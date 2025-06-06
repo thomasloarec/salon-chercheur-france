@@ -9,7 +9,177 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          keywords: string[] | null
+          last_sent_at: string | null
+          location_filter: string | null
+          sector_filter: string | null
+          user_email: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          last_sent_at?: string | null
+          location_filter?: string | null
+          sector_filter?: string | null
+          user_email: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          last_sent_at?: string | null
+          location_filter?: string | null
+          sector_filter?: string | null
+          user_email?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          address: string | null
+          city: string
+          country: string | null
+          created_at: string
+          description: string | null
+          end_date: string
+          entry_fee: string | null
+          estimated_exhibitors: number | null
+          estimated_visitors: number | null
+          event_url: string | null
+          id: string
+          image_url: string | null
+          is_b2b: boolean | null
+          last_scraped_at: string | null
+          location: string
+          name: string
+          organizer_contact: string | null
+          organizer_name: string | null
+          region: string | null
+          scraped_from: string | null
+          sector: string
+          start_date: string
+          tags: string[] | null
+          updated_at: string
+          venue_name: string | null
+        }
+        Insert: {
+          address?: string | null
+          city: string
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          end_date: string
+          entry_fee?: string | null
+          estimated_exhibitors?: number | null
+          estimated_visitors?: number | null
+          event_url?: string | null
+          id?: string
+          image_url?: string | null
+          is_b2b?: boolean | null
+          last_scraped_at?: string | null
+          location: string
+          name: string
+          organizer_contact?: string | null
+          organizer_name?: string | null
+          region?: string | null
+          scraped_from?: string | null
+          sector: string
+          start_date: string
+          tags?: string[] | null
+          updated_at?: string
+          venue_name?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          entry_fee?: string | null
+          estimated_exhibitors?: number | null
+          estimated_visitors?: number | null
+          event_url?: string | null
+          id?: string
+          image_url?: string | null
+          is_b2b?: boolean | null
+          last_scraped_at?: string | null
+          location?: string
+          name?: string
+          organizer_contact?: string | null
+          organizer_name?: string | null
+          region?: string | null
+          scraped_from?: string | null
+          sector?: string
+          start_date?: string
+          tags?: string[] | null
+          updated_at?: string
+          venue_name?: string | null
+        }
+        Relationships: []
+      }
+      scraping_sources: {
+        Row: {
+          base_url: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_scraped_at: string | null
+          name: string
+          scraping_frequency_days: number | null
+        }
+        Insert: {
+          base_url: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_scraped_at?: string | null
+          name: string
+          scraping_frequency_days?: number | null
+        }
+        Update: {
+          base_url?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_scraped_at?: string | null
+          name?: string
+          scraping_frequency_days?: number | null
+        }
+        Relationships: []
+      }
+      sectors: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          keywords: string[] | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          keywords?: string[] | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          keywords?: string[] | null
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

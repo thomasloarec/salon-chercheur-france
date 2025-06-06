@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Bell, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const CTASection = () => {
   return (
@@ -25,9 +26,11 @@ const CTASection = () => {
                 className="pl-10 h-12"
               />
             </div>
-            <Button className="h-12 px-8 bg-accent hover:bg-accent/90">
-              Rechercher
-            </Button>
+            <Link to="/events">
+              <Button className="h-12 px-8 bg-accent hover:bg-accent/90">
+                Rechercher
+              </Button>
+            </Link>
           </div>
           
           <p className="text-sm text-gray-500">

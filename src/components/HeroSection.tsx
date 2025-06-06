@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, MapPin, Calendar } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const HeroSection = () => {
   return (
@@ -43,9 +44,11 @@ const HeroSection = () => {
                 />
               </div>
             </div>
-            <Button className="w-full mt-4 h-12 bg-accent hover:bg-accent/90 text-lg font-semibold">
-              Rechercher des salons
-            </Button>
+            <Link to="/events">
+              <Button className="w-full mt-4 h-12 bg-accent hover:bg-accent/90 text-lg font-semibold">
+                Rechercher des salons
+              </Button>
+            </Link>
           </div>
 
           {/* Stats */}
