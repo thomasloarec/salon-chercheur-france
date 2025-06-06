@@ -14,7 +14,7 @@ const HeroSection = () => {
           </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-gray-200">
             Ne manquez plus jamais une opportunité business. Découvrez tous les événements B2B en France, 
-            filtrés par secteur d'activité et géolocalisation.
+            filtrés par secteur d'activité et géolocalisation. Accès libre et gratuit.
           </p>
 
           {/* Search Bar */}
@@ -59,8 +59,8 @@ const HeroSection = () => {
               <div className="text-gray-300 mt-2">Secteurs d'activité</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-accent">100+</div>
-              <div className="text-gray-300 mt-2">Lieux en France</div>
+              <div className="text-3xl md:text-4xl font-bold text-accent">100%</div>
+              <div className="text-gray-300 mt-2">Gratuit</div>
             </div>
           </div>
         </div>

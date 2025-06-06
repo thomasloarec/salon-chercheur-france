@@ -1,72 +1,38 @@
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Bell, Zap, Shield } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Bell, Search } from 'lucide-react';
 
 const CTASection = () => {
   return (
-    <section className="py-20 gradient-hero text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Prêt à révolutionner votre prospection ?
+    <section className="py-20 bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="bg-white rounded-2xl p-8 md:p-12 shadow-xl">
+          <Bell className="h-16 w-16 text-accent mx-auto mb-6" />
+          <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">
+            Ne manquez plus aucun salon
           </h2>
-          <p className="text-xl text-gray-200 max-w-3xl mx-auto">
-            Rejoignez plus de 5 000 commerciaux qui utilisent déjà SalonsPro pour optimiser 
-            leur présence sur les salons professionnels.
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Commencez dès maintenant à explorer tous les salons professionnels en France. 
+            Recherchez par secteur, ville ou date pour trouver les événements qui vous intéressent.
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-            <CardContent className="p-6 text-center">
-              <Bell className="h-12 w-12 text-accent mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Alertes instantanées</h3>
-              <p className="text-gray-200 text-sm">
-                Soyez notifié dès qu'un nouveau salon correspond à vos critères
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-            <CardContent className="p-6 text-center">
-              <Zap className="h-12 w-12 text-accent mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Accès premium</h3>
-              <p className="text-gray-200 text-sm">
-                Données exclusives et analyses avancées pour optimiser votre ROI
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-            <CardContent className="p-6 text-center">
-              <Shield className="h-12 w-12 text-accent mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Support dédié</h3>
-              <p className="text-gray-200 text-sm">
-                Une équipe d'experts pour vous accompagner dans votre stratégie
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="text-center">
-          <div className="inline-block bg-white/10 backdrop-blur-sm rounded-lg p-8">
-            <h3 className="text-2xl font-bold mb-4">Commencez gratuitement</h3>
-            <p className="text-gray-200 mb-6">
-              Accès gratuit pendant 30 jours, puis seulement 29€/mois
-            </p>
-            <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white font-semibold px-8">
-                Essai gratuit 30 jours
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
-                Voir la démo
-              </Button>
+          
+          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Input
+                placeholder="Votre secteur d'activité..."
+                className="pl-10 h-12"
+              />
             </div>
-            <p className="text-sm text-gray-300 mt-4">
-              Aucune carte bancaire requise • Annulable à tout moment
-            </p>
+            <Button className="h-12 px-8 bg-accent hover:bg-accent/90">
+              Rechercher
+            </Button>
           </div>
+          
+          <p className="text-sm text-gray-500">
+            Accès libre et gratuit • Mise à jour quotidienne • Plus de 1200 salons référencés
+          </p>
         </div>
       </div>
     </section>

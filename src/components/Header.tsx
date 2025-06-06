@@ -31,12 +31,9 @@ const Header = () => {
             <a href="#calendrier" className="text-gray-700 hover:text-primary transition-colors duration-200">
               Calendrier
             </a>
-            <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
-              Connexion
-            </Button>
-            <Button className="bg-accent hover:bg-accent/90">
-              S'inscrire
-            </Button>
+            <a href="#fonctionnalites" className="text-gray-700 hover:text-primary transition-colors duration-200">
+              Fonctionnalités
+            </a>
           </nav>
 
           {/* Mobile menu button */}
@@ -67,14 +64,9 @@ const Header = () => {
               <a href="#calendrier" className="block px-3 py-2 text-gray-700 hover:text-primary">
                 Calendrier
               </a>
-              <div className="flex flex-col space-y-2 px-3 pt-2">
-                <Button variant="outline" className="border-primary text-primary">
-                  Connexion
-                </Button>
-                <Button className="bg-accent hover:bg-accent/90">
-                  S'inscrire
-                </Button>
-              </div>
+              <a href="#fonctionnalites" className="block px-3 py-2 text-gray-700 hover:text-primary">
+                Fonctionnalités
+              </a>
             </div>
           </div>
         )}
