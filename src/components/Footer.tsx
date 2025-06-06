@@ -1,0 +1,89 @@
+
+import { MapPin, Mail, Phone, Linkedin, Twitter } from 'lucide-react';
+
+const Footer = () => {
+  return (
+    <footer className="bg-primary text-white py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          {/* Company Info */}
+          <div className="md:col-span-1">
+            <div className="text-2xl font-bold mb-4">
+              Salons<span className="text-accent">Pro</span>
+            </div>
+            <p className="text-gray-300 mb-4">
+              La plateforme de référence pour découvrir tous les salons professionnels en France.
+            </p>
+            <div className="flex space-x-4">
+              <Linkedin className="h-5 w-5 text-gray-300 hover:text-accent cursor-pointer transition-colors" />
+              <Twitter className="h-5 w-5 text-gray-300 hover:text-accent cursor-pointer transition-colors" />
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">Navigation</h4>
+            <ul className="space-y-2">
+              <li><a href="#accueil" className="text-gray-300 hover:text-accent transition-colors">Accueil</a></li>
+              <li><a href="#recherche" className="text-gray-300 hover:text-accent transition-colors">Rechercher</a></li>
+              <li><a href="#secteurs" className="text-gray-300 hover:text-accent transition-colors">Secteurs</a></li>
+              <li><a href="#calendrier" className="text-gray-300 hover:text-accent transition-colors">Calendrier</a></li>
+            </ul>
+          </div>
+
+          {/* Services */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">Services</h4>
+            <ul className="space-y-2">
+              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Alertes personnalisées</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">API développeurs</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Analyse de données</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Support premium</a></li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">Contact</h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-accent" />
+                <span className="text-gray-300">contact@salonspro.fr</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-accent" />
+                <span className="text-gray-300">01 23 45 67 89</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-accent" />
+                <span className="text-gray-300">Paris, France</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-700 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-300 text-sm">
+              © 2024 SalonsPro. Tous droits réservés.
+            </p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-300 hover:text-accent text-sm transition-colors">
+                Mentions légales
+              </a>
+              <a href="#" className="text-gray-300 hover:text-accent text-sm transition-colors">
+                Politique de confidentialité
+              </a>
+              <a href="#" className="text-gray-300 hover:text-accent text-sm transition-colors">
+                CGU
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;
