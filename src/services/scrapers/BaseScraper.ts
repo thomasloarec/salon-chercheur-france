@@ -1,8 +1,7 @@
-
 import type { ScrapedEvent } from '@/types/scraping';
 
 export abstract class BaseScraper {
-  protected venue: string;
+  public venue: string;
   protected baseUrl: string;
 
   constructor(venue: string, baseUrl: string) {
