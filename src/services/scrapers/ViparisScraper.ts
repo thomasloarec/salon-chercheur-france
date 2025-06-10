@@ -54,7 +54,7 @@ export class ViparisScraper extends BaseScraper {
         '.card'
       ];
       
-      let eventElements: cheerio.Cheerio<cheerio.Element> = $();
+      let eventElements: cheerio.Cheerio = $('<div>'); // Initialize with empty element
       
       for (const selector of eventSelectors) {
         eventElements = $(selector);
@@ -188,7 +188,7 @@ export class ViparisScraper extends BaseScraper {
     return events;
   }
 
-  private extractText($el: cheerio.Cheerio<cheerio.Element>, selectors: string[]): string {
+  private extractText($el: cheerio.Cheerio, selectors: string[]): string {
     for (const selector of selectors) {
       const text = $el.find(selector).first().text().trim();
       if (text) return text;
