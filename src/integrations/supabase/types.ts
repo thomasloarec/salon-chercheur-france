@@ -19,6 +19,7 @@ export type Database = {
           location_filter: string | null
           sector_filter: string | null
           user_email: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -29,6 +30,7 @@ export type Database = {
           location_filter?: string | null
           sector_filter?: string | null
           user_email: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -39,6 +41,7 @@ export type Database = {
           location_filter?: string | null
           sector_filter?: string | null
           user_email?: string
+          user_id?: string | null
         }
         Relationships: []
       }
