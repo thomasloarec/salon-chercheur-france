@@ -1,5 +1,6 @@
 
 import { BaseScraper } from './BaseScraper';
+import * as cheerio from 'cheerio';
 import type { ScrapedEvent } from '@/types/scraping';
 
 export class ExpoNantesScraper extends BaseScraper {
@@ -17,7 +18,6 @@ export class ExpoNantesScraper extends BaseScraper {
       console.log('HTML bytes', html.length);
       
       // Parse HTML with cheerio
-      const cheerio = await import('cheerio');
       const $ = cheerio.load(html);
       console.log('cards', $('.event-card, .c-event-card, .agenda-item').length);
       
