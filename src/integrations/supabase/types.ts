@@ -42,6 +42,69 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          siret: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          siret?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          siret?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      event_exhibitors: {
+        Row: {
+          company_id: string
+          event_id: string
+          scraped_at: string | null
+          source_url: string | null
+          stand: string | null
+        }
+        Insert: {
+          company_id: string
+          event_id: string
+          scraped_at?: string | null
+          source_url?: string | null
+          stand?: string | null
+        }
+        Update: {
+          company_id?: string
+          event_id?: string
+          scraped_at?: string | null
+          source_url?: string | null
+          stand?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_exhibitors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_exhibitors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           address: string | null
@@ -126,6 +189,51 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_matches: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          event_id: string | null
+          id: string
+          relation: string | null
+          stand: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          relation?: string | null
+          stand?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          relation?: string | null
+          stand?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_matches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scraping_sources: {
         Row: {
           base_url: string
@@ -179,6 +287,35 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      user_companies: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          relation: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          relation?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          relation?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
