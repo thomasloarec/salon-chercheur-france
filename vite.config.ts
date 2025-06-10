@@ -9,6 +9,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/api/scrape': {
+        target: 'http://localhost:54321/functions/v1/scrape',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/scrape/, ''),
+      }
+    }
   },
   plugins: [
     react(),

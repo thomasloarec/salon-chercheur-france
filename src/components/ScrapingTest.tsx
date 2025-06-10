@@ -3,26 +3,45 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrapingService } from '@/services/ScrapingService';
 import { AIClassifier } from '@/services/aiClassifier';
-import { Loader2, Play, CheckCircle, XCircle } from 'lucide-react';
-import type { ScrapingResult } from '@/types/scraping';
+import { Loader2, Play, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+
+interface ScrapingResult {
+  found: number;
+  saved: number;
+  scrapingErrors: number;
+  saveErrors: string[];
+  success: boolean;
+}
 
 const ScrapingTest = () => {
   const [isRunning, setIsRunning] = useState(false);
-  const [results, setResults] = useState<ScrapingResult[]>([]);
+  const [result, setResult] = useState<ScrapingResult | null>(null);
   const [testClassification, setTestClassification] = useState<any>(null);
 
   const runScraping = async () => {
     setIsRunning(true);
-    setResults([]);
+    setResult(null);
     
     try {
-      const scrapingService = new ScrapingService();
-      const scrapingResults = await scrapingService.scrapeAllSources();
-      setResults(scrapingResults);
+      const response = await fetch('/api/scrape', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      setResult(data);
     } catch (error) {
       console.error('Scraping failed:', error);
+      setResult({
+        found: 0,
+        saved: 0,
+        scrapingErrors: 1,
+        saveErrors: [String(error)],
+        success: false
+      });
     } finally {
       setIsRunning(false);
     }
@@ -127,56 +146,66 @@ const ScrapingTest = () => {
               </CardContent>
             </Card>
           )}
-        </CardContent>
-      </Card>
 
-      {results.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Résultats du Scraping</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {results.map((result, index) => (
-                <div key={index} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold">{result.source}</h3>
-                    <Badge variant={result.success ? "default" : "destructive"}>
-                      {result.success ? 'Succès' : 'Échec'}
-                    </Badge>
+          {result && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  Résultats du Scraping
+                  {result.success ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">{result.found}</div>
+                      <div className="text-sm text-blue-600">Événements trouvés</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">{result.saved}</div>
+                      <div className="text-sm text-green-600">Événements sauvés</div>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 rounded-lg">
+                      <div className="text-2xl font-bold text-orange-600">{result.scrapingErrors}</div>
+                      <div className="text-sm text-orange-600">Erreurs de scraping</div>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                      <div className="text-2xl font-bold text-red-600">{result.saveErrors.length}</div>
+                      <div className="text-sm text-red-600">Erreurs de sauvegarde</div>
+                    </div>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Trouvés:</span>
-                      <div className="font-medium">{result.eventsFound}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Traités:</span>
-                      <div className="font-medium">{result.eventsProcessed}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Sauvés:</span>
-                      <div className="font-medium text-green-600">{result.eventsSaved}</div>
-                    </div>
-                  </div>
-                  
-                  {result.errors.length > 0 && (
-                    <div className="mt-3">
-                      <span className="text-sm text-red-600 font-medium">Erreurs:</span>
-                      <ul className="text-sm text-red-500 mt-1 space-y-1">
-                        {result.errors.map((error, idx) => (
-                          <li key={idx}>• {error}</li>
+
+                  {result.saveErrors.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-red-600 mb-2">Erreurs de sauvegarde :</h4>
+                      <ul className="text-sm text-red-500 space-y-1">
+                        {result.saveErrors.map((error, idx) => (
+                          <li key={idx} className="bg-red-50 p-2 rounded">• {error}</li>
                         ))}
                       </ul>
                     </div>
                   )}
+
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="text-sm font-medium mb-2">Résumé :</h4>
+                    <p className="text-sm text-gray-600">
+                      {result.success 
+                        ? `✅ Scraping réussi ! ${result.saved} événements ont été traités.`
+                        : `⚠️ Scraping partiellement réussi. ${result.saved}/${result.found} événements sauvés.`
+                      }
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
