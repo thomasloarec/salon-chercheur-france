@@ -25,6 +25,7 @@ export interface Event {
   updated_at: string;
   scraped_from?: string;
   last_scraped_at?: string;
+  event_type?: 'salon' | 'convention' | 'congres' | 'conference' | 'ceremonie' | 'loisir' | 'inconnu';
 }
 
 export interface Sector {

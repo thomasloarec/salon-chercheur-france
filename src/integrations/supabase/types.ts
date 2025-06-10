@@ -116,6 +116,7 @@ export type Database = {
           entry_fee: string | null
           estimated_exhibitors: number | null
           estimated_visitors: number | null
+          event_type: string | null
           event_url: string | null
           id: string
           image_url: string | null
@@ -143,6 +144,7 @@ export type Database = {
           entry_fee?: string | null
           estimated_exhibitors?: number | null
           estimated_visitors?: number | null
+          event_type?: string | null
           event_url?: string | null
           id?: string
           image_url?: string | null
@@ -170,6 +172,7 @@ export type Database = {
           entry_fee?: string | null
           estimated_exhibitors?: number | null
           estimated_visitors?: number | null
+          event_type?: string | null
           event_url?: string | null
           id?: string
           image_url?: string | null
