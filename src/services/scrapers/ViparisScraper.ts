@@ -1,4 +1,3 @@
-
 import * as cheerio from 'cheerio';
 import { BaseScraper } from './BaseScraper';
 import type { ScrapedEvent } from '@/types/scraping';
@@ -21,18 +20,20 @@ export class ViparisScraper extends BaseScraper {
     
     for (const path of this.agendaUrls) {
       try {
-        console.log(`Scraping Viparis: ${this.baseUrl}${path}`);
+        const url = this.baseUrl + path;
+        console.log('🔍 ViparisScraper - Scraping URL:', url);
+        
         const events = await this.scrapeVenuePage(path);
         allEvents.push(...events);
         
         // Wait between venues to avoid rate limiting
         await this.sleepRandom(800, 1600);
       } catch (error) {
-        console.error(`Error scraping ${path}:`, error);
+        console.error(`❌ ViparisScraper - Error scraping ${path}:`, error);
       }
     }
     
-    console.log(`Viparis scraper found ${allEvents.length} events`);
+    console.log(`✅ ViparisScraper - Total events found: ${allEvents.length}`);
     return allEvents;
   }
 
@@ -41,8 +42,31 @@ export class ViparisScraper extends BaseScraper {
     const url = this.baseUrl + path;
     
     try {
+      console.log(`📡 ViparisScraper - Fetching: ${url}`);
       const html = await this.request(url);
+      console.log(`📄 ViparisScraper - HTML bytes received: ${html.length}`);
+      
       const $ = cheerio.load(html);
+      
+      // Debug: Test multiple selectors and log results
+      const selectorTests = [
+        '.c-event-card',
+        '.event-card', 
+        '.agenda-item',
+        '.event-item',
+        '[data-event]',
+        '.card',
+        '.event',
+        '.agenda',
+        'article',
+        '.list-item'
+      ];
+      
+      console.log('🔍 ViparisScraper - Testing selectors:');
+      for (const selector of selectorTests) {
+        const count = $(selector).length;
+        console.log(`  ${selector}: ${count} elements`);
+      }
       
       // Try multiple possible selectors for event cards
       const eventSelectors = [
@@ -59,19 +83,39 @@ export class ViparisScraper extends BaseScraper {
       for (const selector of eventSelectors) {
         eventElements = $(selector);
         if (eventElements.length > 0) {
-          console.log(`Found ${eventElements.length} events with selector: ${selector}`);
+          console.log(`✅ ViparisScraper - Found ${eventElements.length} events with selector: ${selector}`);
           break;
         }
       }
       
       if (eventElements.length === 0) {
+        console.log('🔍 ViparisScraper - No events with standard selectors, trying fallback...');
+        
         // Fallback: look for any elements containing event-like content
         eventElements = $('[class*="event"], [class*="agenda"], .card, .item').filter((_, el) => {
           const text = $(el).text().toLowerCase();
           return text.includes('salon') || text.includes('expo') || text.includes('congrès') || 
                  text.includes('convention') || text.includes('forum');
         });
-        console.log(`Fallback found ${eventElements.length} potential event elements`);
+        console.log(`🔍 ViparisScraper - Fallback found ${eventElements.length} potential event elements`);
+        
+        // Additional debug: look for any divs with text content
+        if (eventElements.length === 0) {
+          const allDivs = $('div');
+          console.log(`🔍 ViparisScraper - Total divs on page: ${allDivs.length}`);
+          
+          const textDivs = $('div').filter((_, el) => {
+            const text = $(el).text().trim();
+            return text.length > 20 && text.includes('2025');
+          });
+          console.log(`🔍 ViparisScraper - Divs with substantial text containing 2025: ${textDivs.length}`);
+          
+          // Sample some content
+          textDivs.slice(0, 3).each((_, el) => {
+            const text = $(el).text().trim().substring(0, 100);
+            console.log(`📝 ViparisScraper - Sample content: ${text}...`);
+          });
+        }
       }
       
       eventElements.each((_, el) => {
@@ -86,6 +130,8 @@ export class ViparisScraper extends BaseScraper {
             'h1', 'h2', 'h3', 'h4',
             '.name'
           ]);
+          
+          console.log(`🏷️ ViparisScraper - Processing event: "${title}"`);
           
           // Extract description
           let description = this.extractText($el, [
@@ -119,6 +165,8 @@ export class ViparisScraper extends BaseScraper {
             }
           }
           
+          console.log(`📅 ViparisScraper - Date string: "${dateStr}"`);
+          
           // Extract location/venue
           let venue = this.extractText($el, [
             '.c-event-card__location',
@@ -142,6 +190,7 @@ export class ViparisScraper extends BaseScraper {
           
           // Skip if no title found
           if (!title) {
+            console.log('⚠️ ViparisScraper - Skipping element: no title found');
             return;
           }
           
@@ -174,17 +223,19 @@ export class ViparisScraper extends BaseScraper {
             tags: this.extractTags(title + ' ' + description)
           };
           
+          console.log(`✅ ViparisScraper - Created event: ${event.title}`);
           events.push(event);
           
         } catch (error) {
-          console.error('Error parsing event element:', error);
+          console.error('❌ ViparisScraper - Error parsing event element:', error);
         }
       });
       
     } catch (error) {
-      console.error(`Error scraping venue page ${url}:`, error);
+      console.error(`❌ ViparisScraper - Error scraping venue page ${url}:`, error);
     }
     
+    console.log(`📊 ViparisScraper - Events extracted from ${url}: ${events.length}`);
     return events;
   }
 

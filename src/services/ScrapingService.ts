@@ -22,30 +22,35 @@ export class ScrapingService {
   }
 
   async scrapeAllSources(): Promise<ScrapingResult[]> {
-    console.log('Starting scraping process...');
+    console.log('🚀 ScrapingService - Starting scraping process...');
     const results: ScrapingResult[] = [];
     
     for (const scraper of this.scrapers) {
       try {
-        console.log(`Scraping ${scraper.venue}...`);
+        console.log(`🔍 ScrapingService - Scraping ${scraper.venue}...`);
         const events = await scraper.scrapeEvents();
         
         let eventsProcessed = 0;
         let eventsSaved = 0;
         const errors: string[] = [];
         
-        console.log(`${scraper.venue} found ${events.length} events`);
+        console.log(`📊 ScrapingService - ${scraper.venue} found ${events.length} events`);
         
         for (const event of events) {
           try {
+            console.log(`🔄 ScrapingService - Processing: "${event.title}"`);
+            
             // AI Classification
             const classification = AIClassifier.classifyEvent(event);
+            console.log(`🤖 ScrapingService - AI Classification - Professional: ${classification.isProfessional} (${(classification.professionalScore * 100).toFixed(0)}%), Sector: ${classification.sector}, Confidence: ${(classification.confidence * 100).toFixed(0)}%`);
             
             // Event type classification using keyword rules
             const eventType = classifyEvent(event.title, event.description);
+            console.log(`🏷️ ScrapingService - Event type: ${eventType}`);
             
             // Only save professional events with decent confidence
             if (classification.isProfessional && classification.confidence > 0.5) {
+              console.log(`✅ ScrapingService - Event qualifies for saving`);
               const saved = await this.saveEvent({
                 ...event,
                 sector: classification.sector,
@@ -55,11 +60,18 @@ export class ScrapingService {
               
               if (saved) {
                 eventsSaved++;
+                console.log(`💾 ScrapingService - Event saved successfully`);
+              } else {
+                console.log(`❌ ScrapingService - Event save failed`);
               }
+            } else {
+              console.log(`⚠️ ScrapingService - Event rejected - Professional: ${classification.isProfessional}, Confidence: ${(classification.confidence * 100).toFixed(0)}%`);
             }
             eventsProcessed++;
           } catch (error) {
-            errors.push(`Error processing event "${event.title}": ${error}`);
+            const errorMsg = `Error processing event "${event.title}": ${error}`;
+            console.error(`❌ ScrapingService - ${errorMsg}`);
+            errors.push(errorMsg);
           }
         }
         
@@ -72,13 +84,13 @@ export class ScrapingService {
           source: scraper.venue
         });
         
-        console.log(`Scraped ${events.length} events from ${scraper.venue}, saved ${eventsSaved}`);
+        console.log(`📈 ScrapingService - ${scraper.venue} summary: Found=${events.length}, Processed=${eventsProcessed}, Saved=${eventsSaved}`);
         
         // Pause between sources to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 2000));
         
       } catch (error) {
-        console.error(`Error scraping ${scraper.venue}:`, error);
+        console.error(`❌ ScrapingService - Error scraping ${scraper.venue}:`, error);
         results.push({
           success: false,
           eventsFound: 0,
@@ -90,14 +102,16 @@ export class ScrapingService {
       }
     }
     
-    console.log('Scraping process completed');
+    console.log('🏁 ScrapingService - Scraping process completed');
     return results;
   }
 
   private async saveEvent(event: ScrapedEvent & { event_type?: string }): Promise<boolean> {
     try {
+      console.log(`💾 ScrapingService - Attempting to save: "${event.title}"`);
+      
       // Check if event already exists (deduplication)
-      const { data: existing } = await supabase
+      const { data: existing, error: selectError } = await supabase
         .from('events')
         .select('id')
         .eq('name', event.title)
@@ -105,7 +119,14 @@ export class ScrapingService {
         .eq('start_date', event.startDate.toISOString().split('T')[0])
         .maybeSingle();
 
+      if (selectError) {
+        console.error('❌ ScrapingService - Error checking existing event:', selectError);
+        return false;
+      }
+
       if (existing) {
+        console.log(`🔄 ScrapingService - Updating existing event: ${event.title}`);
+        
         // Update existing event
         const { error: updateError } = await supabase
           .from('events')
@@ -127,12 +148,14 @@ export class ScrapingService {
           .eq('id', existing.id);
 
         if (updateError) {
-          console.error('Error updating event:', updateError);
+          console.error('❌ ScrapingService - Error updating event:', updateError);
           return false;
         }
         
-        console.log(`Updated existing event: ${event.title} (type: ${event.event_type || 'non classifié'})`);
+        console.log(`✅ ScrapingService - Updated existing event: ${event.title} (type: ${event.event_type || 'non classifié'})`);
       } else {
+        console.log(`➕ ScrapingService - Creating new event: ${event.title}`);
+        
         // Create new event
         const { error: insertError } = await supabase
           .from('events')
@@ -162,16 +185,16 @@ export class ScrapingService {
           });
 
         if (insertError) {
-          console.error('Error inserting event:', insertError);
+          console.error('❌ ScrapingService - Error inserting event:', insertError);
           return false;
         }
         
-        console.log(`Created new event: ${event.title} (type: ${event.event_type || 'non classifié'})`);
+        console.log(`✅ ScrapingService - Created new event: ${event.title} (type: ${event.event_type || 'non classifié'})`);
       }
       
       return true;
     } catch (error) {
-      console.error('Error saving event:', error);
+      console.error('❌ ScrapingService - Error saving event:', error);
       return false;
     }
   }

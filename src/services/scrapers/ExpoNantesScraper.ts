@@ -9,7 +9,29 @@ export class ExpoNantesScraper extends BaseScraper {
 
   async scrapeEvents(): Promise<ScrapedEvent[]> {
     try {
-      const response = await this.fetchWithRetry('https://www.exponantes.com/agenda-des-evenements-du-parc');
+      const url = 'https://www.exponantes.com/agenda-des-evenements-du-parc';
+      console.log('🔍 ExpoNantesScraper - Scraping URL:', url);
+      
+      const response = await this.fetchWithRetry(url);
+      const html = await response.text();
+      console.log(`📄 ExpoNantesScraper - HTML bytes received: ${html.length}`);
+      
+      // TODO: Parse the actual HTML response instead of returning mock events
+      // For now, let's analyze what we get back
+      
+      if (html.length < 1000) {
+        console.log('⚠️ ExpoNantesScraper - HTML response seems too short, might be blocked or redirected');
+        console.log('📄 ExpoNantesScraper - HTML content preview:', html.substring(0, 500));
+      }
+      
+      // Check if we got a proper HTML page
+      if (!html.includes('<html') && !html.includes('<!DOCTYPE')) {
+        console.log('⚠️ ExpoNantesScraper - Response doesn\'t look like HTML');
+        return [];
+      }
+      
+      // For now, return mock events but log that we're doing so
+      console.log('📝 ExpoNantesScraper - Using mock events (real parsing not implemented yet)');
       
       // Mock events for now - in real implementation, parse the HTML response
       const mockEvents: ScrapedEvent[] = [
@@ -49,9 +71,11 @@ export class ExpoNantesScraper extends BaseScraper {
         }
       ];
 
+      console.log(`✅ ExpoNantesScraper - Returning ${mockEvents.length} mock events`);
       return mockEvents;
     } catch (error) {
-      console.error('Error scraping Exponantes:', error);
+      console.error('❌ ExpoNantesScraper - Error scraping:', error);
+      console.log('📝 ExpoNantesScraper - Returning empty array due to error');
       return [];
     }
   }
