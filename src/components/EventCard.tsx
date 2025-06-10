@@ -47,9 +47,24 @@ const EventCard = ({ event }: EventCardProps) => {
             <h3 className="text-xl font-semibold text-primary mb-2 line-clamp-2">
               {event.name}
             </h3>
-            <Badge variant="secondary" className="mb-2">
-              {event.sector}
-            </Badge>
+            <div className="flex gap-2 mb-2">
+              <Badge variant="secondary">
+                {event.sector}
+              </Badge>
+              {event.event_type && event.event_type !== 'loisir' && (
+                <Badge 
+                  variant={
+                    event.event_type === 'salon' ? 'destructive' :
+                    event.event_type === 'convention' ? 'secondary' :
+                    event.event_type === 'congres' ? 'outline' :
+                    event.event_type === 'conference' ? 'default' :
+                    'secondary'
+                  }
+                >
+                  {event.event_type}
+                </Badge>
+              )}
+            </div>
             {event.description && (
               <p className="text-gray-600 text-sm line-clamp-3">
                 {event.description}

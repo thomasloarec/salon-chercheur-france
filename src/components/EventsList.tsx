@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import EventCard from './EventCard';
@@ -11,6 +10,9 @@ const EventsList = () => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data: events, isLoading, error } = useEvents(filters);
+
+  // Filter out 'loisir' events for display
+  const displayEvents = events?.filter(event => event.event_type !== 'loisir') || [];
 
   const handleSearch = (newFilters: SearchFilters) => {
     setFilters(newFilters);
@@ -33,7 +35,7 @@ const EventsList = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold text-primary">
-                {isLoading ? 'Chargement...' : `${events?.length || 0} salon(s) trouvé(s)`}
+                {isLoading ? 'Chargement...' : `${displayEvents.length || 0} salon(s) trouvé(s)`}
               </h2>
               {filters.query && (
                 <p className="text-gray-600 mt-1">
@@ -74,12 +76,12 @@ const EventsList = () => {
                 </div>
               ))}
             </div>
-          ) : events && events.length > 0 ? (
+          ) : displayEvents && displayEvents.length > 0 ? (
             <div className={viewMode === 'grid' ? 
               'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 
               'space-y-4'
             }>
-              {events.map((event) => (
+              {displayEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
             </div>
