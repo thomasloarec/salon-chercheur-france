@@ -54,7 +54,7 @@ export class ViparisScraper extends BaseScraper {
         '.card'
       ];
       
-      let eventElements: cheerio.Cheerio<cheerio.Element> | null = null;
+      let eventElements: cheerio.Cheerio<cheerio.Element> = $();
       
       for (const selector of eventSelectors) {
         eventElements = $(selector);
@@ -64,7 +64,7 @@ export class ViparisScraper extends BaseScraper {
         }
       }
       
-      if (!eventElements || eventElements.length === 0) {
+      if (eventElements.length === 0) {
         // Fallback: look for any elements containing event-like content
         eventElements = $('[class*="event"], [class*="agenda"], .card, .item').filter((_, el) => {
           const text = $(el).text().toLowerCase();
