@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, MapPin, Calendar, Filter, Users } from 'lucide-react';
+import { Search, MapPin, Filter } from 'lucide-react';
 import { useSectors } from '@/hooks/useEvents';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { eachMonthOfInterval, format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import type { SearchFilters } from '@/types/event';
 
 interface SearchSectionProps {
@@ -14,22 +16,45 @@ interface SearchSectionProps {
 }
 
 const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
-  const [filters, setFilters] = useState<SearchFilters>({});
+  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
+  const [city, setCity] = useState('');
+  
   const { data: sectors } = useSectors();
 
+  // Générer la liste des mois (mois restants de l'année + année suivante)
+  const months = eachMonthOfInterval({
+    start: new Date(),
+    end: new Date(new Date().getFullYear() + 1, 11, 31)
+  }).map(date => ({
+    value: date.getMonth() + 1,
+    label: format(date, 'MMMM yyyy', { locale: fr })
+  }));
+
   const handleSearch = () => {
-    onSearch(filters);
+    onSearch({
+      sectors: selectedSectors,
+      months: selectedMonths,
+      city: city || undefined,
+    });
   };
 
   const handleReset = () => {
-    setFilters({});
+    setSelectedSectors([]);
+    setSelectedMonths([]);
+    setCity('');
     onSearch({});
   };
 
-  const handleSectorChange = (value: string) => {
-    const sector = value === 'all' ? undefined : value;
-    setFilters({ ...filters, sector });
-  };
+  const sectorOptions = sectors?.map(sector => ({
+    value: sector.name,
+    label: sector.name
+  })) || [];
+
+  const monthOptions = months.map(month => ({
+    value: month.value.toString(),
+    label: month.label
+  }));
 
   return (
     <section className="py-12 bg-gray-50">
@@ -46,79 +71,41 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
         <Card className="p-6">
           <CardContent className="p-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {/* Recherche textuelle */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  placeholder="Nom du salon, mots-clés..."
-                  className="pl-10"
-                  value={filters.query || ''}
-                  onChange={(e) => setFilters({ ...filters, query: e.target.value })}
+              {/* Secteurs - MultiSelect */}
+              <div>
+                <MultiSelect
+                  label="Secteurs d'activité"
+                  options={sectorOptions}
+                  selected={selectedSectors}
+                  onChange={setSelectedSectors}
+                  placeholder="Choisissez un ou plusieurs secteurs"
                 />
               </div>
-
-              {/* Secteur */}
-              <Select 
-                value={filters.sector || 'all'} 
-                onValueChange={handleSectorChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Secteur d'activité" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les secteurs</SelectItem>
-                  {sectors?.map((sector) => (
-                    <SelectItem key={sector.id} value={sector.name}>
-                      {sector.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
 
               {/* Ville */}
               <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  placeholder="Ville"
-                  className="pl-10"
-                  value={filters.city || ''}
-                  onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-                />
+                <label className="text-sm font-medium leading-none mb-2 block">
+                  Ville / Région
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    placeholder="Ville ou région"
+                    className="pl-10"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
+                </div>
               </div>
 
-              {/* Date de début */}
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  type="date"
-                  placeholder="Date de début"
-                  className="pl-10"
-                  value={filters.startDate || ''}
-                  onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                />
-              </div>
-
-              {/* Date de fin */}
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  type="date"
-                  placeholder="Date de fin"
-                  className="pl-10"
-                  value={filters.endDate || ''}
-                  onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                />
-              </div>
-
-              {/* Nombre minimum de visiteurs */}
-              <div className="relative">
-                <Users className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input
-                  type="number"
-                  placeholder="Min. visiteurs"
-                  className="pl-10"
-                  value={filters.minVisitors || ''}
-                  onChange={(e) => setFilters({ ...filters, minVisitors: e.target.value ? parseInt(e.target.value) : undefined })}
+              {/* Mois - MultiSelect */}
+              <div>
+                <MultiSelect
+                  label="Mois"
+                  options={monthOptions}
+                  selected={selectedMonths.map(m => m.toString())}
+                  onChange={(values) => setSelectedMonths(values.map(v => parseInt(v)))}
+                  placeholder="Tous les mois"
                 />
               </div>
             </div>
@@ -126,7 +113,7 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
             <div className="flex gap-3 justify-center">
               <Button 
                 onClick={handleSearch} 
-                disabled={isLoading}
+                disabled={isLoading || selectedSectors.length === 0}
                 className="bg-accent hover:bg-accent/90"
               >
                 <Search className="h-4 w-4 mr-2" />
@@ -141,6 +128,12 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
                 Réinitialiser
               </Button>
             </div>
+
+            {selectedSectors.length === 0 && (
+              <p className="text-sm text-gray-500 text-center mt-2">
+                Veuillez sélectionner au moins un secteur d'activité
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

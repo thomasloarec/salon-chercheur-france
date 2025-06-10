@@ -7,38 +7,32 @@ export interface Event {
   end_date: string;
   sector: string;
   location: string;
-  address?: string;
   city: string;
   region?: string;
-  country: string;
+  country?: string;
   venue_name?: string;
-  estimated_visitors?: number;
-  estimated_exhibitors?: number;
   event_url?: string;
   image_url?: string;
-  is_b2b: boolean;
   tags?: string[];
   organizer_name?: string;
   organizer_contact?: string;
   entry_fee?: string;
+  estimated_visitors?: number;
+  estimated_exhibitors?: number;
+  is_b2b: boolean;
+  event_type?: string;
   created_at: string;
   updated_at: string;
-  scraped_from?: string;
   last_scraped_at?: string;
-  event_type?: 'salon' | 'convention' | 'congres' | 'conference' | 'ceremonie' | 'loisir' | 'inconnu';
-}
-
-export interface Sector {
-  id: string;
-  name: string;
-  description?: string;
-  keywords: string[];
-  created_at: string;
+  scraped_from?: string;
+  address?: string;
 }
 
 export interface SearchFilters {
   query?: string;
   sector?: string;
+  sectors?: string[];
+  months?: number[];
   city?: string;
   region?: string;
   startDate?: string;

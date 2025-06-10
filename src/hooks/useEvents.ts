@@ -3,6 +3,18 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
 
+interface UseEventsParams {
+  sectors?: string[];
+  months?: number[];
+  city?: string;
+  query?: string;
+  region?: string;
+  startDate?: string;
+  endDate?: string;
+  minVisitors?: number;
+  maxVisitors?: number;
+}
+
 export const useEvents = (filters?: SearchFilters) => {
   return useQuery({
     queryKey: ['events', filters],
@@ -11,15 +23,23 @@ export const useEvents = (filters?: SearchFilters) => {
         .from('events')
         .select('*')
         .eq('is_b2b', true)
+        .gte('start_date', new Date().toISOString().split('T')[0]) // Exclure les événements passés
         .order('start_date', { ascending: true });
 
-      // Apply filters
-      if (filters?.query) {
-        query = query.or(`name.ilike.%${filters.query}%,description.ilike.%${filters.query}%,tags.cs.{${filters.query}}`);
+      // Filtres obligatoires et nouveaux
+      if (filters?.sectors && filters.sectors.length > 0) {
+        query = query.in('sector', filters.sectors);
       }
 
-      if (filters?.sector) {
-        query = query.eq('sector', filters.sector);
+      if (filters?.months && filters.months.length > 0) {
+        // Utiliser la fonction PostgreSQL extract pour filtrer par mois
+        const monthsCondition = `(${filters.months.join(',')})`;
+        query = query.filter('extract(month from start_date)::int', 'in', monthsCondition);
+      }
+
+      // Filtres existants conservés pour compatibilité
+      if (filters?.query) {
+        query = query.or(`name.ilike.%${filters.query}%,description.ilike.%${filters.query}%,tags.cs.{${filters.query}}`);
       }
 
       if (filters?.city) {
