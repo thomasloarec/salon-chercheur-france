@@ -26,6 +26,11 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
     onSearch({});
   };
 
+  const handleSectorChange = (value: string) => {
+    const sector = value === 'all' ? undefined : value;
+    setFilters({ ...filters, sector });
+  };
+
   return (
     <section className="py-12 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,14 +59,14 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
 
               {/* Secteur */}
               <Select 
-                value={filters.sector || ''} 
-                onValueChange={(value) => setFilters({ ...filters, sector: value || undefined })}
+                value={filters.sector || 'all'} 
+                onValueChange={handleSectorChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Secteur d'activité" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les secteurs</SelectItem>
+                  <SelectItem value="all">Tous les secteurs</SelectItem>
                   {sectors?.map((sector) => (
                     <SelectItem key={sector.id} value={sector.name}>
                       {sector.name}
