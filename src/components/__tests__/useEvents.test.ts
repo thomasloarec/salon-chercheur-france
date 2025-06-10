@@ -52,7 +52,7 @@ describe('useEvents hook', () => {
 
     (supabase.from as jest.Mock).mockReturnValue(mockQuery);
 
-    const { result } = renderHook(() => 
+    renderHook(() => 
       useEvents({
         sectors: ['tech', 'health'],
         months: [3, 4, 5],
