@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import Index from '@/pages/Index';
 import Events from '@/pages/Events';
 import ScrapingTest from '@/pages/ScrapingTest';
@@ -21,7 +22,11 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/events" element={<Events />} />
-              <Route path="/scraping-test" element={<ScrapingTest />} />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <ScrapingTest />
+                </ProtectedRoute>
+              } />
               <Route path="/auth" element={<Auth />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

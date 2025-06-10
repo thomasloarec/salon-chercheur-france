@@ -1,14 +1,15 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Calendar, Search, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Menu, X, Calendar, Search, Users, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import UserMenu from './UserMenu';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -24,28 +25,41 @@ const Header = () => {
 
           {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link 
+            <NavLink 
               to="/" 
-              className="text-gray-700 hover:text-primary transition-colors flex items-center space-x-1"
+              className={({ isActive }) => 
+                `text-gray-700 hover:text-primary transition-colors flex items-center space-x-1 ${
+                  isActive ? 'text-primary font-medium' : ''
+                }`
+              }
             >
               <Search className="h-4 w-4" />
               <span>Accueil</span>
-            </Link>
-            <Link 
+            </NavLink>
+            <NavLink 
               to="/events" 
-              className="text-gray-700 hover:text-primary transition-colors flex items-center space-x-1"
+              className={({ isActive }) => 
+                `text-gray-700 hover:text-primary transition-colors flex items-center space-x-1 ${
+                  isActive ? 'text-primary font-medium' : ''
+                }`
+              }
             >
               <Calendar className="h-4 w-4" />
               <span>Événements</span>
-            </Link>
-            {user && (
-              <Link 
-                to="/scraping-test" 
-                className="text-gray-700 hover:text-primary transition-colors flex items-center space-x-1"
+            </NavLink>
+            {session && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => 
+                  `text-gray-700 hover:text-primary transition-colors flex items-center space-x-1 ${
+                    isActive ? 'text-primary font-medium' : ''
+                  }`
+                }
               >
-                <Users className="h-4 w-4" />
-                <span>Test Scraping</span>
-              </Link>
+                <Settings className="h-4 w-4" />
+                <span>Admin</span>
+                <Badge variant="secondary" className="ml-1 text-xs">dev</Badge>
+              </NavLink>
             )}
           </nav>
 
@@ -72,28 +86,41 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
-              <Link
+              <NavLink
                 to="/"
-                className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors"
+                className={({ isActive }) => 
+                  `block px-3 py-2 text-gray-700 hover:text-primary transition-colors ${
+                    isActive ? 'text-primary font-medium' : ''
+                  }`
+                }
                 onClick={() => setIsMenuOpen(false)}
               >
                 Accueil
-              </Link>
-              <Link
+              </NavLink>
+              <NavLink
                 to="/events"
-                className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors"
+                className={({ isActive }) => 
+                  `block px-3 py-2 text-gray-700 hover:text-primary transition-colors ${
+                    isActive ? 'text-primary font-medium' : ''
+                  }`
+                }
                 onClick={() => setIsMenuOpen(false)}
               >
                 Événements
-              </Link>
-              {user && (
-                <Link
-                  to="/scraping-test"
-                  className="block px-3 py-2 text-gray-700 hover:text-primary transition-colors"
+              </NavLink>
+              {session && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) => 
+                    `block px-3 py-2 text-gray-700 hover:text-primary transition-colors flex items-center space-x-1 ${
+                      isActive ? 'text-primary font-medium' : ''
+                    }`
+                  }
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Test Scraping
-                </Link>
+                  <span>Admin</span>
+                  <Badge variant="secondary" className="ml-1 text-xs">dev</Badge>
+                </NavLink>
               )}
               <div className="border-t pt-2">
                 {user ? (
