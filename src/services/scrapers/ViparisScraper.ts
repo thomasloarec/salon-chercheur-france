@@ -1,3 +1,4 @@
+
 import * as cheerio from 'cheerio';
 import { BaseScraper } from './BaseScraper';
 import type { ScrapedEvent } from '@/types/scraping';
@@ -21,7 +22,7 @@ export class ViparisScraper extends BaseScraper {
     for (const path of this.agendaUrls) {
       try {
         const url = this.baseUrl + path;
-        console.log('🔍 ViparisScraper - Scraping URL:', url);
+        console.log('🔍 ViparisScraper - URL:', url);
         
         const events = await this.scrapeVenuePage(path);
         allEvents.push(...events);
@@ -42,11 +43,12 @@ export class ViparisScraper extends BaseScraper {
     const url = this.baseUrl + path;
     
     try {
-      console.log(`📡 ViparisScraper - Fetching: ${url}`);
+      console.log('URL', url);
       const html = await this.request(url);
-      console.log(`📄 ViparisScraper - HTML bytes received: ${html.length}`);
+      console.log('HTML bytes', html.length);
       
       const $ = cheerio.load(html);
+      console.log('cards', $('.c-event-card').length);
       
       // Debug: Test multiple selectors and log results
       const selectorTests = [

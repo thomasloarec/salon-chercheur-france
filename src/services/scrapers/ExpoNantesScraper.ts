@@ -10,11 +10,16 @@ export class ExpoNantesScraper extends BaseScraper {
   async scrapeEvents(): Promise<ScrapedEvent[]> {
     try {
       const url = 'https://www.exponantes.com/agenda-des-evenements-du-parc';
-      console.log('🔍 ExpoNantesScraper - Scraping URL:', url);
+      console.log('🔍 ExpoNantesScraper - URL:', url);
       
       const response = await this.fetchWithRetry(url);
       const html = await response.text();
-      console.log(`📄 ExpoNantesScraper - HTML bytes received: ${html.length}`);
+      console.log('HTML bytes', html.length);
+      
+      // Parse HTML with cheerio
+      const cheerio = await import('cheerio');
+      const $ = cheerio.load(html);
+      console.log('cards', $('.event-card, .c-event-card, .agenda-item').length);
       
       // TODO: Parse the actual HTML response instead of returning mock events
       // For now, let's analyze what we get back
@@ -28,6 +33,26 @@ export class ExpoNantesScraper extends BaseScraper {
       if (!html.includes('<html') && !html.includes('<!DOCTYPE')) {
         console.log('⚠️ ExpoNantesScraper - Response doesn\'t look like HTML');
         return [];
+      }
+      
+      // Debug: Test multiple selectors and log results
+      const selectorTests = [
+        '.event-card',
+        '.c-event-card',
+        '.agenda-item',
+        '.event-item',
+        '[data-event]',
+        '.card',
+        '.event',
+        '.agenda',
+        'article',
+        '.list-item'
+      ];
+      
+      console.log('🔍 ExpoNantesScraper - Testing selectors:');
+      for (const selector of selectorTests) {
+        const count = $(selector).length;
+        console.log(`  ${selector}: ${count} elements`);
       }
       
       // For now, return mock events but log that we're doing so

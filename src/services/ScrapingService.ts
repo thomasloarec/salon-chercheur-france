@@ -186,6 +186,7 @@ export class ScrapingService {
 
         if (insertError) {
           console.error('❌ ScrapingService - Error inserting event:', insertError);
+          console.error('❌ ScrapingService - Insert error details:', JSON.stringify(insertError, null, 2));
           return false;
         }
         
