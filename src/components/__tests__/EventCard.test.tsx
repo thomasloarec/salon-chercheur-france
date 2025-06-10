@@ -1,5 +1,5 @@
 
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import EventCard from '../EventCard';
 import type { Event } from '@/types/event';
@@ -55,47 +55,47 @@ const mockConventionEvent: Event = {
 
 describe('EventCard', () => {
   test('should render salon badge for salon event', () => {
-    render(<EventCard event={mockSalonEvent} />);
+    const { getByText } = render(<EventCard event={mockSalonEvent} />);
     
-    expect(screen.getByText('Salon Test')).toBeInTheDocument();
-    expect(screen.getByText('salon')).toBeInTheDocument();
+    expect(getByText('Salon Test')).toBeInTheDocument();
+    expect(getByText('salon')).toBeInTheDocument();
     
     // Check that the salon badge has the destructive variant (red)
-    const salonBadge = screen.getByText('salon');
+    const salonBadge = getByText('salon');
     expect(salonBadge).toHaveClass('bg-destructive');
   });
 
   test('should not render event type badge for loisir event', () => {
-    render(<EventCard event={mockLoisirEvent} />);
+    const { getByText, queryByText } = render(<EventCard event={mockLoisirEvent} />);
     
-    expect(screen.getByText('Concert Rock')).toBeInTheDocument();
-    expect(screen.queryByText('loisir')).not.toBeInTheDocument();
+    expect(getByText('Concert Rock')).toBeInTheDocument();
+    expect(queryByText('loisir')).not.toBeInTheDocument();
   });
 
   test('should render convention badge for convention event', () => {
-    render(<EventCard event={mockConventionEvent} />);
+    const { getByText } = render(<EventCard event={mockConventionEvent} />);
     
-    expect(screen.getByText('Convention Tech')).toBeInTheDocument();
-    expect(screen.getByText('convention')).toBeInTheDocument();
+    expect(getByText('Convention Tech')).toBeInTheDocument();
+    expect(getByText('convention')).toBeInTheDocument();
     
     // Check that the convention badge has the secondary variant
-    const conventionBadge = screen.getByText('convention');
+    const conventionBadge = getByText('convention');
     expect(conventionBadge).toHaveClass('bg-secondary');
   });
 
   test('should render event details correctly', () => {
-    render(<EventCard event={mockSalonEvent} />);
+    const { getByText } = render(<EventCard event={mockSalonEvent} />);
     
-    expect(screen.getByText('Salon Test')).toBeInTheDocument();
-    expect(screen.getByText('Technologie')).toBeInTheDocument();
-    expect(screen.getByText('Paris')).toBeInTheDocument();
-    expect(screen.getByText('Description du salon')).toBeInTheDocument();
+    expect(getByText('Salon Test')).toBeInTheDocument();
+    expect(getByText('Technologie')).toBeInTheDocument();
+    expect(getByText('Paris')).toBeInTheDocument();
+    expect(getByText('Description du salon')).toBeInTheDocument();
   });
 
   test('should render calendar buttons', () => {
-    render(<EventCard event={mockSalonEvent} />);
+    const { getByText } = render(<EventCard event={mockSalonEvent} />);
     
-    expect(screen.getByText('Google')).toBeInTheDocument();
-    expect(screen.getByText('Outlook')).toBeInTheDocument();
+    expect(getByText('Google')).toBeInTheDocument();
+    expect(getByText('Outlook')).toBeInTheDocument();
   });
 });

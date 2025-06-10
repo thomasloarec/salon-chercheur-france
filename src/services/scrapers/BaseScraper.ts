@@ -1,3 +1,4 @@
+
 import type { ScrapedEvent } from '@/types/scraping';
 
 export abstract class BaseScraper {
@@ -16,11 +17,17 @@ export abstract class BaseScraper {
       try {
         const response = await fetch(url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': this.randomUA()
           }
         });
         
         if (response.ok) return response;
+        
+        // Handle rate limiting
+        if (response.status === 429) {
+          await this.sleepRandom(2000, 4000);
+          continue;
+        }
         
         // Wait before retry with exponential backoff
         await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
@@ -30,6 +37,27 @@ export abstract class BaseScraper {
       }
     }
     throw new Error(`Failed to fetch ${url} after ${retries} retries`);
+  }
+
+  protected async request(url: string): Promise<string> {
+    const response = await this.fetchWithRetry(url);
+    return response.text();
+  }
+
+  protected randomUA(): string {
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    ];
+    return userAgents[Math.floor(Math.random() * userAgents.length)];
+  }
+
+  protected async sleepRandom(min: number, max: number): Promise<void> {
+    const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+    await new Promise(resolve => setTimeout(resolve, delay));
   }
 
   protected parseDate(dateStr: string): Date | null {
@@ -89,6 +117,40 @@ export abstract class BaseScraper {
     } catch {
       return null;
     }
+  }
+
+  protected parseFrDate(dateStr: string): Date | null {
+    return this.parseDate(dateStr);
+  }
+
+  protected detectSector(text: string): string {
+    const textLower = text.toLowerCase();
+    
+    if (textLower.includes('tech') || textLower.includes('digital') || textLower.includes('numérique')) return 'Technologie';
+    if (textLower.includes('industrie') || textLower.includes('manufacturing')) return 'Industrie';
+    if (textLower.includes('médical') || textLower.includes('santé') || textLower.includes('pharma')) return 'Santé';
+    if (textLower.includes('btp') || textLower.includes('construction') || textLower.includes('bâtiment')) return 'BTP';
+    if (textLower.includes('agro') || textLower.includes('alimentaire') || textLower.includes('agriculture')) return 'Agroalimentaire';
+    if (textLower.includes('énergie') || textLower.includes('environnement')) return 'Énergie';
+    if (textLower.includes('transport') || textLower.includes('automobile') || textLower.includes('logistique')) return 'Transport';
+    if (textLower.includes('finance') || textLower.includes('banque') || textLower.includes('assurance')) return 'Finance';
+    
+    return 'Autre';
+  }
+
+  protected extractTags(text: string): string[] {
+    const textLower = text.toLowerCase();
+    const tags: string[] = [];
+    
+    const keywords = ['innovation', 'technologie', 'digital', 'industrie', 'b2b', 'professionnel', 'salon', 'exposition'];
+    
+    for (const keyword of keywords) {
+      if (textLower.includes(keyword)) {
+        tags.push(keyword);
+      }
+    }
+    
+    return tags.slice(0, 5);
   }
 
   protected extractTextContent(element: Element | null, fallback = ''): string {

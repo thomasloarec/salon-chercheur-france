@@ -34,6 +34,8 @@ export class ScrapingService {
         let eventsSaved = 0;
         const errors: string[] = [];
         
+        console.log(`${scraper.venue} found ${events.length} events`);
+        
         for (const event of events) {
           try {
             // AI Classification
