@@ -1,21 +1,11 @@
 
 // This ensures cheerio is only imported when actually running the scraper
-let cheerio: typeof import('cheerio') | null = null;
-
 import { BaseScraper } from './BaseScraper';
 import type { ScrapedEvent } from '@/types/scraping';
 
 export class ExpoNantesScraper extends BaseScraper {
   constructor() {
     super('Exponantes', 'https://www.exponantes.com');
-  }
-
-  private async loadCheerio() {
-    if (!cheerio && typeof window === 'undefined') {
-      // Only import cheerio in Node.js environment
-      cheerio = await import('cheerio');
-    }
-    return cheerio;
   }
 
   async scrapeEvents(): Promise<ScrapedEvent[]> {
@@ -28,48 +18,48 @@ export class ExpoNantesScraper extends BaseScraper {
       console.log('HTML bytes', html.length);
       
       // Load cheerio dynamically only when needed
-      const $ = await this.loadCheerio();
-      if (!$) {
-        console.log('⚠️ ExpoNantesScraper - Cheerio not available, using mock events');
-        return this.getMockEvents();
-      }
-      
-      // Parse HTML with cheerio
-      const cheerioInstance = $.load(html);
-      console.log('cards', cheerioInstance('.event-card, .c-event-card, .agenda-item').length);
-      
-      // TODO: Parse the actual HTML response instead of returning mock events
-      // For now, let's analyze what we get back
-      
-      if (html.length < 1000) {
-        console.log('⚠️ ExpoNantesScraper - HTML response seems too short, might be blocked or redirected');
-        console.log('📄 ExpoNantesScraper - HTML content preview:', html.substring(0, 500));
-      }
-      
-      // Check if we got a proper HTML page
-      if (!html.includes('<html') && !html.includes('<!DOCTYPE')) {
-        console.log('⚠️ ExpoNantesScraper - Response doesn\'t look like HTML');
-        return [];
-      }
-      
-      // Debug: Test multiple selectors and log results
-      const selectorTests = [
-        '.event-card',
-        '.c-event-card',
-        '.agenda-item',
-        '.event-item',
-        '[data-event]',
-        '.card',
-        '.event',
-        '.agenda',
-        'article',
-        '.list-item'
-      ];
-      
-      console.log('🔍 ExpoNantesScraper - Testing selectors:');
-      for (const selector of selectorTests) {
-        const count = cheerioInstance(selector).length;
-        console.log(`  ${selector}: ${count} elements`);
+      if (typeof window === 'undefined') {
+        // Only import cheerio in Node.js environment
+        const { load } = await import('cheerio');
+        const $ = load(html);
+        
+        console.log('cards', $('.event-card, .c-event-card, .agenda-item').length);
+        
+        // TODO: Parse the actual HTML response instead of returning mock events
+        // For now, let's analyze what we get back
+        
+        if (html.length < 1000) {
+          console.log('⚠️ ExpoNantesScraper - HTML response seems too short, might be blocked or redirected');
+          console.log('📄 ExpoNantesScraper - HTML content preview:', html.substring(0, 500));
+        }
+        
+        // Check if we got a proper HTML page
+        if (!html.includes('<html') && !html.includes('<!DOCTYPE')) {
+          console.log('⚠️ ExpoNantesScraper - Response doesn\'t look like HTML');
+          return [];
+        }
+        
+        // Debug: Test multiple selectors and log results
+        const selectorTests = [
+          '.event-card',
+          '.c-event-card',
+          '.agenda-item',
+          '.event-item',
+          '[data-event]',
+          '.card',
+          '.event',
+          '.agenda',
+          'article',
+          '.list-item'
+        ];
+        
+        console.log('🔍 ExpoNantesScraper - Testing selectors:');
+        for (const selector of selectorTests) {
+          const count = $(selector).length;
+          console.log(`  ${selector}: ${count} elements`);
+        }
+      } else {
+        console.log('⚠️ ExpoNantesScraper - Cheerio not available in browser, using mock events');
       }
       
       // For now, return mock events but log that we're doing so
