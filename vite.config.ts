@@ -22,10 +22,10 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: ['cheerio']
+      external: ['cheerio', 'boolbase', 'css-select', 'css-what', 'domelementtype', 'domhandler', 'domutils']
     }
   },
   optimizeDeps: {
-    exclude: ['cheerio']
+    exclude: ['cheerio', 'boolbase', 'css-select', 'css-what', 'domelementtype', 'domhandler', 'domutils']
   }
 }));

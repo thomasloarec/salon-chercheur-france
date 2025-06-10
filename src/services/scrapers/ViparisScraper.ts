@@ -1,5 +1,7 @@
 
-import * as cheerio from 'cheerio';
+// This ensures cheerio is only imported when actually running the scraper
+let cheerio: typeof import('cheerio') | null = null;
+
 import { BaseScraper } from './BaseScraper';
 import type { ScrapedEvent } from '@/types/scraping';
 
@@ -8,6 +10,14 @@ export class ViparisScraper extends BaseScraper {
 
   constructor() {
     super('Viparis', 'https://www.viparis.com');
+  }
+
+  private async loadCheerio() {
+    if (!cheerio && typeof window === 'undefined') {
+      // Only import cheerio in Node.js environment
+      cheerio = await import('cheerio');
+    }
+    return cheerio;
   }
 
   private agendaUrls = [
@@ -47,8 +57,15 @@ export class ViparisScraper extends BaseScraper {
       const html = await this.request(url);
       console.log('HTML bytes', html.length);
       
-      const $ = cheerio.load(html);
-      console.log('cards', $('.c-event-card').length);
+      // Load cheerio dynamically only when needed
+      const $ = await this.loadCheerio();
+      if (!$) {
+        console.log('⚠️ ViparisScraper - Cheerio not available, returning empty array');
+        return [];
+      }
+      
+      const cheerioInstance = $.load(html);
+      console.log('cards', cheerioInstance('.c-event-card').length);
       
       // Debug: Test multiple selectors and log results
       const selectorTests = [
@@ -66,7 +83,7 @@ export class ViparisScraper extends BaseScraper {
       
       console.log('🔍 ViparisScraper - Testing selectors:');
       for (const selector of selectorTests) {
-        const count = $(selector).length;
+        const count = cheerioInstance(selector).length;
         console.log(`  ${selector}: ${count} elements`);
       }
       
@@ -80,10 +97,10 @@ export class ViparisScraper extends BaseScraper {
         '.card'
       ];
       
-      let eventElements: cheerio.Cheerio = $('<div>'); // Initialize with empty element
+      let eventElements = cheerioInstance('<div>'); // Initialize with empty element
       
       for (const selector of eventSelectors) {
-        eventElements = $(selector);
+        eventElements = cheerioInstance(selector);
         if (eventElements.length > 0) {
           console.log(`✅ ViparisScraper - Found ${eventElements.length} events with selector: ${selector}`);
           break;
@@ -241,7 +258,7 @@ export class ViparisScraper extends BaseScraper {
     return events;
   }
 
-  private extractText($el: cheerio.Cheerio, selectors: string[]): string {
+  private extractText($el: any, selectors: string[]): string {
     for (const selector of selectors) {
       const text = $el.find(selector).first().text().trim();
       if (text) return text;
