@@ -1,6 +1,6 @@
 
 export class HttpClient {
-  protected async fetchWithRetry(url: string, retries = 3): Promise<Response> {
+  public async fetchWithRetry(url: string, retries = 3): Promise<Response> {
     for (let i = 0; i < retries; i++) {
       try {
         const response = await fetch(url, {
@@ -27,12 +27,12 @@ export class HttpClient {
     throw new Error(`Failed to fetch ${url} after ${retries} retries`);
   }
 
-  protected async request(url: string): Promise<string> {
+  public async request(url: string): Promise<string> {
     const response = await this.fetchWithRetry(url);
     return response.text();
   }
 
-  protected randomUA(): string {
+  public randomUA(): string {
     const userAgents = [
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -43,7 +43,7 @@ export class HttpClient {
     return userAgents[Math.floor(Math.random() * userAgents.length)];
   }
 
-  protected async sleepRandom(min: number, max: number): Promise<void> {
+  public async sleepRandom(min: number, max: number): Promise<void> {
     const delay = Math.floor(Math.random() * (max - min + 1)) + min;
     await new Promise(resolve => setTimeout(resolve, delay));
   }
