@@ -1,10 +1,10 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
 
 interface UseEventsParams {
   sectors?: string[];
+  types?: string[];
   months?: number[];
   city?: string;
   query?: string;
@@ -29,6 +29,10 @@ export const useEvents = (filters?: SearchFilters) => {
       // Filtres obligatoires et nouveaux
       if (filters?.sectors && filters.sectors.length > 0) {
         query = query.in('sector', filters.sectors);
+      }
+
+      if (filters?.types && filters.types.length > 0) {
+        query = query.in('event_type', filters.types);
       }
 
       if (filters?.months && filters.months.length > 0) {

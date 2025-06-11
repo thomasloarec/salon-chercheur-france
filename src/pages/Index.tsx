@@ -20,6 +20,10 @@ const Index = () => {
       searchParams.set('sectors', filters.sectors.join(','));
     }
     
+    if (filters.types && filters.types.length > 0) {
+      searchParams.set('types', filters.types.join(','));
+    }
+    
     if (filters.months && filters.months.length > 0) {
       searchParams.set('months', filters.months.join(','));
     }

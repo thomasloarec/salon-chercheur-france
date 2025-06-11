@@ -8,6 +8,7 @@ import { useSectors } from '@/hooks/useEvents';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { eachMonthOfInterval, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { EVENT_TYPES } from '@/constants/eventTypes';
 import { useSearchParam } from '@/hooks/useSearchParams';
 
 interface FiltersSidebarProps {
@@ -17,6 +18,7 @@ interface FiltersSidebarProps {
 
 export const FiltersSidebar = ({ onClose, onFiltersChange }: FiltersSidebarProps) => {
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
   const [city, setCity] = useState('');
   
@@ -39,6 +41,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange }: FiltersSidebarProps
   const handleApplyFilters = () => {
     onFiltersChange({
       sectors: selectedSectors,
+      types: selectedTypes,
       months: selectedMonths.map(m => parseInt(m)),
       city: city || undefined,
     });
@@ -46,6 +49,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange }: FiltersSidebarProps
 
   const handleReset = () => {
     setSelectedSectors([]);
+    setSelectedTypes([]);
     setSelectedMonths([]);
     setCity('');
     onFiltersChange({});
@@ -53,7 +57,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange }: FiltersSidebarProps
 
   useEffect(() => {
     handleApplyFilters();
-  }, [selectedSectors, selectedMonths, city]);
+  }, [selectedSectors, selectedTypes, selectedMonths, city]);
 
   return (
     <div className="h-full bg-white border-r border-gray-200 overflow-y-auto">
@@ -79,6 +83,21 @@ export const FiltersSidebar = ({ onClose, onFiltersChange }: FiltersSidebarProps
                 selected={selectedSectors}
                 onChange={setSelectedSectors}
                 placeholder="Tous les secteurs"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Types d'événement */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Type d'événement</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MultiSelect
+                options={EVENT_TYPES}
+                selected={selectedTypes}
+                onChange={setSelectedTypes}
+                placeholder="Tous les types"
               />
             </CardContent>
           </Card>

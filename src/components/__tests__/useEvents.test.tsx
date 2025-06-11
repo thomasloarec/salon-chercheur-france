@@ -39,7 +39,7 @@ describe('useEvents hook', () => {
     jest.clearAllMocks();
   });
 
-  test('should build correct query for multiple sectors and months', () => {
+  test('should build correct query for multiple sectors, types and months', () => {
     const mockQuery = {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
@@ -55,6 +55,7 @@ describe('useEvents hook', () => {
     renderHook(() => 
       useEvents({
         sectors: ['tech', 'health'],
+        types: ['salon', 'conference'],
         months: [3, 4, 5],
         city: 'Paris'
       }), 
@@ -67,6 +68,7 @@ describe('useEvents hook', () => {
     expect(mockQuery.eq).toHaveBeenCalledWith('is_b2b', true);
     expect(mockQuery.gte).toHaveBeenCalledWith('start_date', expect.any(String));
     expect(mockQuery.in).toHaveBeenCalledWith('sector', ['tech', 'health']);
+    expect(mockQuery.in).toHaveBeenCalledWith('event_type', ['salon', 'conference']);
     expect(mockQuery.filter).toHaveBeenCalledWith('extract(month from start_date)::int', 'in', '(3,4,5)');
     expect(mockQuery.ilike).toHaveBeenCalledWith('city', '%Paris%');
     expect(mockQuery.order).toHaveBeenCalledWith('start_date', { ascending: true });
@@ -103,6 +105,7 @@ describe('useEvents hook', () => {
     renderHook(() => 
       useEvents({
         sectors: [],
+        types: [],
         months: []
       }), 
       { wrapper: createWrapper() }
@@ -111,5 +114,26 @@ describe('useEvents hook', () => {
     // Ne doit pas appeler in() ou filter() pour des tableaux vides
     expect(mockQuery.in).not.toHaveBeenCalled();
     expect(mockQuery.filter).not.toHaveBeenCalled();
+  });
+
+  test('should apply types filter correctly', () => {
+    const mockQuery = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+    };
+
+    (supabase.from as jest.Mock).mockReturnValue(mockQuery);
+
+    renderHook(() => 
+      useEvents({
+        types: ['salon', 'convention']
+      }), 
+      { wrapper: createWrapper() }
+    );
+
+    expect(mockQuery.in).toHaveBeenCalledWith('event_type', ['salon', 'convention']);
   });
 });

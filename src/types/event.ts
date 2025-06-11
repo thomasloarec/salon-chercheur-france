@@ -32,6 +32,7 @@ export interface SearchFilters {
   query?: string;
   sector?: string;
   sectors?: string[];
+  types?: string[];
   months?: number[];
   city?: string;
   region?: string;

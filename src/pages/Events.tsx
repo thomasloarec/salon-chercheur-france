@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
 import { ViewToggle } from '@/components/ViewToggle';
@@ -8,18 +8,68 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import type { SearchFilters } from '@/types/event';
 
 const Events = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({});
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: events, isLoading, error } = useEvents(filters);
+
+  // Initialize filters from URL params
+  useEffect(() => {
+    const initialFilters: SearchFilters = {};
+    
+    const sectorsParam = searchParams.get('sectors');
+    if (sectorsParam) {
+      initialFilters.sectors = sectorsParam.split(',');
+    }
+    
+    const typesParam = searchParams.get('types');
+    if (typesParam) {
+      initialFilters.types = typesParam.split(',');
+    }
+    
+    const monthsParam = searchParams.get('months');
+    if (monthsParam) {
+      initialFilters.months = monthsParam.split(',').map(m => parseInt(m));
+    }
+    
+    const cityParam = searchParams.get('city');
+    if (cityParam) {
+      initialFilters.city = cityParam;
+    }
+    
+    setFilters(initialFilters);
+  }, [searchParams]);
 
   // Filter out 'loisir' events for display
   const displayEvents = events?.filter(event => event.event_type !== 'loisir') || [];
 
   const handleFiltersChange = (newFilters: SearchFilters) => {
     setFilters(newFilters);
+    
+    // Update URL params
+    const newParams = new URLSearchParams();
+    
+    if (newFilters.sectors && newFilters.sectors.length > 0) {
+      newParams.set('sectors', newFilters.sectors.join(','));
+    }
+    
+    if (newFilters.types && newFilters.types.length > 0) {
+      newParams.set('types', newFilters.types.join(','));
+    }
+    
+    if (newFilters.months && newFilters.months.length > 0) {
+      newParams.set('months', newFilters.months.join(','));
+    }
+    
+    if (newFilters.city) {
+      newParams.set('city', newFilters.city);
+    }
+    
+    setSearchParams(newParams);
   };
 
   if (error) {

@@ -8,6 +8,7 @@ import { useSectors } from '@/hooks/useEvents';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { eachMonthOfInterval, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { EVENT_TYPES } from '@/constants/eventTypes';
 import type { SearchFilters } from '@/types/event';
 
 interface SearchSectionProps {
@@ -17,6 +18,7 @@ interface SearchSectionProps {
 
 const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
   const [city, setCity] = useState('');
   
@@ -34,6 +36,7 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
   const handleSearch = () => {
     onSearch({
       sectors: selectedSectors,
+      types: selectedTypes,
       months: selectedMonths,
       city: city || undefined,
     });
@@ -41,6 +44,7 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
 
   const handleReset = () => {
     setSelectedSectors([]);
+    setSelectedTypes([]);
     setSelectedMonths([]);
     setCity('');
     onSearch({});
@@ -70,7 +74,7 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
 
         <Card className="p-6">
           <CardContent className="p-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Secteurs - MultiSelect */}
               <div>
                 <MultiSelect
@@ -79,6 +83,17 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
                   selected={selectedSectors}
                   onChange={setSelectedSectors}
                   placeholder="Choisissez un ou plusieurs secteurs"
+                />
+              </div>
+
+              {/* Types - MultiSelect */}
+              <div>
+                <MultiSelect
+                  label="Type d'événement"
+                  options={EVENT_TYPES}
+                  selected={selectedTypes}
+                  onChange={setSelectedTypes}
+                  placeholder="Tous les types"
                 />
               </div>
 
