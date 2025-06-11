@@ -1,8 +1,8 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { BaseScraper } from './scrapers/BaseScraper';
 import { VipariseScraper } from './scrapers/VipariseScraper';
 import { ExpoNantesScraper } from './scrapers/ExpoNantesScraper';
+import { ChalonsScraper } from './scrapers/ChalonsScraper';
 import { AIClassifier } from './aiClassifier';
 import { classifyEvent } from './classifier/keywordRules';
 import type { ScrapedEvent, ScrapingResult } from '@/types/scraping';
@@ -18,6 +18,7 @@ export class ScrapingService {
     this.scrapers = [
       new VipariseScraper(),
       new ExpoNantesScraper(),
+      new ChalonsScraper(),
     ];
   }
 

@@ -123,6 +123,46 @@ export abstract class BaseScraper {
     return this.parseDate(dateStr);
   }
 
+  protected parseDateRangeFr(dateStr: string): [Date | null, Date | null] {
+    if (!dateStr) return [null, null];
+
+    const cleanDateStr = dateStr.trim();
+    
+    // Pattern for French date ranges like "14 – 16 oct. 2025" or "14 au 16 octobre 2025"
+    const rangePattern = /(\d{1,2})\s*[–\-au]+\s*(\d{1,2})\s+(jan\.|fév\.|mar\.|avr\.|mai|juin|juil\.|août|sep\.|oct\.|nov\.|déc\.|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+(\d{4})/i;
+    
+    const match = cleanDateStr.match(rangePattern);
+    if (match) {
+      const [, startDay, endDay, monthStr, year] = match;
+      
+      const monthMap: { [key: string]: number } = {
+        'jan.': 0, 'janvier': 0,
+        'fév.': 1, 'février': 1,
+        'mar.': 2, 'mars': 2,
+        'avr.': 3, 'avril': 3,
+        'mai': 4,
+        'juin': 5,
+        'juil.': 6, 'juillet': 6,
+        'août': 7,
+        'sep.': 8, 'septembre': 8,
+        'oct.': 9, 'octobre': 9,
+        'nov.': 10, 'novembre': 10,
+        'déc.': 11, 'décembre': 11
+      };
+
+      const monthIndex = monthMap[monthStr.toLowerCase()];
+      if (monthIndex !== undefined) {
+        const startDate = new Date(parseInt(year), monthIndex, parseInt(startDay));
+        const endDate = new Date(parseInt(year), monthIndex, parseInt(endDay));
+        return [startDate, endDate];
+      }
+    }
+
+    // Single date pattern
+    const singleDate = this.parseDate(cleanDateStr);
+    return [singleDate, singleDate];
+  }
+
   protected detectSector(text: string): string {
     const textLower = text.toLowerCase();
     
@@ -136,6 +176,19 @@ export abstract class BaseScraper {
     if (textLower.includes('finance') || textLower.includes('banque') || textLower.includes('assurance')) return 'Finance';
     
     return 'Autre';
+  }
+
+  protected ruleBasedType(text: string): string {
+    const textLower = text.toLowerCase();
+
+    if (textLower.includes('salon')) return 'salon';
+    if (textLower.includes('foire')) return 'salon';
+    if (textLower.includes('convention')) return 'convention';
+    if (textLower.includes('congres')) return 'congres';
+    if (textLower.includes('conference')) return 'conference';
+    if (textLower.includes('ceremonie')) return 'ceremonie';
+
+    return 'inconnu';
   }
 
   protected extractTags(text: string): string[] {
