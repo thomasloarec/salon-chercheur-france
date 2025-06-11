@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
 // Mock de l'API Viparis avec pagination
 const mockViparisPage1 = {
@@ -51,28 +51,28 @@ const mockViparisPage3 = {
 };
 
 // Mock fetch global
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 describe('Viparis API Pagination', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('should handle pagination with totalPages', async () => {
     // Mock des 3 pages
-    (global.fetch as any)
+    (global.fetch as jest.MockedFunction<typeof fetch>)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => mockViparisPage1,
-      })
+      } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => mockViparisPage2,
-      })
+      } as Response)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => mockViparisPage3,
-      });
+      } as Response);
 
     // Simulation de récupération de toutes les pages
     const allEvents = [];
@@ -106,10 +106,10 @@ describe('Viparis API Pagination', () => {
       size: 100
     };
 
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
-    });
+    } as Response);
 
     const response = await fetch('https://www.viparis.com/api/event-public?page=1&size=100');
     const data = await response.json();
