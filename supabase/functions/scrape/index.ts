@@ -149,6 +149,7 @@ class ExpoNantesScraper {
           venue_name: 'Parc des Expositions de Nantes',
           event_url: 'https://www.tech-ouest.com',
           website_url: 'https://www.tech-ouest.com',
+          image_url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop',
           city: 'Nantes',
           address: 'Route de Saint-Joseph de Porterie, 44300 Nantes',
           location: 'Nantes, France',
@@ -179,7 +180,7 @@ class ChalonsScraper {
     try {
       console.log('🔄 Running Châlons mock scraper...');
       
-      // Mock events for Châlons-en-Champagne
+      // Enhanced mock events for Châlons-en-Champagne with proper image URLs
       const mockEvents = [
         {
           name: 'Foire de Châlons 2025',
@@ -189,6 +190,7 @@ class ChalonsScraper {
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/foire-de-chalons-2025',
           website_url: 'https://www.chalons-tourisme.com/agenda/foire-de-chalons-2025',
+          image_url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -212,6 +214,7 @@ class ChalonsScraper {
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/salon-artisanat-2025',
           website_url: 'https://www.chalons-tourisme.com/agenda/salon-artisanat-2025',
+          image_url: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -459,8 +462,11 @@ class ChalonsScraper {
         }
       ];
 
-      console.log(`✅ Châlons found ${mockEvents.length} events`);
-      return mockEvents;
+      // Deduplication before returning
+      const unique = [...new Map(mockEvents.map(e => [e.website_url, e])).values()];
+      
+      console.log(`✅ Châlons found ${mockEvents.length} events, ${unique.length} unique after deduplication`);
+      return unique;
     } catch (error) {
       console.error('Error scraping Châlons:', error);
       return [];
@@ -513,19 +519,21 @@ serve(async (req: Request): Promise<Response> => {
       totalErrors++;
     }
 
-    console.log(`📊 Total events to save: ${allEvents.length}`);
+    // Global deduplication across all sources
+    const unique = [...new Map(allEvents.map(e => [e.website_url, e])).values()];
+    console.log(`📊 Total events to save: ${allEvents.length}, unique: ${unique.length}`);
 
     // Save events to database with upsert using website_url as unique key
     let savedCount = 0;
     let saveErrors = [];
 
-    if (allEvents.length > 0) {
+    if (unique.length > 0) {
       try {
         console.log('🔄 Starting UPSERT operation...');
         const { data, error } = await supabaseAdmin
           .from('events')
           .upsert(
-            allEvents.map(event => ({
+            unique.map(event => ({
               ...event,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
@@ -541,7 +549,7 @@ serve(async (req: Request): Promise<Response> => {
           console.error('❌ UPSERT error:', error);
           saveErrors.push(error.message);
         } else {
-          savedCount = data?.length || allEvents.length;
+          savedCount = data?.length || unique.length;
           console.log(`✅ UPSERT COUNT: ${savedCount} - ERROR: ${error ? error.message : 'null'}`);
         }
       } catch (error) {
@@ -551,11 +559,11 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const result = {
-      found: allEvents.length,
+      found: unique.length,
       saved: savedCount,
       scrapingErrors: totalErrors,
       saveErrors: saveErrors.slice(0, 5), // Limit error list
-      success: totalErrors === 0 && saveErrors.length === 0
+      success: totalErrors === 0 && saveErrors.length === 0 && savedCount === unique.length
     };
 
     console.log('🏁 Scraping completed:', result);

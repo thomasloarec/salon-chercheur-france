@@ -115,9 +115,17 @@ export class ChalonsScraper extends BaseScraper {
               if (place) break;
             }
             
-            // Get image and link
-            const img = $el.find('img').attr('src') || null;
+            // Enhanced image extraction with lazy-loading support
+            const img = $el.find('img').attr('data-src')    // ← lazy-load
+                     || $el.find('img').attr('src')
+                     || null;
+
             const href = $el.find('a').attr('href') || '';
+            
+            // Enhanced URL extraction with tracking removal
+            const websiteUrl = href.startsWith('http')
+              ? href.split('?')[0]                       // enlever tracking
+              : `https://www.chalons-tourisme.com${href.split('?')[0]}`;
             
             // Parse dates
             const [startDate, endDate] = this.parseDateRangeFr(dateText);
@@ -130,21 +138,6 @@ export class ChalonsScraper extends BaseScraper {
             // Default venue if none found
             if (!place) {
               place = 'Le Capitole';
-            }
-            
-            // Create proper website URL
-            let websiteUrl = '';
-            if (href) {
-              websiteUrl = href.startsWith('http') 
-                ? href 
-                : `https://www.chalons-tourisme.com${href}`;
-            } else {
-              // Generate unique URL based on title and index for deduplication
-              const slug = title.toLowerCase()
-                .replace(/[^a-z0-9]/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-|-$/g, '');
-              websiteUrl = `https://www.chalons-tourisme.com/agenda/${slug}-${index}`;
             }
             
             console.log(`📝 ChalonsScraper - Event ${index + 1}: "${title}" on ${dateText} at ${place}`);
@@ -174,8 +167,11 @@ export class ChalonsScraper extends BaseScraper {
           }
         }).filter(Boolean) as ScrapedEvent[];
         
-        console.log(`✅ ChalonsScraper - Chalons found ${events.length} events`);
-        return events;
+        // Déduplication before returning
+        const unique = [...new Map(events.map(e => [e.websiteUrl, e])).values()];
+        
+        console.log(`✅ ChalonsScraper - Chalons found ${events.length} events, ${unique.length} unique after deduplication`);
+        return unique;
       } else {
         console.log('⚠️ ChalonsScraper - Running in browser, using mock events');
         return this.getMockEvents();
