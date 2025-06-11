@@ -117,7 +117,7 @@ export class ChalonsScraper extends BaseScraper {
             
             // Get image and link
             const img = $el.find('img').attr('src') || null;
-            const href = $el.find('a').attr('href') || url;
+            const href = $el.find('a').attr('href') || '';
             
             // Parse dates
             const [startDate, endDate] = this.parseDateRangeFr(dateText);
@@ -132,6 +132,21 @@ export class ChalonsScraper extends BaseScraper {
               place = 'Le Capitole';
             }
             
+            // Create proper website URL
+            let websiteUrl = '';
+            if (href) {
+              websiteUrl = href.startsWith('http') 
+                ? href 
+                : `https://www.chalons-tourisme.com${href}`;
+            } else {
+              // Generate unique URL based on title and index for deduplication
+              const slug = title.toLowerCase()
+                .replace(/[^a-z0-9]/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+              websiteUrl = `https://www.chalons-tourisme.com/agenda/${slug}-${index}`;
+            }
+            
             console.log(`📝 ChalonsScraper - Event ${index + 1}: "${title}" on ${dateText} at ${place}`);
             
             const event: ScrapedEvent = {
@@ -142,7 +157,7 @@ export class ChalonsScraper extends BaseScraper {
               venue: place,
               city: 'Châlons-en-Champagne',
               address: 'Châlons-en-Champagne, France',
-              websiteUrl: href.startsWith('http') ? href : `https://www.chalons-tourisme.com${href}`,
+              websiteUrl,
               source: 'chalons-tourisme.com',
               sector: this.detectSector(`${title} ${description}`),
               tags: this.extractTags(`${title} ${description}`),
@@ -183,7 +198,7 @@ export class ChalonsScraper extends BaseScraper {
         venue: 'Le Capitole',
         city: 'Châlons-en-Champagne',
         address: 'Place Foch, 51000 Châlons-en-Champagne',
-        websiteUrl: 'https://www.chalons-tourisme.com/agenda/foire-chalons/',
+        websiteUrl: 'https://www.chalons-tourisme.com/agenda/foire-chalons-2025',
         source: 'chalons-tourisme.com',
         sector: 'Commerce',
         tags: ['foire', 'commerce', 'artisanat', 'local'],
@@ -200,7 +215,7 @@ export class ChalonsScraper extends BaseScraper {
         venue: 'Le Capitole',
         city: 'Châlons-en-Champagne',
         address: 'Place Foch, 51000 Châlons-en-Champagne',
-        websiteUrl: 'https://www.chalons-tourisme.com/agenda/salon-habitat/',
+        websiteUrl: 'https://www.chalons-tourisme.com/agenda/salon-habitat-chalons-2025',
         source: 'chalons-tourisme.com',
         sector: 'BTP',
         tags: ['habitat', 'décoration', 'construction', 'rénovation'],

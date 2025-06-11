@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { BaseScraper } from './scrapers/BaseScraper';
 import { VipariseScraper } from './scrapers/VipariseScraper';
@@ -111,13 +112,11 @@ export class ScrapingService {
     try {
       console.log(`💾 ScrapingService - Attempting to save: "${event.title}"`);
       
-      // Check if event already exists (deduplication)
+      // Check if event already exists (deduplication using website_url)
       const { data: existing, error: selectError } = await supabase
         .from('events')
         .select('id')
-        .eq('name', event.title)
-        .eq('venue_name', event.venue)
-        .eq('start_date', event.startDate.toISOString().split('T')[0])
+        .eq('website_url', event.websiteUrl)
         .maybeSingle();
 
       if (selectError) {
@@ -132,9 +131,17 @@ export class ScrapingService {
         const { error: updateError } = await supabase
           .from('events')
           .update({
+            name: event.title,
             description: event.description,
+            start_date: event.startDate.toISOString().split('T')[0],
             end_date: event.endDate?.toISOString().split('T')[0],
+            venue_name: event.venue,
+            city: event.city,
+            address: event.address,
+            location: `${event.city}, France`,
+            country: 'France',
             event_url: event.websiteUrl,
+            website_url: event.websiteUrl,
             estimated_visitors: event.estimatedVisitors,
             estimated_exhibitors: event.estimatedExhibitors,
             entry_fee: event.entryFee,
@@ -175,6 +182,7 @@ export class ScrapingService {
             entry_fee: event.entryFee,
             organizer_name: event.organizer,
             event_url: event.websiteUrl,
+            website_url: event.websiteUrl,
             sector: event.sector,
             tags: event.tags,
             event_type: event.event_type,

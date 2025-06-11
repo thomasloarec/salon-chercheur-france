@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -124,6 +123,7 @@ function toScraped(e: any): any {
     entry_fee: null,
     organizer_name: 'Viparis',
     event_url: `https://www.viparis.com/e/${e.slug || e.id}`,
+    website_url: `https://www.viparis.com/e/${e.slug || e.id}`,
     image_url: e.image || null,
     sector: detectSector((e.title || '') + ' ' + (e.excerpt || '')),
     tags: [],
@@ -148,6 +148,7 @@ class ExpoNantesScraper {
           end_date: new Date(new Date().getFullYear() + 1, 4, 22).toISOString().split('T')[0],
           venue_name: 'Parc des Expositions de Nantes',
           event_url: 'https://www.tech-ouest.com',
+          website_url: 'https://www.tech-ouest.com',
           city: 'Nantes',
           address: 'Route de Saint-Joseph de Porterie, 44300 Nantes',
           location: 'Nantes, France',
@@ -186,7 +187,8 @@ class ChalonsScraper {
           start_date: new Date(2025, 8, 15).toISOString().split('T')[0],
           end_date: new Date(2025, 8, 17).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
-          event_url: 'https://www.chalons-tourisme.com/agenda/foire-de-chalons',
+          event_url: 'https://www.chalons-tourisme.com/agenda/foire-de-chalons-2025',
+          website_url: 'https://www.chalons-tourisme.com/agenda/foire-de-chalons-2025',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -208,7 +210,8 @@ class ChalonsScraper {
           start_date: new Date(2025, 9, 5).toISOString().split('T')[0],
           end_date: new Date(2025, 9, 7).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
-          event_url: 'https://www.chalons-tourisme.com/agenda/salon-artisanat',
+          event_url: 'https://www.chalons-tourisme.com/agenda/salon-artisanat-2025',
+          website_url: 'https://www.chalons-tourisme.com/agenda/salon-artisanat-2025',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -231,6 +234,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 10, 14).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/marche-vins',
+          website_url: 'https://www.chalons-tourisme.com/agenda/marche-vins',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -253,6 +257,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 3, 22).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/expo-habitat-jardin',
+          website_url: 'https://www.chalons-tourisme.com/agenda/expo-habitat-jardin',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -275,6 +280,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 2, 8).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/forum-emploi',
+          website_url: 'https://www.chalons-tourisme.com/agenda/forum-emploi',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -297,6 +303,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 4, 17).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/salon-livre',
+          website_url: 'https://www.chalons-tourisme.com/agenda/salon-livre',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -319,6 +326,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 5, 12).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/foire-gastronomique',
+          website_url: 'https://www.chalons-tourisme.com/agenda/foire-gastronomique',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -341,6 +349,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 6, 7).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/salon-metiers-art',
+          website_url: 'https://www.chalons-tourisme.com/agenda/salon-metiers-art',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -363,6 +372,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 7, 27).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/expo-auto-moto',
+          website_url: 'https://www.chalons-tourisme.com/agenda/expo-auto-moto',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -385,6 +395,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 8, 1).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/forum-associations',
+          website_url: 'https://www.chalons-tourisme.com/agenda/forum-associations',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -407,6 +418,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 1, 19).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/salon-formation',
+          website_url: 'https://www.chalons-tourisme.com/agenda/salon-formation',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -429,6 +441,7 @@ class ChalonsScraper {
           end_date: new Date(2025, 11, 24).toISOString().split('T')[0],
           venue_name: 'Le Capitole',
           event_url: 'https://www.chalons-tourisme.com/agenda/marche-noel',
+          website_url: 'https://www.chalons-tourisme.com/agenda/marche-noel',
           city: 'Châlons-en-Champagne',
           address: 'Place Foch, 51000 Châlons-en-Champagne',
           location: 'Châlons-en-Champagne, France',
@@ -446,6 +459,7 @@ class ChalonsScraper {
         }
       ];
 
+      console.log(`✅ Châlons found ${mockEvents.length} events`);
       return mockEvents;
     } catch (error) {
       console.error('Error scraping Châlons:', error);
@@ -501,12 +515,13 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`📊 Total events to save: ${allEvents.length}`);
 
-    // Save events to database with upsert using event_url as unique key
+    // Save events to database with upsert using website_url as unique key
     let savedCount = 0;
     let saveErrors = [];
 
     if (allEvents.length > 0) {
       try {
+        console.log('🔄 Starting UPSERT operation...');
         const { data, error } = await supabaseAdmin
           .from('events')
           .upsert(
@@ -516,21 +531,21 @@ serve(async (req: Request): Promise<Response> => {
               updated_at: new Date().toISOString()
             })),
             { 
-              onConflict: 'event_url',
+              onConflict: 'website_url',
               ignoreDuplicates: false
             }
           )
           .select('id');
 
         if (error) {
-          console.error('Upsert error:', error);
+          console.error('❌ UPSERT error:', error);
           saveErrors.push(error.message);
         } else {
           savedCount = data?.length || allEvents.length;
-          console.log(`💾 Successfully saved/updated ${savedCount} events`);
+          console.log(`✅ UPSERT COUNT: ${savedCount} - ERROR: ${error ? error.message : 'null'}`);
         }
       } catch (error) {
-        console.error('Save error:', error);
+        console.error('❌ Save error:', error);
         saveErrors.push(String(error));
       }
     }
