@@ -8,6 +8,26 @@ import { AIClassifier } from './aiClassifier';
 import { classifyEvent } from './classifier/keywordRules';
 import type { ScrapedEvent, ScrapingResult } from '@/types/scraping';
 
+// Simple interface to avoid complex type inference
+interface EnhancedScrapedEvent {
+  title: string;
+  description: string;
+  startDate: Date;
+  endDate: Date | null;
+  venue: string;
+  websiteUrl: string;
+  source: string;
+  city: string;
+  address: string;
+  estimatedVisitors: number | null;
+  estimatedExhibitors: number | null;
+  entryFee: string | null;
+  organizer: string;
+  sector: string;
+  tags: string[];
+  event_type?: string;
+}
+
 export class ScrapingService {
   private scrapers: BaseScraper[] = [];
 
@@ -54,9 +74,21 @@ export class ScrapingService {
             if (classification.isProfessional && classification.confidence > 0.5) {
               console.log(`✅ ScrapingService - Event qualifies for saving`);
               
-              // Create enhanced event object with proper typing
-              const enhancedEvent: ScrapedEvent & { event_type?: string } = {
-                ...event,
+              // Create enhanced event object with simple typing
+              const enhancedEvent: EnhancedScrapedEvent = {
+                title: event.title,
+                description: event.description,
+                startDate: event.startDate,
+                endDate: event.endDate,
+                venue: event.venue,
+                websiteUrl: event.websiteUrl,
+                source: event.source,
+                city: event.city,
+                address: event.address,
+                estimatedVisitors: event.estimatedVisitors,
+                estimatedExhibitors: event.estimatedExhibitors,
+                entryFee: event.entryFee,
+                organizer: event.organizer,
                 sector: classification.sector,
                 tags: classification.tags,
                 event_type: eventType !== 'inconnu' ? eventType : undefined
@@ -112,7 +144,7 @@ export class ScrapingService {
     return results;
   }
 
-  private async saveEvent(event: ScrapedEvent & { event_type?: string }): Promise<boolean> {
+  private async saveEvent(event: EnhancedScrapedEvent): Promise<boolean> {
     try {
       console.log(`💾 ScrapingService - Attempting to save: "${event.title}"`);
       
