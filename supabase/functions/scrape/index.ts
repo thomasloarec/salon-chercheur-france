@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -11,6 +10,26 @@ const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
+
+// Types pour l'API Viparis
+interface ViparisAPIEvent {
+  id: string;
+  title: string;
+  excerpt: string;
+  beginDate: string;
+  endDate: string;
+  venue: string;
+  location?: string;
+  category?: string;
+}
+
+interface ViparisAPIResponse {
+  events: ViparisAPIEvent[];
+  totalCount: number;
+  totalPages?: number;
+  page: number;
+  size: number;
+}
 
 // Inline scraping logic to avoid import issues
 class BaseScraper {
@@ -83,68 +102,186 @@ class ViparisScraper extends BaseScraper {
     super('Viparis', 'https://www.viparis.com');
   }
 
-  async scrapeEvents() {
-    const events = [];
+  private toScrapedEvent(event: ViparisAPIEvent) {
+    const combinedText = `${event.title} ${event.excerpt || ''}`;
     
-    try {
-      const venues = [
-        {
-          url: 'https://www.viparis.com/nos-lieux/paris-nord-villepinte/agenda',
-          city: 'Villepinte',
-          venue: 'Parc des Expositions Paris Nord Villepinte'
-        },
-        {
-          url: 'https://www.viparis.com/nos-lieux/palais-des-congres-de-paris/agenda',
-          city: 'Paris',
-          venue: 'Palais des Congrès de Paris'
-        },
-        {
-          url: 'https://www.viparis.com/nos-lieux/porte-de-versailles/agenda',
-          city: 'Paris',
-          venue: 'Paris Expo Porte de Versailles'
-        }
-      ];
+    return {
+      name: event.title,
+      description: event.excerpt || '',
+      start_date: new Date(event.beginDate).toISOString().split('T')[0],
+      end_date: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : new Date(event.beginDate).toISOString().split('T')[0],
+      venue_name: event.venue || 'Viparis',
+      event_url: `https://www.viparis.com/e/${event.id}`,
+      city: this.extractCity(event.venue || event.location),
+      address: this.getAddress(event.venue || event.location),
+      location: `${this.extractCity(event.venue || event.location)}, France`,
+      country: 'France',
+      estimated_visitors: null,
+      estimated_exhibitors: null,
+      entry_fee: null,
+      organizer_name: 'Viparis',
+      sector: this.detectSector(combinedText),
+      tags: this.extractTags(combinedText),
+      event_type: this.ruleBasedType(combinedText),
+      is_b2b: true,
+      scraped_from: 'viparis.com',
+      last_scraped_at: new Date().toISOString(),
+    };
+  }
 
-      for (const venue of venues) {
-        console.log(`Scraping ${venue.venue}...`);
-        const response = await this.fetchWithRetry(venue.url);
-        const html = await response.text();
-        
-        // For now, return mock events as HTML parsing with Cheerio in Deno needs different setup
-        const mockEvents = [
-          {
-            name: `Salon INDUSTRIE Paris ${new Date().getFullYear() + 1}`,
-            description: 'Le salon international de l\'industrie et des technologies innovantes',
-            start_date: new Date(new Date().getFullYear() + 1, 2, 15).toISOString().split('T')[0],
-            end_date: new Date(new Date().getFullYear() + 1, 2, 17).toISOString().split('T')[0],
-            venue_name: venue.venue,
-            event_url: 'https://www.salon-industrie.com',
-            city: venue.city,
-            address: venue.city === 'Villepinte' ? 'ZAC Paris Nord 2, 93420 Villepinte' : 'Place de la Porte de Versailles, 75015 Paris',
-            location: `${venue.city}, France`,
-            country: 'France',
-            estimated_visitors: 45000,
-            estimated_exhibitors: 1200,
-            entry_fee: 'Gratuit sur inscription',
-            organizer_name: 'Comexposium',
-            sector: this.detectSector('industrie technologie'),
-            tags: this.extractTags('industrie technologie innovation b2b'),
-            event_type: 'salon',
-            is_b2b: true,
-            scraped_from: venue.url,
-            last_scraped_at: new Date().toISOString(),
-          }
-        ];
-        
-        events.push(...mockEvents);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+  private extractCity(venueText: string): string {
+    if (!venueText) return 'Paris';
+    
+    if (venueText.toLowerCase().includes('villepinte')) return 'Villepinte';
+    if (venueText.toLowerCase().includes('versailles')) return 'Paris';
+    if (venueText.toLowerCase().includes('congrès')) return 'Paris';
+    
+    return 'Paris';
+  }
 
-      return events;
-    } catch (error) {
-      console.error('Error scraping Viparis:', error);
-      return [];
+  private getAddress(venueText: string): string {
+    if (!venueText) return 'Paris, France';
+    
+    if (venueText.toLowerCase().includes('villepinte')) {
+      return 'ZAC Paris Nord 2, 93420 Villepinte';
     }
+    if (venueText.toLowerCase().includes('versailles')) {
+      return 'Place de la Porte de Versailles, 75015 Paris';
+    }
+    if (venueText.toLowerCase().includes('congrès')) {
+      return '2 Place de la Porte Maillot, 75017 Paris';
+    }
+    
+    return 'Paris, France';
+  }
+
+  private isB2BEvent(event: ViparisAPIEvent): boolean {
+    const text = `${event.title} ${event.excerpt || ''}`.toLowerCase();
+    
+    // Mots-clés B2B positifs
+    const b2bKeywords = [
+      'salon', 'expo', 'congrès', 'b2b', 'professionnel', 'industrie',
+      'business', 'entreprise', 'commercial', 'innovation', 'technologie'
+    ];
+    
+    // Mots-clés B2C négatifs
+    const b2cKeywords = [
+      'grand public', 'famille', 'enfant', 'loisir', 'spectacle',
+      'concert', 'festival', 'fête', 'animation'
+    ];
+    
+    const hasB2B = b2bKeywords.some(keyword => text.includes(keyword));
+    const hasB2C = b2cKeywords.some(keyword => text.includes(keyword));
+    
+    return hasB2B && !hasB2C;
+  }
+
+  async scrapeEvents() {
+    const allEvents = [];
+    let page = 1;
+    const BASE_URL = 'https://www.viparis.com/api/event-public';
+
+    console.log('🚀 Starting Viparis API scraping with improved pagination...');
+
+    while (true) {
+      try {
+        // Essayer d'abord avec le paramètre audience
+        let url = `${BASE_URL}?audience=professionnels&page=${page}&size=100`;
+        console.log(`📄 Fetching page ${page}: ${url}`);
+        
+        let response = await this.fetchWithRetry(url);
+        let data: ViparisAPIResponse;
+        
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          console.log('❌ Failed with audience parameter, trying without...');
+          // Essayer sans le paramètre audience
+          url = `${BASE_URL}?page=${page}&size=100`;
+          console.log(`📄 Retry page ${page}: ${url}`);
+          response = await this.fetchWithRetry(url);
+          data = await response.json();
+        }
+        
+        // Log détaillé de la structure de réponse pour la première page
+        if (page === 1) {
+          console.log('🔍 API Response structure inspection:');
+          console.log('- totalCount:', data.totalCount || 'undefined');
+          console.log('- totalPages:', data.totalPages || 'undefined');
+          console.log('- events.length:', data.events?.length || 0);
+          console.log('- page:', data.page || 'undefined');
+          console.log('- size:', data.size || 'undefined');
+          console.log('- Response keys:', Object.keys(data));
+        }
+        
+        console.log(`📊 Page ${page}: found ${data.events?.length || 0} events`);
+        
+        if (!data.events || data.events.length === 0) {
+          console.log('✅ No more events found, pagination complete');
+          break;
+        }
+
+        // Filtrer les événements B2B
+        const b2bEvents = data.events.filter(event => this.isB2BEvent(event));
+        console.log(`🎯 Page ${page}: ${b2bEvents.length} B2B events after filtering`);
+
+        // Mapper les événements
+        const mappedEvents = b2bEvents.map(event => this.toScrapedEvent(event));
+        allEvents.push(...mappedEvents);
+
+        // Déterminer s'il y a plus de pages
+        let hasMorePages = false;
+        
+        if (data.totalPages && typeof data.totalPages === 'number') {
+          hasMorePages = page < data.totalPages;
+          console.log(`📖 Using totalPages: ${page}/${data.totalPages}`);
+        } else if (data.totalCount && typeof data.totalCount === 'number') {
+          const estimatedTotalPages = Math.ceil(data.totalCount / (data.size || 100));
+          hasMorePages = page < estimatedTotalPages;
+          console.log(`📖 Using totalCount calculation: ${page}/${estimatedTotalPages} (${data.totalCount} total events)`);
+        } else {
+          // Fallback: continuer tant qu'il y a des événements
+          hasMorePages = data.events.length === (data.size || 100);
+          console.log(`📖 Using fallback method: continuing because page is full (${data.events.length} events)`);
+        }
+
+        if (!hasMorePages) {
+          console.log('✅ Reached last page, pagination complete');
+          break;
+        }
+
+        page++;
+        
+        // Délai poli entre les requêtes
+        console.log('⏳ Waiting 800ms before next request...');
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Limite de sécurité
+        if (page > 50) {
+          console.log('⚠️ Reached safety limit (50 pages), stopping');
+          break;
+        }
+        
+      } catch (error) {
+        console.error(`❌ Error fetching page ${page}:`, error);
+        break;
+      }
+    }
+
+    console.log(`🎉 Viparis scraping completed. Total B2B events found: ${allEvents.length}`);
+    return allEvents;
+  }
+
+  private ruleBasedType(text: string): string {
+    const textLower = text.toLowerCase();
+
+    if (textLower.includes('salon')) return 'salon';
+    if (textLower.includes('convention')) return 'convention';
+    if (textLower.includes('congres')) return 'congres';
+    if (textLower.includes('conference')) return 'conference';
+    if (textLower.includes('ceremonie')) return 'ceremonie';
+
+    return 'inconnu';
   }
 }
 
