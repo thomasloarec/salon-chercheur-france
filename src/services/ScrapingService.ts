@@ -144,15 +144,15 @@ export class ScrapingService {
     return results;
   }
 
-  private async saveEvent(event: EnhancedScrapedEvent): Promise<boolean> {
+  private async saveEvent(eventData: EnhancedScrapedEvent): Promise<boolean> {
     try {
-      console.log(`💾 ScrapingService - Attempting to save: "${event.title}"`);
+      console.log(`💾 ScrapingService - Attempting to save: "${eventData.title}"`);
       
       // Check if event already exists (deduplication using website_url)
       const { data: existing, error: selectError } = await supabase
         .from('events')
         .select('id')
-        .eq('website_url', event.websiteUrl)
+        .eq('website_url', eventData.websiteUrl)
         .maybeSingle();
 
       if (selectError) {
@@ -160,35 +160,38 @@ export class ScrapingService {
         return false;
       }
 
+      // Prepare data for database with explicit typing
+      const dbData = {
+        name: eventData.title,
+        description: eventData.description,
+        start_date: eventData.startDate.toISOString().split('T')[0],
+        end_date: eventData.endDate?.toISOString().split('T')[0] || null,
+        venue_name: eventData.venue,
+        city: eventData.city,
+        address: eventData.address,
+        location: `${eventData.city}, France`,
+        country: 'France',
+        event_url: eventData.websiteUrl,
+        website_url: eventData.websiteUrl,
+        estimated_visitors: eventData.estimatedVisitors,
+        estimated_exhibitors: eventData.estimatedExhibitors,
+        entry_fee: eventData.entryFee,
+        organizer_name: eventData.organizer,
+        sector: eventData.sector,
+        tags: eventData.tags,
+        event_type: eventData.event_type,
+        scraped_from: eventData.source,
+        last_scraped_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       if (existing) {
-        console.log(`🔄 ScrapingService - Updating existing event: ${event.title}`);
+        console.log(`🔄 ScrapingService - Updating existing event: ${eventData.title}`);
         
         // Update existing event
         const { error: updateError } = await supabase
           .from('events')
-          .update({
-            name: event.title,
-            description: event.description,
-            start_date: event.startDate.toISOString().split('T')[0],
-            end_date: event.endDate?.toISOString().split('T')[0],
-            venue_name: event.venue,
-            city: event.city,
-            address: event.address,
-            location: `${event.city}, France`,
-            country: 'France',
-            event_url: event.websiteUrl,
-            website_url: event.websiteUrl,
-            estimated_visitors: event.estimatedVisitors,
-            estimated_exhibitors: event.estimatedExhibitors,
-            entry_fee: event.entryFee,
-            organizer_name: event.organizer,
-            sector: event.sector,
-            tags: event.tags,
-            event_type: event.event_type,
-            scraped_from: event.source,
-            last_scraped_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+          .update(dbData)
           .eq('id', existing.id);
 
         if (updateError) {
@@ -196,37 +199,17 @@ export class ScrapingService {
           return false;
         }
         
-        console.log(`✅ ScrapingService - Updated existing event: ${event.title} (type: ${event.event_type || 'non classifié'})`);
+        console.log(`✅ ScrapingService - Updated existing event: ${eventData.title} (type: ${eventData.event_type || 'non classifié'})`);
       } else {
-        console.log(`➕ ScrapingService - Creating new event: ${event.title}`);
+        console.log(`➕ ScrapingService - Creating new event: ${eventData.title}`);
         
         // Create new event
         const { error: insertError } = await supabase
           .from('events')
           .insert({
-            name: event.title,
-            description: event.description,
-            start_date: event.startDate.toISOString().split('T')[0],
-            end_date: event.endDate?.toISOString().split('T')[0],
-            venue_name: event.venue,
-            city: event.city,
-            address: event.address,
-            location: `${event.city}, France`,
-            country: 'France',
-            estimated_visitors: event.estimatedVisitors,
-            estimated_exhibitors: event.estimatedExhibitors,
-            entry_fee: event.entryFee,
-            organizer_name: event.organizer,
-            event_url: event.websiteUrl,
-            website_url: event.websiteUrl,
-            sector: event.sector,
-            tags: event.tags,
-            event_type: event.event_type,
+            ...dbData,
             is_b2b: true,
-            scraped_from: event.source,
-            last_scraped_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            created_at: new Date().toISOString()
           });
 
         if (insertError) {
@@ -235,7 +218,7 @@ export class ScrapingService {
           return false;
         }
         
-        console.log(`✅ ScrapingService - Created new event: ${event.title} (type: ${event.event_type || 'non classifié'})`);
+        console.log(`✅ ScrapingService - Created new event: ${eventData.title} (type: ${eventData.event_type || 'non classifié'})`);
       }
       
       return true;
