@@ -54,48 +54,47 @@ const mockConventionEvent: Event = {
 };
 
 describe('EventCard', () => {
-  test('should render salon badge for salon event', () => {
-    const { getByText } = render(<EventCard event={mockSalonEvent} />);
-    
-    expect(getByText('Salon Test')).toBeInTheDocument();
-    expect(getByText('salon')).toBeInTheDocument();
-    
-    // Check that the salon badge has the destructive variant (red)
-    const salonBadge = getByText('salon');
-    expect(salonBadge).toHaveClass('bg-destructive');
-  });
-
-  test('should not render event type badge for loisir event', () => {
-    const { getByText, queryByText } = render(<EventCard event={mockLoisirEvent} />);
-    
-    expect(getByText('Concert Rock')).toBeInTheDocument();
-    expect(queryByText('loisir')).not.toBeInTheDocument();
-  });
-
-  test('should render convention badge for convention event', () => {
-    const { getByText } = render(<EventCard event={mockConventionEvent} />);
-    
-    expect(getByText('Convention Tech')).toBeInTheDocument();
-    expect(getByText('convention')).toBeInTheDocument();
-    
-    // Check that the convention badge has the secondary variant
-    const conventionBadge = getByText('convention');
-    expect(conventionBadge).toHaveClass('bg-secondary');
-  });
-
-  test('should render event details correctly', () => {
-    const { getByText } = render(<EventCard event={mockSalonEvent} />);
+  test('should render sector badge in grid view', () => {
+    const { getByText } = render(<EventCard event={mockSalonEvent} view="grid" />);
     
     expect(getByText('Salon Test')).toBeInTheDocument();
     expect(getByText('Technologie')).toBeInTheDocument();
-    expect(getByText('Paris')).toBeInTheDocument();
+  });
+
+  test('should not render description in grid view', () => {
+    const { queryByText } = render(<EventCard event={mockSalonEvent} view="grid" />);
+    
+    expect(queryByText('Description du salon')).not.toBeInTheDocument();
+  });
+
+  test('should render description in list view', () => {
+    const { getByText } = render(<EventCard event={mockSalonEvent} view="list" />);
+    
     expect(getByText('Description du salon')).toBeInTheDocument();
   });
 
-  test('should render calendar buttons', () => {
-    const { getByText } = render(<EventCard event={mockSalonEvent} />);
+  test('should render event details correctly in grid view', () => {
+    const { getByText } = render(<EventCard event={mockSalonEvent} view="grid" />);
     
-    expect(getByText('Google')).toBeInTheDocument();
-    expect(getByText('Outlook')).toBeInTheDocument();
+    expect(getByText('Salon Test')).toBeInTheDocument();
+    expect(getByText('Technologie')).toBeInTheDocument();
+    expect(getByText(/Paris/)).toBeInTheDocument();
+  });
+
+  test('should render calendar buttons in both views', () => {
+    const { getByText: getByTextGrid } = render(<EventCard event={mockSalonEvent} view="grid" />);
+    expect(getByTextGrid('Google')).toBeInTheDocument();
+    expect(getByTextGrid('Outlook')).toBeInTheDocument();
+
+    const { getByText: getByTextList } = render(<EventCard event={mockSalonEvent} view="list" />);
+    expect(getByTextList('Google')).toBeInTheDocument();
+    expect(getByTextList('Outlook')).toBeInTheDocument();
+  });
+
+  test('should render sector badge for different event types', () => {
+    const { getByText } = render(<EventCard event={mockConventionEvent} view="grid" />);
+    
+    expect(getByText('Convention Tech')).toBeInTheDocument();
+    expect(getByText('Informatique')).toBeInTheDocument();
   });
 });

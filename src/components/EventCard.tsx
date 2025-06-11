@@ -72,6 +72,11 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
               )}
             </div>
           )}
+          {event.description && (
+            <p className="text-sm line-clamp-2 text-gray-600">
+              {event.description}
+            </p>
+          )}
           <div className="flex gap-2 mt-2">
             <CalBtn type="gcal" event={event} />
             <CalBtn type="outlook" event={event} />
@@ -106,18 +111,12 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
           alt={event.name}
           className="h-full w-full object-cover"
         />
-        {event.event_type && event.event_type !== 'loisir' && (
+        {event.sector && (
           <Badge 
             className="absolute left-2 top-2"
-            variant={
-              event.event_type === 'salon' ? 'destructive' :
-              event.event_type === 'convention' ? 'secondary' :
-              event.event_type === 'congres' ? 'outline' :
-              event.event_type === 'conference' ? 'default' :
-              'secondary'
-            }
+            variant="secondary"
           >
-            {event.event_type}
+            {event.sector}
           </Badge>
         )}
       </div>
@@ -130,11 +129,6 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
               <> - {formatDate(event.end_date)}</>
             )} – {event.city}
           </p>
-          {event.description && (
-            <p className="text-sm line-clamp-2 text-gray-600">
-              {event.description}
-            </p>
-          )}
           <div className="flex gap-2 mt-2">
             <CalBtn type="gcal" event={event} />
             <CalBtn type="outlook" event={event} />

@@ -118,6 +118,36 @@ describe('RecentEventsSection', () => {
     expect(screen.getByText('Salon Innovation 3')).toBeInTheDocument();
   });
 
+  test('should render sector badges instead of event type', () => {
+    mockUseEvents.mockReturnValue({
+      data: mockEvents,
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+    } as any);
+
+    renderWithProviders(<RecentEventsSection />);
+    
+    expect(screen.getByText('Technologie')).toBeInTheDocument();
+    expect(screen.getByText('Informatique')).toBeInTheDocument();
+    expect(screen.getByText('Innovation')).toBeInTheDocument();
+  });
+
+  test('should not display descriptions in grid view', () => {
+    mockUseEvents.mockReturnValue({
+      data: mockEvents,
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+    } as any);
+
+    renderWithProviders(<RecentEventsSection />);
+    
+    expect(screen.queryByText('Description du salon 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Description de la convention 2')).not.toBeInTheDocument();
+    expect(screen.queryByText('Description du salon 3')).not.toBeInTheDocument();
+  });
+
   test('should show loading state', () => {
     mockUseEvents.mockReturnValue({
       data: undefined,
@@ -149,7 +179,8 @@ describe('RecentEventsSection', () => {
     const manyEvents = Array.from({ length: 12 }, (_, i) => ({
       ...mockEvents[0],
       id: `${i + 1}`,
-      name: `Event ${i + 1}`
+      name: `Event ${i + 1}`,
+      sector: `Sector ${i + 1}`
     }));
 
     mockUseEvents.mockReturnValue({
