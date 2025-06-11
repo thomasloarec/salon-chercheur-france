@@ -53,12 +53,16 @@ export class ScrapingService {
             // Only save professional events with decent confidence
             if (classification.isProfessional && classification.confidence > 0.5) {
               console.log(`✅ ScrapingService - Event qualifies for saving`);
-              const saved = await this.saveEvent({
+              
+              // Create enhanced event object with proper typing
+              const enhancedEvent: ScrapedEvent & { event_type?: string } = {
                 ...event,
                 sector: classification.sector,
                 tags: classification.tags,
                 event_type: eventType !== 'inconnu' ? eventType : undefined
-              });
+              };
+              
+              const saved = await this.saveEvent(enhancedEvent);
               
               if (saved) {
                 eventsSaved++;
