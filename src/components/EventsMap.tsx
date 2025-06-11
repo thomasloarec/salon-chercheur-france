@@ -2,6 +2,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import L from 'leaflet';
 
@@ -37,6 +38,12 @@ interface EventsMapProps {
 }
 
 export const EventsMap = ({ events }: EventsMapProps) => {
+  const fallbackImage = '/placeholder.svg';
+  
+  const formatDate = (dateStr: string) => {
+    return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
+  };
+
   const eventsWithCoords = events.map(event => ({
     ...event,
     coordinates: getCityCoordinates(event.city)
@@ -57,16 +64,31 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         {eventsWithCoords.map(event => (
           <Marker key={event.id} position={event.coordinates}>
             <Popup>
-              <div className="p-2">
-                <h3 className="font-semibold text-sm mb-1">{event.name}</h3>
-                <p className="text-xs text-gray-600 mb-1">
-                  {format(new Date(event.start_date), 'dd MMMM yyyy', { locale: fr })}
-                  {event.end_date !== event.start_date && 
-                    ` - ${format(new Date(event.end_date), 'dd MMMM yyyy', { locale: fr })}`
+              <div className="space-y-1 w-[200px]">
+                <img 
+                  src={event.image_url || fallbackImage} 
+                  alt={event.name}
+                  className="h-24 w-full object-cover rounded"
+                />
+                <strong className="block text-sm font-semibold">{event.name}</strong>
+                <span className="text-xs text-gray-600">
+                  {formatDate(event.start_date)}
+                  {event.start_date !== event.end_date && 
+                    ` - ${formatDate(event.end_date)}`
                   }
-                </p>
-                <p className="text-xs text-gray-600 mb-1">{event.city}</p>
+                </span>
+                <p className="text-xs text-gray-600">{event.city}</p>
                 <p className="text-xs text-blue-600">{event.sector}</p>
+                {event.event_url && (
+                  <a 
+                    href={event.event_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary text-xs underline block mt-1"
+                  >
+                    Voir le salon →
+                  </a>
+                )}
               </div>
             </Popup>
           </Marker>

@@ -49,16 +49,16 @@ export const EventsResults = ({ events = [], isLoading }: EventsResultsProps) =>
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} view="grid" />
           ))}
         </div>
       );
       
     case 'list':
       return (
-        <div className="space-y-4">
+        <div className="space-y-0 bg-white rounded-lg">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} view="list" />
           ))}
         </div>
       );
@@ -70,7 +70,7 @@ export const EventsResults = ({ events = [], isLoading }: EventsResultsProps) =>
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} view="grid" />
           ))}
         </div>
       );

@@ -1,6 +1,4 @@
 
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-
 // Mock de l'API Viparis avec pagination
 const mockViparisPage1 = {
   events: Array.from({ length: 100 }, (_, i) => ({

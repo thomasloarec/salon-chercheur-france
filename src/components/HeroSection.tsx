@@ -1,10 +1,14 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Search, MapPin, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const HeroSection = () => {
+  const heroImage = '/placeholder.svg'; // This would be a real event image
+  const eventType = 'salon'; // This would come from the featured event
+
   return (
     <section className="gradient-hero text-white py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,6 +21,23 @@ const HeroSection = () => {
             Ne manquez plus jamais une opportunité business. Découvrez tous les événements B2B en France, 
             filtrés par secteur d'activité et géolocalisation. Accès libre et gratuit.
           </p>
+
+          {/* Featured Event Image with 3:4 ratio */}
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="relative">
+              <img 
+                src={heroImage} 
+                alt="Événement professionnel en vedette"
+                className="w-full h-[420px] lg:h-[520px] object-cover rounded-2xl"
+              />
+              <Badge 
+                className="absolute left-4 top-4"
+                variant="destructive"
+              >
+                {eventType}
+              </Badge>
+            </div>
+          </div>
 
           {/* Search Bar */}
           <div className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-2xl animate-scale-in">

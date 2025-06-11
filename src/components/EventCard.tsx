@@ -2,149 +2,84 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin, Users, Building, ExternalLink, Calendar } from 'lucide-react';
+import { CalendarDays, MapPin, Users, Building, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import CalBtn from './CalBtn';
 
 interface EventCardProps {
-  event: Event;
+  event: Event & { 
+    estimated_visitors?: number; 
+    price?: string; 
+    image_url?: string; 
+  };
+  view?: 'grid' | 'list';
 }
 
-const EventCard = ({ event }: EventCardProps) => {
-  const handleAddToCalendar = (type: 'google' | 'outlook') => {
-    const startDate = new Date(event.start_date).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const endDate = new Date(event.end_date).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    
-    const title = encodeURIComponent(event.name);
-    const description = encodeURIComponent(event.description || '');
-    const location = encodeURIComponent(`${event.venue_name || ''} ${event.address || ''} ${event.city}`);
-
-    if (type === 'google') {
-      const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${description}&location=${location}`;
-      window.open(googleUrl, '_blank');
-    } else {
-      const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${startDate}&enddt=${endDate}&body=${description}&location=${location}`;
-      window.open(outlookUrl, '_blank');
-    }
+const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
+  const fallbackImage = '/placeholder.svg';
+  
+  const formatDate = (dateStr: string) => {
+    return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
   };
 
-  return (
-    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-      <CardContent className="p-6">
-        {event.image_url && (
-          <div className="w-full h-48 mb-4 rounded-lg overflow-hidden">
-            <img 
-              src={event.image_url} 
-              alt={event.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-        
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-xl font-semibold text-primary mb-2 line-clamp-2">
-              {event.name}
-            </h3>
-            <div className="flex gap-2 mb-2">
-              <Badge variant="secondary">
-                {event.sector}
-              </Badge>
-              {event.event_type && event.event_type !== 'loisir' && (
-                <Badge 
-                  variant={
-                    event.event_type === 'salon' ? 'destructive' :
-                    event.event_type === 'convention' ? 'secondary' :
-                    event.event_type === 'congres' ? 'outline' :
-                    event.event_type === 'conference' ? 'default' :
-                    'secondary'
-                  }
-                >
-                  {event.event_type}
-                </Badge>
+  if (view === 'list') {
+    return (
+      <div className="flex items-start gap-4 py-4 border-b">
+        <div className="flex-1 space-y-1">
+          <h3 className="font-semibold text-lg">{event.name}</h3>
+          <div className="flex items-center text-gray-600 text-sm">
+            <CalendarDays className="h-4 w-4 mr-2 text-accent" />
+            <span>
+              {formatDate(event.start_date)}
+              {event.start_date !== event.end_date && (
+                <> - {formatDate(event.end_date)}</>
               )}
-            </div>
-            {event.description && (
-              <p className="text-gray-600 text-sm line-clamp-3">
-                {event.description}
-              </p>
-            )}
+            </span>
           </div>
-
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center text-gray-600">
-              <CalendarDays className="h-4 w-4 mr-2 text-accent" />
-              <span>
-                {format(new Date(event.start_date), 'dd MMM yyyy', { locale: fr })}
-                {event.start_date !== event.end_date && (
-                  <> - {format(new Date(event.end_date), 'dd MMM yyyy', { locale: fr })}</>
-                )}
-              </span>
-            </div>
-
-            <div className="flex items-center text-gray-600">
-              <MapPin className="h-4 w-4 mr-2 text-accent" />
-              <span>{event.city}{event.region && `, ${event.region}`}</span>
-            </div>
-
-            {event.venue_name && (
-              <div className="flex items-center text-gray-600">
-                <Building className="h-4 w-4 mr-2 text-accent" />
-                <span>{event.venue_name}</span>
-              </div>
-            )}
-
-            {event.estimated_visitors && (
-              <div className="flex items-center text-gray-600">
-                <Users className="h-4 w-4 mr-2 text-accent" />
-                <span>{event.estimated_visitors.toLocaleString()} visiteurs estimés</span>
-              </div>
-            )}
+          <div className="flex items-center text-gray-600 text-sm">
+            <MapPin className="h-4 w-4 mr-2 text-accent" />
+            <span>{event.city}{event.region && `, ${event.region}`}</span>
           </div>
-
+          {event.venue_name && (
+            <div className="flex items-center text-gray-600 text-sm">
+              <Building className="h-4 w-4 mr-2 text-accent" />
+              <span>{event.venue_name}</span>
+            </div>
+          )}
+          <div className="flex items-center text-gray-600 text-sm">
+            <Users className="h-4 w-4 mr-2 text-accent" />
+            <span>
+              {event.estimated_visitors ? 
+                `${event.estimated_visitors.toLocaleString()} visiteurs attendus` : 
+                'Visiteurs N.C.'
+              } • {event.price || 'Tarif N.C.'}
+            </span>
+          </div>
           {event.tags && event.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 mt-2">
               {event.tags.slice(0, 3).map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
+                <Badge key={index} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>
               ))}
               {event.tags.length > 3 && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="secondary" className="text-xs">
                   +{event.tags.length - 3} autres
                 </Badge>
               )}
             </div>
           )}
-
-          <div className="pt-4 space-y-2">
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleAddToCalendar('google')}
-                className="flex-1"
-              >
-                <Calendar className="h-4 w-4 mr-1" />
-                Google
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleAddToCalendar('outlook')}
-                className="flex-1"
-              >
-                <Calendar className="h-4 w-4 mr-1" />
-                Outlook
-              </Button>
-            </div>
-            
+          <div className="flex gap-2 mt-2">
+            <CalBtn type="gcal" event={event} />
+            <CalBtn type="outlook" event={event} />
             {event.event_url && (
               <Button 
                 variant="default" 
                 size="sm" 
-                className="w-full bg-accent hover:bg-accent/90"
+                className="bg-accent hover:bg-accent/90"
                 onClick={() => window.open(event.event_url, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -152,6 +87,69 @@ const EventCard = ({ event }: EventCardProps) => {
               </Button>
             )}
           </div>
+        </div>
+        <img 
+          src={event.image_url || fallbackImage} 
+          alt={event.name}
+          className="w-[120px] h-[160px] object-cover rounded"
+        />
+      </div>
+    );
+  }
+
+  // Grid view
+  return (
+    <Card className="rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+      <div className="relative h-56">
+        <img 
+          src={event.image_url || fallbackImage} 
+          alt={event.name}
+          className="h-full w-full object-cover"
+        />
+        {event.event_type && event.event_type !== 'loisir' && (
+          <Badge 
+            className="absolute left-2 top-2"
+            variant={
+              event.event_type === 'salon' ? 'destructive' :
+              event.event_type === 'convention' ? 'secondary' :
+              event.event_type === 'congres' ? 'outline' :
+              event.event_type === 'conference' ? 'default' :
+              'secondary'
+            }
+          >
+            {event.event_type}
+          </Badge>
+        )}
+      </div>
+      <CardContent className="p-4">
+        <div className="space-y-1">
+          <h3 className="font-semibold text-lg line-clamp-2">{event.name}</h3>
+          <p className="text-sm text-muted-foreground">
+            {formatDate(event.start_date)}
+            {event.start_date !== event.end_date && (
+              <> - {formatDate(event.end_date)}</>
+            )} – {event.city}
+          </p>
+          {event.description && (
+            <p className="text-sm line-clamp-2 text-gray-600">
+              {event.description}
+            </p>
+          )}
+          <div className="flex gap-2 mt-2">
+            <CalBtn type="gcal" event={event} />
+            <CalBtn type="outlook" event={event} />
+          </div>
+          {event.event_url && (
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="w-full mt-2 bg-accent hover:bg-accent/90"
+              onClick={() => window.open(event.event_url, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Voir le salon
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
