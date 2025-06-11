@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -14,6 +15,7 @@ const supabaseAdmin = createClient(
 // Types pour l'API Viparis
 interface ViparisAPIEvent {
   id: string;
+  slug?: string;
   title: string;
   excerpt: string;
   beginDate: string;
@@ -111,7 +113,7 @@ class ViparisScraper extends BaseScraper {
       start_date: new Date(event.beginDate).toISOString().split('T')[0],
       end_date: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : new Date(event.beginDate).toISOString().split('T')[0],
       venue_name: event.venue || 'Viparis',
-      event_url: `https://www.viparis.com/e/${event.id}`,
+      event_url: `https://www.viparis.com/e/${event.slug || event.id}`,
       city: this.extractCity(event.venue || event.location),
       address: this.getAddress(event.venue || event.location),
       location: `${this.extractCity(event.venue || event.location)}, France`,
@@ -176,89 +178,83 @@ class ViparisScraper extends BaseScraper {
     return hasB2B && !hasB2C;
   }
 
-  async scrapeEvents() {
+  async fetchViparisEvents() {
+    const BASE_URL = 'https://www.viparis.com/api/event-public';
     const allEvents = [];
     let page = 1;
-    const BASE_URL = 'https://www.viparis.com/api/event-public';
+    let totalPages = 1;
 
-    console.log('🚀 Starting Viparis API scraping with improved pagination...');
+    console.log('🚀 Starting Viparis API scraping with detailed logging...');
 
-    while (true) {
+    while (page <= totalPages) {
       try {
-        // Essayer d'abord avec le paramètre audience
-        let url = `${BASE_URL}?audience=professionnels&page=${page}&size=100`;
+        // Test without audience parameter first
+        const url = `${BASE_URL}?page=${page}&size=100`;
         console.log(`📄 Fetching page ${page}: ${url}`);
         
-        let response = await this.fetchWithRetry(url);
-        let data: ViparisAPIResponse;
+        const response = await this.fetchWithRetry(url);
         
-        try {
-          data = await response.json();
-        } catch (jsonError) {
-          console.log('❌ Failed with audience parameter, trying without...');
-          // Essayer sans le paramètre audience
-          url = `${BASE_URL}?page=${page}&size=100`;
-          console.log(`📄 Retry page ${page}: ${url}`);
-          response = await this.fetchWithRetry(url);
-          data = await response.json();
+        if (!response.ok) {
+          console.log(`❌ Fetch error for page ${page}:`, response.status, url);
+          break;
         }
+
+        const data: ViparisAPIResponse = await response.json();
         
-        // Log détaillé de la structure de réponse pour la première page
+        // Detailed logging of API response structure
+        console.log(`PAGE ${page}:`);
+        console.log(`  - events.length: ${data.events?.length || 0}`);
+        console.log(`  - totalPages: ${data.totalPages || 'undefined'}`);
+        console.log(`  - totalCount: ${data.totalCount || 'undefined'}`);
+        console.log(`  - page: ${data.page || 'undefined'}`);
+        console.log(`  - size: ${data.size || 'undefined'}`);
+        
         if (page === 1) {
-          console.log('🔍 API Response structure inspection:');
-          console.log('- totalCount:', data.totalCount || 'undefined');
-          console.log('- totalPages:', data.totalPages || 'undefined');
-          console.log('- events.length:', data.events?.length || 0);
-          console.log('- page:', data.page || 'undefined');
-          console.log('- size:', data.size || 'undefined');
-          console.log('- Response keys:', Object.keys(data));
+          console.log('🔍 Full API Response structure for page 1:');
+          console.log('  - Response keys:', Object.keys(data));
+          if (data.events && data.events.length > 0) {
+            console.log('  - Sample event keys:', Object.keys(data.events[0]));
+          }
         }
-        
-        console.log(`📊 Page ${page}: found ${data.events?.length || 0} events`);
         
         if (!data.events || data.events.length === 0) {
           console.log('✅ No more events found, pagination complete');
           break;
         }
 
-        // Filtrer les événements B2B
+        // Update totalPages if provided
+        if (data.totalPages && typeof data.totalPages === 'number') {
+          totalPages = data.totalPages;
+          console.log(`📖 Using totalPages from API: ${totalPages}`);
+        } else if (data.totalCount && typeof data.totalCount === 'number') {
+          const estimatedTotalPages = Math.ceil(data.totalCount / (data.size || 100));
+          totalPages = estimatedTotalPages;
+          console.log(`📖 Calculated totalPages from totalCount: ${totalPages} (${data.totalCount} total events)`);
+        }
+
+        // Filter B2B events
         const b2bEvents = data.events.filter(event => this.isB2BEvent(event));
         console.log(`🎯 Page ${page}: ${b2bEvents.length} B2B events after filtering`);
 
-        // Mapper les événements
+        // Map events
         const mappedEvents = b2bEvents.map(event => this.toScrapedEvent(event));
         allEvents.push(...mappedEvents);
 
-        // Déterminer s'il y a plus de pages
-        let hasMorePages = false;
-        
-        if (data.totalPages && typeof data.totalPages === 'number') {
-          hasMorePages = page < data.totalPages;
-          console.log(`📖 Using totalPages: ${page}/${data.totalPages}`);
-        } else if (data.totalCount && typeof data.totalCount === 'number') {
-          const estimatedTotalPages = Math.ceil(data.totalCount / (data.size || 100));
-          hasMorePages = page < estimatedTotalPages;
-          console.log(`📖 Using totalCount calculation: ${page}/${estimatedTotalPages} (${data.totalCount} total events)`);
-        } else {
-          // Fallback: continuer tant qu'il y a des événements
-          hasMorePages = data.events.length === (data.size || 100);
-          console.log(`📖 Using fallback method: continuing because page is full (${data.events.length} events)`);
-        }
-
-        if (!hasMorePages) {
-          console.log('✅ Reached last page, pagination complete');
+        // Check if we should continue
+        if (page >= totalPages || data.events.length < (data.size || 100)) {
+          console.log('✅ Reached last page or incomplete page, pagination complete');
           break;
         }
 
         page++;
         
-        // Délai poli entre les requêtes
-        console.log('⏳ Waiting 800ms before next request...');
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Friendly delay between requests
+        console.log('⏳ Waiting 600ms before next request...');
+        await new Promise(resolve => setTimeout(resolve, 600));
         
-        // Limite de sécurité
-        if (page > 50) {
-          console.log('⚠️ Reached safety limit (50 pages), stopping');
+        // Safety limit
+        if (page > 20) {
+          console.log('⚠️ Reached safety limit (20 pages), stopping');
           break;
         }
         
@@ -268,8 +264,12 @@ class ViparisScraper extends BaseScraper {
       }
     }
 
-    console.log(`🎉 Viparis scraping completed. Total B2B events found: ${allEvents.length}`);
+    console.log(`🎉 TOTAL COLLECTED: ${allEvents.length} events`);
     return allEvents;
+  }
+
+  async scrapeEvents() {
+    return await this.fetchViparisEvents();
   }
 
   private ruleBasedType(text: string): string {
@@ -341,7 +341,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('Starting scraping process...');
+    console.log('🚀 Starting scraping process...');
     
     const scrapers = [
       new ViparisScraper(),
@@ -353,59 +353,50 @@ serve(async (req: Request): Promise<Response> => {
 
     for (const scraper of scrapers) {
       try {
-        console.log(`Running ${scraper.venue} scraper...`);
+        console.log(`🔄 Running ${scraper.venue} scraper...`);
         const events = await scraper.scrapeEvents();
-        console.log(`${scraper.venue} found ${events.length} events`);
+        console.log(`✅ ${scraper.venue} found ${events.length} events`);
         allEvents.push(...events);
       } catch (error) {
-        console.error(`Error with ${scraper.venue}:`, error);
+        console.error(`❌ Error with ${scraper.venue}:`, error);
         totalErrors++;
       }
     }
 
-    console.log(`Total events to save: ${allEvents.length}`);
+    console.log(`📊 Total events to save: ${allEvents.length}`);
 
-    // Save events to database
+    // Save events to database with upsert using event_url as unique key
     let savedCount = 0;
+    let updatedCount = 0;
     let saveErrors = [];
 
     for (const event of allEvents) {
       try {
-        // Check if event already exists
-        const { data: existing } = await supabaseAdmin
+        // Use upsert with event_url as conflict resolution
+        const { data, error } = await supabaseAdmin
           .from('events')
-          .select('id')
-          .eq('name', event.name)
-          .eq('venue_name', event.venue_name)
-          .eq('start_date', event.start_date)
-          .maybeSingle();
-
-        if (existing) {
-          // Update existing event
-          const { error } = await supabaseAdmin
-            .from('events')
-            .update({
-              ...event,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existing.id);
-
-          if (!error) savedCount++;
-          else saveErrors.push(error.message);
-        } else {
-          // Insert new event
-          const { error } = await supabaseAdmin
-            .from('events')
-            .insert({
+          .upsert(
+            {
               ...event,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            });
+            },
+            { 
+              onConflict: 'event_url',
+              ignoreDuplicates: false
+            }
+          )
+          .select('id');
 
-          if (!error) savedCount++;
-          else saveErrors.push(error.message);
+        if (error) {
+          console.error('Upsert error for event:', event.name, error);
+          saveErrors.push(error.message);
+        } else {
+          savedCount++;
+          console.log(`💾 Saved/Updated: ${event.name}`);
         }
       } catch (error) {
+        console.error('Save error for event:', event.name, error);
         saveErrors.push(String(error));
       }
     }
@@ -418,7 +409,7 @@ serve(async (req: Request): Promise<Response> => {
       success: totalErrors === 0 && saveErrors.length === 0
     };
 
-    console.log('Scraping completed:', result);
+    console.log('🏁 Scraping completed:', result);
 
     return new Response(JSON.stringify(result), {
       headers: { 
@@ -429,7 +420,7 @@ serve(async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    console.error('Fatal scraping error:', error);
+    console.error('💥 Fatal scraping error:', error);
     
     return new Response(JSON.stringify({
       found: 0,
