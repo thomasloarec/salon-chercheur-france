@@ -12,293 +12,131 @@ const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
 
-// Types pour l'API Viparis
-interface ViparisAPIEvent {
-  id: string;
-  slug?: string;
-  title: string;
-  excerpt: string;
-  beginDate: string;
-  endDate: string;
-  venue: string;
-  location?: string;
-  category?: string;
+const SBEE_KEY = Deno.env.get('SBEE_API_KEY')!;
+const BASE_BEE = 'https://app.scrapingbee.com/api/v1/';
+
+function beeUrl(target: string) {
+  return BASE_BEE + '?' + new URLSearchParams({
+    api_key: SBEE_KEY,
+    url: target,
+    render_js: 'false'
+  });
 }
 
-interface ViparisAPIResponse {
-  events: ViparisAPIEvent[];
-  totalCount: number;
-  totalPages?: number;
-  page: number;
-  size: number;
+function detectSector(text: string): string {
+  const textLower = text.toLowerCase();
+  
+  if (textLower.includes('tech') || textLower.includes('digital') || textLower.includes('numérique')) return 'Technologie';
+  if (textLower.includes('industrie') || textLower.includes('manufacturing')) return 'Industrie';
+  if (textLower.includes('médical') || textLower.includes('santé') || textLower.includes('pharma')) return 'Santé';
+  if (textLower.includes('btp') || textLower.includes('construction') || textLower.includes('bâtiment')) return 'BTP';
+  if (textLower.includes('agro') || textLower.includes('alimentaire') || textLower.includes('agriculture')) return 'Agroalimentaire';
+  if (textLower.includes('énergie') || textLower.includes('environnement')) return 'Énergie';
+  if (textLower.includes('transport') || textLower.includes('automobile') || textLower.includes('logistique')) return 'Transport';
+  if (textLower.includes('finance') || textLower.includes('banque') || textLower.includes('assurance')) return 'Finance';
+  
+  return 'Autre';
 }
 
-// Inline scraping logic to avoid import issues
-class BaseScraper {
-  public venue: string;
-  protected baseUrl: string;
+function ruleBasedType(text: string): string {
+  const textLower = text.toLowerCase();
 
-  constructor(venue: string, baseUrl: string) {
-    this.venue = venue;
-    this.baseUrl = baseUrl;
-  }
+  if (textLower.includes('salon')) return 'salon';
+  if (textLower.includes('convention')) return 'convention';
+  if (textLower.includes('congres')) return 'congres';
+  if (textLower.includes('conference')) return 'conference';
+  if (textLower.includes('ceremonie')) return 'ceremonie';
 
-  protected async fetchWithRetry(url: string, retries = 3): Promise<Response> {
-    for (let i = 0; i < retries; i++) {
+  return 'inconnu';
+}
+
+async function fetchViparis() {
+  console.log('🚀 Starting Viparis scraping with ScrapingBee...');
+  
+  const sites = ['paris-expo', 'paris-nord-villepinte', 'palais-des-congres'];
+  const all: any[] = [];
+
+  for (const site of sites) {
+    let page = 0;
+    console.log(`📍 Scraping site: ${site}`);
+    
+    while (true) {
       try {
-        const response = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-          }
-        });
+        const target = `https://www.viparis.com/v3/api/events?lang=fr&page=${page}&limit=100&site=${site}`;
+        console.log(`🔍 Fetching page ${page} for ${site}: ${target}`);
         
-        if (response.ok) return response;
+        const res = await fetch(beeUrl(target));
         
-        if (response.status === 429) {
-          await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
-          continue;
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
-      } catch (error) {
-        if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
-      }
-    }
-    throw new Error(`Failed to fetch ${url} after ${retries} retries`);
-  }
-
-  protected detectSector(text: string): string {
-    const textLower = text.toLowerCase();
-    
-    if (textLower.includes('tech') || textLower.includes('digital') || textLower.includes('numérique')) return 'Technologie';
-    if (textLower.includes('industrie') || textLower.includes('manufacturing')) return 'Industrie';
-    if (textLower.includes('médical') || textLower.includes('santé') || textLower.includes('pharma')) return 'Santé';
-    if (textLower.includes('btp') || textLower.includes('construction') || textLower.includes('bâtiment')) return 'BTP';
-    if (textLower.includes('agro') || textLower.includes('alimentaire') || textLower.includes('agriculture')) return 'Agroalimentaire';
-    if (textLower.includes('énergie') || textLower.includes('environnement')) return 'Énergie';
-    if (textLower.includes('transport') || textLower.includes('automobile') || textLower.includes('logistique')) return 'Transport';
-    if (textLower.includes('finance') || textLower.includes('banque') || textLower.includes('assurance')) return 'Finance';
-    
-    return 'Autre';
-  }
-
-  protected extractTags(text: string): string[] {
-    const textLower = text.toLowerCase();
-    const tags: string[] = [];
-    
-    const keywords = ['innovation', 'technologie', 'digital', 'industrie', 'b2b', 'professionnel', 'salon', 'exposition'];
-    
-    for (const keyword of keywords) {
-      if (textLower.includes(keyword)) {
-        tags.push(keyword);
-      }
-    }
-    
-    return tags.slice(0, 5);
-  }
-}
-
-class ViparisScraper extends BaseScraper {
-  constructor() {
-    super('Viparis', 'https://www.viparis.com');
-  }
-
-  private toScrapedEvent(event: ViparisAPIEvent) {
-    const combinedText = `${event.title} ${event.excerpt || ''}`;
-    
-    return {
-      name: event.title,
-      description: event.excerpt || '',
-      start_date: new Date(event.beginDate).toISOString().split('T')[0],
-      end_date: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : new Date(event.beginDate).toISOString().split('T')[0],
-      venue_name: event.venue || 'Viparis',
-      event_url: `https://www.viparis.com/e/${event.slug || event.id}`,
-      city: this.extractCity(event.venue || event.location),
-      address: this.getAddress(event.venue || event.location),
-      location: `${this.extractCity(event.venue || event.location)}, France`,
-      country: 'France',
-      estimated_visitors: null,
-      estimated_exhibitors: null,
-      entry_fee: null,
-      organizer_name: 'Viparis',
-      sector: this.detectSector(combinedText),
-      tags: this.extractTags(combinedText),
-      event_type: this.ruleBasedType(combinedText),
-      is_b2b: true,
-      scraped_from: 'viparis.com',
-      last_scraped_at: new Date().toISOString(),
-    };
-  }
-
-  private extractCity(venueText: string): string {
-    if (!venueText) return 'Paris';
-    
-    if (venueText.toLowerCase().includes('villepinte')) return 'Villepinte';
-    if (venueText.toLowerCase().includes('versailles')) return 'Paris';
-    if (venueText.toLowerCase().includes('congrès')) return 'Paris';
-    
-    return 'Paris';
-  }
-
-  private getAddress(venueText: string): string {
-    if (!venueText) return 'Paris, France';
-    
-    if (venueText.toLowerCase().includes('villepinte')) {
-      return 'ZAC Paris Nord 2, 93420 Villepinte';
-    }
-    if (venueText.toLowerCase().includes('versailles')) {
-      return 'Place de la Porte de Versailles, 75015 Paris';
-    }
-    if (venueText.toLowerCase().includes('congrès')) {
-      return '2 Place de la Porte Maillot, 75017 Paris';
-    }
-    
-    return 'Paris, France';
-  }
-
-  private isB2BEvent(event: ViparisAPIEvent): boolean {
-    const text = `${event.title} ${event.excerpt || ''}`.toLowerCase();
-    
-    // Mots-clés B2B positifs
-    const b2bKeywords = [
-      'salon', 'expo', 'congrès', 'b2b', 'professionnel', 'industrie',
-      'business', 'entreprise', 'commercial', 'innovation', 'technologie'
-    ];
-    
-    // Mots-clés B2C négatifs
-    const b2cKeywords = [
-      'grand public', 'famille', 'enfant', 'loisir', 'spectacle',
-      'concert', 'festival', 'fête', 'animation'
-    ];
-    
-    const hasB2B = b2bKeywords.some(keyword => text.includes(keyword));
-    const hasB2C = b2cKeywords.some(keyword => text.includes(keyword));
-    
-    return hasB2B && !hasB2C;
-  }
-
-  async fetchViparisEvents() {
-    const BASE_URL = 'https://www.viparis.com/api/event-public';
-    const allEvents = [];
-    let page = 1;
-    let totalPages = 1;
-
-    console.log('🚀 Starting Viparis API scraping with detailed logging...');
-
-    while (page <= totalPages) {
-      try {
-        // Test without audience parameter first
-        const url = `${BASE_URL}?page=${page}&size=100`;
-        console.log(`📄 Fetching page ${page}: ${url}`);
-        
-        const response = await this.fetchWithRetry(url);
-        
-        if (!response.ok) {
-          console.log(`❌ Fetch error for page ${page}:`, response.status, url);
+        if (!res.ok) {
+          console.log(`❌ ScrapingBee error for ${site} page ${page}:`, res.status);
           break;
         }
-
-        const data: ViparisAPIResponse = await response.json();
         
-        // Detailed logging of API response structure
-        console.log(`PAGE ${page}:`);
-        console.log(`  - events.length: ${data.events?.length || 0}`);
-        console.log(`  - totalPages: ${data.totalPages || 'undefined'}`);
-        console.log(`  - totalCount: ${data.totalCount || 'undefined'}`);
-        console.log(`  - page: ${data.page || 'undefined'}`);
-        console.log(`  - size: ${data.size || 'undefined'}`);
+        const data = await res.json();
+        const eventsPage = data.events ?? [];
         
-        if (page === 1) {
-          console.log('🔍 Full API Response structure for page 1:');
-          console.log('  - Response keys:', Object.keys(data));
-          if (data.events && data.events.length > 0) {
-            console.log('  - Sample event keys:', Object.keys(data.events[0]));
-          }
-        }
+        console.log(`📄 SITE ${site} PAGE ${page}: ${eventsPage.length} events found`);
         
-        if (!data.events || data.events.length === 0) {
-          console.log('✅ No more events found, pagination complete');
+        if (!eventsPage.length) {
+          console.log(`✅ No more events for ${site}, moving to next site`);
           break;
         }
-
-        // Update totalPages if provided
-        if (data.totalPages && typeof data.totalPages === 'number') {
-          totalPages = data.totalPages;
-          console.log(`📖 Using totalPages from API: ${totalPages}`);
-        } else if (data.totalCount && typeof data.totalCount === 'number') {
-          const estimatedTotalPages = Math.ceil(data.totalCount / (data.size || 100));
-          totalPages = estimatedTotalPages;
-          console.log(`📖 Calculated totalPages from totalCount: ${totalPages} (${data.totalCount} total events)`);
-        }
-
-        // Filter B2B events
-        const b2bEvents = data.events.filter(event => this.isB2BEvent(event));
-        console.log(`🎯 Page ${page}: ${b2bEvents.length} B2B events after filtering`);
-
-        // Map events
-        const mappedEvents = b2bEvents.map(event => this.toScrapedEvent(event));
-        allEvents.push(...mappedEvents);
-
-        // Check if we should continue
-        if (page >= totalPages || data.events.length < (data.size || 100)) {
-          console.log('✅ Reached last page or incomplete page, pagination complete');
-          break;
-        }
-
+        
+        const mappedEvents = eventsPage.map(toScraped);
+        all.push(...mappedEvents);
+        
         page++;
         
-        // Friendly delay between requests
-        console.log('⏳ Waiting 600ms before next request...');
-        await new Promise(resolve => setTimeout(resolve, 600));
+        // Friendly delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Safety limit
-        if (page > 20) {
-          console.log('⚠️ Reached safety limit (20 pages), stopping');
+        // Safety limit per site
+        if (page > 10) {
+          console.log(`⚠️ Reached safety limit for ${site}, moving to next site`);
           break;
         }
         
       } catch (error) {
-        console.error(`❌ Error fetching page ${page}:`, error);
+        console.error(`❌ Error fetching ${site} page ${page}:`, error);
         break;
       }
     }
-
-    console.log(`🎉 TOTAL COLLECTED: ${allEvents.length} events`);
-    return allEvents;
   }
-
-  async scrapeEvents() {
-    return await this.fetchViparisEvents();
-  }
-
-  private ruleBasedType(text: string): string {
-    const textLower = text.toLowerCase();
-
-    if (textLower.includes('salon')) return 'salon';
-    if (textLower.includes('convention')) return 'convention';
-    if (textLower.includes('congres')) return 'congres';
-    if (textLower.includes('conference')) return 'conference';
-    if (textLower.includes('ceremonie')) return 'ceremonie';
-
-    return 'inconnu';
-  }
+  
+  console.log(`🎉 TOTAL COLLECTED: ${all.length} events`);
+  return all;
 }
 
-class ExpoNantesScraper extends BaseScraper {
-  constructor() {
-    super('Exponantes', 'https://www.exponantes.com');
-  }
+function toScraped(e: any): any {
+  return {
+    name: e.title || 'Événement sans titre',
+    description: e.excerpt || '',
+    start_date: e.beginDate ? new Date(e.beginDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    end_date: e.endDate ? new Date(e.endDate).toISOString().split('T')[0] : null,
+    venue_name: e.venue || 'Viparis',
+    city: e.city || 'Paris',
+    address: e.address || 'Paris, France',
+    location: `${e.city || 'Paris'}, France`,
+    country: 'France',
+    estimated_visitors: null,
+    estimated_exhibitors: null,
+    entry_fee: null,
+    organizer_name: 'Viparis',
+    event_url: `https://www.viparis.com/e/${e.slug || e.id}`,
+    image_url: e.image || null,
+    sector: detectSector((e.title || '') + ' ' + (e.excerpt || '')),
+    tags: [],
+    event_type: ruleBasedType((e.title || '') + ' ' + (e.excerpt || '')),
+    is_b2b: true,
+    scraped_from: 'viparis.com',
+    last_scraped_at: new Date().toISOString(),
+  };
+}
 
+class ExpoNantesScraper {
   async scrapeEvents() {
     try {
-      const url = 'https://www.exponantes.com/agenda-des-evenements-du-parc';
-      console.log(`Scraping ${url}...`);
-      
-      const response = await this.fetchWithRetry(url);
-      const html = await response.text();
-      
-      console.log(`HTML response length: ${html.length}`);
+      console.log('🔄 Running ExpoNantes mock scraper...');
       
       // Mock events for now
       const mockEvents = [
@@ -317,11 +155,11 @@ class ExpoNantesScraper extends BaseScraper {
           estimated_exhibitors: 800,
           entry_fee: 'Gratuit sur inscription',
           organizer_name: 'Exponantes',
-          sector: this.detectSector('technologie innovation'),
-          tags: this.extractTags('technologie innovation digital startup'),
+          sector: detectSector('technologie innovation'),
+          tags: [],
           event_type: 'salon',
           is_b2b: true,
-          scraped_from: url,
+          scraped_from: 'exponantes.com',
           last_scraped_at: new Date().toISOString(),
         }
       ];
@@ -341,46 +179,49 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('🚀 Starting scraping process...');
+    console.log('🚀 Starting scraping process with ScrapingBee...');
     
-    const scrapers = [
-      new ViparisScraper(),
-      new ExpoNantesScraper(),
-    ];
-
     const allEvents = [];
     let totalErrors = 0;
 
-    for (const scraper of scrapers) {
-      try {
-        console.log(`🔄 Running ${scraper.venue} scraper...`);
-        const events = await scraper.scrapeEvents();
-        console.log(`✅ ${scraper.venue} found ${events.length} events`);
-        allEvents.push(...events);
-      } catch (error) {
-        console.error(`❌ Error with ${scraper.venue}:`, error);
-        totalErrors++;
-      }
+    // Scrape Viparis with ScrapingBee
+    try {
+      console.log('🔄 Running Viparis scraper with ScrapingBee...');
+      const viparisEvents = await fetchViparis();
+      console.log(`✅ Viparis found ${viparisEvents.length} events`);
+      allEvents.push(...viparisEvents);
+    } catch (error) {
+      console.error('❌ Error with Viparis:', error);
+      totalErrors++;
+    }
+
+    // Scrape ExpoNantes (mock)
+    try {
+      const expoNantesScraper = new ExpoNantesScraper();
+      const expoEvents = await expoNantesScraper.scrapeEvents();
+      console.log(`✅ ExpoNantes found ${expoEvents.length} events`);
+      allEvents.push(...expoEvents);
+    } catch (error) {
+      console.error('❌ Error with ExpoNantes:', error);
+      totalErrors++;
     }
 
     console.log(`📊 Total events to save: ${allEvents.length}`);
 
     // Save events to database with upsert using event_url as unique key
     let savedCount = 0;
-    let updatedCount = 0;
     let saveErrors = [];
 
-    for (const event of allEvents) {
+    if (allEvents.length > 0) {
       try {
-        // Use upsert with event_url as conflict resolution
         const { data, error } = await supabaseAdmin
           .from('events')
           .upsert(
-            {
+            allEvents.map(event => ({
               ...event,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            },
+            })),
             { 
               onConflict: 'event_url',
               ignoreDuplicates: false
@@ -389,14 +230,14 @@ serve(async (req: Request): Promise<Response> => {
           .select('id');
 
         if (error) {
-          console.error('Upsert error for event:', event.name, error);
+          console.error('Upsert error:', error);
           saveErrors.push(error.message);
         } else {
-          savedCount++;
-          console.log(`💾 Saved/Updated: ${event.name}`);
+          savedCount = data?.length || allEvents.length;
+          console.log(`💾 Successfully saved/updated ${savedCount} events`);
         }
       } catch (error) {
-        console.error('Save error for event:', event.name, error);
+        console.error('Save error:', error);
         saveErrors.push(String(error));
       }
     }
