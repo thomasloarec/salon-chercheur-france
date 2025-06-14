@@ -42,7 +42,7 @@ const CTASection = () => {
             Ne manquez plus aucun salon
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Recevez, au début de chaque mois, les salons incontournables de votre secteur ainsi que les nouveaux événements tout juste publiés. 
+            Recevez chaque mois les salons incontournables de votre secteur ainsi que les nouveaux événements tout juste publiés. 
             Choisissez votre secteur et inscrivez-vous pour ne rien manquer !
           </p>
           

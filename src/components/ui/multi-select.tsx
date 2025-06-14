@@ -30,6 +30,7 @@ interface MultiSelectProps {
   placeholder?: string;
   label?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export function MultiSelect({
@@ -39,6 +40,7 @@ export function MultiSelect({
   placeholder = "Sélectionner...",
   label,
   className,
+  disabled = false,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -67,6 +69,7 @@ export function MultiSelect({
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            disabled={disabled}
             className="w-full justify-between h-auto min-h-[2.5rem]"
           >
             <div className="flex flex-wrap gap-1">
@@ -80,25 +83,27 @@ export function MultiSelect({
                     className="mr-1 mb-1"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleUnselect(value);
+                      if (!disabled) handleUnselect(value);
                     }}
                   >
                     {option?.label}
-                    <button
-                      className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleUnselect(value);
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onClick={() => handleUnselect(value)}
-                    >
-                      <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                    </button>
+                    {!disabled && (
+                      <button
+                        className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleUnselect(value);
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onClick={() => handleUnselect(value)}
+                      >
+                        <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                      </button>
+                    )}
                   </Badge>
                 );
               })}

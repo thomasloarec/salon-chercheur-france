@@ -30,7 +30,7 @@ export const useNewsletterSubscribe = () => {
       console.log('Newsletter subscription successful:', data);
       toast({
         title: "Abonnement confirmé !",
-        description: data.message || "Vous recevrez votre première newsletter début du mois prochain.",
+        description: "Merci ! Vous recevrez votre première newsletter prochainement.",
       });
     },
     onError: (error: any) => {
