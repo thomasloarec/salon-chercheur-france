@@ -7,6 +7,12 @@ export const setupMapInteractions = (
   map: maplibregl.Map,
   eventsWithCoords: any[]
 ) => {
+  // Add safety check for map
+  if (!map) {
+    console.error('Map instance is undefined');
+    return () => {};
+  }
+
   // Handle cluster clicks - show popup with event list (no zoom)
   const handleClusterClick = (e: maplibregl.MapMouseEvent & {
     features?: maplibregl.MapGeoJSONFeature[] | undefined;
@@ -18,9 +24,16 @@ export const setupMapInteractions = (
     const pointCount = feature.properties.point_count as number;
     const source = map.getSource('events') as maplibregl.GeoJSONSource;
 
-    // Correct signature: (clusterId, callback)
+    if (!source) {
+      console.error('Events source not found');
+      return;
+    }
+
+    // Correct signature: (clusterId, limit, offset, callback)
     source.getClusterLeaves(
       clusterId,
+      pointCount, // limit - get all points in cluster
+      0, // offset
       (err: any, leaves: any) => {
         if (err) {
           console.error('Error getting cluster leaves:', err);
@@ -76,6 +89,11 @@ export const setupMapInteractions = (
     const clusterId = feature.properties.cluster_id as number;
     const source = map.getSource('events') as maplibregl.GeoJSONSource;
 
+    if (!source) {
+      console.error('Events source not found');
+      return;
+    }
+
     // Correct signature: (clusterId, callback)
     source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
       if (err) {
@@ -108,34 +126,49 @@ export const setupMapInteractions = (
 
 // Separate functions for cursor effects
 export const setupCursorEffects = (map: maplibregl.Map) => {
-  // Change cursor on hover for clusters
-  map.on('mouseenter', 'cluster-circle', () => {
-    map.getCanvas().style.cursor = 'pointer';
-  });
+  if (!map) {
+    console.error('Map instance is undefined');
+    return () => {};
+  }
 
-  map.on('mouseleave', 'cluster-circle', () => {
+  // Change cursor on hover for clusters
+  const handleClusterMouseEnter = () => {
+    map.getCanvas().style.cursor = 'pointer';
+  };
+
+  const handleClusterMouseLeave = () => {
     map.getCanvas().style.cursor = '';
-  });
+  };
 
   // Change cursor on hover for individual points
-  map.on('mouseenter', 'unclustered-point', () => {
+  const handlePointMouseEnter = () => {
     map.getCanvas().style.cursor = 'pointer';
-  });
+  };
 
-  map.on('mouseleave', 'unclustered-point', () => {
+  const handlePointMouseLeave = () => {
     map.getCanvas().style.cursor = '';
-  });
+  };
+
+  map.on('mouseenter', 'cluster-circle', handleClusterMouseEnter);
+  map.on('mouseleave', 'cluster-circle', handleClusterMouseLeave);
+  map.on('mouseenter', 'unclustered-point', handlePointMouseEnter);
+  map.on('mouseleave', 'unclustered-point', handlePointMouseLeave);
 
   return () => {
-    map.off('mouseenter', 'cluster-circle');
-    map.off('mouseleave', 'cluster-circle');
-    map.off('mouseenter', 'unclustered-point');
-    map.off('mouseleave', 'unclustered-point');
+    map.off('mouseenter', 'cluster-circle', handleClusterMouseEnter);
+    map.off('mouseleave', 'cluster-circle', handleClusterMouseLeave);
+    map.off('mouseenter', 'unclustered-point', handlePointMouseEnter);
+    map.off('mouseleave', 'unclustered-point', handlePointMouseLeave);
   };
 };
 
 // Export individual setup functions for better modularity
 export const setupClusterInteractions = (map: maplibregl.Map) => {
+  if (!map) {
+    console.error('Map instance is undefined');
+    return () => {};
+  }
+
   const handleClusterClick = (e: maplibregl.MapMouseEvent & {
     features?: maplibregl.MapGeoJSONFeature[] | undefined;
   } & Object) => {
@@ -146,7 +179,12 @@ export const setupClusterInteractions = (map: maplibregl.Map) => {
     const pointCount = feature.properties.point_count as number;
     const source = map.getSource('events') as maplibregl.GeoJSONSource;
 
-    source.getClusterLeaves(clusterId, (err: any, leaves: any) => {
+    if (!source) {
+      console.error('Events source not found');
+      return;
+    }
+
+    source.getClusterLeaves(clusterId, pointCount, 0, (err: any, leaves: any) => {
       if (err) {
         console.error('Error getting cluster leaves:', err);
         return;
@@ -178,6 +216,11 @@ export const setupClusterInteractions = (map: maplibregl.Map) => {
     const clusterId = feature.properties.cluster_id as number;
     const source = map.getSource('events') as maplibregl.GeoJSONSource;
 
+    if (!source) {
+      console.error('Events source not found');
+      return;
+    }
+
     source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
       if (err) {
         console.error('Error getting cluster expansion zoom:', err);
@@ -203,6 +246,11 @@ export const setupClusterInteractions = (map: maplibregl.Map) => {
 };
 
 export const setupPointInteractions = (map: maplibregl.Map) => {
+  if (!map) {
+    console.error('Map instance is undefined');
+    return () => {};
+  }
+
   const handleEventClick = (e: maplibregl.MapMouseEvent & {
     features?: maplibregl.MapGeoJSONFeature[] | undefined;
   } & Object) => {

@@ -5,6 +5,12 @@ import { toFeatureCollection, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/utils/mapUt
 import { setupClusterInteractions, setupPointInteractions, setupCursorEffects } from './mapInteractions';
 
 export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithCoords[]) => {
+  // Add safety check for map
+  if (!map) {
+    console.error('Map instance is undefined');
+    return () => {};
+  }
+
   // Remove existing source and layers
   if (map.getSource('events')) {
     if (map.getLayer('cluster-circle')) map.removeLayer('cluster-circle');
@@ -17,7 +23,7 @@ export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithC
     // No events - show France
     map.setCenter(DEFAULT_CENTER);
     map.setZoom(DEFAULT_ZOOM);
-    return;
+    return () => {};
   }
 
   // Wait for map to be loaded before adding sources
@@ -77,10 +83,10 @@ export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithC
       },
     });
 
-    // Setup interactions
-    setupClusterInteractions(map);
-    setupPointInteractions(map);
-    setupCursorEffects(map);
+    // Setup interactions only after layers are added
+    const cleanupCluster = setupClusterInteractions(map);
+    const cleanupPoint = setupPointInteractions(map);
+    const cleanupCursor = setupCursorEffects(map);
 
     // Fit bounds if events are present
     if (eventsWithCoords.length > 0) {
@@ -103,21 +109,34 @@ export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithC
         });
       }
     }
+
+    // Return combined cleanup function
+    return () => {
+      cleanupCluster();
+      cleanupPoint();
+      cleanupCursor();
+      // Cleanup layers and source on unmount
+      if (map.getSource('events')) {
+        if (map.getLayer('cluster-circle')) map.removeLayer('cluster-circle');
+        if (map.getLayer('cluster-count')) map.removeLayer('cluster-count');
+        if (map.getLayer('unclustered-point')) map.removeLayer('unclustered-point');
+        map.removeSource('events');
+      }
+    };
   };
 
   if (map.isStyleLoaded()) {
-    addMapContent();
+    return addMapContent();
   } else {
-    map.on('load', addMapContent);
+    let cleanup: (() => void) | undefined;
+    const onLoad = () => {
+      cleanup = addMapContent();
+    };
+    map.on('load', onLoad);
+    
+    return () => {
+      map.off('load', onLoad);
+      if (cleanup) cleanup();
+    };
   }
-
-  return () => {
-    // Cleanup on unmount
-    if (map.getSource('events')) {
-      if (map.getLayer('cluster-circle')) map.removeLayer('cluster-circle');
-      if (map.getLayer('cluster-count')) map.removeLayer('cluster-count');
-      if (map.getLayer('unclustered-point')) map.removeLayer('unclustered-point');
-      map.removeSource('events');
-    }
-  };
 };
