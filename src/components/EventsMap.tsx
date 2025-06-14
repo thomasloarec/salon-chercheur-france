@@ -203,7 +203,7 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         const childCount = feature.properties?.point_count;
         const source = map.getSource('events') as maplibregl.GeoJSONSource;
 
-        // Récupère toutes les feuilles du cluster - Fixed: removed offset parameter
+        // Récupère toutes les feuilles du cluster - Fixed API call
         source.getClusterLeaves(clusterId, childCount, (err, leaves) => {
           if (err) {
             console.error('Error getting cluster leaves:', err);
@@ -243,7 +243,7 @@ export const EventsMap = ({ events }: EventsMapProps) => {
             maxWidth: '350px',
             className: 'cluster-popup'
           })
-            .setLngLat(feature.geometry.coordinates as [number, number])
+            .setLngLat((feature.geometry as any).coordinates as [number, number])
             .setHTML(html)
             .addTo(map);
         });
@@ -258,10 +258,10 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         if (clusterId !== undefined) {
           try {
             const zoom = await (map.getSource('events') as maplibregl.GeoJSONSource).getClusterExpansionZoom(clusterId);
-            // Fixed: properly cast geometry as Point to access coordinates
-            const coordinates = (features[0].geometry as any).coordinates;
+            // Fixed: properly cast geometry to Point to access coordinates
+            const geometry = features[0].geometry as { coordinates: [number, number] };
             map.easeTo({
-              center: coordinates,
+              center: geometry.coordinates,
               zoom: zoom,
             });
           } catch (err) {
