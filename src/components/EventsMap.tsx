@@ -1,8 +1,8 @@
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import type { Event } from '@/types/event';
 import L from 'leaflet';
 
@@ -13,6 +13,9 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+const DEFAULT_CENTER: L.LatLngExpression = [46.6, 2.4]; // centre France
+const DEFAULT_ZOOM = 5; // suffisant pour voir l'hexagone
 
 // Mock coordinates for demonstration - these would come from geocoding in the future
 const getCityCoordinates = (city: string): [number, number] => {
@@ -33,6 +36,28 @@ const getCityCoordinates = (city: string): [number, number] => {
   return coordinates[city] || [46.5, 2.5]; // Default to center of France
 };
 
+// Hook interne pour ajuster la carte
+function FitBounds({ events }: { events: Array<{ id: string; coordinates: [number, number] }> }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (events.length === 0) {
+      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+      return;
+    }
+
+    const bounds = L.latLngBounds(events.map((e) => e.coordinates));
+    // Si un seul événement, zoom modéré (8) pour éviter un zoom trop rapproché
+    if (events.length === 1) {
+      map.setView(bounds.getCenter(), 8);
+    } else {
+      map.fitBounds(bounds, { padding: [40, 40] });
+    }
+  }, [events, map]);
+
+  return null;
+}
+
 interface EventsMapProps {
   events: Event[];
 }
@@ -50,10 +75,10 @@ export const EventsMap = ({ events }: EventsMapProps) => {
   }));
 
   return (
-    <div className="h-[75vh] w-full rounded-lg overflow-hidden border">
+    <div className="h-[600px] w-full rounded-lg overflow-hidden border">
       <MapContainer 
-        center={[46.5, 2.5]} 
-        zoom={6} 
+        center={DEFAULT_CENTER}
+        zoom={DEFAULT_ZOOM}
         className="h-full w-full"
         scrollWheelZoom={true}
       >
@@ -93,6 +118,9 @@ export const EventsMap = ({ events }: EventsMapProps) => {
             </Popup>
           </Marker>
         ))}
+
+        {/* Ajuste automatiquement la vue */}
+        <FitBounds events={eventsWithCoords} />
       </MapContainer>
     </div>
   );
