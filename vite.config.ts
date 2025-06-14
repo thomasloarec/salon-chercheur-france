@@ -29,7 +29,19 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: ['cheerio', 'boolbase', 'css-select', 'css-what', 'domelementtype', 'domhandler', 'domutils']
+      external: ['cheerio', 'boolbase', 'css-select', 'css-what', 'domelementtype', 'domhandler', 'domutils'],
+      output: {
+        // Prevent automatic preloading of all chunks
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+        }
+      }
+    },
+    // Disable automatic modulePreload for better control
+    modulePreload: {
+      polyfill: false
     }
   },
   optimizeDeps: {
