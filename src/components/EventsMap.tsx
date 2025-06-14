@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
@@ -192,8 +193,63 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         },
       });
 
-      // Interaction - Zoom sur cluster au clic
-      map.on('click', 'cluster-circle', async (e) => {
+      // Interaction - Popup avec liste d'événements sur cluster au clic
+      map.on('click', 'cluster-circle', (e) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+
+        const clusterId = feature.properties?.cluster_id;
+        const childCount = feature.properties?.point_count;
+        const source = map.getSource('events') as maplibregl.GeoJSONSource;
+
+        // Récupère toutes les feuilles du cluster
+        source.getClusterLeaves(clusterId, childCount, 0, (err, leaves) => {
+          if (err) {
+            console.error('Error getting cluster leaves:', err);
+            return;
+          }
+
+          // Tri chronologique
+          const sorted = leaves
+            .map((l) => l.properties)
+            .sort((a, b) =>
+              dayjs(a.start_date).isAfter(dayjs(b.start_date)) ? 1 : -1
+            );
+
+          // Construire le HTML
+          const html = `
+            <div class="max-w-[320px] max-h-[300px] overflow-y-auto">
+              <div class="font-medium text-sm mb-2 text-gray-900">${childCount} événement(s)</div>
+              ${sorted
+                .map(
+                  (ev) => `
+                  <div class="mb-2 pb-2 border-b border-gray-200 last:border-b-0">
+                    <div class="text-xs text-blue-600 mb-1">
+                      📅 ${dayjs(ev.start_date).format('DD/MM/YY')}${ev.start_date !== ev.end_date ? ` - ${dayjs(ev.end_date).format('DD/MM/YY')}` : ''}
+                    </div>
+                    <div class="font-medium text-sm text-gray-900 mb-1">${ev.name}</div>
+                    <div class="text-xs text-gray-600 mb-1">${ev.city}</div>
+                    <div class="text-xs text-blue-600 mb-1">${ev.sector}</div>
+                    ${ev.event_url ? `<a href="${ev.event_url}" target="_blank" rel="noopener noreferrer" class="text-primary text-xs underline">Voir le salon →</a>` : ''}
+                  </div>`
+                )
+                .join('')}
+            </div>
+          `;
+
+          new maplibregl.Popup({ 
+            offset: 25,
+            maxWidth: '350px',
+            className: 'cluster-popup'
+          })
+            .setLngLat(feature.geometry.coordinates as [number, number])
+            .setHTML(html)
+            .addTo(map);
+        });
+      });
+
+      // Interaction optionnelle - Zoom sur cluster au double-clic
+      map.on('dblclick', 'cluster-circle', async (e) => {
         const features = map.queryRenderedFeatures(e.point, {
           layers: ['cluster-circle']
         });
