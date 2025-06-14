@@ -12,6 +12,7 @@ interface EventsMapProps {
 export const EventsMap = ({ events }: EventsMapProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const map = useMaplibreMap(containerRef);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!map) return;
@@ -21,9 +22,26 @@ export const EventsMap = ({ events }: EventsMapProps) => {
 
     // Setup map layers and interactions
     const cleanup = setupMapLayers(map, eventsWithCoords);
+    cleanupRef.current = cleanup;
 
-    return cleanup;
+    return () => {
+      // Ensure cleanup is called when component unmounts or dependencies change
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
   }, [map, events]);
+
+  // Additional cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className="h-[600px] w-full rounded-lg overflow-hidden border">

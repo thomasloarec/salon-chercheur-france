@@ -29,11 +29,10 @@ export const setupMapInteractions = (
       return;
     }
 
-    // Correct signature: (clusterId, limit, offset, callback)
+    // Correct signature: (clusterId, limit, callback)
     source.getClusterLeaves(
       clusterId,
       pointCount, // limit - get all points in cluster
-      0, // offset
       (err: any, leaves: any) => {
         if (err) {
           console.error('Error getting cluster leaves:', err);
@@ -118,9 +117,11 @@ export const setupMapInteractions = (
 
   // Return cleanup function
   return () => {
-    map.off('click', 'cluster-circle', handleClusterClick);
-    map.off('click', 'unclustered-point', handleEventClick);
-    map.off('dblclick', 'cluster-circle', handleClusterDoubleClick);
+    if (map && map.off) {
+      map.off('click', 'cluster-circle', handleClusterClick);
+      map.off('click', 'unclustered-point', handleEventClick);
+      map.off('dblclick', 'cluster-circle', handleClusterDoubleClick);
+    }
   };
 };
 
@@ -133,20 +134,28 @@ export const setupCursorEffects = (map: maplibregl.Map) => {
 
   // Change cursor on hover for clusters
   const handleClusterMouseEnter = () => {
-    map.getCanvas().style.cursor = 'pointer';
+    if (map && map.getCanvas) {
+      map.getCanvas().style.cursor = 'pointer';
+    }
   };
 
   const handleClusterMouseLeave = () => {
-    map.getCanvas().style.cursor = '';
+    if (map && map.getCanvas) {
+      map.getCanvas().style.cursor = '';
+    }
   };
 
   // Change cursor on hover for individual points
   const handlePointMouseEnter = () => {
-    map.getCanvas().style.cursor = 'pointer';
+    if (map && map.getCanvas) {
+      map.getCanvas().style.cursor = 'pointer';
+    }
   };
 
   const handlePointMouseLeave = () => {
-    map.getCanvas().style.cursor = '';
+    if (map && map.getCanvas) {
+      map.getCanvas().style.cursor = '';
+    }
   };
 
   map.on('mouseenter', 'cluster-circle', handleClusterMouseEnter);
@@ -155,10 +164,12 @@ export const setupCursorEffects = (map: maplibregl.Map) => {
   map.on('mouseleave', 'unclustered-point', handlePointMouseLeave);
 
   return () => {
-    map.off('mouseenter', 'cluster-circle', handleClusterMouseEnter);
-    map.off('mouseleave', 'cluster-circle', handleClusterMouseLeave);
-    map.off('mouseenter', 'unclustered-point', handlePointMouseEnter);
-    map.off('mouseleave', 'unclustered-point', handlePointMouseLeave);
+    if (map && map.off) {
+      map.off('mouseenter', 'cluster-circle', handleClusterMouseEnter);
+      map.off('mouseleave', 'cluster-circle', handleClusterMouseLeave);
+      map.off('mouseenter', 'unclustered-point', handlePointMouseEnter);
+      map.off('mouseleave', 'unclustered-point', handlePointMouseLeave);
+    }
   };
 };
 
@@ -184,7 +195,7 @@ export const setupClusterInteractions = (map: maplibregl.Map) => {
       return;
     }
 
-    source.getClusterLeaves(clusterId, pointCount, 0, (err: any, leaves: any) => {
+    source.getClusterLeaves(clusterId, pointCount, (err: any, leaves: any) => {
       if (err) {
         console.error('Error getting cluster leaves:', err);
         return;
@@ -240,8 +251,10 @@ export const setupClusterInteractions = (map: maplibregl.Map) => {
   map.on('dblclick', 'cluster-circle', handleClusterDoubleClick);
 
   return () => {
-    map.off('click', 'cluster-circle', handleClusterClick);
-    map.off('dblclick', 'cluster-circle', handleClusterDoubleClick);
+    if (map && map.off) {
+      map.off('click', 'cluster-circle', handleClusterClick);
+      map.off('dblclick', 'cluster-circle', handleClusterDoubleClick);
+    }
   };
 };
 
@@ -270,6 +283,8 @@ export const setupPointInteractions = (map: maplibregl.Map) => {
   map.on('click', 'unclustered-point', handleEventClick);
 
   return () => {
-    map.off('click', 'unclustered-point', handleEventClick);
+    if (map && map.off) {
+      map.off('click', 'unclustered-point', handleEventClick);
+    }
   };
 };

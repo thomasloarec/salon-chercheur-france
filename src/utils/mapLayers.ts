@@ -11,12 +11,33 @@ export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithC
     return () => {};
   }
 
-  // Remove existing source and layers
-  if (map.getSource('events')) {
-    if (map.getLayer('cluster-circle')) map.removeLayer('cluster-circle');
-    if (map.getLayer('cluster-count')) map.removeLayer('cluster-count');
-    if (map.getLayer('unclustered-point')) map.removeLayer('unclustered-point');
-    map.removeSource('events');
+  // Safe removal function with existence checks
+  const safeRemoveLayer = (layerId: string) => {
+    try {
+      if (map && map.getLayer && map.getLayer(layerId)) {
+        map.removeLayer(layerId);
+      }
+    } catch (error) {
+      console.warn(`Failed to remove layer ${layerId}:`, error);
+    }
+  };
+
+  const safeRemoveSource = (sourceId: string) => {
+    try {
+      if (map && map.getSource && map.getSource(sourceId)) {
+        map.removeSource(sourceId);
+      }
+    } catch (error) {
+      console.warn(`Failed to remove source ${sourceId}:`, error);
+    }
+  };
+
+  // Remove existing source and layers safely
+  if (map.getSource && map.getSource('events')) {
+    safeRemoveLayer('cluster-circle');
+    safeRemoveLayer('cluster-count');
+    safeRemoveLayer('unclustered-point');
+    safeRemoveSource('events');
   }
 
   if (eventsWithCoords.length === 0) {
@@ -110,17 +131,19 @@ export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithC
       }
     }
 
-    // Return combined cleanup function
+    // Return combined cleanup function with safety checks
     return () => {
-      cleanupCluster();
-      cleanupPoint();
-      cleanupCursor();
-      // Cleanup layers and source on unmount
-      if (map.getSource('events')) {
-        if (map.getLayer('cluster-circle')) map.removeLayer('cluster-circle');
-        if (map.getLayer('cluster-count')) map.removeLayer('cluster-count');
-        if (map.getLayer('unclustered-point')) map.removeLayer('unclustered-point');
-        map.removeSource('events');
+      // Clean up interactions first
+      if (cleanupCluster) cleanupCluster();
+      if (cleanupPoint) cleanupPoint();
+      if (cleanupCursor) cleanupCursor();
+      
+      // Cleanup layers and source on unmount with safety checks
+      if (map && map.getSource) {
+        safeRemoveLayer('cluster-circle');
+        safeRemoveLayer('cluster-count');
+        safeRemoveLayer('unclustered-point');
+        safeRemoveSource('events');
       }
     };
   };
@@ -135,7 +158,9 @@ export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithC
     map.on('load', onLoad);
     
     return () => {
-      map.off('load', onLoad);
+      if (map && map.off) {
+        map.off('load', onLoad);
+      }
       if (cleanup) cleanup();
     };
   }
