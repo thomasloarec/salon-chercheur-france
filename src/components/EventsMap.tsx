@@ -1,5 +1,4 @@
 
-
 import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
@@ -199,12 +198,12 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         const feature = e.features?.[0];
         if (!feature) return;
 
-        const clusterId = feature.properties?.cluster_id;
-        const childCount = feature.properties?.point_count;
+        const clusterId = feature.properties?.cluster_id as number;
+        const childCount = feature.properties?.point_count as number;
         const source = map.getSource('events') as maplibregl.GeoJSONSource;
 
-        // Récupère toutes les feuilles du cluster - Fixed API call
-        source.getClusterLeaves(clusterId, childCount, (err, leaves) => {
+        // Utilise la signature correcte : (clusterId, limit, offset, callback)
+        source.getClusterLeaves(clusterId, childCount, 0, (err, leaves) => {
           if (err) {
             console.error('Error getting cluster leaves:', err);
             return;
@@ -238,12 +237,23 @@ export const EventsMap = ({ events }: EventsMapProps) => {
             </div>
           `;
 
+          // Obtenir les coordonnées depuis la géométrie
+          const geometry = feature.geometry;
+          let coordinates: [number, number];
+          
+          if (geometry.type === 'Point') {
+            coordinates = geometry.coordinates as [number, number];
+          } else {
+            console.error('Unexpected geometry type:', geometry.type);
+            return;
+          }
+
           new maplibregl.Popup({ 
             offset: 25,
             maxWidth: '350px',
             className: 'cluster-popup'
           })
-            .setLngLat((feature.geometry as any).coordinates as [number, number])
+            .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
         });
@@ -258,10 +268,19 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         if (clusterId !== undefined) {
           try {
             const zoom = await (map.getSource('events') as maplibregl.GeoJSONSource).getClusterExpansionZoom(clusterId);
-            // Fixed: properly cast geometry to Point to access coordinates
-            const geometry = features[0].geometry as { coordinates: [number, number] };
+            // Obtenir les coordonnées depuis la géométrie
+            const geometry = features[0].geometry;
+            let coordinates: [number, number];
+            
+            if (geometry.type === 'Point') {
+              coordinates = geometry.coordinates as [number, number];
+            } else {
+              console.error('Unexpected geometry type:', geometry.type);
+              return;
+            }
+            
             map.easeTo({
-              center: geometry.coordinates,
+              center: coordinates,
               zoom: zoom,
             });
           } catch (err) {
@@ -376,4 +395,3 @@ export const EventsMap = ({ events }: EventsMapProps) => {
     </div>
   );
 };
-
