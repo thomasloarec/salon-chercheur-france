@@ -3,8 +3,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import Leaflet CSS for map functionality */
-@import 'leaflet/dist/leaflet.css';
+/* Import MapLibre GL CSS for map functionality */
+@import '@maptiler/sdk/dist/maptiler-sdk.css';
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
@@ -138,11 +138,12 @@
   background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
 }
 
-/* Leaflet overrides */
-.leaflet-popup-content-wrapper {
-  border-radius: 8px;
+/* MapLibre GL overrides */
+.maplibregl-control-container {
+  font-family: inherit;
 }
 
-.leaflet-popup-content {
-  margin: 0;
+.maplibregl-popup-content {
+  border-radius: 8px;
+  padding: 0;
 }
