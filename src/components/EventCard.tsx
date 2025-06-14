@@ -8,7 +8,6 @@ import type { Event } from '@/types/event';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
-import CalBtn from './CalBtn';
 
 interface EventCardProps {
   event: Event & { 
@@ -67,21 +66,16 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
             <MapPin className="h-4 w-4 mr-2 text-accent" />
             <span>{event.city}</span>
           </div>
-          <div className="flex gap-2 mt-2">
-            <CalBtn type="gcal" event={event} />
-            <CalBtn type="outlook" event={event} />
-          </div>
-          {event.event_url && (
+          <Link to={`/events/${eventSlug}`}>
             <Button 
               variant="default" 
               size="sm" 
-              className="w-full mt-2 bg-accent hover:bg-accent/90"
-              onClick={() => window.open(event.event_url, '_blank')}
+              className="w-full mt-4 bg-accent hover:bg-accent/90"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Voir le salon
             </Button>
-          )}
+          </Link>
         </div>
       </CardContent>
     </Card>
