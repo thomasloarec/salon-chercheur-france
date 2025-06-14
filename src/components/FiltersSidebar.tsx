@@ -123,8 +123,8 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
           <Label htmlFor="sectors">Secteurs d'activité</Label>
           <MultiSelect
             options={sectorOptions}
-            value={sectors}
-            onValueChange={setSectors}
+            selected={sectors}
+            onChange={setSectors}
             placeholder="Sélectionner des secteurs..."
           />
         </div>
@@ -135,8 +135,8 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
           <Label htmlFor="types">Type d'événement</Label>
           <MultiSelect
             options={typeOptions}
-            value={types}
-            onValueChange={setTypes}
+            selected={types}
+            onChange={setTypes}
             placeholder="Sélectionner des types..."
           />
         </div>
@@ -147,8 +147,8 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
           <Label htmlFor="months">Mois</Label>
           <MultiSelect
             options={monthOptions}
-            value={months}
-            onValueChange={setMonths}
+            selected={months}
+            onChange={setMonths}
             placeholder="Sélectionner des mois..."
           />
         </div>
