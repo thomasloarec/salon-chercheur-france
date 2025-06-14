@@ -1,7 +1,8 @@
 
 import { useSearchParams } from 'react-router-dom';
 import EventCard from './EventCard';
-import { EventsMap } from './EventsMap';
+// TODO: Réactiver EventsMap une fois les erreurs TypeScript corrigées
+// import { EventsMap } from './EventsMap';
 import { Calendar } from 'lucide-react';
 import type { Event } from '@/types/event';
 
@@ -47,7 +48,21 @@ export const EventsResults = ({ events = [], isLoading }: EventsResultsProps) =>
 
   // Affichage conditionnel basé sur la vue actuelle
   if (currentView === 'map') {
-    return <EventsMap events={events} />;
+    // TODO: Réactiver EventsMap une fois les erreurs TypeScript corrigées
+    return (
+      <div className="text-center py-12">
+        <div className="bg-gray-100 rounded-lg p-8">
+          <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">
+            Vue carte temporairement désactivée
+          </h3>
+          <p className="text-gray-500">
+            La vue carte sera bientôt disponible. Utilisez la vue grille en attendant.
+          </p>
+        </div>
+      </div>
+    );
+    // return <EventsMap events={events} />;
   }
 
   // Vue grille par défaut
