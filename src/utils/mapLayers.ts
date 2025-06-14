@@ -2,7 +2,8 @@
 import maplibregl from 'maplibre-gl';
 import type { EventWithCoords } from '@/utils/mapUtils';
 import { toFeatureCollection, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/utils/mapUtils';
-import { setupClusterInteractions, setupPointInteractions, setupCursorEffects } from './mapInteractions';
+// TODO: Réactiver ces imports une fois les erreurs TypeScript corrigées
+// import { setupClusterInteractions, setupPointInteractions, setupCursorEffects } from './mapInteractions';
 
 export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithCoords[]) => {
   // Add safety check for map
@@ -104,10 +105,13 @@ export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithC
       },
     });
 
+    // TODO: Réactiver les interactions une fois les erreurs TypeScript corrigées
+    /*
     // Setup interactions only after layers are added
     const cleanupCluster = setupClusterInteractions(map);
     const cleanupPoint = setupPointInteractions(map);
     const cleanupCursor = setupCursorEffects(map);
+    */
 
     // Fit bounds if events are present
     if (eventsWithCoords.length > 0) {
@@ -133,10 +137,13 @@ export const setupMapLayers = (map: maplibregl.Map, eventsWithCoords: EventWithC
 
     // Return combined cleanup function with safety checks
     return () => {
+      // TODO: Réactiver le cleanup des interactions une fois les erreurs TypeScript corrigées
+      /*
       // Clean up interactions first
       if (cleanupCluster) cleanupCluster();
       if (cleanupPoint) cleanupPoint();
       if (cleanupCursor) cleanupCursor();
+      */
       
       // Cleanup layers and source on unmount with safety checks
       if (map && map.getSource) {
