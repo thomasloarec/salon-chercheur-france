@@ -46,15 +46,24 @@ export const EventsMap = ({ events }: EventsMapProps) => {
 
     // Initialize map only once
     if (!mapRef.current) {
-      const apiKey = import.meta.env.VITE_MAPTILER_KEY;
-      if (!apiKey) {
-        console.error('VITE_MAPTILER_KEY is not defined. Please add your MapTiler API key to your environment variables.');
-        return;
+      const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY;
+      
+      const styleUrl = MAPTILER_KEY
+        ? `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`
+        // Fallback libre (Carto) si la clé est absente en dev
+        : "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
+
+      if (!MAPTILER_KEY) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "⚠️  VITE_MAPTILER_KEY manquant : la carte utilise le style Carto fallback. " +
+          "Ajoute la clé MapTiler pour un rendu optimisé."
+        );
       }
 
       mapRef.current = new maplibregl.Map({
         container: containerRef.current,
-        style: `https://api.maptiler.com/maps/streets/style.json?key=${apiKey}`,
+        style: styleUrl,
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
       });
