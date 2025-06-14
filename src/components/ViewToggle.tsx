@@ -1,10 +1,17 @@
 
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, List, Map } from 'lucide-react';
-import { useSearchParam } from '@/hooks/useSearchParams';
+import { useSearchParams } from 'react-router-dom';
 
 export const ViewToggle = () => {
-  const [view, setView] = useSearchParam('view', 'grid');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get('view') || 'grid';
+  
+  const setView = (newView: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('view', newView);
+    setSearchParams(newParams);
+  };
   
   return (
     <div className="mb-4 flex gap-2">

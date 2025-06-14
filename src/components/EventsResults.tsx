@@ -1,5 +1,5 @@
 
-import { useSearchParam } from '@/hooks/useSearchParams';
+import { useSearchParams } from 'react-router-dom';
 import EventCard from './EventCard';
 import { EventsMap } from './EventsMap';
 import { Calendar } from 'lucide-react';
@@ -11,7 +11,8 @@ interface EventsResultsProps {
 }
 
 export const EventsResults = ({ events = [], isLoading }: EventsResultsProps) => {
-  const [view] = useSearchParam('view', 'grid');
+  const [searchParams] = useSearchParams();
+  const view = searchParams.get('view') || 'grid';
 
   if (isLoading) {
     return (
