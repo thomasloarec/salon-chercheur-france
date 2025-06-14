@@ -41,6 +41,7 @@ const Events = () => {
       initialFilters.city = cityParam;
     }
     
+    console.log('Initial filters from URL:', initialFilters);
     setFilters(initialFilters);
   }, [searchParams]);
 
@@ -48,6 +49,7 @@ const Events = () => {
   const displayEvents = events?.filter(event => event.event_type !== 'loisir') || [];
 
   const handleFiltersChange = (newFilters: SearchFilters) => {
+    console.log('Filters changed:', newFilters);
     setFilters(newFilters);
     
     // Update URL params
@@ -108,6 +110,7 @@ const Events = () => {
           <FiltersSidebar 
             onClose={() => setIsSidebarOpen(false)}
             onFiltersChange={handleFiltersChange}
+            initialFilters={filters}
           />
         </aside>
 
@@ -134,6 +137,11 @@ const Events = () => {
               {Object.keys(filters).length > 0 && (
                 <p className="text-gray-600 mt-1">
                   Résultats filtrés
+                  {filters.sectors && filters.sectors.length > 0 && (
+                    <span className="ml-2 text-accent font-medium">
+                      • Secteur: {filters.sectors.join(', ')}
+                    </span>
+                  )}
                 </p>
               )}
             </div>

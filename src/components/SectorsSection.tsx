@@ -1,59 +1,74 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 const sectors = [
   {
     name: "Technologie & Innovation",
     count: 156,
     color: "bg-blue-100 text-blue-800",
-    examples: ["Informatique", "IA & Robotique", "Télécoms", "Startups"]
+    examples: ["Informatique", "IA & Robotique", "Télécoms", "Startups"],
+    searchParam: "Technologie"
   },
   {
     name: "Industrie & Manufacturing",
     count: 142,
     color: "bg-gray-100 text-gray-800",
-    examples: ["Mécanique", "Automobile", "Aéronautique", "Métallurgie"]
+    examples: ["Mécanique", "Automobile", "Aéronautique", "Métallurgie"],
+    searchParam: "Industrie"
   },
   {
     name: "Santé & Médical",
     count: 98,
     color: "bg-green-100 text-green-800",
-    examples: ["Médical", "Pharmaceutique", "Biotechnologies", "E-santé"]
+    examples: ["Médical", "Pharmaceutique", "Biotechnologies", "E-santé"],
+    searchParam: "Santé"
   },
   {
     name: "BTP & Construction",
     count: 87,
     color: "bg-orange-100 text-orange-800",
-    examples: ["Bâtiment", "Travaux Publics", "Architecture", "Immobilier"]
+    examples: ["Bâtiment", "Travaux Publics", "Architecture", "Immobilier"],
+    searchParam: "BTP"
   },
   {
     name: "Commerce & Distribution",
     count: 134,
     color: "bg-purple-100 text-purple-800",
-    examples: ["Retail", "E-commerce", "Franchise", "Logistique"]
+    examples: ["Retail", "E-commerce", "Franchise", "Logistique"],
+    searchParam: "Commerce"
   },
   {
     name: "Alimentation & Agriculture",
     count: 76,
     color: "bg-green-100 text-green-800",
-    examples: ["Agroalimentaire", "Agriculture", "Viticulture", "Bio"]
+    examples: ["Agroalimentaire", "Agriculture", "Viticulture", "Bio"],
+    searchParam: "Alimentation"
   },
   {
     name: "Énergie & Environnement",
     count: 65,
     color: "bg-emerald-100 text-emerald-800",
-    examples: ["Énergies renouvelables", "Environnement", "Développement durable"]
+    examples: ["Énergies renouvelables", "Environnement", "Développement durable"],
+    searchParam: "Énergie"
   },
   {
     name: "Services B2B",
     count: 118,
     color: "bg-indigo-100 text-indigo-800",
-    examples: ["Conseil", "Finance", "RH", "Communication"]
+    examples: ["Conseil", "Finance", "RH", "Communication"],
+    searchParam: "Services"
   }
 ];
 
 const SectorsSection = () => {
+  const navigate = useNavigate();
+
+  const handleSectorClick = (searchParam: string) => {
+    navigate(`/events?sectors=${encodeURIComponent(searchParam)}`);
+  };
+
   return (
     <section id="secteurs" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,6 +86,7 @@ const SectorsSection = () => {
             <Card 
               key={index} 
               className="hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group border-2 hover:border-accent/20"
+              onClick={() => handleSectorClick(sector.searchParam)}
             >
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
@@ -98,7 +114,10 @@ const SectorsSection = () => {
         </div>
 
         <div className="text-center mt-12">
-          <button className="text-accent font-semibold hover:underline text-lg">
+          <button 
+            className="text-accent font-semibold hover:underline text-lg"
+            onClick={() => navigate('/events')}
+          >
             Voir tous les secteurs →
           </button>
         </div>

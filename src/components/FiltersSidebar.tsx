@@ -1,151 +1,169 @@
 
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, MapPin } from 'lucide-react';
-import { useSectors } from '@/hooks/useEvents';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { eachMonthOfInterval, format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { EVENT_TYPES } from '@/constants/eventTypes';
-import { useSearchParam } from '@/hooks/useSearchParams';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import type { SearchFilters } from '@/types/event';
+
+const sectorOptions = [
+  { value: 'Technologie', label: 'Technologie & Innovation' },
+  { value: 'Industrie', label: 'Industrie & Manufacturing' },
+  { value: 'Santé', label: 'Santé & Médical' },
+  { value: 'BTP', label: 'BTP & Construction' },
+  { value: 'Commerce', label: 'Commerce & Distribution' },
+  { value: 'Alimentation', label: 'Alimentation & Agriculture' },
+  { value: 'Énergie', label: 'Énergie & Environnement' },
+  { value: 'Services', label: 'Services B2B' },
+];
+
+const typeOptions = [
+  { value: 'salon', label: 'Salon' },
+  { value: 'convention', label: 'Convention' },
+  { value: 'congres', label: 'Congrès' },
+  { value: 'conference', label: 'Conférence' },
+];
+
+const monthOptions = [
+  { value: '1', label: 'Janvier' },
+  { value: '2', label: 'Février' },
+  { value: '3', label: 'Mars' },
+  { value: '4', label: 'Avril' },
+  { value: '5', label: 'Mai' },
+  { value: '6', label: 'Juin' },
+  { value: '7', label: 'Juillet' },
+  { value: '8', label: 'Août' },
+  { value: '9', label: 'Septembre' },
+  { value: '10', label: 'Octobre' },
+  { value: '11', label: 'Novembre' },
+  { value: '12', label: 'Décembre' },
+];
 
 interface FiltersSidebarProps {
-  onClose?: () => void;
-  onFiltersChange: (filters: any) => void;
+  onClose: () => void;
+  onFiltersChange: (filters: SearchFilters) => void;
+  initialFilters?: SearchFilters;
 }
 
-export const FiltersSidebar = ({ onClose, onFiltersChange }: FiltersSidebarProps) => {
-  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
-  const [city, setCity] = useState('');
-  
-  const { data: sectors } = useSectors();
+export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }: FiltersSidebarProps) => {
+  const [sectors, setSectors] = useState<string[]>(initialFilters.sectors || []);
+  const [types, setTypes] = useState<string[]>(initialFilters.types || []);
+  const [months, setMonths] = useState<string[]>(
+    initialFilters.months?.map(m => m.toString()) || []
+  );
+  const [city, setCity] = useState(initialFilters.city || '');
 
-  // Generate months list (remaining months of current year + next year)
-  const months = eachMonthOfInterval({
-    start: new Date(),
-    end: new Date(new Date().getFullYear() + 1, 11, 31)
-  }).map(date => ({
-    value: (date.getMonth() + 1).toString(),
-    label: format(date, 'MMMM yyyy', { locale: fr })
-  }));
-
-  const sectorOptions = sectors?.map(sector => ({
-    value: sector.name,
-    label: sector.name
-  })) || [];
-
-  const handleApplyFilters = () => {
-    onFiltersChange({
-      sectors: selectedSectors,
-      types: selectedTypes,
-      months: selectedMonths.map(m => parseInt(m)),
-      city: city || undefined,
-    });
-  };
-
-  const handleReset = () => {
-    setSelectedSectors([]);
-    setSelectedTypes([]);
-    setSelectedMonths([]);
-    setCity('');
-    onFiltersChange({});
-  };
-
+  // Update local state when initialFilters change
   useEffect(() => {
-    handleApplyFilters();
-  }, [selectedSectors, selectedTypes, selectedMonths, city]);
+    console.log('FiltersSidebar received initial filters:', initialFilters);
+    setSectors(initialFilters.sectors || []);
+    setTypes(initialFilters.types || []);
+    setMonths(initialFilters.months?.map(m => m.toString()) || []);
+    setCity(initialFilters.city || '');
+  }, [initialFilters]);
+
+  // Apply filters when any filter changes
+  useEffect(() => {
+    const filters: SearchFilters = {};
+    
+    if (sectors.length > 0) {
+      filters.sectors = sectors;
+    }
+    
+    if (types.length > 0) {
+      filters.types = types;
+    }
+    
+    if (months.length > 0) {
+      filters.months = months.map(m => parseInt(m));
+    }
+    
+    if (city.trim()) {
+      filters.city = city.trim();
+    }
+    
+    console.log('FiltersSidebar applying filters:', filters);
+    onFiltersChange(filters);
+  }, [sectors, types, months, city, onFiltersChange]);
+
+  const clearAllFilters = () => {
+    setSectors([]);
+    setTypes([]);
+    setMonths([]);
+    setCity('');
+  };
+
+  const hasActiveFilters = sectors.length > 0 || types.length > 0 || months.length > 0 || city.trim();
 
   return (
-    <div className="h-full bg-white border-r border-gray-200 overflow-y-auto">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Filtres</h2>
-          {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose} className="md:hidden">
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+    <div className="h-full bg-white border-r overflow-y-auto">
+      <div className="p-4 border-b">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Filtres</h2>
+          <Button variant="ghost" size="sm" onClick={onClose} className="md:hidden">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        {hasActiveFilters && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={clearAllFilters}
+            className="mt-2 w-full"
+          >
+            Réinitialiser
+          </Button>
+        )}
+      </div>
+
+      <div className="p-4 space-y-6">
+        <div>
+          <Label htmlFor="sectors">Secteurs d'activité</Label>
+          <MultiSelect
+            options={sectorOptions}
+            value={sectors}
+            onValueChange={setSectors}
+            placeholder="Sélectionner des secteurs..."
+          />
         </div>
 
-        <div className="space-y-6">
-          {/* Secteurs */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Secteurs d'activité</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MultiSelect
-                options={sectorOptions}
-                selected={selectedSectors}
-                onChange={setSelectedSectors}
-                placeholder="Tous les secteurs"
-              />
-            </CardContent>
-          </Card>
+        <Separator />
 
-          {/* Types d'événement */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Type d'événement</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MultiSelect
-                options={EVENT_TYPES}
-                selected={selectedTypes}
-                onChange={setSelectedTypes}
-                placeholder="Tous les types"
-              />
-            </CardContent>
-          </Card>
+        <div>
+          <Label htmlFor="types">Type d'événement</Label>
+          <MultiSelect
+            options={typeOptions}
+            value={types}
+            onValueChange={setTypes}
+            placeholder="Sélectionner des types..."
+          />
+        </div>
 
-          {/* Ville */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Ville / Région</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Ville ou région"
-                  className="pl-10"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
+        <Separator />
 
-          {/* Mois */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Période</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MultiSelect
-                options={months}
-                selected={selectedMonths}
-                onChange={setSelectedMonths}
-                placeholder="Tous les mois"
-              />
-            </CardContent>
-          </Card>
+        <div>
+          <Label htmlFor="months">Mois</Label>
+          <MultiSelect
+            options={monthOptions}
+            value={months}
+            onValueChange={setMonths}
+            placeholder="Sélectionner des mois..."
+          />
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleReset}
-              className="flex-1"
-            >
-              Réinitialiser
-            </Button>
-          </div>
+        <Separator />
+
+        <div>
+          <Label htmlFor="city">Ville</Label>
+          <Input
+            id="city"
+            type="text"
+            placeholder="Entrez une ville..."
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+          />
         </div>
       </div>
     </div>
