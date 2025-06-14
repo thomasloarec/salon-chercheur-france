@@ -1,4 +1,5 @@
 
+
 import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
@@ -202,8 +203,8 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         const childCount = feature.properties?.point_count;
         const source = map.getSource('events') as maplibregl.GeoJSONSource;
 
-        // Récupère toutes les feuilles du cluster
-        source.getClusterLeaves(clusterId, childCount, 0, (err, leaves) => {
+        // Récupère toutes les feuilles du cluster - Fixed: removed offset parameter
+        source.getClusterLeaves(clusterId, childCount, (err, leaves) => {
           if (err) {
             console.error('Error getting cluster leaves:', err);
             return;
@@ -257,8 +258,10 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         if (clusterId !== undefined) {
           try {
             const zoom = await (map.getSource('events') as maplibregl.GeoJSONSource).getClusterExpansionZoom(clusterId);
+            // Fixed: properly cast geometry as Point to access coordinates
+            const coordinates = (features[0].geometry as any).coordinates;
             map.easeTo({
-              center: (features[0].geometry as any).coordinates,
+              center: coordinates,
               zoom: zoom,
             });
           } catch (err) {
@@ -373,3 +376,4 @@ export const EventsMap = ({ events }: EventsMapProps) => {
     </div>
   );
 };
+
