@@ -2,7 +2,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin, ExternalLink } from 'lucide-react';
+import { CalendarDays, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import { format } from 'date-fns';
@@ -72,7 +72,6 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
               size="sm" 
               className="w-full mt-4 bg-accent hover:bg-accent/90"
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
               Voir le salon
             </Button>
           </Link>
