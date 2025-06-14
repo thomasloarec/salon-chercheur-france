@@ -1,5 +1,5 @@
 
-import type { Map as MaplibreMap, MapMouseEvent, MapTouchEvent, GeoJSONSource } from 'maplibre-gl';
+import type { Map as MaplibreMap, MapLayerMouseEvent, GeoJSONSource } from 'maplibre-gl';
 import { renderEventPopup, renderClusterPopup } from './mapPopupRenderers';
 
 export const setupMapInteractions = (map: MaplibreMap) => {
@@ -21,17 +21,17 @@ export const setupMapInteractions = (map: MaplibreMap) => {
   });
 
   // Click handler for clusters
-  map.on('click', 'clusters', (e: MapMouseEvent | MapTouchEvent) => {
+  map.on('click', 'clusters', (e: MapLayerMouseEvent) => {
     const features = map.queryRenderedFeatures(e.point, {
       layers: ['clusters']
     });
 
     if (!features.length) return;
 
-    const clusterId = features[0].properties.cluster_id;
+    const clusterId = features[0].properties?.cluster_id;
     const source = map.getSource('events') as GeoJSONSource;
     
-    if (source && source.getClusterExpansionZoom) {
+    if (source && source.getClusterExpansionZoom && clusterId) {
       source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
         if (err) return;
 
@@ -44,7 +44,7 @@ export const setupMapInteractions = (map: MaplibreMap) => {
   });
 
   // Click handler for individual events
-  map.on('click', 'unclustered-point', (e: MapMouseEvent | MapTouchEvent) => {
+  map.on('click', 'unclustered-point', (e: MapLayerMouseEvent) => {
     const features = map.queryRenderedFeatures(e.point, {
       layers: ['unclustered-point']
     });
@@ -65,7 +65,7 @@ export const setupMapInteractions = (map: MaplibreMap) => {
   });
 
   // Show cluster popup on hover
-  map.on('mouseenter', 'clusters', (e: MapMouseEvent | MapTouchEvent) => {
+  map.on('mouseenter', 'clusters', (e: MapLayerMouseEvent) => {
     const features = map.queryRenderedFeatures(e.point, {
       layers: ['clusters']
     });
@@ -73,12 +73,12 @@ export const setupMapInteractions = (map: MaplibreMap) => {
     if (!features.length) return;
 
     const feature = features[0];
-    const clusterId = feature.properties.cluster_id;
-    const pointCount = feature.properties.point_count;
+    const clusterId = feature.properties?.cluster_id;
+    const pointCount = feature.properties?.point_count;
     const coordinates = (feature.geometry as any).coordinates.slice();
     const source = map.getSource('events') as GeoJSONSource;
 
-    if (source && source.getClusterLeaves) {
+    if (source && source.getClusterLeaves && clusterId && pointCount) {
       source.getClusterLeaves(clusterId, pointCount, 0, (err: any, leaves: any) => {
         if (err) return;
         
@@ -100,17 +100,17 @@ export const setupMapInteractions = (map: MaplibreMap) => {
 // Export individual setup functions for compatibility
 export const setupClusterInteractions = (map: MaplibreMap) => {
   // Click handler for clusters
-  map.on('click', 'clusters', (e: MapMouseEvent | MapTouchEvent) => {
+  const clusterClickHandler = (e: MapLayerMouseEvent) => {
     const features = map.queryRenderedFeatures(e.point, {
       layers: ['clusters']
     });
 
     if (!features.length) return;
 
-    const clusterId = features[0].properties.cluster_id;
+    const clusterId = features[0].properties?.cluster_id;
     const source = map.getSource('events') as GeoJSONSource;
     
-    if (source && source.getClusterExpansionZoom) {
+    if (source && source.getClusterExpansionZoom && clusterId) {
       source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
         if (err) return;
 
@@ -120,16 +120,18 @@ export const setupClusterInteractions = (map: MaplibreMap) => {
         });
       });
     }
-  });
+  };
+
+  map.on('click', 'clusters', clusterClickHandler);
 
   return () => {
-    map.off('click', 'clusters');
+    map.off('click', 'clusters', clusterClickHandler);
   };
 };
 
 export const setupPointInteractions = (map: MaplibreMap) => {
   // Click handler for individual events
-  map.on('click', 'unclustered-point', (e: MapMouseEvent | MapTouchEvent) => {
+  const pointClickHandler = (e: MapLayerMouseEvent) => {
     const features = map.queryRenderedFeatures(e.point, {
       layers: ['unclustered-point']
     });
@@ -144,35 +146,42 @@ export const setupPointInteractions = (map: MaplibreMap) => {
     }
 
     renderEventPopup(map, coordinates, feature.properties);
-  });
+  };
+
+  map.on('click', 'unclustered-point', pointClickHandler);
 
   return () => {
-    map.off('click', 'unclustered-point');
+    map.off('click', 'unclustered-point', pointClickHandler);
   };
 };
 
 export const setupCursorEffects = (map: MaplibreMap) => {
-  // Change cursor on hover
-  map.on('mouseenter', 'clusters', () => {
+  // Change cursor on hover handlers
+  const clusterMouseEnter = () => {
     map.getCanvas().style.cursor = 'pointer';
-  });
+  };
 
-  map.on('mouseleave', 'clusters', () => {
+  const clusterMouseLeave = () => {
     map.getCanvas().style.cursor = '';
-  });
+  };
 
-  map.on('mouseenter', 'unclustered-point', () => {
+  const pointMouseEnter = () => {
     map.getCanvas().style.cursor = 'pointer';
-  });
+  };
 
-  map.on('mouseleave', 'unclustered-point', () => {
+  const pointMouseLeave = () => {
     map.getCanvas().style.cursor = '';
-  });
+  };
+
+  map.on('mouseenter', 'clusters', clusterMouseEnter);
+  map.on('mouseleave', 'clusters', clusterMouseLeave);
+  map.on('mouseenter', 'unclustered-point', pointMouseEnter);
+  map.on('mouseleave', 'unclustered-point', pointMouseLeave);
 
   return () => {
-    map.off('mouseenter', 'clusters');
-    map.off('mouseleave', 'clusters');
-    map.off('mouseenter', 'unclustered-point');
-    map.off('mouseleave', 'unclustered-point');
+    map.off('mouseenter', 'clusters', clusterMouseEnter);
+    map.off('mouseleave', 'clusters', clusterMouseLeave);
+    map.off('mouseenter', 'unclustered-point', pointMouseEnter);
+    map.off('mouseleave', 'unclustered-point', pointMouseLeave);
   };
 };

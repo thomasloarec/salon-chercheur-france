@@ -1,8 +1,10 @@
 
+import { Popup } from 'maplibre-gl';
+import type { Map as MaplibreMap } from 'maplibre-gl';
 import dayjs from 'dayjs';
 import { generateEventSlug } from './eventUtils';
 
-export const renderClusterPopup = (events: any[], count: number): string => {
+export const renderClusterPopup = (map: MaplibreMap, coordinates: [number, number], events: any[]) => {
   const eventsHtml = events
     .map((event) => {
       const slug = generateEventSlug(event);
@@ -28,20 +30,25 @@ export const renderClusterPopup = (events: any[], count: number): string => {
     })
     .join('');
 
-  return `
+  const popupHtml = `
     <div style="max-width: 320px; max-height: 300px; overflow-y: auto;">
       <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px; color: #333;">
-        ${count} événement(s)
+        ${events.length} événement(s)
       </div>
       ${eventsHtml}
     </div>
   `;
+
+  new Popup()
+    .setLngLat(coordinates)
+    .setHTML(popupHtml)
+    .addTo(map);
 };
 
-export const renderEventPopup = (event: any): string => {
+export const renderEventPopup = (map: MaplibreMap, coordinates: [number, number], event: any) => {
   const slug = generateEventSlug(event);
   
-  return `
+  const popupHtml = `
     <div style="width: 280px;">
       <img 
         src="${event.image_url || '/placeholder.svg'}" 
@@ -71,4 +78,9 @@ export const renderEventPopup = (event: any): string => {
       </a>
     </div>
   `;
+
+  new Popup()
+    .setLngLat(coordinates)
+    .setHTML(popupHtml)
+    .addTo(map);
 };
