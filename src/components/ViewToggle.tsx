@@ -2,11 +2,21 @@
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, List, Map } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 export const ViewToggle = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const currentView = searchParams.get('view') ?? 'grid';
+  
+  // Synchronisation initiale : forcer ?view=grid si absent
+  useEffect(() => {
+    if (!searchParams.get('view')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('view', 'grid');
+      navigate({ search: newParams.toString() }, { replace: true });
+    }
+  }, [searchParams, navigate]);
   
   const handleChangeView = (view: 'grid' | 'list' | 'map') => {
     // Clone les params pour préserver les filtres existants

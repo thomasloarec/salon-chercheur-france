@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
 import { ViewToggle } from '@/components/ViewToggle';
@@ -53,12 +53,19 @@ const Events = () => {
   // Filter out 'loisir' events for display
   const displayEvents = events?.filter(event => event.event_type !== 'loisir') || [];
 
+  // Memoize the callback to prevent infinite re-renders
   const handleFiltersChange = useCallback((newFilters: SearchFilters) => {
     console.log('Filters changed:', newFilters);
     setFilters(newFilters);
     
     // Update URL params
     const newParams = new URLSearchParams();
+    
+    // Preserve view parameter
+    const currentView = searchParams.get('view');
+    if (currentView) {
+      newParams.set('view', currentView);
+    }
     
     if (newFilters.sectors && newFilters.sectors.length > 0) {
       newParams.set('sectors', newFilters.sectors.join(','));
@@ -77,7 +84,15 @@ const Events = () => {
     }
     
     setSearchParams(newParams);
-  }, [setSearchParams]);
+  }, [searchParams, setSearchParams]);
+
+  // Memoize initial filters to prevent unnecessary re-renders
+  const memoizedInitialFilters = useMemo(() => filters, [
+    filters.sectors?.join(','),
+    filters.types?.join(','), 
+    filters.months?.join(','),
+    filters.city
+  ]);
 
   if (error) {
     return (
@@ -115,7 +130,7 @@ const Events = () => {
           <FiltersSidebar 
             onClose={() => setIsSidebarOpen(false)}
             onFiltersChange={handleFiltersChange}
-            initialFilters={filters}
+            initialFilters={memoizedInitialFilters}
           />
         </aside>
 

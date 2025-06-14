@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
@@ -63,8 +64,8 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     setCity(initialFilters.city || '');
   }, [initialFilters.sectors, initialFilters.types, initialFilters.months, initialFilters.city]);
 
-  // Stabilize the filter application function
-  const applyFilters = useCallback(() => {
+  // Memoize the filters to prevent infinite loops
+  const stableFilters = useMemo(() => {
     const filters: SearchFilters = {};
     
     if (sectors.length > 0) {
@@ -83,14 +84,14 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
       filters.city = city.trim();
     }
     
-    console.log('FiltersSidebar applying filters:', filters);
-    onFiltersChange(filters);
-  }, [sectors, types, months, city, onFiltersChange]);
+    return filters;
+  }, [sectors, types, months, city]);
 
-  // Apply filters when any filter changes
+  // Apply filters when stable filters change
   useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
+    console.log('FiltersSidebar applying filters:', stableFilters);
+    onFiltersChange(stableFilters);
+  }, [stableFilters, onFiltersChange]);
 
   const clearAllFilters = () => {
     setSectors([]);
