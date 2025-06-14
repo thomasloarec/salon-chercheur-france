@@ -4,6 +4,7 @@ import maplibregl from 'maplibre-gl';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import dayjs from 'dayjs';
 import type { Event } from '@/types/event';
 
 const DEFAULT_CENTER: [number, number] = [2.4, 46.6]; // France centre (lng, lat)
@@ -28,6 +29,35 @@ const getCityCoordinates = (city: string): [number, number] => {
   return coordinates[city] || [2.5, 46.5]; // Default to center of France (lng, lat)
 };
 
+interface EventWithCoords extends Event {
+  coordinates: [number, number];
+}
+
+interface EventGroup {
+  lat: number;
+  lng: number;
+  events: EventWithCoords[];
+}
+
+function groupByLatLng(events: EventWithCoords[]): EventGroup[] {
+  const groups: Record<string, EventWithCoords[]> = {};
+  
+  events.forEach((event) => {
+    const [lng, lat] = event.coordinates;
+    const key = `${lat.toFixed(5)},${lng.toFixed(5)}`; // 5 décimales ≈ 1 m
+    groups[key] = groups[key] ? [...groups[key], event] : [event];
+  });
+  
+  return Object.entries(groups).map(([key, evts]) => {
+    const [lat, lng] = key.split(",").map(Number);
+    // Tri chronologique
+    evts.sort((a, b) =>
+      dayjs(a.start_date).isAfter(dayjs(b.start_date)) ? 1 : -1
+    );
+    return { lat, lng, events: evts };
+  });
+}
+
 interface EventsMapProps {
   events: Event[];
 }
@@ -38,7 +68,7 @@ export const EventsMap = ({ events }: EventsMapProps) => {
   const markersRef = useRef<maplibregl.Marker[]>([]);
 
   const formatDate = (dateStr: string) => {
-    return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
+    return dayjs(dateStr).format('DD/MM/YY');
   };
 
   useEffect(() => {
@@ -77,39 +107,70 @@ export const EventsMap = ({ events }: EventsMapProps) => {
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Add markers for events
-    const eventsWithCoords = events.map(event => ({
-      ...event,
-      coordinates: getCityCoordinates(event.city)
-    }));
+    // Filter events with coordinates and add mock coordinates
+    const eventsWithCoords: EventWithCoords[] = events
+      .map(event => ({
+        ...event,
+        coordinates: getCityCoordinates(event.city)
+      }))
+      .filter(event => {
+        const [lng, lat] = event.coordinates;
+        return typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng);
+      });
 
-    eventsWithCoords.forEach(event => {
-      // Create popup content
+    // Group events by coordinates
+    const groupedEvents = groupByLatLng(eventsWithCoords);
+
+    // Add markers for event groups
+    groupedEvents.forEach(group => {
+      const eventCount = group.events.length;
+      
+      // Create popup content with all events in the group
       const popupContent = `
-        <div class="space-y-1 w-[200px]">
-          <img 
-            src="${event.image_url || '/placeholder.svg'}" 
-            alt="${event.name}"
-            class="h-24 w-full object-cover rounded"
-          />
-          <strong class="block text-sm font-semibold">${event.name}</strong>
-          <span class="text-xs text-gray-600">
-            ${formatDate(event.start_date)}${event.start_date !== event.end_date ? ` - ${formatDate(event.end_date)}` : ''}
-          </span>
-          <p class="text-xs text-gray-600">${event.city}</p>
-          <p class="text-xs text-blue-600">${event.sector}</p>
-          ${event.event_url ? `<a href="${event.event_url}" target="_blank" rel="noopener noreferrer" class="text-primary text-xs underline block mt-1">Voir le salon →</a>` : ''}
+        <div class="space-y-2 w-[280px] max-h-[400px] overflow-y-auto">
+          <div class="font-semibold text-sm mb-2 text-gray-800">
+            ${eventCount > 1 ? `${eventCount} événements à ce lieu` : 'Événement'}
+          </div>
+          ${group.events.map(event => `
+            <div class="border-b border-gray-200 pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
+              <img 
+                src="${event.image_url || '/placeholder.svg'}" 
+                alt="${event.name}"
+                class="h-16 w-full object-cover rounded mb-1"
+              />
+              <div class="text-xs text-blue-600 mb-1">
+                📅 ${formatDate(event.start_date)}${event.start_date !== event.end_date ? ` - ${formatDate(event.end_date)}` : ''}
+              </div>
+              <div class="font-medium text-sm text-gray-900 mb-1">${event.name}</div>
+              <div class="text-xs text-gray-600 mb-1">${event.city}</div>
+              <div class="text-xs text-blue-600 mb-1">${event.sector}</div>
+              ${event.event_url ? `<a href="${event.event_url}" target="_blank" rel="noopener noreferrer" class="text-primary text-xs underline">Voir le salon →</a>` : ''}
+            </div>
+          `).join('')}
         </div>
       `;
 
       const popup = new maplibregl.Popup({
-        offset: 25
+        offset: 25,
+        maxWidth: '300px'
       }).setHTML(popupContent);
 
+      // Create marker with badge if multiple events
+      const markerElement = document.createElement('div');
+      markerElement.className = 'relative';
+      markerElement.innerHTML = `
+        <div class="w-6 h-6 bg-[#e8552b] rounded-full border-2 border-white shadow-lg"></div>
+        ${eventCount > 1 ? `
+          <div class="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
+            ${eventCount}
+          </div>
+        ` : ''}
+      `;
+
       const marker = new maplibregl.Marker({
-        color: '#e8552b'
+        element: markerElement
       })
-        .setLngLat(event.coordinates)
+        .setLngLat([group.lng, group.lat])
         .setPopup(popup)
         .addTo(map);
 
@@ -117,15 +178,15 @@ export const EventsMap = ({ events }: EventsMapProps) => {
     });
 
     // Fit bounds if events are present
-    if (eventsWithCoords.length > 0) {
-      const coordinates = eventsWithCoords.map(e => e.coordinates);
+    if (groupedEvents.length > 0) {
+      const coordinates = groupedEvents.map(g => [g.lng, g.lat] as [number, number]);
       
       if (coordinates.length === 1) {
-        // Single event - moderate zoom
+        // Single group - moderate zoom
         map.setCenter(coordinates[0]);
         map.setZoom(8);
       } else {
-        // Multiple events - fit bounds
+        // Multiple groups - fit bounds
         const bounds = coordinates.reduce(
           (bounds, coord) => bounds.extend(coord),
           new maplibregl.LngLatBounds(coordinates[0], coordinates[0])
