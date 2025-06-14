@@ -111,7 +111,7 @@ export const EventsMap = ({ events }: EventsMapProps) => {
         const [lng, lat] = getCityCoordinates(event.city);
         return {
           ...event,
-          coordinates: [lng, lat],
+          coordinates: [lng, lat] as [number, number],
           lat,
           lng
         };
@@ -136,151 +136,160 @@ export const EventsMap = ({ events }: EventsMapProps) => {
       return;
     }
 
-    // Add GeoJSON source with clustering
-    map.addSource('events', {
-      type: 'geojson',
-      data: toFeatureCollection(eventsWithCoords),
-      cluster: true,
-      clusterMaxZoom: 14, // au-delà, on affiche les points
-      clusterRadius: 50, // px
-    });
-
-    // Style des clusters (badge chiffre)
-    map.addLayer({
-      id: 'cluster-circle',
-      type: 'circle',
-      source: 'events',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': '#e8552b',
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
-        'circle-radius': [
-          'step',
-          ['get', 'point_count'],
-          14, 10, 18, 30, 22
-        ],
-      },
-    });
-
-    // Texte compteur sur les clusters
-    map.addLayer({
-      id: 'cluster-count',
-      type: 'symbol',
-      source: 'events',
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': '{point_count_abbreviated}',
-        'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-        'text-size': 12,
-      },
-      paint: { 'text-color': '#ffffff' },
-    });
-
-    // Points individuels avec icône pin
-    map.addLayer({
-      id: 'unclustered-point',
-      type: 'circle',
-      source: 'events',
-      filter: ['!', ['has', 'point_count']],
-      paint: {
-        'circle-color': '#e8552b',
-        'circle-radius': 8,
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
-      },
-    });
-
-    // Interaction - Zoom sur cluster au clic
-    map.on('click', 'cluster-circle', (e) => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['cluster-circle']
+    // Wait for map to be loaded before adding sources
+    const addMapContent = () => {
+      // Add GeoJSON source with clustering
+      map.addSource('events', {
+        type: 'geojson',
+        data: toFeatureCollection(eventsWithCoords),
+        cluster: true,
+        clusterMaxZoom: 14, // au-delà, on affiche les points
+        clusterRadius: 50, // px
       });
-      const clusterId = features[0].properties?.cluster_id;
-      if (clusterId !== undefined) {
-        (map.getSource('events') as maplibregl.GeoJSONSource).getClusterExpansionZoom(
-          clusterId,
-          (err, zoom) => {
-            if (err) return;
-            map.easeTo({
-              center: (features[0].geometry as any).coordinates,
-              zoom: zoom,
-            });
-          }
-        );
-      }
-    });
 
-    // Popup pour les points individuels
-    map.on('click', 'unclustered-point', (e) => {
-      const feature = e.features?.[0];
-      if (!feature || !feature.properties) return;
+      // Style des clusters (badge chiffre)
+      map.addLayer({
+        id: 'cluster-circle',
+        type: 'circle',
+        source: 'events',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': '#e8552b',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            14, 10, 18, 30, 22
+          ],
+        },
+      });
 
-      const { id, name, start_date, end_date, city, sector, event_url, image_url } = feature.properties;
-      
-      const popupContent = `
-        <div class="w-[280px]">
-          <img 
-            src="${image_url || '/placeholder.svg'}" 
-            alt="${name}"
-            class="h-16 w-full object-cover rounded mb-2"
-          />
-          <div class="text-xs text-blue-600 mb-1">
-            📅 ${formatDate(start_date)}${start_date !== end_date ? ` - ${formatDate(end_date)}` : ''}
-          </div>
-          <div class="font-medium text-sm text-gray-900 mb-1">${name}</div>
-          <div class="text-xs text-gray-600 mb-1">${city}</div>
-          <div class="text-xs text-blue-600 mb-1">${sector}</div>
-          ${event_url ? `<a href="${event_url}" target="_blank" rel="noopener noreferrer" class="text-primary text-xs underline">Voir le salon →</a>` : ''}
-        </div>
-      `;
+      // Texte compteur sur les clusters
+      map.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'events',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+          'text-size': 12,
+        },
+        paint: { 'text-color': '#ffffff' },
+      });
 
-      new maplibregl.Popup({
-        offset: 25,
-        maxWidth: '300px'
-      })
-        .setLngLat((feature.geometry as any).coordinates)
-        .setHTML(popupContent)
-        .addTo(map);
-    });
+      // Points individuels avec icône pin
+      map.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'events',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': '#e8552b',
+          'circle-radius': 8,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+        },
+      });
 
-    // Curseur pointer sur les éléments interactifs
-    map.on('mouseenter', 'unclustered-point', () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-    
-    map.on('mouseleave', 'unclustered-point', () => {
-      map.getCanvas().style.cursor = '';
-    });
-    
-    map.on('mouseenter', 'cluster-circle', () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-    
-    map.on('mouseleave', 'cluster-circle', () => {
-      map.getCanvas().style.cursor = '';
-    });
-
-    // Fit bounds if events are present
-    if (eventsWithCoords.length > 0) {
-      const coordinates = eventsWithCoords.map(e => [e.lng, e.lat] as [number, number]);
-      
-      if (coordinates.length === 1) {
-        // Single event - moderate zoom
-        map.setCenter(coordinates[0]);
-        map.setZoom(8);
-      } else {
-        // Multiple events - fit bounds
-        const bounds = coordinates.reduce(
-          (bounds, coord) => bounds.extend(coord),
-          new maplibregl.LngLatBounds(coordinates[0], coordinates[0])
-        );
-        map.fitBounds(bounds, { 
-          padding: 40, 
-          duration: 600,
-          maxZoom: 10
+      // Interaction - Zoom sur cluster au clic
+      map.on('click', 'cluster-circle', (e) => {
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: ['cluster-circle']
         });
+        const clusterId = features[0].properties?.cluster_id;
+        if (clusterId !== undefined) {
+          (map.getSource('events') as maplibregl.GeoJSONSource).getClusterExpansionZoom(
+            clusterId,
+            (err, zoom) => {
+              if (err) return;
+              map.easeTo({
+                center: (features[0].geometry as any).coordinates,
+                zoom: zoom,
+              });
+            }
+          );
+        }
+      });
+
+      // Popup pour les points individuels
+      map.on('click', 'unclustered-point', (e) => {
+        const feature = e.features?.[0];
+        if (!feature || !feature.properties) return;
+
+        const { id, name, start_date, end_date, city, sector, event_url, image_url } = feature.properties;
+        
+        const popupContent = `
+          <div class="w-[280px]">
+            <img 
+              src="${image_url || '/placeholder.svg'}" 
+              alt="${name}"
+              class="h-16 w-full object-cover rounded mb-2"
+            />
+            <div class="text-xs text-blue-600 mb-1">
+              📅 ${formatDate(start_date)}${start_date !== end_date ? ` - ${formatDate(end_date)}` : ''}
+            </div>
+            <div class="font-medium text-sm text-gray-900 mb-1">${name}</div>
+            <div class="text-xs text-gray-600 mb-1">${city}</div>
+            <div class="text-xs text-blue-600 mb-1">${sector}</div>
+            ${event_url ? `<a href="${event_url}" target="_blank" rel="noopener noreferrer" class="text-primary text-xs underline">Voir le salon →</a>` : ''}
+          </div>
+        `;
+
+        new maplibregl.Popup({
+          offset: 25,
+          maxWidth: '300px'
+        })
+          .setLngLat((feature.geometry as any).coordinates)
+          .setHTML(popupContent)
+          .addTo(map);
+      });
+
+      // Curseur pointer sur les éléments interactifs
+      map.on('mouseenter', 'unclustered-point', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      
+      map.on('mouseleave', 'unclustered-point', () => {
+        map.getCanvas().style.cursor = '';
+      });
+      
+      map.on('mouseenter', 'cluster-circle', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      
+      map.on('mouseleave', 'cluster-circle', () => {
+        map.getCanvas().style.cursor = '';
+      });
+
+      // Fit bounds if events are present
+      if (eventsWithCoords.length > 0) {
+        const coordinates = eventsWithCoords.map(e => [e.lng, e.lat] as [number, number]);
+        
+        if (coordinates.length === 1) {
+          // Single event - moderate zoom
+          map.setCenter(coordinates[0]);
+          map.setZoom(8);
+        } else {
+          // Multiple events - fit bounds
+          const bounds = coordinates.reduce(
+            (bounds, coord) => bounds.extend(coord),
+            new maplibregl.LngLatBounds(coordinates[0], coordinates[0])
+          );
+          map.fitBounds(bounds, { 
+            padding: 40, 
+            duration: 600,
+            maxZoom: 10
+          });
+        }
       }
+    };
+
+    if (map.isStyleLoaded()) {
+      addMapContent();
+    } else {
+      map.on('load', addMapContent);
     }
 
     return () => {
