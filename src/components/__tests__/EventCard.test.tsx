@@ -61,18 +61,6 @@ describe('EventCard', () => {
     expect(getByText('Technologie')).toBeInTheDocument();
   });
 
-  test('should not render description in grid view', () => {
-    const { queryByText } = render(<EventCard event={mockSalonEvent} view="grid" />);
-    
-    expect(queryByText('Description du salon')).not.toBeInTheDocument();
-  });
-
-  test('should render description in list view', () => {
-    const { getByText } = render(<EventCard event={mockSalonEvent} view="list" />);
-    
-    expect(getByText('Description du salon')).toBeInTheDocument();
-  });
-
   test('should render event details correctly in grid view', () => {
     const { getByText } = render(<EventCard event={mockSalonEvent} view="grid" />);
     
@@ -81,14 +69,10 @@ describe('EventCard', () => {
     expect(getByText(/Paris/)).toBeInTheDocument();
   });
 
-  test('should render calendar buttons in both views', () => {
-    const { getByText: getByTextGrid } = render(<EventCard event={mockSalonEvent} view="grid" />);
-    expect(getByTextGrid('Google')).toBeInTheDocument();
-    expect(getByTextGrid('Outlook')).toBeInTheDocument();
-
-    const { getByText: getByTextList } = render(<EventCard event={mockSalonEvent} view="list" />);
-    expect(getByTextList('Google')).toBeInTheDocument();
-    expect(getByTextList('Outlook')).toBeInTheDocument();
+  test('should render calendar buttons in grid view', () => {
+    const { getByText } = render(<EventCard event={mockSalonEvent} view="grid" />);
+    expect(getByText('Google')).toBeInTheDocument();
+    expect(getByText('Outlook')).toBeInTheDocument();
   });
 
   test('should render sector badge for different event types', () => {

@@ -29,9 +29,11 @@ export const setupMapInteractions = (
       return;
     }
 
-    // Correct signature: (clusterId, callback)
+    // Correct signature: (clusterId, pointCount, callback)
     source.getClusterLeaves(
       clusterId,
+      pointCount,
+      0,
       (err: any, leaves: any) => {
         if (err) {
           console.error('Error getting cluster leaves:', err);
@@ -194,7 +196,7 @@ export const setupClusterInteractions = (map: maplibregl.Map) => {
       return;
     }
 
-    source.getClusterLeaves(clusterId, (err: any, leaves: any) => {
+    source.getClusterLeaves(clusterId, pointCount, 0, (err: any, leaves: any) => {
       if (err) {
         console.error('Error getting cluster leaves:', err);
         return;
