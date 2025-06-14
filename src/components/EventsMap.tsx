@@ -31,31 +31,34 @@ const getCityCoordinates = (city: string): [number, number] => {
 
 interface EventWithCoords extends Event {
   coordinates: [number, number];
-}
-
-interface EventGroup {
   lat: number;
   lng: number;
-  events: EventWithCoords[];
 }
 
-function groupByLatLng(events: EventWithCoords[]): EventGroup[] {
-  const groups: Record<string, EventWithCoords[]> = {};
-  
-  events.forEach((event) => {
-    const [lng, lat] = event.coordinates;
-    const key = `${lat.toFixed(5)},${lng.toFixed(5)}`; // 5 décimales ≈ 1 m
-    groups[key] = groups[key] ? [...groups[key], event] : [event];
-  });
-  
-  return Object.entries(groups).map(([key, evts]) => {
-    const [lat, lng] = key.split(",").map(Number);
-    // Tri chronologique
-    evts.sort((a, b) =>
-      dayjs(a.start_date).isAfter(dayjs(b.start_date)) ? 1 : -1
-    );
-    return { lat, lng, events: evts };
-  });
+function toFeatureCollection(events: EventWithCoords[]) {
+  return {
+    type: "FeatureCollection" as const,
+    features: events
+      .filter(e => typeof e.lat === "number" && typeof e.lng === "number")
+      .map(e => ({
+        type: "Feature" as const,
+        geometry: {
+          type: "Point" as const,
+          // IMPORTANT: [lng, lat] order without rounding
+          coordinates: [e.lng, e.lat] as [number, number],
+        },
+        properties: {
+          id: e.id,
+          name: e.name,
+          start_date: e.start_date,
+          end_date: e.end_date,
+          city: e.city,
+          sector: e.sector,
+          event_url: e.event_url,
+          image_url: e.image_url,
+        },
+      })),
+  };
 }
 
 interface EventsMapProps {
@@ -65,7 +68,6 @@ interface EventsMapProps {
 export const EventsMap = ({ events }: EventsMapProps) => {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
 
   const formatDate = (dateStr: string) => {
     return dayjs(dateStr).format('DD/MM/YY');
@@ -103,90 +105,172 @@ export const EventsMap = ({ events }: EventsMapProps) => {
 
     const map = mapRef.current;
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
-
-    // Filter events with coordinates and add mock coordinates
+    // Prepare events with coordinates
     const eventsWithCoords: EventWithCoords[] = events
-      .map(event => ({
-        ...event,
-        coordinates: getCityCoordinates(event.city)
-      }))
+      .map(event => {
+        const [lng, lat] = getCityCoordinates(event.city);
+        return {
+          ...event,
+          coordinates: [lng, lat],
+          lat,
+          lng
+        };
+      })
       .filter(event => {
-        const [lng, lat] = event.coordinates;
-        return typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng);
+        return typeof event.lat === 'number' && typeof event.lng === 'number' && 
+               !isNaN(event.lat) && !isNaN(event.lng);
       });
 
-    // Group events by coordinates
-    const groupedEvents = groupByLatLng(eventsWithCoords);
+    // Remove existing source and layers
+    if (map.getSource('events')) {
+      if (map.getLayer('cluster-circle')) map.removeLayer('cluster-circle');
+      if (map.getLayer('cluster-count')) map.removeLayer('cluster-count');
+      if (map.getLayer('unclustered-point')) map.removeLayer('unclustered-point');
+      map.removeSource('events');
+    }
 
-    // Add markers for event groups
-    groupedEvents.forEach(group => {
-      const eventCount = group.events.length;
+    if (eventsWithCoords.length === 0) {
+      // No events - show France
+      map.setCenter(DEFAULT_CENTER);
+      map.setZoom(DEFAULT_ZOOM);
+      return;
+    }
+
+    // Add GeoJSON source with clustering
+    map.addSource('events', {
+      type: 'geojson',
+      data: toFeatureCollection(eventsWithCoords),
+      cluster: true,
+      clusterMaxZoom: 14, // au-delà, on affiche les points
+      clusterRadius: 50, // px
+    });
+
+    // Style des clusters (badge chiffre)
+    map.addLayer({
+      id: 'cluster-circle',
+      type: 'circle',
+      source: 'events',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': '#e8552b',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff',
+        'circle-radius': [
+          'step',
+          ['get', 'point_count'],
+          14, 10, 18, 30, 22
+        ],
+      },
+    });
+
+    // Texte compteur sur les clusters
+    map.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'events',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+        'text-size': 12,
+      },
+      paint: { 'text-color': '#ffffff' },
+    });
+
+    // Points individuels avec icône pin
+    map.addLayer({
+      id: 'unclustered-point',
+      type: 'circle',
+      source: 'events',
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': '#e8552b',
+        'circle-radius': 8,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff',
+      },
+    });
+
+    // Interaction - Zoom sur cluster au clic
+    map.on('click', 'cluster-circle', (e) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['cluster-circle']
+      });
+      const clusterId = features[0].properties?.cluster_id;
+      if (clusterId !== undefined) {
+        (map.getSource('events') as maplibregl.GeoJSONSource).getClusterExpansionZoom(
+          clusterId,
+          (err, zoom) => {
+            if (err) return;
+            map.easeTo({
+              center: (features[0].geometry as any).coordinates,
+              zoom: zoom,
+            });
+          }
+        );
+      }
+    });
+
+    // Popup pour les points individuels
+    map.on('click', 'unclustered-point', (e) => {
+      const feature = e.features?.[0];
+      if (!feature || !feature.properties) return;
+
+      const { id, name, start_date, end_date, city, sector, event_url, image_url } = feature.properties;
       
-      // Create popup content with all events in the group
       const popupContent = `
-        <div class="space-y-2 w-[280px] max-h-[400px] overflow-y-auto">
-          <div class="font-semibold text-sm mb-2 text-gray-800">
-            ${eventCount > 1 ? `${eventCount} événements à ce lieu` : 'Événement'}
+        <div class="w-[280px]">
+          <img 
+            src="${image_url || '/placeholder.svg'}" 
+            alt="${name}"
+            class="h-16 w-full object-cover rounded mb-2"
+          />
+          <div class="text-xs text-blue-600 mb-1">
+            📅 ${formatDate(start_date)}${start_date !== end_date ? ` - ${formatDate(end_date)}` : ''}
           </div>
-          ${group.events.map(event => `
-            <div class="border-b border-gray-200 pb-2 mb-2 last:border-b-0 last:pb-0 last:mb-0">
-              <img 
-                src="${event.image_url || '/placeholder.svg'}" 
-                alt="${event.name}"
-                class="h-16 w-full object-cover rounded mb-1"
-              />
-              <div class="text-xs text-blue-600 mb-1">
-                📅 ${formatDate(event.start_date)}${event.start_date !== event.end_date ? ` - ${formatDate(event.end_date)}` : ''}
-              </div>
-              <div class="font-medium text-sm text-gray-900 mb-1">${event.name}</div>
-              <div class="text-xs text-gray-600 mb-1">${event.city}</div>
-              <div class="text-xs text-blue-600 mb-1">${event.sector}</div>
-              ${event.event_url ? `<a href="${event.event_url}" target="_blank" rel="noopener noreferrer" class="text-primary text-xs underline">Voir le salon →</a>` : ''}
-            </div>
-          `).join('')}
+          <div class="font-medium text-sm text-gray-900 mb-1">${name}</div>
+          <div class="text-xs text-gray-600 mb-1">${city}</div>
+          <div class="text-xs text-blue-600 mb-1">${sector}</div>
+          ${event_url ? `<a href="${event_url}" target="_blank" rel="noopener noreferrer" class="text-primary text-xs underline">Voir le salon →</a>` : ''}
         </div>
       `;
 
-      const popup = new maplibregl.Popup({
+      new maplibregl.Popup({
         offset: 25,
         maxWidth: '300px'
-      }).setHTML(popupContent);
-
-      // Create marker with badge if multiple events
-      const markerElement = document.createElement('div');
-      markerElement.className = 'relative';
-      markerElement.innerHTML = `
-        <div class="w-6 h-6 bg-[#e8552b] rounded-full border-2 border-white shadow-lg"></div>
-        ${eventCount > 1 ? `
-          <div class="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-            ${eventCount}
-          </div>
-        ` : ''}
-      `;
-
-      const marker = new maplibregl.Marker({
-        element: markerElement
       })
-        .setLngLat([group.lng, group.lat])
-        .setPopup(popup)
+        .setLngLat((feature.geometry as any).coordinates)
+        .setHTML(popupContent)
         .addTo(map);
+    });
 
-      markersRef.current.push(marker);
+    // Curseur pointer sur les éléments interactifs
+    map.on('mouseenter', 'unclustered-point', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    
+    map.on('mouseleave', 'unclustered-point', () => {
+      map.getCanvas().style.cursor = '';
+    });
+    
+    map.on('mouseenter', 'cluster-circle', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    
+    map.on('mouseleave', 'cluster-circle', () => {
+      map.getCanvas().style.cursor = '';
     });
 
     // Fit bounds if events are present
-    if (groupedEvents.length > 0) {
-      const coordinates = groupedEvents.map(g => [g.lng, g.lat] as [number, number]);
+    if (eventsWithCoords.length > 0) {
+      const coordinates = eventsWithCoords.map(e => [e.lng, e.lat] as [number, number]);
       
       if (coordinates.length === 1) {
-        // Single group - moderate zoom
+        // Single event - moderate zoom
         map.setCenter(coordinates[0]);
         map.setZoom(8);
       } else {
-        // Multiple groups - fit bounds
+        // Multiple events - fit bounds
         const bounds = coordinates.reduce(
           (bounds, coord) => bounds.extend(coord),
           new maplibregl.LngLatBounds(coordinates[0], coordinates[0])
@@ -197,16 +281,16 @@ export const EventsMap = ({ events }: EventsMapProps) => {
           maxZoom: 10
         });
       }
-    } else {
-      // No events - show France
-      map.setCenter(DEFAULT_CENTER);
-      map.setZoom(DEFAULT_ZOOM);
     }
 
     return () => {
-      // Cleanup markers on unmount
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
+      // Cleanup on unmount
+      if (map.getSource('events')) {
+        if (map.getLayer('cluster-circle')) map.removeLayer('cluster-circle');
+        if (map.getLayer('cluster-count')) map.removeLayer('cluster-count');
+        if (map.getLayer('unclustered-point')) map.removeLayer('unclustered-point');
+        map.removeSource('events');
+      }
     };
   }, [events]);
 
