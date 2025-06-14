@@ -20,7 +20,9 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <Calendar className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-primary">Salon Tracker</span>
+            <div className="text-xl font-bold">
+              Salons<span className="text-accent">Pro</span>
+            </div>
           </Link>
 
           {/* Navigation Desktop */}
