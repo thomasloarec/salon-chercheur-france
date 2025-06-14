@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
@@ -15,6 +16,11 @@ const Events = () => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: events, isLoading, error } = useEvents(filters);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Initialize filters from URL params
   useEffect(() => {
