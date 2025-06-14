@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
 import { ViewToggle } from '@/components/ViewToggle';
@@ -48,7 +47,7 @@ const Events = () => {
   // Filter out 'loisir' events for display
   const displayEvents = events?.filter(event => event.event_type !== 'loisir') || [];
 
-  const handleFiltersChange = (newFilters: SearchFilters) => {
+  const handleFiltersChange = useCallback((newFilters: SearchFilters) => {
     console.log('Filters changed:', newFilters);
     setFilters(newFilters);
     
@@ -72,7 +71,7 @@ const Events = () => {
     }
     
     setSearchParams(newParams);
-  };
+  }, [setSearchParams]);
 
   if (error) {
     return (
