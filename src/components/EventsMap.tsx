@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
@@ -194,22 +193,21 @@ export const EventsMap = ({ events }: EventsMapProps) => {
       });
 
       // Interaction - Zoom sur cluster au clic
-      map.on('click', 'cluster-circle', (e) => {
+      map.on('click', 'cluster-circle', async (e) => {
         const features = map.queryRenderedFeatures(e.point, {
           layers: ['cluster-circle']
         });
         const clusterId = features[0].properties?.cluster_id;
         if (clusterId !== undefined) {
-          (map.getSource('events') as maplibregl.GeoJSONSource).getClusterExpansionZoom(
-            clusterId,
-            (err, zoom) => {
-              if (err) return;
-              map.easeTo({
-                center: (features[0].geometry as any).coordinates,
-                zoom: zoom,
-              });
-            }
-          );
+          try {
+            const zoom = await (map.getSource('events') as maplibregl.GeoJSONSource).getClusterExpansionZoom(clusterId);
+            map.easeTo({
+              center: (features[0].geometry as any).coordinates,
+              zoom: zoom,
+            });
+          } catch (err) {
+            console.error('Error getting cluster expansion zoom:', err);
+          }
         }
       });
 
