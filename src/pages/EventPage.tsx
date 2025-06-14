@@ -1,5 +1,5 @@
 
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { parseEventSlug } from '@/utils/eventUtils';
@@ -12,29 +12,35 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 
 const EventPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [exhibitors, setExhibitors] = useState<any[]>([]);
   const [crmTargets, setCrmTargets] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchEvent = async () => {
-      if (!slug) return;
+      if (!slug) {
+        setError('Slug manquant');
+        setLoading(false);
+        return;
+      }
       
       const parsedSlug = parseEventSlug(slug);
       if (!parsedSlug) {
-        navigate('/events');
+        setError('Format de slug invalide');
+        setLoading(false);
         return;
       }
 
       try {
         // Fetch event by matching name, year, and city
-        const { data: events, error } = await supabase
+        const { data: events, error: fetchError } = await supabase
           .from('events')
           .select('*')
           .ilike('name', `%${parsedSlug.name.replace('-', ' ')}%`)
@@ -43,14 +49,16 @@ const EventPage = () => {
           .lt('start_date', `${parsedSlug.year + 1}-01-01`)
           .limit(1);
 
-        if (error) {
-          console.error('Error fetching event:', error);
-          navigate('/events');
+        if (fetchError) {
+          console.error('Error fetching event:', fetchError);
+          setError('Erreur lors du chargement de l\'événement');
+          setLoading(false);
           return;
         }
 
         if (!events || events.length === 0) {
-          navigate('/events');
+          setError('Événement introuvable');
+          setLoading(false);
           return;
         }
 
@@ -73,14 +81,14 @@ const EventPage = () => {
 
       } catch (error) {
         console.error('Error:', error);
-        navigate('/events');
+        setError('Une erreur inattendue s\'est produite');
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvent();
-  }, [slug, navigate]);
+  }, [slug]);
 
   if (loading) {
     return (
@@ -103,8 +111,39 @@ const EventPage = () => {
     );
   }
 
-  if (!event) {
-    return null;
+  if (error || !event) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <main className="py-12">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <Button variant="outline" asChild className="mb-6">
+              <Link to="/events">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour aux événements
+              </Link>
+            </Button>
+            
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Événement introuvable
+              </h1>
+              <p className="text-lg text-gray-600">
+                {error || 'L\'événement que vous recherchez n\'existe pas ou a été supprimé.'}
+              </p>
+              <div className="mt-8">
+                <Button asChild>
+                  <Link to="/events">
+                    Voir tous les événements
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   // Generate JSON-LD structured data
@@ -144,13 +183,11 @@ const EventPage = () => {
         
         <main className="py-6">
           <div className="max-w-6xl mx-auto px-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/events')}
-              className="mb-6"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour aux événements
+            <Button variant="outline" asChild className="mb-6">
+              <Link to="/events">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour aux événements
+              </Link>
             </Button>
 
             <EventHero event={event} />
