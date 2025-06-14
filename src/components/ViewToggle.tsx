@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, List, Map } from 'lucide-react';
+import { LayoutGrid, Map } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
@@ -9,20 +9,19 @@ export const ViewToggle = () => {
   const navigate = useNavigate();
   const currentView = searchParams.get('view') ?? 'grid';
   
-  // Synchronisation initiale : forcer ?view=grid si absent
+  // Synchronisation initiale : forcer ?view=grid si absent ou si c'est 'list'
   useEffect(() => {
-    if (!searchParams.get('view')) {
+    const view = searchParams.get('view');
+    if (!view || view === 'list') {
       const newParams = new URLSearchParams(searchParams);
       newParams.set('view', 'grid');
       navigate({ search: newParams.toString() }, { replace: true });
     }
   }, [searchParams, navigate]);
   
-  const handleChangeView = (view: 'grid' | 'list' | 'map') => {
-    // Clone les params pour préserver les filtres existants
+  const handleChangeView = (view: 'grid' | 'map') => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('view', view);
-    // Remplacer l'entrée courante (pas de push dans l'historique)
     navigate({ search: newParams.toString() }, { replace: true });
   };
   
@@ -35,14 +34,6 @@ export const ViewToggle = () => {
       >
         <LayoutGrid className="h-4 w-4 mr-2" />
         Grille
-      </Button>
-      <Button 
-        variant={currentView === 'list' ? 'default' : 'outline'} 
-        size="sm"
-        onClick={() => handleChangeView('list')}
-      >
-        <List className="h-4 w-4 mr-2" />
-        Liste
       </Button>
       <Button 
         variant={currentView === 'map' ? 'default' : 'outline'} 

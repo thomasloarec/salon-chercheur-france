@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Index from '@/pages/Index';
 import Events from '@/pages/Events';
+import EventPage from '@/pages/EventPage';
 import ScrapingTest from '@/pages/ScrapingTest';
 import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
@@ -22,6 +23,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/events" element={<Events />} />
+              <Route path="/events/:slug" element={<EventPage />} />
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <ScrapingTest />
