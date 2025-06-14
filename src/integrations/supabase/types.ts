@@ -243,6 +243,27 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscriptions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          sectors: string[]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          sectors: string[]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          sectors?: string[]
+        }
+        Relationships: []
+      }
       scraping_sources: {
         Row: {
           base_url: string
