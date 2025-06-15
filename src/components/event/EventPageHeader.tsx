@@ -53,7 +53,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           </div>
 
           {/* Conteneur pour le séparateur et les actions afin de limiter la largeur */}
-          <div className="inline-block">
+          <div className="w-fit">
             <Separator className="mb-4" />
             <div className="flex flex-wrap gap-3 items-center">
               {/* Boutons calendrier avec texte explicatif */}
