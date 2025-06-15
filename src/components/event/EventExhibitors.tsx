@@ -83,17 +83,17 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
           <TableBody>
             {exhibitors.map((exhibitor, index) => (
               <TableRow key={index} className="hover:bg-gray-50">
-                <TableCell className="font-medium">
+                <TableCell className="font-medium text-left">
                   {exhibitor.name}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-left">
                   {exhibitor.stand && (
                     <Badge variant="outline" className="font-normal">
                       {exhibitor.stand}
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-left">
                   {exhibitor.website && (
                     <a 
                       href={`https://${exhibitor.website}`}
