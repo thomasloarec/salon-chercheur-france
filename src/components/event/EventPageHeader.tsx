@@ -52,8 +52,10 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
             </span>
           </div>
 
-          {/* Séparateur */}
-          <Separator className="my-4" />
+          {/* Séparateur limité à la largeur des actions */}
+          <div className="my-4 inline-block w-auto">
+            <Separator className="w-full" />
+          </div>
 
           {/* Actions */}
           <div className="space-y-3">
