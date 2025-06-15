@@ -20,7 +20,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
 
   return (
     <section className="bg-white rounded-lg shadow-sm p-8 mb-8">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start lg:justify-items-end">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
         <div className="space-y-6">
           {/* Tags */}
           <div className="flex flex-wrap gap-2">
