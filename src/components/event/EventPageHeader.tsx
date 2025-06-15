@@ -18,53 +18,74 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
 
   return (
     <section className="bg-white rounded-lg shadow-sm p-8 mb-8">
-      <div className="space-y-6">
-        {/* Tags */}
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="text-sm px-3 py-1">
-            {event.sector}
-          </Badge>
-          {event.tags?.map((tag, index) => (
-            <Badge key={index} variant="outline" className="text-sm px-3 py-1">
-              {tag}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Contenu principal */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Tags */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary" className="text-sm px-3 py-1">
+              {event.sector}
             </Badge>
-          ))}
-        </div>
-
-        {/* Titre principal */}
-        <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-          {event.name}
-        </h1>
-
-        {/* Dates */}
-        <div className="flex items-center text-lg text-gray-600">
-          <CalendarDays className="h-6 w-6 mr-3 text-accent" />
-          <span className="font-medium">
-            {formatDate(event.start_date)}
-            {event.start_date !== event.end_date && (
-              <> - {formatDate(event.end_date)}</>
-            )}
-          </span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-wrap gap-3 pt-4 border-t">
-          <div className="flex gap-2">
-            <CalBtn type="gcal" event={event} />
-            <CalBtn type="outlook" event={event} />
+            {event.tags?.map((tag, index) => (
+              <Badge key={index} variant="outline" className="text-sm px-3 py-1">
+                {tag}
+              </Badge>
+            ))}
           </div>
-          
-          {event.event_url && (
-            <Button 
-              variant="outline"
-              onClick={() => window.open(event.event_url, '_blank')}
-              className="text-sm"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Site officiel
-            </Button>
-          )}
+
+          {/* Titre principal */}
+          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+            {event.name}
+          </h1>
+
+          {/* Dates */}
+          <div className="flex items-center text-lg text-gray-600">
+            <CalendarDays className="h-6 w-6 mr-3 text-accent" />
+            <span className="font-medium">
+              {formatDate(event.start_date)}
+              {event.start_date !== event.end_date && (
+                <> - {formatDate(event.end_date)}</>
+              )}
+            </span>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex flex-wrap gap-3">
+              <div className="flex gap-2">
+                <CalBtn type="gcal" event={event} />
+                <CalBtn type="outlook" event={event} />
+              </div>
+              
+              {event.event_url && (
+                <Button 
+                  variant="outline"
+                  onClick={() => window.open(event.event_url, '_blank')}
+                  className="text-sm"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Site officiel
+                </Button>
+              )}
+            </div>
+            
+            {/* Phrase explicative */}
+            <p className="text-sm text-muted-foreground">
+              Ajoutez cet événement à votre agenda en un clic.
+            </p>
+          </div>
         </div>
+
+        {/* Image de l'événement */}
+        {event.image_url && (
+          <div className="lg:col-span-1">
+            <img
+              src={event.image_url}
+              alt={`Image de l'événement ${event.name}`}
+              className="w-full max-w-sm h-64 object-cover rounded-xl shadow-sm lg:ml-auto"
+            />
+          </div>
+        )}
       </div>
     </section>
   );

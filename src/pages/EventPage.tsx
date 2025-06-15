@@ -128,7 +128,7 @@ const EventPage = () => {
         <Header />
         
         <main className="py-8">
-          <div className="max-w-7xl mx-auto px-4">
+          <div className="max-w-7xl mx-auto px-4 space-y-8">
             <EventPageHeader event={event} />
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

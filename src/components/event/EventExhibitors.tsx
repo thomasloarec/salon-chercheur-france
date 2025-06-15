@@ -20,12 +20,23 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
     return (
       <Card className="mb-8">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center justify-between text-2xl">
-            <div className="flex items-center">
-              <Building className="h-6 w-6 mr-3 text-accent" />
-              Exposants
-            </div>
+          <CardTitle className="text-2xl">
+            <h2 className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Building className="h-6 w-6 mr-3 text-accent" />
+                Exposants
+              </div>
+              <Button className="bg-accent hover:bg-accent/90">
+                <Link className="h-4 w-4 mr-2" />
+                Connecter mon CRM
+              </Button>
+            </h2>
           </CardTitle>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+            <p className="text-blue-800 text-sm">
+              💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12">
@@ -33,10 +44,6 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
             <p className="text-gray-500 text-lg mb-6">
               La liste des exposants sera bientôt disponible.
             </p>
-            <Button className="bg-accent hover:bg-accent/90">
-              <Link className="h-4 w-4 mr-2" />
-              Connecter mon CRM
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -46,15 +53,17 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
   return (
     <Card className="mb-8">
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between text-2xl">
-          <div className="flex items-center">
-            <Building className="h-6 w-6 mr-3 text-accent" />
-            Exposants ({exhibitors.length})
-          </div>
-          <Button className="bg-accent hover:bg-accent/90">
-            <Link className="h-4 w-4 mr-2" />
-            Connecter mon CRM
-          </Button>
+        <CardTitle className="text-2xl">
+          <h2 className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Building className="h-6 w-6 mr-3 text-accent" />
+              Exposants ({exhibitors.length})
+            </div>
+            <Button className="bg-accent hover:bg-accent/90">
+              <Link className="h-4 w-4 mr-2" />
+              Connecter mon CRM
+            </Button>
+          </h2>
         </CardTitle>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
           <p className="text-blue-800 text-sm">
