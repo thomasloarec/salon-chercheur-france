@@ -97,19 +97,33 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         updated_at: new Date().toISOString(),
       };
 
-      const { data: updatedEvent, error } = await supabase
+      console.log('Updating event with data:', updateData);
+      console.log('Event ID:', event.id);
+
+      const { error } = await supabase
         .from('events')
         .update(updateData)
-        .eq('id', event.id)
-        .select()
-        .single();
+        .eq('id', event.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
+
+      console.log('Event updated successfully');
 
       toast({
         title: "Événement modifié",
         description: "Les modifications ont été enregistrées avec succès.",
       });
+
+      // Mettre à jour l'événement local avec les nouvelles données
+      const updatedEvent: Event = {
+        ...event,
+        ...updateData,
+        start_date: updateData.start_date,
+        end_date: updateData.end_date,
+      };
 
       onEventUpdated(updatedEvent);
       onOpenChange(false);
