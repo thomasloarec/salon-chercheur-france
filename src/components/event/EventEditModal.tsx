@@ -19,8 +19,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAllSectors, useEventSectors } from '@/hooks/useEventSectors';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
 
@@ -42,11 +44,14 @@ interface EventFormData {
   venue_name: string;
   address: string;
   event_url: string;
+  sector_ids: string[];
 }
 
 export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: EventEditModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { data: allSectors = [] } = useAllSectors();
+  const { data: eventSectors = [] } = useEventSectors(event.id);
 
   const {
     register,
@@ -66,11 +71,43 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       venue_name: event.venue_name || '',
       address: event.address || '',
       event_url: event.event_url || '',
+      sector_ids: eventSectors.map(s => s.id),
     },
   });
 
   const startDate = watch('start_date');
   const endDate = watch('end_date');
+  const sectorIds = watch('sector_ids');
+
+  const updateEventSectors = async (eventId: string, newSectorIds: string[]) => {
+    // Supprimer les anciennes relations
+    const { error: deleteError } = await supabase
+      .from('event_sectors')
+      .delete()
+      .eq('event_id', eventId);
+
+    if (deleteError) {
+      console.error('Error deleting old sectors:', deleteError);
+      throw deleteError;
+    }
+
+    // Ajouter les nouvelles relations
+    if (newSectorIds.length > 0) {
+      const sectorsToInsert = newSectorIds.map(sectorId => ({
+        event_id: eventId,
+        sector_id: sectorId,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('event_sectors')
+        .insert(sectorsToInsert);
+
+      if (insertError) {
+        console.error('Error inserting new sectors:', insertError);
+        throw insertError;
+      }
+    }
+  };
 
   const onSubmit = async (data: EventFormData) => {
     // Validate dates
@@ -102,89 +139,32 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
       console.log('🔧 DEBUG: Starting event update process');
       console.log('🔧 DEBUG: Target event ID:', event.id);
-      console.log('🔧 DEBUG: Target event ID type:', typeof event.id);
       console.log('🔧 DEBUG: Update payload:', updateData);
-      console.log('🔧 DEBUG: Original event data:', event);
+      console.log('🔧 DEBUG: Sector IDs:', data.sector_ids);
       
-      // Check user authentication and role
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log('🔧 DEBUG: Current user:', user);
-      console.log('🔧 DEBUG: Auth error:', authError);
-      console.log('🔧 DEBUG: User role/metadata:', user?.user_metadata);
-
-      // Step 1: Update the event with detailed logging
-      console.log('🔧 DEBUG: Sending UPDATE request to Supabase...');
-      const updateStartTime = Date.now();
-      
-      const { data: updateResponse, error: updateError, status, statusText } = await supabase
+      // Step 1: Update the event
+      const { data: updateResponse, error: updateError } = await supabase
         .from('events')
         .update(updateData)
         .eq('id', event.id);
 
-      const updateDuration = Date.now() - updateStartTime;
-      
-      console.log('🔧 DEBUG: Supabase UPDATE response:', {
-        data: updateResponse,
-        error: updateError,
-        status,
-        statusText,
-        duration: `${updateDuration}ms`
-      });
-
       if (updateError) {
         console.error('❌ DEBUG: Update failed with error:', updateError);
-        console.error('❌ DEBUG: Error details:', {
-          message: updateError.message,
-          details: updateError.details,
-          hint: updateError.hint,
-          code: updateError.code
-        });
         throw updateError;
       }
 
-      console.log('✅ DEBUG: Update request completed successfully');
+      console.log('✅ DEBUG: Event update completed successfully');
 
-      // Manual verification via REST API call
-      console.log('🔧 DEBUG: Verifying update via direct REST API call...');
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const accessToken = session?.access_token;
-        
-        const restResponse = await fetch(`https://vxivdvzzhebobveedxbj.supabase.co/rest/v1/events?id=eq.${event.id}`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4aXZkdnp6aGVib2J2ZWVkeGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyMTY5NTEsImV4cCI6MjA2NDc5Mjk1MX0.s1P0Hj1u1g1BtAczv_gkippD9wTwkUj2pwxKchkZ8Hw',
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        const restData = await restResponse.json();
-        console.log('🔧 DEBUG: REST API verification response:', {
-          status: restResponse.status,
-          statusText: restResponse.statusText,
-          data: restData
-        });
-      } catch (restError) {
-        console.error('🔧 DEBUG: REST API verification failed:', restError);
-      }
+      // Step 2: Update event sectors
+      await updateEventSectors(event.id, data.sector_ids);
+      console.log('✅ DEBUG: Event sectors updated successfully');
 
-      // Step 2: Fetch the updated event separately
-      console.log('🔧 DEBUG: Fetching updated event data...');
-      const fetchStartTime = Date.now();
-      
+      // Step 3: Fetch the updated event
       const { data: refreshedEvent, error: fetchError } = await supabase
         .from('events')
         .select('*')
         .eq('id', event.id)
         .single();
-
-      const fetchDuration = Date.now() - fetchStartTime;
-      
-      console.log('🔧 DEBUG: Fetch response:', {
-        data: refreshedEvent,
-        error: fetchError,
-        duration: `${fetchDuration}ms`
-      });
 
       if (fetchError) {
         console.error('❌ DEBUG: Fetch after update failed:', fetchError);
@@ -197,14 +177,6 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       }
 
       console.log('✅ DEBUG: Fetched updated event:', refreshedEvent);
-      
-      // Compare old vs new data
-      console.log('🔧 DEBUG: Data comparison:');
-      console.log('  - Original name:', event.name, '→ New name:', refreshedEvent.name);
-      console.log('  - Original image_url:', event.image_url, '→ New image_url:', refreshedEvent.image_url);
-      console.log('  - Original description:', event.description, '→ New description:', refreshedEvent.description);
-      console.log('  - Original event_url:', event.event_url, '→ New event_url:', refreshedEvent.event_url);
-      console.log('  - Original updated_at:', event.updated_at, '→ New updated_at:', refreshedEvent.updated_at);
 
       // Check if the slug has changed
       const slugChanged = refreshedEvent.slug !== event.slug;
@@ -234,6 +206,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     }
   };
 
+  const sectorOptions = allSectors.map(sector => ({
+    value: sector.id,
+    label: sector.name,
+  }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -255,6 +232,16 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               {errors.name && (
                 <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
               )}
+            </div>
+
+            <div>
+              <Label>Secteurs d'activité</Label>
+              <MultiSelect
+                options={sectorOptions}
+                selected={sectorIds}
+                onChange={(selectedIds) => setValue('sector_ids', selectedIds)}
+                placeholder="Sélectionner des secteurs..."
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -108,6 +108,39 @@ export type Database = {
           },
         ]
       }
+      event_sectors: {
+        Row: {
+          created_at: string
+          event_id: string
+          sector_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          sector_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          sector_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_sectors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_sectors_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           address: string | null

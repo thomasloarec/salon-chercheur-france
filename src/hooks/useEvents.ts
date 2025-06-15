@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
@@ -26,7 +25,15 @@ export const useEvents = (filters?: SearchFilters) => {
     queryFn: async () => {
       let query = supabase
         .from('events')
-        .select('*');
+        .select(`
+          *,
+          event_sectors (
+            sectors (
+              id,
+              name
+            )
+          )
+        `);
 
       if (!isAdmin) {
         query = query.eq('visible', true);
@@ -88,7 +95,13 @@ export const useEvents = (filters?: SearchFilters) => {
         throw error;
       }
 
-      return data as Event[];
+      // Transform the data to include sectors
+      const eventsWithSectors = data?.map(event => ({
+        ...event,
+        sectors: event.event_sectors?.map(es => es.sectors).filter(Boolean) || []
+      })) || [];
+
+      return eventsWithSectors as Event[];
     },
   });
 };

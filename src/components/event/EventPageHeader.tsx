@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import CalBtn from '@/components/CalBtn';
 import type { Event } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEventSectors } from '@/hooks/useEventSectors';
 import { cn } from '@/lib/utils';
 
 interface EventPageHeaderProps {
@@ -18,6 +19,7 @@ interface EventPageHeaderProps {
 export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderProps) => {
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@salonspro.com';
+  const { data: eventSectors = [] } = useEventSectors(event.id);
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
@@ -39,16 +41,19 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
       )}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
         <div className="space-y-6">
-          {/* Tags */}
+          {/* Secteurs d'activité */}
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="text-sm px-3 py-1">
-              {event.sector}
-            </Badge>
-            {event.tags?.map((tag, index) => (
-              <Badge key={index} variant="outline" className="text-sm px-3 py-1">
-                {tag}
+            {eventSectors.length > 0 ? (
+              eventSectors.map((sector) => (
+                <Badge key={sector.id} variant="secondary" className="text-sm px-3 py-1">
+                  {sector.name}
+                </Badge>
+              ))
+            ) : (
+              <Badge variant="secondary" className="text-sm px-3 py-1">
+                {event.sector}
               </Badge>
-            ))}
+            )}
           </div>
 
           {/* Titre principal */}
