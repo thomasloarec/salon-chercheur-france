@@ -28,7 +28,7 @@ interface EventEditModalProps {
   event: Event;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEventUpdated: (updatedEvent: Event) => void;
+  onEventUpdated: (updatedEvent: Event, slugChanged?: boolean) => void;
 }
 
 interface EventFormData {
@@ -100,32 +100,31 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       console.log('Updating event with data:', updateData);
       console.log('Event ID:', event.id);
 
-      const { error } = await supabase
+      // Update the event in the database
+      const { data: updatedEventData, error } = await supabase
         .from('events')
         .update(updateData)
-        .eq('id', event.id);
+        .eq('id', event.id)
+        .select('*')
+        .single();
 
       if (error) {
         console.error('Supabase update error:', error);
         throw error;
       }
 
-      console.log('Event updated successfully');
+      console.log('Event updated successfully:', updatedEventData);
+
+      // Check if the slug has changed (this happens automatically via database trigger)
+      const slugChanged = updatedEventData.slug !== event.slug;
 
       toast({
         title: "Événement modifié",
         description: "Les modifications ont été enregistrées avec succès.",
       });
 
-      // Mettre à jour l'événement local avec les nouvelles données
-      const updatedEvent: Event = {
-        ...event,
-        ...updateData,
-        start_date: updateData.start_date,
-        end_date: updateData.end_date,
-      };
-
-      onEventUpdated(updatedEvent);
+      // Pass the updated event data from the database response
+      onEventUpdated(updatedEventData, slugChanged);
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating event:', error);

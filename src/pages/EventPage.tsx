@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -90,13 +91,18 @@ const EventPage = () => {
     fetchEvent();
   }, [slug]);
 
-  const handleEventUpdated = async (updatedEvent: Event) => {
-    console.log('🔄 Event updated, refreshing from database...');
+  const handleEventUpdated = async (updatedEvent: Event, slugChanged?: boolean) => {
+    console.log('🔄 Event updated:', updatedEvent);
+    console.log('🔄 Slug changed:', slugChanged);
+    
     // Mettre à jour l'état local immédiatement
     setEvent(updatedEvent);
     
-    // Puis recharger depuis la base de données pour s'assurer d'avoir les dernières données
-    await fetchEvent();
+    // Si le slug a changé, rediriger vers la nouvelle URL
+    if (slugChanged && updatedEvent.slug) {
+      console.log('🔄 Redirecting to new slug:', updatedEvent.slug);
+      navigate(`/events/${updatedEvent.slug}`, { replace: true });
+    }
   };
 
   const handleEventDeleted = () => {
