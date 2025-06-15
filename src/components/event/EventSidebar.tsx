@@ -22,20 +22,26 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Lieu */}
+          {/* Lieu & Adresse */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
-              <Building className="h-4 w-4 text-accent mr-2" />
-              Lieu
-            </h3>
-            <div className="space-y-1 text-gray-600 pl-6">
-              {event.venue_name && (
-                <p className="font-medium">{event.venue_name}</p>
-              )}
-              {event.address && (
-                <p>{event.address}</p>
-              )}
-            </div>
+            {event.venue_name && (
+              <div className="mb-4">
+                <h3 className="font-semibold text-gray-900 mb-1 flex items-center">
+                  <Building className="h-4 w-4 text-accent mr-2" />
+                  Nom du lieu
+                </h3>
+                <p className="text-gray-600 pl-6">{event.venue_name}</p>
+              </div>
+            )}
+            {event.address && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1 flex items-center">
+                  <MapPin className="h-4 w-4 text-accent mr-2" />
+                  Adresse
+                </h3>
+                <p className="text-gray-600 pl-6">{event.address}</p>
+              </div>
+            )}
           </div>
 
           {/* Carte */}
