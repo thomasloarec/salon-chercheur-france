@@ -14,13 +14,15 @@ interface EventCardProps {
     estimated_visitors?: number; 
     price?: string; 
     image_url?: string; 
+    slug?: string;
   };
   view?: 'grid';
 }
 
 const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
   const fallbackImage = '/placeholder.svg';
-  const eventSlug = generateEventSlug(event);
+  // Use database-generated slug if available, otherwise fallback to client-generated
+  const eventSlug = event.slug || generateEventSlug(event);
   
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });

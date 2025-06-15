@@ -132,6 +132,7 @@ export type Database = {
           region: string | null
           scraped_from: string | null
           sector: string
+          slug: string | null
           start_date: string
           tags: string[] | null
           updated_at: string
@@ -161,6 +162,7 @@ export type Database = {
           region?: string | null
           scraped_from?: string | null
           sector: string
+          slug?: string | null
           start_date: string
           tags?: string[] | null
           updated_at?: string
@@ -190,6 +192,7 @@ export type Database = {
           region?: string | null
           scraped_from?: string | null
           sector?: string
+          slug?: string | null
           start_date?: string
           tags?: string[] | null
           updated_at?: string
@@ -352,7 +355,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_event_slug: {
+        Args: { event_name: string; event_city: string; event_year: number }
+        Returns: string
+      }
+      unaccent: {
+        Args: { "": string }
+        Returns: string
+      }
+      unaccent_init: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      update_existing_events_slugs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

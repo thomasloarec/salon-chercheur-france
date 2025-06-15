@@ -1,4 +1,3 @@
-
 import type { Event } from '@/types/event';
 
 export const generateEventSlug = (event: Event): string => {
@@ -21,8 +20,10 @@ export const generateEventSlug = (event: Event): string => {
   return `${name}-${year}-${city}`;
 };
 
+// This function is now deprecated since we use database-generated slugs
+// Keeping it for backward compatibility if needed
 export const parseEventSlug = (slug: string) => {
-  console.log('🔍 Parsing slug:', slug);
+  console.log('🔍 Parsing slug (deprecated):', slug);
   
   const parts = slug.split('-');
   console.log('🔍 Slug parts:', parts);

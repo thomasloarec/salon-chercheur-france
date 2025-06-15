@@ -1,7 +1,7 @@
+
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { parseEventSlug } from '@/utils/eventUtils';
 import { matchExhibitorsWithCRM } from '@/utils/crmMatching';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -29,92 +29,31 @@ const EventPage = () => {
         return;
       }
 
-      console.log('🔍 Parsing slug:', slug);
-      const parsedSlug = parseEventSlug(slug);
-      console.log('🔍 Parsed slug data:', parsedSlug);
+      console.log('🔍 Searching for event with slug:', slug);
       
-      if (!parsedSlug) {
-        setError('Format de slug invalide');
-        setLoading(false);
-        return;
-      }
-
       try {
-        // First, let's try a broader search to see what's in the database
-        console.log('🔍 Searching for events...');
-        
-        // Try multiple search strategies
-        const searches = [
-          // Exact match with parsed data
-          {
-            query: supabase
-              .from('events')
-              .select('*')
-              .ilike('name', `%${parsedSlug.name.replace(/-/g, ' ')}%`)
-              .eq('city', parsedSlug.city)
-              .gte('start_date', `${parsedSlug.year}-01-01`)
-              .lt('start_date', `${parsedSlug.year + 1}-01-01`),
-            description: 'Exact match'
-          },
-          // More flexible city search (handle case and accents)
-          {
-            query: supabase
-              .from('events')
-              .select('*')
-              .ilike('name', `%${parsedSlug.name.replace(/-/g, ' ')}%`)
-              .ilike('city', `%${parsedSlug.city}%`)
-              .gte('start_date', `${parsedSlug.year}-01-01`)
-              .lt('start_date', `${parsedSlug.year + 1}-01-01`),
-            description: 'Flexible city match'
-          },
-          // Even more flexible search
-          {
-            query: supabase
-              .from('events')
-              .select('*')
-              .ilike('name', `%salon%metiers%art%`)
-              .ilike('city', `%chalon%`)
-              .gte('start_date', `${parsedSlug.year}-01-01`)
-              .lt('start_date', `${parsedSlug.year + 1}-01-01`),
-            description: 'Very flexible match'
-          }
-        ];
+        // Search directly by slug - much simpler and more reliable
+        const { data: eventData, error: fetchError } = await supabase
+          .from('events')
+          .select('*')
+          .eq('slug', slug)
+          .maybeSingle();
 
-        let eventData = null;
-        
-        for (const search of searches) {
-          console.log(`🔍 Trying ${search.description}...`);
-          const { data: events, error: fetchError } = await search.query.limit(5);
-          
-          if (fetchError) {
-            console.error(`❌ Error in ${search.description}:`, fetchError);
-            continue;
-          }
-          
-          console.log(`📊 ${search.description} found ${events?.length || 0} events:`, events);
-          
-          if (events && events.length > 0) {
-            eventData = events[0];
-            console.log('✅ Using event:', eventData);
-            break;
-          }
+        if (fetchError) {
+          console.error('❌ Error fetching event:', fetchError);
+          setError('Erreur lors du chargement de l\'événement');
+          setLoading(false);
+          return;
         }
 
         if (!eventData) {
-          // Let's also check what events are actually in the database
-          console.log('🔍 Checking all events in database...');
-          const { data: allEvents, error: allError } = await supabase
-            .from('events')
-            .select('id, name, city, start_date')
-            .limit(10);
-          
-          console.log('📊 Sample events in database:', allEvents);
-          
+          console.log('❌ Event not found with slug:', slug);
           setError('Événement introuvable');
           setLoading(false);
           return;
         }
 
+        console.log('✅ Event found:', eventData);
         setEvent(eventData);
 
         // Mock exhibitors data for now
