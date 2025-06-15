@@ -1,6 +1,7 @@
 
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { matchExhibitorsWithCRM } from '@/utils/crmMatching';
 import Header from '@/components/Header';
@@ -21,6 +22,7 @@ const EventPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const invalidateEvents = useInvalidateEvents();
+  const queryClient = useQueryClient();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +108,8 @@ const EventPage = () => {
     
     // Invalidate events cache to update lists
     invalidateEvents();
+    // Invalidate the sectors for this specific event to force a refetch
+    queryClient.invalidateQueries({ queryKey: ['event-sectors', refreshedEvent.id] });
     
     // If the slug has changed, redirect to the new URL
     if (slugChanged && refreshedEvent.slug) {
