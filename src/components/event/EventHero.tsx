@@ -21,7 +21,7 @@ export const EventHero = ({ event }: EventHeroProps) => {
         event-hero
         grid 
         grid-cols-[1fr_auto]
-        items-center
+        items-start
         gap-6 
         p-6 
         bg-white 
@@ -72,15 +72,19 @@ export const EventHero = ({ event }: EventHeroProps) => {
           )}
         </div>
 
-        {/* Image avec hauteur contrainte par la grid */}
-        <div className="event-hero__image">
+        {/* Image avec hauteur verrouillée */}
+        <div className="
+          event-hero__image-container
+          max-h-[200px]
+          overflow-hidden
+        ">
           <img
             src={event.image_url || ''}
             alt={`Affiche de ${event.name}`}
             loading="lazy"
             className="
-              max-h-full
               w-auto
+              max-h-full
               object-contain
               rounded-md
               shadow-lg
