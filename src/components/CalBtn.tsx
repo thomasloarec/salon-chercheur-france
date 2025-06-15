@@ -50,16 +50,8 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
       const isoStart = format(start, 'yyyy-MM-dd');
       const isoEnd = format(endExclusive, 'yyyy-MM-dd');
       
-      // Build Outlook-specific body with improved formatting
-      let outlookBody = event.description || '';
-      
-      if (crmProspects.length > 0) {
-        const prospectsList = crmProspects
-          .map(p => `- ${p.name}${p.stand ? ` – Stand ${p.stand}` : ''}`)
-          .join('\n');
-        
-        outlookBody += `\n\n🎯 Vos prospects exposants :\n${prospectsList}`;
-      }
+      // Convert newlines to HTML <br> tags for Outlook
+      const outlookBody = details.replace(/\n/g, '<br>');
       
       // Using outlook.office.com for Office 365 accounts
       // For personal accounts, could use outlook.live.com but office.com works for both
