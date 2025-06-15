@@ -21,7 +21,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
 
   return (
     <section className="bg-white rounded-lg shadow-sm p-8 mb-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
         {/* Contenu principal */}
         <div className="lg:col-span-2 space-y-6">
           {/* Tags */}
@@ -92,7 +92,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
             <EventImage
               src={event.image_url}
               alt={`Affiche de ${event.name}`}
-              className="shadow-lg"
+              className="shadow-lg h-full aspect-auto max-w-none"
             />
           </div>
         )}
