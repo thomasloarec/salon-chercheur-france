@@ -13,12 +13,14 @@ import { SimilarEvents } from '@/components/event/SimilarEvents';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInvalidateEvents } from '@/hooks/useEvents';
 import type { Event } from '@/types/event';
 
 const EventPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const invalidateEvents = useInvalidateEvents();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +104,9 @@ const EventPage = () => {
     // Update local state immediately with the refreshed event data
     setEvent(refreshedEvent);
     
+    // Invalidate events cache to update lists
+    invalidateEvents();
+    
     // If the slug has changed, redirect to the new URL
     if (slugChanged && refreshedEvent.slug) {
       console.log('🔄 Redirecting to new slug:', refreshedEvent.slug);
@@ -110,6 +115,12 @@ const EventPage = () => {
   };
 
   const handleEventDeleted = () => {
+    console.log('🗑️ Event deleted, invalidating cache and redirecting');
+    
+    // Invalidate events cache to update lists immediately
+    invalidateEvents();
+    
+    // Navigate to events list
     navigate('/events');
   };
 

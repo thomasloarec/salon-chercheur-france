@@ -1,5 +1,5 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
@@ -110,4 +110,13 @@ export const useSectors = () => {
       return data;
     },
   });
+};
+
+// Hook utilitaire pour invalider le cache des événements
+export const useInvalidateEvents = () => {
+  const queryClient = useQueryClient();
+  
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+  };
 };

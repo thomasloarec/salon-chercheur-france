@@ -33,6 +33,7 @@ interface EventAdminMenuProps {
 export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted }: EventAdminMenuProps) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   if (!isAdmin) {
@@ -68,20 +69,33 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
   };
 
   const handleDeleteEvent = async () => {
+    setIsDeleting(true);
     try {
+      console.log('Attempting to delete event with ID:', event.id);
+      
       const { error } = await supabase
         .from('events')
         .delete()
         .eq('id', event.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase delete error:', error);
+        throw error;
+      }
 
+      console.log('Event deleted successfully');
+      
       toast({
         title: "Événement supprimé",
         description: "L'événement a été supprimé définitivement.",
       });
 
+      // Close the dialog first
+      setShowDeleteDialog(false);
+      
+      // Call the callback to handle navigation
       onEventDeleted();
+      
     } catch (error) {
       console.error('Error deleting event:', error);
       toast({
@@ -89,6 +103,8 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         description: "Impossible de supprimer l'événement.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -148,9 +164,13 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteEvent} className="bg-destructive text-destructive-foreground">
-              Supprimer
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteEvent} 
+              className="bg-destructive text-destructive-foreground"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Suppression...' : 'Supprimer'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
