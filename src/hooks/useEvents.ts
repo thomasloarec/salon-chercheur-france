@@ -1,20 +1,8 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface UseEventsParams {
-  sectors?: string[];
-  types?: string[];
-  months?: number[];
-  city?: string;
-  query?: string;
-  region?: string;
-  startDate?: string;
-  endDate?: string;
-  minVisitors?: number;
-  maxVisitors?: number;
-}
 
 export const useEvents = (filters?: SearchFilters) => {
   const { user } = useAuth();
@@ -44,9 +32,14 @@ export const useEvents = (filters?: SearchFilters) => {
         .gte('start_date', new Date().toISOString().split('T')[0]) // Exclure les événements passés
         .order('start_date', { ascending: true });
 
-      // Filtres obligatoires et nouveaux
+      // Filtres secteurs - utiliser les noms des secteurs pour le filtrage
       if (filters?.sectors && filters.sectors.length > 0) {
-        query = query.in('sector', filters.sectors);
+        // Pour les filtres de secteurs, on filtre à la fois sur l'ancien champ "sector" 
+        // et sur les nouveaux secteurs liés via event_sectors
+        const sectorConditions = filters.sectors.map(sectorName => 
+          `sector.eq.${sectorName}`
+        ).join(',');
+        query = query.or(sectorConditions);
       }
 
       if (filters?.types && filters.types.length > 0) {
@@ -102,25 +95,6 @@ export const useEvents = (filters?: SearchFilters) => {
       })) || [];
 
       return eventsWithSectors as Event[];
-    },
-  });
-};
-
-export const useSectors = () => {
-  return useQuery({
-    queryKey: ['sectors'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sectors')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching sectors:', error);
-        throw error;
-      }
-
-      return data;
     },
   });
 };

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -22,7 +21,7 @@ import {
 import { MultiSelect } from '@/components/ui/multi-select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAllSectors, useEventSectors } from '@/hooks/useEventSectors';
+import { useSectors, useEventSectors } from '@/hooks/useSectors';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
 
@@ -50,7 +49,7 @@ interface EventFormData {
 export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: EventEditModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { data: allSectors = [] } = useAllSectors();
+  const { data: allSectors = [] } = useSectors();
   const { data: eventSectors = [] } = useEventSectors(event.id);
 
   const {

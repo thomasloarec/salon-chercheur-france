@@ -1,3 +1,6 @@
+
+import type { Sector } from './sector';
+
 export interface Event {
   id: string;
   name: string;
@@ -27,10 +30,7 @@ export interface Event {
   address?: string;
   visible?: boolean;
   slug?: string;
-  sectors?: Array<{
-    id: string;
-    name: string;
-  }>;
+  sectors?: Sector[];
 }
 
 export interface SearchFilters {

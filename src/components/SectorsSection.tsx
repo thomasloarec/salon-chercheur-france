@@ -2,73 +2,81 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { useSectors } from '@/hooks/useSectors';
 
-const sectors = [
-  {
-    name: "Technologie & Innovation",
-    count: 156,
+// Mapping des secteurs avec leurs couleurs et exemples
+const sectorMapping: Record<string, {
+  color: string;
+  examples: string[];
+  count: number;
+}> = {
+  'Technologie': {
     color: "bg-blue-100 text-blue-800",
     examples: ["Informatique", "IA & Robotique", "Télécoms", "Startups"],
-    searchParam: "Technologie"
+    count: 156
   },
-  {
-    name: "Industrie & Manufacturing",
-    count: 142,
+  'Industrie': {
     color: "bg-gray-100 text-gray-800",
     examples: ["Mécanique", "Automobile", "Aéronautique", "Métallurgie"],
-    searchParam: "Industrie"
+    count: 142
   },
-  {
-    name: "Santé & Médical",
-    count: 98,
+  'Santé': {
     color: "bg-green-100 text-green-800",
     examples: ["Médical", "Pharmaceutique", "Biotechnologies", "E-santé"],
-    searchParam: "Santé"
+    count: 98
   },
-  {
-    name: "BTP & Construction",
-    count: 87,
+  'BTP': {
     color: "bg-orange-100 text-orange-800",
     examples: ["Bâtiment", "Travaux Publics", "Architecture", "Immobilier"],
-    searchParam: "BTP"
+    count: 87
   },
-  {
-    name: "Commerce & Distribution",
-    count: 134,
+  'Commerce': {
     color: "bg-purple-100 text-purple-800",
     examples: ["Retail", "E-commerce", "Franchise", "Logistique"],
-    searchParam: "Commerce"
+    count: 134
   },
-  {
-    name: "Alimentation & Agriculture",
-    count: 76,
+  'Alimentation': {
     color: "bg-green-100 text-green-800",
     examples: ["Agroalimentaire", "Agriculture", "Viticulture", "Bio"],
-    searchParam: "Alimentation"
+    count: 76
   },
-  {
-    name: "Énergie & Environnement",
-    count: 65,
+  'Énergie': {
     color: "bg-emerald-100 text-emerald-800",
     examples: ["Énergies renouvelables", "Environnement", "Développement durable"],
-    searchParam: "Énergie"
+    count: 65
   },
-  {
-    name: "Services B2B",
-    count: 118,
+  'Services': {
     color: "bg-indigo-100 text-indigo-800",
     examples: ["Conseil", "Finance", "RH", "Communication"],
-    searchParam: "Services"
+    count: 118
   }
-];
+};
 
 const SectorsSection = () => {
   const navigate = useNavigate();
+  const { data: sectors = [], isLoading } = useSectors();
 
-  const handleSectorClick = (slug: string) => {
-    // Navigation simple vers /events avec le secteur en query param
-    navigate(`/events?sectors=${encodeURIComponent(slug)}`);
+  const handleSectorClick = (sectorName: string) => {
+    // Navigation vers /events avec le nom du secteur en query param
+    navigate(`/events?sectors=${encodeURIComponent(sectorName)}`);
   };
+
+  if (isLoading) {
+    return (
+      <section id="secteurs" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
+              Explorez par secteur d'activité
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Chargement des secteurs...
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="secteurs" className="py-20 bg-white">
@@ -78,40 +86,52 @@ const SectorsSection = () => {
             Explorez par secteur d'activité
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Plus de 50 secteurs d'activité couverts pour répondre à tous vos besoins de prospection commerciale.
+            Plus de {sectors.length} secteurs d'activité couverts pour répondre à tous vos besoins de prospection commerciale.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sectors.map((sector, index) => (
-            <Card 
-              key={index} 
-              className="hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group border-2 hover:border-accent/20"
-              onClick={() => handleSectorClick(sector.searchParam)}
-            >
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
-                    {sector.name}
-                  </h3>
-                  <Badge className={`${sector.color} font-semibold`}>
-                    {sector.count}
-                  </Badge>
-                </div>
-                
-                <div className="space-y-2">
-                  {sector.examples.map((example, idx) => (
-                    <span 
-                      key={idx} 
-                      className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full mr-2 mb-2"
-                    >
-                      {example}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {sectors.map((sector) => {
+            // Chercher la correspondance dans notre mapping statique
+            const matchKey = Object.keys(sectorMapping).find(key => 
+              sector.name.toLowerCase().includes(key.toLowerCase())
+            );
+            const sectorConfig = matchKey ? sectorMapping[matchKey] : {
+              color: "bg-blue-100 text-blue-800",
+              examples: ["Divers"],
+              count: 50
+            };
+
+            return (
+              <Card 
+                key={sector.id} 
+                className="hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group border-2 hover:border-accent/20"
+                onClick={() => handleSectorClick(sector.name)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
+                      {sector.name}
+                    </h3>
+                    <Badge className={`${sectorConfig.color} font-semibold`}>
+                      {sectorConfig.count}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {sectorConfig.examples.map((example, idx) => (
+                      <span 
+                        key={idx} 
+                        className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full mr-2 mb-2"
+                      >
+                        {example}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         <div className="text-center mt-12">

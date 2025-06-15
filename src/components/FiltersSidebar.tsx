@@ -7,18 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useSearchParams } from 'react-router-dom';
+import { useSectors } from '@/hooks/useSectors';
 import type { SearchFilters } from '@/types/event';
-
-const sectorOptions = [
-  { value: 'Technologie', label: 'Technologie & Innovation' },
-  { value: 'Industrie', label: 'Industrie & Manufacturing' },
-  { value: 'Santé', label: 'Santé & Médical' },
-  { value: 'BTP', label: 'BTP & Construction' },
-  { value: 'Commerce', label: 'Commerce & Distribution' },
-  { value: 'Alimentation', label: 'Alimentation & Agriculture' },
-  { value: 'Énergie', label: 'Énergie & Environnement' },
-  { value: 'Services', label: 'Services B2B' },
-];
 
 const typeOptions = [
   { value: 'salon', label: 'Salon' },
@@ -50,7 +40,14 @@ interface FiltersSidebarProps {
 
 export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }: FiltersSidebarProps) => {
   const [searchParams] = useSearchParams();
+  const { data: sectorsData = [] } = useSectors();
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Créer les options des secteurs à partir des données de l'API
+  const sectorOptions = sectorsData.map(sector => ({
+    value: sector.name,
+    label: sector.name,
+  }));
   
   // Initialisation une seule fois au montage avec les paramètres URL
   const [sectors, setSectors] = useState<string[]>(() => {

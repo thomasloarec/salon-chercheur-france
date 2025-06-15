@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import CalBtn from '@/components/CalBtn';
 import type { Event } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEventSectors } from '@/hooks/useEventSectors';
+import { useEventSectors } from '@/hooks/useSectors';
 import { cn } from '@/lib/utils';
 
 interface EventPageHeaderProps {
