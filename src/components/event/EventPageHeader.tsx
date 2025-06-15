@@ -5,6 +5,7 @@ import { CalendarDays, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { EventImage } from '@/components/ui/event-image';
 import CalBtn from '@/components/CalBtn';
 import type { Event } from '@/types/event';
 
@@ -85,13 +86,13 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           </div>
         </div>
 
-        {/* Image de l'événement */}
+        {/* Image de l'événement avec le bon composant */}
         {event.image_url && (
-          <div className="lg:col-span-1">
-            <img
+          <div className="lg:col-span-1 flex justify-center lg:justify-end">
+            <EventImage
               src={event.image_url}
-              alt={`Image de l'événement ${event.name}`}
-              className="w-full max-w-sm h-64 object-cover rounded-xl shadow-sm lg:ml-auto"
+              alt={`Affiche de ${event.name}`}
+              className="shadow-lg"
             />
           </div>
         )}

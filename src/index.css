@@ -176,3 +176,26 @@
     max-width: 280px;
   }
 }
+
+/* ========= OVERRIDE POUR EVENT HERO IMAGE ========= */
+.event-hero__image img,
+.event-image-wrapper img {
+  /* on force le ratio et l'objet-fit */
+  aspect-ratio: 3 / 4 !important;
+  width: auto !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* S'assurer que tous les contenants d'images d'événements utilisent le bon ratio */
+.event-image-wrapper {
+  aspect-ratio: 3 / 4 !important;
+  max-width: 320px !important;
+}
+
+@media (max-width: 640px) {
+  .event-image-wrapper {
+    aspect-ratio: 2 / 3 !important;
+    max-width: 280px !important;
+  }
+}
