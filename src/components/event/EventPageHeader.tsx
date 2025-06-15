@@ -51,12 +51,19 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
 
           {/* Actions */}
           <div className="space-y-3 pt-4 border-t">
-            <div className="flex flex-wrap gap-3">
-              <div className="flex gap-2">
-                <CalBtn type="gcal" event={event} />
-                <CalBtn type="outlook" event={event} />
+            <div className="flex flex-wrap gap-3 items-start">
+              {/* Boutons calendrier avec texte explicatif */}
+              <div className="flex flex-col">
+                <div className="flex gap-2">
+                  <CalBtn type="gcal" event={event} />
+                  <CalBtn type="outlook" event={event} />
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Ajoutez cet événement à votre agenda en un clic.
+                </p>
               </div>
               
+              {/* Bouton site officiel */}
               {event.event_url && (
                 <Button 
                   variant="outline"
@@ -68,11 +75,6 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
                 </Button>
               )}
             </div>
-            
-            {/* Phrase explicative */}
-            <p className="text-sm text-muted-foreground">
-              Ajoutez cet événement à votre agenda en un clic.
-            </p>
           </div>
         </div>
 
