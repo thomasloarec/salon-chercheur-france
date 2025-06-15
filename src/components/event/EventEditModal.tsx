@@ -97,37 +97,56 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         updated_at: new Date().toISOString(),
       };
 
-      console.log('Updating event with data:', updateData);
-      console.log('Event ID:', event.id);
+      console.log('🔄 Updating event with ID:', event.id);
+      console.log('🔄 Update data:', updateData);
+      console.log('🔄 Original slug:', event.slug);
 
-      // Update the event in the database
-      const { data: updatedEventData, error } = await supabase
+      // First, update the event using the ID (not slug)
+      const { error: updateError } = await supabase
         .from('events')
         .update(updateData)
-        .eq('id', event.id)
-        .select('*')
-        .single();
+        .eq('id', event.id);
 
-      if (error) {
-        console.error('Supabase update error:', error);
-        throw error;
+      if (updateError) {
+        console.error('❌ Supabase update error:', updateError);
+        throw updateError;
       }
 
-      console.log('Event updated successfully:', updatedEventData);
+      console.log('✅ Event update successful');
 
-      // Check if the slug has changed (this happens automatically via database trigger)
+      // Then, fetch the updated event to get the new data including the potentially updated slug
+      const { data: updatedEventData, error: fetchError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', event.id)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('❌ Error fetching updated event:', fetchError);
+        throw fetchError;
+      }
+
+      if (!updatedEventData) {
+        console.error('❌ No event found after update');
+        throw new Error('Event not found after update');
+      }
+
+      console.log('✅ Updated event data:', updatedEventData);
+
+      // Check if the slug has changed
       const slugChanged = updatedEventData.slug !== event.slug;
+      console.log('🔄 Slug changed:', slugChanged, 'from', event.slug, 'to', updatedEventData.slug);
 
       toast({
         title: "Événement modifié",
         description: "Les modifications ont été enregistrées avec succès.",
       });
 
-      // Pass the updated event data from the database response
+      // Pass the updated event data and slug change info
       onEventUpdated(updatedEventData, slugChanged);
       onOpenChange(false);
     } catch (error) {
-      console.error('Error updating event:', error);
+      console.error('❌ Error updating event:', error);
       toast({
         title: "Erreur",
         description: "Impossible de modifier l'événement.",
