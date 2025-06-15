@@ -52,11 +52,9 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
             </span>
           </div>
 
-          {/* Séparateur limité à la largeur des boutons d’action */}
-          <Separator className="my-4 inline-block w-auto" />
-
-          {/* Actions */}
-          <div className="space-y-3">
+          {/* Conteneur pour le séparateur et les actions afin de limiter la largeur */}
+          <div className="inline-block">
+            <Separator className="mb-4" />
             <div className="flex flex-wrap gap-3 items-center">
               {/* Boutons calendrier avec texte explicatif */}
               <div className="flex flex-col">
