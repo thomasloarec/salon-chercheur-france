@@ -87,12 +87,12 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
 
         {/* Image de l'événement */}
         {event.image_url && (
-          <div className="flex-shrink-0 overflow-hidden">
+          <div className="flex-shrink-0 overflow-hidden max-h-[14rem] lg:max-h-[20rem]">
             <img
               src={event.image_url}
               alt={`Affiche de ${event.name}`}
               loading="lazy"
-              className="max-h-full w-auto object-contain rounded-md shadow-lg"
+              className="h-auto w-auto max-h-[14rem] lg:max-h-[20rem] object-contain rounded-md shadow-lg"
             />
           </div>
         )}
