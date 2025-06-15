@@ -9,6 +9,7 @@ import CalBtn from '@/components/CalBtn';
 import type { Event } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEventSectors } from '@/hooks/useSectors';
+import { getSectorConfig } from '@/constants/sectors';
 import { cn } from '@/lib/utils';
 
 interface EventPageHeaderProps {
@@ -44,15 +45,25 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           {/* Secteurs d'activité */}
           <div className="flex flex-wrap gap-2">
             {eventSectors.length > 0 ? (
-              eventSectors.map((sector) => (
-                <Badge key={sector.id} variant="secondary" className="text-sm px-3 py-1">
-                  {sector.name}
-                </Badge>
-              ))
+              eventSectors.map((sector) => {
+                const config = getSectorConfig(sector.name);
+                return (
+                  <Badge 
+                    key={sector.id} 
+                    variant="secondary" 
+                    className={`text-sm px-3 py-1 ${config.color}`}
+                  >
+                    {sector.name}
+                  </Badge>
+                );
+              })
             ) : (
-              <Badge variant="secondary" className="text-sm px-3 py-1">
-                {event.sector}
-              </Badge>
+              // Fallback vers l'ancien champ sector si aucun secteur n'est trouvé
+              event.sector && (
+                <Badge variant="secondary" className="text-sm px-3 py-1">
+                  {event.sector}
+                </Badge>
+              )
             )}
           </div>
 

@@ -10,6 +10,8 @@ import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { EventImage } from '@/components/ui/event-image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEventSectors } from '@/hooks/useSectors';
+import { getSectorConfig } from '@/constants/sectors';
 import { cn } from '@/lib/utils';
 
 interface EventCardProps {
@@ -25,6 +27,7 @@ interface EventCardProps {
 const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@salonspro.com';
+  const { data: eventSectors = [] } = useEventSectors(event.id);
 
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
@@ -54,14 +57,42 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
             src={event.image_url || ''} 
             alt={`Affiche de ${event.name}`}
           />
-          {event.sector && (
-            <Badge 
-              className="absolute left-2 top-2"
-              variant="secondary"
-            >
-              {event.sector}
-            </Badge>
-          )}
+          {/* Affichage des secteurs sur l'image */}
+          <div className="absolute left-2 top-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
+            {eventSectors.length > 0 ? (
+              eventSectors.slice(0, 2).map((sector) => {
+                const config = getSectorConfig(sector.name);
+                return (
+                  <Badge 
+                    key={sector.id}
+                    variant="secondary"
+                    className={`text-xs px-2 py-1 ${config.color} shadow-sm`}
+                  >
+                    {sector.name}
+                  </Badge>
+                );
+              })
+            ) : (
+              // Fallback vers l'ancien champ sector
+              event.sector && (
+                <Badge 
+                  variant="secondary"
+                  className="text-xs px-2 py-1 shadow-sm"
+                >
+                  {event.sector}
+                </Badge>
+              )
+            )}
+            {/* Indicateur s'il y a plus de 2 secteurs */}
+            {eventSectors.length > 2 && (
+              <Badge 
+                variant="secondary"
+                className="text-xs px-2 py-1 bg-gray-500 text-white shadow-sm"
+              >
+                +{eventSectors.length - 2}
+              </Badge>
+            )}
+          </div>
         </div>
       </Link>
       <CardContent className="p-4">

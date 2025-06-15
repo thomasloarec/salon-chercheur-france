@@ -5,6 +5,8 @@ import { CalendarDays, MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CalBtn from '@/components/CalBtn';
+import { useEventSectors } from '@/hooks/useSectors';
+import { getSectorConfig } from '@/constants/sectors';
 import type { Event } from '@/types/event';
 
 interface EventHeaderProps {
@@ -12,6 +14,8 @@ interface EventHeaderProps {
 }
 
 export const EventHeader = ({ event }: EventHeaderProps) => {
+  const { data: eventSectors = [] } = useEventSectors(event.id);
+
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
@@ -20,7 +24,25 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
     <header className="bg-white rounded-lg shadow-sm p-6 mb-6">
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2 mb-4">
-          <Badge variant="secondary">{event.sector}</Badge>
+          {eventSectors.length > 0 ? (
+            eventSectors.map((sector) => {
+              const config = getSectorConfig(sector.name);
+              return (
+                <Badge 
+                  key={sector.id} 
+                  variant="secondary"
+                  className={config.color}
+                >
+                  {sector.name}
+                </Badge>
+              );
+            })
+          ) : (
+            // Fallback vers l'ancien champ sector
+            event.sector && (
+              <Badge variant="secondary">{event.sector}</Badge>
+            )
+          )}
           {event.tags?.map((tag, index) => (
             <Badge key={index} variant="outline">{tag}</Badge>
           ))}

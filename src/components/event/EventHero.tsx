@@ -4,6 +4,8 @@ import { fr } from 'date-fns/locale';
 import { CalendarDays, MapPin, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { EventImage } from '@/components/ui/event-image';
+import { useEventSectors } from '@/hooks/useSectors';
+import { getSectorConfig } from '@/constants/sectors';
 import type { Event } from '@/types/event';
 
 interface EventHeroProps {
@@ -11,6 +13,8 @@ interface EventHeroProps {
 }
 
 export const EventHero = ({ event }: EventHeroProps) => {
+  const { data: eventSectors = [] } = useEventSectors(event.id);
+
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
@@ -31,9 +35,30 @@ export const EventHero = ({ event }: EventHeroProps) => {
         {/* Contenu principal - prend tout l'espace disponible */}
         <div className="event-hero__details space-y-6">
           <div className="space-y-4">
-            <Badge variant="secondary" className="w-fit">
-              {event.sector}
-            </Badge>
+            {/* Affichage des secteurs */}
+            <div className="flex flex-wrap gap-2">
+              {eventSectors.length > 0 ? (
+                eventSectors.map((sector) => {
+                  const config = getSectorConfig(sector.name);
+                  return (
+                    <Badge 
+                      key={sector.id} 
+                      variant="secondary" 
+                      className={`w-fit ${config.color}`}
+                    >
+                      {sector.name}
+                    </Badge>
+                  );
+                })
+              ) : (
+                // Fallback vers l'ancien champ sector
+                event.sector && (
+                  <Badge variant="secondary" className="w-fit">
+                    {event.sector}
+                  </Badge>
+                )
+              )}
+            </div>
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
               {event.name}
             </h1>
