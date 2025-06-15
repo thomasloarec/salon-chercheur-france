@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarDays, ExternalLink } from 'lucide-react';
@@ -21,7 +20,6 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
   return (
     <section className="bg-white rounded-lg shadow-sm p-8 mb-8">
       <div className="flex flex-col lg:flex-row gap-8 items-start">
-        {/* Contenu principal */}
         <div className="space-y-6">
           {/* Tags */}
           <div className="flex flex-wrap gap-2">
@@ -87,12 +85,12 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
 
         {/* Image de l'événement */}
         {event.image_url && (
-          <div className="flex-shrink-0 overflow-hidden max-h-[14rem] lg:max-h-[20rem]">
+          <div className="flex-shrink-0 overflow-hidden max-h-[12rem] lg:max-h-[18rem]">
             <img
               src={event.image_url}
               alt={`Affiche de ${event.name}`}
               loading="lazy"
-              className="h-auto w-auto max-h-[14rem] lg:max-h-[20rem] object-contain rounded-md shadow-lg"
+              className="h-auto w-auto max-h-[12rem] lg:max-h-[18rem] object-contain rounded-md shadow-lg"
             />
           </div>
         )}
