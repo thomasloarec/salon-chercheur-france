@@ -15,7 +15,7 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-xl">
-            <h2 className="flex items-center">
+            <h2 className="flex items-center text-left">
               <MapPin className="h-5 w-5 mr-2 text-accent" />
               Informations pratiques
             </h2>
@@ -23,29 +23,29 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Lieu & Adresse */}
-          <div className="space-y-4">
+          <dl className="space-y-4 text-left">
             {event.venue_name && (
-              <div className="flex items-start">
-                <Building className="h-4 w-4 text-accent mr-3 mt-1 flex-shrink-0" />
-                <div className="flex flex-col">
-                  <span className="font-semibold text-gray-900">Nom du lieu</span>
-                  <span className="text-gray-600">{event.venue_name}</span>
+              <div className="flex items-start gap-2">
+                <Building className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                <div className="text-left">
+                  <dt className="font-semibold text-gray-900">Nom du lieu</dt>
+                  <dd className="text-gray-600">{event.venue_name}</dd>
                 </div>
               </div>
             )}
             {event.address && (
-              <div className="flex items-start">
-                <MapPin className="h-4 w-4 text-accent mr-3 mt-1 flex-shrink-0" />
-                <div className="flex flex-col">
-                  <span className="font-semibold text-gray-900">Adresse</span>
-                  <span className="text-gray-600">{event.address}</span>
+              <div className="flex items-start gap-2">
+                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                <div className="text-left">
+                  <dt className="font-semibold text-gray-900">Adresse</dt>
+                  <dd className="text-gray-600">{event.address}</dd>
                 </div>
               </div>
             )}
-          </div>
+          </dl>
 
           {/* Carte */}
-          <div>
+          <div className="text-left">
             <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
               <MapPin className="h-4 w-4 text-accent mr-2" />
               Localisation

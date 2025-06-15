@@ -11,34 +11,44 @@ export const EventDetails = ({ event }: EventDetailsProps) => {
   return (
     <Card className="mb-6 text-left">
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex items-center text-left">
           <MapPin className="h-5 w-5 mr-2 text-accent" />
           Informations pratiques
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-left">
-        <div>
+        <div className="text-left">
           <h4 className="font-medium text-gray-900 mb-2 text-left">Lieu</h4>
-          <div className="space-y-1 text-gray-600">
+          <dl className="space-y-2 text-gray-600 text-left">
             {event.venue_name && (
-              <div className="flex items-start">
-                <Building className="h-4 w-4 text-accent mr-3 mt-1 flex-shrink-0" />
-                <span className="font-medium text-left">{event.venue_name}</span>
+              <div className="flex items-start gap-2">
+                <Building className="h-4 w-4 text-accent flex-shrink-0 mt-1" />
+                <div className="text-left">
+                  <dt className="sr-only">Nom du lieu</dt>
+                  <dd className="font-medium text-left">{event.venue_name}</dd>
+                </div>
               </div>
             )}
             {event.address && (
-              <div className="flex items-start ml-7">
-                <span className="text-left">{event.address}</span>
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 text-accent flex-shrink-0 mt-1" />
+                <div className="text-left">
+                  <dt className="sr-only">Adresse</dt>
+                  <dd className="text-left">{event.address}</dd>
+                </div>
               </div>
             )}
-            <div className="flex items-start ml-7">
-              <span className="text-left">{event.city}, {event.country || 'France'}</span>
+            <div className="flex items-start gap-2">
+              <div className="w-4 h-4 flex-shrink-0"></div>
+              <div className="text-left">
+                <span className="text-left">{event.city}, {event.country || 'France'}</span>
+              </div>
             </div>
-          </div>
+          </dl>
         </div>
 
         {event.estimated_visitors && (
-          <div>
+          <div className="text-left">
             <h4 className="font-medium text-gray-900 mb-2 text-left">Affluence</h4>
             <div className="flex items-center text-gray-600">
               <Users className="h-4 w-4 text-accent mr-2" />
@@ -48,21 +58,21 @@ export const EventDetails = ({ event }: EventDetailsProps) => {
         )}
 
         {event.organizer_name && (
-          <div>
+          <div className="text-left">
             <h4 className="font-medium text-gray-900 mb-2 text-left">Organisateur</h4>
             <p className="text-gray-600 text-left ml-6">{event.organizer_name}</p>
           </div>
         )}
 
         {event.entry_fee && (
-          <div>
+          <div className="text-left">
             <h4 className="font-medium text-gray-900 mb-2 text-left">Tarifs</h4>
             <p className="text-gray-600 text-left ml-6">{event.entry_fee}</p>
           </div>
         )}
 
         {/* Placeholder pour carte désactivée */}
-        <div className="mt-6">
+        <div className="mt-6 text-left">
           <h4 className="font-medium text-gray-900 mb-2 text-left">Localisation</h4>
           <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
             <div className="text-center text-gray-500">

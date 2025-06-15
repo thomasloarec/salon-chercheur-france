@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, MapPin, Users, ExternalLink } from 'lucide-react';
+import { CalendarDays, MapPin, Users, ExternalLink, Building } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Event } from '@/types/event';
@@ -19,37 +19,51 @@ export const EventInfo = ({ event }: EventInfoProps) => {
   return (
     <Card className="text-left">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-left">
           <CalendarDays className="h-5 w-5 text-accent" />
           Informations pratiques
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-left">
-        <div>
+        <div className="text-left">
           <h4 className="font-medium text-gray-900 mb-1 text-left">Dates</h4>
           <p className="text-gray-600 text-left">
             Du {formatDate(event.start_date)} au {formatDate(event.end_date)}
           </p>
         </div>
 
-        <div>
+        <div className="text-left">
           <h4 className="font-medium text-gray-900 mb-1 text-left">Lieu</h4>
-          <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" />
-            <div className="text-left">
-              {event.venue_name && (
-                <p className="font-medium text-left">{event.venue_name}</p>
-              )}
-              {event.address && (
-                <p className="text-gray-600 text-left">{event.address}</p>
-              )}
-              <p className="text-gray-600 text-left">{event.city}, {event.country || 'France'}</p>
+          <dl className="space-y-2 text-left">
+            {event.venue_name && (
+              <div className="flex items-start gap-2">
+                <Building className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                <div className="text-left">
+                  <dt className="sr-only">Nom du lieu</dt>
+                  <dd className="font-medium text-left">{event.venue_name}</dd>
+                </div>
+              </div>
+            )}
+            {event.address && (
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                <div className="text-left">
+                  <dt className="sr-only">Adresse</dt>
+                  <dd className="text-gray-600 text-left">{event.address}</dd>
+                </div>
+              </div>
+            )}
+            <div className="flex items-start gap-2">
+              <div className="w-4 h-4 flex-shrink-0"></div>
+              <div className="text-left">
+                <p className="text-gray-600 text-left">{event.city}, {event.country || 'France'}</p>
+              </div>
             </div>
-          </div>
+          </dl>
         </div>
 
         {event.estimated_visitors && (
-          <div>
+          <div className="text-left">
             <h4 className="font-medium text-gray-900 mb-1 text-left">Visiteurs attendus</h4>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-accent" />
@@ -61,7 +75,7 @@ export const EventInfo = ({ event }: EventInfoProps) => {
         )}
 
         {event.organizer_name && (
-          <div>
+          <div className="text-left">
             <h4 className="font-medium text-gray-900 mb-1 text-left">Organisateur</h4>
             <p className="text-gray-600 text-left">{event.organizer_name}</p>
           </div>
