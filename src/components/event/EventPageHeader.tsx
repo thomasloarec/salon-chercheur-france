@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 import { CalendarDays, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import CalBtn from '@/components/CalBtn';
 import type { Event } from '@/types/event';
 
@@ -34,29 +35,29 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
             ))}
           </div>
 
-          {/* Container flex pour titre et date avec alignement vertical */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* Titre principal */}
-            <div className="flex-1">
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left">
-                {event.name}
-              </h1>
-            </div>
-
-            {/* Date alignée avec le titre */}
-            <div className="flex items-center text-lg text-gray-600 md:ml-6">
-              <CalendarDays className="h-6 w-6 mr-3 text-accent" />
-              <span className="font-medium">
-                {formatDate(event.start_date)}
-                {event.start_date !== event.end_date && (
-                  <> - {formatDate(event.end_date)}</>
-                )}
-              </span>
-            </div>
+          {/* Titre principal */}
+          <div>
+            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left">
+              {event.name}
+            </h1>
           </div>
 
+          {/* Date */}
+          <div className="flex items-center text-lg text-gray-600">
+            <CalendarDays className="h-6 w-6 mr-3 text-accent" />
+            <span className="font-medium">
+              {formatDate(event.start_date)}
+              {event.start_date !== event.end_date && (
+                <> - {formatDate(event.end_date)}</>
+              )}
+            </span>
+          </div>
+
+          {/* Séparateur */}
+          <Separator className="my-4" />
+
           {/* Actions */}
-          <div className="space-y-3 pt-4 border-t">
+          <div className="space-y-3">
             <div className="flex flex-wrap gap-3 items-center">
               {/* Boutons calendrier avec texte explicatif */}
               <div className="flex flex-col">
@@ -74,7 +75,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
                 <Button 
                   variant="outline"
                   onClick={() => window.open(event.event_url, '_blank')}
-                  className="text-sm"
+                  className="text-sm self-start"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Site officiel
