@@ -19,18 +19,17 @@ export const EventHero = ({ event }: EventHeroProps) => {
     <section className="relative">
       <div className="
         event-hero
-        flex 
-        items-stretch
+        grid 
+        grid-cols-[1fr_auto]
+        items-center
         gap-6 
         p-6 
         bg-white 
         rounded-lg 
-        shadow 
-        max-h-[12rem]
-        overflow-hidden
+        shadow
       ">
         {/* Contenu principal - prend tout l'espace disponible */}
-        <div className="event-hero__details flex-1 space-y-6">
+        <div className="event-hero__details space-y-6">
           <div className="space-y-4">
             <Badge variant="secondary" className="w-fit">
               {event.sector}
@@ -73,14 +72,14 @@ export const EventHero = ({ event }: EventHeroProps) => {
           )}
         </div>
 
-        {/* Image avec hauteur contrainte et flex-shrink-0 */}
-        <div className="event-hero__image flex-shrink-0 h-full">
+        {/* Image avec hauteur contrainte par la grid */}
+        <div className="event-hero__image">
           <img
             src={event.image_url || ''}
             alt={`Affiche de ${event.name}`}
             loading="lazy"
             className="
-              h-full
+              max-h-full
               w-auto
               object-contain
               rounded-md
