@@ -22,13 +22,40 @@ export const generateEventSlug = (event: Event): string => {
 };
 
 export const parseEventSlug = (slug: string) => {
+  console.log('🔍 Parsing slug:', slug);
+  
   const parts = slug.split('-');
-  if (parts.length < 3) return null;
+  console.log('🔍 Slug parts:', parts);
   
-  // Assume last two parts are year and city
-  const year = parts[parts.length - 2];
-  const city = parts[parts.length - 1];
-  const name = parts.slice(0, -2).join('-');
+  if (parts.length < 3) {
+    console.log('❌ Not enough parts in slug');
+    return null;
+  }
   
-  return { name, year: parseInt(year), city };
+  // Find the year (should be a 4-digit number)
+  let yearIndex = -1;
+  let year = 0;
+  
+  for (let i = parts.length - 2; i >= 0; i--) {
+    const potentialYear = parseInt(parts[i]);
+    if (potentialYear >= 2020 && potentialYear <= 2030 && parts[i].length === 4) {
+      yearIndex = i;
+      year = potentialYear;
+      break;
+    }
+  }
+  
+  if (yearIndex === -1) {
+    console.log('❌ No valid year found in slug');
+    return null;
+  }
+  
+  // Everything before the year is the name
+  const name = parts.slice(0, yearIndex).join('-');
+  // Everything after the year is the city
+  const city = parts.slice(yearIndex + 1).join('');
+  
+  console.log('✅ Parsed result:', { name, year, city });
+  
+  return { name, year, city };
 };

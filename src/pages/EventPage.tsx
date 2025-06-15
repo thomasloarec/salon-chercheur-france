@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,8 +28,11 @@ const EventPage = () => {
         setLoading(false);
         return;
       }
-      
+
+      console.log('🔍 Parsing slug:', slug);
       const parsedSlug = parseEventSlug(slug);
+      console.log('🔍 Parsed slug data:', parsedSlug);
+      
       if (!parsedSlug) {
         setError('Format de slug invalide');
         setLoading(false);
@@ -38,30 +40,81 @@ const EventPage = () => {
       }
 
       try {
-        // Fetch event by matching name, year, and city
-        const { data: events, error: fetchError } = await supabase
-          .from('events')
-          .select('*')
-          .ilike('name', `%${parsedSlug.name.replace('-', ' ')}%`)
-          .eq('city', parsedSlug.city)
-          .gte('start_date', `${parsedSlug.year}-01-01`)
-          .lt('start_date', `${parsedSlug.year + 1}-01-01`)
-          .limit(1);
+        // First, let's try a broader search to see what's in the database
+        console.log('🔍 Searching for events...');
+        
+        // Try multiple search strategies
+        const searches = [
+          // Exact match with parsed data
+          {
+            query: supabase
+              .from('events')
+              .select('*')
+              .ilike('name', `%${parsedSlug.name.replace(/-/g, ' ')}%`)
+              .eq('city', parsedSlug.city)
+              .gte('start_date', `${parsedSlug.year}-01-01`)
+              .lt('start_date', `${parsedSlug.year + 1}-01-01`),
+            description: 'Exact match'
+          },
+          // More flexible city search (handle case and accents)
+          {
+            query: supabase
+              .from('events')
+              .select('*')
+              .ilike('name', `%${parsedSlug.name.replace(/-/g, ' ')}%`)
+              .ilike('city', `%${parsedSlug.city}%`)
+              .gte('start_date', `${parsedSlug.year}-01-01`)
+              .lt('start_date', `${parsedSlug.year + 1}-01-01`),
+            description: 'Flexible city match'
+          },
+          // Even more flexible search
+          {
+            query: supabase
+              .from('events')
+              .select('*')
+              .ilike('name', `%salon%metiers%art%`)
+              .ilike('city', `%chalon%`)
+              .gte('start_date', `${parsedSlug.year}-01-01`)
+              .lt('start_date', `${parsedSlug.year + 1}-01-01`),
+            description: 'Very flexible match'
+          }
+        ];
 
-        if (fetchError) {
-          console.error('Error fetching event:', fetchError);
-          setError('Erreur lors du chargement de l\'événement');
-          setLoading(false);
-          return;
+        let eventData = null;
+        
+        for (const search of searches) {
+          console.log(`🔍 Trying ${search.description}...`);
+          const { data: events, error: fetchError } = await search.query.limit(5);
+          
+          if (fetchError) {
+            console.error(`❌ Error in ${search.description}:`, fetchError);
+            continue;
+          }
+          
+          console.log(`📊 ${search.description} found ${events?.length || 0} events:`, events);
+          
+          if (events && events.length > 0) {
+            eventData = events[0];
+            console.log('✅ Using event:', eventData);
+            break;
+          }
         }
 
-        if (!events || events.length === 0) {
+        if (!eventData) {
+          // Let's also check what events are actually in the database
+          console.log('🔍 Checking all events in database...');
+          const { data: allEvents, error: allError } = await supabase
+            .from('events')
+            .select('id, name, city, start_date')
+            .limit(10);
+          
+          console.log('📊 Sample events in database:', allEvents);
+          
           setError('Événement introuvable');
           setLoading(false);
           return;
         }
 
-        const eventData = events[0];
         setEvent(eventData);
 
         // Mock exhibitors data for now
@@ -79,7 +132,7 @@ const EventPage = () => {
         setCrmTargets(matchedTargets);
 
       } catch (error) {
-        console.error('Error:', error);
+        console.error('❌ Unexpected error:', error);
         setError('Une erreur inattendue s\'est produite');
       } finally {
         setLoading(false);
