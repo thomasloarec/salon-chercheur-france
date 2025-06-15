@@ -35,7 +35,6 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
               {event.address && (
                 <p>{event.address}</p>
               )}
-              <p>{event.city}, {event.region || event.country || 'France'}</p>
             </div>
           </div>
 

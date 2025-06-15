@@ -41,6 +41,7 @@ interface EventFormData {
   entry_fee: string;
   venue_name: string;
   address: string;
+  event_url: string;
 }
 
 export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: EventEditModalProps) => {
@@ -64,6 +65,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       entry_fee: event.entry_fee || '',
       venue_name: event.venue_name || '',
       address: event.address || '',
+      event_url: event.event_url || '',
     },
   });
 
@@ -94,6 +96,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         entry_fee: data.entry_fee || null,
         venue_name: data.venue_name || null,
         address: data.address || null,
+        event_url: data.event_url || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -200,6 +203,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       console.log('  - Original name:', event.name, '→ New name:', refreshedEvent.name);
       console.log('  - Original image_url:', event.image_url, '→ New image_url:', refreshedEvent.image_url);
       console.log('  - Original description:', event.description, '→ New description:', refreshedEvent.description);
+      console.log('  - Original event_url:', event.event_url, '→ New event_url:', refreshedEvent.event_url);
       console.log('  - Original updated_at:', event.updated_at, '→ New updated_at:', refreshedEvent.updated_at);
 
       // Check if the slug has changed
@@ -314,6 +318,16 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 type="url"
                 placeholder="https://exemple.com/image.jpg"
                 {...register('image_url')}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="event_url">Site officiel</Label>
+              <Input
+                id="event_url"
+                type="url"
+                placeholder="https://exemple.com"
+                {...register('event_url')}
               />
             </div>
           </div>
