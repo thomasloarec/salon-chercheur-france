@@ -85,17 +85,38 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
                 to={`/events/${generateEventSlug(event)}`}
                 className="block hover:bg-gray-50 rounded p-2 -m-2 transition-colors"
               >
-                <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
-                  {event.name}
-                </h4>
-                <div className="space-y-1 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <CalendarDays className="h-3 w-3 mr-2" />
-                    <span>{format(new Date(event.start_date), 'dd MMM yyyy', { locale: fr })}</span>
+                {/* Container flex avec image à gauche et détails à droite */}
+                <div className="flex gap-4 items-start">
+                  {/* Colonne de gauche : miniature/carte */}
+                  <div className="flex-shrink-0">
+                    {event.image_url ? (
+                      <img
+                        src={event.image_url}
+                        alt={`Image de ${event.name}`}
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <CalendarDays className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-3 w-3 mr-2" />
-                    <span>{event.city}</span>
+
+                  {/* Colonne de droite : détails textuels */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-gray-900 mb-2 line-clamp-2 text-left">
+                      {event.name}
+                    </h4>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <CalendarDays className="h-3 w-3 mr-2 flex-shrink-0" />
+                        <span>{format(new Date(event.start_date), 'dd MMM yyyy', { locale: fr })}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <MapPin className="h-3 w-3 mr-2 flex-shrink-0" />
+                        <span className="truncate">{event.city}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </Link>

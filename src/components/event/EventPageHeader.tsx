@@ -34,25 +34,30 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
             ))}
           </div>
 
-          {/* Titre principal */}
-          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-            {event.name}
-          </h1>
+          {/* Container flex pour titre et date avec alignement vertical */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Titre principal */}
+            <div className="flex-1">
+              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left">
+                {event.name}
+              </h1>
+            </div>
 
-          {/* Dates */}
-          <div className="flex items-center text-lg text-gray-600">
-            <CalendarDays className="h-6 w-6 mr-3 text-accent" />
-            <span className="font-medium">
-              {formatDate(event.start_date)}
-              {event.start_date !== event.end_date && (
-                <> - {formatDate(event.end_date)}</>
-              )}
-            </span>
+            {/* Date alignée avec le titre */}
+            <div className="flex items-center text-lg text-gray-600 md:ml-6">
+              <CalendarDays className="h-6 w-6 mr-3 text-accent" />
+              <span className="font-medium">
+                {formatDate(event.start_date)}
+                {event.start_date !== event.end_date && (
+                  <> - {formatDate(event.end_date)}</>
+                )}
+              </span>
+            </div>
           </div>
 
           {/* Actions */}
           <div className="space-y-3 pt-4 border-t">
-            <div className="flex flex-wrap gap-3 items-start">
+            <div className="flex flex-wrap gap-3 items-center">
               {/* Boutons calendrier avec texte explicatif */}
               <div className="flex flex-col">
                 <div className="flex gap-2">

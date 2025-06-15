@@ -8,7 +8,6 @@ import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitors } from '@/components/event/EventExhibitors';
 import { EventSidebar } from '@/components/event/EventSidebar';
-import { EventFooter } from '@/components/event/EventFooter';
 import { SimilarEvents } from '@/components/event/SimilarEvents';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
@@ -145,7 +144,6 @@ const EventPage = () => {
               <p className="text-lg text-gray-600">
                 {error || 'L\'événement que vous recherchez n\'existe pas ou a été supprimé.'}
               </p>
-              <EventFooter />
             </div>
           </div>
         </main>
@@ -194,8 +192,6 @@ const EventPage = () => {
                 city={event.city} 
               />
             </section>
-
-            <EventFooter />
           </div>
         </main>
 
