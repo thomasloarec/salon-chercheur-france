@@ -3,54 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useSectors } from '@/hooks/useSectors';
-
-// Mapping des secteurs avec leurs couleurs et exemples
-const sectorMapping: Record<string, {
-  color: string;
-  examples: string[];
-  count: number;
-}> = {
-  'Technologie': {
-    color: "bg-blue-100 text-blue-800",
-    examples: ["Informatique", "IA & Robotique", "Télécoms", "Startups"],
-    count: 156
-  },
-  'Industrie': {
-    color: "bg-gray-100 text-gray-800",
-    examples: ["Mécanique", "Automobile", "Aéronautique", "Métallurgie"],
-    count: 142
-  },
-  'Santé': {
-    color: "bg-green-100 text-green-800",
-    examples: ["Médical", "Pharmaceutique", "Biotechnologies", "E-santé"],
-    count: 98
-  },
-  'BTP': {
-    color: "bg-orange-100 text-orange-800",
-    examples: ["Bâtiment", "Travaux Publics", "Architecture", "Immobilier"],
-    count: 87
-  },
-  'Commerce': {
-    color: "bg-purple-100 text-purple-800",
-    examples: ["Retail", "E-commerce", "Franchise", "Logistique"],
-    count: 134
-  },
-  'Alimentation': {
-    color: "bg-green-100 text-green-800",
-    examples: ["Agroalimentaire", "Agriculture", "Viticulture", "Bio"],
-    count: 76
-  },
-  'Énergie': {
-    color: "bg-emerald-100 text-emerald-800",
-    examples: ["Énergies renouvelables", "Environnement", "Développement durable"],
-    count: 65
-  },
-  'Services': {
-    color: "bg-indigo-100 text-indigo-800",
-    examples: ["Conseil", "Finance", "RH", "Communication"],
-    count: 118
-  }
-};
+import { getSectorConfig } from '@/constants/sectors';
 
 const SectorsSection = () => {
   const navigate = useNavigate();
@@ -86,22 +39,14 @@ const SectorsSection = () => {
             Explorez par secteur d'activité
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Plus de {sectors.length} secteurs d'activité couverts pour répondre à tous vos besoins de prospection commerciale.
+            {sectors.length} secteurs d'activité couverts pour répondre à tous vos besoins de prospection commerciale.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sectors.map((sector) => {
-            // Chercher la correspondance dans notre mapping statique
-            const matchKey = Object.keys(sectorMapping).find(key => 
-              sector.name.toLowerCase().includes(key.toLowerCase())
-            );
-            const sectorConfig = matchKey ? sectorMapping[matchKey] : {
-              color: "bg-blue-100 text-blue-800",
-              examples: ["Divers"],
-              count: 50
-            };
-
+            const config = getSectorConfig(sector.name);
+            
             return (
               <Card 
                 key={sector.id} 
@@ -113,20 +58,13 @@ const SectorsSection = () => {
                     <h3 className="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
                       {sector.name}
                     </h3>
-                    <Badge className={`${sectorConfig.color} font-semibold`}>
-                      {sectorConfig.count}
+                    <Badge className={`${config.color} font-semibold`}>
+                      {sectors.length > 8 ? 'Nouveau' : 'Secteur'}
                     </Badge>
                   </div>
                   
-                  <div className="space-y-2">
-                    {sectorConfig.examples.map((example, idx) => (
-                      <span 
-                        key={idx} 
-                        className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full mr-2 mb-2"
-                      >
-                        {example}
-                      </span>
-                    ))}
+                  <div className="text-gray-600 text-sm">
+                    <p>{config.description}</p>
                   </div>
                 </CardContent>
               </Card>
