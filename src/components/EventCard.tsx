@@ -2,13 +2,15 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin } from 'lucide-react';
+import { CalendarDays, MapPin, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { EventImage } from '@/components/ui/event-image';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface EventCardProps {
   event: Event & { 
@@ -21,6 +23,9 @@ interface EventCardProps {
 }
 
 const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'admin@salonspro.com';
+
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
   
@@ -30,7 +35,19 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
 
   // Grid view only now
   return (
-    <Card className="rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+    <Card className={cn(
+      "rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative",
+      !event.visible && isAdmin && "bg-gray-100 opacity-50"
+    )}>
+      {!event.visible && isAdmin && (
+        <Badge
+          variant="destructive"
+          className="absolute top-2 right-2 z-10"
+          title="Événement invisible"
+        >
+          <EyeOff className="h-4 w-4" />
+        </Badge>
+      )}
       <Link to={`/events/${eventSlug}`} className="block">
         <div className="relative">
           <EventImage 

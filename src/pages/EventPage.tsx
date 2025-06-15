@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,11 +38,16 @@ const EventPage = () => {
     console.log('🔍 Searching for event with slug:', slug);
     
     try {
-      const { data: eventData, error: fetchError } = await supabase
+      let query = supabase
         .from('events')
         .select('*')
-        .eq('slug', slug)
-        .maybeSingle();
+        .eq('slug', slug);
+
+      if (!isAdmin) {
+        query = query.eq('visible', true);
+      }
+
+      const { data: eventData, error: fetchError } = await query.maybeSingle();
 
       if (fetchError) {
         console.error('❌ Error fetching event:', fetchError);

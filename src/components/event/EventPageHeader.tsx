@@ -1,12 +1,14 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarDays, ExternalLink } from 'lucide-react';
+import { CalendarDays, ExternalLink, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import CalBtn from '@/components/CalBtn';
 import type { Event } from '@/types/event';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface EventPageHeaderProps {
   event: Event;
@@ -14,12 +16,27 @@ interface EventPageHeaderProps {
 }
 
 export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderProps) => {
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'admin@salonspro.com';
+
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
 
   return (
-    <section className="bg-white rounded-lg shadow-sm p-8 mb-8">
+    <section className={cn(
+      "bg-white rounded-lg shadow-sm p-8 mb-8 relative",
+      !event.visible && isAdmin && "bg-gray-100 opacity-50"
+    )}>
+       {!event.visible && isAdmin && (
+        <Badge
+          variant="destructive"
+          className="absolute top-4 right-4 z-10"
+          title="Événement invisible"
+        >
+          <EyeOff className="h-4 w-4" />
+        </Badge>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
         <div className="space-y-6">
           {/* Tags */}

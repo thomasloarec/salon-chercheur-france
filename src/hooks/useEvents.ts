@@ -1,6 +1,8 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UseEventsParams {
   sectors?: string[];
@@ -16,12 +18,21 @@ interface UseEventsParams {
 }
 
 export const useEvents = (filters?: SearchFilters) => {
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'admin@salonspro.com';
+
   return useQuery({
-    queryKey: ['events', filters],
+    queryKey: ['events', filters, isAdmin],
     queryFn: async () => {
       let query = supabase
         .from('events')
-        .select('*')
+        .select('*');
+
+      if (!isAdmin) {
+        query = query.eq('visible', true);
+      }
+
+      query = query
         .eq('is_b2b', true)
         .gte('start_date', new Date().toISOString().split('T')[0]) // Exclure les événements passés
         .order('start_date', { ascending: true });
