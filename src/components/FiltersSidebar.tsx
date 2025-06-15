@@ -6,6 +6,7 @@ import { MultiSelect } from '@/components/ui/multi-select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useSearchParams } from 'react-router-dom';
 import type { SearchFilters } from '@/types/event';
 
 const sectorOptions = [
@@ -48,23 +49,33 @@ interface FiltersSidebarProps {
 }
 
 export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }: FiltersSidebarProps) => {
-  const [sectors, setSectors] = useState<string[]>([]);
-  const [types, setTypes] = useState<string[]>([]);
-  const [months, setMonths] = useState<string[]>([]);
-  const [city, setCity] = useState('');
+  const [searchParams] = useSearchParams();
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Initialisation une seule fois au montage avec les paramètres URL
+  const [sectors, setSectors] = useState<string[]>(() => {
+    const sectorsParam = searchParams.get('sectors');
+    return sectorsParam ? sectorsParam.split(',') : (initialFilters.sectors || []);
+  });
+  
+  const [types, setTypes] = useState<string[]>(() => {
+    const typesParam = searchParams.get('types');
+    return typesParam ? typesParam.split(',') : (initialFilters.types || []);
+  });
+  
+  const [months, setMonths] = useState<string[]>(() => {
+    const monthsParam = searchParams.get('months');
+    return monthsParam ? monthsParam.split(',') : (initialFilters.months?.map(m => m.toString()) || []);
+  });
+  
+  const [city, setCity] = useState(() => {
+    return searchParams.get('city') || initialFilters.city || '';
+  });
 
-  // Synchronisation une seule fois au montage avec les filtres initiaux
+  // Marquer comme initialisé après le premier rendu
   useEffect(() => {
-    if (!isInitialized) {
-      console.log('FiltersSidebar: Initializing with filters:', initialFilters);
-      setSectors(initialFilters.sectors || []);
-      setTypes(initialFilters.types || []);
-      setMonths(initialFilters.months?.map(m => m.toString()) || []);
-      setCity(initialFilters.city || '');
-      setIsInitialized(true);
-    }
-  }, [initialFilters, isInitialized]);
+    setIsInitialized(true);
+  }, []);
 
   // Application des filtres uniquement après initialisation et quand les valeurs changent
   useEffect(() => {
