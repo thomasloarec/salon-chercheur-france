@@ -137,6 +137,7 @@ export type Database = {
           tags: string[] | null
           updated_at: string
           venue_name: string | null
+          visible: boolean | null
           website_url: string | null
         }
         Insert: {
@@ -167,6 +168,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           venue_name?: string | null
+          visible?: boolean | null
           website_url?: string | null
         }
         Update: {
@@ -197,6 +199,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           venue_name?: string | null
+          visible?: boolean | null
           website_url?: string | null
         }
         Relationships: []

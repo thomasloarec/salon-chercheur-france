@@ -26,6 +26,8 @@ export interface Event {
   last_scraped_at?: string;
   scraped_from?: string;
   address?: string;
+  visible?: boolean;
+  slug?: string;
 }
 
 export interface SearchFilters {

@@ -1,4 +1,5 @@
-import { useParams } from 'react-router-dom';
+
+import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { matchExhibitorsWithCRM } from '@/utils/crmMatching';
@@ -11,15 +12,22 @@ import { EventSidebar } from '@/components/event/EventSidebar';
 import { EventFooter } from '@/components/event/EventFooter';
 import { SimilarEvents } from '@/components/event/SimilarEvents';
 import { SEOHead } from '@/components/event/SEOHead';
+import { EventAdminMenu } from '@/components/event/EventAdminMenu';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 
 const EventPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exhibitors, setExhibitors] = useState<any[]>([]);
   const [crmProspects, setCrmProspects] = useState<Array<{ name: string; stand?: string }>>([]);
+
+  // Simple admin check - in a real app, this would come from user roles
+  const isAdmin = user?.email === 'admin@salonspro.com';
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -83,6 +91,14 @@ const EventPage = () => {
     fetchEvent();
   }, [slug]);
 
+  const handleEventUpdated = (updatedEvent: Event) => {
+    setEvent(updatedEvent);
+  };
+
+  const handleEventDeleted = () => {
+    navigate('/events');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -137,7 +153,19 @@ const EventPage = () => {
         
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4 space-y-8">
-            <EventPageHeader event={event} crmProspects={crmProspects} />
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <EventPageHeader event={event} crmProspects={crmProspects} />
+              </div>
+              <div className="ml-4">
+                <EventAdminMenu
+                  event={event}
+                  isAdmin={isAdmin}
+                  onEventUpdated={handleEventUpdated}
+                  onEventDeleted={handleEventDeleted}
+                />
+              </div>
+            </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Colonne principale */}
