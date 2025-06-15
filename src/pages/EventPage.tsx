@@ -3,16 +3,15 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { parseEventSlug } from '@/utils/eventUtils';
-import { EventHero } from '@/components/event/EventHero';
-import { EventInfo } from '@/components/event/EventInfo';
-import { ExhibitorsTable } from '@/components/event/ExhibitorsTable';
-import { SimilarEvents } from '@/components/event/SimilarEvents';
 import { matchExhibitorsWithCRM } from '@/utils/crmMatching';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { EventHeader } from '@/components/event/EventHeader';
+import { EventDescription } from '@/components/event/EventDescription';
+import { ExhibitorsList } from '@/components/event/ExhibitorsList';
+import { EventDetails } from '@/components/event/EventDetails';
+import { EventFooter } from '@/components/event/EventFooter';
+import { SimilarEvents } from '@/components/event/SimilarEvents';
 import type { Event } from '@/types/event';
 
 const EventPage = () => {
@@ -96,7 +95,7 @@ const EventPage = () => {
         <Header />
         <main className="py-12">
           <div className="max-w-4xl mx-auto px-4">
-            <div className="animate-pulse space-y-4">
+            <div className="animate-pulse space-y-6">
               <div className="h-8 bg-gray-200 rounded w-3/4"></div>
               <div className="h-64 bg-gray-200 rounded"></div>
               <div className="space-y-2">
@@ -117,13 +116,6 @@ const EventPage = () => {
         <Header />
         <main className="py-12">
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <Button variant="outline" asChild className="mb-6">
-              <Link to="/events">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Retour aux événements
-              </Link>
-            </Button>
-            
             <div className="space-y-4">
               <h1 className="text-3xl font-bold text-gray-900">
                 Événement introuvable
@@ -131,13 +123,7 @@ const EventPage = () => {
               <p className="text-lg text-gray-600">
                 {error || 'L\'événement que vous recherchez n\'existe pas ou a été supprimé.'}
               </p>
-              <div className="mt-8">
-                <Button asChild>
-                  <Link to="/events">
-                    Voir tous les événements
-                  </Link>
-                </Button>
-              </div>
+              <EventFooter />
             </div>
           </div>
         </main>
@@ -178,44 +164,25 @@ const EventPage = () => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gray-50">
         <Header />
         
         <main className="py-6">
           <div className="max-w-6xl mx-auto px-4">
-            <Button variant="outline" asChild className="mb-6">
-              <Link to="/events">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Retour aux événements
-              </Link>
-            </Button>
-
-            <EventHero event={event} />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-              <div className="lg:col-span-2 space-y-8">
-                <section>
-                  <h2 className="text-2xl font-bold mb-4">À propos de l'événement</h2>
-                  <div className="prose max-w-none">
-                    {event.description ? (
-                      <p>{event.description}</p>
-                    ) : (
-                      <p>
-                        Découvrez {event.name}, un événement incontournable du secteur {event.sector.toLowerCase()}.
-                        Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.
-                      </p>
-                    )}
-                  </div>
-                </section>
-
-                <ExhibitorsTable 
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Colonne principale */}
+              <div className="lg:col-span-2 space-y-6">
+                <EventHeader event={event} />
+                <EventDescription event={event} />
+                <ExhibitorsList 
                   exhibitors={exhibitors} 
                   crmTargets={crmTargets} 
                 />
               </div>
 
+              {/* Sidebar */}
               <div className="space-y-6">
-                <EventInfo event={event} />
+                <EventDetails event={event} />
                 <SimilarEvents 
                   currentEvent={event} 
                   sector={event.sector} 
@@ -223,6 +190,8 @@ const EventPage = () => {
                 />
               </div>
             </div>
+
+            <EventFooter />
           </div>
         </main>
 
