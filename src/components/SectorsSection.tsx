@@ -65,8 +65,10 @@ const sectors = [
 const SectorsSection = () => {
   const navigate = useNavigate();
 
+  // Handler simplifié qui ne fait qu'une navigation atomique
   const handleSectorClick = (searchParam: string) => {
-    navigate(`/events?sectors=${encodeURIComponent(searchParam)}`);
+    console.log('SectorsSection: Navigating to sector:', searchParam);
+    navigate(`/events?sectors=${encodeURIComponent(searchParam)}`, { replace: false });
   };
 
   return (

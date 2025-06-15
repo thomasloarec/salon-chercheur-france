@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
@@ -48,24 +48,28 @@ interface FiltersSidebarProps {
 }
 
 export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }: FiltersSidebarProps) => {
-  const [sectors, setSectors] = useState<string[]>(initialFilters.sectors || []);
-  const [types, setTypes] = useState<string[]>(initialFilters.types || []);
-  const [months, setMonths] = useState<string[]>(
-    initialFilters.months?.map(m => m.toString()) || []
-  );
-  const [city, setCity] = useState(initialFilters.city || '');
+  const [sectors, setSectors] = useState<string[]>([]);
+  const [types, setTypes] = useState<string[]>([]);
+  const [months, setMonths] = useState<string[]>([]);
+  const [city, setCity] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Update local state when initialFilters change
+  // Synchronisation une seule fois au montage avec les filtres initiaux
   useEffect(() => {
-    console.log('FiltersSidebar received initial filters:', initialFilters);
-    setSectors(initialFilters.sectors || []);
-    setTypes(initialFilters.types || []);
-    setMonths(initialFilters.months?.map(m => m.toString()) || []);
-    setCity(initialFilters.city || '');
-  }, [initialFilters.sectors, initialFilters.types, initialFilters.months, initialFilters.city]);
+    if (!isInitialized) {
+      console.log('FiltersSidebar: Initializing with filters:', initialFilters);
+      setSectors(initialFilters.sectors || []);
+      setTypes(initialFilters.types || []);
+      setMonths(initialFilters.months?.map(m => m.toString()) || []);
+      setCity(initialFilters.city || '');
+      setIsInitialized(true);
+    }
+  }, [initialFilters, isInitialized]);
 
-  // Memoize the filters to prevent infinite loops
-  const stableFilters = useMemo(() => {
+  // Application des filtres uniquement après initialisation et quand les valeurs changent
+  useEffect(() => {
+    if (!isInitialized) return;
+
     const filters: SearchFilters = {};
     
     if (sectors.length > 0) {
@@ -84,16 +88,12 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
       filters.city = city.trim();
     }
     
-    return filters;
-  }, [sectors, types, months, city]);
-
-  // Apply filters when stable filters change
-  useEffect(() => {
-    console.log('FiltersSidebar applying filters:', stableFilters);
-    onFiltersChange(stableFilters);
-  }, [stableFilters, onFiltersChange]);
+    console.log('FiltersSidebar: Applying filters after user interaction:', filters);
+    onFiltersChange(filters);
+  }, [sectors, types, months, city, isInitialized, onFiltersChange]);
 
   const clearAllFilters = () => {
+    console.log('FiltersSidebar: Clearing all filters');
     setSectors([]);
     setTypes([]);
     setMonths([]);

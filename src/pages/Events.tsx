@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
 import { ViewToggle } from '@/components/ViewToggle';
@@ -15,6 +15,7 @@ const Events = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isInitialized, setIsInitialized] = useState(false);
   const { data: events, isLoading, error } = useEvents(filters);
 
   // Scroll to top when component mounts
@@ -22,40 +23,43 @@ const Events = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Initialize filters from URL params
+  // Initialize filters from URL params ONCE
   useEffect(() => {
-    const initialFilters: SearchFilters = {};
-    
-    const sectorsParam = searchParams.get('sectors');
-    if (sectorsParam) {
-      initialFilters.sectors = sectorsParam.split(',');
+    if (!isInitialized) {
+      const initialFilters: SearchFilters = {};
+      
+      const sectorsParam = searchParams.get('sectors');
+      if (sectorsParam) {
+        initialFilters.sectors = sectorsParam.split(',');
+      }
+      
+      const typesParam = searchParams.get('types');
+      if (typesParam) {
+        initialFilters.types = typesParam.split(',');
+      }
+      
+      const monthsParam = searchParams.get('months');
+      if (monthsParam) {
+        initialFilters.months = monthsParam.split(',').map(m => parseInt(m));
+      }
+      
+      const cityParam = searchParams.get('city');
+      if (cityParam) {
+        initialFilters.city = cityParam;
+      }
+      
+      console.log('Events: Initial filters from URL:', initialFilters);
+      setFilters(initialFilters);
+      setIsInitialized(true);
     }
-    
-    const typesParam = searchParams.get('types');
-    if (typesParam) {
-      initialFilters.types = typesParam.split(',');
-    }
-    
-    const monthsParam = searchParams.get('months');
-    if (monthsParam) {
-      initialFilters.months = monthsParam.split(',').map(m => parseInt(m));
-    }
-    
-    const cityParam = searchParams.get('city');
-    if (cityParam) {
-      initialFilters.city = cityParam;
-    }
-    
-    console.log('Initial filters from URL:', initialFilters);
-    setFilters(initialFilters);
-  }, [searchParams]);
+  }, [searchParams, isInitialized]);
 
   // Filter out 'loisir' events for display
   const displayEvents = events?.filter(event => event.event_type !== 'loisir') || [];
 
   // Memoize the callback to prevent infinite re-renders
   const handleFiltersChange = useCallback((newFilters: SearchFilters) => {
-    console.log('Filters changed:', newFilters);
+    console.log('Events: Filters changed:', newFilters);
     setFilters(newFilters);
     
     // Update URL params
@@ -85,14 +89,6 @@ const Events = () => {
     
     setSearchParams(newParams);
   }, [searchParams, setSearchParams]);
-
-  // Memoize initial filters to prevent unnecessary re-renders
-  const memoizedInitialFilters = useMemo(() => filters, [
-    filters.sectors?.join(','),
-    filters.types?.join(','), 
-    filters.months?.join(','),
-    filters.city
-  ]);
 
   if (error) {
     return (
@@ -130,7 +126,7 @@ const Events = () => {
           <FiltersSidebar 
             onClose={() => setIsSidebarOpen(false)}
             onFiltersChange={handleFiltersChange}
-            initialFilters={memoizedInitialFilters}
+            initialFilters={isInitialized ? filters : {}}
           />
         </aside>
 
