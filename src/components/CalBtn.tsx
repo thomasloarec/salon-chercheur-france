@@ -28,13 +28,14 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
     }
     
     const encodedTitle = encodeURIComponent(event.name);
-    const encodedDetails = encodeURIComponent(details);
     const encodedLocation = encodeURIComponent(`${event.venue_name || ''} ${event.address || ''} ${event.city}`.trim());
 
     if (type === 'gcal') {
       // Google Calendar URL for all-day events
       const gStart = format(start, 'yyyyMMdd');
       const gEnd = format(endExclusive, 'yyyyMMdd');
+      
+      const encodedDetails = encodeURIComponent(details);
       
       const googleUrl = 
         `https://calendar.google.com/calendar/render` +
@@ -46,12 +47,22 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
       
       window.open(googleUrl, '_blank');
     } else {
-      // Outlook Web compose event URL
+      // Outlook Web compose event URL with compact description
       const isoStart = format(start, 'yyyy-MM-dd');
       const isoEnd = format(endExclusive, 'yyyy-MM-dd');
       
-      // Convert newlines to HTML <br> tags for Outlook
-      const outlookBody = details.replace(/\n/g, '<br>');
+      // Build compact description for Outlook
+      let outlookDescription = event.description || '';
+      
+      if (crmProspects.length > 0) {
+        const compactProspectsList = crmProspects
+          .map(p => `- ${p.name}${p.stand ? ` – Stand ${p.stand}` : ''}`)
+          .join(' // ');
+        
+        outlookDescription += ` 🎯 Vos prospects exposants : ${compactProspectsList}`;
+      }
+      
+      const outlookBody = encodeURIComponent(outlookDescription);
       
       // Using outlook.office.com for Office 365 accounts
       // For personal accounts, could use outlook.live.com but office.com works for both
@@ -60,7 +71,7 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
         `?path=/calendar/action/compose` +
         `&rru=addevent` +
         `&subject=${encodedTitle}` +
-        `&body=${encodeURIComponent(outlookBody)}` +
+        `&body=${outlookBody}` +
         `&location=${encodedLocation}` +
         `&allday=true` +
         `&startdt=${isoStart}` +
