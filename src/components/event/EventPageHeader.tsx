@@ -5,7 +5,6 @@ import { CalendarDays, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { EventImage } from '@/components/ui/event-image';
 import CalBtn from '@/components/CalBtn';
 import type { Event } from '@/types/event';
 
@@ -21,9 +20,9 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
 
   return (
     <section className="bg-white rounded-lg shadow-sm p-8 mb-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-stretch">
         {/* Contenu principal */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           {/* Tags */}
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-sm px-3 py-1">
@@ -86,13 +85,14 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           </div>
         </div>
 
-        {/* Image de l'événement avec le bon composant */}
+        {/* Image de l'événement */}
         {event.image_url && (
-          <div className="lg:col-span-1 flex justify-center lg:justify-end">
-            <EventImage
+          <div className="h-full overflow-hidden flex items-center justify-center">
+            <img
               src={event.image_url}
               alt={`Affiche de ${event.name}`}
-              className="shadow-lg h-full aspect-auto max-w-none"
+              loading="lazy"
+              className="h-full w-auto object-contain rounded-md shadow-lg"
             />
           </div>
         )}
