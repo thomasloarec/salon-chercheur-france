@@ -15,8 +15,6 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
     // Prepare dates for all-day events
     const start = new Date(event.start_date);
     const endExclusive = addDays(new Date(event.end_date), 1);
-    const gStart = format(start, 'yyyyMMdd');
-    const gEnd = format(endExclusive, 'yyyyMMdd');
     
     // Build dynamic description
     let details = event.description || '';
@@ -35,6 +33,9 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
 
     if (type === 'gcal') {
       // Google Calendar URL for all-day events
+      const gStart = format(start, 'yyyyMMdd');
+      const gEnd = format(endExclusive, 'yyyyMMdd');
+      
       const googleUrl = 
         `https://calendar.google.com/calendar/render` +
         `?action=TEMPLATE` +
@@ -45,49 +46,25 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
       
       window.open(googleUrl, '_blank');
     } else {
-      // Generate ICS file for Outlook/Apple Calendar
-      generateICSFile({
-        title: event.name,
-        startDate: gStart,
-        endDate: gEnd,
-        description: details,
-        location: `${event.venue_name || ''} ${event.address || ''} ${event.city}`.trim(),
-        uid: event.id,
-      });
+      // Outlook Web compose event URL
+      const isoStart = format(start, 'yyyy-MM-dd');
+      const isoEnd = format(endExclusive, 'yyyy-MM-dd');
+      
+      // Using outlook.office.com for Office 365 accounts
+      // For personal accounts, could use outlook.live.com but office.com works for both
+      const outlookUrl = 
+        `https://outlook.office.com/calendar/0/deeplink/compose` +
+        `?path=/calendar/action/compose` +
+        `&rru=addevent` +
+        `&subject=${encodedTitle}` +
+        `&body=${encodedDetails}` +
+        `&location=${encodedLocation}` +
+        `&allday=true` +
+        `&startdt=${isoStart}` +
+        `&enddt=${isoEnd}`;
+      
+      window.open(outlookUrl, '_blank');
     }
-  };
-
-  const generateICSFile = ({ title, startDate, endDate, description, location, uid }: {
-    title: string;
-    startDate: string;
-    endDate: string;
-    description: string;
-    location: string;
-    uid: string;
-  }) => {
-    const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//SalonsPro//EN',
-      'BEGIN:VEVENT',
-      `UID:${uid}@salonspro.com`,
-      `SUMMARY:${title}`,
-      `DTSTART;VALUE=DATE:${startDate}`,
-      `DTEND;VALUE=DATE:${endDate}`,
-      `DESCRIPTION:${description.replace(/\n/g, '\\n')}`,
-      `LOCATION:${location}`,
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].join('\r\n');
-
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
   };
 
   return (
