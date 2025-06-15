@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, MapPin, Filter } from 'lucide-react';
-import { useSectors } from '@/hooks/useEvents';
+import { useSectors } from '@/hooks/useSectors';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { eachMonthOfInterval, format } from 'date-fns';
 import { fr } from 'date-fns/locale';

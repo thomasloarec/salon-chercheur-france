@@ -18,7 +18,8 @@ export const useEvents = (filters?: SearchFilters) => {
           event_sectors (
             sectors (
               id,
-              name
+              name,
+              created_at
             )
           )
         `);
@@ -91,7 +92,11 @@ export const useEvents = (filters?: SearchFilters) => {
       // Transform the data to include sectors
       const eventsWithSectors = data?.map(event => ({
         ...event,
-        sectors: event.event_sectors?.map(es => es.sectors).filter(Boolean) || []
+        sectors: event.event_sectors?.map(es => ({
+          id: es.sectors.id,
+          name: es.sectors.name,
+          created_at: es.sectors.created_at,
+        })).filter(Boolean) || []
       })) || [];
 
       return eventsWithSectors as Event[];
