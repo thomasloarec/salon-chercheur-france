@@ -97,45 +97,118 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         updated_at: new Date().toISOString(),
       };
 
-      console.log('🔄 Updating event with ID:', event.id);
-      console.log('🔄 Update data:', updateData);
-      console.log('🔄 Original slug:', event.slug);
+      console.log('🔧 DEBUG: Starting event update process');
+      console.log('🔧 DEBUG: Target event ID:', event.id);
+      console.log('🔧 DEBUG: Target event ID type:', typeof event.id);
+      console.log('🔧 DEBUG: Update payload:', updateData);
+      console.log('🔧 DEBUG: Original event data:', event);
+      
+      // Check user authentication and role
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('🔧 DEBUG: Current user:', user);
+      console.log('🔧 DEBUG: Auth error:', authError);
+      console.log('🔧 DEBUG: User role/metadata:', user?.user_metadata);
 
-      // Step 1: Update the event with return=minimal to avoid any data return
-      const { error: updateError } = await supabase
+      // Step 1: Update the event with detailed logging
+      console.log('🔧 DEBUG: Sending UPDATE request to Supabase...');
+      const updateStartTime = Date.now();
+      
+      const { data: updateResponse, error: updateError, status, statusText } = await supabase
         .from('events')
         .update(updateData)
         .eq('id', event.id);
 
+      const updateDuration = Date.now() - updateStartTime;
+      
+      console.log('🔧 DEBUG: Supabase UPDATE response:', {
+        data: updateResponse,
+        error: updateError,
+        status,
+        statusText,
+        duration: `${updateDuration}ms`
+      });
+
       if (updateError) {
-        console.error('❌ Update failed:', updateError);
+        console.error('❌ DEBUG: Update failed with error:', updateError);
+        console.error('❌ DEBUG: Error details:', {
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+          code: updateError.code
+        });
         throw updateError;
       }
 
-      console.log('✅ Event update successful');
+      console.log('✅ DEBUG: Update request completed successfully');
+
+      // Manual verification via REST API call
+      console.log('🔧 DEBUG: Verifying update via direct REST API call...');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
+        
+        const restResponse = await fetch(`https://vxivdvzzhebobveedxbj.supabase.co/rest/v1/events?id=eq.${event.id}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4aXZkdnp6aGVib2J2ZWVkeGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyMTY5NTEsImV4cCI6MjA2NDc5Mjk1MX0.s1P0Hj1u1g1BtAczv_gkippD9wTwkUj2pwxKchkZ8Hw',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const restData = await restResponse.json();
+        console.log('🔧 DEBUG: REST API verification response:', {
+          status: restResponse.status,
+          statusText: restResponse.statusText,
+          data: restData
+        });
+      } catch (restError) {
+        console.error('🔧 DEBUG: REST API verification failed:', restError);
+      }
 
       // Step 2: Fetch the updated event separately
+      console.log('🔧 DEBUG: Fetching updated event data...');
+      const fetchStartTime = Date.now();
+      
       const { data: refreshedEvent, error: fetchError } = await supabase
         .from('events')
         .select('*')
         .eq('id', event.id)
         .single();
 
+      const fetchDuration = Date.now() - fetchStartTime;
+      
+      console.log('🔧 DEBUG: Fetch response:', {
+        data: refreshedEvent,
+        error: fetchError,
+        duration: `${fetchDuration}ms`
+      });
+
       if (fetchError) {
-        console.error('❌ Fetch after update failed:', fetchError);
+        console.error('❌ DEBUG: Fetch after update failed:', fetchError);
         throw fetchError;
       }
 
       if (!refreshedEvent) {
-        console.error('❌ No event found after update');
+        console.error('❌ DEBUG: No event found after update');
         throw new Error('Event not found after update');
       }
 
-      console.log('✅ Fetched updated event:', refreshedEvent);
+      console.log('✅ DEBUG: Fetched updated event:', refreshedEvent);
+      
+      // Compare old vs new data
+      console.log('🔧 DEBUG: Data comparison:');
+      console.log('  - Original name:', event.name, '→ New name:', refreshedEvent.name);
+      console.log('  - Original image_url:', event.image_url, '→ New image_url:', refreshedEvent.image_url);
+      console.log('  - Original description:', event.description, '→ New description:', refreshedEvent.description);
+      console.log('  - Original updated_at:', event.updated_at, '→ New updated_at:', refreshedEvent.updated_at);
 
       // Check if the slug has changed
       const slugChanged = refreshedEvent.slug !== event.slug;
-      console.log('🔄 Slug changed:', slugChanged, 'from', event.slug, 'to', refreshedEvent.slug);
+      console.log('🔧 DEBUG: Slug comparison:', {
+        original: event.slug,
+        new: refreshedEvent.slug,
+        changed: slugChanged
+      });
 
       toast({
         title: "Événement modifié",
@@ -146,7 +219,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       onEventUpdated(refreshedEvent, slugChanged);
       onOpenChange(false);
     } catch (error) {
-      console.error('❌ Error updating event:', error);
+      console.error('❌ DEBUG: Overall error in update process:', error);
       toast({
         title: "Erreur",
         description: "Impossible de modifier l'événement.",
