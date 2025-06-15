@@ -1,11 +1,11 @@
 
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { generateEventSlug } from '@/utils/eventUtils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Event } from '@/types/event';
@@ -82,8 +82,8 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           {similarEvents.map((event) => (
             <div key={event.id} className="border-b border-gray-100 pb-4 last:border-b-0">
               <Link 
-                to={`/events/${generateEventSlug(event)}`}
-                className="block hover:bg-gray-50 rounded p-2 -m-2 transition-colors"
+                to={`/events/${event.slug}`}
+                className="block hover:bg-gray-50 rounded p-2 -m-2 transition-colors cursor-pointer"
               >
                 {/* Container flex avec image à gauche et détails à droite */}
                 <div className="flex gap-4 items-start">
@@ -104,7 +104,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
 
                   {/* Colonne de droite : détails textuels */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 mb-2 line-clamp-2 text-left">
+                    <h4 className="font-medium text-gray-900 mb-2 line-clamp-2 text-left hover:text-accent transition-colors">
                       {event.name}
                     </h4>
                     <div className="space-y-1 text-sm text-gray-600">
@@ -133,3 +133,4 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
     </Card>
   );
 };
+
