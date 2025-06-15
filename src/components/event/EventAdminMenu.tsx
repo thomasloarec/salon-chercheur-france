@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Trash2, Edit, EyeOff, Settings } from 'lucide-react';
+import { Trash2, Edit, EyeOff, Eye, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -39,26 +39,29 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
     return null;
   }
 
-  const handleHideEvent = async () => {
+  const handleToggleVisibility = async () => {
+    const newStatus = !event.visible;
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('events')
-        .update({ visible: false })
-        .eq('id', event.id);
+        .update({ visible: newStatus })
+        .eq('id', event.id)
+        .select()
+        .single();
 
       if (error) throw error;
 
       toast({
-        title: "Événement masqué",
-        description: "L'événement a été rendu invisible au public.",
+        title: `Événement ${newStatus ? 'rendu visible' : 'masqué'}`,
+        description: `L'événement est maintenant ${newStatus ? 'visible' : 'invisible'} au public.`,
       });
 
-      onEventUpdated({ ...event, visible: false });
+      onEventUpdated(data as Event);
     } catch (error) {
-      console.error('Error hiding event:', error);
+      console.error('Error toggling event visibility:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de masquer l'événement.",
+        description: "Impossible de modifier la visibilité de l'événement.",
         variant: "destructive",
       });
     }
@@ -103,13 +106,25 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
             <Edit className="h-4 w-4 mr-2" />
             Modifier l'événement
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleHideEvent}>
-            <EyeOff className="h-4 w-4 mr-2" />
-            Rendre invisible
+          <DropdownMenuItem 
+            onClick={handleToggleVisibility}
+            className={event.visible ? 'text-destructive focus:text-destructive' : ''}
+          >
+            {event.visible ? (
+              <>
+                <EyeOff className="h-4 w-4 mr-2" />
+                Rendre invisible
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4 mr-2" />
+                Rendre visible
+              </>
+            )}
           </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={() => setShowDeleteDialog(true)}
-            className="text-destructive"
+            className="text-destructive focus:text-destructive"
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Supprimer l'événement
