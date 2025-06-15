@@ -184,14 +184,6 @@ const EventPage = () => {
               {/* Sidebar */}
               <EventSidebar event={event} />
             </div>
-
-            <section className="mt-12">
-              <SimilarEvents 
-                currentEvent={event} 
-                sector={event.sector} 
-                city={event.city} 
-              />
-            </section>
           </div>
         </main>
 

@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building } from 'lucide-react';
+import { SimilarEvents } from './SimilarEvents';
 import type { Event } from '@/types/event';
 
 interface EventSidebarProps {
@@ -10,6 +11,7 @@ interface EventSidebarProps {
 export const EventSidebar = ({ event }: EventSidebarProps) => {
   return (
     <aside className="space-y-6">
+      {/* Informations pratiques */}
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-xl">
@@ -52,6 +54,13 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Événements similaires */}
+      <SimilarEvents 
+        currentEvent={event} 
+        sector={event.sector} 
+        city={event.city} 
+      />
     </aside>
   );
 };
