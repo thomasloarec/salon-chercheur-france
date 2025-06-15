@@ -101,41 +101,41 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       console.log('🔄 Update data:', updateData);
       console.log('🔄 Original slug:', event.slug);
 
-      // First, update the event using the ID (not slug)
+      // Step 1: Update the event with return=minimal to avoid any data return
       const { error: updateError } = await supabase
         .from('events')
         .update(updateData)
         .eq('id', event.id);
 
       if (updateError) {
-        console.error('❌ Supabase update error:', updateError);
+        console.error('❌ Update failed:', updateError);
         throw updateError;
       }
 
       console.log('✅ Event update successful');
 
-      // Then, fetch the updated event to get the new data including the potentially updated slug
-      const { data: updatedEventData, error: fetchError } = await supabase
+      // Step 2: Fetch the updated event separately
+      const { data: refreshedEvent, error: fetchError } = await supabase
         .from('events')
         .select('*')
         .eq('id', event.id)
-        .maybeSingle();
+        .single();
 
       if (fetchError) {
-        console.error('❌ Error fetching updated event:', fetchError);
+        console.error('❌ Fetch after update failed:', fetchError);
         throw fetchError;
       }
 
-      if (!updatedEventData) {
+      if (!refreshedEvent) {
         console.error('❌ No event found after update');
         throw new Error('Event not found after update');
       }
 
-      console.log('✅ Updated event data:', updatedEventData);
+      console.log('✅ Fetched updated event:', refreshedEvent);
 
       // Check if the slug has changed
-      const slugChanged = updatedEventData.slug !== event.slug;
-      console.log('🔄 Slug changed:', slugChanged, 'from', event.slug, 'to', updatedEventData.slug);
+      const slugChanged = refreshedEvent.slug !== event.slug;
+      console.log('🔄 Slug changed:', slugChanged, 'from', event.slug, 'to', refreshedEvent.slug);
 
       toast({
         title: "Événement modifié",
@@ -143,7 +143,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       });
 
       // Pass the updated event data and slug change info
-      onEventUpdated(updatedEventData, slugChanged);
+      onEventUpdated(refreshedEvent, slugChanged);
       onOpenChange(false);
     } catch (error) {
       console.error('❌ Error updating event:', error);

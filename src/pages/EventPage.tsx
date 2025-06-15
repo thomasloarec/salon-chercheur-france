@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,17 +90,17 @@ const EventPage = () => {
     fetchEvent();
   }, [slug]);
 
-  const handleEventUpdated = async (updatedEvent: Event, slugChanged?: boolean) => {
-    console.log('🔄 Event updated:', updatedEvent);
+  const handleEventUpdated = async (refreshedEvent: Event, slugChanged?: boolean) => {
+    console.log('🔄 Event updated:', refreshedEvent);
     console.log('🔄 Slug changed:', slugChanged);
     
-    // Mettre à jour l'état local immédiatement
-    setEvent(updatedEvent);
+    // Update local state immediately with the refreshed event data
+    setEvent(refreshedEvent);
     
-    // Si le slug a changé, rediriger vers la nouvelle URL
-    if (slugChanged && updatedEvent.slug) {
-      console.log('🔄 Redirecting to new slug:', updatedEvent.slug);
-      navigate(`/events/${updatedEvent.slug}`, { replace: true });
+    // If the slug has changed, redirect to the new URL
+    if (slugChanged && refreshedEvent.slug) {
+      console.log('🔄 Redirecting to new slug:', refreshedEvent.slug);
+      navigate(`/events/${refreshedEvent.slug}`, { replace: true });
     }
   };
 
