@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,70 +28,75 @@ const EventPage = () => {
   // Simple admin check - in a real app, this would come from user roles
   const isAdmin = user?.email === 'admin@salonspro.com';
 
-  useEffect(() => {
-    const fetchEvent = async () => {
-      if (!slug) {
-        setError('Slug manquant');
+  const fetchEvent = async () => {
+    if (!slug) {
+      setError('Slug manquant');
+      setLoading(false);
+      return;
+    }
+
+    console.log('🔍 Searching for event with slug:', slug);
+    
+    try {
+      const { data: eventData, error: fetchError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('❌ Error fetching event:', fetchError);
+        setError('Erreur lors du chargement de l\'événement');
         setLoading(false);
         return;
       }
 
-      console.log('🔍 Searching for event with slug:', slug);
-      
-      try {
-        const { data: eventData, error: fetchError } = await supabase
-          .from('events')
-          .select('*')
-          .eq('slug', slug)
-          .maybeSingle();
-
-        if (fetchError) {
-          console.error('❌ Error fetching event:', fetchError);
-          setError('Erreur lors du chargement de l\'événement');
-          setLoading(false);
-          return;
-        }
-
-        if (!eventData) {
-          console.log('❌ Event not found with slug:', slug);
-          setError('Événement introuvable');
-          setLoading(false);
-          return;
-        }
-
-        console.log('✅ Event found:', eventData);
-        setEvent(eventData);
-
-        // Mock exhibitors data for now
-        const mockExhibitors = [
-          { name: 'Entreprise A', stand: 'A12', website: 'entreprise-a.com' },
-          { name: 'Entreprise B', stand: 'B15', website: 'entreprise-b.com' },
-          { name: 'Entreprise C', stand: 'C08', website: 'entreprise-c.com' },
-        ];
-
-        setExhibitors(mockExhibitors);
-
-        // Mock CRM prospects data (these would be matched from actual CRM in real implementation)
-        const mockCrmProspects = [
-          { name: 'Entreprise A', stand: 'A12' },
-          { name: 'Entreprise B', stand: 'B15' },
-        ];
-
-        setCrmProspects(mockCrmProspects);
-
-      } catch (error) {
-        console.error('❌ Unexpected error:', error);
-        setError('Une erreur inattendue s\'est produite');
-      } finally {
+      if (!eventData) {
+        console.log('❌ Event not found with slug:', slug);
+        setError('Événement introuvable');
         setLoading(false);
+        return;
       }
-    };
 
+      console.log('✅ Event found:', eventData);
+      setEvent(eventData);
+
+      // Mock exhibitors data for now
+      const mockExhibitors = [
+        { name: 'Entreprise A', stand: 'A12', website: 'entreprise-a.com' },
+        { name: 'Entreprise B', stand: 'B15', website: 'entreprise-b.com' },
+        { name: 'Entreprise C', stand: 'C08', website: 'entreprise-c.com' },
+      ];
+
+      setExhibitors(mockExhibitors);
+
+      // Mock CRM prospects data (these would be matched from actual CRM in real implementation)
+      const mockCrmProspects = [
+        { name: 'Entreprise A', stand: 'A12' },
+        { name: 'Entreprise B', stand: 'B15' },
+      ];
+
+      setCrmProspects(mockCrmProspects);
+
+    } catch (error) {
+      console.error('❌ Unexpected error:', error);
+      setError('Une erreur inattendue s\'est produite');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchEvent();
   }, [slug]);
 
-  const handleEventUpdated = (updatedEvent: Event) => {
+  const handleEventUpdated = async (updatedEvent: Event) => {
+    console.log('🔄 Event updated, refreshing from database...');
+    // Mettre à jour l'état local immédiatement
     setEvent(updatedEvent);
+    
+    // Puis recharger depuis la base de données pour s'assurer d'avoir les dernières données
+    await fetchEvent();
   };
 
   const handleEventDeleted = () => {
