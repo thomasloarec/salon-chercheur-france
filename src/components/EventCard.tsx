@@ -8,6 +8,7 @@ import type { Event } from '@/types/event';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
+import { EventImage } from '@/components/ui/event-image';
 
 interface EventCardProps {
   event: Event & { 
@@ -20,7 +21,6 @@ interface EventCardProps {
 }
 
 const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
-  const fallbackImage = '/placeholder.svg';
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
   
@@ -32,11 +32,10 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
   return (
     <Card className="rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
       <Link to={`/events/${eventSlug}`} className="block">
-        <div className="relative h-56">
-          <img 
-            src={event.image_url || fallbackImage} 
-            alt={event.name}
-            className="h-full w-full object-cover"
+        <div className="relative">
+          <EventImage 
+            src={event.image_url || ''} 
+            alt={`Affiche de ${event.name}`}
           />
           {event.sector && (
             <Badge 

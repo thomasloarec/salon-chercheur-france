@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarDays, MapPin, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { EventImage } from '@/components/ui/event-image';
 import type { Event } from '@/types/event';
 
 interface EventHeroProps {
@@ -60,11 +61,11 @@ export const EventHero = ({ event }: EventHeroProps) => {
           )}
         </div>
 
-        <div className="relative">
-          <img
-            src={event.image_url || '/placeholder.svg'}
-            alt={event.name}
-            className="w-full h-96 object-cover rounded-2xl shadow-lg"
+        <div className="relative max-w-md mx-auto lg:max-w-none">
+          <EventImage
+            src={event.image_url || ''}
+            alt={`Affiche de ${event.name}`}
+            className="rounded-2xl shadow-lg"
           />
         </div>
       </div>
