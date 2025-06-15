@@ -8,6 +8,15 @@ interface EventDescriptionProps {
 }
 
 export const EventDescription = ({ event }: EventDescriptionProps) => {
+  const renderDescription = (description: string) => {
+    return description.split('\n').map((line, index) => (
+      <React.Fragment key={index}>
+        {line}
+        {index < description.split('\n').length - 1 && <br />}
+      </React.Fragment>
+    ));
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -19,7 +28,9 @@ export const EventDescription = ({ event }: EventDescriptionProps) => {
       <CardContent>
         <div className="prose max-w-none">
           {event.description ? (
-            <p className="text-gray-700 leading-relaxed">{event.description}</p>
+            <p className="text-gray-700 leading-relaxed">
+              {renderDescription(event.description)}
+            </p>
           ) : (
             <p className="text-gray-700 leading-relaxed">
               Découvrez {event.name}, un événement incontournable du secteur {event.sector.toLowerCase()}.
