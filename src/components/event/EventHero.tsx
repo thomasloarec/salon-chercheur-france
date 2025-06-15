@@ -17,7 +17,7 @@ export const EventHero = ({ event }: EventHeroProps) => {
 
   return (
     <section className="relative">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="space-y-6">
           <div className="space-y-4">
             <Badge variant="secondary" className="w-fit">
@@ -61,11 +61,11 @@ export const EventHero = ({ event }: EventHeroProps) => {
           )}
         </div>
 
-        <div className="relative max-w-md mx-auto lg:max-w-none">
+        <div className="flex justify-center lg:justify-end">
           <EventImage
             src={event.image_url || ''}
             alt={`Affiche de ${event.name}`}
-            className="rounded-2xl shadow-lg"
+            className="shadow-lg"
           />
         </div>
       </div>
