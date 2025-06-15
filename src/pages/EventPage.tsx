@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +19,7 @@ const EventPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exhibitors, setExhibitors] = useState<any[]>([]);
+  const [crmProspects, setCrmProspects] = useState<Array<{ name: string; stand?: string }>>([]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -63,6 +63,14 @@ const EventPage = () => {
         ];
 
         setExhibitors(mockExhibitors);
+
+        // Mock CRM prospects data (these would be matched from actual CRM in real implementation)
+        const mockCrmProspects = [
+          { name: 'Entreprise A', stand: 'A12' },
+          { name: 'Entreprise B', stand: 'B15' },
+        ];
+
+        setCrmProspects(mockCrmProspects);
 
       } catch (error) {
         console.error('❌ Unexpected error:', error);
@@ -129,7 +137,7 @@ const EventPage = () => {
         
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4 space-y-8">
-            <EventPageHeader event={event} />
+            <EventPageHeader event={event} crmProspects={crmProspects} />
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Colonne principale */}

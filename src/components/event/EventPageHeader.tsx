@@ -9,9 +9,10 @@ import type { Event } from '@/types/event';
 
 interface EventPageHeaderProps {
   event: Event;
+  crmProspects?: Array<{ name: string; stand?: string }>;
 }
 
-export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
+export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderProps) => {
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
@@ -55,8 +56,8 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
               {/* Boutons calendrier avec texte explicatif */}
               <div className="flex flex-col">
                 <div className="flex gap-2">
-                  <CalBtn type="gcal" event={event} />
-                  <CalBtn type="outlook" event={event} />
+                  <CalBtn type="gcal" event={event} crmProspects={crmProspects} />
+                  <CalBtn type="outlook" event={event} crmProspects={crmProspects} />
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   Ajoutez cet événement à votre agenda en un clic.
