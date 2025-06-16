@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -18,10 +19,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSectors, useEventSectors } from '@/hooks/useSectors';
+import { EVENT_TYPES } from '@/constants/eventTypes';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
 
@@ -43,6 +52,7 @@ interface EventFormData {
   venue_name: string;
   address: string;
   event_url: string;
+  event_type: string;
   sector_ids: string[];
 }
 
@@ -70,6 +80,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       venue_name: event.venue_name || '',
       address: event.address || '',
       event_url: event.event_url || '',
+      event_type: event.event_type || 'salon',
       sector_ids: eventSectors.map(s => s.id),
     },
   });
@@ -77,6 +88,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   const startDate = watch('start_date');
   const endDate = watch('end_date');
   const sectorIds = watch('sector_ids');
+  const eventType = watch('event_type');
 
   const updateEventSectors = async (eventId: string, newSectorIds: string[]) => {
     // Supprimer les anciennes relations
@@ -133,6 +145,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         venue_name: data.venue_name || null,
         address: data.address || null,
         event_url: data.event_url || null,
+        event_type: data.event_type,
         updated_at: new Date().toISOString(),
       };
 
@@ -231,6 +244,22 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               {errors.name && (
                 <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
               )}
+            </div>
+
+            <div>
+              <Label>Type d'événement</Label>
+              <Select value={eventType} onValueChange={(value) => setValue('event_type', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

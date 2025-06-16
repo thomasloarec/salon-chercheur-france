@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Users, Euro } from 'lucide-react';
+import { FileText, Users, Euro, Calendar } from 'lucide-react';
+import { getEventTypeLabel } from '@/constants/eventTypes';
 import type { Event } from '@/types/event';
 
 interface EventAboutProps {
@@ -31,6 +32,17 @@ export const EventAbout = ({ event }: EventAboutProps) => {
 
         {/* Informations structurées */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+          {/* Type d'événement - en première position */}
+          {event.event_type && (
+            <div className="flex items-center space-x-3">
+              <Calendar className="h-5 w-5 text-accent flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-gray-900">Type</h3>
+                <p className="text-gray-600">{getEventTypeLabel(event.event_type)}</p>
+              </div>
+            </div>
+          )}
+
           {/* Affluence */}
           {event.estimated_visitors && (
             <div className="flex items-center space-x-3">

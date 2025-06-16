@@ -158,6 +158,11 @@ const Events = () => {
                       • Secteur: {filters.sectors.join(', ')}
                     </span>
                   )}
+                  {filters.types && filters.types.length > 0 && (
+                    <span className="ml-2 text-accent font-medium">
+                      • Type: {filters.types.join(', ')}
+                    </span>
+                  )}
                 </p>
               )}
             </div>

@@ -152,7 +152,7 @@ export type Database = {
           entry_fee: string | null
           estimated_exhibitors: number | null
           estimated_visitors: number | null
-          event_type: string | null
+          event_type: string
           event_url: string | null
           id: string
           image_url: string | null
@@ -183,7 +183,7 @@ export type Database = {
           entry_fee?: string | null
           estimated_exhibitors?: number | null
           estimated_visitors?: number | null
-          event_type?: string | null
+          event_type?: string
           event_url?: string | null
           id?: string
           image_url?: string | null
@@ -214,7 +214,7 @@ export type Database = {
           entry_fee?: string | null
           estimated_exhibitors?: number | null
           estimated_visitors?: number | null
-          event_type?: string | null
+          event_type?: string
           event_url?: string | null
           id?: string
           image_url?: string | null
@@ -409,7 +409,12 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      event_type_enum:
+        | "salon"
+        | "convention"
+        | "congres"
+        | "conference"
+        | "ceremonie"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -524,6 +529,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      event_type_enum: [
+        "salon",
+        "convention",
+        "congres",
+        "conference",
+        "ceremonie",
+      ],
+    },
   },
 } as const

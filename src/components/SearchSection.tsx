@@ -74,7 +74,7 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
 
         <Card className="p-6">
           <CardContent className="p-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
               {/* Secteurs - MultiSelect */}
               <div>
                 <MultiSelect
@@ -123,25 +123,27 @@ const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
                   placeholder="Tous les mois"
                 />
               </div>
-            </div>
 
-            <div className="flex gap-3 justify-center">
-              <Button 
-                onClick={handleSearch} 
-                disabled={isLoading || selectedSectors.length === 0}
-                className="bg-accent hover:bg-accent/90"
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Rechercher
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleReset}
-                disabled={isLoading}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Réinitialiser
-              </Button>
+              {/* Actions */}
+              <div className="flex flex-col justify-end space-y-2">
+                <Button 
+                  onClick={handleSearch} 
+                  disabled={isLoading || selectedSectors.length === 0}
+                  className="bg-accent hover:bg-accent/90"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Rechercher
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleReset}
+                  disabled={isLoading}
+                  size="sm"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Réinitialiser
+                </Button>
+              </div>
             </div>
 
             {selectedSectors.length === 0 && (

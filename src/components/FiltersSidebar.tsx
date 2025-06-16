@@ -8,14 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useSearchParams } from 'react-router-dom';
 import { useSectors } from '@/hooks/useSectors';
+import { EVENT_TYPES } from '@/constants/eventTypes';
 import type { SearchFilters } from '@/types/event';
-
-const typeOptions = [
-  { value: 'salon', label: 'Salon' },
-  { value: 'convention', label: 'Convention' },
-  { value: 'congres', label: 'Congrès' },
-  { value: 'conference', label: 'Conférence' },
-];
 
 const monthOptions = [
   { value: '1', label: 'Janvier' },
@@ -147,7 +141,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
         <div>
           <Label htmlFor="types">Type d'événement</Label>
           <MultiSelect
-            options={typeOptions}
+            options={EVENT_TYPES}
             selected={types}
             onChange={setTypes}
             placeholder="Sélectionner des types..."
