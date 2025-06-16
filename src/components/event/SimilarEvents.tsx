@@ -1,5 +1,4 @@
 
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,13 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           return;
         }
 
-        setSimilarEvents(data || []);
+        // Ensure event_type is properly typed
+        const typedEvents = (data || []).map(event => ({
+          ...event,
+          event_type: event.event_type as Event['event_type']
+        })) as Event[];
+
+        setSimilarEvents(typedEvents);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -133,4 +138,3 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
     </Card>
   );
 };
-

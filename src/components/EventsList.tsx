@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import EventCard from './EventCard';
@@ -11,8 +12,8 @@ const EventsList = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data: events, isLoading, error } = useEvents(filters);
 
-  // Filter out 'loisir' events for display
-  const displayEvents = events?.filter(event => event.event_type !== 'loisir') || [];
+  // Display all B2B events (no need to filter out anything)
+  const displayEvents = events || [];
 
   const handleSearch = (newFilters: SearchFilters) => {
     setFilters(newFilters);

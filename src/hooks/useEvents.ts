@@ -89,9 +89,10 @@ export const useEvents = (filters?: SearchFilters) => {
         throw error;
       }
 
-      // Transform the data to include sectors
+      // Transform the data to include sectors and ensure event_type is properly typed
       const eventsWithSectors = data?.map(event => ({
         ...event,
+        event_type: event.event_type as Event['event_type'],
         sectors: event.event_sectors?.map(es => ({
           id: es.sectors.id,
           name: es.sectors.name,

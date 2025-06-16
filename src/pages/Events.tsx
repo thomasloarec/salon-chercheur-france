@@ -54,8 +54,8 @@ const Events = () => {
     }
   }, [searchParams, isInitialized]);
 
-  // Filter out 'loisir' events for display
-  const displayEvents = events?.filter(event => event.event_type !== 'loisir') || [];
+  // Display all B2B events (no need to filter out anything)
+  const displayEvents = events || [];
 
   // Memoize the callback to prevent infinite re-renders
   const handleFiltersChange = useCallback((newFilters: SearchFilters) => {

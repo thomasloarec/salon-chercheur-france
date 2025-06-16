@@ -21,22 +21,6 @@ const mockSalonEvent: Event = {
   event_type: 'salon'
 };
 
-const mockLoisirEvent: Event = {
-  id: '2',
-  name: 'Concert Rock',
-  description: 'Concert de musique rock',
-  start_date: '2024-03-15',
-  end_date: '2024-03-15',
-  sector: 'Musique',
-  location: 'Lyon',
-  city: 'Lyon',
-  country: 'France',
-  is_b2b: false,
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
-  event_type: 'loisir'
-};
-
 const mockConventionEvent: Event = {
   id: '3',
   name: 'Convention Tech',

@@ -22,7 +22,7 @@ export interface Event {
   estimated_visitors?: number;
   estimated_exhibitors?: number;
   is_b2b: boolean;
-  event_type?: 'salon' | 'convention' | 'congres' | 'conference' | 'ceremonie';
+  event_type: 'salon' | 'convention' | 'congres' | 'conference' | 'ceremonie';
   created_at: string;
   updated_at: string;
   last_scraped_at?: string;

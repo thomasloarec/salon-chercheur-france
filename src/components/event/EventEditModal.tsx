@@ -190,11 +190,17 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
       console.log('✅ DEBUG: Fetched updated event:', refreshedEvent);
 
+      // Ensure proper typing for the updated event
+      const typedRefreshedEvent = {
+        ...refreshedEvent,
+        event_type: refreshedEvent.event_type as Event['event_type']
+      } as Event;
+
       // Check if the slug has changed
-      const slugChanged = refreshedEvent.slug !== event.slug;
+      const slugChanged = typedRefreshedEvent.slug !== event.slug;
       console.log('🔧 DEBUG: Slug comparison:', {
         original: event.slug,
-        new: refreshedEvent.slug,
+        new: typedRefreshedEvent.slug,
         changed: slugChanged
       });
 
@@ -204,7 +210,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       });
 
       // Pass the updated event data and slug change info
-      onEventUpdated(refreshedEvent, slugChanged);
+      onEventUpdated(typedRefreshedEvent, slugChanged);
       onOpenChange(false);
     } catch (error) {
       console.error('❌ DEBUG: Overall error in update process:', error);

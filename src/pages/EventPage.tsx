@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -68,7 +67,13 @@ const EventPage = () => {
       }
 
       console.log('✅ Event found:', eventData);
-      setEvent(eventData);
+      // Ensure event_type is properly typed
+      const typedEvent = {
+        ...eventData,
+        event_type: eventData.event_type as Event['event_type']
+      } as Event;
+      
+      setEvent(typedEvent);
 
       // Mock exhibitors data for now
       const mockExhibitors = [
@@ -103,18 +108,24 @@ const EventPage = () => {
     console.log('🔄 Event updated:', refreshedEvent);
     console.log('🔄 Slug changed:', slugChanged);
     
+    // Ensure the refreshed event has proper typing
+    const typedRefreshedEvent = {
+      ...refreshedEvent,
+      event_type: refreshedEvent.event_type as Event['event_type']
+    } as Event;
+    
     // Update local state immediately with the refreshed event data
-    setEvent(refreshedEvent);
+    setEvent(typedRefreshedEvent);
     
     // Invalidate events cache to update lists
     invalidateEvents();
     // Invalidate the sectors for this specific event to force a refetch
-    queryClient.invalidateQueries({ queryKey: ['event-sectors', refreshedEvent.id] });
+    queryClient.invalidateQueries({ queryKey: ['event-sectors', typedRefreshedEvent.id] });
     
     // If the slug has changed, redirect to the new URL
-    if (slugChanged && refreshedEvent.slug) {
-      console.log('🔄 Redirecting to new slug:', refreshedEvent.slug);
-      navigate(`/events/${refreshedEvent.slug}`, { replace: true });
+    if (slugChanged && typedRefreshedEvent.slug) {
+      console.log('🔄 Redirecting to new slug:', typedRefreshedEvent.slug);
+      navigate(`/events/${typedRefreshedEvent.slug}`, { replace: true });
     }
   };
 
