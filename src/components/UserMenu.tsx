@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   DropdownMenu,
@@ -40,6 +39,12 @@ const UserMenu = () => {
           </div>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/profile" className="cursor-pointer">
+            <User className="mr-2 h-4 w-4" />
+            Mon profil
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/favorites" className="cursor-pointer">
             <Heart className="mr-2 h-4 w-4" />

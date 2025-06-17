@@ -332,6 +332,50 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          job_title: string | null
+          last_name: string | null
+          primary_sector: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_name?: string | null
+          primary_sector?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_name?: string | null
+          primary_sector?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_primary_sector_fkey"
+            columns: ["primary_sector"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scraping_sources: {
         Row: {
           base_url: string
@@ -420,6 +464,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_user_account: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      export_user_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       generate_event_slug: {
         Args: { event_name: string; event_city: string; event_year: number }
         Returns: string
@@ -439,6 +491,10 @@ export type Database = {
       update_existing_events_slugs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      update_user_password: {
+        Args: { current_password: string; new_password: string }
+        Returns: Json
       }
     }
     Enums: {
