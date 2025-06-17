@@ -31,7 +31,30 @@ export const useEvents = (filters?: SearchFilters) => {
 
       query = query
         .eq('is_b2b', true)
-        .order('start_date', { ascending: true }); // Tri chronologique ascendant garanti côté DB
+        .order('start_date', { ascending: true });
+
+      // Filtres secteurs - utiliser les IDs des secteurs pour le filtrage
+      if (filters?.sectorIds && filters.sectorIds.length > 0) {
+        // Inclure les secteurs dans la sélection avec INNER JOIN
+        query = supabase
+          .from('events')
+          .select(`
+            *,
+            event_sectors!inner(
+              sector_id,
+              sectors(id, name, created_at)
+            )
+          `)
+          .in('event_sectors.sector_id', filters.sectorIds);
+
+        if (!isAdmin) {
+          query = query.eq('visible', true);
+        }
+
+        query = query
+          .eq('is_b2b', true)
+          .order('start_date', { ascending: true });
+      }
 
       // Filtre « à partir d'aujourd'hui » par défaut (sauf si des mois sont précisés)
       if (!filters?.months || filters.months.length === 0) {
@@ -42,7 +65,7 @@ export const useEvents = (filters?: SearchFilters) => {
       if (filters?.months?.length === 1) {
         const [month] = filters.months;
         const year = new Date().getFullYear();
-        const { fromISO, toISO } = getMonthRange(year, month - 1); // month est 1-indexé, getMonthRange attend 0-indexé
+        const { fromISO, toISO } = getMonthRange(year, month - 1);
 
         query = query
           .gte('start_date', fromISO)
@@ -56,21 +79,11 @@ export const useEvents = (filters?: SearchFilters) => {
         const orString = filters.months
           .map(m => {
             const { fromISO, toISO } = getMonthRange(year, m - 1);
-            // chaque and(...) représente un mois
             return `and(start_date.gte.${fromISO},start_date.lt.${toISO})`;
           })
-          .join(','); // PostgREST ajoutera les () extérieures
+          .join(',');
 
-        query = query.or(orString); // plus de () manuelles
-      }
-
-      // Filtres secteurs - utiliser les IDs des secteurs pour le filtrage
-      if (filters?.sectorIds && filters.sectorIds.length > 0) {
-        // Filter using the junction table event_sectors with sector IDs
-        const sectorConditions = filters.sectorIds.map(sectorId => 
-          `event_sectors.sector_id.eq.${sectorId}`
-        ).join(',');
-        query = query.or(sectorConditions);
+        query = query.or(orString);
       }
 
       // Legacy support for old sectors filter (by name)

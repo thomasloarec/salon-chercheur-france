@@ -10,7 +10,6 @@ import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { EventImage } from '@/components/ui/event-image';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEventSectors } from '@/hooks/useSectors';
 import { getSectorConfig } from '@/constants/sectors';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +26,6 @@ interface EventCardProps {
 const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@salonspro.com';
-  const { data: eventSectors = [] } = useEventSectors(event.id);
 
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
@@ -35,6 +33,9 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
   };
+
+  // Use sectors directly from the event object (no more individual fetching)
+  const eventSectors = event.sectors || [];
 
   // Grid view only now
   return (
