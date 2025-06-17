@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
@@ -170,7 +169,7 @@ const Events = () => {
             <ViewToggle />
           </div>
 
-          {/* Results */}
+          {/* Results with month grouping */}
           <EventsResults events={displayEvents} isLoading={isLoading} />
         </main>
       </div>

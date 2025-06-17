@@ -31,7 +31,7 @@ export const useEvents = (filters?: SearchFilters) => {
       query = query
         .eq('is_b2b', true)
         .gte('start_date', new Date().toISOString().split('T')[0]) // Exclure les événements passés
-        .order('start_date', { ascending: true });
+        .order('start_date', { ascending: true }); // Tri chronologique ascendant garanti côté DB
 
       // Filtres secteurs - utiliser les noms des secteurs pour le filtrage
       if (filters?.sectors && filters.sectors.length > 0) {

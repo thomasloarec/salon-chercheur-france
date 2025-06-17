@@ -1,25 +1,39 @@
 
+import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import EventCard from './EventCard';
-// TODO: Réactiver EventsMap une fois les erreurs TypeScript corrigées
-// import { EventsMap } from './EventsMap';
 import { Calendar } from 'lucide-react';
 import type { Event } from '@/types/event';
+import { groupEventsByMonth } from '@/utils/eventGrouping';
 
 interface EventsResultsProps {
-  events?: Event[];
+  events: Event[];
   isLoading: boolean;
 }
 
-export const EventsResults = ({ events = [], isLoading }: EventsResultsProps) => {
+export const EventsResults = ({ events, isLoading }: EventsResultsProps) => {
   const [searchParams] = useSearchParams();
-  const currentView = searchParams.get('view') ?? 'grid';
+  const viewMode = searchParams.get('view') || 'grid';
+
+  // Regrouper les événements par mois
+  const groupedEvents = useMemo(() => {
+    if (!events || events.length === 0) return [];
+    
+    // Les événements sont déjà triés par date côté DB, 
+    // mais on s'assure du tri côté client aussi
+    const sortedEvents = [...events].sort((a, b) => 
+      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    );
+    
+    return groupEventsByMonth(sortedEvents);
+  }, [events]);
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
+            <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
             <div className="h-4 bg-gray-200 rounded mb-2"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
             <div className="space-y-2">
@@ -46,30 +60,22 @@ export const EventsResults = ({ events = [], isLoading }: EventsResultsProps) =>
     );
   }
 
-  // Affichage conditionnel basé sur la vue actuelle
-  if (currentView === 'map') {
-    // TODO: Réactiver EventsMap une fois les erreurs TypeScript corrigées
-    return (
-      <div className="text-center py-12">
-        <div className="bg-gray-100 rounded-lg p-8">
-          <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">
-            Vue carte temporairement désactivée
-          </h3>
-          <p className="text-gray-500">
-            La vue carte sera bientôt disponible. Utilisez la vue grille en attendant.
-          </p>
-        </div>
-      </div>
-    );
-    // return <EventsMap events={events} />;
-  }
-
-  // Vue grille par défaut
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {events.map((event) => (
-        <EventCard key={event.id} event={event} view="grid" />
+    <div className="space-y-10">
+      {groupedEvents.map(({ monthLabel, events: monthEvents }) => (
+        <section key={monthLabel} className="border-t border-gray-200 pt-8 first:border-t-0 first:pt-0">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6 capitalize">
+            {monthLabel}
+          </h2>
+          <div className={viewMode === 'grid' ? 
+            'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 
+            'space-y-4'
+          }>
+            {monthEvents.map((event) => (
+              <EventCard key={event.id} event={event} view={viewMode as 'grid'} />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   );
