@@ -1,16 +1,17 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/contexts/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Index from '@/pages/Index';
-import Events from '@/pages/Events';
-import EventPage from '@/pages/EventPage';
-import ScrapingTest from '@/pages/ScrapingTest';
-import Auth from '@/pages/Auth';
-import NotFound from '@/pages/NotFound';
-import './App.css';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Index from "./pages/Index";
+import Events from "./pages/Events";
+import EventPage from "./pages/EventPage";
+import Auth from "./pages/Auth";
+import Favorites from "./pages/Favorites";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -18,23 +19,27 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-background">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/events" element={<Events />} />
               <Route path="/events/:slug" element={<EventPage />} />
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <ScrapingTest />
-                </ProtectedRoute>
-              } />
               <Route path="/auth" element={<Auth />} />
+              <Route 
+                path="/favorites" 
+                element={
+                  <ProtectedRoute>
+                    <Favorites />
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <Toaster />
-          </div>
-        </Router>
+          </BrowserRouter>
+        </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

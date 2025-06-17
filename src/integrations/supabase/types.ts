@@ -282,6 +282,35 @@ export type Database = {
           },
         ]
       }
+      favorites: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscriptions: {
         Row: {
           created_at: string
@@ -394,6 +423,10 @@ export type Database = {
       generate_event_slug: {
         Args: { event_name: string; event_city: string; event_year: number }
         Returns: string
+      }
+      toggle_favorite: {
+        Args: { p_event: string }
+        Returns: undefined
       }
       unaccent: {
         Args: { "": string }

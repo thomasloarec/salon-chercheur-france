@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,7 @@ import { EventImage } from '@/components/ui/event-image';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSectorConfig } from '@/constants/sectors';
 import { cn } from '@/lib/utils';
+import FavoriteButton from './FavoriteButton';
 
 interface EventCardProps {
   event: Event & { 
@@ -58,6 +58,10 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
             src={event.image_url || ''} 
             alt={`Affiche de ${event.name}`}
           />
+          {/* Bouton favoris */}
+          <div className="absolute top-2 right-2 z-20">
+            <FavoriteButton eventId={event.id} />
+          </div>
           {/* Affichage des secteurs sur l'image */}
           <div className="absolute left-2 top-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
             {eventSectors.length > 0 ? (
