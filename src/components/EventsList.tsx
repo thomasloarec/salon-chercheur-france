@@ -29,7 +29,7 @@ const EventsList = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SearchSection onSearch={handleSearch} isLoading={isLoading} />
+      <SearchSection onSearch={handleSearch} />
       
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
