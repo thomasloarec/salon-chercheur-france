@@ -165,22 +165,22 @@
   object-fit: contain;
 }
 
-/* Styles pour les cartes d'événements - images complètes sans crop avec hauteur limitée responsive */
+/* Styles pour les cartes d'événements - images complètes sans crop avec hauteur fixe responsive */
 .event-card img,
 .event-card-image {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: contain;
   background-color: #f5f5f5;
   border-radius: 0.5rem;
 }
 
-/* Conteneur des images de cartes d'événements avec contraintes de hauteur responsive */
+/* Conteneur des images de cartes d'événements avec hauteurs fixes responsive */
 .event-card-image-wrapper,
 .event-card__image-wrapper {
   width: 100%;
-  max-height: 250px; /* Desktop: max-height 250px */
+  height: 250px; /* Desktop: hauteur fixe 250px */
   overflow: hidden;
   background-color: #f5f5f5;
   border-radius: 0.5rem;
@@ -190,28 +190,27 @@
   justify-content: center;
 }
 
-/* Tablette (<= 768px) : max-height 200px */
+/* Tablette (<= 768px) : hauteur fixe 200px */
 @media (max-width: 768px) {
   .event-card-image-wrapper,
   .event-card__image-wrapper {
-    max-height: 200px;
+    height: 200px;
   }
 }
 
-/* Mobile (<= 480px) : max-height 150px */
+/* Mobile (<= 480px) : hauteur fixe 150px */
 @media (max-width: 480px) {
   .event-card-image-wrapper,
   .event-card__image-wrapper {
-    max-height: 150px;
+    height: 150px;
   }
 }
 
-/* Maintien du ratio et affichage complet pour les images dans les conteneurs */
+/* Affichage complet des images dans les conteneurs avec hauteur fixe */
 .event-card-image-wrapper img,
 .event-card__image-wrapper img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: contain;
-  max-height: 100%;
 }
