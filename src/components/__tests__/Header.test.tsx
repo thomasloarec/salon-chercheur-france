@@ -10,6 +10,7 @@ const mockUseAuth = {
   user: null,
   session: null,
   signOut: jest.fn(),
+  loading: false,
 };
 
 jest.mock('@/contexts/AuthContext', () => ({
@@ -38,8 +39,16 @@ describe('Header', () => {
     expect(queryByText('Admin')).not.toBeInTheDocument();
   });
 
-  test('should show Admin link when user is authenticated', () => {
-    mockUseAuth.user = { id: '1', email: 'test@example.com' };
+  test('should not show Admin link when user is authenticated but not admin', () => {
+    mockUseAuth.user = { id: '1', email: 'user@example.com' };
+    mockUseAuth.session = { user: mockUseAuth.user };
+    
+    const { queryByText } = renderWithProviders(<Header />);
+    expect(queryByText('Admin')).not.toBeInTheDocument();
+  });
+
+  test('should show Admin link when user is admin', () => {
+    mockUseAuth.user = { id: '1', email: 'admin@salonspro.com' };
     mockUseAuth.session = { user: mockUseAuth.user };
     
     const { getByText } = renderWithProviders(<Header />);
