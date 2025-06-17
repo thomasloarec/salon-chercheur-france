@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
@@ -56,12 +55,12 @@ export const useEvents = (filters?: SearchFilters) => {
         const orString = filters.months
           .map(m => {
             const { fromISO, toISO } = getMonthRange(year, m - 1);
-            // PostgREST syntaxe : or=(and(cond1,cond2),and(cond1,cond2))
+            // chaque and(...) représente un mois
             return `and(start_date.gte.${fromISO},start_date.lt.${toISO})`;
           })
-          .join(',');
+          .join(','); // PostgREST ajoutera les () extérieures
 
-        query = query.or(`(${orString})`);
+        query = query.or(orString); // ❗️ plus de () manuelles
       }
 
       // Filtres secteurs - utiliser les noms des secteurs pour le filtrage
