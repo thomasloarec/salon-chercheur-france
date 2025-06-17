@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,10 +38,10 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
   // Use sectors directly from the event object (no more individual fetching)
   const eventSectors = event.sectors || [];
 
-  // Grid view only now
+  // Updated layout - vertical flex instead of grid
   return (
     <Card className={cn(
-      "rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative",
+      "flex flex-col w-full max-w-sm overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative",
       !event.visible && isAdmin && "bg-gray-100 opacity-50"
     )}>
       {!event.visible && isAdmin && (
@@ -53,10 +54,11 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
         </Badge>
       )}
       <Link to={`/events/${eventSlug}`} className="block">
-        <div className="relative">
+        <div className="relative h-72 w-full">
           <EventImage 
             src={event.image_url || ''} 
             alt={`Affiche de ${event.name}`}
+            className="h-full w-full object-cover"
           />
           {/* Bouton favoris */}
           <div className="absolute top-2 right-2 z-20">
@@ -100,36 +102,34 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
           </div>
         </div>
       </Link>
-      <CardContent className="p-4">
-        <div className="space-y-1">
-          <Link to={`/events/${eventSlug}`}>
-            <h3 className="font-semibold text-lg line-clamp-2 hover:text-accent cursor-pointer">
-              {event.name}
-            </h3>
-          </Link>
-          <div className="flex items-center text-gray-600 text-sm">
-            <CalendarDays className="h-4 w-4 mr-2 text-accent" />
-            <span>
-              {formatDate(event.start_date)}
-              {event.start_date !== event.end_date && (
-                <> - {formatDate(event.end_date)}</>
-              )}
-            </span>
-          </div>
-          <div className="flex items-center text-gray-600 text-sm">
-            <MapPin className="h-4 w-4 mr-2 text-accent" />
-            <span>{event.city}</span>
-          </div>
-          <Link to={`/events/${eventSlug}`}>
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="w-full mt-4 bg-accent hover:bg-accent/90"
-            >
-              Voir le salon
-            </Button>
-          </Link>
+      <CardContent className="flex flex-col gap-1 p-4">
+        <Link to={`/events/${eventSlug}`}>
+          <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.name}>
+            {event.name}
+          </h3>
+        </Link>
+        <div className="flex items-center text-gray-600 text-sm">
+          <CalendarDays className="h-4 w-4 mr-2 text-accent" />
+          <span>
+            {formatDate(event.start_date)}
+            {event.start_date !== event.end_date && (
+              <> - {formatDate(event.end_date)}</>
+            )}
+          </span>
         </div>
+        <div className="flex items-center text-gray-600 text-sm">
+          <MapPin className="h-4 w-4 mr-2 text-accent" />
+          <span className="truncate">{event.city}</span>
+        </div>
+        <Link to={`/events/${eventSlug}`}>
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="w-full mt-4 bg-accent hover:bg-accent/90"
+          >
+            Voir le salon
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   );
