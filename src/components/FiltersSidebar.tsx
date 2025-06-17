@@ -9,22 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { useSearchParams } from 'react-router-dom';
 import { useSectors } from '@/hooks/useSectors';
 import { EVENT_TYPES } from '@/constants/eventTypes';
+import { getRollingMonths } from '@/utils/monthUtils';
 import type { SearchFilters } from '@/types/event';
-
-const monthOptions = [
-  { value: '1', label: 'Janvier' },
-  { value: '2', label: 'Février' },
-  { value: '3', label: 'Mars' },
-  { value: '4', label: 'Avril' },
-  { value: '5', label: 'Mai' },
-  { value: '6', label: 'Juin' },
-  { value: '7', label: 'Juillet' },
-  { value: '8', label: 'Août' },
-  { value: '9', label: 'Septembre' },
-  { value: '10', label: 'Octobre' },
-  { value: '11', label: 'Novembre' },
-  { value: '12', label: 'Décembre' },
-];
 
 interface FiltersSidebarProps {
   onClose: () => void;
@@ -41,6 +27,12 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   const sectorOptions = sectorsData.map(sector => ({
     value: sector.name,
     label: sector.name,
+  }));
+
+  // Créer les options de mois glissants
+  const monthOptions = getRollingMonths().map(monthOption => ({
+    value: `${monthOption.month}-${monthOption.year}`,
+    label: monthOption.label,
   }));
   
   // Initialisation une seule fois au montage avec les paramètres URL
@@ -83,7 +75,8 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     }
     
     if (months.length > 0) {
-      filters.months = months.map(m => parseInt(m));
+      // Convert month strings back to numbers for compatibility
+      filters.months = months.map(m => parseInt(m.split('-')[0]));
     }
     
     if (city.trim()) {

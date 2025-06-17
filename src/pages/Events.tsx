@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useEvents } from '@/hooks/useEvents';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
@@ -39,7 +40,12 @@ const Events = () => {
       
       const monthsParam = searchParams.get('months');
       if (monthsParam) {
-        initialFilters.months = monthsParam.split(',').map(m => parseInt(m));
+        // Handle both old format (numbers) and new format (month-year)
+        initialFilters.months = monthsParam.split(',').map(m => {
+          // If it contains a dash, extract the month part, otherwise use as is
+          const monthValue = m.includes('-') ? m.split('-')[0] : m;
+          return parseInt(monthValue);
+        });
       }
       
       const cityParam = searchParams.get('city');
