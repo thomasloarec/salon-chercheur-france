@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
+import { getMonthRange } from '@/utils/dateUtils';
 
 export const useEvents = (filters?: SearchFilters) => {
   const { user } = useAuth();
@@ -30,8 +31,22 @@ export const useEvents = (filters?: SearchFilters) => {
 
       query = query
         .eq('is_b2b', true)
-        .gte('start_date', new Date().toISOString().split('T')[0]) // Exclure les événements passés
         .order('start_date', { ascending: true }); // Tri chronologique ascendant garanti côté DB
+
+      // Filtre « à partir d'aujourd'hui » par défaut (sauf si des mois sont précisés)
+      if (!filters?.months || filters.months.length === 0) {
+        query = query.gte('start_date', new Date().toISOString().split('T')[0]);
+      }
+
+      // Nouveau filtre Mois par plage de dates
+      if (filters?.months && filters.months.length > 0) {
+        const year = new Date().getFullYear(); // Utilise l'année courante
+        const ranges = filters.months.map(month => {
+          const { fromISO, toISO } = getMonthRange(year, month - 1); // month est 1-indexé, getMonthRange attend 0-indexé
+          return `(start_date.gte.${fromISO},start_date.lt.${toISO})`;
+        });
+        query = query.or(ranges.join(','));
+      }
 
       // Filtres secteurs - utiliser les noms des secteurs pour le filtrage
       if (filters?.sectors && filters.sectors.length > 0) {
@@ -45,12 +60,6 @@ export const useEvents = (filters?: SearchFilters) => {
 
       if (filters?.types && filters.types.length > 0) {
         query = query.in('event_type', filters.types);
-      }
-
-      if (filters?.months && filters.months.length > 0) {
-        // Utiliser la fonction PostgreSQL extract pour filtrer par mois
-        const monthsCondition = `(${filters.months.join(',')})`;
-        query = query.filter('extract(month from start_date)::int', 'in', monthsCondition);
       }
 
       // Filtres existants conservés pour compatibilité
