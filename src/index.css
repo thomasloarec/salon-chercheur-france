@@ -1,5 +1,3 @@
-
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -169,7 +167,7 @@
 /* Limitation de largeur des cartes d'événements */
 .event-card {
   width: 100%;
-  max-width: 288px;    /* 320px × 0.9 = 288px - réduction de 10% */
+  max-width: 272px;    /* 320px × 0.85 = 272px - réduction de 15% */
   margin: 0 auto;      /* Centrer la carte dans son conteneur */
 }
 
@@ -183,24 +181,24 @@
 /* Conteneur des images de cartes d'événements avec hauteurs fixes responsive */
 .event-card__image-wrapper {
   width: 100%;
-  height: 225px; /* 250px × 0.9 = 225px - réduction de 10% */
+  height: 213px; /* 250px × 0.85 = 213px - réduction de 15% */
   overflow: hidden;
   background-color: #f5f5f5;
   border-radius: 0.5rem;
   position: relative;
 }
 
-/* Tablette (<= 768px) : hauteur réduite de 10% */
+/* Tablette (<= 768px) : hauteur réduite de 15% */
 @media (max-width: 768px) {
   .event-card__image-wrapper {
-    height: 180px;     /* 200px × 0.9 = 180px */
+    height: 170px;     /* 200px × 0.85 = 170px */
   }
 }
 
-/* Mobile (<= 480px) : hauteur réduite de 10% */
+/* Mobile (<= 480px) : hauteur réduite de 15% */
 @media (max-width: 480px) {
   .event-card__image-wrapper {
-    height: 135px;     /* 150px × 0.9 = 135px */
+    height: 128px;     /* 150px × 0.85 = 128px */
   }
 }
 
