@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +43,7 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
 
   return (
     <Card className={cn(
-      "flex flex-col w-full max-w-sm overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative",
+      "flex flex-col w-full max-w-sm overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative event-card",
       !event.visible && isAdmin && "bg-gray-100 opacity-50"
     )}>
       {!event.visible && isAdmin && (
@@ -58,12 +57,12 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
       )}
       
       <Link to={`/events/${eventSlug}`} className="block">
-        <div className="relative w-full event-card-image-wrapper">
+        <div className="relative w-full event-card__image-wrapper">
           <img
             src={event.image_url || '/placeholder.svg'}
             alt={`Affiche de ${event.name}`}
             loading="lazy"
-            className="event-card-image"
+            className="event-card__image"
           />
           
           {/* Bouton favoris */}

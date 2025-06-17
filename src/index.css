@@ -164,8 +164,9 @@
   object-fit: contain;
 }
 
-/* Limitation de largeur des cartes d'événements */
-.event-card {
+/* Limitation de largeur des cartes d'événements ET de leurs wrappers d'image */
+.event-card,
+.event-card__image-wrapper {
   width: 100%;
   max-width: 272px;    /* 320px × 0.85 = 272px - réduction de 15% */
   margin: 0 auto;      /* Centrer la carte dans son conteneur */
@@ -173,14 +174,14 @@
 
 /* Carte full width sur tablette et mobile */
 @media (max-width: 768px) {
-  .event-card {
+  .event-card,
+  .event-card__image-wrapper {
     max-width: 100%;    /* Carte prend toute la largeur disponible */
   }
 }
 
 /* Conteneur des images de cartes d'événements avec hauteurs fixes responsive */
 .event-card__image-wrapper {
-  width: 100%;
   height: 213px; /* 250px × 0.85 = 213px - réduction de 15% */
   overflow: hidden;
   background-color: #f5f5f5;
@@ -203,9 +204,10 @@
 }
 
 /* Images remplissent toute la largeur avec hauteur auto pour éviter les bandes grises */
-.event-card__image-wrapper img {
+.event-card__image-wrapper img,
+.event-card__image {
   display: block;
-  width: 100%;              /* toujours full width du wrapper */
+  width: 100%;              /* toujours full width du wrapper limité */
   height: auto;             /* conserve le ratio et jamais de letterbox */
   object-fit: contain;      /* affiche toute l'affiche sans crop */
 }
