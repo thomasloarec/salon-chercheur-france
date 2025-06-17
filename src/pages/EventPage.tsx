@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,6 +13,7 @@ import { EventSidebar } from '@/components/event/EventSidebar';
 import { SimilarEvents } from '@/components/event/SimilarEvents';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
+import FavoriteButton from '@/components/FavoriteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import type { Event } from '@/types/event';
@@ -43,7 +45,10 @@ const EventPage = () => {
     try {
       let query = supabase
         .from('events')
-        .select('*')
+        .select(`
+          *,
+          favorites!left(user_id)
+        `)
         .eq('slug', slug);
 
       if (!isAdmin) {
@@ -67,10 +72,15 @@ const EventPage = () => {
       }
 
       console.log('✅ Event found:', eventData);
-      // Ensure event_type is properly typed
+      
+      // Check if user has favorited this event
+      const isFavorite = user ? eventData.favorites?.some((fav: any) => fav.user_id === user.id) : false;
+      
+      // Ensure event_type is properly typed and add is_favorite
       const typedEvent = {
         ...eventData,
-        event_type: eventData.event_type as Event['event_type']
+        event_type: eventData.event_type as Event['event_type'],
+        is_favorite: isFavorite
       } as Event;
       
       setEvent(typedEvent);
@@ -102,7 +112,7 @@ const EventPage = () => {
 
   useEffect(() => {
     fetchEvent();
-  }, [slug]);
+  }, [slug, user]);
 
   const handleEventUpdated = async (refreshedEvent: Event, slugChanged?: boolean) => {
     console.log('🔄 Event updated:', refreshedEvent);
@@ -192,19 +202,27 @@ const EventPage = () => {
         
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4 space-y-8">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <EventPageHeader event={event} crmProspects={crmProspects} />
-              </div>
-              <div className="ml-4">
-                <EventAdminMenu
-                  event={event}
-                  isAdmin={isAdmin}
-                  onEventUpdated={handleEventUpdated}
-                  onEventDeleted={handleEventDeleted}
+            {/* Titre + Favoris + Admin Menu */}
+            <section className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 flex-1">
+                  {event.name}
+                </h1>
+                <FavoriteButton
+                  eventId={event.id}
+                  size="lg"
+                  className="mt-1"
                 />
               </div>
-            </div>
+              <EventAdminMenu
+                event={event}
+                isAdmin={isAdmin}
+                onEventUpdated={handleEventUpdated}
+                onEventDeleted={handleEventDeleted}
+              />
+            </section>
+            
+            <EventPageHeader event={event} crmProspects={crmProspects} />
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Colonne principale */}

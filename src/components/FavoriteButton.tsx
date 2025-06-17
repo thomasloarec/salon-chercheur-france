@@ -35,6 +35,15 @@ const FavoriteButton = ({ eventId, className, size = 'sm' }: FavoriteButtonProps
     }
   };
 
+  // Size configurations
+  const sizeConfig = {
+    sm: { button: "h-8 w-8 p-0", icon: "h-5 w-5" },
+    default: { button: "h-10 w-10 p-0", icon: "h-6 w-6" },
+    lg: { button: "h-12 w-12 p-0", icon: "h-8 w-8" }
+  };
+
+  const config = sizeConfig[size];
+
   return (
     <>
       <Button
@@ -43,17 +52,19 @@ const FavoriteButton = ({ eventId, className, size = 'sm' }: FavoriteButtonProps
         onClick={handleClick}
         disabled={toggleFavorite.isPending}
         className={cn(
-          "h-8 w-8 p-0 hover:bg-white/20 transition-all duration-200",
+          config.button,
+          "hover:bg-white/20 transition-all duration-200",
           className
         )}
         aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
       >
         <Heart
           className={cn(
-            "h-5 w-5 transition-all duration-200",
+            config.icon,
+            "transition-all duration-200",
             isFavorite
               ? "fill-red-500 text-red-500"
-              : "text-white hover:text-red-500",
+              : "text-gray-600 hover:text-red-500",
             toggleFavorite.isPending && "animate-pulse"
           )}
         />

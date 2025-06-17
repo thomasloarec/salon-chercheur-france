@@ -33,6 +33,7 @@ export interface Event {
   visible?: boolean;
   slug?: string;
   sectors?: Sector[];
+  is_favorite?: boolean;
 }
 
 export interface SearchFilters {
