@@ -1,6 +1,8 @@
 
 import type { Sector } from './sector';
 
+export type EventType = 'salon' | 'convention' | 'congres' | 'conference' | 'ceremonie';
+
 export interface Event {
   id: string;
   name: string;
@@ -22,7 +24,7 @@ export interface Event {
   estimated_visitors?: number;
   estimated_exhibitors?: number;
   is_b2b: boolean;
-  event_type: 'salon' | 'convention' | 'congres' | 'conference' | 'ceremonie';
+  event_type: EventType;
   created_at: string;
   updated_at: string;
   last_scraped_at?: string;

@@ -6,6 +6,7 @@ import EventCard from '@/components/EventCard';
 import { Button } from '@/components/ui/button';
 import { Heart, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import type { EventType } from '@/types/event';
 
 const Favorites = () => {
   const { user } = useAuth();
@@ -70,9 +71,11 @@ const Favorites = () => {
         ) : favorites && favorites.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {favorites.map((favorite) => {
-              // Transform the favorite data to match Event type
+              // Transform the favorite data to match Event type with proper type casting
               const eventData = {
                 ...favorite.events,
+                // Ensure event_type is properly typed
+                event_type: favorite.events.event_type as EventType,
                 // Transform sectors from event_sectors relation
                 sectors: favorite.events.event_sectors?.map(es => ({
                   id: es.sectors.id,
