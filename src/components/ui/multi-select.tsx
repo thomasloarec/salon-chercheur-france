@@ -73,7 +73,9 @@ export function MultiSelect({
             className="w-full justify-between h-auto min-h-[2.5rem]"
           >
             <div className="flex flex-wrap gap-1">
-              {selected.length === 0 && placeholder}
+              {selected.length === 0 && (
+                <span className="text-gray-400">{placeholder}</span>
+              )}
               {selected.map((value) => {
                 const option = options.find((option) => option.value === value);
                 return (
