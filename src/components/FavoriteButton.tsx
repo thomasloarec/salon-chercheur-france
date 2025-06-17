@@ -10,10 +10,16 @@ import { cn } from '@/lib/utils';
 interface FavoriteButtonProps {
   eventId: string;
   className?: string;
-  size?: 'sm' | 'default' | 'lg';
+  size?: 'sm' | 'default' | 'lg' | 'xl';
+  variant?: 'overlay' | 'inline';
 }
 
-const FavoriteButton = ({ eventId, className, size = 'sm' }: FavoriteButtonProps) => {
+const FavoriteButton = ({ 
+  eventId, 
+  className, 
+  size = 'sm',
+  variant = 'overlay'
+}: FavoriteButtonProps) => {
   const { user } = useAuth();
   const { data: isFavorite = false } = useIsFavorite(eventId);
   const toggleFavorite = useToggleFavorite();
@@ -39,13 +45,19 @@ const FavoriteButton = ({ eventId, className, size = 'sm' }: FavoriteButtonProps
   const sizeConfig = {
     sm: { button: "h-8 w-8 p-0", icon: "h-5 w-5" },
     default: { button: "h-10 w-10 p-0", icon: "h-6 w-6" },
-    lg: { button: "h-12 w-12 p-0", icon: "h-8 w-8" }
+    lg: { button: "h-12 w-12 p-0", icon: "h-8 w-8" },
+    xl: { button: "h-14 w-14 p-0", icon: "h-10 w-10" }
   };
 
   const config = sizeConfig[size];
 
+  // Wrapper classes based on variant
+  const wrapperClasses = variant === 'overlay' 
+    ? 'absolute top-2 right-2 z-10' 
+    : '';
+
   return (
-    <>
+    <div className={wrapperClasses}>
       <Button
         variant="ghost"
         size={size}
@@ -53,7 +65,9 @@ const FavoriteButton = ({ eventId, className, size = 'sm' }: FavoriteButtonProps
         disabled={toggleFavorite.isPending}
         className={cn(
           config.button,
-          "hover:bg-white/20 transition-all duration-200",
+          variant === 'overlay' 
+            ? "hover:bg-white/20 transition-all duration-200"
+            : "hover:bg-gray-100 transition-all duration-200",
           className
         )}
         aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
@@ -64,7 +78,9 @@ const FavoriteButton = ({ eventId, className, size = 'sm' }: FavoriteButtonProps
             "transition-all duration-200",
             isFavorite
               ? "fill-red-500 text-red-500"
-              : "text-gray-600 hover:text-red-500",
+              : variant === 'overlay' 
+                ? "text-white hover:text-red-500"
+                : "text-gray-600 hover:text-red-500",
             toggleFavorite.isPending && "animate-pulse"
           )}
         />
@@ -74,7 +90,7 @@ const FavoriteButton = ({ eventId, className, size = 'sm' }: FavoriteButtonProps
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
       />
-    </>
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -202,16 +201,16 @@ const EventPage = () => {
         
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4 space-y-8">
-            {/* Titre + Favoris + Admin Menu */}
-            <section className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 flex-1">
+            {/* Titre + Favoris sur une seule ligne */}
+            <section className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 flex-1">
                 <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 flex-1">
                   {event.name}
                 </h1>
                 <FavoriteButton
                   eventId={event.id}
-                  size="lg"
-                  className="mt-1"
+                  size="xl"
+                  variant="inline"
                 />
               </div>
               <EventAdminMenu
