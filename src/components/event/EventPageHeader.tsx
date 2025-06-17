@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import CalBtn from '@/components/CalBtn';
+import FavoriteButton from '@/components/FavoriteButton';
 import type { Event } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEventSectors } from '@/hooks/useSectors';
@@ -67,11 +68,16 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
             )}
           </div>
 
-          {/* Titre principal */}
-          <div>
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left">
+          {/* Titre principal avec bouton Favoris */}
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left flex-1">
               {event.name}
             </h1>
+            <FavoriteButton
+              eventId={event.id}
+              className="w-9 h-9"
+              variant="inline"
+            />
           </div>
 
           {/* Date */}
