@@ -69,19 +69,31 @@ const Favorites = () => {
           </div>
         ) : favorites && favorites.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites.map((favorite) => (
-              <EventCard 
-                key={favorite.id} 
-                event={{
-                  ...favorite.events,
-                  sectors: favorite.events.event_sectors?.map(es => ({
-                    id: es.sectors.id,
-                    name: es.sectors.name,
-                    created_at: es.sectors.created_at,
-                  })).filter(Boolean) || []
-                }} 
-              />
-            ))}
+            {favorites.map((favorite) => {
+              // Transform the favorite data to match Event type
+              const eventData = {
+                ...favorite.events,
+                // Add missing required Event properties with defaults
+                location: favorite.events.location || favorite.events.city,
+                is_b2b: favorite.events.is_b2b ?? true,
+                event_type: favorite.events.event_type || 'salon',
+                created_at: favorite.events.created_at || favorite.created_at,
+                updated_at: favorite.events.updated_at || favorite.events.created_at || favorite.created_at,
+                // Transform sectors from event_sectors relation
+                sectors: favorite.events.event_sectors?.map(es => ({
+                  id: es.sectors.id,
+                  name: es.sectors.name,
+                  created_at: es.sectors.created_at,
+                })).filter(Boolean) || []
+              };
+
+              return (
+                <EventCard 
+                  key={favorite.id} 
+                  event={eventData}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12">
