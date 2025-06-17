@@ -38,14 +38,30 @@ export const useEvents = (filters?: SearchFilters) => {
         query = query.gte('start_date', new Date().toISOString().split('T')[0]);
       }
 
-      // Nouveau filtre Mois par plage de dates
-      if (filters?.months && filters.months.length > 0) {
-        const year = new Date().getFullYear(); // Utilise l'année courante
-        const ranges = filters.months.map(month => {
-          const { fromISO, toISO } = getMonthRange(year, month - 1); // month est 1-indexé, getMonthRange attend 0-indexé
-          return `(start_date.gte.${fromISO},start_date.lt.${toISO})`;
-        });
-        query = query.or(ranges.join(','));
+      // Corriger le filtre Mois - un seul mois
+      if (filters?.months?.length === 1) {
+        const [month] = filters.months;
+        const year = new Date().getFullYear();
+        const { fromISO, toISO } = getMonthRange(year, month - 1); // month est 1-indexé, getMonthRange attend 0-indexé
+
+        query = query
+          .gte('start_date', fromISO)
+          .lt('start_date', toISO);
+      }
+
+      // Gestion multi-mois (facultatif mais prêt pour l'avenir)
+      if (filters?.months && filters.months.length > 1) {
+        const year = new Date().getFullYear();
+        
+        const orString = filters.months
+          .map(m => {
+            const { fromISO, toISO } = getMonthRange(year, m - 1);
+            // PostgREST syntaxe : or=(and(cond1,cond2),and(cond1,cond2))
+            return `and(start_date.gte.${fromISO},start_date.lt.${toISO})`;
+          })
+          .join(',');
+
+        query = query.or(`(${orString})`);
       }
 
       // Filtres secteurs - utiliser les noms des secteurs pour le filtrage
