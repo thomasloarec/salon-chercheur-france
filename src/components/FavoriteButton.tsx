@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import AuthRequiredModal from './AuthRequiredModal';
@@ -41,12 +40,12 @@ const FavoriteButton = ({
     }
   };
 
-  // Size configurations
+  // Size configurations for button container and icon
   const sizeConfig = {
-    sm: { button: "h-8 w-8 p-0", icon: "h-5 w-5" },
-    default: { button: "h-10 w-10 p-0", icon: "h-6 w-6" },
-    lg: { button: "h-12 w-12 p-0", icon: "h-8 w-8" },
-    xl: { button: "h-14 w-14 p-0", icon: "h-10 w-10" }
+    sm: { container: "w-7 h-7", icon: "h-4 w-4" },
+    default: { container: "w-9 h-9", icon: "h-5 w-5" },
+    lg: { container: "w-9 h-9", icon: "h-6 w-6" },
+    xl: { container: "w-11 h-11", icon: "h-7 w-7" }
   };
 
   const config = sizeConfig[size];
@@ -58,18 +57,18 @@ const FavoriteButton = ({
 
   return (
     <div className={wrapperClasses}>
-      <Button
-        variant="ghost"
+      <button
         onClick={handleClick}
         disabled={toggleFavorite.isPending}
+        aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
         className={cn(
-          config.button,
-          variant === 'overlay' 
-            ? "hover:bg-white/20 transition-all duration-200"
-            : "hover:bg-gray-100 transition-all duration-200",
+          'inline-flex items-center justify-center rounded-full transition-all duration-200',
+          'bg-white hover:bg-red-50 focus:ring-2 focus:ring-red-300 focus:outline-none',
+          'shadow-sm hover:shadow-md',
+          config.container,
+          toggleFavorite.isPending && "animate-pulse",
           className
         )}
-        aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
       >
         <Heart
           className={cn(
@@ -77,13 +76,10 @@ const FavoriteButton = ({
             "transition-all duration-200",
             isFavorite
               ? "fill-red-500 text-red-500"
-              : variant === 'overlay' 
-                ? "text-white hover:text-red-500"
-                : "text-gray-600 hover:text-red-500",
-            toggleFavorite.isPending && "animate-pulse"
+              : "text-gray-400 hover:text-red-500"
           )}
         />
-      </Button>
+      </button>
 
       <AuthRequiredModal
         open={showAuthModal}
