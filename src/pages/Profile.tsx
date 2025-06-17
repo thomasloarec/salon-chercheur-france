@@ -21,9 +21,7 @@ import {
   User, 
   Mail, 
   Lock, 
-  Download, 
   Trash2, 
-  Plus,
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
@@ -31,8 +29,7 @@ import {
   useProfile, 
   useUpdateProfile, 
   useUserNewsletterSubscriptions,
-  useUpdateNewsletterSubscriptions,
-  useExportUserData 
+  useUpdateNewsletterSubscriptions
 } from '@/hooks/useProfile';
 import { useSectors } from '@/hooks/useSectors';
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal';
@@ -46,7 +43,6 @@ const Profile = () => {
   const { data: subscribedSectors = [] } = useUserNewsletterSubscriptions();
   const updateProfile = useUpdateProfile();
   const updateNewsletterSubscriptions = useUpdateNewsletterSubscriptions();
-  const exportUserData = useExportUserData();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -302,25 +298,7 @@ const Profile = () => {
             {/* Bloc RGPD */}
             <Card className="p-6 rounded-2xl shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Gestion des données</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Download className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <p className="font-medium">Exporter mes données</p>
-                      <p className="text-sm text-gray-600">
-                        Téléchargez toutes vos données au format JSON
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => exportUserData.mutate()}
-                    disabled={exportUserData.isPending}
-                  >
-                    {exportUserData.isPending ? 'Export...' : 'Exporter'}
-                  </Button>
-                </div>
+              <div className="w-full">
                 <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
                   <div className="flex items-center gap-3">
                     <Trash2 className="h-5 w-5 text-red-500" />
@@ -333,6 +311,7 @@ const Profile = () => {
                   </div>
                   <Button
                     variant="destructive"
+                    className="w-full md:w-auto"
                     onClick={() => setShowDeleteModal(true)}
                   >
                     Supprimer
