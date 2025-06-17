@@ -148,54 +148,41 @@
   padding: 0;
 }
 
-/* EventImage component styles */
+/* EventImage component styles - Styles flexibles pour afficher les images complètes */
 .event-image-wrapper {
-  aspect-ratio: 3 / 4;
   width: 100%;
-  max-width: 320px;
-  position: relative;
+  height: auto;
   overflow: hidden;
+  background-color: #f5f5f5;
+  border-radius: 0.5rem;
+  position: relative;
+}
+
+.event-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Styles pour les cartes d'événements - images complètes sans crop */
+.event-card img,
+.event-card-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
   background-color: #f5f5f5;
   border-radius: 0.5rem;
 }
 
-.event-image {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: auto;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* Responsive adjustments for mobile */
-@media (max-width: 640px) {
-  .event-image-wrapper {
-    aspect-ratio: 2 / 3;
-    max-width: 280px;
-  }
-}
-
-/* ========= OVERRIDE POUR EVENT HERO IMAGE ========= */
-.event-hero__image img,
-.event-image-wrapper img {
-  /* on force le ratio et l'objet-fit */
-  aspect-ratio: 3 / 4 !important;
-  width: auto !important;
-  height: 100% !important;
-  object-fit: contain !important;
-}
-
-/* S'assurer que tous les contenants d'images d'événements utilisent le bon ratio */
-.event-image-wrapper {
-  aspect-ratio: 3 / 4 !important;
-  max-width: 320px !important;
-}
-
-@media (max-width: 640px) {
-  .event-image-wrapper {
-    aspect-ratio: 2 / 3 !important;
-    max-width: 280px !important;
-  }
+/* Conteneur des images de cartes d'événements */
+.event-card-image-wrapper,
+.event-card__image-wrapper {
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+  background-color: #f5f5f5;
+  border-radius: 0.5rem;
+  position: relative;
 }

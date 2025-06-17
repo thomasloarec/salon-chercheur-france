@@ -58,12 +58,12 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
       )}
       
       <Link to={`/events/${eventSlug}`} className="block">
-        <div className="relative h-72 w-full">
+        <div className="relative w-full event-card-image-wrapper">
           <img
             src={event.image_url || '/placeholder.svg'}
             alt={`Affiche de ${event.name}`}
             loading="lazy"
-            className="h-full w-full object-cover"
+            className="event-card-image"
           />
           
           {/* Bouton favoris */}
