@@ -67,9 +67,11 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
           />
           
           {/* Bouton favoris */}
-          <div className="absolute top-2 right-2 z-20">
-            <FavoriteButton eventId={event.id} />
-          </div>
+          <FavoriteButton 
+            eventId={event.id} 
+            size="default"
+            variant="overlay"
+          />
           
           {/* Affichage des secteurs sur l'image */}
           <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">

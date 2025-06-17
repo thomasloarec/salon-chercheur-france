@@ -10,3 +10,11 @@ export function getMonthRange(year: number, monthIndexZeroBased: number) {
     toISO: formatISO(to, { representation: 'date' }),
   };
 }
+
+// Utility function for date formatting
+export function formatDateRange(start: string, end: string) {
+  const opt: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+  const sd = new Date(start).toLocaleDateString('fr-FR', opt);
+  const ed = new Date(end).toLocaleDateString('fr-FR', opt);
+  return start === end ? sd : `${sd} – ${ed}`;
+}
