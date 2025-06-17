@@ -60,7 +60,6 @@ const FavoriteButton = ({
     <div className={wrapperClasses}>
       <Button
         variant="ghost"
-        size={size}
         onClick={handleClick}
         disabled={toggleFavorite.isPending}
         className={cn(
