@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
@@ -48,7 +49,7 @@ export const useEvents = (filters?: SearchFilters) => {
           .lt('start_date', toISO);
       }
 
-      // Gestion multi-mois (facultatif mais prêt pour l'avenir)
+      // Gestion multi-mois
       if (filters?.months && filters.months.length > 1) {
         const year = new Date().getFullYear();
         
@@ -60,13 +61,20 @@ export const useEvents = (filters?: SearchFilters) => {
           })
           .join(','); // PostgREST ajoutera les () extérieures
 
-        query = query.or(orString); // ❗️ plus de () manuelles
+        query = query.or(orString); // plus de () manuelles
       }
 
-      // Filtres secteurs - utiliser les noms des secteurs pour le filtrage
+      // Filtres secteurs - utiliser les IDs des secteurs pour le filtrage
+      if (filters?.sectorIds && filters.sectorIds.length > 0) {
+        // Filter using the junction table event_sectors with sector IDs
+        const sectorConditions = filters.sectorIds.map(sectorId => 
+          `event_sectors.sector_id.eq.${sectorId}`
+        ).join(',');
+        query = query.or(sectorConditions);
+      }
+
+      // Legacy support for old sectors filter (by name)
       if (filters?.sectors && filters.sectors.length > 0) {
-        // Pour les filtres de secteurs, on filtre à la fois sur l'ancien champ "sector" 
-        // et sur les nouveaux secteurs liés via event_sectors
         const sectorConditions = filters.sectors.map(sectorName => 
           `sector.eq.${sectorName}`
         ).join(',');

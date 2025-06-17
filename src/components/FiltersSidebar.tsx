@@ -23,9 +23,9 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   const { data: sectorsData = [] } = useSectors();
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Créer les options des secteurs à partir des données de l'API
+  // Créer les options des secteurs avec IDs comme valeurs
   const sectorOptions = sectorsData.map(sector => ({
-    value: sector.name,
+    value: sector.id,
     label: sector.name,
   }));
 
@@ -36,9 +36,9 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   }));
   
   // Initialisation une seule fois au montage avec les paramètres URL
-  const [sectors, setSectors] = useState<string[]>(() => {
+  const [sectorIds, setSectorIds] = useState<string[]>(() => {
     const sectorsParam = searchParams.get('sectors');
-    return sectorsParam ? sectorsParam.split(',') : (initialFilters.sectors || []);
+    return sectorsParam ? sectorsParam.split(',') : (initialFilters.sectorIds || []);
   });
   
   const [types, setTypes] = useState<string[]>(() => {
@@ -66,8 +66,8 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
 
     const filters: SearchFilters = {};
     
-    if (sectors.length > 0) {
-      filters.sectors = sectors;
+    if (sectorIds.length > 0) {
+      filters.sectorIds = sectorIds;
     }
     
     if (types.length > 0) {
@@ -85,17 +85,17 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     
     console.log('FiltersSidebar: Applying filters after user interaction:', filters);
     onFiltersChange(filters);
-  }, [sectors, types, months, city, isInitialized, onFiltersChange]);
+  }, [sectorIds, types, months, city, isInitialized, onFiltersChange]);
 
   const clearAllFilters = () => {
     console.log('FiltersSidebar: Clearing all filters');
-    setSectors([]);
+    setSectorIds([]);
     setTypes([]);
     setMonths([]);
     setCity('');
   };
 
-  const hasActiveFilters = sectors.length > 0 || types.length > 0 || months.length > 0 || city.trim();
+  const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || city.trim();
 
   return (
     <div className="h-full bg-white border-r overflow-y-auto">
@@ -123,8 +123,8 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
           <Label htmlFor="sectors">Secteurs d'activité</Label>
           <MultiSelect
             options={sectorOptions}
-            selected={sectors}
-            onChange={setSectors}
+            selected={sectorIds}
+            onChange={setSectorIds}
             placeholder="Sélectionner des secteurs..."
           />
         </div>

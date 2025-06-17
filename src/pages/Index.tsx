@@ -16,7 +16,10 @@ const Index = () => {
     // Naviguer vers la page des événements avec les filtres
     const searchParams = new URLSearchParams();
     
-    if (filters.sectors && filters.sectors.length > 0) {
+    // Use sectorIds for new filtering, sectors for legacy support
+    if (filters.sectorIds && filters.sectorIds.length > 0) {
+      searchParams.set('sectors', filters.sectorIds.join(','));
+    } else if (filters.sectors && filters.sectors.length > 0) {
       searchParams.set('sectors', filters.sectors.join(','));
     }
     

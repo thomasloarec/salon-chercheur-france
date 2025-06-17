@@ -1,158 +1,152 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Search, MapPin, Filter } from 'lucide-react';
-import { useSectors } from '@/hooks/useSectors';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { eachMonthOfInterval, format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { Search, MapPin, Calendar } from 'lucide-react';
+import { useSectors } from '@/hooks/useSectors';
+import { getRollingMonths } from '@/utils/monthUtils';
 import { EVENT_TYPES } from '@/constants/eventTypes';
 import type { SearchFilters } from '@/types/event';
 
 interface SearchSectionProps {
   onSearch: (filters: SearchFilters) => void;
-  isLoading?: boolean;
 }
 
-const SearchSection = ({ onSearch, isLoading }: SearchSectionProps) => {
-  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
+const SearchSection = ({ onSearch }: SearchSectionProps) => {
+  const [sectors, setSectors] = useState<string[]>([]);
+  const [types, setTypes] = useState<string[]>([]);
+  const [months, setMonths] = useState<string[]>([]);
   const [city, setCity] = useState('');
-  
-  const { data: sectors } = useSectors();
 
-  // Générer la liste des mois (mois restants de l'année + année suivante)
-  const months = eachMonthOfInterval({
-    start: new Date(),
-    end: new Date(new Date().getFullYear() + 1, 11, 31)
-  }).map(date => ({
-    value: date.getMonth() + 1,
-    label: format(date, 'MMMM yyyy', { locale: fr })
-  }));
+  const { data: sectorsData = [] } = useSectors();
+
+  // Create sector options using IDs as values
+  const sectorOptions = useMemo(() => 
+    sectorsData.map(sector => ({
+      value: sector.id,
+      label: sector.name,
+    })), [sectorsData]
+  );
+
+  // Create rolling months options
+  const monthOptions = useMemo(() => 
+    getRollingMonths(12).map(monthOption => ({
+      value: `${monthOption.month}-${monthOption.year}`,
+      label: monthOption.label,
+    })), []
+  );
 
   const handleSearch = () => {
-    onSearch({
-      sectors: selectedSectors,
-      types: selectedTypes,
-      months: selectedMonths,
-      city: city || undefined,
-    });
+    const filters: SearchFilters = {};
+    
+    if (sectors.length > 0) {
+      filters.sectorIds = sectors;
+    }
+    
+    if (types.length > 0) {
+      filters.types = types;
+    }
+    
+    if (months.length > 0) {
+      // Convert month strings back to numbers for compatibility
+      filters.months = months.map(m => parseInt(m.split('-')[0]));
+    }
+    
+    if (city.trim()) {
+      filters.city = city.trim();
+    }
+    
+    onSearch(filters);
   };
-
-  const handleReset = () => {
-    setSelectedSectors([]);
-    setSelectedTypes([]);
-    setSelectedMonths([]);
-    setCity('');
-    onSearch({});
-  };
-
-  const sectorOptions = sectors?.map(sector => ({
-    value: sector.name,
-    label: sector.name
-  })) || [];
-
-  const monthOptions = months.map(month => ({
-    value: month.value.toString(),
-    label: month.label
-  }));
 
   return (
-    <section className="py-12 bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-primary mb-4">
-            Recherche avancée de salons
-          </h2>
-          <p className="text-xl text-gray-600">
-            Trouvez facilement les événements professionnels qui vous intéressent
+    <section className="gradient-hero text-white py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center animate-fade-in-up">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            Tous les salons professionnels
+            <span className="block text-accent">en un seul endroit</span>
+          </h1>
+          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-gray-200">
+            Ne manquez plus jamais une opportunité business. Découvrez tous les événements B2B en France, 
+            filtrés par secteur d'activité et géolocalisation. Accès libre et gratuit.
           </p>
-        </div>
 
-        <Card className="p-6">
-          <CardContent className="p-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-              {/* Secteurs - MultiSelect */}
+          {/* Search Form */}
+          <div className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-2xl animate-scale-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Secteurs d'activité</label>
                 <MultiSelect
-                  label="Secteurs d'activité"
                   options={sectorOptions}
-                  selected={selectedSectors}
-                  onChange={setSelectedSectors}
-                  placeholder="Choisissez un ou plusieurs secteurs"
+                  selected={sectors}
+                  onChange={setSectors}
+                  placeholder="Sélectionner des secteurs..."
                 />
               </div>
-
-              {/* Types - MultiSelect */}
+              
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type d'événement</label>
                 <MultiSelect
-                  label="Type d'événement"
                   options={EVENT_TYPES}
-                  selected={selectedTypes}
-                  onChange={setSelectedTypes}
-                  placeholder="Tous les types"
+                  selected={types}
+                  onChange={setTypes}
+                  placeholder="Sélectionner des types..."
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Mois</label>
+                <MultiSelect
+                  options={monthOptions}
+                  selected={months}
+                  onChange={setMonths}
+                  placeholder="Sélectionner des mois..."
                 />
               </div>
 
-              {/* Ville */}
-              <div className="relative">
-                <label className="text-sm font-medium leading-none mb-2 block">
-                  Ville / Région
-                </label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ville</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <Input
-                    placeholder="Ville ou région"
-                    className="pl-10"
+                    placeholder="Ville, région..."
+                    className="pl-10 h-12 text-gray-900"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
                 </div>
               </div>
-
-              {/* Mois - MultiSelect */}
-              <div>
-                <MultiSelect
-                  label="Mois"
-                  options={monthOptions}
-                  selected={selectedMonths.map(m => m.toString())}
-                  onChange={(values) => setSelectedMonths(values.map(v => parseInt(v)))}
-                  placeholder="Tous les mois"
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-col justify-end space-y-2">
-                <Button 
-                  onClick={handleSearch} 
-                  disabled={isLoading || selectedSectors.length === 0}
-                  className="bg-accent hover:bg-accent/90"
-                >
-                  <Search className="h-4 w-4 mr-2" />
-                  Rechercher
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleReset}
-                  disabled={isLoading}
-                  size="sm"
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Réinitialiser
-                </Button>
-              </div>
             </div>
 
-            {selectedSectors.length === 0 && (
-              <p className="text-sm text-gray-500 text-center mt-2">
-                Veuillez sélectionner au moins un secteur d'activité
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            <Button 
+              onClick={handleSearch}
+              className="w-full h-12 bg-accent hover:bg-accent/90 text-lg font-semibold"
+            >
+              <Search className="h-5 w-5 mr-2" />
+              Rechercher des salons
+            </Button>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-accent">1200+</div>
+              <div className="text-gray-300 mt-2">Salons référencés</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-accent">50+</div>
+              <div className="text-gray-300 mt-2">Secteurs d'activité</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-accent">100%</div>
+              <div className="text-gray-300 mt-2">Gratuit</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

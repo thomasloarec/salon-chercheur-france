@@ -30,7 +30,15 @@ const Events = () => {
       
       const sectorsParam = searchParams.get('sectors');
       if (sectorsParam) {
-        initialFilters.sectors = sectorsParam.split(',');
+        // Check if these are sector IDs (UUIDs) or names
+        const sectorValues = sectorsParam.split(',');
+        // Simple heuristic: if it looks like a UUID, treat as ID, otherwise as name
+        const isUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (sectorValues.some(s => isUuidPattern.test(s))) {
+          initialFilters.sectorIds = sectorValues;
+        } else {
+          initialFilters.sectors = sectorValues;
+        }
       }
       
       const typesParam = searchParams.get('types');
@@ -76,7 +84,10 @@ const Events = () => {
       newParams.set('view', currentView);
     }
     
-    if (newFilters.sectors && newFilters.sectors.length > 0) {
+    // Use sectorIds for new filtering, sectors for legacy support
+    if (newFilters.sectorIds && newFilters.sectorIds.length > 0) {
+      newParams.set('sectors', newFilters.sectorIds.join(','));
+    } else if (newFilters.sectors && newFilters.sectors.length > 0) {
       newParams.set('sectors', newFilters.sectors.join(','));
     }
     
