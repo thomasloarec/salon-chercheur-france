@@ -73,12 +73,6 @@ const Favorites = () => {
               // Transform the favorite data to match Event type
               const eventData = {
                 ...favorite.events,
-                // Add missing required Event properties with defaults
-                location: favorite.events.location || favorite.events.city,
-                is_b2b: favorite.events.is_b2b ?? true,
-                event_type: favorite.events.event_type || 'salon',
-                created_at: favorite.events.created_at || favorite.created_at,
-                updated_at: favorite.events.updated_at || favorite.events.created_at || favorite.created_at,
                 // Transform sectors from event_sectors relation
                 sectors: favorite.events.event_sectors?.map(es => ({
                   id: es.sectors.id,
