@@ -1,4 +1,5 @@
 
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -165,6 +166,20 @@
   object-fit: contain;
 }
 
+/* Limitation de largeur des cartes d'événements */
+.event-card {
+  width: 100%;
+  max-width: 320px;    /* Ne pas dépasser 320px de large sur desktop */
+  margin: 0 auto;      /* Centrer la carte dans son conteneur */
+}
+
+/* Carte full width sur tablette et mobile */
+@media (max-width: 768px) {
+  .event-card {
+    max-width: 100%;    /* Carte prend toute la largeur disponible */
+  }
+}
+
 /* Conteneur des images de cartes d'événements avec hauteurs fixes responsive */
 .event-card__image-wrapper {
   width: 100%;
@@ -192,7 +207,7 @@
 /* Images remplissent toute la largeur avec hauteur auto pour éviter les bandes grises */
 .event-card__image-wrapper img {
   display: block;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
+  width: 100%;              /* toujours full width du wrapper */
+  height: auto;             /* conserve le ratio et jamais de letterbox */
+  object-fit: contain;      /* affiche toute l'affiche sans crop */
 }
