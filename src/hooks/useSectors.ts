@@ -21,6 +21,7 @@ export const useSectors = () => {
       console.log('All sectors fetched:', data);
       return data as Sector[];
     },
+    staleTime: 300_000, // 5 minutes
   });
 };
 
@@ -49,5 +50,6 @@ export const useEventSectors = (eventId: string) => {
       return data?.map(item => item.sectors).filter(Boolean) as Sector[];
     },
     enabled: !!eventId,
+    staleTime: 300_000, // 5 minutes
   });
 };

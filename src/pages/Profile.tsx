@@ -35,11 +35,13 @@ import { useSectors } from '@/hooks/useSectors';
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal';
 import ChangeEmailModal from '@/components/profile/ChangeEmailModal';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
+import ProfileSkeleton from '@/components/profile/ProfileSkeleton';
+import EmptyProfileState from '@/components/profile/EmptyProfileState';
 
 const Profile = () => {
   const { user, loading } = useAuth();
-  const { data: profile, isLoading: profileLoading } = useProfile();
-  const { data: sectors = [] } = useSectors();
+  const { data: profile, isLoading: profileLoading, error: profileError } = useProfile();
+  const { data: sectors = [], isLoading: sectorsLoading } = useSectors();
   const { data: subscribedSectors = [] } = useUserNewsletterSubscriptions();
   const updateProfile = useUpdateProfile();
   const updateNewsletterSubscriptions = useUpdateNewsletterSubscriptions();
@@ -56,6 +58,7 @@ const Profile = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -76,8 +79,19 @@ const Profile = () => {
   if (loading || profileLoading) {
     return (
       <MainLayout title="Mon profil">
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="min-h-screen bg-gray-50 py-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+                <User className="h-8 w-8" />
+                Mon profil
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Gérez vos informations personnelles et vos préférences
+              </p>
+            </div>
+            <ProfileSkeleton />
+          </div>
         </div>
       </MainLayout>
     );
@@ -85,6 +99,15 @@ const Profile = () => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Show empty state if profile doesn't exist and user hasn't chosen to create one
+  if (profile === null && !showCreateForm) {
+    return (
+      <MainLayout title="Mon profil">
+        <EmptyProfileState onCreateProfile={() => setShowCreateForm(true)} />
+      </MainLayout>
+    );
   }
 
   const calculateProfileProgress = () => {
@@ -117,6 +140,7 @@ const Profile = () => {
   };
 
   const profileProgress = calculateProfileProgress();
+  const isLoading = sectorsLoading;
 
   return (
     <MainLayout title="Mon profil">
@@ -156,64 +180,84 @@ const Profile = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">Prénom *</Label>
-                  <Input
-                    id="first_name"
-                    value={formData.first_name}
-                    onChange={(e) => handleInputChange('first_name', e.target.value)}
-                    placeholder="Votre prénom"
-                  />
+                  {isLoading ? (
+                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <Input
+                      id="first_name"
+                      value={formData.first_name}
+                      onChange={(e) => handleInputChange('first_name', e.target.value)}
+                      placeholder="Votre prénom"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="last_name">Nom *</Label>
-                  <Input
-                    id="last_name"
-                    value={formData.last_name}
-                    onChange={(e) => handleInputChange('last_name', e.target.value)}
-                    placeholder="Votre nom"
-                  />
+                  {isLoading ? (
+                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <Input
+                      id="last_name"
+                      value={formData.last_name}
+                      onChange={(e) => handleInputChange('last_name', e.target.value)}
+                      placeholder="Votre nom"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="job_title">Fonction / Poste</Label>
-                  <Input
-                    id="job_title"
-                    value={formData.job_title}
-                    onChange={(e) => handleInputChange('job_title', e.target.value)}
-                    placeholder="Votre fonction"
-                  />
+                  {isLoading ? (
+                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <Input
+                      id="job_title"
+                      value={formData.job_title}
+                      onChange={(e) => handleInputChange('job_title', e.target.value)}
+                      placeholder="Votre fonction"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company">Entreprise</Label>
-                  <Input
-                    id="company"
-                    value={formData.company}
-                    onChange={(e) => handleInputChange('company', e.target.value)}
-                    placeholder="Votre entreprise"
-                  />
+                  {isLoading ? (
+                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <Input
+                      id="company"
+                      value={formData.company}
+                      onChange={(e) => handleInputChange('company', e.target.value)}
+                      placeholder="Votre entreprise"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="primary_sector">Secteur d'activité principal</Label>
-                  <Select
-                    value={formData.primary_sector}
-                    onValueChange={(value) => handleInputChange('primary_sector', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez votre secteur principal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sectors.map((sector) => (
-                        <SelectItem key={sector.id} value={sector.id}>
-                          {sector.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {isLoading ? (
+                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    <Select
+                      value={formData.primary_sector}
+                      onValueChange={(value) => handleInputChange('primary_sector', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez votre secteur principal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sectors.map((sector) => (
+                          <SelectItem key={sector.id} value={sector.id}>
+                            {sector.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
 
               <div className="flex justify-end mt-6">
                 <Button 
                   onClick={handleSave}
-                  disabled={updateProfile.isPending}
+                  disabled={updateProfile.isPending || isLoading}
                 >
                   {updateProfile.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
                 </Button>
@@ -275,23 +319,35 @@ const Profile = () => {
               </div>
 
               <div className="space-y-3">
-                {sectors.map((sector) => (
-                  <div
-                    key={sector.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-medium">{sector.name}</p>
-                      {sector.description && (
-                        <p className="text-sm text-gray-600">{sector.description}</p>
-                      )}
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-32 mb-1 animate-pulse" />
+                        <div className="h-3 bg-gray-200 rounded w-48 animate-pulse" />
+                      </div>
+                      <div className="h-6 w-11 bg-gray-200 rounded-full animate-pulse" />
                     </div>
-                    <Switch
-                      checked={selectedSectors.includes(sector.id)}
-                      onCheckedChange={() => handleSectorToggle(sector.id)}
-                    />
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  sectors.map((sector) => (
+                    <div
+                      key={sector.id}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div>
+                        <p className="font-medium">{sector.name}</p>
+                        {sector.description && (
+                          <p className="text-sm text-gray-600">{sector.description}</p>
+                        )}
+                      </div>
+                      <Switch
+                        checked={selectedSectors.includes(sector.id)}
+                        onCheckedChange={() => handleSectorToggle(sector.id)}
+                      />
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
 

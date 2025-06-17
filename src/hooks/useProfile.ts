@@ -34,12 +34,14 @@ export const useProfile = () => {
           )
         `)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
     },
     enabled: !!user,
+    staleTime: 0, // Always fresh for profile data
+    retry: false,
   });
 };
 
@@ -52,19 +54,18 @@ export const useUpdateProfile = () => {
     mutationFn: async (profileData: Partial<Profile>) => {
       if (!user) throw new Error('Not authenticated');
 
+      const updateData = {
+        user_id: user.id,
+        ...profileData,
+      };
+
       const { data, error } = await supabase
         .from('profiles')
-        .update(profileData)
-        .eq('user_id', user.id)
+        .upsert([updateData], { onConflict: 'user_id' })
         .select()
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          throw new Error('Profil introuvable ou doublon. Contacte le support.');
-        }
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
@@ -96,12 +97,14 @@ export const useUserNewsletterSubscriptions = () => {
         .from('newsletter_subscriptions')
         .select('sectors')
         .eq('email', user.email)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       return data?.sectors || [];
     },
     enabled: !!user?.email,
+    staleTime: 60_000, // 1 minute
+    retry: false,
   });
 };
 
@@ -165,5 +168,29 @@ export const useDeleteAccount = () => {
         variant: "destructive",
       });
     },
+  });
+};
+
+// Optimized bulk favorites query
+export const useBulkFavorites = (eventIds: string[]) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['favorites', eventIds],
+    queryFn: async () => {
+      if (!user || !eventIds.length) return new Set();
+
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('event_id')
+        .eq('user_id', user.id)
+        .in('event_id', eventIds);
+
+      if (error) throw error;
+      return new Set(data?.map(f => f.event_id) || []);
+    },
+    enabled: !!user && eventIds.length > 0,
+    staleTime: 60_000, // 1 minute
+    retry: false,
   });
 };
