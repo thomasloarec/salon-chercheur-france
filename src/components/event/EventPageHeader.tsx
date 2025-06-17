@@ -69,13 +69,13 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           </div>
 
           {/* Titre principal avec bouton Favoris */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center space-x-2">
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left flex-1">
               {event.name}
             </h1>
             <FavoriteButton
               eventId={event.id}
-              className="w-9 h-9"
+              className="w-10 h-10"
               variant="inline"
             />
           </div>
