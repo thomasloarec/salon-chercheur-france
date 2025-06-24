@@ -8,16 +8,22 @@ export async function syncCrmAccounts(userId: string, provider: CrmProvider): Pr
   console.log(`Starting CRM sync for user ${userId} with provider ${provider}`);
   
   // Get user's CRM connection
-  const { data: connection, error: connectionError } = await supabase
+  const { data: connectionData, error: connectionError } = await supabase
     .from('user_crm_connections')
     .select('*')
     .eq('user_id', userId)
     .eq('provider', provider)
     .single();
 
-  if (connectionError || !connection) {
+  if (connectionError || !connectionData) {
     throw new Error(`No CRM connection found for provider ${provider}`);
   }
+
+  // Cast the connection data to proper type
+  const connection: CrmConnection = {
+    ...connectionData,
+    provider: connectionData.provider as CrmProvider
+  };
 
   // Check if token needs refresh
   let accessToken = connection.access_token;
