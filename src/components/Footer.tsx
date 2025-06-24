@@ -5,7 +5,7 @@ const Footer = () => {
   return (
     <footer className="bg-primary text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Company Info */}
           <div className="md:col-span-1">
             <div className="text-2xl font-bold mb-4">
@@ -24,21 +24,8 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Navigation</h4>
             <ul className="space-y-2">
-              <li><a href="#accueil" className="text-gray-300 hover:text-accent transition-colors">Accueil</a></li>
-              <li><a href="#recherche" className="text-gray-300 hover:text-accent transition-colors">Rechercher</a></li>
-              <li><a href="#secteurs" className="text-gray-300 hover:text-accent transition-colors">Secteurs</a></li>
-              <li><a href="#calendrier" className="text-gray-300 hover:text-accent transition-colors">Calendrier</a></li>
-            </ul>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Services</h4>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Alertes personnalisées</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">API développeurs</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Analyse de données</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-accent transition-colors">Support premium</a></li>
+              <li><a href="/" className="text-gray-300 hover:text-accent transition-colors">Accueil</a></li>
+              <li><a href="/events" className="text-gray-300 hover:text-accent transition-colors">Événements</a></li>
             </ul>
           </div>
 
