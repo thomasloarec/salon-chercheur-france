@@ -1,9 +1,16 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, ChevronRight, Heart, CalendarPlus } from 'lucide-react';
+import { Calendar, MapPin, ChevronRight, Heart } from 'lucide-react';
+import { SiGooglecalendar, SiMicrosoftoutlook } from "react-icons/si";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatDateRange } from '@/utils/dateUtils';
 import { useToggleFavorite } from '@/hooks/useFavorites';
 import { useToast } from '@/hooks/use-toast';
@@ -100,24 +107,37 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
 
       {/* Calendar buttons */}
       <div className="flex gap-2 ml-auto flex-shrink-0">
-        <a
-          href={getGoogleCalUrl(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Ajouter à Google Calendar"
-          className="text-muted-foreground hover:text-[#4285F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm p-1 transition-colors"
-        >
-          <CalendarPlus className="w-4 h-4" />
-        </a>
-        <a
-          href={getOutlookCalUrl(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Ajouter à Outlook"
-          className="text-muted-foreground hover:text-[#0072C6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm p-1 transition-colors"
-        >
-          <CalendarPlus className="w-4 h-4" />
-        </a>
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={getGoogleCalUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Ajouter à Google Calendar"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm p-1 transition-opacity"
+              >
+                <SiGooglecalendar className="w-5 h-5 text-[#4285F4]" />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Google Calendar</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={getOutlookCalUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Ajouter à Microsoft Outlook"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm p-1 transition-opacity"
+              >
+                <SiMicrosoftoutlook className="w-5 h-5 text-[#0072C6]" />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Outlook</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Remove button */}
