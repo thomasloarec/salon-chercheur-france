@@ -56,6 +56,9 @@ enable_confirmations = false
 [functions.scrape]
 verify_jwt = false
 
+[functions.sync-crm]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 inspector_port = 8083
