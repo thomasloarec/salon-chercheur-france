@@ -41,10 +41,11 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           <EyeOff className="h-4 w-4" />
         </Badge>
       )}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
-        <div className="space-y-6">
+      
+      <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+        <div className="flex-1">
           {/* Secteurs d'activité */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-6">
             {eventSectors.length > 0 ? (
               eventSectors.map((sector) => {
                 const config = getSectorConfig(sector.name);
@@ -69,7 +70,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           </div>
 
           {/* Titre principal avec bouton Favoris */}
-          <div className="inline-flex items-center space-x-2">
+          <div className="inline-flex items-center space-x-2 mb-6">
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left">
               {event.name}
             </h1>
@@ -81,7 +82,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           </div>
 
           {/* Date */}
-          <div className="flex items-center text-lg text-gray-600">
+          <div className="flex items-center text-lg text-gray-600 mb-6">
             <CalendarDays className="h-6 w-6 mr-3 text-accent" />
             <span className="font-medium">
               {formatDate(event.start_date)}
@@ -123,14 +124,12 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
 
         {/* Image de l'événement */}
         {event.image_url && (
-          <div className="flex-shrink-0 overflow-hidden max-h-[12rem] lg:max-h-[18rem] justify-self-end">
-            <img
-              src={event.image_url}
-              alt={`Affiche de ${event.name}`}
-              loading="lazy"
-              className="h-auto w-auto max-h-[12rem] lg:max-h-[18rem] object-contain rounded-md shadow-lg"
-            />
-          </div>
+          <img
+            src={event.image_url}
+            alt={`Affiche de ${event.name}`}
+            loading="lazy"
+            className="w-28 sm:w-40 lg:w-48 h-auto object-contain flex-shrink-0 rounded-md shadow-lg"
+          />
         )}
       </div>
     </section>
