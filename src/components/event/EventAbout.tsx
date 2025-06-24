@@ -2,11 +2,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Users, Euro, Calendar } from 'lucide-react';
 import { getEventTypeLabel } from '@/constants/eventTypes';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
+import { defaultSchema } from 'hast-util-sanitize';
 import type { Event } from '@/types/event';
 
 interface EventAboutProps {
   event: Event;
 }
+
+// Étendre le schéma pour autoriser la balise <mark>
+const schema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames || []), 'mark'],
+};
 
 export const EventAbout = ({ event }: EventAboutProps) => {
   return (
@@ -20,14 +30,21 @@ export const EventAbout = ({ event }: EventAboutProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Description */}
-        <div>
-          <p className="text-gray-700 leading-relaxed text-base text-left">
-            {event.description || (
-              `Découvrez ${event.name}, un événement incontournable du secteur ${event.sector.toLowerCase()}. 
-              Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`
-            )}
-          </p>
+        {/* Description (Markdown + sauts de ligne) */}
+        <div className="prose max-w-none text-gray-700 leading-relaxed">
+          {event.description ? (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[[rehypeSanitize, schema]]}
+            >
+              {event.description}
+            </ReactMarkdown>
+          ) : (
+            <p>
+              Découvrez {event.name}, un événement incontournable du secteur {event.sector.toLowerCase()}. 
+              Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.
+            </p>
+          )}
         </div>
 
         {/* Sous-catégories : Type | Affluence | Tarifs */}
