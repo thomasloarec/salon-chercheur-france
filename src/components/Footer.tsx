@@ -69,7 +69,7 @@ const Footer = () => {
               © 2024 SalonsPro. Tous droits réservés.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-300 hover:text-accent text-sm transition-colors">
+              <a href="/mentions-legales" className="text-gray-300 hover:text-accent text-sm transition-colors">
                 Mentions légales
               </a>
               <a href="#" className="text-gray-300 hover:text-accent text-sm transition-colors">
