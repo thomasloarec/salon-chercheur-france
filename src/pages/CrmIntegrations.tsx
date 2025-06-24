@@ -2,12 +2,14 @@
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCrmIntegrations, useSyncCrmAccounts, useDisconnectCrm } from '@/hooks/useCrmIntegrations';
+import { useCrmIntegrations, useSyncCrmAccounts } from '@/hooks/useCrmIntegrations';
+import { handleOAuthLogin, handleOAuthCallback, handleDisconnectCrm } from '@/lib/oauthHandlers';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, Unplug, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { CrmProvider } from '@/types/crm';
 import { formatDistanceToNow } from 'date-fns';
@@ -15,23 +17,64 @@ import { fr } from 'date-fns/locale';
 
 const CrmIntegrations = () => {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: integrations = [], isLoading, refetch } = useCrmIntegrations();
   const syncMutation = useSyncCrmAccounts();
-  const disconnectMutation = useDisconnectCrm();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Handle URL parameters for feedback
+  // Handle OAuth callback and other URL parameters
   useEffect(() => {
-    const connected = searchParams.get('connected');
+    const callback = searchParams.get('callback');
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
     const error = searchParams.get('error');
+    const connected = searchParams.get('connected');
     const disconnected = searchParams.get('disconnected');
 
-    if (connected) {
+    // Handle OAuth callback
+    if (callback && code && state) {
+      handleOAuthCallback(callback as CrmProvider, code, state)
+        .then(() => {
+          toast({
+            title: "Connexion réussie",
+            description: `${getProviderName(callback as CrmProvider)} a été connecté avec succès.`,
+          });
+          queryClient.invalidateQueries({ queryKey: ['crm-integrations', user?.id] });
+          // Clean up URL parameters
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('callback');
+          newParams.delete('code');
+          newParams.delete('state');
+          newParams.set('connected', callback);
+          setSearchParams(newParams);
+        })
+        .catch((error) => {
+          console.error('OAuth callback error:', error);
+          toast({
+            title: "Erreur de connexion",
+            description: `Impossible de connecter ${getProviderName(callback as CrmProvider)}.`,
+            variant: "destructive",
+          });
+          // Clean up URL parameters
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('callback');
+          newParams.delete('code');
+          newParams.delete('state');
+          newParams.set('error', callback);
+          setSearchParams(newParams);
+        });
+    }
+    // Handle other feedback parameters
+    else if (connected) {
       toast({
         title: "Connexion réussie",
         description: `${getProviderName(connected as CrmProvider)} a été connecté avec succès.`,
       });
+      // Clean up the parameter after showing toast
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('connected');
+      setSearchParams(newParams, { replace: true });
     } else if (error) {
       if (error === 'unauthorized') {
         toast({
@@ -46,17 +89,32 @@ const CrmIntegrations = () => {
           variant: "destructive",
         });
       }
+      // Clean up the parameter after showing toast
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('error');
+      setSearchParams(newParams, { replace: true });
     } else if (disconnected) {
       toast({
         title: "Déconnexion réussie",
         description: `${getProviderName(disconnected as CrmProvider)} a été déconnecté.`,
       });
+      // Clean up the parameter after showing toast
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('disconnected');
+      setSearchParams(newParams, { replace: true });
     }
-  }, [searchParams, toast]);
+  }, [searchParams, setSearchParams, toast, user?.id, queryClient]);
 
-  const handleConnect = (provider: CrmProvider) => {
-    // Redirect to OAuth flow
-    window.location.href = `/api/integrations/${provider}/login`;
+  const handleConnect = async (provider: CrmProvider) => {
+    try {
+      await handleOAuthLogin(provider);
+    } catch (error) {
+      toast({
+        title: "Erreur de connexion",
+        description: "Impossible d'initier la connexion OAuth.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSync = async (provider: CrmProvider) => {
@@ -77,7 +135,8 @@ const CrmIntegrations = () => {
 
   const handleDisconnect = async (provider: CrmProvider) => {
     try {
-      await disconnectMutation.mutateAsync(provider);
+      await handleDisconnectCrm(provider);
+      queryClient.invalidateQueries({ queryKey: ['crm-integrations', user?.id] });
       toast({
         title: "Déconnexion réussie",
         description: `${getProviderName(provider)} a été déconnecté.`,
@@ -189,7 +248,6 @@ const CrmIntegrations = () => {
                         </Button>
                         <Button
                           onClick={() => handleDisconnect(integration.provider)}
-                          disabled={disconnectMutation.isPending}
                           size="sm"
                           variant="outline"
                         >
