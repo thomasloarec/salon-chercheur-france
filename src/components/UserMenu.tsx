@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   DropdownMenu,
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, LogOut, Heart } from 'lucide-react';
+import { User, LogOut, Heart, CalendarRange } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
@@ -43,6 +44,12 @@ const UserMenu = () => {
           <Link to="/profile" className="cursor-pointer">
             <User className="mr-2 h-4 w-4" />
             Mon profil
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/agenda" className="cursor-pointer">
+            <CalendarRange className="mr-2 h-4 w-4" />
+            Mon agenda
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
