@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toggleFavorite } from '@/utils/toggleFavorite';
 
 export const useFavorites = () => {
   const { user } = useAuth();
@@ -92,14 +92,12 @@ export const useToggleFavorite = () => {
 
   return useMutation({
     mutationFn: async (eventId: string) => {
-      const { error } = await supabase.rpc('toggle_favorite', {
-        p_event: eventId,
-      });
-      if (error) throw error;
+      return await toggleFavorite(eventId);
     },
     onSuccess: (_, eventId) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['favorite-events', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['is-favorite', eventId, user?.id] });
     },
   });
