@@ -19,3 +19,4 @@ Sitemap: https://salonspro.fr/sitemap.xml
 # Allow access to legal pages
 Allow: /mentions-legales
 Allow: /politique-confidentialite
+
