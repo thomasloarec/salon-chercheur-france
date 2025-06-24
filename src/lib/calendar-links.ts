@@ -1,6 +1,10 @@
 
 import type { Event } from '@/types/event';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+// Extend dayjs with UTC plugin
+dayjs.extend(utc);
 
 export const getGoogleCalUrl = (event: Event) => {
   const start = dayjs(event.start_date).utc().format("YYYYMMDDTHHmmss[Z]");
