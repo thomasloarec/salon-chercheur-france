@@ -14,6 +14,7 @@ import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
 import MentionsLegales from "./pages/MentionsLegales";
 import PolitiqueConfidentialite from "./pages/PolitiqueConfidentialite";
+import CGU from "./pages/CGU";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/mentions-legales" element={<MentionsLegales />} />
               <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
+              <Route path="/cgu" element={<CGU />} />
               <Route 
                 path="/favorites" 
                 element={

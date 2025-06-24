@@ -75,7 +75,7 @@ const Footer = () => {
               <a href="/politique-confidentialite" className="text-gray-300 hover:text-accent text-sm transition-colors">
                 Politique de confidentialité
               </a>
-              <a href="#" className="text-gray-300 hover:text-accent text-sm transition-colors">
+              <a href="/cgu" className="text-gray-300 hover:text-accent text-sm transition-colors">
                 CGU
               </a>
             </div>
