@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCrmIntegrations, useSyncCrmAccounts, useDisconnectCrm } from '@/hooks/useCrmIntegrations';
 import { Button } from '@/components/ui/button';
@@ -14,10 +15,44 @@ import { fr } from 'date-fns/locale';
 
 const CrmIntegrations = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const { data: integrations = [], isLoading, refetch } = useCrmIntegrations();
   const syncMutation = useSyncCrmAccounts();
   const disconnectMutation = useDisconnectCrm();
   const { toast } = useToast();
+
+  // Handle URL parameters for feedback
+  useEffect(() => {
+    const connected = searchParams.get('connected');
+    const error = searchParams.get('error');
+    const disconnected = searchParams.get('disconnected');
+
+    if (connected) {
+      toast({
+        title: "Connexion réussie",
+        description: `${getProviderName(connected as CrmProvider)} a été connecté avec succès.`,
+      });
+    } else if (error) {
+      if (error === 'unauthorized') {
+        toast({
+          title: "Erreur d'authentification",
+          description: "Vous devez être connecté pour gérer les intégrations CRM.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erreur de connexion",
+          description: `Impossible de connecter ${getProviderName(error as CrmProvider)}.`,
+          variant: "destructive",
+        });
+      }
+    } else if (disconnected) {
+      toast({
+        title: "Déconnexion réussie",
+        description: `${getProviderName(disconnected as CrmProvider)} a été déconnecté.`,
+      });
+    }
+  }, [searchParams, toast]);
 
   const handleConnect = (provider: CrmProvider) => {
     // Redirect to OAuth flow
@@ -29,7 +64,7 @@ const CrmIntegrations = () => {
       await syncMutation.mutateAsync(provider);
       toast({
         title: "Synchronisation réussie",
-        description: `Les comptes ${provider} ont été synchronisés.`,
+        description: `Les comptes ${getProviderName(provider)} ont été synchronisés.`,
       });
     } catch (error) {
       toast({
@@ -45,7 +80,7 @@ const CrmIntegrations = () => {
       await disconnectMutation.mutateAsync(provider);
       toast({
         title: "Déconnexion réussie",
-        description: `${provider} a été déconnecté.`,
+        description: `${getProviderName(provider)} a été déconnecté.`,
       });
     } catch (error) {
       toast({
