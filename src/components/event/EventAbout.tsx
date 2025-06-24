@@ -2,23 +2,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Users, Euro, Calendar } from 'lucide-react';
 import { getEventTypeLabel } from '@/constants/eventTypes';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeSanitize from 'rehype-sanitize';
-import { defaultSchema } from 'hast-util-sanitize';
+import DOMPurify from 'dompurify';
 import type { Event } from '@/types/event';
 
 interface EventAboutProps {
   event: Event;
 }
 
-// Étendre le schéma pour autoriser la balise <mark>
-const schema = {
-  ...defaultSchema,
-  tagNames: [...(defaultSchema.tagNames || []), 'mark'],
+// Configuration du sanitizer pour autoriser la balise <mark>
+const sanitize = (dirtyHtml: string) => {
+  return DOMPurify.sanitize(dirtyHtml, { 
+    ADD_TAGS: ['mark'],
+    ADD_ATTR: ['style'] // Pour les couleurs de fond et de texte
+  });
 };
 
 export const EventAbout = ({ event }: EventAboutProps) => {
+  const defaultDescription = `Découvrez ${event.name}, un événement incontournable du secteur ${event.sector.toLowerCase()}. 
+    Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`;
+
   return (
     <Card className="mb-8">
       <CardHeader className="pb-4">
@@ -30,22 +32,15 @@ export const EventAbout = ({ event }: EventAboutProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Description (Markdown + sauts de ligne) */}
-        <div className="prose max-w-none text-gray-700 leading-relaxed">
-          {event.description ? (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[[rehypeSanitize, schema]]}
-            >
-              {event.description}
-            </ReactMarkdown>
-          ) : (
-            <p>
-              Découvrez {event.name}, un événement incontournable du secteur {event.sector.toLowerCase()}. 
-              Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.
-            </p>
-          )}
-        </div>
+        {/* Description avec rendu HTML sécurisé */}
+        <div
+          className="prose max-w-none text-gray-700 leading-relaxed"
+          dangerouslySetInnerHTML={{
+            __html: event.description 
+              ? sanitize(event.description)
+              : defaultDescription
+          }}
+        />
 
         {/* Sous-catégories : Type | Affluence | Tarifs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 sm:gap-y-0 sm:gap-x-10 pt-4 border-t">

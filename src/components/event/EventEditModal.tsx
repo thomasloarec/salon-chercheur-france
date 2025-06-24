@@ -1,8 +1,9 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Calendar, Upload } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,7 @@ interface EventFormData {
 
 export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: EventEditModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [description, setDescription] = useState(event.description || '');
   const { toast } = useToast();
   const { data: allSectors = [] } = useSectors();
   const { data: eventSectors = [] } = useEventSectors(event.id);
@@ -139,7 +141,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         start_date: format(data.start_date, 'yyyy-MM-dd'),
         end_date: format(data.end_date, 'yyyy-MM-dd'),
         image_url: data.image_url || null,
-        description: data.description || null,
+        description: description || null,
         estimated_visitors: data.estimated_visitors ? parseInt(data.estimated_visitors) : null,
         entry_fee: data.entry_fee || null,
         venue_name: data.venue_name || null,
@@ -228,6 +230,21 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     value: sector.id,
     label: sector.name,
   }));
+
+  const quillModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', { 'script': 'sub' }, { 'script': 'super' }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link', 'blockquote', 'code-block'],
+      [{ 'color': [] }, { 'background': [] }],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'bold', 'italic', 'underline', 'list', 'bullet', 'link', 
+    'blockquote', 'code-block', 'color', 'background', 'script'
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -359,10 +376,14 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             
             <div>
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                rows={4}
-                {...register('description')}
+              <ReactQuill
+                theme="snow"
+                value={description}
+                onChange={setDescription}
+                modules={quillModules}
+                formats={quillFormats}
+                className="mb-4"
+                placeholder="Décrivez l'événement..."
               />
             </div>
 
