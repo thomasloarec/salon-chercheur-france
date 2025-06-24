@@ -14,7 +14,7 @@ import { fr } from 'date-fns/locale';
 
 const Agenda = () => {
   const { user } = useAuth();
-  const { data: events = [], isLoading, error } = useFavoriteEvents();
+  const { data: events = [], isLoading, error, refetch } = useFavoriteEvents();
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   // Persist view mode in localStorage
@@ -28,6 +28,10 @@ const Agenda = () => {
   const handleViewModeChange = (mode: 'list' | 'grid') => {
     setViewMode(mode);
     localStorage.setItem('agenda-view-mode', mode);
+  };
+
+  const handleRemoveFavorite = () => {
+    refetch();
   };
 
   // Find next upcoming event
@@ -143,7 +147,7 @@ const Agenda = () => {
                   <div role="list" className="divide-y divide-gray-100">
                     {events.map((event) => (
                       <div key={event.id} role="listitem">
-                        <FavoriteRow event={event} />
+                        <FavoriteRow event={event} onRemove={handleRemoveFavorite} />
                       </div>
                     ))}
                   </div>
