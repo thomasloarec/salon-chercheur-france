@@ -7,7 +7,7 @@ import EventCard from '@/components/EventCard';
 import FavoriteRow from '@/components/FavoriteRow';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarRange, Calendar, Grid3X3, List, Download } from 'lucide-react';
+import { CalendarRange, Calendar, Grid3X3, List } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -94,7 +94,7 @@ const Agenda = () => {
                 </div>
               </div>
 
-              {/* View Toggle & Export */}
+              {/* View Toggle */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center border rounded-lg p-1 bg-white">
                   <Button
@@ -114,13 +114,6 @@ const Agenda = () => {
                     <Grid3X3 className="h-4 w-4" />
                   </Button>
                 </div>
-                
-                {events.length > 0 && (
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Exporter .ics
-                  </Button>
-                )}
               </div>
             </div>
           </div>

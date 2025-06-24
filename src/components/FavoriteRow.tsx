@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, ChevronRight, Heart } from 'lucide-react';
+import { Calendar, MapPin, ChevronRight, Heart, CalendarPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDateRange } from '@/utils/dateUtils';
 import { useToggleFavorite } from '@/hooks/useFavorites';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { getGoogleCalUrl, getOutlookCalUrl } from '@/lib/calendar-links';
 import type { Event } from '@/types/event';
 
 interface FavoriteRowProps {
@@ -97,6 +98,28 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
         <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" />
       </Link>
 
+      {/* Calendar buttons */}
+      <div className="flex gap-2 ml-auto flex-shrink-0">
+        <a
+          href={getGoogleCalUrl(event)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Ajouter à Google Calendar"
+          className="text-muted-foreground hover:text-[#4285F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm p-1 transition-colors"
+        >
+          <CalendarPlus className="w-4 h-4" />
+        </a>
+        <a
+          href={getOutlookCalUrl(event)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Ajouter à Outlook"
+          className="text-muted-foreground hover:text-[#0072C6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm p-1 transition-colors"
+        >
+          <CalendarPlus className="w-4 h-4" />
+        </a>
+      </div>
+
       {/* Remove button */}
       <Button
         variant="ghost"
@@ -104,7 +127,7 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
         onClick={handleRemoveClick}
         disabled={toggleFavorite.isPending}
         aria-label="Retirer de l'agenda"
-        className="ml-auto flex-shrink-0"
+        className="flex-shrink-0"
       >
         <Heart
           className={cn(
