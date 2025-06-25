@@ -31,7 +31,13 @@ const Index = () => {
       searchParams.set('months', filters.months.join(','));
     }
     
-    if (filters.city) {
+    // Nouvelle gestion de la localisation avec suggestion
+    if (filters.locationSuggestion) {
+      searchParams.set('location_type', filters.locationSuggestion.type);
+      searchParams.set('location_value', filters.locationSuggestion.value);
+      searchParams.set('location_label', filters.locationSuggestion.label);
+    } else if (filters.city) {
+      // Fallback pour l'ancien système
       searchParams.set('city', filters.city);
     }
     

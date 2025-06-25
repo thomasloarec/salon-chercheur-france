@@ -36,6 +36,12 @@ export interface Event {
   is_favorite?: boolean;
 }
 
+export interface LocationSuggestion {
+  type: 'department' | 'region' | 'city' | 'text';
+  value: string;
+  label: string;
+}
+
 export interface SearchFilters {
   query?: string;
   sector?: string;
@@ -49,4 +55,5 @@ export interface SearchFilters {
   endDate?: string;
   minVisitors?: number;
   maxVisitors?: number;
+  locationSuggestion?: LocationSuggestion;
 }

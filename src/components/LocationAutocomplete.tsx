@@ -1,0 +1,174 @@
+
+import { useState, useEffect, useRef } from 'react';
+import { Input } from '@/components/ui/input';
+import { MapPin, ChevronDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface LocationSuggestion {
+  type: 'department' | 'region' | 'city' | 'text';
+  value: string;
+  label: string;
+}
+
+interface LocationAutocompleteProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSelect: (suggestion: LocationSuggestion) => void;
+  placeholder?: string;
+}
+
+const LocationAutocomplete = ({ 
+  value, 
+  onChange, 
+  onSelect, 
+  placeholder = "Ville, département, région..." 
+}: LocationAutocompleteProps) => {
+  const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!value || value.length < 2) {
+        setSuggestions([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Recherche dans la vue events_geo pour obtenir toutes les suggestions
+        const { data, error } = await supabase
+          .from('events_geo')
+          .select('city, dep_nom, region_nom, dep_code, region_code')
+          .or(`city.ilike.%${value}%,dep_nom.ilike.%${value}%,region_nom.ilike.%${value}%`)
+          .limit(20);
+
+        if (error) {
+          console.error('Erreur autocomplete:', error);
+          return;
+        }
+
+        const uniqueSuggestions = new Map<string, LocationSuggestion>();
+
+        data?.forEach(row => {
+          // Ajouter les villes
+          if (row.city && row.city.toLowerCase().includes(value.toLowerCase())) {
+            const key = `city-${row.city}`;
+            if (!uniqueSuggestions.has(key)) {
+              uniqueSuggestions.set(key, {
+                type: 'city',
+                value: row.city,
+                label: `${row.city} (ville)`
+              });
+            }
+          }
+
+          // Ajouter les départements
+          if (row.dep_nom && row.dep_nom.toLowerCase().includes(value.toLowerCase())) {
+            const key = `department-${row.dep_code}`;
+            if (!uniqueSuggestions.has(key)) {
+              uniqueSuggestions.set(key, {
+                type: 'department',
+                value: row.dep_code,
+                label: `${row.dep_nom} (département)`
+              });
+            }
+          }
+
+          // Ajouter les régions
+          if (row.region_nom && row.region_nom.toLowerCase().includes(value.toLowerCase())) {
+            const key = `region-${row.region_code}`;
+            if (!uniqueSuggestions.has(key)) {
+              uniqueSuggestions.set(key, {
+                type: 'region',
+                value: row.region_code,
+                label: `${row.region_nom} (région)`
+              });
+            }
+          }
+        });
+
+        setSuggestions(Array.from(uniqueSuggestions.values()).slice(0, 8));
+        setIsOpen(true);
+      } catch (error) {
+        console.error('Erreur autocomplete:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [value]);
+
+  const handleSuggestionClick = (suggestion: LocationSuggestion) => {
+    onChange(suggestion.label);
+    onSelect(suggestion);
+    setIsOpen(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onChange(newValue);
+    if (!newValue) {
+      setIsOpen(false);
+    }
+  };
+
+  // Fermer le dropdown si on clique à l'extérieur
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div className="relative">
+        <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+        <Input
+          placeholder={placeholder}
+          className="pl-10 pr-10 h-12 text-gray-900"
+          value={value}
+          onChange={handleInputChange}
+          onFocus={() => {
+            if (suggestions.length > 0) setIsOpen(true);
+          }}
+        />
+        {isLoading && (
+          <div className="absolute right-3 top-3">
+            <div className="animate-spin h-5 w-5 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
+          </div>
+        )}
+        {!isLoading && suggestions.length > 0 && (
+          <ChevronDown className="absolute right-3 top-3 h-5 w-5 text-gray-400" />
+        )}
+      </div>
+
+      {isOpen && suggestions.length > 0 && (
+        <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+          {suggestions.map((suggestion, index) => (
+            <button
+              key={index}
+              className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-none bg-transparent"
+              onClick={() => handleSuggestionClick(suggestion)}
+            >
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                <span className="text-gray-900">{suggestion.label}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default LocationAutocomplete;

@@ -1,12 +1,12 @@
 
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { Search, MapPin, Calendar } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useSectors } from '@/hooks/useSectors';
 import { getRollingMonths } from '@/utils/monthUtils';
 import { EVENT_TYPES } from '@/constants/eventTypes';
+import LocationAutocomplete, { type LocationSuggestion } from './LocationAutocomplete';
 import type { SearchFilters } from '@/types/event';
 
 interface SearchSectionProps {
@@ -18,6 +18,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   const [types, setTypes] = useState<string[]>([]);
   const [months, setMonths] = useState<string[]>([]);
   const [city, setCity] = useState('');
+  const [selectedLocationSuggestion, setSelectedLocationSuggestion] = useState<LocationSuggestion | null>(null);
 
   const { data: sectorsData = [] } = useSectors();
 
@@ -37,6 +38,18 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     })), []
   );
 
+  const handleLocationSelect = (suggestion: LocationSuggestion) => {
+    setSelectedLocationSuggestion(suggestion);
+  };
+
+  const handleLocationChange = (value: string) => {
+    setCity(value);
+    // Si l'utilisateur tape quelque chose de différent, reset la suggestion
+    if (selectedLocationSuggestion && value !== selectedLocationSuggestion.label) {
+      setSelectedLocationSuggestion(null);
+    }
+  };
+
   const handleSearch = () => {
     const filters: SearchFilters = {};
     
@@ -53,10 +66,20 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
       filters.months = months.map(m => parseInt(m.split('-')[0]));
     }
     
-    if (city.trim()) {
-      filters.city = city.trim();
+    // Gérer la localisation
+    if (selectedLocationSuggestion) {
+      // L'utilisateur a sélectionné une suggestion
+      filters.locationSuggestion = selectedLocationSuggestion;
+    } else if (city.trim()) {
+      // L'utilisateur a tapé du texte libre
+      filters.locationSuggestion = {
+        type: 'text',
+        value: city.trim(),
+        label: city.trim()
+      };
     }
     
+    console.log('🔍 Recherche lancée avec filtres:', filters);
     onSearch(filters);
   };
 
@@ -109,16 +132,13 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ville</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <Input
-                    placeholder="Ville, région..."
-                    className="pl-10 h-12 text-gray-900"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                  />
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Localisation</label>
+                <LocationAutocomplete
+                  value={city}
+                  onChange={handleLocationChange}
+                  onSelect={handleLocationSelect}
+                  placeholder="Ville, département, région..."
+                />
               </div>
             </div>
 
