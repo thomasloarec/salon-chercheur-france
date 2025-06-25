@@ -1,8 +1,9 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export interface LocationSuggestion {
   type: 'department' | 'region' | 'city' | 'text';
@@ -17,6 +18,15 @@ interface LocationAutocompleteProps {
   placeholder?: string;
 }
 
+// Debounce utility function
+const debounce = (func: Function, delay: number) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  };
+};
+
 const LocationAutocomplete = ({ 
   value, 
   onChange, 
@@ -28,101 +38,70 @@ const LocationAutocomplete = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Sync with external value changes
   useEffect(() => {
     setQuery(value);
   }, [value]);
 
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (!query || query.length < 2) {
+  const fetchSuggestions = async (searchQuery: string) => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('🔍 Fetching suggestions for:', searchQuery);
+      
+      // Use the new get_location_suggestions function
+      const { data, error } = await supabase.rpc('get_location_suggestions', { q: searchQuery });
+      
+      if (error) {
+        console.error('❌ Error fetching suggestions:', error);
         setSuggestions([]);
         return;
       }
 
-      setIsLoading(true);
-      try {
-        const uniqueSuggestions = new Map<string, LocationSuggestion>();
+      const formattedSuggestions: LocationSuggestion[] = (data || []).map((item: any) => ({
+        type: item.type,
+        value: item.value,
+        label: item.label
+      }));
 
-        // Recherche dans les villes (depuis la table events)
-        const { data: cities } = await supabase
-          .from('events')
-          .select('city')
-          .ilike('city', `%${query}%`)
-          .limit(10);
+      console.log('✅ Suggestions received:', formattedSuggestions);
+      setSuggestions(formattedSuggestions);
+      setIsOpen(formattedSuggestions.length > 0);
+    } catch (error) {
+      console.error('❌ Error in fetchSuggestions:', error);
+      setSuggestions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        cities?.forEach(event => {
-          if (event.city && event.city.toLowerCase().includes(query.toLowerCase())) {
-            const key = `city-${event.city}`;
-            if (!uniqueSuggestions.has(key)) {
-              uniqueSuggestions.set(key, {
-                type: 'city',
-                value: event.city,
-                label: `${event.city} (ville)`
-              });
-            }
-          }
-        });
-
-        // Recherche dans les départements
-        const { data: departements } = await supabase
-          .from('departements')
-          .select('code, nom')
-          .ilike('nom', `%${query}%`)
-          .limit(5);
-
-        departements?.forEach(dep => {
-          if (dep.nom && dep.nom.toLowerCase().includes(query.toLowerCase())) {
-            const key = `department-${dep.code}`;
-            if (!uniqueSuggestions.has(key)) {
-              uniqueSuggestions.set(key, {
-                type: 'department',
-                value: dep.code,
-                label: `${dep.nom} (département)`
-              });
-            }
-          }
-        });
-
-        // Recherche dans les régions
-        const { data: regions } = await supabase
-          .from('regions')
-          .select('code, nom')
-          .ilike('nom', `%${query}%`)
-          .limit(5);
-
-        regions?.forEach(region => {
-          if (region.nom && region.nom.toLowerCase().includes(query.toLowerCase())) {
-            const key = `region-${region.code}`;
-            if (!uniqueSuggestions.has(key)) {
-              uniqueSuggestions.set(key, {
-                type: 'region',
-                value: region.code,
-                label: `${region.nom} (région)`
-              });
-            }
-          }
-        });
-
-        setSuggestions(Array.from(uniqueSuggestions.values()).slice(0, 8));
-        setIsOpen(true);
-      } catch (error) {
-        console.error('Erreur autocomplete:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const debounceTimer = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [query]);
+  // Debounced fetch function
+  const debouncedFetch = useMemo(() => debounce(fetchSuggestions, 300), []);
 
   const handleSuggestionClick = (suggestion: LocationSuggestion) => {
+    console.log('🎯 Suggestion selected:', suggestion);
     setQuery(suggestion.label);
     onChange(suggestion.label);
     onSelect(suggestion);
     setIsOpen(false);
+    
+    // Navigate to events page with location filter
+    const searchParams = new URLSearchParams(location.search);
+    searchParams.set('location_type', suggestion.type);
+    searchParams.set('location_value', suggestion.value);
+    searchParams.set('page', '1');
+    
+    navigate({
+      pathname: '/events',
+      search: searchParams.toString()
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,11 +112,16 @@ const LocationAutocomplete = ({
     
     if (!newValue) {
       setIsOpen(false);
+      setSuggestions([]);
+    } else {
+      // Debounced fetch for suggestions
+      debouncedFetch(newValue);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && query.length >= 3) {
+    if (e.key === 'Enter' && query.trim().length >= 3) {
+      console.log('⌨️ Enter pressed with query:', query.trim());
       // Create a text-based location suggestion when user presses Enter
       const textSuggestion: LocationSuggestion = {
         type: 'text',
@@ -146,10 +130,21 @@ const LocationAutocomplete = ({
       };
       onSelect(textSuggestion);
       setIsOpen(false);
+      
+      // Navigate to events page with text search
+      const searchParams = new URLSearchParams(location.search);
+      searchParams.set('location_type', 'text');
+      searchParams.set('location_value', encodeURIComponent(query.trim()));
+      searchParams.set('page', '1');
+      
+      navigate({
+        pathname: '/events',
+        search: searchParams.toString()
+      });
     }
   };
 
-  // Fermer le dropdown si on clique à l'extérieur
+  // Close dropdown if clicked outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -196,6 +191,10 @@ const LocationAutocomplete = ({
               <div className="flex items-center">
                 <MapPin className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
                 <span className="text-gray-900">{suggestion.label}</span>
+                <span className="ml-2 text-xs text-gray-500">
+                  ({suggestion.type === 'city' ? 'ville' : 
+                    suggestion.type === 'department' ? 'département' : 'région'})
+                </span>
               </div>
             </button>
           ))}

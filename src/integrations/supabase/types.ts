@@ -177,6 +177,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_exhibitors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_sectors: {
@@ -201,6 +208,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_sectors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
           {
@@ -351,6 +365,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "exhibitor_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
         ]
       }
       favorites: {
@@ -378,6 +399,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
         ]
@@ -621,7 +649,31 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      events_geo: {
+        Row: {
+          city: string | null
+          dep_code: string | null
+          id: string | null
+          region: string | null
+          region_code: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communes_dep_code_fkey"
+            columns: ["dep_code"]
+            isOneToOne: false
+            referencedRelation: "departements"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "communes_region_code_fkey"
+            columns: ["region_code"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
     }
     Functions: {
       delete_user_account: {
@@ -635,6 +687,15 @@ export type Database = {
       generate_event_slug: {
         Args: { event_name: string; event_city: string; event_year: number }
         Returns: string
+      }
+      get_location_suggestions: {
+        Args: { q: string }
+        Returns: {
+          rank: number
+          type: string
+          label: string
+          value: string
+        }[]
       }
       gtrgm_compress: {
         Args: { "": unknown }

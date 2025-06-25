@@ -8,6 +8,7 @@ import { getRollingMonths } from '@/utils/monthUtils';
 import { EVENT_TYPES } from '@/constants/eventTypes';
 import LocationAutocomplete, { type LocationSuggestion } from './LocationAutocomplete';
 import type { SearchFilters } from '@/types/event';
+import { useNavigate } from 'react-router-dom';
 
 interface SearchSectionProps {
   onSearch: (filters: SearchFilters) => void;
@@ -19,6 +20,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   const [months, setMonths] = useState<string[]>([]);
   const [locationQuery, setLocationQuery] = useState('');
   const [selectedLocationSuggestion, setSelectedLocationSuggestion] = useState<LocationSuggestion | null>(null);
+  const navigate = useNavigate();
 
   const { data: sectorsData = [] } = useSectors();
 
@@ -39,7 +41,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   );
 
   const handleLocationSelect = (suggestion: LocationSuggestion) => {
-    console.log('🎯 Location selected:', suggestion);
+    console.log('🎯 Location selected in SearchSection:', suggestion);
     setSelectedLocationSuggestion(suggestion);
     setLocationQuery(suggestion.label);
   };
@@ -53,37 +55,42 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   };
 
   const handleSearch = () => {
-    const filters: SearchFilters = {};
+    console.log('🔍 Search triggered from SearchSection');
+    
+    // Build search params
+    const searchParams = new URLSearchParams();
     
     if (sectors.length > 0) {
-      filters.sectorIds = sectors;
+      searchParams.set('sectors', sectors.join(','));
     }
     
     if (types.length > 0) {
-      filters.types = types;
+      searchParams.set('types', types.join(','));
     }
     
     if (months.length > 0) {
-      // Convert month strings back to numbers for compatibility
-      filters.months = months.map(m => parseInt(m.split('-')[0]));
+      searchParams.set('months', months.join(','));
     }
     
     // Handle location properly with locationSuggestion
     if (selectedLocationSuggestion) {
-      filters.locationSuggestion = selectedLocationSuggestion;
+      searchParams.set('location_type', selectedLocationSuggestion.type);
+      searchParams.set('location_value', selectedLocationSuggestion.value);
       console.log('🔍 Recherche avec suggestion:', selectedLocationSuggestion);
     } else if (locationQuery.trim()) {
       // Fallback to text search if user typed something but didn't select
-      filters.locationSuggestion = {
-        type: 'text',
-        value: locationQuery.trim(),
-        label: locationQuery.trim()
-      };
+      searchParams.set('location_type', 'text');
+      searchParams.set('location_value', locationQuery.trim());
       console.log('🔍 Recherche avec texte libre:', locationQuery.trim());
     }
     
-    console.log('🔍 Filtres finaux envoyés:', filters);
-    onSearch(filters);
+    searchParams.set('page', '1');
+    
+    // Navigate to events page
+    navigate({
+      pathname: '/events',
+      search: searchParams.toString()
+    });
   };
 
   return (

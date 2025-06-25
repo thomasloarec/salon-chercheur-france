@@ -193,7 +193,7 @@ const Events = () => {
                   Résultats filtrés
                   {filters.locationSuggestion && (
                     <span className="ml-2 text-accent font-medium">
-                      • Lieu: {filters.locationSuggestion.label} ({filters.locationSuggestion.type})
+                      • Lieu: {filters.locationSuggestion.label}
                     </span>
                   )}
                   {filters.sectors && filters.sectors.length > 0 && (
