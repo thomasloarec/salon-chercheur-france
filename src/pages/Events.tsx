@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useEvents } from '@/hooks/useEvents';
+import { useEventsWithRPC } from '@/hooks/useEventsWithRPC';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
 import { ViewToggle } from '@/components/ViewToggle';
 import { EventsResults } from '@/components/EventsResults';
@@ -16,7 +16,7 @@ const Events = () => {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const [isInitialized, setIsInitialized] = useState(false);
-  const { data: events, isLoading, error } = useEvents(filters);
+  const { data: eventsData, isLoading, error } = useEventsWithRPC(filters);
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -56,19 +56,39 @@ const Events = () => {
         });
       }
       
-      const cityParam = searchParams.get('city');
-      if (cityParam) {
-        initialFilters.city = cityParam;
+      // Nouvelle gestion standardisée de la localisation
+      const locationTypeParam = searchParams.get('location_type');
+      const locationValueParam = searchParams.get('location_value');
+      
+      if (locationTypeParam && locationValueParam) {
+        initialFilters.locationSuggestion = {
+          type: locationTypeParam as 'department' | 'region' | 'city' | 'text',
+          value: locationValueParam,
+          label: locationValueParam
+        };
       }
       
-      console.log('Events: Initial filters from URL:', initialFilters);
+      // Fallback pour l'ancien système city (à supprimer progressivement)
+      const cityParam = searchParams.get('city');
+      if (cityParam && !initialFilters.locationSuggestion) {
+        initialFilters.locationSuggestion = {
+          type: 'text',
+          value: cityParam,
+          label: cityParam
+        };
+      }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Events: Initial filters from URL:', initialFilters);
+      }
+      
       setFilters(initialFilters);
       setIsInitialized(true);
     }
   }, [searchParams, isInitialized]);
 
-  // Display all B2B events (no need to filter out anything)
-  const displayEvents = events || [];
+  // Display events from RPC response
+  const displayEvents = eventsData?.events || [];
 
   // Memoize the callback to prevent infinite re-renders
   const handleFiltersChange = useCallback((newFilters: SearchFilters) => {
@@ -99,8 +119,10 @@ const Events = () => {
       newParams.set('months', newFilters.months.join(','));
     }
     
-    if (newFilters.city) {
-      newParams.set('city', newFilters.city);
+    // Nouvelle gestion standardisée de la localisation
+    if (newFilters.locationSuggestion) {
+      newParams.set('location_type', newFilters.locationSuggestion.type);
+      newParams.set('location_value', newFilters.locationSuggestion.value);
     }
     
     setSearchParams(newParams);
@@ -169,6 +191,11 @@ const Events = () => {
               {Object.keys(filters).length > 0 && (
                 <p className="text-gray-600 mt-1">
                   Résultats filtrés
+                  {filters.locationSuggestion && (
+                    <span className="ml-2 text-accent font-medium">
+                      • Lieu: {filters.locationSuggestion.label} ({filters.locationSuggestion.type})
+                    </span>
+                  )}
                   {filters.sectors && filters.sectors.length > 0 && (
                     <span className="ml-2 text-accent font-medium">
                       • Secteur: {filters.sectors.join(', ')}

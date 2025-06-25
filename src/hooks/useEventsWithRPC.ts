@@ -36,10 +36,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       if (filters?.locationSuggestion) {
         params.location_type = filters.locationSuggestion.type;
         params.location_value = filters.locationSuggestion.value;
-      } else if (filters?.city) {
-        // Fallback pour les anciens filtres
-        params.location_type = 'text';
-        params.location_value = filters.city;
       }
 
       // Ajouter les autres filtres
@@ -55,9 +51,16 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         params.months = filters.months;
       }
 
-      // Log pour le debug en développement
+      // Console debug en développement
       if (process.env.NODE_ENV === 'development') {
         console.log('🔍 Appel à search_events RPC avec:', params);
+        console.table({ 
+          location_type: params.location_type, 
+          location_value: params.location_value,
+          sector_ids: params.sector_ids?.length || 0,
+          event_types: params.event_types?.length || 0,
+          months: params.months?.length || 0
+        });
       }
 
       try {
@@ -72,6 +75,11 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         if (process.env.NODE_ENV === 'development') {
           console.log('✅ Réponse search_events RPC:', {
             events_count: (data as any)?.length || 0,
+            total_count: (data as any)?.[0]?.total_count || 0
+          });
+          console.table({ 
+            error: null, 
+            rows: (data as any)?.length || 0,
             total_count: (data as any)?.[0]?.total_count || 0
           });
         }
@@ -117,12 +125,35 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         };
       } catch (error) {
         console.error('❌ Erreur lors de l\'appel RPC:', error);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.table({ 
+            error: error.message || 'Unknown error', 
+            rows: 0,
+            total_count: 0
+          });
+        }
+        
         // Fallback vers une requête normale si la RPC échoue
-        const { data: fallbackData, error: fallbackError } = await supabase
+        let query = supabase
           .from('events')
           .select('*')
           .eq('visible', true)
-          .order('start_date', { ascending: true })
+          .order('start_date', { ascending: true });
+
+        // Appliquer les filtres de localisation en fallback
+        if (filters?.locationSuggestion) {
+          const { type, value } = filters.locationSuggestion;
+          if (type === 'city') {
+            query = query.ilike('city', `%${value}%`);
+          } else if (type === 'region') {
+            query = query.ilike('region', `%${value}%`);
+          } else if (type === 'text') {
+            query = query.or(`city.ilike.%${value}%,region.ilike.%${value}%,location.ilike.%${value}%`);
+          }
+        }
+
+        const { data: fallbackData, error: fallbackError } = await query
           .range((page - 1) * pageSize, page * pageSize - 1);
 
         if (fallbackError) {
