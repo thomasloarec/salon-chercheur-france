@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -98,7 +97,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || city.trim();
 
   return (
-    <div className="h-full bg-white border-r overflow-y-auto">
+    <aside className="sticky top-0 max-h-screen overflow-y-auto h-full bg-white border-r">
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Filtres</h2>
@@ -166,6 +165,6 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
           />
         </div>
       </div>
-    </div>
+    </aside>
   );
 };
