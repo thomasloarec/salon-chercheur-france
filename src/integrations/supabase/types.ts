@@ -247,6 +247,7 @@ export type Database = {
           name: string
           organizer_contact: string | null
           organizer_name: string | null
+          postal_code: string | null
           region: string | null
           scraped_from: string | null
           sector: string
@@ -278,6 +279,7 @@ export type Database = {
           name: string
           organizer_contact?: string | null
           organizer_name?: string | null
+          postal_code?: string | null
           region?: string | null
           scraped_from?: string | null
           sector: string
@@ -309,6 +311,7 @@ export type Database = {
           name?: string
           organizer_contact?: string | null
           organizer_name?: string | null
+          postal_code?: string | null
           region?: string | null
           scraped_from?: string | null
           sector?: string
@@ -651,11 +654,39 @@ export type Database = {
     Views: {
       events_geo: {
         Row: {
+          address: string | null
           city: string | null
+          commune_id: number | null
+          country: string | null
+          created_at: string | null
           dep_code: string | null
+          description: string | null
+          end_date: string | null
+          entry_fee: string | null
+          estimated_exhibitors: number | null
+          estimated_visitors: number | null
+          event_type: string | null
+          event_url: string | null
           id: string | null
+          image_url: string | null
+          is_b2b: boolean | null
+          last_scraped_at: string | null
+          location: string | null
+          name: string | null
+          organizer_contact: string | null
+          organizer_name: string | null
+          postal_code: string | null
           region: string | null
           region_code: string | null
+          scraped_from: string | null
+          sector: string | null
+          slug: string | null
+          start_date: string | null
+          tags: string[] | null
+          updated_at: string | null
+          venue_name: string | null
+          visible: boolean | null
+          website_url: string | null
         }
         Relationships: [
           {
@@ -666,7 +697,7 @@ export type Database = {
             referencedColumns: ["code"]
           },
           {
-            foreignKeyName: "communes_region_code_fkey"
+            foreignKeyName: "departements_region_code_fkey"
             columns: ["region_code"]
             isOneToOne: false
             referencedRelation: "regions"
