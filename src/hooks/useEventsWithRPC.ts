@@ -129,9 +129,42 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           throw fallbackError;
         }
 
+        // Mapper les données de fallback au format Event
+        const fallbackEvents: Event[] = (fallbackData || []).map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          start_date: item.start_date,
+          end_date: item.end_date,
+          sector: item.sector,
+          location: item.location,
+          city: item.city,
+          region: item.region,
+          country: item.country,
+          venue_name: item.venue_name,
+          event_url: item.event_url,
+          image_url: item.image_url,
+          tags: item.tags,
+          organizer_name: item.organizer_name,
+          organizer_contact: item.organizer_contact,
+          entry_fee: item.entry_fee,
+          estimated_visitors: item.estimated_visitors,
+          estimated_exhibitors: item.estimated_exhibitors,
+          is_b2b: item.is_b2b,
+          event_type: item.event_type as Event['event_type'],
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          last_scraped_at: item.last_scraped_at,
+          scraped_from: item.scraped_from,
+          address: item.address,
+          visible: item.visible,
+          slug: item.slug,
+          sectors: []
+        }));
+
         return {
-          events: fallbackData || [],
-          total_count: fallbackData?.length || 0
+          events: fallbackEvents,
+          total_count: fallbackEvents.length
         };
       }
     },
