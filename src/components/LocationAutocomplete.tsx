@@ -105,6 +105,8 @@ const LocationAutocomplete = ({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     const newValue = e.target.value;
     setQuery(newValue);
     // Only update parent for display purposes, don't trigger search
@@ -121,6 +123,8 @@ const LocationAutocomplete = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && query.trim().length >= 3) {
+      e.preventDefault();
+      e.stopPropagation();
       console.log('⌨️ Enter pressed with query:', query.trim());
       // Create a text-based location suggestion when user presses Enter
       const textSuggestion: LocationSuggestion = {

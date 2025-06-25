@@ -10,7 +10,7 @@ SELECT
 FROM public.events e
 LEFT JOIN public.communes c ON LOWER(UNACCENT(e.city)) = LOWER(UNACCENT(c.nom));
 
--- Créer la fonction get_location_suggestions
+-- Créer la fonction get_location_suggestions avec gestion robuste des espaces/tirets
 CREATE OR REPLACE FUNCTION public.get_location_suggestions(q text)
 RETURNS TABLE (
   rank integer,
@@ -20,30 +20,26 @@ RETURNS TABLE (
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
-  WITH ranked AS (
-    -- 1. Ville : priorité absolue (rank 1)
-    SELECT 1 AS rank, 'city' AS type,
-           nom  AS label, nom  AS value
-    FROM   communes
-    WHERE  LOWER(unaccent(nom)) = LOWER(unaccent(q))
-
-    UNION
-    -- 2. Département (rank 2)
-    SELECT 2, 'department',
-           d.nom, d.code
-    FROM   departements d
-    WHERE  LOWER(unaccent(d.nom)) = LOWER(unaccent(q))
-
-    UNION
-    -- 3. Région (rank 3)
-    SELECT 3, 'region',
-           r.nom, r.code
-    FROM   regions r
-    WHERE  LOWER(unaccent(r.nom)) = LOWER(unaccent(q))
+  WITH input AS (
+    SELECT LOWER(unaccent(regexp_replace(q, '[\s\-]', '', 'g'))) AS q_norm
   )
   SELECT DISTINCT ON (label) ranked.*
-  FROM   ranked
-  ORDER  BY label, rank;
+  FROM (
+    SELECT 1 AS rank, 'city' AS type, c.nom AS label, c.nom AS value
+    FROM   communes c, input i
+    WHERE  LOWER(unaccent(regexp_replace(c.nom, '[\s\-]', '', 'g'))) LIKE i.q_norm || '%'
+
+    UNION
+    SELECT 2, 'department', d.nom, d.code
+    FROM   departements d, input i
+    WHERE  LOWER(unaccent(regexp_replace(d.nom, '[\s\-]', '', 'g'))) LIKE i.q_norm || '%'
+
+    UNION
+    SELECT 3, 'region', r.nom, r.code
+    FROM   regions r, input i
+    WHERE  LOWER(unaccent(regexp_replace(r.nom, '[\s\-]', '', 'g'))) LIKE i.q_norm || '%'
+  ) AS ranked
+  ORDER BY label, rank;
 END;
 $$;
 

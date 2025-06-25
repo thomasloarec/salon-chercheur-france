@@ -93,6 +93,12 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     });
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSearch();
+  };
+
   return (
     <section className="gradient-hero text-white py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,7 +113,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
           </p>
 
           {/* Search Form */}
-          <div className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-2xl animate-scale-in">
+          <form onSubmit={handleFormSubmit} className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-2xl animate-scale-in">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Secteurs d'activité</label>
@@ -153,13 +159,13 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
             </div>
 
             <Button 
-              onClick={handleSearch}
+              type="submit"
               className="w-full h-12 bg-accent hover:bg-accent/90 text-lg font-semibold"
             >
               <Search className="h-5 w-5 mr-2" />
               Rechercher des salons
             </Button>
-          </div>
+          </form>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
