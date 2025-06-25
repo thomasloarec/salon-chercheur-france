@@ -45,6 +45,48 @@ export type Database = {
         }
         Relationships: []
       }
+      communes: {
+        Row: {
+          code_postal: string | null
+          created_at: string | null
+          dep_code: string | null
+          id: number
+          nom: string
+          region_code: string | null
+        }
+        Insert: {
+          code_postal?: string | null
+          created_at?: string | null
+          dep_code?: string | null
+          id?: number
+          nom: string
+          region_code?: string | null
+        }
+        Update: {
+          code_postal?: string | null
+          created_at?: string | null
+          dep_code?: string | null
+          id?: number
+          nom?: string
+          region_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communes_dep_code_fkey"
+            columns: ["dep_code"]
+            isOneToOne: false
+            referencedRelation: "departements"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "communes_region_code_fkey"
+            columns: ["region_code"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string | null
@@ -68,6 +110,35 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      departements: {
+        Row: {
+          code: string
+          created_at: string | null
+          nom: string
+          region_code: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          nom: string
+          region_code?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          nom?: string
+          region_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departements_region_code_fkey"
+            columns: ["region_code"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       event_exhibitors: {
         Row: {
@@ -376,6 +447,24 @@ export type Database = {
           },
         ]
       }
+      regions: {
+        Row: {
+          code: string
+          created_at: string | null
+          nom: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          nom: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          nom?: string
+        }
+        Relationships: []
+      }
       scraping_sources: {
         Row: {
           base_url: string
@@ -546,6 +635,38 @@ export type Database = {
       generate_event_slug: {
         Args: { event_name: string; event_city: string; event_year: number }
         Returns: string
+      }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
       }
       toggle_favorite: {
         Args: { p_event: string }
