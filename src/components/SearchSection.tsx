@@ -17,7 +17,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   const [sectors, setSectors] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [months, setMonths] = useState<string[]>([]);
-  const [city, setCity] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
   const [selectedLocationSuggestion, setSelectedLocationSuggestion] = useState<LocationSuggestion | null>(null);
 
   const { data: sectorsData = [] } = useSectors();
@@ -39,13 +39,15 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   );
 
   const handleLocationSelect = (suggestion: LocationSuggestion) => {
+    console.log('🎯 Location selected:', suggestion);
     setSelectedLocationSuggestion(suggestion);
+    setLocationQuery(suggestion.label);
   };
 
   const handleLocationChange = (value: string) => {
-    setCity(value);
-    // Si l'utilisateur tape quelque chose de différent, reset la suggestion
-    if (selectedLocationSuggestion && value !== selectedLocationSuggestion.label) {
+    setLocationQuery(value);
+    // Don't trigger search on every keystroke
+    if (!value) {
       setSelectedLocationSuggestion(null);
     }
   };
@@ -66,20 +68,21 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
       filters.months = months.map(m => parseInt(m.split('-')[0]));
     }
     
-    // Gérer la localisation
+    // Handle location properly with locationSuggestion
     if (selectedLocationSuggestion) {
-      // L'utilisateur a sélectionné une suggestion
       filters.locationSuggestion = selectedLocationSuggestion;
-    } else if (city.trim()) {
-      // L'utilisateur a tapé du texte libre
+      console.log('🔍 Recherche avec suggestion:', selectedLocationSuggestion);
+    } else if (locationQuery.trim()) {
+      // Fallback to text search if user typed something but didn't select
       filters.locationSuggestion = {
         type: 'text',
-        value: city.trim(),
-        label: city.trim()
+        value: locationQuery.trim(),
+        label: locationQuery.trim()
       };
+      console.log('🔍 Recherche avec texte libre:', locationQuery.trim());
     }
     
-    console.log('🔍 Recherche lancée avec filtres:', filters);
+    console.log('🔍 Filtres finaux envoyés:', filters);
     onSearch(filters);
   };
 
@@ -134,7 +137,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Localisation</label>
                 <LocationAutocomplete
-                  value={city}
+                  value={locationQuery}
                   onChange={handleLocationChange}
                   onSelect={handleLocationSelect}
                   placeholder="Ville, département, région..."

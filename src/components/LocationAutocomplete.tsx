@@ -23,14 +23,20 @@ const LocationAutocomplete = ({
   onSelect, 
   placeholder = "Ville, département, région..." 
 }: LocationAutocompleteProps) => {
+  const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Sync with external value changes
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
+
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (!value || value.length < 2) {
+      if (!query || query.length < 2) {
         setSuggestions([]);
         return;
       }
@@ -43,11 +49,11 @@ const LocationAutocomplete = ({
         const { data: cities } = await supabase
           .from('events')
           .select('city')
-          .ilike('city', `%${value}%`)
+          .ilike('city', `%${query}%`)
           .limit(10);
 
         cities?.forEach(event => {
-          if (event.city && event.city.toLowerCase().includes(value.toLowerCase())) {
+          if (event.city && event.city.toLowerCase().includes(query.toLowerCase())) {
             const key = `city-${event.city}`;
             if (!uniqueSuggestions.has(key)) {
               uniqueSuggestions.set(key, {
@@ -63,11 +69,11 @@ const LocationAutocomplete = ({
         const { data: departements } = await supabase
           .from('departements')
           .select('code, nom')
-          .ilike('nom', `%${value}%`)
+          .ilike('nom', `%${query}%`)
           .limit(5);
 
         departements?.forEach(dep => {
-          if (dep.nom && dep.nom.toLowerCase().includes(value.toLowerCase())) {
+          if (dep.nom && dep.nom.toLowerCase().includes(query.toLowerCase())) {
             const key = `department-${dep.code}`;
             if (!uniqueSuggestions.has(key)) {
               uniqueSuggestions.set(key, {
@@ -83,11 +89,11 @@ const LocationAutocomplete = ({
         const { data: regions } = await supabase
           .from('regions')
           .select('code, nom')
-          .ilike('nom', `%${value}%`)
+          .ilike('nom', `%${query}%`)
           .limit(5);
 
         regions?.forEach(region => {
-          if (region.nom && region.nom.toLowerCase().includes(value.toLowerCase())) {
+          if (region.nom && region.nom.toLowerCase().includes(query.toLowerCase())) {
             const key = `region-${region.code}`;
             if (!uniqueSuggestions.has(key)) {
               uniqueSuggestions.set(key, {
@@ -110,9 +116,10 @@ const LocationAutocomplete = ({
 
     const debounceTimer = setTimeout(fetchSuggestions, 300);
     return () => clearTimeout(debounceTimer);
-  }, [value]);
+  }, [query]);
 
   const handleSuggestionClick = (suggestion: LocationSuggestion) => {
+    setQuery(suggestion.label);
     onChange(suggestion.label);
     onSelect(suggestion);
     setIsOpen(false);
@@ -120,8 +127,24 @@ const LocationAutocomplete = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    setQuery(newValue);
+    // Only update parent for display purposes, don't trigger search
     onChange(newValue);
+    
     if (!newValue) {
+      setIsOpen(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && query.length >= 3) {
+      // Create a text-based location suggestion when user presses Enter
+      const textSuggestion: LocationSuggestion = {
+        type: 'text',
+        value: query.trim(),
+        label: query.trim()
+      };
+      onSelect(textSuggestion);
       setIsOpen(false);
     }
   };
@@ -145,8 +168,9 @@ const LocationAutocomplete = ({
         <Input
           placeholder={placeholder}
           className="pl-10 pr-10 h-12 text-gray-900"
-          value={value}
+          value={query}
           onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           onFocus={() => {
             if (suggestions.length > 0) setIsOpen(true);
           }}
