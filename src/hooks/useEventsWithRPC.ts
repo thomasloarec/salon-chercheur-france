@@ -139,6 +139,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           .from('events')
           .select('*')
           .eq('visible', true)
+          .gte('start_date', new Date().toISOString().slice(0, 10)) // AJOUT du filtre temporel
           .order('start_date', { ascending: true });
 
         // Appliquer les filtres de localisation en fallback
