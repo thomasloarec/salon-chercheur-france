@@ -37,53 +37,63 @@ const LocationAutocomplete = ({
 
       setIsLoading(true);
       try {
-        // Recherche dans la vue events_geo pour obtenir toutes les suggestions
-        const { data, error } = await supabase
-          .from('events_geo')
-          .select('city, dep_nom, region_nom, dep_code, region_code')
-          .or(`city.ilike.%${value}%,dep_nom.ilike.%${value}%,region_nom.ilike.%${value}%`)
-          .limit(20);
-
-        if (error) {
-          console.error('Erreur autocomplete:', error);
-          return;
-        }
-
         const uniqueSuggestions = new Map<string, LocationSuggestion>();
 
-        data?.forEach(row => {
-          // Ajouter les villes
-          if (row.city && row.city.toLowerCase().includes(value.toLowerCase())) {
-            const key = `city-${row.city}`;
+        // Recherche dans les villes (depuis la table events)
+        const { data: cities } = await supabase
+          .from('events')
+          .select('city')
+          .ilike('city', `%${value}%`)
+          .limit(10);
+
+        cities?.forEach(event => {
+          if (event.city && event.city.toLowerCase().includes(value.toLowerCase())) {
+            const key = `city-${event.city}`;
             if (!uniqueSuggestions.has(key)) {
               uniqueSuggestions.set(key, {
                 type: 'city',
-                value: row.city,
-                label: `${row.city} (ville)`
+                value: event.city,
+                label: `${event.city} (ville)`
               });
             }
           }
+        });
 
-          // Ajouter les départements
-          if (row.dep_nom && row.dep_nom.toLowerCase().includes(value.toLowerCase())) {
-            const key = `department-${row.dep_code}`;
+        // Recherche dans les départements
+        const { data: departements } = await supabase
+          .from('departements')
+          .select('code, nom')
+          .ilike('nom', `%${value}%`)
+          .limit(5);
+
+        departements?.forEach(dep => {
+          if (dep.nom && dep.nom.toLowerCase().includes(value.toLowerCase())) {
+            const key = `department-${dep.code}`;
             if (!uniqueSuggestions.has(key)) {
               uniqueSuggestions.set(key, {
                 type: 'department',
-                value: row.dep_code,
-                label: `${row.dep_nom} (département)`
+                value: dep.code,
+                label: `${dep.nom} (département)`
               });
             }
           }
+        });
 
-          // Ajouter les régions
-          if (row.region_nom && row.region_nom.toLowerCase().includes(value.toLowerCase())) {
-            const key = `region-${row.region_code}`;
+        // Recherche dans les régions
+        const { data: regions } = await supabase
+          .from('regions')
+          .select('code, nom')
+          .ilike('nom', `%${value}%`)
+          .limit(5);
+
+        regions?.forEach(region => {
+          if (region.nom && region.nom.toLowerCase().includes(value.toLowerCase())) {
+            const key = `region-${region.code}`;
             if (!uniqueSuggestions.has(key)) {
               uniqueSuggestions.set(key, {
                 type: 'region',
-                value: row.region_code,
-                label: `${row.region_nom} (région)`
+                value: region.code,
+                label: `${region.nom} (région)`
               });
             }
           }

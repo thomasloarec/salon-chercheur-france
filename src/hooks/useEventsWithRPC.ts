@@ -60,60 +60,80 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         console.log('🔍 Appel à search_events RPC avec:', params);
       }
 
-      // Appel à la RPC
-      const { data, error } = await supabase.rpc('search_events', params);
+      try {
+        // Appel à la RPC avec le bon typage
+        const { data, error } = await supabase.rpc('search_events' as any, params);
 
-      if (error) {
-        console.error('❌ Erreur RPC search_events:', error);
-        throw error;
+        if (error) {
+          console.error('❌ Erreur RPC search_events:', error);
+          throw error;
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Réponse search_events RPC:', {
+            events_count: (data as any)?.length || 0,
+            total_count: (data as any)?.[0]?.total_count || 0
+          });
+        }
+
+        // Transformer les données pour correspondre au format attendu
+        const events: Event[] = (data as any)?.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          start_date: item.start_date,
+          end_date: item.end_date,
+          sector: item.sector,
+          location: item.location,
+          city: item.city,
+          region: item.region,
+          country: item.country,
+          venue_name: item.venue_name,
+          event_url: item.event_url,
+          image_url: item.image_url,
+          tags: item.tags,
+          organizer_name: item.organizer_name,
+          organizer_contact: item.organizer_contact,
+          entry_fee: item.entry_fee,
+          estimated_visitors: item.estimated_visitors,
+          estimated_exhibitors: item.estimated_exhibitors,
+          is_b2b: item.is_b2b,
+          event_type: item.event_type as Event['event_type'],
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          last_scraped_at: item.last_scraped_at,
+          scraped_from: item.scraped_from,
+          address: item.address,
+          visible: item.visible,
+          slug: item.slug,
+          sectors: item.sectors || []
+        })) || [];
+
+        const totalCount = (data as any)?.[0]?.total_count || 0;
+
+        return {
+          events,
+          total_count: totalCount
+        };
+      } catch (error) {
+        console.error('❌ Erreur lors de l\'appel RPC:', error);
+        // Fallback vers une requête normale si la RPC échoue
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('events')
+          .select('*')
+          .eq('visible', true)
+          .order('start_date', { ascending: true })
+          .range((page - 1) * pageSize, page * pageSize - 1);
+
+        if (fallbackError) {
+          throw fallbackError;
+        }
+
+        return {
+          events: fallbackData || [],
+          total_count: fallbackData?.length || 0
+        };
       }
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Réponse search_events RPC:', {
-          events_count: data?.length || 0,
-          total_count: data?.[0]?.total_count || 0
-        });
-      }
-
-      // Transformer les données pour correspondre au format attendu
-      const events: Event[] = data?.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        sector: item.sector,
-        location: item.location,
-        city: item.city,
-        region: item.region,
-        country: item.country,
-        venue_name: item.venue_name,
-        event_url: item.event_url,
-        image_url: item.image_url,
-        tags: item.tags,
-        organizer_name: item.organizer_name,
-        organizer_contact: item.organizer_contact,
-        entry_fee: item.entry_fee,
-        estimated_visitors: item.estimated_visitors,
-        estimated_exhibitors: item.estimated_exhibitors,
-        is_b2b: item.is_b2b,
-        event_type: item.event_type as Event['event_type'],
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        last_scraped_at: item.last_scraped_at,
-        scraped_from: item.scraped_from,
-        address: item.address,
-        visible: item.visible,
-        slug: item.slug,
-        sectors: item.sectors || []
-      })) || [];
-
-      const totalCount = data?.[0]?.total_count || 0;
-
-      return {
-        events,
-        total_count: totalCount
-      };
     },
   });
 };
