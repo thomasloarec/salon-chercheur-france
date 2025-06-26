@@ -12,8 +12,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run: npm ci
-      - run: npx ts-node scripts/importCommunesFromAPI.ts
+      - run: |
+          npm install -g ts-node typescript node-fetch@3 @supabase/supabase-js
+      - run: ts-node scripts/importCommunesFromAPI.ts
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
