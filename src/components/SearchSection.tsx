@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
@@ -50,11 +49,13 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   };
 
   const handleLocationChange = (value: string) => {
+    console.log('📝 Location input changed:', value);
     setLocationQuery(value);
-    // Don't trigger search on every keystroke - only for display
-    if (!value) {
+    // Reset suggestion if user changes the text manually
+    if (selectedLocationSuggestion && value !== selectedLocationSuggestion.label) {
       setSelectedLocationSuggestion(null);
     }
+    // DO NOT navigate here - only for display purposes
   };
 
   const navigateToResults = (locationSuggestion?: LocationSuggestion) => {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin, ChevronDown } from 'lucide-react';
@@ -94,15 +93,17 @@ const LocationAutocomplete = ({
     e.preventDefault();
     e.stopPropagation();
     const newValue = e.target.value;
+    console.log('📝 LocationAutocomplete input changed:', newValue);
     setQuery(newValue);
-    // Only update parent for display purposes, don't trigger search
+    
+    // Only update parent for display purposes - NO NAVIGATION
     onChange(newValue);
     
     if (!newValue) {
       setIsOpen(false);
       setSuggestions([]);
     } else {
-      // Debounced fetch for suggestions
+      // Debounced fetch for suggestions only
       debouncedFetch(newValue);
     }
   };
