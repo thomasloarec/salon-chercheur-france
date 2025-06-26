@@ -44,6 +44,14 @@ async function fetchCommunesFromAPI() {
   }
 }
 
+function normalize(str) {
+  return str
+    .normalize('NFD')                 // sépare accents
+    .replace(/[\u0300-\u036f]/g, '')  // supprime accents
+    .toLowerCase()
+    .trim();
+}
+
 function transformData(apiData) {
   console.log('🔄 Transforming data (1 row per postal code)...');
   
@@ -61,10 +69,10 @@ function transformData(apiData) {
     }
   }
   
-  // 🔸 Dé-duplication nom + code_postal
-  const uniq = new Map();                   // key = nom|code_postal
+  // 🔸 Dé-duplication nom + code_postal avec normalisation
+  const uniq = new Map();               // clé normalisée
   for (const r of rows) {
-    const key = `${r.nom}|${r.code_postal}`;
+    const key = `${normalize(r.nom)}|${r.code_postal}`;
     if (!uniq.has(key)) uniq.set(key, r);
   }
   const dedupedRows = Array.from(uniq.values());
@@ -88,7 +96,7 @@ async function insertInBatches(rows) {
     throw deleteError;
   }
   
-  const batchSize = 1000;
+  const batchSize = 500;
   let inserted = 0;
   
   for (let i = 0; i < rows.length; i += batchSize) {
