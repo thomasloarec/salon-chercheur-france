@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run: npm install node-fetch@3 @supabase/supabase-js
+      - run: npm install node-fetch@2 @supabase/supabase-js --no-save
       - run: node scripts/importCommunesFromAPI.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
