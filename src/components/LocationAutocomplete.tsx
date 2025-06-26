@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 export interface LocationSuggestion {
   type: 'department' | 'region' | 'city' | 'text';
@@ -38,8 +37,6 @@ const LocationAutocomplete = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   // Sync with external value changes
   useEffect(() => {
@@ -91,17 +88,6 @@ const LocationAutocomplete = ({
     onChange(suggestion.label);
     onSelect(suggestion);
     setIsOpen(false);
-    
-    // Navigate to events page with location filter
-    const searchParams = new URLSearchParams(location.search);
-    searchParams.set('location_type', suggestion.type);
-    searchParams.set('location_value', suggestion.value);
-    searchParams.set('page', '1');
-    
-    navigate({
-      pathname: '/events',
-      search: searchParams.toString()
-    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,17 +120,6 @@ const LocationAutocomplete = ({
       };
       onSelect(textSuggestion);
       setIsOpen(false);
-      
-      // Navigate to events page with text search
-      const searchParams = new URLSearchParams(location.search);
-      searchParams.set('location_type', 'text');
-      searchParams.set('location_value', encodeURIComponent(query.trim()));
-      searchParams.set('page', '1');
-      
-      navigate({
-        pathname: '/events',
-        search: searchParams.toString()
-      });
     }
   };
 

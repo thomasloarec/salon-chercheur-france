@@ -44,19 +44,20 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     console.log('🎯 Location selected in SearchSection:', suggestion);
     setSelectedLocationSuggestion(suggestion);
     setLocationQuery(suggestion.label);
+    
+    // Navigate immediately when user selects a suggestion
+    navigateToResults(suggestion);
   };
 
   const handleLocationChange = (value: string) => {
     setLocationQuery(value);
-    // Don't trigger search on every keystroke
+    // Don't trigger search on every keystroke - only for display
     if (!value) {
       setSelectedLocationSuggestion(null);
     }
   };
 
-  const handleSearch = () => {
-    console.log('🔍 Search triggered from SearchSection');
-    
+  const navigateToResults = (locationSuggestion?: LocationSuggestion) => {
     // Build search params
     const searchParams = new URLSearchParams();
     
@@ -73,10 +74,11 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     }
     
     // Handle location properly with locationSuggestion
-    if (selectedLocationSuggestion) {
-      searchParams.set('location_type', selectedLocationSuggestion.type);
-      searchParams.set('location_value', selectedLocationSuggestion.value);
-      console.log('🔍 Recherche avec suggestion:', selectedLocationSuggestion);
+    const finalLocationSuggestion = locationSuggestion || selectedLocationSuggestion;
+    if (finalLocationSuggestion) {
+      searchParams.set('location_type', finalLocationSuggestion.type);
+      searchParams.set('location_value', finalLocationSuggestion.value);
+      console.log('🔍 Recherche avec suggestion:', finalLocationSuggestion);
     } else if (locationQuery.trim()) {
       // Fallback to text search if user typed something but didn't select
       searchParams.set('location_type', 'text');
@@ -96,7 +98,19 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    handleSearch();
+    console.log('🔍 Form submitted');
+    
+    // If user has typed something but not selected a suggestion, create a text suggestion
+    if (locationQuery.trim() && !selectedLocationSuggestion) {
+      const textSuggestion: LocationSuggestion = {
+        type: 'text',
+        value: locationQuery.trim(),
+        label: locationQuery.trim()
+      };
+      navigateToResults(textSuggestion);
+    } else {
+      navigateToResults();
+    }
   };
 
   return (
