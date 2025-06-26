@@ -54,7 +54,6 @@ function transformData(apiData) {
     // Create one row per postal code
     for (const codePostal of commune.codesPostaux) {
       rows.push({
-        code: commune.code,
         nom: commune.nom,
         code_postal: codePostal.padStart(5, '0'), // Ensure 5 digits
         dep_code: commune.codeDepartement,
@@ -74,8 +73,7 @@ async function insertInBatches(rows) {
   console.log('🗑️  Clearing existing communes...');
   const { error: deleteError } = await supabase
     .from('communes')
-    .delete()
-    .neq('code', ''); // Delete all rows
+    .delete();
   
   if (deleteError) {
     console.error('❌ Failed to clear existing data:', deleteError);
@@ -90,7 +88,7 @@ async function insertInBatches(rows) {
     
     const { error } = await supabase
       .from('communes')
-      .insert(batch);
+      .insert(batch, { onConflict: 'nom,code_postal' });
     
     if (error) {
       console.error(`❌ Batch error at row ${i}:`, error);
