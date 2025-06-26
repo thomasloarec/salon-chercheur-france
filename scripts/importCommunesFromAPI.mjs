@@ -61,8 +61,16 @@ function transformData(apiData) {
     }
   }
   
-  console.log(`✅ Generated ${rows.length} rows (commune + postal code combinations)`);
-  return rows;
+  // 🔸 Dé-duplication nom + code_postal
+  const uniq = new Map();                   // key = nom|code_postal
+  for (const r of rows) {
+    const key = `${r.nom}|${r.code_postal}`;
+    if (!uniq.has(key)) uniq.set(key, r);
+  }
+  const dedupedRows = Array.from(uniq.values());
+  
+  console.log(`✅ Generated ${rows.length} rows ➜ ${dedupedRows.length} uniques`);
+  return dedupedRows;
 }
 
 async function insertInBatches(rows) {
