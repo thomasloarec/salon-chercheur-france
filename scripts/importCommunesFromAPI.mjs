@@ -1,4 +1,3 @@
-
 /**
  * Import all French communes from geo.api.gouv.fr into Supabase
  * 
@@ -73,7 +72,8 @@ async function insertInBatches(rows) {
   console.log('🗑️  Clearing existing communes...');
   const { error: deleteError } = await supabase
     .from('communes')
-    .delete();
+    .delete()
+    .neq('nom', null);
   
   if (deleteError) {
     console.error('❌ Failed to clear existing data:', deleteError);
