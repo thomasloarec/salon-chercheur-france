@@ -12,8 +12,19 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run: npm install node-fetch@2 @supabase/supabase-js --no-save
-      - run: node scripts/importCommunesFromAPI.js
+
+      # 1. Créer un dossier temporaire et y installer
+      - run: |
+          mkdir temp-import
+          cd temp-import
+          npm init -y
+          npm install node-fetch@3 @supabase/supabase-js
+
+      # 2. Exécuter le script original, en lui passant les modules du dossier temporaire
+      - run: |
+          node \
+            --require ./temp-import/node_modules/ts-node/register \
+            scripts/importCommunesFromAPI.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
