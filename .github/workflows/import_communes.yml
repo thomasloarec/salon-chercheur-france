@@ -1,9 +1,7 @@
 
 name: Import Communes
-
 on:
-  workflow_dispatch:  # démarrage manuel
-
+  workflow_dispatch:
 jobs:
   import:
     runs-on: ubuntu-latest
@@ -13,18 +11,20 @@ jobs:
         with:
           node-version: 18
 
-      # 1. Créer un dossier temporaire et y installer
+      # Installer uniquement dans un dossier isolé
       - run: |
           mkdir temp-import
           cd temp-import
           npm init -y
+          # Forcer le mode ESM
+          echo '{ "type": "module" }' > package.json
           npm install node-fetch@3 @supabase/supabase-js
 
-      # 2. Exécuter le script original, en lui passant les modules du dossier temporaire
+      # Exécuter le script ESM renommé
       - run: |
           node \
-            --require ./temp-import/node_modules/ts-node/register \
-            scripts/importCommunesFromAPI.js
+            --experimental-specifier-resolution=node \
+            scripts/importCommunesFromAPI.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
