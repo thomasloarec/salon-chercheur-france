@@ -88,7 +88,10 @@ async function insertInBatches(rows) {
     
     const { error } = await supabase
       .from('communes')
-      .insert(batch, { onConflict: 'nom,code_postal' });
+      .insert(batch, {
+        onConflict: 'nom,code_postal',
+        ignoreDuplicates: true     // évite les erreurs de doublon
+      });
     
     if (error) {
       console.error(`❌ Batch error at row ${i}:`, error);
