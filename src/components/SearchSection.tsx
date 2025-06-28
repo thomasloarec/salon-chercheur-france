@@ -18,7 +18,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   const [sectors, setSectors] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [months, setMonths] = useState<string[]>([]);
-  const [selectedRegion, setSelectedRegion] = useState<string[]>([]);
+  const [locationValue, setLocationValue] = useState<string>('');
   const [regions, setRegions] = useState<{ code: string; nom: string }[]>([]);
   const navigate = useNavigate();
 
@@ -49,15 +49,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     })), []
   );
 
-  // Create region options
-  const regionOptions = useMemo(() => 
-    regions.map(region => ({
-      value: region.code,
-      label: region.nom,
-    })), [regions]
-  );
-
-  const navigateToResults = (regionCode?: string) => {
+  const navigateToResults = () => {
     // Build search params
     const searchParams = new URLSearchParams();
     
@@ -74,11 +66,10 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     }
     
     // Handle region selection
-    const finalRegionCode = regionCode || selectedRegion[0];
-    if (finalRegionCode) {
+    if (locationValue) {
       searchParams.set('location_type', 'region');
-      searchParams.set('location_value', finalRegionCode);
-      console.log('🔍 Recherche avec région:', finalRegionCode);
+      searchParams.set('location_value', locationValue);
+      console.log('🔍 Recherche avec région:', locationValue);
     }
     
     searchParams.set('page', '1');
@@ -88,14 +79,6 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
       pathname: '/events',
       search: searchParams.toString()
     });
-  };
-
-  const handleRegionChange = (codes: string[]) => {
-    console.log('🎯 Région sélectionnée:', codes[0] || '');
-    setSelectedRegion(codes);
-    if (codes[0]) {
-      navigateToResults(codes[0]);
-    }
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -156,9 +139,9 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Région</label>
                 <MultiSelect
-                  options={regionOptions}
-                  selected={selectedRegion}
-                  onChange={handleRegionChange}
+                  options={regions.map(r => ({ value: r.code, label: r.nom }))}
+                  selected={locationValue ? [locationValue] : []}
+                  onChange={vals => setLocationValue(vals[0] || '')}
                   placeholder="Sélectionner une région..."
                   className="w-full"
                 />
