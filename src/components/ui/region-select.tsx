@@ -39,10 +39,10 @@ export const RegionSelect = ({
       </Label>
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+          "w-full justify-between h-auto min-h-[2.5rem] border border-input bg-background hover:bg-accent hover:text-accent-foreground text-sm disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
           className
         )}>
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={placeholder} className="text-gray-400" />
         </SelectTrigger>
         <SelectContent>
           {regions.map((region) => (
