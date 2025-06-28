@@ -41,9 +41,6 @@ export const RegionSelect = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">
-            {placeholder}
-          </SelectItem>
           {regions.map((region) => (
             <SelectItem key={region.code} value={region.code}>
               {region.nom}
