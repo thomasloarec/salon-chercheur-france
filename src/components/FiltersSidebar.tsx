@@ -1,8 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { RegionSelect } from '@/components/ui/region-select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -37,6 +37,12 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     label: monthOption.label,
   }));
 
+  // Créer les options des régions
+  const regionOptions = regions.map(region => ({
+    value: region.code,
+    label: region.nom,
+  }));
+
   // Load regions
   useEffect(() => {
     supabase
@@ -62,16 +68,16 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     return monthsParam ? monthsParam.split(',') : (initialFilters.months?.map(m => m.toString()) || []);
   });
   
-  const [selectedRegion, setSelectedRegion] = useState(() => {
+  const [selectedRegion, setSelectedRegion] = useState<string[]>(() => {
     // Initialize from URL params
     const locationTypeParam = searchParams.get('location_type');
     const locationValueParam = searchParams.get('location_value');
     
     if (locationTypeParam === 'region' && locationValueParam) {
-      return locationValueParam;
+      return [locationValueParam];
     }
     
-    return initialFilters.locationSuggestion?.value || '';
+    return initialFilters.locationSuggestion?.value ? [initialFilters.locationSuggestion.value] : [];
   });
 
   // Marquer comme initialisé après le premier rendu
@@ -79,9 +85,9 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     setIsInitialized(true);
   }, []);
 
-  const handleRegionChange = (code: string) => {
-    console.log('🎯 Sidebar - Région sélectionnée:', code);
-    setSelectedRegion(code);
+  const handleRegionChange = (codes: string[]) => {
+    console.log('🎯 Sidebar - Région sélectionnée:', codes[0] || '');
+    setSelectedRegion(codes);
   };
 
   // Application des filtres uniquement après initialisation et quand les valeurs changent
@@ -104,13 +110,14 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     }
     
     // Handle region selection with locationSuggestion
-    if (selectedRegion) {
+    if (selectedRegion.length > 0) {
+      const regionCode = selectedRegion[0];
       filters.locationSuggestion = {
         type: 'region',
-        value: selectedRegion,
-        label: regions.find(r => r.code === selectedRegion)?.nom || selectedRegion
+        value: regionCode,
+        label: regions.find(r => r.code === regionCode)?.nom || regionCode
       };
-      console.log('🔍 Sidebar - Applying region filter:', selectedRegion);
+      console.log('🔍 Sidebar - Applying region filter:', regionCode);
     }
     
     console.log('FiltersSidebar: Applying filters after user interaction:', filters);
@@ -122,10 +129,10 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     setSectorIds([]);
     setTypes([]);
     setMonths([]);
-    setSelectedRegion('');
+    setSelectedRegion([]);
   };
 
-  const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || selectedRegion;
+  const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || selectedRegion.length > 0;
 
   return (
     <aside className="sticky top-0 max-h-screen overflow-y-auto h-full bg-white border-r">
@@ -185,13 +192,15 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
 
         <Separator />
 
-        <RegionSelect
-          regions={regions}
-          value={selectedRegion}
-          onValueChange={handleRegionChange}
-          placeholder="Sélectionnez une région…"
-          label="Région"
-        />
+        <div>
+          <Label htmlFor="regions">Région</Label>
+          <MultiSelect
+            options={regionOptions}
+            selected={selectedRegion}
+            onChange={handleRegionChange}
+            placeholder="Sélectionner une région..."
+          />
+        </div>
       </div>
     </aside>
   );

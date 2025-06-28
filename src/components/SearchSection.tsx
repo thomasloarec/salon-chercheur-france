@@ -1,7 +1,7 @@
+
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { RegionSelect } from '@/components/ui/region-select';
 import { Search } from 'lucide-react';
 import { useSectors } from '@/hooks/useSectors';
 import { getRollingMonths } from '@/utils/monthUtils';
@@ -18,7 +18,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   const [sectors, setSectors] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [months, setMonths] = useState<string[]>([]);
-  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState<string[]>([]);
   const [regions, setRegions] = useState<{ code: string; nom: string }[]>([]);
   const navigate = useNavigate();
 
@@ -49,6 +49,14 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     })), []
   );
 
+  // Create region options
+  const regionOptions = useMemo(() => 
+    regions.map(region => ({
+      value: region.code,
+      label: region.nom,
+    })), [regions]
+  );
+
   const navigateToResults = (regionCode?: string) => {
     // Build search params
     const searchParams = new URLSearchParams();
@@ -66,7 +74,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     }
     
     // Handle region selection
-    const finalRegionCode = regionCode || selectedRegion;
+    const finalRegionCode = regionCode || selectedRegion[0];
     if (finalRegionCode) {
       searchParams.set('location_type', 'region');
       searchParams.set('location_value', finalRegionCode);
@@ -82,11 +90,11 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     });
   };
 
-  const handleRegionChange = (code: string) => {
-    console.log('🎯 Région sélectionnée:', code);
-    setSelectedRegion(code);
-    if (code) {
-      navigateToResults(code);
+  const handleRegionChange = (codes: string[]) => {
+    console.log('🎯 Région sélectionnée:', codes[0] || '');
+    setSelectedRegion(codes);
+    if (codes[0]) {
+      navigateToResults(codes[0]);
     }
   };
 
@@ -145,13 +153,16 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
                 />
               </div>
 
-              <RegionSelect
-                regions={regions}
-                value={selectedRegion}
-                onValueChange={handleRegionChange}
-                placeholder="Sélectionnez une région…"
-                label="Région"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Région</label>
+                <MultiSelect
+                  options={regionOptions}
+                  selected={selectedRegion}
+                  onChange={handleRegionChange}
+                  placeholder="Sélectionner une région..."
+                  className="w-full"
+                />
+              </div>
             </div>
 
             <Button 
