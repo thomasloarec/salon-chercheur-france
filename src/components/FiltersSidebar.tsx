@@ -10,8 +10,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useSectors } from '@/hooks/useSectors';
 import { EVENT_TYPES } from '@/constants/eventTypes';
 import { getRollingMonths } from '@/utils/monthUtils';
-import LocationAutocomplete, { type LocationSuggestion } from './LocationAutocomplete';
 import type { SearchFilters } from '@/types/event';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FiltersSidebarProps {
   onClose: () => void;
@@ -23,6 +23,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   const [searchParams] = useSearchParams();
   const { data: sectorsData = [] } = useSectors();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [regions, setRegions] = useState<{ code: string; nom: string }[]>([]);
   
   // Créer les options des secteurs avec IDs comme valeurs
   const sectorOptions = sectorsData.map(sector => ({
@@ -35,6 +36,15 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     value: `${monthOption.month}-${monthOption.year}`,
     label: monthOption.label,
   }));
+
+  // Load regions
+  useEffect(() => {
+    supabase
+      .from('regions')
+      .select('code, nom')
+      .order('nom', { ascending: true })
+      .then(({ data }) => data && setRegions(data));
+  }, []);
   
   // Initialisation une seule fois au montage avec les paramètres URL
   const [sectorIds, setSectorIds] = useState<string[]>(() => {
@@ -52,32 +62,16 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     return monthsParam ? monthsParam.split(',') : (initialFilters.months?.map(m => m.toString()) || []);
   });
   
-  const [locationQuery, setLocationQuery] = useState(() => {
-    // Initialize from URL params or initial filters
-    const locationTypeParam = searchParams.get('location_type');
-    const locationValueParam = searchParams.get('location_value');
-    
-    if (locationTypeParam && locationValueParam) {
-      return locationValueParam;
-    }
-    
-    return initialFilters.locationSuggestion?.label || '';
-  });
-
-  const [selectedLocationSuggestion, setSelectedLocationSuggestion] = useState<LocationSuggestion | null>(() => {
+  const [selectedRegion, setSelectedRegion] = useState(() => {
     // Initialize from URL params
     const locationTypeParam = searchParams.get('location_type');
     const locationValueParam = searchParams.get('location_value');
     
-    if (locationTypeParam && locationValueParam) {
-      return {
-        type: locationTypeParam as LocationSuggestion['type'],
-        value: locationValueParam,
-        label: locationValueParam
-      };
+    if (locationTypeParam === 'region' && locationValueParam) {
+      return locationValueParam;
     }
     
-    return initialFilters.locationSuggestion || null;
+    return initialFilters.locationSuggestion?.value || '';
   });
 
   // Marquer comme initialisé après le premier rendu
@@ -85,18 +79,10 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     setIsInitialized(true);
   }, []);
 
-  const handleLocationSelect = (suggestion: LocationSuggestion) => {
-    console.log('🎯 Sidebar - Location selected:', suggestion);
-    setSelectedLocationSuggestion(suggestion);
-    setLocationQuery(suggestion.label);
-  };
-
-  const handleLocationChange = (value: string) => {
-    setLocationQuery(value);
-    // Reset suggestion if user changes the text
-    if (selectedLocationSuggestion && value !== selectedLocationSuggestion.label) {
-      setSelectedLocationSuggestion(null);
-    }
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    console.log('🎯 Sidebar - Région sélectionnée:', code);
+    setSelectedRegion(code);
   };
 
   // Application des filtres uniquement après initialisation et quand les valeurs changent
@@ -118,34 +104,29 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
       filters.months = months.map(m => parseInt(m.split('-')[0]));
     }
     
-    // Handle location with locationSuggestion
-    if (selectedLocationSuggestion) {
-      filters.locationSuggestion = selectedLocationSuggestion;
-      console.log('🔍 Sidebar - Applying location suggestion:', selectedLocationSuggestion);
-    } else if (locationQuery.trim()) {
-      // Fallback to text search
+    // Handle region selection with locationSuggestion
+    if (selectedRegion) {
       filters.locationSuggestion = {
-        type: 'text',
-        value: locationQuery.trim(),
-        label: locationQuery.trim()
+        type: 'region',
+        value: selectedRegion,
+        label: regions.find(r => r.code === selectedRegion)?.nom || selectedRegion
       };
-      console.log('🔍 Sidebar - Applying text location:', locationQuery.trim());
+      console.log('🔍 Sidebar - Applying region filter:', selectedRegion);
     }
     
     console.log('FiltersSidebar: Applying filters after user interaction:', filters);
     onFiltersChange(filters);
-  }, [sectorIds, types, months, selectedLocationSuggestion, locationQuery, isInitialized, onFiltersChange]);
+  }, [sectorIds, types, months, selectedRegion, isInitialized, onFiltersChange, regions]);
 
   const clearAllFilters = () => {
     console.log('FiltersSidebar: Clearing all filters');
     setSectorIds([]);
     setTypes([]);
     setMonths([]);
-    setLocationQuery('');
-    setSelectedLocationSuggestion(null);
+    setSelectedRegion('');
   };
 
-  const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || selectedLocationSuggestion || locationQuery.trim();
+  const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || selectedRegion;
 
   return (
     <aside className="sticky top-0 max-h-screen overflow-y-auto h-full bg-white border-r">
@@ -206,13 +187,20 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
         <Separator />
 
         <div>
-          <Label htmlFor="location">Localisation</Label>
-          <LocationAutocomplete
-            value={locationQuery}
-            onChange={handleLocationChange}
-            onSelect={handleLocationSelect}
-            placeholder="Ville, département, région..."
-          />
+          <Label htmlFor="region">Région</Label>
+          <select
+            id="region"
+            className="w-full h-10 border border-gray-300 rounded px-3 text-gray-900"
+            value={selectedRegion}
+            onChange={handleRegionChange}
+          >
+            <option value="">Sélectionnez une région…</option>
+            {regions.map(r => (
+              <option key={r.code} value={r.code}>
+                {r.nom}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
     </aside>

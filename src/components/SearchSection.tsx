@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react';
+
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Search } from 'lucide-react';
 import { useSectors } from '@/hooks/useSectors';
 import { getRollingMonths } from '@/utils/monthUtils';
 import { EVENT_TYPES } from '@/constants/eventTypes';
-import LocationAutocomplete, { type LocationSuggestion } from './LocationAutocomplete';
 import type { SearchFilters } from '@/types/event';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SearchSectionProps {
   onSearch: (filters: SearchFilters) => void;
@@ -17,11 +18,20 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   const [sectors, setSectors] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [months, setMonths] = useState<string[]>([]);
-  const [locationQuery, setLocationQuery] = useState('');
-  const [selectedLocationSuggestion, setSelectedLocationSuggestion] = useState<LocationSuggestion | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [regions, setRegions] = useState<{ code: string; nom: string }[]>([]);
   const navigate = useNavigate();
 
   const { data: sectorsData = [] } = useSectors();
+
+  // Load regions
+  useEffect(() => {
+    supabase
+      .from('regions')
+      .select('code, nom')
+      .order('nom', { ascending: true })
+      .then(({ data }) => data && setRegions(data));
+  }, []);
 
   // Create sector options using IDs as values
   const sectorOptions = useMemo(() => 
@@ -39,26 +49,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     })), []
   );
 
-  const handleLocationSelect = (suggestion: LocationSuggestion) => {
-    console.log('🎯 Location selected in SearchSection:', suggestion);
-    setSelectedLocationSuggestion(suggestion);
-    setLocationQuery(suggestion.label);
-    
-    // Navigate immediately when user selects a suggestion
-    navigateToResults(suggestion);
-  };
-
-  const handleLocationChange = (value: string) => {
-    console.log('📝 Location input changed:', value);
-    setLocationQuery(value);
-    // Reset suggestion if user changes the text manually
-    if (selectedLocationSuggestion && value !== selectedLocationSuggestion.label) {
-      setSelectedLocationSuggestion(null);
-    }
-    // DO NOT navigate here - only for display purposes
-  };
-
-  const navigateToResults = (locationSuggestion?: LocationSuggestion) => {
+  const navigateToResults = (regionCode?: string) => {
     // Build search params
     const searchParams = new URLSearchParams();
     
@@ -74,17 +65,12 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
       searchParams.set('months', months.join(','));
     }
     
-    // Handle location properly with locationSuggestion
-    const finalLocationSuggestion = locationSuggestion || selectedLocationSuggestion;
-    if (finalLocationSuggestion) {
-      searchParams.set('location_type', finalLocationSuggestion.type);
-      searchParams.set('location_value', finalLocationSuggestion.value);
-      console.log('🔍 Recherche avec suggestion:', finalLocationSuggestion);
-    } else if (locationQuery.trim()) {
-      // Fallback to text search if user typed something but didn't select
-      searchParams.set('location_type', 'text');
-      searchParams.set('location_value', locationQuery.trim());
-      console.log('🔍 Recherche avec texte libre:', locationQuery.trim());
+    // Handle region selection
+    const finalRegionCode = regionCode || selectedRegion;
+    if (finalRegionCode) {
+      searchParams.set('location_type', 'region');
+      searchParams.set('location_value', finalRegionCode);
+      console.log('🔍 Recherche avec région:', finalRegionCode);
     }
     
     searchParams.set('page', '1');
@@ -96,22 +82,20 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     });
   };
 
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    console.log('🎯 Région sélectionnée:', code);
+    setSelectedRegion(code);
+    if (code) {
+      navigateToResults(code);
+    }
+  };
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     console.log('🔍 Form submitted');
-    
-    // If user has typed something but not selected a suggestion, create a text suggestion
-    if (locationQuery.trim() && !selectedLocationSuggestion) {
-      const textSuggestion: LocationSuggestion = {
-        type: 'text',
-        value: locationQuery.trim(),
-        label: locationQuery.trim()
-      };
-      navigateToResults(textSuggestion);
-    } else {
-      navigateToResults();
-    }
+    navigateToResults();
   };
 
   return (
@@ -163,13 +147,21 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Localisation</label>
-                <LocationAutocomplete
-                  value={locationQuery}
-                  onChange={handleLocationChange}
-                  onSelect={handleLocationSelect}
-                  placeholder="Ville, département, région..."
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Région
+                </label>
+                <select
+                  className="w-full h-12 border border-gray-300 rounded px-3 text-gray-900"
+                  value={selectedRegion}
+                  onChange={handleRegionChange}
+                >
+                  <option value="">Sélectionnez une région…</option>
+                  {regions.map(r => (
+                    <option key={r.code} value={r.code}>
+                      {r.nom}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
