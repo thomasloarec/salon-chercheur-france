@@ -27,7 +27,7 @@ export const RegionSelect = ({
   regions,
   value,
   onValueChange,
-  placeholder = "Sélectionnez une région…",
+  placeholder = "Sélectionner une région…",
   label = "Région",
   className,
 }: RegionSelectProps) => {
@@ -37,7 +37,7 @@ export const RegionSelect = ({
         {label}
       </Label>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="h-12 w-full rounded-lg border border-gray-200 bg-white shadow-sm">
+        <SelectTrigger className="h-12 w-full rounded-lg border border-gray-200 bg-white shadow-sm flex items-center px-3 py-2">
           <SelectValue placeholder={placeholder} className="text-gray-400" />
         </SelectTrigger>
         <SelectContent>
