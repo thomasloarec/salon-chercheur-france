@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface Region {
   code: string;
@@ -37,11 +38,10 @@ export const RegionSelect = ({
         {label}
       </Label>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="h-12 w-full rounded-lg border border-gray-200 bg-white shadow-sm pl-4 pr-4 flex items-center justify-between text-gray-900 text-sm hover:bg-gray-50 focus:border-accent focus:ring-1 focus:ring-accent">
-          <SelectValue 
-            placeholder={placeholder} 
-            className="text-gray-400 text-sm leading-5"
-          />
+        <SelectTrigger className={cn(
+          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+        )}>
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           {regions.map((region) => (
