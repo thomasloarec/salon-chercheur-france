@@ -1,7 +1,7 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { RegionSelect } from '@/components/ui/region-select';
 import { Search } from 'lucide-react';
 import { useSectors } from '@/hooks/useSectors';
 import { getRollingMonths } from '@/utils/monthUtils';
@@ -82,8 +82,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
     });
   };
 
-  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const code = e.target.value;
+  const handleRegionChange = (code: string) => {
     console.log('🎯 Région sélectionnée:', code);
     setSelectedRegion(code);
     if (code) {
@@ -146,23 +145,13 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Région
-                </label>
-                <select
-                  className="w-full h-12 border border-gray-300 rounded px-3 text-gray-900"
-                  value={selectedRegion}
-                  onChange={handleRegionChange}
-                >
-                  <option value="">Sélectionnez une région…</option>
-                  {regions.map(r => (
-                    <option key={r.code} value={r.code}>
-                      {r.nom}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <RegionSelect
+                regions={regions}
+                value={selectedRegion}
+                onValueChange={handleRegionChange}
+                placeholder="Sélectionnez une région…"
+                label="Région"
+              />
             </div>
 
             <Button 

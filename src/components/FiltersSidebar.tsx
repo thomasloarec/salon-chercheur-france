@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { RegionSelect } from '@/components/ui/region-select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -79,8 +79,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     setIsInitialized(true);
   }, []);
 
-  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const code = e.target.value;
+  const handleRegionChange = (code: string) => {
     console.log('🎯 Sidebar - Région sélectionnée:', code);
     setSelectedRegion(code);
   };
@@ -186,22 +185,13 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
 
         <Separator />
 
-        <div>
-          <Label htmlFor="region">Région</Label>
-          <select
-            id="region"
-            className="w-full h-10 border border-gray-300 rounded px-3 text-gray-900"
-            value={selectedRegion}
-            onChange={handleRegionChange}
-          >
-            <option value="">Sélectionnez une région…</option>
-            {regions.map(r => (
-              <option key={r.code} value={r.code}>
-                {r.nom}
-              </option>
-            ))}
-          </select>
-        </div>
+        <RegionSelect
+          regions={regions}
+          value={selectedRegion}
+          onValueChange={handleRegionChange}
+          placeholder="Sélectionnez une région…"
+          label="Région"
+        />
       </div>
     </aside>
   );
