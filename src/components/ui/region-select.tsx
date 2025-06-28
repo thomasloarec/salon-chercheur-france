@@ -38,7 +38,10 @@ export const RegionSelect = ({
       </Label>
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger className="inline-flex items-center justify-between w-full px-3 py-2 text-sm rounded-md border border-gray-200 bg-white">
-          <SelectValue placeholder={placeholder} className="text-gray-400" />
+          <SelectValue 
+            placeholder={placeholder} 
+            className="text-gray-400 text-sm leading-5"
+          />
         </SelectTrigger>
         <SelectContent>
           {regions.map((region) => (
