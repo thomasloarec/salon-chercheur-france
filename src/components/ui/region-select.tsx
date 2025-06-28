@@ -37,7 +37,7 @@ export const RegionSelect = ({
         {label}
       </Label>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="h-12 w-full rounded-lg border border-gray-200 bg-white shadow-sm flex items-center px-3 py-2">
+        <SelectTrigger className="inline-flex items-center justify-between w-full px-3 py-2 text-sm rounded-md border border-gray-200 bg-white">
           <SelectValue placeholder={placeholder} className="text-gray-400" />
         </SelectTrigger>
         <SelectContent>
