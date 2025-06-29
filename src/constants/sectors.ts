@@ -70,7 +70,10 @@ export const SECTOR_CONFIG: Record<string, {
 export const HIDDEN_SECTORS_ON_HOME = [
   'Mode & Textile',
   'Éducation & Formation',
-  'Cosmétique & Bien-être'
+  'Cosmétique & Bien-être',
+  'Finance, Assurance & Immobilier',
+  'Services aux Entreprises & RH',
+  'Secteur Public & Collectivités'
 ];
 
 export const getSectorConfig = (sectorName: string) => {
