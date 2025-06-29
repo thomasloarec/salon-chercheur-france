@@ -3,11 +3,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useSectors } from '@/hooks/useSectors';
-import { getSectorConfig } from '@/constants/sectors';
+import { getSectorConfig, HIDDEN_SECTORS_ON_HOME } from '@/constants/sectors';
 
 const SectorsSection = () => {
   const navigate = useNavigate();
   const { data: sectors = [], isLoading } = useSectors();
+
+  // Filter out hidden sectors for home display
+  const displayedSectors = sectors.filter(sector => 
+    !HIDDEN_SECTORS_ON_HOME.includes(sector.name)
+  );
 
   const handleSectorClick = (sectorName: string) => {
     // Navigation vers /events avec le nom du secteur en query param
@@ -43,8 +48,8 @@ const SectorsSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sectors.map((sector) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {displayedSectors.map((sector) => {
             const config = getSectorConfig(sector.name);
             
             return (
@@ -59,7 +64,7 @@ const SectorsSection = () => {
                       {sector.name}
                     </h3>
                     <Badge className={`${config.color} font-semibold`}>
-                      {sectors.length > 8 ? 'Nouveau' : 'Secteur'}
+                      {sectors.length > 12 ? 'Nouveau' : 'Secteur'}
                     </Badge>
                   </div>
                   

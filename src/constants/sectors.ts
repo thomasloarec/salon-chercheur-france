@@ -24,6 +24,10 @@ export const SECTOR_CONFIG: Record<string, {
     color: "bg-emerald-100 text-emerald-800",
     description: "Énergies renouvelables, environnement et développement durable"
   },
+  'Finance, Assurance & Immobilier': {
+    color: "bg-blue-100 text-blue-800",
+    description: "Services financiers, assurance et marché immobilier"
+  },
   'Industrie & Production': {
     color: "bg-gray-100 text-gray-800",
     description: "Industrie manufacturière, mécanique et production"
@@ -31,6 +35,14 @@ export const SECTOR_CONFIG: Record<string, {
   'Santé & Médical': {
     color: "bg-red-100 text-red-800",
     description: "Secteur médical, pharmaceutique et biotechnologies"
+  },
+  'Secteur Public & Collectivités': {
+    color: "bg-slate-100 text-slate-800",
+    description: "Administration publique, collectivités territoriales et services publics"
+  },
+  'Services aux Entreprises & RH': {
+    color: "bg-teal-100 text-teal-800",
+    description: "Conseil, ressources humaines et services aux entreprises"
   },
   'Technologie & Innovation': {
     color: "bg-purple-100 text-purple-800",
@@ -53,6 +65,13 @@ export const SECTOR_CONFIG: Record<string, {
     description: "Tourisme, événementiel, loisirs et voyages"
   }
 };
+
+// Secteurs à exclure de l'affichage sur la page d'accueil (mais toujours disponibles dans les filtres)
+export const HIDDEN_SECTORS_ON_HOME = [
+  'Mode & Textile',
+  'Éducation & Formation',
+  'Cosmétique & Bien-être'
+];
 
 export const getSectorConfig = (sectorName: string) => {
   return SECTOR_CONFIG[sectorName] || {
