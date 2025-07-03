@@ -1,3 +1,18 @@
+// Polyfill WeakMap pour les environnements qui ne le supportent pas
+if (typeof WeakMap !== 'function') {
+  // implémentation basique avec Map
+  (window as any).WeakMap = class {
+    private _map: Map<any, any>;
+    constructor(entries?: readonly (readonly [any, any])[]) {
+      this._map = new Map(entries as any);
+    }
+    has(key: any)    { return this._map.has(key); }
+    get(key: any)    { return this._map.get(key); }
+    set(key: any, v: any) { this._map.set(key, v); return this; }
+    delete(key: any) { return this._map.delete(key); }
+  };
+}
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
