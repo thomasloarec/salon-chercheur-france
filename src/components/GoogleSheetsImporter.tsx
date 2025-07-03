@@ -23,16 +23,15 @@ const GoogleSheetsImporter = () => {
   useEffect(() => {
     const loadSheets = async () => {
       try {
-        const response = await fetch('/functions/v1/list-google-sheets');
-        const data = await response.json();
+        const { data, error } = await supabase.functions.invoke<{ files: GoogleSheet[] }>('list-google-sheets');
         
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to load sheets');
+        if (error) {
+          throw error;
         }
 
-        setSheets(data.files || []);
+        setSheets(data?.files || []);
       } catch (e: any) {
-        console.error('Error loading sheets:', e);
+        console.error('Erreur loading sheets:', e);
         setLogs(`Erreur lors du chargement des feuilles : ${e.message}`);
       } finally {
         setLoading(false);
@@ -91,7 +90,7 @@ const GoogleSheetsImporter = () => {
         <div className="space-y-2">
           <Label>Google Sheet événements</Label>
           <Select value={spreadsheetId1} onValueChange={setSpreadsheetId1}>
-            <SelectTrigger>
+            <SelectTrigger aria-label="Choisir une feuille">
               <SelectValue placeholder="-- Sélectionnez une feuille --" />
             </SelectTrigger>
             <SelectContent>
@@ -111,7 +110,7 @@ const GoogleSheetsImporter = () => {
         <div className="space-y-2">
           <Label>Google Sheet exposants</Label>
           <Select value={spreadsheetId2} onValueChange={setSpreadsheetId2}>
-            <SelectTrigger>
+            <SelectTrigger aria-label="Choisir une feuille exposants">
               <SelectValue placeholder="-- Sélectionnez une feuille --" />
             </SelectTrigger>
             <SelectContent>
