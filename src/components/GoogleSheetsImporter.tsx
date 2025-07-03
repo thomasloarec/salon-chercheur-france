@@ -23,13 +23,14 @@ const GoogleSheetsImporter = () => {
   useEffect(() => {
     const loadSheets = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('import-google-sheets/list-google-sheets');
+        const response = await fetch('/functions/v1/list-google-sheets');
+        const data = await response.json();
         
-        if (error) {
-          throw error;
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load sheets');
         }
 
-        setSheets(data?.files || []);
+        setSheets(data.files || []);
       } catch (e: any) {
         console.error('Error loading sheets:', e);
         setLogs(`Erreur lors du chargement des feuilles : ${e.message}`);
@@ -81,12 +82,14 @@ const GoogleSheetsImporter = () => {
           <Label>Google Sheet événements</Label>
           <Select value={spreadsheetId1} onValueChange={setSpreadsheetId1}>
             <SelectTrigger>
-              <SelectValue placeholder="-- Choisir une feuille --" />
+              <SelectValue placeholder="Choisir une feuille…" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">-- Choisir une feuille --</SelectItem>
+              <SelectItem value="" disabled>-- Sélectionnez une feuille --</SelectItem>
               {sheets.map(s => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -99,12 +102,14 @@ const GoogleSheetsImporter = () => {
           <Label>Google Sheet exposants</Label>
           <Select value={spreadsheetId2} onValueChange={setSpreadsheetId2}>
             <SelectTrigger>
-              <SelectValue placeholder="-- Choisir une feuille --" />
+              <SelectValue placeholder="Choisir une feuille…" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">-- Choisir une feuille --</SelectItem>
+              <SelectItem value="" disabled>-- Sélectionnez une feuille --</SelectItem>
               {sheets.map(s => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
