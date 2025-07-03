@@ -24,32 +24,45 @@ async function getAccessToken() {
     }),
   });
   const { access_token } = await res.json();
+  console.log('✅ Obtained access_token, length:', access_token.length);
   return access_token;
 }
 
 serve(async (req) => {
+  console.log('📥 list-google-sheets called, method:', req.method);
   const CORS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
   };
   if (req.method === "OPTIONS") {
+    console.log('↔️ Preflight OPTIONS request');
     return new Response(null, { status: 204, headers: CORS });
   }
   try {
+    console.log('🔐 Generating access token...');
     const token = await getAccessToken();
+    console.log('🌐 Fetching Drive files list from Google API...');
     const driveRes = await fetch(
       "https://www.googleapis.com/drive/v3/files?mimeType=application/vnd.google-apps.spreadsheet&pageSize=100",
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!driveRes.ok) throw new Error(`Drive API ${driveRes.status}`);
-    const { files } = await driveRes.json();
+    console.log('🔄 Drive API response status:', driveRes.status);
+    const driveText = await driveRes.text();
+    console.log('🔄 Drive API raw body:', driveText);
+    // Puis retransformer en JSON si ok
+    const driveJson = JSON.parse(driveText);
+    const files = driveJson.files;
     return new Response(JSON.stringify({ files }), {
       status: 200,
       headers: { ...CORS, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('❌ list-google-sheets error:', error);
+    return new Response(JSON.stringify({
+      error: error.message,
+      stack: error.stack,
+    }), {
       status: 500,
       headers: { ...CORS, "Content-Type": "application/json" },
     });
