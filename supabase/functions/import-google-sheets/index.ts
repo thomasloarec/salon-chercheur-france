@@ -1,10 +1,11 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -36,6 +37,48 @@ interface ExposantData {
   exposant_description: string;
 }
 
+// Function to get access token using service account
+async function getAccessToken(): Promise<string> {
+  const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
+  if (!serviceAccountKey) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not found');
+  }
+
+  const keyData = JSON.parse(serviceAccountKey);
+  const now = Math.floor(Date.now() / 1000);
+  
+  const payload = {
+    iss: keyData.client_email,
+    scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  };
+
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    new TextEncoder().encode(keyData.private_key),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const jwt = await create({ alg: 'RS256', typ: 'JWT' }, payload, privateKey);
+
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error(`Failed to get access token: ${tokenResponse.statusText}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
@@ -44,23 +87,62 @@ serve(async (req) => {
     });
   }
 
-  try {
-    console.log('Starting Google Sheets import...');
-    
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+  const url = new URL(req.url);
+  
+  // Handle GET request for listing Google Sheets
+  if (req.method === 'GET' && url.pathname.includes('list-google-sheets')) {
+    try {
+      console.log('Listing Google Sheets...');
+      const accessToken = await getAccessToken();
+      
+      const sheetsResponse = await fetch(
+        'https://www.googleapis.com/drive/v3/files?q=mimeType%3D%27application/vnd.google-apps.spreadsheet%27&pageSize=100&fields=files(id,name)',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
 
-    const { spreadsheetId1, spreadsheetId2, sheetName1 = 'All_Evenements', sheetName2 = 'E46', accessToken } = await req.json();
-    
-    if (!accessToken) {
-      throw new Error('Token d\'accès Google manquant');
+      if (!sheetsResponse.ok) {
+        throw new Error(`Failed to fetch sheets: ${sheetsResponse.statusText}`);
+      }
+
+      const sheetsData = await sheetsResponse.json();
+      
+      return new Response(JSON.stringify({ files: sheetsData.files }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Error listing Google Sheets:', error);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-    
-    if (!spreadsheetId1 && !spreadsheetId2) {
-      throw new Error('Au moins un ID de spreadsheet est requis');
-    }
+  }
+
+  // Handle POST request for importing data
+  if (req.method === 'POST') {
+    try {
+      console.log('Starting Google Sheets import...');
+      
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const { spreadsheetId1, spreadsheetId2, sheetName1 = 'All_Evenements', sheetName2 = 'E46' } = await req.json();
+      
+      if (!spreadsheetId1 && !spreadsheetId2) {
+        throw new Error('Au moins un ID de spreadsheet est requis');
+      }
+
+      // Get access token using service account
+      const accessToken = await getAccessToken();
 
     console.log(`Importing from spreadsheets: ${spreadsheetId1 || 'none'} and ${spreadsheetId2 || 'none'}`);
 
@@ -205,8 +287,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
-    console.error('Error in import-google-sheets function:', error);
+    } catch (error) {
+      console.error('Error in import-google-sheets function:', error);
     return new Response(JSON.stringify({ 
       success: false, 
       error: error.message,
@@ -214,6 +296,13 @@ serve(async (req) => {
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      });
+    }
   }
+
+  // If neither GET nor POST, return method not allowed
+  return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+    status: 405,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 });
