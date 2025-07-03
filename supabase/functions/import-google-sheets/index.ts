@@ -245,12 +245,13 @@ serve(async (req) => {
           console.log(`Successfully inserted ${eventsToInsert.length} events`);
 
           // ------- DUPLICATION DANS LA TABLE DE PRODUCTION -------
-          // Construire un tableau avec les champs clés utiles
+          // Convertir "" en null pour les colonnes date
           const productionEvents = eventsToInsert.map(ev => ({
             id: ev.id,
             name: ev.nom_event || '',
-            start_date: ev.date_debut || '',
-            end_date: ev.date_fin || '',
+            // Si date_debut est une chaîne non vide, on la garde, sinon null
+            start_date: ev.date_debut && ev.date_debut.trim() !== "" ? ev.date_debut : null,
+            end_date: ev.date_fin && ev.date_fin.trim() !== "" ? ev.date_fin : null,
             sector: ev.secteur || '',
             location: ev.nom_lieu || '',
             city: ev.nom_lieu || '',
