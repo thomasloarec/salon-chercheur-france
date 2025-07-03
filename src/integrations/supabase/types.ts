@@ -240,6 +240,7 @@ export type Database = {
           event_type: string
           event_url: string | null
           id: string
+          id_event: string | null
           image_url: string | null
           is_b2b: boolean | null
           last_scraped_at: string | null
@@ -272,6 +273,7 @@ export type Database = {
           event_type?: string
           event_url?: string | null
           id?: string
+          id_event?: string | null
           image_url?: string | null
           is_b2b?: boolean | null
           last_scraped_at?: string | null
@@ -304,6 +306,7 @@ export type Database = {
           event_type?: string
           event_url?: string | null
           id?: string
+          id_event?: string | null
           image_url?: string | null
           is_b2b?: boolean | null
           last_scraped_at?: string | null
