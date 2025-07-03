@@ -4,8 +4,32 @@ import { create, getNumericDate, Header } from "https://deno.land/x/djwt@v2.8/mo
 // Charger la clé du Service Account
 const serviceAccount = JSON.parse(Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY")!);
 
-// Génération du token d'accès Google
+// Helper pour transformer la clé PEM en ArrayBuffer
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = pem
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s+/g, "");
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) {
+    arr[i] = bin.charCodeAt(i);
+  }
+  return arr.buffer;
+}
+
 async function getAccessToken() {
+  // Convertir PEM -> CryptoKey
+  const keyDer = pemToArrayBuffer(serviceAccount.private_key);
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    keyDer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  // Préparer JWT
   const header: Header = { alg: "RS256", typ: "JWT" };
   const payload = {
     iss: serviceAccount.client_email,
@@ -14,7 +38,11 @@ async function getAccessToken() {
     exp: getNumericDate(60 * 60),
     iat: getNumericDate(0),
   };
-  const assertion = await create(header, payload, serviceAccount.private_key);
+
+  // Créer l'assertion signée
+  const assertion = await create(header, payload, cryptoKey);
+
+  // Échanger contre un access_token
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
