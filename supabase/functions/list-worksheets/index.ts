@@ -69,13 +69,21 @@ serve(async (req) => {
     return new Response(null, { status: 204, headers: CORS });
   }
   
+  // parse spreadsheetId from GET query or POST body
+  let spreadsheetId: string | null = null;
+  if (req.method === "GET") {
+    spreadsheetId = new URL(req.url).searchParams.get("spreadsheetId");
+  } else if (req.method === "POST") {
+    const body = await req.json().catch(() => ({}));
+    spreadsheetId = body.spreadsheetId;
+  }
+  if (!spreadsheetId) {
+    return new Response(JSON.stringify({ error: "spreadsheetId required" }), {
+      status: 400,
+      headers: CORS,
+    });
+  }
   try {
-    const { searchParams } = new URL(req.url);
-    const spreadsheetId = searchParams.get("spreadsheetId");
-    if (!spreadsheetId) {
-      throw new Error("spreadsheetId query param required");
-    }
-    
     console.log('📊 Getting worksheets for spreadsheet:', spreadsheetId);
     const token = await getAccessToken();
     
