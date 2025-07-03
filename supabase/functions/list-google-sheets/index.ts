@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { create, getNumericDate, Header } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
-// Charger le Service Account
+// Charger la clé du Service Account
 const serviceAccount = JSON.parse(Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY")!);
 
-// Fonction pour générer un access_token
+// Génération du token d'accès Google
 async function getAccessToken() {
   const header: Header = { alg: "RS256", typ: "JWT" };
   const payload = {
@@ -15,7 +15,7 @@ async function getAccessToken() {
     iat: getNumericDate(0),
   };
   const assertion = await create(header, payload, serviceAccount.private_key);
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -23,36 +23,35 @@ async function getAccessToken() {
       assertion,
     }),
   });
-  const { access_token } = await tokenRes.json();
+  const { access_token } = await res.json();
   return access_token;
 }
 
 serve(async (req) => {
-  // CORS
-  const cors = {
+  const CORS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: cors });
+    return new Response(null, { status: 204, headers: CORS });
   }
   try {
     const token = await getAccessToken();
     const driveRes = await fetch(
-      "https://www.googleapis.com/drive/v3/files?q=mimeType%3D%27application/vnd.google-apps.spreadsheet%27&pageSize=100",
+      "https://www.googleapis.com/drive/v3/files?mimeType=application/vnd.google-apps.spreadsheet&pageSize=100",
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!driveRes.ok) throw new Error(`Drive API ${driveRes.status}`);
     const { files } = await driveRes.json();
     return new Response(JSON.stringify({ files }), {
       status: 200,
-      headers: { ...cors, "Content-Type": "application/json" },
+      headers: { ...CORS, "Content-Type": "application/json" },
     });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...cors, "Content-Type": "application/json" },
+      headers: { ...CORS, "Content-Type": "application/json" },
     });
   }
 });
