@@ -222,6 +222,16 @@ serve(async (req) => {
 
         console.log(`Prepared ${eventsToInsert.length} events for insertion`);
 
+        // Dédupliquer eventsToInsert par id
+        const originalLength = eventsToInsert.length;
+        const uniqueEventsMap: Record<string, any> = {};
+        eventsToInsert.forEach(ev => {
+          uniqueEventsMap[ev.id] = ev;
+        });
+        eventsToInsert = Object.values(uniqueEventsMap);
+        
+        console.log(`Deduplicated events: from ${originalLength} to ${eventsToInsert.length}`);
+
         // Insert events into Supabase
         if (eventsToInsert.length > 0) {
           const { error: eventsError } = await supabaseClient
