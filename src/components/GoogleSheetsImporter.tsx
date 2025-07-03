@@ -13,10 +13,10 @@ interface GoogleSheet {
 
 const GoogleSheetsImporter = () => {
   const [sheets, setSheets] = useState<GoogleSheet[]>([]);
-  const [spreadsheetId1, setSpreadsheetId1] = useState('__none__');
+  const [spreadsheetId1, setSpreadsheetId1] = useState('');
   const [sheetName1, setSheetName1] = useState('All_Evenements');
-  const [spreadsheetId2, setSpreadsheetId2] = useState('__none__');
-  const [sheetName2, setSheetName2] = useState('E46');
+  const [spreadsheetId2, setSpreadsheetId2] = useState('');
+  const [sheetName2, setSheetName2] = useState('All_Exposants');
   const [logs, setLogs] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
@@ -42,8 +42,8 @@ const GoogleSheetsImporter = () => {
   }, []);
 
   const runImport = async () => {
-    if (spreadsheetId1 === '__none__' && spreadsheetId2 === '__none__') {
-      setLogs('Veuillez sélectionner au moins une feuille à importer');
+    if (!spreadsheetId1 || !spreadsheetId2) {
+      setLogs('Veuillez sélectionner les deux feuilles à importer');
       return;
     }
 
@@ -51,9 +51,9 @@ const GoogleSheetsImporter = () => {
     try {
       const { data, error } = await supabase.functions.invoke('import-google-sheets', {
         body: { 
-          spreadsheetId1: spreadsheetId1 === '__none__' ? null : spreadsheetId1, 
+          spreadsheetId1, 
           sheetName1, 
-          spreadsheetId2: spreadsheetId2 === '__none__' ? null : spreadsheetId2, 
+          spreadsheetId2, 
           sheetName2 
         }
       });
@@ -94,7 +94,6 @@ const GoogleSheetsImporter = () => {
               <SelectValue placeholder="-- Sélectionnez une feuille --" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__" disabled>-- Sélectionnez une feuille --</SelectItem>
               {sheets.map(s => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.name}
@@ -114,7 +113,6 @@ const GoogleSheetsImporter = () => {
               <SelectValue placeholder="-- Sélectionnez une feuille --" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__" disabled>-- Sélectionnez une feuille --</SelectItem>
               {sheets.map(s => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.name}
@@ -127,7 +125,7 @@ const GoogleSheetsImporter = () => {
           <Label>Nom de l'onglet exposants</Label>
           <Input value={sheetName2} onChange={e => setSheetName2(e.target.value)} />
         </div>
-        <Button onClick={runImport} className="w-full" disabled={spreadsheetId1 === '__none__' && spreadsheetId2 === '__none__'}>Importer les données</Button>
+        <Button onClick={runImport} className="w-full" disabled={!spreadsheetId1 || !spreadsheetId2}>Importer les données</Button>
         <pre className="text-sm bg-muted p-3 rounded">{logs}</pre>
       </CardContent>
     </Card>
