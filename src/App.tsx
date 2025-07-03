@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import Favorites from "./pages/Favorites";
 import Agenda from "./pages/Agenda";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
 import MentionsLegales from "./pages/MentionsLegales";
 import PolitiqueConfidentialite from "./pages/PolitiqueConfidentialite";
 import CGU from "./pages/CGU";
@@ -62,6 +63,7 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
