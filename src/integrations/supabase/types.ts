@@ -325,6 +325,72 @@ export type Database = {
         }
         Relationships: []
       }
+      events_import: {
+        Row: {
+          adresse: string | null
+          affluence: string | null
+          ai_certainty: string | null
+          chatgpt_prompt: string | null
+          created_at: string | null
+          date_complete: string | null
+          date_debut: string | null
+          date_fin: string | null
+          description_event: string | null
+          id: string
+          nom_event: string | null
+          nom_lieu: string | null
+          secteur: string | null
+          status_event: string | null
+          tarifs: string | null
+          type_event: string | null
+          updated_at: string | null
+          url_image: string | null
+          url_site_officiel: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          affluence?: string | null
+          ai_certainty?: string | null
+          chatgpt_prompt?: string | null
+          created_at?: string | null
+          date_complete?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id: string
+          nom_event?: string | null
+          nom_lieu?: string | null
+          secteur?: string | null
+          status_event?: string | null
+          tarifs?: string | null
+          type_event?: string | null
+          updated_at?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          affluence?: string | null
+          ai_certainty?: string | null
+          chatgpt_prompt?: string | null
+          created_at?: string | null
+          date_complete?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id?: string
+          nom_event?: string | null
+          nom_lieu?: string | null
+          secteur?: string | null
+          status_event?: string | null
+          tarifs?: string | null
+          type_event?: string | null
+          updated_at?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+        }
+        Relationships: []
+      }
       exhibitor_matches: {
         Row: {
           company_id: string | null
@@ -373,6 +439,44 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exposants: {
+        Row: {
+          created_at: string | null
+          exposant_description: string | null
+          exposant_nom: string | null
+          exposant_stand: string | null
+          exposant_website: string | null
+          id: number
+          id_event: string
+        }
+        Insert: {
+          created_at?: string | null
+          exposant_description?: string | null
+          exposant_nom?: string | null
+          exposant_stand?: string | null
+          exposant_website?: string | null
+          id?: number
+          id_event: string
+        }
+        Update: {
+          created_at?: string | null
+          exposant_description?: string | null
+          exposant_nom?: string | null
+          exposant_stand?: string | null
+          exposant_website?: string | null
+          id?: number
+          id_event?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exposants_id_event_fkey"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "events_import"
             referencedColumns: ["id"]
           },
         ]
