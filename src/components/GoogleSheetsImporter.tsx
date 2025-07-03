@@ -14,11 +14,31 @@ interface GoogleSheet {
 const GoogleSheetsImporter = () => {
   const [sheets, setSheets] = useState<GoogleSheet[]>([]);
   const [spreadsheetId1, setSpreadsheetId1] = useState('');
-  const [sheetName1, setSheetName1] = useState('All_Evenements');
+  const [sheetName1, setSheetName1] = useState('');
   const [spreadsheetId2, setSpreadsheetId2] = useState('');
-  const [sheetName2, setSheetName2] = useState('All_Exposants');
+  const [sheetName2, setSheetName2] = useState('');
+  const [worksheets1, setWorksheets1] = useState<string[]>([]);
+  const [worksheets2, setWorksheets2] = useState<string[]>([]);
   const [logs, setLogs] = useState<string>('');
   const [loading, setLoading] = useState(true);
+
+  const loadWorksheets = async (spreadsheetId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke<{ titles: string[] }>('list-worksheets', {
+        body: { spreadsheetId }
+      });
+      
+      if (error) {
+        throw error;
+      }
+
+      return data?.titles || [];
+    } catch (e: any) {
+      console.error('Erreur loading worksheets:', e);
+      setLogs(`Erreur lors du chargement des onglets : ${e.message}`);
+      return [];
+    }
+  };
 
   useEffect(() => {
     const loadSheets = async () => {
@@ -41,9 +61,27 @@ const GoogleSheetsImporter = () => {
     loadSheets();
   }, []);
 
+  useEffect(() => {
+    if (spreadsheetId1) {
+      loadWorksheets(spreadsheetId1).then(setWorksheets1);
+    } else {
+      setWorksheets1([]);
+      setSheetName1('');
+    }
+  }, [spreadsheetId1]);
+
+  useEffect(() => {
+    if (spreadsheetId2) {
+      loadWorksheets(spreadsheetId2).then(setWorksheets2);
+    } else {
+      setWorksheets2([]);
+      setSheetName2('');
+    }
+  }, [spreadsheetId2]);
+
   const runImport = async () => {
-    if (!spreadsheetId1 || !spreadsheetId2) {
-      setLogs('Veuillez sélectionner les deux feuilles à importer');
+    if (!spreadsheetId1 || !spreadsheetId2 || !sheetName1 || !sheetName2) {
+      setLogs('Veuillez sélectionner les deux feuilles et leurs onglets');
       return;
     }
 
@@ -59,12 +97,16 @@ const GoogleSheetsImporter = () => {
       });
 
       if (error) {
-        throw error;
+        // Afficher l'erreur complète de l'edge function
+        const errorMessage = error.message || 'Erreur inconnue';
+        const errorDetails = error.details || error.hint || '';
+        setLogs(`❌ Erreur d'import: ${errorMessage}${errorDetails ? '\nDétails: ' + errorDetails : ''}`);
+        return;
       }
 
-      setLogs(data?.message || JSON.stringify(data));
+      setLogs(data?.message || '✅ Import terminé avec succès');
     } catch (e: any) {
-      setLogs(`Erreur front : ${e.message}`);
+      setLogs(`❌ Erreur de communication: ${e.message}`);
     }
   };
 
@@ -104,7 +146,18 @@ const GoogleSheetsImporter = () => {
         </div>
         <div className="space-y-2">
           <Label>Nom de l'onglet événements</Label>
-          <Input value={sheetName1} onChange={e => setSheetName1(e.target.value)} />
+          <Select value={sheetName1} onValueChange={setSheetName1}>
+            <SelectTrigger>
+              <SelectValue placeholder="-- Sélectionnez un onglet --" />
+            </SelectTrigger>
+            <SelectContent>
+              {worksheets1.map(title => (
+                <SelectItem key={title} value={title}>
+                  {title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Google Sheet exposants</Label>
@@ -123,9 +176,20 @@ const GoogleSheetsImporter = () => {
         </div>
         <div className="space-y-2">
           <Label>Nom de l'onglet exposants</Label>
-          <Input value={sheetName2} onChange={e => setSheetName2(e.target.value)} />
+          <Select value={sheetName2} onValueChange={setSheetName2}>
+            <SelectTrigger>
+              <SelectValue placeholder="-- Sélectionnez un onglet --" />
+            </SelectTrigger>
+            <SelectContent>
+              {worksheets2.map(title => (
+                <SelectItem key={title} value={title}>
+                  {title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Button onClick={runImport} className="w-full" disabled={!spreadsheetId1 || !spreadsheetId2}>Importer les données</Button>
+        <Button onClick={runImport} className="w-full" disabled={!spreadsheetId1 || !spreadsheetId2 || !sheetName1 || !sheetName2}>Importer les données</Button>
         <pre className="text-sm bg-muted p-3 rounded">{logs}</pre>
       </CardContent>
     </Card>
