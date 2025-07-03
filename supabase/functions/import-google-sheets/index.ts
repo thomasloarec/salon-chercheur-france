@@ -37,6 +37,20 @@ interface ExposantData {
   exposant_description: string;
 }
 
+// Helper : convertir PEM (PKCS#8) en ArrayBuffer
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\s+/g, '');
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) {
+    arr[i] = bin.charCodeAt(i);
+  }
+  return arr.buffer;
+}
+
 // Function to get access token using service account
 async function getAccessToken(): Promise<string> {
   const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
@@ -45,30 +59,37 @@ async function getAccessToken(): Promise<string> {
   }
 
   const keyData = JSON.parse(serviceAccountKey);
-  const now = Math.floor(Date.now() / 1000);
   
-  const payload = {
-    iss: keyData.client_email,
-    scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: now + 3600,
-    iat: now,
-  };
-
-  const privateKey = await crypto.subtle.importKey(
+  // Importer la clé privée comme CryptoKey
+  const keyDer = pemToArrayBuffer(keyData.private_key);
+  const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
-    new TextEncoder().encode(keyData.private_key),
+    keyDer,
     { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
     ['sign']
   );
 
-  const jwt = await create({ alg: 'RS256', typ: 'JWT' }, payload, privateKey);
+  // Préparer et signer le JWT
+  const header = { alg: 'RS256', typ: 'JWT' } as const;
+  const payload = {
+    iss: keyData.client_email,
+    scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: getNumericDate(60 * 60),
+    iat: getNumericDate(0),
+  };
 
+  const assertion = await create(header, payload, cryptoKey);
+
+  // Échanger l'assertion contre un access_token
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion,
+    }),
   });
 
   if (!tokenResponse.ok) {
