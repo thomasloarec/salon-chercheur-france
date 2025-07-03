@@ -247,7 +247,7 @@ serve(async (req) => {
           // ------- DUPLICATION DANS LA TABLE DE PRODUCTION -------
           // Convertir "" en null pour les colonnes date
           const productionEvents = eventsToInsert.map(ev => ({
-            id: ev.id,
+            id_event: ev.id,      // on écrit dans id_event, pas dans id
             name: ev.nom_event || '',
             // Si date_debut est une chaîne non vide, on la garde, sinon null
             start_date: ev.date_debut && ev.date_debut.trim() !== "" ? ev.date_debut : null,
@@ -265,7 +265,7 @@ serve(async (req) => {
 
           const { error: prodError } = await supabaseClient
             .from('events')
-            .upsert(productionEvents, { onConflict: 'id' });
+            .upsert(productionEvents, { onConflict: 'id_event' });
 
           if (prodError) {
             console.error('Error upserting production events:', prodError);
