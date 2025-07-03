@@ -52,13 +52,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const googleApiKey = Deno.env.get('GOOGLE_SHEETS_API_KEY');
-    console.log('🔑 Google Sheets API Key loaded:', !!googleApiKey);
-    if (!googleApiKey) {
-      throw new Error('Google Sheets API key not found');
+    const { spreadsheetId1, spreadsheetId2, sheetName1 = 'All_Evenements', sheetName2 = 'E46', accessToken } = await req.json();
+    
+    if (!accessToken) {
+      throw new Error('Token d\'accès Google manquant');
     }
-
-    const { spreadsheetId1, spreadsheetId2, sheetName1 = 'All_Evenements', sheetName2 = 'E46' } = await req.json();
     
     if (!spreadsheetId1 && !spreadsheetId2) {
       throw new Error('Au moins un ID de spreadsheet est requis');
@@ -72,8 +70,12 @@ serve(async (req) => {
     // Import events from All_Evenements sheet (if provided)
     if (spreadsheetId1) {
       console.log('Fetching events data...');
-      const eventsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId1}/values/${sheetName1}?key=${googleApiKey}`;
-      const eventsResponse = await fetch(eventsUrl);
+      const eventsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId1}/values/${sheetName1}`;
+      const eventsResponse = await fetch(eventsUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
       
       if (!eventsResponse.ok) {
         throw new Error(`Failed to fetch events data: ${eventsResponse.statusText} (${eventsResponse.status})`);
@@ -135,8 +137,12 @@ serve(async (req) => {
     // Import exposants from selected sheet (if provided)
     if (spreadsheetId2) {
       console.log(`Fetching exposants data from sheet: ${sheetName2}...`);
-      const exposantsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId2}/values/${sheetName2}?key=${googleApiKey}`;
-      const exposantsResponse = await fetch(exposantsUrl);
+      const exposantsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId2}/values/${sheetName2}`;
+      const exposantsResponse = await fetch(exposantsUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
       
       if (!exposantsResponse.ok) {
         throw new Error(`Failed to fetch exposants data: ${exposantsResponse.statusText} (${exposantsResponse.status})`);
