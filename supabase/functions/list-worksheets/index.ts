@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { create, getNumericDate, Header } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
@@ -60,7 +61,7 @@ serve(async (req) => {
   console.log('📥 list-worksheets called, method:', req.method);
   const CORS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS", 
     "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
   };
   if (req.method === "OPTIONS") {
