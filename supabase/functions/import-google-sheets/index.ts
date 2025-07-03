@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://deno.land/x/supabase@1.0.0/mod.ts';
+import { createClient } from 'https://deno.land/x/supabase@1.29.1/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,6 +53,7 @@ serve(async (req) => {
     );
 
     const googleApiKey = Deno.env.get('GOOGLE_SHEETS_API_KEY');
+    console.log('🔑 Google Sheets API Key loaded:', !!googleApiKey);
     if (!googleApiKey) {
       throw new Error('Google Sheets API key not found');
     }
