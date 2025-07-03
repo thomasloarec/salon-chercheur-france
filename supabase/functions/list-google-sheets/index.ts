@@ -31,7 +31,7 @@ serve(async (req) => {
   const CORS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
   };
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
