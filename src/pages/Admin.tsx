@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import GoogleSheetsImporter from '@/components/GoogleSheetsImporter';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { 
   ShieldCheck, 
   BarChart3, 
@@ -237,178 +239,182 @@ const AdminPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">
-            Administration SalonsPro
-          </h1>
-          <p className="text-gray-600">
-            Panneau de contrôle pour la gestion des données
-          </p>
-        </div>
+    <>
+      <Header />
+      <main className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-primary mb-2">
+              Administration SalonsPro
+            </h1>
+            <p className="text-gray-600">
+              Panneau de contrôle pour la gestion des données
+            </p>
+          </div>
 
-        {/* Bloc Sécurité */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-green-600" />
-              Sécurité et statut admin
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Email de l'utilisateur connecté :</p>
-              <p className="font-semibold">{user?.email}</p>
-              <Badge className="mt-2 bg-green-100 text-green-800">
-                Vous êtes connecté en tant qu'administrateur
-              </Badge>
-            </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Se déconnecter
-            </Button>
-          </CardContent>
-        </Card>
+          {/* Bloc Sécurité */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-green-600" />
+                Sécurité et statut admin
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Email de l'utilisateur connecté :</p>
+                <p className="font-semibold">{user?.email}</p>
+                <Badge className="mt-2 bg-green-100 text-green-800">
+                  Vous êtes connecté en tant qu'administrateur
+                </Badge>
+              </div>
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Se déconnecter
+              </Button>
+            </CardContent>
+          </Card>
 
-        {/* Bloc Import Google Sheets */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5 text-blue-600" />
-              Import de données Google Sheets
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <GoogleSheetsImporter />
-          </CardContent>
-        </Card>
+          {/* Bloc Import Google Sheets */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5 text-blue-600" />
+                Import de données Google Sheets
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <GoogleSheetsImporter />
+            </CardContent>
+          </Card>
 
-        {/* Bloc Statistiques */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-purple-600" />
-              Statistiques rapides
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <Calendar className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-blue-600">{stats.totalEvents}</p>
-                <p className="text-sm text-gray-600">Événements totaux</p>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <Building className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-600">{stats.totalExposants}</p>
-                <p className="text-sm text-gray-600">Exposants totaux</p>
-              </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <Users className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-orange-600">{stats.upcomingEvents}</p>
-                <p className="text-sm text-gray-600">Événements à venir</p>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <ExternalLink className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <div>
-                  <p className="text-sm font-semibold text-purple-600">
-                    Dernier import
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    {stats.lastEvent?.nom_event || 'Aucun'}
-                  </p>
+          {/* Bloc Statistiques */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-purple-600" />
+                Statistiques rapides
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <Calendar className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-blue-600">{stats.totalEvents}</p>
+                  <p className="text-sm text-gray-600">Événements totaux</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <Building className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-green-600">{stats.totalExposants}</p>
+                  <p className="text-sm text-gray-600">Exposants totaux</p>
+                </div>
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <Users className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-orange-600">{stats.upcomingEvents}</p>
+                  <p className="text-sm text-gray-600">Événements à venir</p>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <ExternalLink className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                  <div>
+                    <p className="text-sm font-semibold text-purple-600">
+                      Dernier import
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {stats.lastEvent?.nom_event || 'Aucun'}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Bloc Contrôle qualité */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              Contrôle qualité
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="font-semibold text-red-600 mb-2">
-                Événements sans exposants ({qualityIssues.eventsWithoutExposants.length})
-              </h4>
-              <div className="max-h-32 overflow-y-auto">
-                {qualityIssues.eventsWithoutExposants.map((event: any) => (
-                  <p key={event.id} className="text-sm text-gray-600 py-1">
-                    • {event.nom_event}
-                  </p>
-                ))}
+          {/* Bloc Contrôle qualité */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                Contrôle qualité
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-red-600 mb-2">
+                  Événements sans exposants ({qualityIssues.eventsWithoutExposants.length})
+                </h4>
+                <div className="max-h-32 overflow-y-auto">
+                  {qualityIssues.eventsWithoutExposants.map((event: any) => (
+                    <p key={event.id} className="text-sm text-gray-600 py-1">
+                      • {event.nom_event}
+                    </p>
+                  ))}
+                </div>
               </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h4 className="font-semibold text-orange-600 mb-2">
-                Événements sans URL officielle ({qualityIssues.eventsWithoutUrl.length})
-              </h4>
-              <div className="max-h-32 overflow-y-auto">
-                {qualityIssues.eventsWithoutUrl.map((event: any) => (
-                  <p key={event.id} className="text-sm text-gray-600 py-1">
-                    • {event.nom_event}
-                  </p>
-                ))}
+              
+              <Separator />
+              
+              <div>
+                <h4 className="font-semibold text-orange-600 mb-2">
+                  Événements sans URL officielle ({qualityIssues.eventsWithoutUrl.length})
+                </h4>
+                <div className="max-h-32 overflow-y-auto">
+                  {qualityIssues.eventsWithoutUrl.map((event: any) => (
+                    <p key={event.id} className="text-sm text-gray-600 py-1">
+                      • {event.nom_event}
+                    </p>
+                  ))}
+                </div>
               </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h4 className="font-semibold text-blue-600 mb-2">
-                Événements sans image ({qualityIssues.eventsWithoutImage.length})
-              </h4>
-              <div className="max-h-32 overflow-y-auto">
-                {qualityIssues.eventsWithoutImage.map((event: any) => (
-                  <p key={event.id} className="text-sm text-gray-600 py-1">
-                    • {event.nom_event}
-                  </p>
-                ))}
+              
+              <Separator />
+              
+              <div>
+                <h4 className="font-semibold text-blue-600 mb-2">
+                  Événements sans image ({qualityIssues.eventsWithoutImage.length})
+                </h4>
+                <div className="max-h-32 overflow-y-auto">
+                  {qualityIssues.eventsWithoutImage.map((event: any) => (
+                    <p key={event.id} className="text-sm text-gray-600 py-1">
+                      • {event.nom_event}
+                    </p>
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Bloc Outils Admin */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-gray-600" />
-              Outils Admin
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                onClick={exportEventsToCsv}
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Exporter tous les événements en CSV
-              </Button>
-              <Button
-                onClick={exportExposantsToCsv}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Exporter tous les exposants en CSV
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          {/* Bloc Outils Admin */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-gray-600" />
+                Outils Admin
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  onClick={exportEventsToCsv}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Exporter tous les événements en CSV
+                </Button>
+                <Button
+                  onClick={exportExposantsToCsv}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Exporter tous les exposants en CSV
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 };
 
