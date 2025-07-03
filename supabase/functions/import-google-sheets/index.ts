@@ -243,6 +243,35 @@ serve(async (req) => {
             throw new Error(`Failed to insert events: ${eventsError.message}`);
           }
           console.log(`Successfully inserted ${eventsToInsert.length} events`);
+
+          // ------- DUPLICATION DANS LA TABLE DE PRODUCTION -------
+          // Construire un tableau avec les champs clés utiles
+          const productionEvents = eventsToInsert.map(ev => ({
+            id: ev.id,
+            name: ev.nom_event || '',
+            start_date: ev.date_debut || '',
+            end_date: ev.date_fin || '',
+            sector: ev.secteur || '',
+            location: ev.nom_lieu || '',
+            city: ev.nom_lieu || '',
+            address: ev.adresse || '',
+            website_url: ev.url_site_officiel || '',
+            image_url: ev.url_image || '',
+            description: ev.description_event || '',
+            entry_fee: ev.tarifs || '',
+            event_type: ev.type_event || 'salon'
+          }));
+
+          const { error: prodError } = await supabaseClient
+            .from('events')
+            .upsert(productionEvents, { onConflict: 'id' });
+
+          if (prodError) {
+            console.error('Error upserting production events:', prodError);
+            throw new Error(`Failed to upsert production events: ${prodError.message}`);
+          }
+          console.log(`Successfully duplicated ${productionEvents.length} events to production table`);
+          // ------------------------------------------------------
         }
       }
     }
