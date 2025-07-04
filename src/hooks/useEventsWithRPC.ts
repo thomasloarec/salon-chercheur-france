@@ -77,6 +77,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             events_count: (data as any)?.length || 0,
             total_count: (data as any)?.[0]?.total_count || 0
           });
+          console.log('🔍 DEBUG: Premier événement de la RPC:', (data as any)?.[0]);
           console.table({ 
             error: null, 
             rows: (data as any)?.length || 0,
@@ -85,38 +86,48 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         }
 
         // Transformer les données pour correspondre au format attendu
-        const events: Event[] = (data as any)?.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          start_date: item.start_date,
-          end_date: item.end_date,
-          sector: item.sector,
-          location: item.location,
-          city: item.city,
-          region: item.region,
-          country: item.country,
-          venue_name: item.venue_name,
-          event_url: item.event_url,
-          image_url: item.image_url,
-          tags: item.tags,
-          organizer_name: item.organizer_name,
-          organizer_contact: item.organizer_contact,
-          entry_fee: item.entry_fee,
-          estimated_visitors: item.estimated_visitors,
-          estimated_exhibitors: item.estimated_exhibitors,
-          is_b2b: item.is_b2b,
-          event_type: item.event_type as Event['event_type'],
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          last_scraped_at: item.last_scraped_at,
-          scraped_from: item.scraped_from,
-          address: item.address,
-          postal_code: item.postal_code, // S'assurer que postal_code est inclus
-          visible: item.visible,
-          slug: item.slug,
-          sectors: item.sectors || []
-        })) || [];
+        const events: Event[] = (data as any)?.map((item: any) => {
+          console.log('🔍 DEBUG: Mapping item from RPC:', {
+            id: item.id,
+            name: item.name,
+            address: item.address,
+            postal_code: item.postal_code,
+            city: item.city
+          });
+          
+          return {
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            start_date: item.start_date,
+            end_date: item.end_date,
+            sector: item.sector,
+            location: item.location,
+            city: item.city,
+            region: item.region,
+            country: item.country,
+            venue_name: item.venue_name,
+            event_url: item.event_url,
+            image_url: item.image_url,
+            tags: item.tags,
+            organizer_name: item.organizer_name,
+            organizer_contact: item.organizer_contact,
+            entry_fee: item.entry_fee,
+            estimated_visitors: item.estimated_visitors,
+            estimated_exhibitors: item.estimated_exhibitors,
+            is_b2b: item.is_b2b,
+            event_type: item.event_type as Event['event_type'],
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            last_scraped_at: item.last_scraped_at,
+            scraped_from: item.scraped_from,
+            address: item.address,
+            postal_code: item.postal_code, // S'assurer que postal_code est inclus
+            visible: item.visible,
+            slug: item.slug,
+            sectors: item.sectors || []
+          };
+        }) || [];
 
         const totalCount = (data as any)?.[0]?.total_count || 0;
 
@@ -162,39 +173,51 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           throw fallbackError;
         }
 
+        console.log('🔍 DEBUG: Premier événement du fallback:', fallbackData?.[0]);
+
         // Mapper les données de fallback au format Event
-        const fallbackEvents: Event[] = (fallbackData || []).map(item => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          start_date: item.start_date,
-          end_date: item.end_date,
-          sector: item.sector,
-          location: item.location,
-          city: item.city,
-          region: item.region,
-          country: item.country,
-          venue_name: item.venue_name,
-          event_url: item.event_url,
-          image_url: item.image_url,
-          tags: item.tags,
-          organizer_name: item.organizer_name,
-          organizer_contact: item.organizer_contact,
-          entry_fee: item.entry_fee,
-          estimated_visitors: item.estimated_visitors,
-          estimated_exhibitors: item.estimated_exhibitors,
-          is_b2b: item.is_b2b,
-          event_type: item.event_type as Event['event_type'],
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          last_scraped_at: item.last_scraped_at,
-          scraped_from: item.scraped_from,
-          address: item.address,
-          postal_code: item.postal_code, // S'assurer que postal_code est inclus
-          visible: item.visible,
-          slug: item.slug,
-          sectors: []
-        }));
+        const fallbackEvents: Event[] = (fallbackData || []).map(item => {
+          console.log('🔍 DEBUG: Mapping item from fallback:', {
+            id: item.id,
+            name: item.name,
+            address: item.address,
+            postal_code: item.postal_code,
+            city: item.city
+          });
+          
+          return {
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            start_date: item.start_date,
+            end_date: item.end_date,
+            sector: item.sector,
+            location: item.location,
+            city: item.city,
+            region: item.region,
+            country: item.country,
+            venue_name: item.venue_name,
+            event_url: item.event_url,
+            image_url: item.image_url,
+            tags: item.tags,
+            organizer_name: item.organizer_name,
+            organizer_contact: item.organizer_contact,
+            entry_fee: item.entry_fee,
+            estimated_visitors: item.estimated_visitors,
+            estimated_exhibitors: item.estimated_exhibitors,
+            is_b2b: item.is_b2b,
+            event_type: item.event_type as Event['event_type'],
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            last_scraped_at: item.last_scraped_at,
+            scraped_from: item.scraped_from,
+            address: item.address,
+            postal_code: item.postal_code, // S'assurer que postal_code est inclus
+            visible: item.visible,
+            slug: item.slug,
+            sectors: []
+          };
+        });
 
         return {
           events: fallbackEvents,

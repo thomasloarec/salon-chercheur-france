@@ -77,6 +77,13 @@ const EventPage = () => {
       }
 
       console.log('✅ Event found:', eventData);
+      console.log('🔍 DEBUG: Event data from EventPage query:', {
+        id: eventData.id,
+        name: eventData.name,
+        address: eventData.address,
+        postal_code: eventData.postal_code,
+        city: eventData.city
+      });
       
       // Check if user has favorited this event
       const isFavorite = user ? eventData.favorites?.some((fav: any) => fav.user_id === user.id) : false;

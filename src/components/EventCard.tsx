@@ -41,6 +41,14 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@salonspro.com';
 
+  // DEBUG: Log de l'objet event complet
+  console.log('🔍 EventCard - event object:', event);
+  console.log('🔍 EventCard - address props:', {
+    address: event.address,
+    postal_code: event.postal_code,
+    city: event.city
+  });
+
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
   
