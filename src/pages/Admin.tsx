@@ -22,7 +22,9 @@ import {
   Image,
   Users,
   Eye,
-  CheckCircle
+  CheckCircle,
+  Trash2,
+  Database
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import EventGrid from '@/components/EventGrid';
@@ -32,6 +34,7 @@ const AdminPage = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [stats, setStats] = useState({
     totalEvents: 0,
     totalExposants: 0,
@@ -249,6 +252,45 @@ const AdminPage = () => {
     }
   };
 
+  const handleDeleteAllDrafts = async () => {
+    if (!confirm('Supprimer définitivement tous les événements en attente ?')) return;
+    
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('visible', false);
+      
+      if (error) {
+        toast({ title: "Erreur : " + error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Événements en attente supprimés" });
+        loadPendingEvents(); // Refresh the list
+      }
+    } catch (error) {
+      toast({ title: "Erreur lors de la suppression", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleClearImportBuffer = async () => {
+    if (!confirm('Vider complètement la table tampon ?')) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('clear-import-buffer');
+      
+      if (error) {
+        toast({ title: "Erreur : " + error.message, variant: "destructive" });
+      } else {
+        toast({ title: `Table tampon vidée (${data.cleared} lignes supprimées)` });
+      }
+    } catch (error) {
+      toast({ title: "Erreur lors de la purge", variant: "destructive" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -337,6 +379,31 @@ const AdminPage = () => {
             </CardContent>
           </Card>
 
+          {/* Bloc Maintenance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-red-600" />
+                Maintenance
+              </CardTitle>
+              <CardDescription>
+                Outils de maintenance et de nettoyage des données
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  variant="destructive"
+                  onClick={handleClearImportBuffer}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Vider la table tampon
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Bloc Statistiques */}
           <Card>
             <CardHeader>
@@ -387,17 +454,30 @@ const AdminPage = () => {
               <CardDescription>
                 {pendingEvents.length} événement(s) à publier
               </CardDescription>
-              {pendingEvents.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={publishAllDrafts}
-                  className="w-fit"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Publier tous ({pendingEvents.length})
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {pendingEvents.length > 0 && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={publishAllDrafts}
+                      className="w-fit"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Publier tous ({pendingEvents.length})
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteAllDrafts}
+                      disabled={deleting}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deleting ? 'Suppression...' : `Supprimer tout (${pendingEvents.length})`}
+                    </Button>
+                  </>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {pendingEvents.length === 0 ? (
