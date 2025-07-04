@@ -245,23 +245,37 @@ serve(async (req) => {
           console.log(`Successfully inserted ${eventsToInsert.length} events`);
 
           // ------- DUPLICATION DANS LA TABLE DE PRODUCTION -------
-          // Convertir "" en null pour les colonnes date
-          const productionEvents = eventsToInsert.map(ev => ({
-            id_event: ev.id,      // on écrit dans id_event, pas dans id
-            name: ev.nom_event || '',
-            // Si date_debut est une chaîne non vide, on la garde, sinon null
-            start_date: ev.date_debut && ev.date_debut.trim() !== "" ? ev.date_debut : null,
-            end_date: ev.date_fin && ev.date_fin.trim() !== "" ? ev.date_fin : null,
-            sector: ev.secteur || '',
-            location: ev.nom_lieu || '',
-            city: ev.nom_lieu || '',
-            address: ev.adresse || '',
-            website_url: ev.url_site_officiel || '',
-            image_url: ev.url_image || '',
-            description: ev.description_event || '',
-            entry_fee: ev.tarifs || '',
-            event_type: ev.type_event || 'salon'
-          }));
+          // Construction des événements avec gestion des colonnes NOT NULL
+          const productionEvents = eventsToInsert.map(ev => {
+            // helpers
+            const safeDate = (d: string | null) =>
+              d && d.trim() !== '' ? d : '1970-01-01';
+            const cityFromAddress = (addr: string) => {
+              // tente d'extraire la dernière "ville" (simple heuristique)
+              const parts = addr?.split(',') ?? [];
+              return parts.length ? parts[parts.length - 1].trim() : 'Inconnue';
+            };
+
+            return {
+              id_event: ev.id,                                  // texte
+              name: ev.nom_event || 'Sans titre',
+              visible: (ev.status_event ?? '').toLowerCase() === 'active',
+              event_type: ev.type_event || 'salon',
+              start_date: safeDate(ev.date_debut),
+              end_date: safeDate(ev.date_fin || ev.date_debut),
+              sector: ev.secteur || 'Autre',
+              location: ev.nom_lieu || 'Non précisé',
+              city: cityFromAddress(ev.adresse),
+              address: ev.adresse || null,
+              image_url: ev.url_image || null,
+              website_url: ev.url_site_officiel || null,
+              description: ev.description_event || null,
+              estimated_visitors: ev.affluence && ev.affluence.trim() !== '' ? Number(ev.affluence) : null,
+              entry_fee: ev.tarifs || null,
+              venue_name: ev.nom_lieu || null,
+              // Supabase générera created_at / updated_at
+            };
+          });
 
           const { error: prodError } = await supabaseClient
             .from('events')
@@ -272,6 +286,7 @@ serve(async (req) => {
             throw new Error(`Failed to upsert production events: ${prodError.message}`);
           }
           console.log(`Successfully duplicated ${productionEvents.length} events to production table`);
+          console.log(`Inserted/updated ${productionEvents.length} events & ${exposantsInserted} exposants`);
           // ------------------------------------------------------
         }
       }
