@@ -342,6 +342,8 @@ export type Database = {
           id: string
           nom_event: string | null
           nom_lieu: string | null
+          postal_code: string | null
+          rue: string | null
           secteur: string | null
           status_event: string | null
           tarifs: string | null
@@ -349,6 +351,7 @@ export type Database = {
           updated_at: string | null
           url_image: string | null
           url_site_officiel: string | null
+          ville: string | null
         }
         Insert: {
           adresse?: string | null
@@ -363,6 +366,8 @@ export type Database = {
           id: string
           nom_event?: string | null
           nom_lieu?: string | null
+          postal_code?: string | null
+          rue?: string | null
           secteur?: string | null
           status_event?: string | null
           tarifs?: string | null
@@ -370,6 +375,7 @@ export type Database = {
           updated_at?: string | null
           url_image?: string | null
           url_site_officiel?: string | null
+          ville?: string | null
         }
         Update: {
           adresse?: string | null
@@ -384,6 +390,8 @@ export type Database = {
           id?: string
           nom_event?: string | null
           nom_lieu?: string | null
+          postal_code?: string | null
+          rue?: string | null
           secteur?: string | null
           status_event?: string | null
           tarifs?: string | null
@@ -391,6 +399,7 @@ export type Database = {
           updated_at?: string | null
           url_image?: string | null
           url_site_officiel?: string | null
+          ville?: string | null
         }
         Relationships: []
       }
