@@ -1,9 +1,21 @@
 
 export function formatAddress(
-  address?: string | null,
+  street?: string | null,
   postal_code?: string | null,
-  city?: string | null
+  city?: string | null,
 ) {
-  const parts = [address?.trim(), postal_code?.trim(), city?.trim()].filter(Boolean);
-  return parts.join(', ');
+  const parts: string[] = [];
+
+  if (street?.trim()) parts.push(street.trim());
+
+  // En FR : « 75015 Paris » ou « 75015 » / « Paris » si l'un des deux manque
+  const cpCity =
+    postal_code?.trim() && city?.trim()
+      ? `${postal_code.trim()} ${city.trim()}`
+      : postal_code?.trim() || city?.trim();
+
+  if (cpCity) parts.push(cpCity);
+
+  // supprime les doublons éventuels
+  return [...new Set(parts)].join(', ');
 }

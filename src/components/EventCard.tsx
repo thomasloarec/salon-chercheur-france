@@ -74,6 +74,13 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
       </Link>
     );
 
+  // Debug log pour vérifier les props d'adresse
+  console.debug('Addr props', {
+    address: event.address,
+    postal_code: event.postal_code,
+    city: event.city
+  });
+
   return (
     <div className="relative group">
       <Card className={cn(
@@ -92,7 +99,6 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
           </Badge>
         )}
 
-        {/* Badge "Invisible" pour les événements non visibles en mode admin normal */}
         {!event.visible && isAdmin && !adminPreview && (
           <Badge
             variant="destructive"
@@ -112,7 +118,6 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
               className="event-card__image"
             />
             
-            {/* Bouton favoris */}
             {!adminPreview && (
               <FavoriteButton 
                 eventId={event.id} 
@@ -121,7 +126,6 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
               />
             )}
             
-            {/* Affichage des secteurs sur l'image avec pastilles couleur */}
             <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
               {eventSectors.length > 0 ? (
                 eventSectors.slice(0, 2).map((sector, index) => (
@@ -132,7 +136,6 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
                   />
                 ))
               ) : (
-                // Fallback vers l'ancien champ sector si c'est une chaîne simple
                 typeof event.sector === 'string' && event.sector && (
                   <SectorBadge 
                     label={event.sector}
@@ -140,7 +143,6 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
                   />
                 )
               )}
-              {/* Indicateur s'il y a plus de 2 secteurs */}
               {eventSectors.length > 2 && (
                 <Badge 
                   variant="secondary"

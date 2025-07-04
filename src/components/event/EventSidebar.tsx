@@ -3,12 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building } from 'lucide-react';
 import { SimilarEvents } from './SimilarEvents';
 import type { Event } from '@/types/event';
+import { formatAddress } from '@/utils/formatAddress';
 
 interface EventSidebarProps {
   event: Event;
 }
 
 export const EventSidebar = ({ event }: EventSidebarProps) => {
+  // Debug log pour vérifier les props d'adresse
+  console.debug('Addr props', {
+    address: event.address,
+    postal_code: event.postal_code,
+    city: event.city
+  });
+
   return (
     <aside className="space-y-6">
       {/* Informations pratiques */}
@@ -33,15 +41,13 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
                 </div>
               </div>
             )}
-            {event.address && (
-              <div className="flex items-start gap-2">
-                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                <div className="text-left">
-                  <dt className="font-semibold text-gray-900">Adresse</dt>
-                  <dd className="text-gray-600">{event.address}</dd>
-                </div>
+            <div className="flex items-start gap-2">
+              <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <dt className="font-semibold text-gray-900">Adresse</dt>
+                <dd className="text-gray-600">{formatAddress(event.address, event.postal_code, event.city)}</dd>
               </div>
-            )}
+            </div>
           </dl>
 
           {/* Carte */}
