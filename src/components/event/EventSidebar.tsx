@@ -10,13 +10,6 @@ interface EventSidebarProps {
 }
 
 export const EventSidebar = ({ event }: EventSidebarProps) => {
-  // Debug log pour vérifier les props d'adresse
-  console.debug('Addr props', {
-    address: event.address,
-    postal_code: event.postal_code,
-    city: event.city
-  });
-
   return (
     <aside className="space-y-6">
       {/* Informations pratiques */}

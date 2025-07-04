@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin, Users, ExternalLink, Building } from 'lucide-react';
@@ -15,13 +16,6 @@ export const EventInfo = ({ event }: EventInfoProps) => {
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
-
-  // Debug log pour vérifier les props d'adresse
-  console.debug('Addr props', {
-    address: event.address,
-    postal_code: event.postal_code,
-    city: event.city
-  });
 
   return (
     <Card className="text-left">

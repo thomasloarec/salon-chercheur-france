@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building, Users, Clock } from 'lucide-react';
 import type { Event } from '@/types/event';
@@ -8,13 +9,6 @@ interface EventDetailsProps {
 }
 
 export const EventDetails = ({ event }: EventDetailsProps) => {
-  // Debug log pour vérifier les props d'adresse
-  console.debug('Addr props', {
-    address: event.address,
-    postal_code: event.postal_code,
-    city: event.city
-  });
-
   return (
     <Card className="mb-6 text-left">
       <CardHeader>
