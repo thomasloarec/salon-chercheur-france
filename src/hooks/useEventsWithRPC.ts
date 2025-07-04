@@ -112,6 +112,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           last_scraped_at: item.last_scraped_at,
           scraped_from: item.scraped_from,
           address: item.address,
+          postal_code: item.postal_code, // S'assurer que postal_code est inclus
           visible: item.visible,
           slug: item.slug,
           sectors: item.sectors || []
@@ -137,7 +138,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         // Fallback vers une requête normale si la RPC échoue
         let query = supabase
           .from('events')
-          .select('*')
+          .select('*, postal_code') // S'assurer que postal_code est sélectionné
           .eq('visible', true)
           .gte('start_date', new Date().toISOString().slice(0, 10)) // AJOUT du filtre temporel
           .order('start_date', { ascending: true });
@@ -189,6 +190,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           last_scraped_at: item.last_scraped_at,
           scraped_from: item.scraped_from,
           address: item.address,
+          postal_code: item.postal_code, // S'assurer que postal_code est inclus
           visible: item.visible,
           slug: item.slug,
           sectors: []
