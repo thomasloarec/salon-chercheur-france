@@ -303,9 +303,9 @@ serve(async (req) => {
               end_date: ev.date_fin || ev.date_debut || '1970-01-01',
               sector: ev.secteur || 'Autre',
               location: ev.nom_lieu || 'Non précisé',
-              address: ev.rue || null,
-              postal_code: ev.postal_code || null,
-              city: ev.ville || 'Inconnue',  // NOT NULL dans le schéma
+              address: ev.rue || null,                          // Rue → address
+              postal_code: ev.postal_code || null,              // Code Postal → postal_code
+              city: ev.ville || 'Inconnue',                     // Ville → city
               image_url: ev.url_image || null,
               website_url: ev.url_site_officiel || null,
               description: ev.description_event || null,

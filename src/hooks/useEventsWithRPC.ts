@@ -51,18 +51,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         params.months = filters.months;
       }
 
-      // Console debug en développement
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 Appel à search_events RPC avec:', params);
-        console.table({ 
-          location_type: params.location_type, 
-          location_value: params.location_value,
-          sector_ids: params.sector_ids?.length || 0,
-          event_types: params.event_types?.length || 0,
-          months: params.months?.length || 0
-        });
-      }
-
       try {
         // Appel à la RPC avec le bon typage
         const { data, error } = await supabase.rpc('search_events' as any, params);
@@ -72,29 +60,8 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           throw error;
         }
 
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Réponse search_events RPC:', {
-            events_count: (data as any)?.length || 0,
-            total_count: (data as any)?.[0]?.total_count || 0
-          });
-          console.log('🔍 DEBUG: Premier événement de la RPC:', (data as any)?.[0]);
-          console.table({ 
-            error: null, 
-            rows: (data as any)?.length || 0,
-            total_count: (data as any)?.[0]?.total_count || 0
-          });
-        }
-
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {
-          console.log('🔍 DEBUG: Mapping item from RPC:', {
-            id: item.id,
-            name: item.name,
-            address: item.address,
-            postal_code: item.postal_code,
-            city: item.city
-          });
-          
           return {
             id: item.id,
             name: item.name,
@@ -122,7 +89,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             last_scraped_at: item.last_scraped_at,
             scraped_from: item.scraped_from,
             address: item.address,
-            postal_code: item.postal_code, // S'assurer que postal_code est inclus
+            postal_code: item.postal_code,
             visible: item.visible,
             slug: item.slug,
             sectors: item.sectors || []
@@ -138,20 +105,12 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       } catch (error) {
         console.error('❌ Erreur lors de l\'appel RPC:', error);
         
-        if (process.env.NODE_ENV === 'development') {
-          console.table({ 
-            error: error.message || 'Unknown error', 
-            rows: 0,
-            total_count: 0
-          });
-        }
-        
         // Fallback vers une requête normale si la RPC échoue
         let query = supabase
           .from('events')
-          .select('*, postal_code') // S'assurer que postal_code est sélectionné
+          .select('*, postal_code')
           .eq('visible', true)
-          .gte('start_date', new Date().toISOString().slice(0, 10)) // AJOUT du filtre temporel
+          .gte('start_date', new Date().toISOString().slice(0, 10))
           .order('start_date', { ascending: true });
 
         // Appliquer les filtres de localisation en fallback
@@ -173,18 +132,8 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           throw fallbackError;
         }
 
-        console.log('🔍 DEBUG: Premier événement du fallback:', fallbackData?.[0]);
-
         // Mapper les données de fallback au format Event
         const fallbackEvents: Event[] = (fallbackData || []).map(item => {
-          console.log('🔍 DEBUG: Mapping item from fallback:', {
-            id: item.id,
-            name: item.name,
-            address: item.address,
-            postal_code: item.postal_code,
-            city: item.city
-          });
-          
           return {
             id: item.id,
             name: item.name,
@@ -212,7 +161,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             last_scraped_at: item.last_scraped_at,
             scraped_from: item.scraped_from,
             address: item.address,
-            postal_code: item.postal_code, // S'assurer que postal_code est inclus
+            postal_code: item.postal_code,
             visible: item.visible,
             slug: item.slug,
             sectors: []
