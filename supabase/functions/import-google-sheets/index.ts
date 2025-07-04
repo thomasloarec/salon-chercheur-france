@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -228,6 +229,7 @@ serve(async (req) => {
       } else {
         // Get headers and map data
         const eventsHeaders = eventsRows[0];
+        console.log('📋 Headers found:', eventsHeaders);
 
         for (let i = 1; i < eventsRows.length; i++) {
           const row = eventsRows[i];
@@ -236,6 +238,25 @@ serve(async (req) => {
           const statusRaw = row[eventsHeaders.indexOf('Status_Event')] || '';
           const isApproved = statusRaw.trim().toLowerCase() === 'approved';
           if (!isApproved) continue; // on ignore la ligne
+          
+          // 🛂 DIAGNOSTIC: Mapping explicite des colonnes d'adresse
+          const address = row[eventsHeaders.indexOf('Rue')] || '';
+          const postal_code = row[eventsHeaders.indexOf('Code Postal')] || '';
+          const city = row[eventsHeaders.indexOf('Ville')] || '';
+          
+          console.log('🛂 mapping sample', { 
+            address: address, 
+            postal_code: postal_code, 
+            city: city,
+            raw_row_sample: {
+              rue_index: eventsHeaders.indexOf('Rue'),
+              postal_index: eventsHeaders.indexOf('Code Postal'), 
+              ville_index: eventsHeaders.indexOf('Ville'),
+              rue_value: row[eventsHeaders.indexOf('Rue')],
+              postal_value: row[eventsHeaders.indexOf('Code Postal')],
+              ville_value: row[eventsHeaders.indexOf('Ville')]
+            }
+          });
           
           const eventData: any = {
             id: row[eventsHeaders.indexOf('ID_Event')] || '',
@@ -253,9 +274,9 @@ serve(async (req) => {
             affluence: row[eventsHeaders.indexOf('Affluence')] || '',
             tarifs: row[eventsHeaders.indexOf('Tarifs')] || '',
             nom_lieu: row[eventsHeaders.indexOf('Nom_Lieu')] || '',
-            rue: row[eventsHeaders.indexOf('Rue')] || '',
-            postal_code: row[eventsHeaders.indexOf('Code Postal')] || '',
-            ville: row[eventsHeaders.indexOf('Ville')] || '',
+            rue: address,                    // 🛂 EXPLICIT mapping
+            postal_code: postal_code,        // 🛂 EXPLICIT mapping  
+            ville: city,                     // 🛂 EXPLICIT mapping
             chatgpt_prompt: row[eventsHeaders.indexOf('ChatGPT_Prompt')] || ''
           };
 
@@ -294,6 +315,14 @@ serve(async (req) => {
           // ------- DUPLICATION DANS LA TABLE DE PRODUCTION -------
           // Construction des événements avec gestion des colonnes NOT NULL
           const productionEvents = eventsToInsert.map(ev => {
+            // 🛂 DIAGNOSTIC: Log avant insertion en production
+            console.log('🏭 Production mapping sample', {
+              event_id: ev.id,
+              address: ev.rue || null,
+              postal_code: ev.postal_code || null, 
+              city: ev.ville || 'Inconnue'
+            });
+            
             return {
               id_event: ev.id,                                  // texte
               name: ev.nom_event || 'Sans titre',

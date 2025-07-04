@@ -62,6 +62,15 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
 
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {
+          // 📡 DIAGNOSTIC: Log RPC row data
+          console.log('📡 RPC row', { 
+            id: item.id,
+            postal_code: item.postal_code, 
+            city: item.city,
+            address: item.address,
+            full_item: item
+          });
+          
           return {
             id: item.id,
             name: item.name,
@@ -130,6 +139,15 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
 
         if (fallbackError) {
           throw fallbackError;
+        }
+
+        // 📡 DIAGNOSTIC: Log fallback data
+        if (fallbackData && fallbackData.length > 0) {
+          console.log('📡 Fallback row', { 
+            postal_code: fallbackData[0].postal_code, 
+            city: fallbackData[0].city,
+            address: fallbackData[0].address
+          });
         }
 
         // Mapper les données de fallback au format Event
