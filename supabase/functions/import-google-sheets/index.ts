@@ -25,6 +25,25 @@ function normalizeDate(input: string | null): string | null {
   return `${year}-${month}-${day}`;
 }
 
+// Supprime les accents et met en minuscule
+function slugify(str: string) {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')   // retire accents
+    .toLowerCase();
+}
+
+// Mapping vers les valeurs autorisées par la contrainte CHECK
+const EVENT_TYPE_ALLOWED = ['salon','conference','congres','convention','ceremonie'];
+
+function normalizeEventType(raw: string | null): string {
+  if (!raw) return 'salon';            // fallback
+  const slug = slugify(raw.trim());
+  if (EVENT_TYPE_ALLOWED.includes(slug)) return slug as typeof EVENT_TYPE_ALLOWED[number];
+  // valeur inconnue -> fallback
+  return 'salon';
+}
+
 interface EventData {
   ID_Event: string;
   nom_event: string;
@@ -216,7 +235,7 @@ serve(async (req) => {
             nom_event: row[eventsHeaders.indexOf('Nom_Event')] || '',
             status_event: row[eventsHeaders.indexOf('Status_Event')] || '',
             ai_certainty: row[eventsHeaders.indexOf('AI_certainty')] || '',
-            type_event: row[eventsHeaders.indexOf('Type_Event')] || '',
+            type_event: normalizeEventType(row[eventsHeaders.indexOf('Type_Event')] || ''),
             date_debut: normalizeDate(row[eventsHeaders.indexOf('Date_debut')] || ''),
             date_fin: normalizeDate(row[eventsHeaders.indexOf('Date_Fin')] || ''),
             date_complete: row[eventsHeaders.indexOf('Date_complète')] || '',
