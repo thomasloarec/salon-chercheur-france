@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,6 +16,9 @@ import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import FavoriteButton from '@/components/FavoriteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvalidateEvents } from '@/hooks/useEvents';
+import { Button } from '@/components/ui/button';
+import { Eye, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Event } from '@/types/event';
 
 const EventPage = () => {
@@ -150,6 +154,34 @@ const EventPage = () => {
     navigate('/events');
   };
 
+  const handlePublish = async () => {
+    if (!event) return;
+
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ visible: true })
+        .eq('id', event.id);
+
+      if (error) throw error;
+
+      toast.success('Événement publié !');
+      
+      // Update local state
+      setEvent({ ...event, visible: true });
+      
+      // Invalidate cache
+      invalidateEvents();
+      
+      // Redirect to normal view
+      navigate(`/events/${event.slug}`, { replace: true });
+      
+    } catch (error) {
+      console.error('Error publishing event:', error);
+      toast.error('Erreur lors de la publication');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -195,6 +227,8 @@ const EventPage = () => {
     );
   }
 
+  const isDraft = !event.visible;
+
   return (
     <>
       <SEOHead event={event} noIndex={isPreview} />
@@ -216,14 +250,40 @@ const EventPage = () => {
               </div>
             )}
             
-            {/* Admin Menu seul */}
-            <section className="flex items-center justify-end">
-              <EventAdminMenu
-                event={event}
-                isAdmin={isAdmin}
-                onEventUpdated={handleEventUpdated}
-                onEventDeleted={handleEventDeleted}
-              />
+            {/* Admin Menu et boutons d'action */}
+            <section className="flex items-center justify-between">
+              <div></div>
+              <div className="flex items-center gap-2">
+                {/* Bouton Site officiel */}
+                {event.event_url && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.open(event.event_url, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Site officiel
+                  </Button>
+                )}
+                
+                {/* Bouton Publier pour les admins sur les brouillons */}
+                {isAdmin && isDraft && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={handlePublish}
+                  >
+                    <Eye className="mr-2 h-4 w-4" /> Publier
+                  </Button>
+                )}
+                
+                <EventAdminMenu
+                  event={event}
+                  isAdmin={isAdmin}
+                  onEventUpdated={handleEventUpdated}
+                  onEventDeleted={handleEventDeleted}
+                />
+              </div>
             </section>
             
             <EventPageHeader event={event} crmProspects={crmProspects} />

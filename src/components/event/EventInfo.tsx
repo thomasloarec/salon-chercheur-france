@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Event } from '@/types/event';
 import CalBtn from '../CalBtn';
+import { formatAddress } from '@/utils/formatAddress';
 
 interface EventInfoProps {
   event: Event;
@@ -44,19 +45,11 @@ export const EventInfo = ({ event }: EventInfoProps) => {
                 </div>
               </div>
             )}
-            {event.address && (
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
-                <div className="text-left">
-                  <dt className="sr-only">Adresse</dt>
-                  <dd className="text-gray-600 text-left">{event.address}</dd>
-                </div>
-              </div>
-            )}
             <div className="flex items-start gap-2">
-              <div className="w-4 h-4 flex-shrink-0"></div>
+              <MapPin className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
               <div className="text-left">
-                <p className="text-gray-600 text-left">{event.city}, {event.country || 'France'}</p>
+                <dt className="sr-only">Adresse</dt>
+                <dd className="text-gray-600 text-left">{formatAddress(event.address, event.postal_code, event.city)}</dd>
               </div>
             </div>
           </dl>

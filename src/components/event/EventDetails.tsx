@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building, Users, Clock } from 'lucide-react';
 import type { Event } from '@/types/event';
+import { formatAddress } from '@/utils/formatAddress';
 
 interface EventDetailsProps {
   event: Event;
@@ -29,19 +30,11 @@ export const EventDetails = ({ event }: EventDetailsProps) => {
                 </div>
               </div>
             )}
-            {event.address && (
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-accent flex-shrink-0 mt-1" />
-                <div className="text-left">
-                  <dt className="sr-only">Adresse</dt>
-                  <dd className="text-left">{event.address}</dd>
-                </div>
-              </div>
-            )}
             <div className="flex items-start gap-2">
-              <div className="w-4 h-4 flex-shrink-0"></div>
+              <MapPin className="h-4 w-4 text-accent flex-shrink-0 mt-1" />
               <div className="text-left">
-                <span className="text-left">{event.city}, {event.country || 'France'}</span>
+                <dt className="sr-only">Adresse</dt>
+                <dd className="text-left">{formatAddress(event.address, event.postal_code, event.city)}</dd>
               </div>
             </div>
           </dl>

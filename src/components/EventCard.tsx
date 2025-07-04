@@ -15,6 +15,7 @@ import { getSectorConfig } from '@/constants/sectors';
 import { cn } from '@/lib/utils';
 import FavoriteButton from './FavoriteButton';
 import { SectorBadge } from '@/components/ui/sector-badge';
+import { formatAddress } from '@/utils/formatAddress';
 
 interface EventCardProps {
   event: Event & { 
@@ -43,7 +44,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
   
-  // Parse sectors with fallback to prevent crashes
+  // Parse sectors with improved error handling
   const eventSectors = React.useMemo(() => {
     if (event.sectors && Array.isArray(event.sectors)) {
       return event.sectors.map(s => s.name || s);
@@ -163,10 +164,10 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             {formatDateRange(event.start_date, event.end_date)}
           </p>
           
-          <div className="flex items-center text-gray-600 text-sm">
-            <MapPin className="h-4 w-4 mr-2 text-accent" />
-            <span className="truncate">{event.city}</span>
-          </div>
+          <p className="text-sm text-gray-500 flex items-center gap-1">
+            <MapPin className="h-4 w-4 shrink-0" />
+            {formatAddress(event.address, event.postal_code, event.city) || '—'}
+          </p>
           
           <CardWrapper>
             <Button 
