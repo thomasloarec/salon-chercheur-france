@@ -204,6 +204,7 @@ serve(async (req) => {
 
     let eventsToInsert: any[] = [];
     let exposantsInserted = 0;
+    const approvedIds = new Set<string>();
 
     // Import events from All_Evenements sheet (if provided)
     if (spreadsheetId1) {
@@ -230,6 +231,12 @@ serve(async (req) => {
 
         for (let i = 1; i < eventsRows.length; i++) {
           const row = eventsRows[i];
+          
+          // Vérifier si l'événement est approuvé
+          const statusRaw = row[eventsHeaders.indexOf('Status_Event')] || '';
+          const isApproved = statusRaw.trim().toLowerCase() === 'approved';
+          if (!isApproved) continue; // on ignore la ligne
+          
           const eventData: any = {
             id: row[eventsHeaders.indexOf('ID_Event')] || '',
             nom_event: row[eventsHeaders.indexOf('Nom_Event')] || '',
@@ -254,8 +261,11 @@ serve(async (req) => {
 
           if (eventData.id) {
             eventsToInsert.push(eventData);
+            approvedIds.add(eventData.id);
           }
         }
+
+        console.log(`Events ignorés (non Approved) : ${eventsRows.length - 1 - eventsToInsert.length}`);
 
         console.log(`Prepared ${eventsToInsert.length} events for insertion`);
 
@@ -354,6 +364,9 @@ serve(async (req) => {
             exposant_website: row[exposantsHeaders.indexOf('exposant_website')] || '',
             exposant_description: row[exposantsHeaders.indexOf('exposant_description')] || ''
           };
+
+          // Ne prendre que les exposants d'un événement Approved
+          if (!approvedIds.has(exposantData.id_event)) continue;
 
           if (exposantData.id_event && exposantData.exposant_nom) {
             exposantsToInsert.push(exposantData);
