@@ -9,6 +9,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info',
 };
 
+// Convertit 'DD/MM/YYYY' ou 'D/M/YY' en 'YYYY-MM-DD'
+function normalizeDate(input: string | null): string | null {
+  if (!input || input.trim() === '') return null;
+  // Si déjà au format YYYY-MM-DD, on renvoie tel quel
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+  // Pattern DD/MM/YYYY
+  const m = input.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (!m) return null; // format inconnu
+  const [ , d, mth, y ] = m;
+  // 2-digit year → 20xx
+  const year = y.length === 2 ? `20${y}` : y.padStart(4,'0');
+  const month = mth.padStart(2,'0');
+  const day   = d.padStart(2,'0');
+  return `${year}-${month}-${day}`;
+}
+
 interface EventData {
   ID_Event: string;
   nom_event: string;
@@ -201,8 +217,8 @@ serve(async (req) => {
             status_event: row[eventsHeaders.indexOf('Status_Event')] || '',
             ai_certainty: row[eventsHeaders.indexOf('AI_certainty')] || '',
             type_event: row[eventsHeaders.indexOf('Type_Event')] || '',
-            date_debut: row[eventsHeaders.indexOf('Date_debut')] || '',
-            date_fin: row[eventsHeaders.indexOf('Date_Fin')] || '',
+            date_debut: normalizeDate(row[eventsHeaders.indexOf('Date_debut')] || ''),
+            date_fin: normalizeDate(row[eventsHeaders.indexOf('Date_Fin')] || ''),
             date_complete: row[eventsHeaders.indexOf('Date_complète')] || '',
             secteur: row[eventsHeaders.indexOf('Secteur')] || '',
             url_image: row[eventsHeaders.indexOf('URL_image')] || '',
@@ -249,17 +265,13 @@ serve(async (req) => {
           // ------- DUPLICATION DANS LA TABLE DE PRODUCTION -------
           // Construction des événements avec gestion des colonnes NOT NULL
           const productionEvents = eventsToInsert.map(ev => {
-            // helpers
-            const safeDate = (d: string | null) =>
-              d && d.trim() !== '' ? d : '1970-01-01';
-
             return {
               id_event: ev.id,                                  // texte
               name: ev.nom_event || 'Sans titre',
               visible: (ev.status_event ?? '').toLowerCase() === 'active',
               event_type: ev.type_event || 'salon',
-              start_date: safeDate(ev.date_debut),
-              end_date: safeDate(ev.date_fin || ev.date_debut),
+              start_date: ev.date_debut || '1970-01-01',
+              end_date: ev.date_fin || ev.date_debut || '1970-01-01',
               sector: ev.secteur || 'Autre',
               location: ev.nom_lieu || 'Non précisé',
               address: ev.rue || null,
