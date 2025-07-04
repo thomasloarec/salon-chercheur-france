@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getSectorConfig } from '@/constants/sectors';
 import { cn } from '@/lib/utils';
 import FavoriteButton from './FavoriteButton';
+import { SectorBadge } from '@/components/ui/sector-badge';
 
 interface EventCardProps {
   event: Event & { 
@@ -45,13 +46,13 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   // Parse sectors with fallback to prevent crashes
   const eventSectors = React.useMemo(() => {
     if (event.sectors && Array.isArray(event.sectors)) {
-      return event.sectors;
+      return event.sectors.map(s => s.name || s);
     }
     
     if (typeof event.sector === 'string') {
       try {
         const parsed = JSON.parse(event.sector);
-        return Array.isArray(parsed) ? parsed : [];
+        return Array.isArray(parsed) ? parsed : [event.sector];
       } catch {
         // If JSON parsing fails, try splitting by comma
         return event.sector.split(',').map(s => s.trim()).filter(Boolean);
@@ -61,93 +62,81 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
     return [];
   }, [event.sectors, event.sector]);
 
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => 
+    adminPreview ? (
+      <Link to={`/events/${eventSlug}?preview=1`} className="block">
+        {children}
+      </Link>
+    ) : (
+      <Link to={`/events/${eventSlug}`} className="block">
+        {children}
+      </Link>
+    );
+
   return (
-    <Card className={cn(
-      "flex flex-col w-full max-w-[272px] overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative event-card group",
-      !event.visible && isAdmin && "bg-gray-100 opacity-50",
-      adminPreview && "border-orange-200"
-    )}>
-      {/* Badge "Brouillon" pour adminPreview */}
-      {adminPreview && (
-        <Badge
-          variant="secondary"
-          className="absolute top-2 left-2 z-10 bg-orange-100 text-orange-800 border-orange-300"
-          title="Événement en attente de publication"
-        >
-          Brouillon
-        </Badge>
-      )}
-
-      {/* Badge "Invisible" pour les événements non visibles en mode admin normal */}
-      {!event.visible && isAdmin && !adminPreview && (
-        <Badge
-          variant="destructive"
-          className="absolute top-2 left-2 z-10"
-          title="Événement invisible"
-        >
-          <EyeOff className="h-4 w-4" />
-        </Badge>
-      )}
-
-      {/* Overlay avec bouton Publier en mode adminPreview */}
-      {adminPreview && onPublish && (
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center">
-          <Button
-            size="sm"
+    <div className="relative group">
+      <Card className={cn(
+        "flex flex-col w-full max-w-[272px] overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative event-card",
+        !event.visible && isAdmin && "bg-gray-100 opacity-50",
+        adminPreview && "border-orange-200"
+      )}>
+        {/* Badge "Brouillon" pour adminPreview */}
+        {adminPreview && (
+          <Badge
             variant="secondary"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onPublish(event.id);
-            }}
-            className="bg-white text-gray-900 hover:bg-gray-100"
+            className="absolute top-2 left-2 z-10 bg-orange-100 text-orange-800 border-orange-300"
+            title="Événement en attente de publication"
           >
-            <Eye className="h-4 w-4 mr-2" />
-            Publier
-          </Button>
-        </div>
-      )}
-      
-      <Link 
-        to={`/events/${eventSlug}${adminPreview ? '?preview=1' : ''}`} 
-        className="block"
-      >
-        <div className="relative w-full event-card__image-wrapper">
-          <img
-            src={event.image_url || '/placeholder.svg'}
-            alt={`Affiche de ${event.name}`}
-            loading="lazy"
-            className="event-card__image"
-          />
-          
-          {/* Bouton favoris */}
-          <FavoriteButton 
-            eventId={event.id} 
-            size="default"
-            variant="overlay"
-          />
-          
-            {/* Affichage des secteurs sur l'image */}
+            Brouillon
+          </Badge>
+        )}
+
+        {/* Badge "Invisible" pour les événements non visibles en mode admin normal */}
+        {!event.visible && isAdmin && !adminPreview && (
+          <Badge
+            variant="destructive"
+            className="absolute top-2 left-2 z-10"
+            title="Événement invisible"
+          >
+            <EyeOff className="h-4 w-4" />
+          </Badge>
+        )}
+        
+        <CardWrapper>
+          <div className="relative w-full event-card__image-wrapper">
+            <img
+              src={event.image_url || '/placeholder.svg'}
+              alt={`Affiche de ${event.name}`}
+              loading="lazy"
+              className="event-card__image"
+            />
+            
+            {/* Bouton favoris */}
+            {!adminPreview && (
+              <FavoriteButton 
+                eventId={event.id} 
+                size="default"
+                variant="overlay"
+              />
+            )}
+            
+            {/* Affichage des secteurs sur l'image avec pastilles couleur */}
             <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
               {eventSectors.length > 0 ? (
                 eventSectors.slice(0, 2).map((sector, index) => (
-                  <Badge 
+                  <SectorBadge 
                     key={`${sector}-${index}`}
-                    variant="secondary"
-                    className="text-xs px-2 py-1 bg-white/90 text-gray-800 shadow-sm"
-                  >
-                    {sector}
-                  </Badge>
+                    label={sector}
+                    className="shadow-sm"
+                  />
                 ))
               ) : (
                 // Fallback vers l'ancien champ sector si c'est une chaîne simple
                 typeof event.sector === 'string' && event.sector && (
-                  <Badge 
-                    variant="secondary"
-                    className="text-xs px-2 py-1 bg-white/90 text-gray-800 shadow-sm"
-                  >
-                    {event.sector}
-                  </Badge>
+                  <SectorBadge 
+                    label={event.sector}
+                    className="shadow-sm"
+                  />
                 )
               )}
               {/* Indicateur s'il y a plus de 2 secteurs */}
@@ -160,36 +149,54 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
                 </Badge>
               )}
             </div>
-        </div>
-      </Link>
-      
-      <CardContent className="flex flex-col gap-1 p-4">
-        <Link to={`/events/${eventSlug}${adminPreview ? '?preview=1' : ''}`}>
-          <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.name}>
-            {event.name}
-          </h3>
-        </Link>
+          </div>
+        </CardWrapper>
         
-        <p className="text-sm text-gray-600">
-          {formatDateRange(event.start_date, event.end_date)}
-        </p>
-        
-        <div className="flex items-center text-gray-600 text-sm">
-          <MapPin className="h-4 w-4 mr-2 text-accent" />
-          <span className="truncate">{event.city}</span>
-        </div>
-        
-        <Link to={`/events/${eventSlug}${adminPreview ? '?preview=1' : ''}`}>
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="w-full mt-4 bg-accent hover:bg-accent/90"
-          >
-            Voir le salon
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
+        <CardContent className="flex flex-col gap-1 p-4">
+          <CardWrapper>
+            <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.name}>
+              {event.name}
+            </h3>
+          </CardWrapper>
+          
+          <p className="text-sm text-gray-600">
+            {formatDateRange(event.start_date, event.end_date)}
+          </p>
+          
+          <div className="flex items-center text-gray-600 text-sm">
+            <MapPin className="h-4 w-4 mr-2 text-accent" />
+            <span className="truncate">{event.city}</span>
+          </div>
+          
+          <CardWrapper>
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="w-full mt-4 bg-accent hover:bg-accent/90"
+            >
+              Voir le salon
+            </Button>
+          </CardWrapper>
+        </CardContent>
+      </Card>
+
+      {/* Bouton Publier flottant pour adminPreview */}
+      {adminPreview && onPublish && (
+        <Button
+          size="sm"
+          variant="secondary"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white text-gray-900 hover:bg-gray-100 shadow-lg"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onPublish(event.id);
+          }}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          Publier
+        </Button>
+      )}
+    </div>
   );
 };
 
