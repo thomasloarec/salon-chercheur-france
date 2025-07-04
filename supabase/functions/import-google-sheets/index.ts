@@ -197,22 +197,24 @@ serve(async (req) => {
           const row = eventsRows[i];
           const eventData: any = {
             id: row[eventsHeaders.indexOf('ID_Event')] || '',
-            nom_event: row[eventsHeaders.indexOf('nom_event')] || '',
-            status_event: row[eventsHeaders.indexOf('status_event')] || '',
-            ai_certainty: row[eventsHeaders.indexOf('ai_certainty')] || '',
-            type_event: row[eventsHeaders.indexOf('type_event')] || '',
-            date_debut: row[eventsHeaders.indexOf('date_debut')] || '',
-            date_fin: row[eventsHeaders.indexOf('date_fin')] || '',
-            date_complete: row[eventsHeaders.indexOf('date_complete')] || '',
-            secteur: row[eventsHeaders.indexOf('secteur')] || '',
-            url_image: row[eventsHeaders.indexOf('url_image')] || '',
-            url_site_officiel: row[eventsHeaders.indexOf('url_site_officiel')] || '',
-            description_event: row[eventsHeaders.indexOf('description_event')] || '',
-            affluence: row[eventsHeaders.indexOf('affluence')] || '',
-            tarifs: row[eventsHeaders.indexOf('tarifs')] || '',
-            nom_lieu: row[eventsHeaders.indexOf('nom_lieu')] || '',
-            adresse: row[eventsHeaders.indexOf('adresse')] || '',
-            chatgpt_prompt: row[eventsHeaders.indexOf('chatgpt_prompt')] || ''
+            nom_event: row[eventsHeaders.indexOf('Nom_Event')] || '',
+            status_event: row[eventsHeaders.indexOf('Status_Event')] || '',
+            ai_certainty: row[eventsHeaders.indexOf('AI_certainty')] || '',
+            type_event: row[eventsHeaders.indexOf('Type_Event')] || '',
+            date_debut: row[eventsHeaders.indexOf('Date_debut')] || '',
+            date_fin: row[eventsHeaders.indexOf('Date_Fin')] || '',
+            date_complete: row[eventsHeaders.indexOf('Date_complète')] || '',
+            secteur: row[eventsHeaders.indexOf('Secteur')] || '',
+            url_image: row[eventsHeaders.indexOf('URL_image')] || '',
+            url_site_officiel: row[eventsHeaders.indexOf('URL_site_officiel')] || '',
+            description_event: row[eventsHeaders.indexOf('Description_Event')] || '',
+            affluence: row[eventsHeaders.indexOf('Affluence')] || '',
+            tarifs: row[eventsHeaders.indexOf('Tarifs')] || '',
+            nom_lieu: row[eventsHeaders.indexOf('Nom_Lieu')] || '',
+            rue: row[eventsHeaders.indexOf('Rue')] || '',
+            postal_code: row[eventsHeaders.indexOf('Code Postal')] || '',
+            ville: row[eventsHeaders.indexOf('Ville')] || '',
+            chatgpt_prompt: row[eventsHeaders.indexOf('ChatGPT_Prompt')] || ''
           };
 
           if (eventData.id) {
@@ -250,11 +252,6 @@ serve(async (req) => {
             // helpers
             const safeDate = (d: string | null) =>
               d && d.trim() !== '' ? d : '1970-01-01';
-            const cityFromAddress = (addr: string) => {
-              // tente d'extraire la dernière "ville" (simple heuristique)
-              const parts = addr?.split(',') ?? [];
-              return parts.length ? parts[parts.length - 1].trim() : 'Inconnue';
-            };
 
             return {
               id_event: ev.id,                                  // texte
@@ -265,8 +262,9 @@ serve(async (req) => {
               end_date: safeDate(ev.date_fin || ev.date_debut),
               sector: ev.secteur || 'Autre',
               location: ev.nom_lieu || 'Non précisé',
-              city: cityFromAddress(ev.adresse),
-              address: ev.adresse || null,
+              address: ev.rue || null,
+              postal_code: ev.postal_code || null,
+              city: ev.ville || 'Inconnue',  // NOT NULL dans le schéma
               image_url: ev.url_image || null,
               website_url: ev.url_site_officiel || null,
               description: ev.description_event || null,
