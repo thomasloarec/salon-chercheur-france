@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -374,6 +374,43 @@ const AdminPage = () => {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Bloc Événements en attente */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-blue-600" />
+                Événements en attente
+              </CardTitle>
+              <CardDescription>
+                {pendingEvents.length} événement(s) à publier
+              </CardDescription>
+              {pendingEvents.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={publishAllDrafts}
+                  className="w-fit"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Publier tous ({pendingEvents.length})
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {pendingEvents.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  Aucun événement en attente de publication
+                </p>
+              ) : (
+                <EventGrid
+                  events={pendingEvents}
+                  adminPreview
+                  onPublish={publishEvent}
+                />
+              )}
             </CardContent>
           </Card>
 
