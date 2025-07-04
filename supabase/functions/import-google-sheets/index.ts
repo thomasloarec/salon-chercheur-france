@@ -318,58 +318,74 @@ serve(async (req) => {
             }
             console.log(`Successfully inserted ${eventsToInsert.length} events`);
 
-            // ------- DUPLICATION DANS LA TABLE DE PRODUCTION -------
-            // Construction des événements avec gestion des colonnes NOT NULL
-            const productionEvents = eventsToInsert.map(ev => {
-              // 🛂 DIAGNOSTIC: Log avant insertion en production
-              console.log('🏭 Production mapping sample', {
-                event_id: ev.id,
-                address: ev.rue || null,
-                postal_code: ev.postal_code || null, 
-                city: ev.ville || 'Inconnue'
-              });
-              
-              return {
-                id_event: ev.id,                                  // texte
-                name: ev.nom_event || 'Sans titre',
-                visible: (ev.status_event ?? '').toLowerCase() === 'active',
-                event_type: ev.type_event || 'salon',
-                start_date: ev.date_debut || '1970-01-01',
-                end_date: ev.date_fin || ev.date_debut || '1970-01-01',
-                sector: ev.secteur || 'Autre',
-                location: ev.nom_lieu || 'Non précisé',
-                address: ev.rue || null,                          // Rue → address
-                postal_code: ev.postal_code || null,              // Code Postal → postal_code
-                city: ev.ville || 'Inconnue',                     // Ville → city
-                image_url: ev.url_image || null,
-                website_url: ev.url_site_officiel || null,
-                description: ev.description_event || null,
-                estimated_visitors: ev.affluence && ev.affluence.trim() !== '' ? Number(ev.affluence) : null,
-                entry_fee: ev.tarifs || null,
-                venue_name: ev.nom_lieu || null,
-                // Supabase générera created_at / updated_at
-              };
-            });
+            // ------- PROMOTION VERS LA TABLE DE PRODUCTION -------
+            console.log('Starting promotion to production events table...');
+            
+            // Lire depuis events_import avec les colonnes address nécessaires
+            const { data: importedEvents, error: selectError } = await supabaseClient
+              .from('events_import')
+              .select('id, nom_event, status_event, type_event, date_debut, date_fin, secteur, url_image, url_site_officiel, description_event, affluence, tarifs, nom_lieu, rue, postal_code, ville')
+              .in('id', eventsToInsert.map(ev => ev.id));
 
-            // TODO: Remove debug log after diagnosis phase
-            console.log(
-              '📤 upsert payload (events)',
-              JSON.stringify(productionEvents[0], null, 2)
-            );
-
-            const { error: prodError } = await supabaseClient
-              .from('events')
-              .upsert(productionEvents, { 
-                onConflict: 'id_event',
-                ignoreDuplicates: false 
-              });
-
-            if (prodError) {
-              console.error('Error upserting production events:', prodError);
-              throw new Error(`Failed to upsert production events: ${prodError.message}`);
+            if (selectError) {
+              console.error('Error selecting from events_import:', selectError);
+              throw new Error(`Failed to select from events_import: ${selectError.message}`);
             }
-            console.log(`Successfully duplicated ${productionEvents.length} events to production table`);
-            console.log(`Inserted/updated ${productionEvents.length} events & ${exposantsInserted} exposants`);
+
+            if (!importedEvents || importedEvents.length === 0) {
+              console.log('No imported events found for promotion');
+            } else {
+              // Construction des événements avec gestion des colonnes NOT NULL
+              const productionEvents = importedEvents.map(ev => {
+                // 🏭 DIAGNOSTIC: Log avant insertion en production
+                console.log('🏭 Production mapping', {
+                  event_id: ev.id,
+                  address: ev.rue || null,
+                  postal_code: ev.postal_code || null, 
+                  city: ev.ville || 'Inconnue'
+                });
+                
+                return {
+                  id_event: ev.id,                                  // texte
+                  name: ev.nom_event || 'Sans titre',
+                  visible: (ev.status_event ?? '').toLowerCase() === 'approved',
+                  event_type: ev.type_event || 'salon',
+                  start_date: ev.date_debut || '1970-01-01',
+                  end_date: ev.date_fin || ev.date_debut || '1970-01-01',
+                  sector: ev.secteur || 'Autre',
+                  location: ev.nom_lieu || 'Non précisé',
+                  address: ev.rue || null,                          // Rue → address
+                  postal_code: ev.postal_code || null,              // Code Postal → postal_code
+                  city: ev.ville || 'Inconnue',                     // Ville → city
+                  image_url: ev.url_image || null,
+                  website_url: ev.url_site_officiel || null,
+                  description: ev.description_event || null,
+                  estimated_visitors: ev.affluence && ev.affluence.trim() !== '' ? Number(ev.affluence) : null,
+                  entry_fee: ev.tarifs || null,
+                  venue_name: ev.nom_lieu || null,
+                  // Supabase générera created_at / updated_at
+                };
+              });
+
+              // TODO: Remove debug log after diagnosis phase
+              console.log(
+                '📤 upsert payload (events prod)',
+                JSON.stringify(productionEvents[0], null, 2)
+              );
+
+              const { error: prodError } = await supabaseClient
+                .from('events')
+                .upsert(productionEvents, { 
+                  onConflict: 'id_event',
+                  ignoreDuplicates: false 
+                });
+
+              if (prodError) {
+                console.error('Error upserting production events:', prodError);
+                throw new Error(`Failed to upsert production events: ${prodError.message}`);
+              }
+              console.log(`Successfully promoted ${productionEvents.length} events to production table`);
+            }
             // ------------------------------------------------------
           }
         }
