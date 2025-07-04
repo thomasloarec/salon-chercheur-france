@@ -30,6 +30,7 @@ export interface Event {
   last_scraped_at?: string;
   scraped_from?: string;
   address?: string;
+  postal_code?: string;
   visible?: boolean;
   slug?: string;
   sectors?: Sector[];
