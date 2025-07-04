@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,8 +42,24 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
   
-  // Use sectors directly from the event object
-  const eventSectors = event.sectors || [];
+  // Parse sectors with fallback to prevent crashes
+  const eventSectors = React.useMemo(() => {
+    if (event.sectors && Array.isArray(event.sectors)) {
+      return event.sectors;
+    }
+    
+    if (typeof event.sector === 'string') {
+      try {
+        const parsed = JSON.parse(event.sector);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        // If JSON parsing fails, try splitting by comma
+        return event.sector.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    }
+    
+    return [];
+  }, [event.sectors, event.sector]);
 
   return (
     <Card className={cn(
@@ -91,7 +108,10 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
         </div>
       )}
       
-      <Link to={`/events/${eventSlug}`} className="block">
+      <Link 
+        to={`/events/${eventSlug}${adminPreview ? '?preview=1' : ''}`} 
+        className="block"
+      >
         <div className="relative w-full event-card__image-wrapper">
           <img
             src={event.image_url || '/placeholder.svg'}
@@ -107,47 +127,44 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             variant="overlay"
           />
           
-          {/* Affichage des secteurs sur l'image */}
-          <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
-            {eventSectors.length > 0 ? (
-              eventSectors.slice(0, 2).map((sector) => {
-                const config = getSectorConfig(sector.name);
-                return (
+            {/* Affichage des secteurs sur l'image */}
+            <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
+              {eventSectors.length > 0 ? (
+                eventSectors.slice(0, 2).map((sector, index) => (
                   <Badge 
-                    key={sector.id}
+                    key={`${sector}-${index}`}
                     variant="secondary"
-                    className={`text-xs px-2 py-1 ${config.color} shadow-sm`}
+                    className="text-xs px-2 py-1 bg-white/90 text-gray-800 shadow-sm"
                   >
-                    {sector.name}
+                    {sector}
                   </Badge>
-                );
-              })
-            ) : (
-              // Fallback vers l'ancien champ sector
-              event.sector && (
+                ))
+              ) : (
+                // Fallback vers l'ancien champ sector si c'est une chaîne simple
+                typeof event.sector === 'string' && event.sector && (
+                  <Badge 
+                    variant="secondary"
+                    className="text-xs px-2 py-1 bg-white/90 text-gray-800 shadow-sm"
+                  >
+                    {event.sector}
+                  </Badge>
+                )
+              )}
+              {/* Indicateur s'il y a plus de 2 secteurs */}
+              {eventSectors.length > 2 && (
                 <Badge 
                   variant="secondary"
-                  className="text-xs px-2 py-1 shadow-sm"
+                  className="text-xs px-2 py-1 bg-gray-500 text-white shadow-sm"
                 >
-                  {event.sector}
+                  +{eventSectors.length - 2}
                 </Badge>
-              )
-            )}
-            {/* Indicateur s'il y a plus de 2 secteurs */}
-            {eventSectors.length > 2 && (
-              <Badge 
-                variant="secondary"
-                className="text-xs px-2 py-1 bg-gray-500 text-white shadow-sm"
-              >
-                +{eventSectors.length - 2}
-              </Badge>
-            )}
-          </div>
+              )}
+            </div>
         </div>
       </Link>
       
       <CardContent className="flex flex-col gap-1 p-4">
-        <Link to={`/events/${eventSlug}`}>
+        <Link to={`/events/${eventSlug}${adminPreview ? '?preview=1' : ''}`}>
           <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.name}>
             {event.name}
           </h3>
@@ -162,7 +179,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
           <span className="truncate">{event.city}</span>
         </div>
         
-        <Link to={`/events/${eventSlug}`}>
+        <Link to={`/events/${eventSlug}${adminPreview ? '?preview=1' : ''}`}>
           <Button 
             variant="default" 
             size="sm" 

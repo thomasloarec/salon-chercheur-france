@@ -6,9 +6,10 @@ import type { Event } from '@/types/event';
 
 interface SEOHeadProps {
   event: Event;
+  noIndex?: boolean;
 }
 
-export const SEOHead = ({ event }: SEOHeadProps) => {
+export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
   const formatDateShort = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
   };
@@ -60,6 +61,7 @@ export const SEOHead = ({ event }: SEOHeadProps) => {
     <Helmet>
       <title>{title}</title>
       <meta name="description" content={description} />
+      {noIndex && <meta name="robots" content="noindex, nofollow" />}
       
       {/* Open Graph */}
       <meta property="og:title" content={title} />

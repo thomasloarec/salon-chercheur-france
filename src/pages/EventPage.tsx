@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,8 @@ const EventPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.get('preview') === '1';
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
   const [event, setEvent] = useState<Event | null>(null);
@@ -195,12 +197,25 @@ const EventPage = () => {
 
   return (
     <>
-      <SEOHead event={event} />
+      <SEOHead event={event} noIndex={isPreview} />
       <div className="min-h-screen bg-gray-50">
         <Header />
         
         <main className="py-8">
           <div className="max-w-7xl mx-auto px-4 space-y-8">
+            {/* Preview notice */}
+            {isPreview && (
+              <div className="bg-orange-100 border-l-4 border-orange-500 p-4 rounded">
+                <div className="flex items-center">
+                  <div className="ml-3">
+                    <p className="text-sm text-orange-700">
+                      <strong>Mode aperçu:</strong> Cet événement n'est pas encore publié et n'est visible que par les administrateurs.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Admin Menu seul */}
             <section className="flex items-center justify-end">
               <EventAdminMenu
