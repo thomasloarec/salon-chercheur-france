@@ -20,8 +20,12 @@ import {
   Building,
   ExternalLink,
   Image,
-  Users
+  Users,
+  Eye,
+  CheckCircle
 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import EventGrid from '@/components/EventGrid';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -39,6 +43,7 @@ const AdminPage = () => {
     eventsWithoutUrl: [],
     eventsWithoutImage: []
   });
+  const [pendingEvents, setPendingEvents] = useState([]);
 
   useEffect(() => {
     checkAuth();
@@ -48,6 +53,7 @@ const AdminPage = () => {
     if (isAdmin) {
       loadStats();
       loadQualityIssues();
+      loadPendingEvents();
     }
   }, [isAdmin]);
 
@@ -139,6 +145,48 @@ const AdminPage = () => {
       });
     } catch (error) {
       console.error('Erreur lors du chargement des problèmes de qualité:', error);
+    }
+  };
+
+  const loadPendingEvents = async () => {
+    try {
+      const { data } = await supabase
+        .from('events')
+        .select('*')
+        .eq('visible', false)
+        .order('start_date');
+      
+      setPendingEvents(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des événements en attente:', error);
+    }
+  };
+
+  const publishEvent = async (eventId: string) => {
+    try {
+      await supabase
+        .from('events')
+        .update({ visible: true })
+        .eq('id', eventId);
+      
+      toast({ title: "Événement publié avec succès!" });
+      loadPendingEvents();
+    } catch (error) {
+      toast({ title: "Erreur lors de la publication", variant: "destructive" });
+    }
+  };
+
+  const publishAllDrafts = async () => {
+    try {
+      await supabase
+        .from('events')
+        .update({ visible: true })
+        .eq('visible', false);
+      
+      toast({ title: `${pendingEvents.length} événements publiés!` });
+      loadPendingEvents();
+    } catch (error) {
+      toast({ title: "Erreur lors de la publication groupée", variant: "destructive" });
     }
   };
 

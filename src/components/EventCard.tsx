@@ -2,7 +2,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin, EyeOff } from 'lucide-react';
+import { CalendarDays, MapPin, EyeOff, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import { format } from 'date-fns';
@@ -22,6 +22,8 @@ interface EventCardProps {
     slug?: string;
   };
   view?: 'grid';
+  adminPreview?: boolean;
+  onPublish?: (eventId: string) => void;
 }
 
 // Utility function for date formatting
@@ -32,7 +34,7 @@ function formatDateRange(start: string, end: string) {
   return start === end ? sd : `${sd} – ${ed}`;
 }
 
-const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
+const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: EventCardProps) => {
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@salonspro.com';
 
@@ -44,10 +46,23 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
 
   return (
     <Card className={cn(
-      "flex flex-col w-full max-w-[272px] overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative event-card",
-      !event.visible && isAdmin && "bg-gray-100 opacity-50"
+      "flex flex-col w-full max-w-[272px] overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative event-card group",
+      !event.visible && isAdmin && "bg-gray-100 opacity-50",
+      adminPreview && "border-orange-200"
     )}>
-      {!event.visible && isAdmin && (
+      {/* Badge "Brouillon" pour adminPreview */}
+      {adminPreview && (
+        <Badge
+          variant="secondary"
+          className="absolute top-2 left-2 z-10 bg-orange-100 text-orange-800 border-orange-300"
+          title="Événement en attente de publication"
+        >
+          Brouillon
+        </Badge>
+      )}
+
+      {/* Badge "Invisible" pour les événements non visibles en mode admin normal */}
+      {!event.visible && isAdmin && !adminPreview && (
         <Badge
           variant="destructive"
           className="absolute top-2 left-2 z-10"
@@ -55,6 +70,25 @@ const EventCard = ({ event, view = 'grid' }: EventCardProps) => {
         >
           <EyeOff className="h-4 w-4" />
         </Badge>
+      )}
+
+      {/* Overlay avec bouton Publier en mode adminPreview */}
+      {adminPreview && onPublish && (
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onPublish(event.id);
+            }}
+            className="bg-white text-gray-900 hover:bg-gray-100"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Publier
+          </Button>
+        </div>
       )}
       
       <Link to={`/events/${eventSlug}`} className="block">
