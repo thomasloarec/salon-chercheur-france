@@ -359,7 +359,10 @@ serve(async (req) => {
 
             const { error: prodError } = await supabaseClient
               .from('events')
-              .upsert(productionEvents, { onConflict: 'id_event' });
+              .upsert(productionEvents, { 
+                onConflict: 'id_event',
+                ignoreDuplicates: false 
+              });
 
             if (prodError) {
               console.error('Error upserting production events:', prodError);

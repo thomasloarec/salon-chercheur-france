@@ -117,7 +117,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         // Fallback vers une requête normale si la RPC échoue
         let query = supabase
           .from('events')
-          .select('*, postal_code')
+          .select('*, address, postal_code, city')
           .eq('visible', true)
           .gte('start_date', new Date().toISOString().slice(0, 10))
           .order('start_date', { ascending: true });
