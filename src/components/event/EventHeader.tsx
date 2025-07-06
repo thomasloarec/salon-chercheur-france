@@ -75,10 +75,10 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
             <CalBtn type="outlook" event={event} />
           </div>
           
-          {event.event_url && (
+          {event.website_url && (
             <Button 
               variant="outline"
-              onClick={() => window.open(event.event_url, '_blank')}
+              onClick={() => window.open(event.website_url, '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Site officiel

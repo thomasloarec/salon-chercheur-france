@@ -17,6 +17,7 @@ export interface Event {
   country?: string;
   venue_name?: string;
   event_url?: string;
+  website_url?: string;
   image_url?: string;
   tags?: string[];
   organizer_name?: string;

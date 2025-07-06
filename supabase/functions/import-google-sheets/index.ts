@@ -354,12 +354,12 @@ serve(async (req) => {
                   end_date: ev.date_fin || ev.date_debut || '1970-01-01',
                   sector: ev.secteur || 'Autre',
                   location: ev.nom_lieu || 'Non précisé',
-                  address: ev.rue || null,                          // Rue → address
-                  postal_code: ev.postal_code || null,              // Code Postal → postal_code
-                  city: ev.ville || 'Inconnue',                     // Ville → city
+                  address: ev.rue || null,                          // Rue → address (CORRECTED)
+                  postal_code: ev.postal_code || null,              // Code Postal → postal_code (CORRECTED)
+                  city: ev.ville || 'Inconnue',                     // Ville → city (CORRECTED)
                   country: 'France',
                   image_url: ev.url_image || null,
-                  website_url: ev.url_site_officiel || null,
+                  website_url: ev.url_site_officiel || null,        // URL_site_officiel → website_url (CORRECTED)
                   description: ev.description_event || null,
                   estimated_visitors: ev.affluence && ev.affluence.trim() !== '' ? Number(ev.affluence) : null,
                   entry_fee: ev.tarifs || null,
@@ -368,7 +368,7 @@ serve(async (req) => {
                 };
               });
 
-              // TODO: Remove debug log after diagnosis phase
+              // 📤 Log du premier enregistrement pour confirmer postal_code et city
               console.log(
                 '📤 upsert payload (events prod)',
                 JSON.stringify(productionEvents[0], null, 2)
