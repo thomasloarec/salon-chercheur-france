@@ -37,6 +37,7 @@ CREATE OR REPLACE FUNCTION public.search_events(
   last_scraped_at timestamp with time zone,
   scraped_from text,
   address text,
+  postal_code text,
   visible boolean,
   slug text,
   total_count bigint
@@ -83,12 +84,12 @@ BEGIN
   -- Compter le total
   EXECUTE 'SELECT COUNT(*) ' || base_query INTO total_events;
   
-  -- Retourner les résultats paginés avec le total (sans alias e.*)
+  -- Retourner les résultats paginés avec le total (inclut postal_code)
   RETURN QUERY EXECUTE format('
     SELECT e.id, e.name, e.description, e.start_date, e.end_date, e.sector, e.location, e.city, e.region, e.country,
            e.venue_name, e.event_url, e.image_url, e.tags, e.organizer_name, e.organizer_contact, e.entry_fee,
            e.estimated_visitors, e.estimated_exhibitors, e.is_b2b, e.event_type, e.created_at, e.updated_at,
-           e.last_scraped_at, e.scraped_from, e.address, e.visible, e.slug, %L::bigint as total_count
+           e.last_scraped_at, e.scraped_from, e.address, e.postal_code, e.visible, e.slug, %L::bigint as total_count
     %s 
     ORDER BY e.start_date ASC 
     LIMIT %L OFFSET %L',

@@ -62,6 +62,11 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           throw error;
         }
 
+        // Log de contrôle temporaire
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🪝 events sample →', data?.[0]?.address, data?.[0]?.postal_code, data?.[0]?.city);
+        }
+
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {
           // 📡 DIAGNOSTIC: Log RPC row data
@@ -155,6 +160,11 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
 
         if (fallbackError) {
           throw fallbackError;
+        }
+
+        // Log de contrôle temporaire pour le fallback
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🪝 fallback events sample →', fallbackData?.[0]?.address, fallbackData?.[0]?.postal_code, fallbackData?.[0]?.city);
         }
 
         // 📡 DIAGNOSTIC: Log fallback data
