@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EventExhibitors } from './EventExhibitors';
@@ -118,8 +117,8 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     );
   }
 
-  // Slice selon showAll
-  const toDisplay = showAll ? exhibitors : exhibitors.slice(0, 7);
+  // Slice selon showAll - changed from 7 to 9
+  const toDisplay = showAll ? exhibitors : exhibitors.slice(0, 9);
 
   return (
     <div className="bg-white rounded-lg border p-6 space-y-4">
@@ -144,13 +143,13 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         ))}
       </div>
 
-      {exhibitors.length > 7 && (
+      {exhibitors.length > 9 && (
         <div className="text-center">
           <Button
             variant="outline"
             onClick={() => setShowAll(prev => !prev)}
           >
-            {showAll ? 'Voir moins' : `Afficher tout (${exhibitors.length})`}
+            {showAll ? 'Voir moins' : 'Afficher tout'}
           </Button>
         </div>
       )}
