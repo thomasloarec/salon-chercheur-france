@@ -38,8 +38,10 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         params.location_value = filters.locationSuggestion.value;
       }
 
-      // Ajouter les autres filtres
-      if (filters?.sectorIds && filters.sectorIds.length > 0) {
+      // Ajouter les filtres secteurs - utiliser les noms des secteurs directement
+      if (filters?.sectors && filters.sectors.length > 0) {
+        params.sector_ids = filters.sectors;
+      } else if (filters?.sectorIds && filters.sectorIds.length > 0) {
         params.sector_ids = filters.sectorIds;
       }
 
@@ -132,6 +134,12 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           } else if (type === 'text') {
             query = query.or(`city.ilike.%${value}%,region.ilike.%${value}%,location.ilike.%${value}%`);
           }
+        }
+
+        // Filtrage par secteur en fallback
+        if (filters?.sectors && filters.sectors.length > 0) {
+          const sectorFilter = filters.sectors.map(sector => `sector.ilike.%${sector}%`).join(',');
+          query = query.or(sectorFilter);
         }
 
         const { data: fallbackData, error: fallbackError } = await query

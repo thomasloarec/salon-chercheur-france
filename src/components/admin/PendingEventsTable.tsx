@@ -3,16 +3,8 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Trash2, CheckCircle } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,16 +16,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-
-interface PendingEvent {
-  id: string;
-  name: string;
-  start_date: string;
-  end_date: string;
-  city: string;
-  sector: string;
-  event_type: string;
-}
+import EventGrid from '@/components/EventGrid';
+import type { Event } from '@/types/event';
 
 export const PendingEventsTable = () => {
   const { toast } = useToast();
@@ -46,12 +30,12 @@ export const PendingEventsTable = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, name, start_date, end_date, city, sector, event_type')
+        .select('*, address, postal_code, city')
         .eq('visible', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as PendingEvent[];
+      return data as Event[];
     },
   });
 
@@ -128,7 +112,7 @@ export const PendingEventsTable = () => {
 
   return (
     <div className="bg-card rounded-lg border p-6">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold">
           Événements en attente de publication ({pendingEvents.length})
         </h3>
@@ -156,43 +140,11 @@ export const PendingEventsTable = () => {
         </AlertDialog>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Événement</TableHead>
-            <TableHead>Dates</TableHead>
-            <TableHead>Lieu</TableHead>
-            <TableHead>Secteur</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {pendingEvents.map((event) => (
-            <TableRow key={event.id}>
-              <TableCell className="font-medium">{event.name}</TableCell>
-              <TableCell>
-                {new Date(event.start_date).toLocaleDateString('fr-FR')} - {new Date(event.end_date).toLocaleDateString('fr-FR')}
-              </TableCell>
-              <TableCell>{event.city}</TableCell>
-              <TableCell>{event.sector}</TableCell>
-              <TableCell className="capitalize">{event.event_type}</TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => publishEvent(event.id)}
-                    disabled={publishingId === event.id}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    {publishingId === event.id ? 'Publication...' : 'Publier'}
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <EventGrid 
+        events={pendingEvents}
+        adminPreview={true}
+        onPublish={publishEvent}
+      />
     </div>
   );
 };
