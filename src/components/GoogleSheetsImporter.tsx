@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,14 +81,21 @@ const GoogleSheetsImporter = () => {
     }
 
     setLogs('Import en cours…');
+    
+    // 📤 Construction du payload avec diagnostic
+    const payload = { 
+      spreadsheetId1: eventSheetId, 
+      sheetName1, 
+      spreadsheetId2: exposantSheetId,  // 🔧 Correction : utilise exposantSheetId
+      sheetName2 
+    };
+    
+    // 📤 Log de diagnostic avant envoi
+    console.log('📤 payload import', payload);
+    
     try {
       const { data, error } = await supabase.functions.invoke('import-google-sheets', {
-        body: { 
-          spreadsheetId1: eventSheetId, 
-          sheetName1, 
-          spreadsheetId2: exposantSheetId, 
-          sheetName2 
-        }
+        body: payload
       });
 
       if (error) {
