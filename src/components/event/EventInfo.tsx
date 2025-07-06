@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin, Users, ExternalLink, Building } from 'lucide-react';
@@ -78,25 +77,21 @@ export const EventInfo = ({ event }: EventInfoProps) => {
 
         <div className="border-t pt-4">
           <h4 className="font-medium text-gray-900 mb-2 text-left">Ajouter au calendrier</h4>
-          <div className="flex gap-2 justify-start">
+          <div className="flex flex-wrap items-center gap-2">
             <CalBtn type="gcal" event={event} />
             <CalBtn type="outlook" event={event} />
+            {official && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open(official, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Site officiel
+              </Button>
+            )}
           </div>
         </div>
-
-        {official && (
-          <div className="border-t pt-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-left justify-start"
-              onClick={() => window.open(official, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Site officiel de l'événement
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

@@ -1,8 +1,7 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarDays, MapPin, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { CalendarDays, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import CalBtn from '@/components/CalBtn';
 import { useEventSectors } from '@/hooks/useSectors';
@@ -19,8 +18,6 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
-
-  const official = event.website_url || event.event_url;
 
   return (
     <header className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -76,16 +73,6 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
             <CalBtn type="gcal" event={event} />
             <CalBtn type="outlook" event={event} />
           </div>
-          
-          {official && (
-            <Button 
-              variant="outline"
-              onClick={() => window.open(official, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Site officiel
-            </Button>
-          )}
         </div>
       </div>
     </header>

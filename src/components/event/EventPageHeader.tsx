@@ -97,26 +97,24 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
             <div className="flex flex-wrap gap-3 items-center">
               {/* Boutons calendrier avec texte explicatif */}
               <div className="flex flex-col">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <CalBtn type="gcal" event={event} crmProspects={crmProspects} />
                   <CalBtn type="outlook" event={event} crmProspects={crmProspects} />
+                  {official && (
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(official, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Site officiel
+                    </Button>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   Ajoutez cet événement à votre agenda en un clic.
                 </p>
               </div>
-              
-              {/* Bouton site officiel */}
-              {official && (
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(official, '_blank')}
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Site officiel
-                </Button>
-              )}
             </div>
           </div>
         </div>
