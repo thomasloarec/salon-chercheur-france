@@ -70,6 +70,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             postal_code: item.postal_code, 
             city: item.city,
             address: item.address,
+            visible: item.visible,
             full_item: item
           });
           
@@ -120,7 +121,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         let query = supabase
           .from('events')
           .select('*, address, postal_code, city')
-          .eq('visible', true)
+          .eq('visible', true) // IMPORTANT: ne charger que les événements visibles
           .gte('start_date', new Date().toISOString().slice(0, 10))
           .order('start_date', { ascending: true });
 
@@ -154,7 +155,8 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           console.log('📡 Fallback row', { 
             postal_code: fallbackData[0].postal_code, 
             city: fallbackData[0].city,
-            address: fallbackData[0].address
+            address: fallbackData[0].address,
+            visible: fallbackData[0].visible
           });
         }
 

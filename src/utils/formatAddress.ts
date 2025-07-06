@@ -11,27 +11,28 @@ export function formatAddress(
     city: city
   });
 
-  // Construire l'adresse complète en priorité
+  // Construire l'adresse complète en évitant les doublons
   const parts: string[] = [];
   
   if (address && address.trim()) {
     parts.push(address.trim());
   }
   
-  // Ajouter code postal et ville ensemble s'ils existent
-  const locationParts: string[] = [];
   if (postal_code && postal_code.trim()) {
-    locationParts.push(postal_code.trim());
-  }
-  if (city && city.trim()) {
-    locationParts.push(city.trim());
+    parts.push(postal_code.trim());
   }
   
-  if (locationParts.length > 0) {
-    parts.push(locationParts.join(' '));
+  if (city && city.trim()) {
+    parts.push(city.trim());
   }
 
-  const result = parts.join(', ');
+  // Filtrer les doublons (comparaison case-insensitive)
+  const uniqueParts = parts.filter((part, index, array) => {
+    const lowerPart = part.toLowerCase();
+    return array.findIndex(p => p.toLowerCase() === lowerPart) === index;
+  });
+
+  const result = uniqueParts.join(', ');
   console.log('🏠 formatAddress result:', result);
   
   return result || '—';

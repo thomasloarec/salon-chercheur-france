@@ -25,6 +25,7 @@ export const useEvents = (filters?: SearchFilters) => {
           )
         `);
 
+      // IMPORTANT: Filtrer par visibilité sauf pour les admins
       if (!isAdmin) {
         query = query.eq('visible', true);
       }

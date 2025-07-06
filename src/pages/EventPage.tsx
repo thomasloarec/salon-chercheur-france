@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Event } from '@/types/event';
+import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
 
 const EventPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -56,7 +56,8 @@ const EventPage = () => {
         `)
         .eq('slug', slug);
 
-      if (!isAdmin) {
+      // IMPORTANT: Pour les non-admins, ne charger que les événements visibles
+      if (!isAdmin && !isPreview) {
         query = query.eq('visible', true);
       }
 
@@ -89,15 +90,6 @@ const EventPage = () => {
       } as Event;
       
       setEvent(typedEvent);
-
-      // Mock exhibitors data for now
-      const mockExhibitors = [
-        { name: 'Entreprise A', stand: 'A12', website: 'entreprise-a.com' },
-        { name: 'Entreprise B', stand: 'B15', website: 'entreprise-b.com' },
-        { name: 'Entreprise C', stand: 'C08', website: 'entreprise-c.com' },
-      ];
-
-      setExhibitors(mockExhibitors);
 
       // Mock CRM prospects data (these would be matched from actual CRM in real implementation)
       const mockCrmProspects = [
@@ -292,7 +284,7 @@ const EventPage = () => {
               {/* Colonne principale */}
               <div className="lg:col-span-2 space-y-8">
                 <EventAbout event={event} />
-                <EventExhibitors exhibitors={exhibitors} />
+                <EventExhibitorsSection event={event} />
               </div>
 
               {/* Sidebar */}
