@@ -1,4 +1,5 @@
 
+
 export function formatAddress(
   address?: string | null,
   postal_code?: string | null,
@@ -11,15 +12,27 @@ export function formatAddress(
     city: city
   });
 
-  // Construire l'adresse complète en évitant les doublons
-  const parts = [address, postal_code, city]
-    .filter(Boolean)
-    .map(part => part?.trim())
-    .filter(Boolean)
-    .filter((value, index, array) => array.indexOf(value) === index); // Supprime les doublons
+  const parts: string[] = [];
+  
+  if (address) {
+    parts.push(address.trim());
+  }
 
-  const result = parts.join(', ');
+  if (postal_code && city) {
+    parts.push(`${postal_code.trim()} ${city.trim()}`);
+  } else {
+    if (postal_code) parts.push(postal_code.trim());
+    if (city) parts.push(city.trim());
+  }
+
+  // Supprime les doublons
+  const uniqueParts = parts.filter(
+    (value, idx, arr) => arr.indexOf(value) === idx
+  );
+
+  const result = uniqueParts.join(', ');
   console.log('🏠 formatAddress result:', result);
   
   return result || '—';
 }
+
