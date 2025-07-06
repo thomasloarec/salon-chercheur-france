@@ -26,13 +26,13 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
       }
 
       try {
-        // First try to find exhibitors using id_event from events_import table
+        // Fetch exposants sans aucune condition de filtrage sur le statut
         let { data, error } = await supabase
           .from('exposants')
           .select('*')
           .eq('id_event', event.id_event || event.id);
 
-        // If no results and we have id_event, try with the main event id
+        // Si pas de résultats avec id_event, essayer avec l'id principal
         if ((!data || data.length === 0) && event.id_event) {
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('exposants')
