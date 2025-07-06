@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -454,33 +453,25 @@ serve(async (req) => {
           for (let i = 1; i < exposantsRows.length; i++) {
             const row = exposantsRows[i];
             const exposantData: any = {
-              id_event: row[findHeader(exposantsHeaders, 'ID_Event')] || '',
-              exposant_nom: row[findHeader(exposantsHeaders, 'exposant_nom')] || '',
-              exposant_stand: row[findHeader(exposantsHeaders, 'exposant_stand')] || '',
-              exposant_website: row[findHeader(exposantsHeaders, 'exposant_website')] || '',
-              exposant_description: row[findHeader(exposantsHeaders, 'exposant_description')] || ''
+              id_event: row[findHeader(exposantsHeaders, 'ID_Event')]?.trim() || '',
+              exposant_nom: row[findHeader(exposantsHeaders, 'exposant_nom')]?.trim() || '',
+              exposant_stand: row[findHeader(exposantsHeaders, 'exposant_stand')]?.trim() || '',
+              exposant_website: row[findHeader(exposantsHeaders, 'exposant_website')]?.trim() || '',
+              exposant_description: row[findHeader(exposantsHeaders, 'exposant_description')]?.trim() || ''
             };
 
-            // Ne prendre que les exposants d'un événement Approved
-            if (!approvedIds.has(exposantData.id_event)) continue;
-
-            if (exposantData.id_event && exposantData.exposant_nom) {
+            // ➜ Ne garde que le contrôle « nom rempli »
+            if (exposantData.exposant_nom !== '') {
               exposantsToInsert.push(exposantData);
             }
           }
 
           // 🧩 DIAGNOSTIC: Log prepared data
-          console.log('🧩 Prepared', exposantsToInsert.length, 'exposants');
-          console.log('🧩 First expo to insert (after case-insensitive mapping)', exposantsToInsert[0]);
+          console.log(`🧩 Will insert ${exposantsToInsert.length} exposants`);
+          console.log('🧩 Sample expo', exposantsToInsert[0]);
 
           // Insert exposants into Supabase
           if (exposantsToInsert.length > 0) {
-            // TODO: Remove debug log after diagnosis phase
-            console.log(
-              '📤 upsert payload (exposants)',
-              JSON.stringify(exposantsToInsert[0], null, 2)
-            );
-
             const { error: exposantsError } = await supabaseClient
               .from('exposants')
               .insert(exposantsToInsert);
