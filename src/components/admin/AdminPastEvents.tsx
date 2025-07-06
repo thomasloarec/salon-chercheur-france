@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +23,7 @@ export const AdminPastEvents = () => {
       const today = new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from('events')
-        .select('id, id_event, name, start_date, end_date, city, visible')
+        .select('id, id_event, slug, name, start_date, end_date, city, visible')
         .lt('end_date', today)
         .order('end_date', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -64,8 +65,18 @@ export const AdminPastEvents = () => {
             </TableHeader>
             <TableBody>
               {pastEvents?.map((event) => (
-                <TableRow key={event.id}>
-                  <TableCell className="font-medium">{event.name}</TableCell>
+                <TableRow 
+                  key={event.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                >
+                  <TableCell className="font-medium">
+                    <Link 
+                      to={`/events/${event.slug || event.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {event.name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{event.city}</TableCell>
                   <TableCell>
                     {new Date(event.start_date).toLocaleDateString('fr-FR')}
