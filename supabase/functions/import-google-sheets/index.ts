@@ -418,6 +418,10 @@ serve(async (req) => {
           const exposantsHeaders = exposantsRows[0];
           const exposantsToInsert: any[] = [];
 
+          // 🧩 DIAGNOSTIC: Log headers and first raw row
+          console.log('🧩 Expo headers', exposantsHeaders);
+          console.log('🧩 First expo raw row', exposantsRows[1]);
+
           for (let i = 1; i < exposantsRows.length; i++) {
             const row = exposantsRows[i];
             const exposantData: any = {
@@ -436,7 +440,9 @@ serve(async (req) => {
             }
           }
 
-          console.log(`Prepared ${exposantsToInsert.length} exposants for insertion`);
+          // 🧩 DIAGNOSTIC: Log prepared data
+          console.log('🧩 Prepared', exposantsToInsert.length, 'exposants');
+          console.log('🧩 First expo to insert', exposantsToInsert[0]);
 
           // Insert exposants into Supabase
           if (exposantsToInsert.length > 0) {
@@ -451,7 +457,7 @@ serve(async (req) => {
               .insert(exposantsToInsert);
 
             if (exposantsError) {
-              console.error('Error inserting exposants:', exposantsError);
+              console.error('❌ Expo insert error', exposantsError.details || exposantsError.message);
               throw new Error(`Failed to insert exposants: ${exposantsError.message}`);
             }
             console.log(`Successfully inserted ${exposantsToInsert.length} exposants`);
