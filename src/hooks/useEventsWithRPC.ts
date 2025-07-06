@@ -92,6 +92,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             country: item.country,
             venue_name: item.venue_name,
             event_url: item.event_url,
+            website_url: item.website_url,
             image_url: item.image_url,
             tags: item.tags,
             organizer_name: item.organizer_name,
@@ -125,7 +126,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         // Fallback vers une requête normale si la RPC échoue
         let query = supabase
           .from('events')
-          .select('*, address, postal_code, city')
+          .select('*, address, postal_code, city, website_url')
           .eq('visible', true) // IMPORTANT: ne charger que les événements visibles
           .gte('start_date', new Date().toISOString().slice(0, 10))
           .order('start_date', { ascending: true });
@@ -192,6 +193,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             country: item.country,
             venue_name: item.venue_name,
             event_url: item.event_url,
+            website_url: item.website_url,
             image_url: item.image_url,
             tags: item.tags,
             organizer_name: item.organizer_name,

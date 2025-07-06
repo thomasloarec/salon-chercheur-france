@@ -16,12 +16,11 @@ interface EventHeaderProps {
 export const EventHeader = ({ event }: EventHeaderProps) => {
   const { data: eventSectors = [] } = useEventSectors(event.id);
 
-  // 🔗 Log de diagnostic temporaire
-  console.log('🔗 event urls', event.event_url, event.website_url);
-
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
+
+  const official = event.website_url || event.event_url;
 
   return (
     <header className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -78,10 +77,10 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
             <CalBtn type="outlook" event={event} />
           </div>
           
-          {event.website_url && (
+          {official && (
             <Button 
               variant="outline"
-              onClick={() => window.open(event.website_url, '_blank')}
+              onClick={() => window.open(official, '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Site officiel

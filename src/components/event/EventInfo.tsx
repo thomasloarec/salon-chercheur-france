@@ -17,6 +17,8 @@ export const EventInfo = ({ event }: EventInfoProps) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
 
+  const official = event.website_url || event.event_url;
+
   return (
     <Card className="text-left">
       <CardHeader>
@@ -82,13 +84,13 @@ export const EventInfo = ({ event }: EventInfoProps) => {
           </div>
         </div>
 
-        {event.event_url && (
+        {official && (
           <div className="border-t pt-4">
             <Button 
               variant="outline" 
               size="sm" 
               className="w-full text-left justify-start"
-              onClick={() => window.open(event.event_url, '_blank')}
+              onClick={() => window.open(official, '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Site officiel de l'événement

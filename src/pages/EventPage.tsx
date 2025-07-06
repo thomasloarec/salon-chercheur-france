@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -220,6 +221,7 @@ const EventPage = () => {
   }
 
   const isDraft = !event.visible;
+  const official = event.website_url || event.event_url;
 
   return (
     <>
@@ -247,11 +249,11 @@ const EventPage = () => {
               <div></div>
               <div className="flex items-center gap-2">
                 {/* Bouton Site officiel */}
-                {event.event_url && (
+                {official && (
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => window.open(event.event_url, '_blank')}
+                    onClick={() => window.open(official, '_blank')}
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Site officiel
