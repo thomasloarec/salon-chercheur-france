@@ -452,23 +452,33 @@ serve(async (req) => {
 
           for (let i = 1; i < exposantsRows.length; i++) {
             const row = exposantsRows[i];
-            const exposantData: any = {
-              id_event: row[findHeader(exposantsHeaders, 'ID_Event')]?.trim() || '',
-              exposant_nom: row[findHeader(exposantsHeaders, 'exposant_nom')]?.trim() || '',
-              exposant_stand: row[findHeader(exposantsHeaders, 'exposant_stand')]?.trim() || '',
-              exposant_website: row[findHeader(exposantsHeaders, 'exposant_website')]?.trim() || '',
+
+            const exposantData = {
+              id_event:             row[findHeader(exposantsHeaders, 'ID_Event')]?.trim() || '',
+              exposant_nom:         row[findHeader(exposantsHeaders, 'exposant_nom')]?.trim() || '',
+              exposant_stand:       row[findHeader(exposantsHeaders, 'exposant_stand')]?.trim() || '',
+              exposant_website:     row[findHeader(exposantsHeaders, 'exposant_website')]?.trim() || '',
               exposant_description: row[findHeader(exposantsHeaders, 'exposant_description')]?.trim() || ''
             };
 
-            // ➜ Ne garde que le contrôle « nom rempli »
-            if (exposantData.exposant_nom !== '') {
-              exposantsToInsert.push(exposantData);
+            // 👉 DEBUG : seulement pour les 5 premières lignes
+            if (i <= 5) {
+              console.log('🧐 Expo row', i, exposantData);
             }
+
+            // **SEUL** filtre : le nom n'est pas vide
+            const shouldPush = exposantData.exposant_nom !== '';
+
+            if (i <= 5) {
+              console.log('➡️  push?', shouldPush);
+            }
+
+            if (shouldPush) exposantsToInsert.push(exposantData);
           }
 
-          // 🧩 DIAGNOSTIC: Log prepared data
-          console.log(`🧩 Will insert ${exposantsToInsert.length} exposants`);
-          console.log('🧩 Sample expo', exposantsToInsert[0]);
+          // Après la boucle, juste avant l'insert
+          console.log('📊 exposantsToInsert length =', exposantsToInsert.length);
+          console.log('📊 Sample expo to insert', exposantsToInsert[0]);
 
           // Insert exposants into Supabase
           if (exposantsToInsert.length > 0) {
