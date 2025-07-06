@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { GoogleSheetsImporter } from '@/components/GoogleSheetsImporter';
+import GoogleSheetsImporter from '@/components/GoogleSheetsImporter';
 import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
 
 const Admin = () => {
