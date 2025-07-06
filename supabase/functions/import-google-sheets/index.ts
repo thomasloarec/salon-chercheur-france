@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -210,7 +211,9 @@ serve(async (req) => {
 
       let eventsToInsert: any[] = [];
       let exposantsInserted = 0;
-      const approvedIds = new Set<string>();
+      
+      // Déclaration unique de approvedIds
+      let approvedIds: Set<string> = new Set();
 
       // Import events from All_Evenements sheet (if provided)
       if (spreadsheetId1) {
@@ -287,7 +290,6 @@ serve(async (req) => {
 
             if (eventData.id) {
               eventsToInsert.push(eventData);
-              approvedIds.add(eventData.id);
             }
           }
 
@@ -401,8 +403,6 @@ serve(async (req) => {
       }
 
       // Construire approvedIds même si aucun événement n'est importé
-      let approvedIds: Set<string>;
-
       if (eventsToInsert.length === 0) {
         // Charger les ID déjà approuvés depuis la BDD
         console.log('No events imported, loading approved IDs from database...');
