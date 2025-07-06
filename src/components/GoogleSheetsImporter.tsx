@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 
 type SheetFile = { id: string; name: string };
@@ -129,67 +130,91 @@ const GoogleSheetsImporter = () => {
       <CardHeader>
         <CardTitle>Import Google Sheets</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label>Google Sheet événements</Label>
-          <Select value={eventSheetId} onValueChange={setEventSheetId}>
-            <SelectTrigger aria-label="Choisir une feuille">
-              <SelectValue placeholder="-- Sélectionnez une feuille --" />
-            </SelectTrigger>
-            <SelectContent>
-              {files.map(f => (
-                <SelectItem key={f.id} value={f.id}>
-                  {f.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <CardContent className="space-y-6">
+        
+        {/* Section Import ÉVÉNEMENTS */}
+        <div className="space-y-4">
+          <div>
+            <CardTitle className="text-lg">Import ÉVÉNEMENTS</CardTitle>
+            <CardDescription>Importation des données d'événements depuis Google Sheets</CardDescription>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Fichier Google Sheets (ÉVÉNEMENTS)</Label>
+            <Select value={eventSheetId} onValueChange={setEventSheetId}>
+              <SelectTrigger aria-label="Choisir une feuille">
+                <SelectValue placeholder="Sélectionnez la feuille d'événements" />
+              </SelectTrigger>
+              <SelectContent>
+                {files.map(f => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Onglet dans la feuille (ÉVÉNEMENTS)</Label>
+            <Select value={sheetName1} onValueChange={setSheetName1}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionnez l'onglet d'événements" />
+              </SelectTrigger>
+              <SelectContent>
+                {tabsEvent.map(title => (
+                  <SelectItem key={title} value={title}>
+                    {title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label>Nom de l'onglet événements</Label>
-          <Select value={sheetName1} onValueChange={setSheetName1}>
-            <SelectTrigger>
-              <SelectValue placeholder="-- Sélectionnez un onglet --" />
-            </SelectTrigger>
-            <SelectContent>
-              {tabsEvent.map(title => (
-                <SelectItem key={title} value={title}>
-                  {title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+        {/* Séparation visuelle */}
+        <Separator className="my-4" />
+
+        {/* Section Import EXPOSANTS */}
+        <div className="space-y-4">
+          <div>
+            <CardTitle className="text-lg">Import EXPOSANTS</CardTitle>
+            <CardDescription>Importation des données d'exposants depuis Google Sheets</CardDescription>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Fichier Google Sheets (EXPOSANTS)</Label>
+            <Select value={exposantSheetId} onValueChange={setExposantSheetId}>
+              <SelectTrigger aria-label="Choisir une feuille exposants">
+                <SelectValue placeholder="Sélectionnez la feuille d'exposants" />
+              </SelectTrigger>
+              <SelectContent>
+                {files.map(f => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Onglet dans la feuille (EXPOSANTS)</Label>
+            <Select value={sheetName2} onValueChange={setSheetName2}>
+              <SelectTrigger>
+                <SelectValue placeholder="All_Exposants (par défaut)" />
+              </SelectTrigger>
+              <SelectContent>
+                {tabsExpo.map(title => (
+                  <SelectItem key={title} value={title}>
+                    {title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label>Google Sheet exposants</Label>
-          <Select value={exposantSheetId} onValueChange={setExposantSheetId}>
-            <SelectTrigger aria-label="Choisir une feuille exposants">
-              <SelectValue placeholder="-- Sélectionnez une feuille --" />
-            </SelectTrigger>
-            <SelectContent>
-              {files.map(f => (
-                <SelectItem key={f.id} value={f.id}>
-                  {f.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Nom de l'onglet exposants</Label>
-          <Select value={sheetName2} onValueChange={setSheetName2}>
-            <SelectTrigger>
-              <SelectValue placeholder="All_Exposants" />
-            </SelectTrigger>
-            <SelectContent>
-              {tabsExpo.map(title => (
-                <SelectItem key={title} value={title}>
-                  {title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
         <Button onClick={runImport} className="w-full" disabled={!eventSheetId && !exposantSheetId}>
           Importer événements et/ou exposants
         </Button>
