@@ -9,6 +9,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info',
 };
 
+// Helper function for case-insensitive header lookup
+function findHeader(headers: string[], key: string): number {
+  const lowerKey = key.toLowerCase();
+  return headers.findIndex(header => header.toLowerCase() === lowerKey);
+}
+
 // Convertit 'DD/MM/YYYY' ou 'D/M/YY' en 'YYYY-MM-DD'
 function normalizeDate(input: string | null): string | null {
   if (!input || input.trim() === '') return null;
@@ -425,11 +431,11 @@ serve(async (req) => {
           for (let i = 1; i < exposantsRows.length; i++) {
             const row = exposantsRows[i];
             const exposantData: any = {
-              id_event: row[exposantsHeaders.indexOf('ID_Event')] || '',
-              exposant_nom: row[exposantsHeaders.indexOf('exposant_nom')] || '',
-              exposant_stand: row[exposantsHeaders.indexOf('exposant_stand')] || '',
-              exposant_website: row[exposantsHeaders.indexOf('exposant_website')] || '',
-              exposant_description: row[exposantsHeaders.indexOf('exposant_description')] || ''
+              id_event: row[findHeader(exposantsHeaders, 'ID_Event')] || '',
+              exposant_nom: row[findHeader(exposantsHeaders, 'exposant_nom')] || '',
+              exposant_stand: row[findHeader(exposantsHeaders, 'exposant_stand')] || '',
+              exposant_website: row[findHeader(exposantsHeaders, 'exposant_website')] || '',
+              exposant_description: row[findHeader(exposantsHeaders, 'exposant_description')] || ''
             };
 
             // Ne prendre que les exposants d'un événement Approved
@@ -442,7 +448,7 @@ serve(async (req) => {
 
           // 🧩 DIAGNOSTIC: Log prepared data
           console.log('🧩 Prepared', exposantsToInsert.length, 'exposants');
-          console.log('🧩 First expo to insert', exposantsToInsert[0]);
+          console.log('🧩 First expo to insert (after case-insensitive mapping)', exposantsToInsert[0]);
 
           // Insert exposants into Supabase
           if (exposantsToInsert.length > 0) {
