@@ -346,9 +346,9 @@ serve(async (req) => {
                 });
                 
                 return {
-                  id_event: ev.id,                                  // texte
-                  name: ev.nom_event || 'Sans titre',
-                  visible: (ev.status_event ?? '').toLowerCase() === 'approved',
+                  id_event: ev.id,                                  // liaison avec events_import
+                  name: ev.nom_event?.trim() || 'Sans titre',
+                  visible: false,                                   // ⬅️ par défaut invisible
                   event_type: ev.type_event || 'salon',
                   start_date: ev.date_debut || '1970-01-01',
                   end_date: ev.date_fin || ev.date_debut || '1970-01-01',
@@ -357,6 +357,7 @@ serve(async (req) => {
                   address: ev.rue || null,                          // Rue → address
                   postal_code: ev.postal_code || null,              // Code Postal → postal_code
                   city: ev.ville || 'Inconnue',                     // Ville → city
+                  country: 'France',
                   image_url: ev.url_image || null,
                   website_url: ev.url_site_officiel || null,
                   description: ev.description_event || null,
@@ -384,7 +385,7 @@ serve(async (req) => {
                 console.error('Error upserting production events:', prodError);
                 throw new Error(`Failed to upsert production events: ${prodError.message}`);
               }
-              console.log(`Successfully promoted ${productionEvents.length} events to production table`);
+              console.log(`Successfully promoted ${productionEvents.length} events to production table (visible=false by default)`);
             }
             // ------------------------------------------------------
           }
@@ -462,7 +463,7 @@ serve(async (req) => {
         success: true,
         eventsImported: eventsToInsert.length,
         exposantsImported: exposantsInserted,
-        message: 'Import completed successfully'
+        message: 'Import completed successfully - events imported as invisible by default'
       };
 
       console.log('Import completed:', summary);
