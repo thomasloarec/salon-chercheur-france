@@ -400,6 +400,26 @@ serve(async (req) => {
         }
       }
 
+      // Construire approvedIds même si aucun événement n'est importé
+      let approvedIds: Set<string>;
+
+      if (eventsToInsert.length === 0) {
+        // Charger les ID déjà approuvés depuis la BDD
+        console.log('No events imported, loading approved IDs from database...');
+        const { data: approvedFromDB, error } = await supabaseClient
+          .from('events_import')
+          .select('id')
+          .eq('status_event', 'Approved');
+
+        if (error) throw error;
+
+        approvedIds = new Set(approvedFromDB?.map(r => r.id) || []);
+        console.log(`Loaded ${approvedIds.size} approved event IDs from database`);
+      } else {
+        approvedIds = new Set(eventsToInsert.map(ev => ev.id));
+        console.log(`Using ${approvedIds.size} approved IDs from imported events`);
+      }
+
       // Import exposants from selected sheet (if provided)
       if (spreadsheetId2) {
         console.log(`Fetching exposants data from sheet: ${sheetName2}...`);
