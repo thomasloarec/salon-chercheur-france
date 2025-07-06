@@ -422,6 +422,10 @@ serve(async (req) => {
         console.log(`Using ${approvedIds.size} approved IDs from imported events`);
       }
 
+      // 📤 Log des approvedIds après construction
+      console.log('✅ approvedIds sample', Array.from(approvedIds).slice(0, 20));
+      console.log('✅ approvedIds size', approvedIds.size);
+
       // Import exposants from selected sheet (if provided)
       if (spreadsheetId2) {
         console.log(`Fetching exposants data from sheet: ${sheetName2}...`);
@@ -454,7 +458,7 @@ serve(async (req) => {
             const row = exposantsRows[i];
 
             const exposantData = {
-              id_event:             row[findHeader(exposantsHeaders, 'ID_Event')]?.trim() || '',
+              id_event:             (row[findHeader(exposantsHeaders, 'ID_Event')] || '').trim(),
               exposant_nom:         row[findHeader(exposantsHeaders, 'exposant_nom')]?.trim() || '',
               exposant_stand:       row[findHeader(exposantsHeaders, 'exposant_stand')]?.trim() || '',
               exposant_website:     row[findHeader(exposantsHeaders, 'exposant_website')]?.trim() || '',
@@ -466,14 +470,31 @@ serve(async (req) => {
               console.log('🧐 Expo row', i, exposantData);
             }
 
-            // **SEUL** filtre : le nom n'est pas vide
-            const shouldPush = exposantData.exposant_nom !== '';
-
+            // 🔍 Log du test d'appartenance aux approvedIds
             if (i <= 5) {
-              console.log('➡️  push?', shouldPush);
+              console.log('🔍 expo id', exposantData.id_event,
+                         '| nom', exposantData.exposant_nom,
+                         '| in approvedIds ?', approvedIds.has(exposantData.id_event));
             }
 
-            if (shouldPush) exposantsToInsert.push(exposantData);
+            // Filtre 1 : l'événement doit être approuvé
+            if (!approvedIds.has(exposantData.id_event)) {
+              if (i <= 5) console.log('❌ Event not approved, skipping');
+              continue;
+            }
+
+            // Filtre 2 : le nom doit être rempli
+            if (exposantData.exposant_nom === '') {
+              if (i <= 5) console.log('❌ Empty name, skipping');
+              continue;
+            }
+
+            // 👉 DEBUG : seulement pour les 5 premières lignes
+            if (i <= 5) {
+              console.log('➡️  push?', true);
+            }
+
+            exposantsToInsert.push(exposantData);
           }
 
           // Après la boucle, juste avant l'insert
