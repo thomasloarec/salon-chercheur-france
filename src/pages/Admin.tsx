@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import GoogleSheetsImporter from '@/components/GoogleSheetsImporter';
 import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
+import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import MainLayout from '@/components/layout/MainLayout';
 
 const Admin = () => {
@@ -36,6 +37,9 @@ const Admin = () => {
 
         {/* Événements en attente de publication */}
         <PendingEventsTable />
+        
+        {/* Événements passés */}
+        <AdminPastEvents />
         
         {/* Import Google Sheets */}
         <GoogleSheetsImporter />
