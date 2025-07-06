@@ -137,10 +137,17 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           }
         }
 
-        // Filtrage par secteur en fallback
+        // Filtrage par secteur en fallback - utiliser contains pour JSON
         if (filters?.sectors && filters.sectors.length > 0) {
-          const sectorFilter = filters.sectors.map(sector => `sector.ilike.%${sector}%`).join(',');
-          query = query.or(sectorFilter);
+          const sectorConditions = filters.sectors.map(sector => 
+            `sector.cs.["${sector}"]`
+          ).join(',');
+          query = query.or(sectorConditions);
+        } else if (filters?.sectorIds && filters.sectorIds.length > 0) {
+          const sectorConditions = filters.sectorIds.map(sectorId => 
+            `sector.cs.["${sectorId}"]`
+          ).join(',');
+          query = query.or(sectorConditions);
         }
 
         const { data: fallbackData, error: fallbackError } = await query

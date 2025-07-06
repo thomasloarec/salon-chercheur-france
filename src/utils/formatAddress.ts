@@ -12,27 +12,13 @@ export function formatAddress(
   });
 
   // Construire l'adresse complète en évitant les doublons
-  const parts: string[] = [];
-  
-  if (address && address.trim()) {
-    parts.push(address.trim());
-  }
-  
-  if (postal_code && postal_code.trim()) {
-    parts.push(postal_code.trim());
-  }
-  
-  if (city && city.trim()) {
-    parts.push(city.trim());
-  }
+  const parts = [address, postal_code, city]
+    .filter(Boolean)
+    .map(part => part?.trim())
+    .filter(Boolean)
+    .filter((value, index, array) => array.indexOf(value) === index); // Supprime les doublons
 
-  // Filtrer les doublons (comparaison case-insensitive)
-  const uniqueParts = parts.filter((part, index, array) => {
-    const lowerPart = part.toLowerCase();
-    return array.findIndex(p => p.toLowerCase() === lowerPart) === index;
-  });
-
-  const result = uniqueParts.join(', ');
+  const result = parts.join(', ');
   console.log('🏠 formatAddress result:', result);
   
   return result || '—';
