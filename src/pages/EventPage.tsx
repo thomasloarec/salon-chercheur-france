@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,7 +16,7 @@ import FavoriteButton from '@/components/FavoriteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { Button } from '@/components/ui/button';
-import { Eye, ExternalLink } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Event } from '@/types/event';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
@@ -221,7 +220,6 @@ const EventPage = () => {
   }
 
   const isDraft = !event.visible;
-  const official = event.website_url || event.event_url;
 
   return (
     <>
@@ -248,18 +246,6 @@ const EventPage = () => {
             <section className="flex items-center justify-between">
               <div></div>
               <div className="flex items-center gap-2">
-                {/* Bouton Site officiel */}
-                {official && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.open(official, '_blank')}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Site officiel
-                  </Button>
-                )}
-                
                 {/* Bouton Publier pour les admins sur les brouillons */}
                 {isAdmin && isDraft && (
                   <Button
