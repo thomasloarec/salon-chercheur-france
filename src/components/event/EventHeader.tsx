@@ -16,6 +16,9 @@ interface EventHeaderProps {
 export const EventHeader = ({ event }: EventHeaderProps) => {
   const { data: eventSectors = [] } = useEventSectors(event.id);
 
+  // 🔗 Log de diagnostic temporaire
+  console.log('🔗 event urls', event.event_url, event.website_url);
+
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
