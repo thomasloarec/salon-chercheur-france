@@ -26,10 +26,24 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
       }
 
       try {
-        const { data, error } = await supabase
+        // First try to find exhibitors using id_event from events_import table
+        let { data, error } = await supabase
           .from('exposants')
           .select('*')
-          .eq('id_event', event.id);
+          .eq('id_event', event.id_event || event.id);
+
+        // If no results and we have id_event, try with the main event id
+        if ((!data || data.length === 0) && event.id_event) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('exposants')
+            .select('*')
+            .eq('id_event', event.id);
+          
+          if (!fallbackError) {
+            data = fallbackData;
+            error = fallbackError;
+          }
+        }
 
         if (error) {
           console.error('Error fetching exhibitors:', error);
@@ -54,7 +68,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     };
 
     fetchExhibitors();
-  }, [event.id]);
+  }, [event.id, event.id_event]);
 
   if (loading) {
     return (
