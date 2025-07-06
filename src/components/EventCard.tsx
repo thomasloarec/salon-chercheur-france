@@ -43,25 +43,6 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
 
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
-  
-  // Parse sectors with improved error handling
-  const eventSectors = React.useMemo(() => {
-    if (event.sectors && Array.isArray(event.sectors)) {
-      return event.sectors.map(s => s.name || s);
-    }
-    
-    if (typeof event.sector === 'string') {
-      try {
-        const parsed = JSON.parse(event.sector);
-        return Array.isArray(parsed) ? parsed : [event.sector];
-      } catch {
-        // If JSON parsing fails, try splitting by comma
-        return event.sector.split(',').map(s => s.trim()).filter(Boolean);
-      }
-    }
-    
-    return [];
-  }, [event.sectors, event.sector]);
 
   const CardWrapper = ({ children }: { children: React.ReactNode }) => 
     adminPreview ? (
@@ -120,30 +101,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             )}
             
             <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
-              {eventSectors.length > 0 ? (
-                eventSectors.slice(0, 2).map((sector, index) => (
-                  <SectorBadge 
-                    key={`${sector}-${index}`}
-                    label={sector}
-                    className="shadow-sm"
-                  />
-                ))
-              ) : (
-                typeof event.sector === 'string' && event.sector && (
-                  <SectorBadge 
-                    label={event.sector}
-                    className="shadow-sm"
-                  />
-                )
-              )}
-              {eventSectors.length > 2 && (
-                <Badge 
-                  variant="secondary"
-                  className="text-xs px-2 py-1 bg-gray-500 text-white shadow-sm"
-                >
-                  +{eventSectors.length - 2}
-                </Badge>
-              )}
+              <SectorBadge label={event.sector} className="shadow-sm" />
             </div>
           </div>
         </CardWrapper>
