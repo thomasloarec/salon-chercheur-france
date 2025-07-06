@@ -20,7 +20,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   useEffect(() => {
     const fetchExhibitors = async () => {
-      if (!event.id_event) {
+      if (!event.id) {
         setLoading(false);
         return;
       }
@@ -29,7 +29,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         const { data, error } = await supabase
           .from('exposants')
           .select('*')
-          .eq('id_event', event.id_event);
+          .eq('id_event', event.id);
 
         if (error) {
           console.error('Error fetching exhibitors:', error);
@@ -54,7 +54,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     };
 
     fetchExhibitors();
-  }, [event.id_event]);
+  }, [event.id]);
 
   if (loading) {
     return (
