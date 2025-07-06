@@ -70,7 +70,7 @@ const GoogleSheetsImporter = () => {
       .then(({ data, error }) => {
         if (error) throw error;
         setTabsExpo(data?.titles || []);
-        setSheetName2(data?.titles?.[0] || '');
+        setSheetName2(data?.titles?.[0] || 'All_Exposants');
       })
       .catch(e => setLogs(`Erreur onglets exposants : ${e.message}`));
   }, [exposantSheetId]);
@@ -173,7 +173,7 @@ const GoogleSheetsImporter = () => {
           <Label>Nom de l'onglet exposants</Label>
           <Select value={sheetName2} onValueChange={setSheetName2}>
             <SelectTrigger>
-              <SelectValue placeholder="-- Sélectionnez un onglet --" />
+              <SelectValue placeholder="All_Exposants" />
             </SelectTrigger>
             <SelectContent>
               {tabsExpo.map(title => (

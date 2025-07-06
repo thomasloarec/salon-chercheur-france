@@ -197,7 +197,7 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
-      const { spreadsheetId1, spreadsheetId2, sheetName1 = 'All_Evenements', sheetName2 = 'E46' } = await req.json();
+      const { spreadsheetId1, spreadsheetId2, sheetName1 = 'All_Evenements', sheetName2 = 'All_Exposants' } = await req.json();
       
       if (!spreadsheetId1 && !spreadsheetId2) {
         throw new Error('Au moins un ID de spreadsheet est requis');
