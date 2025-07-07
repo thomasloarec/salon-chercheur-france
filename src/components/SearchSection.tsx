@@ -1,9 +1,9 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Search } from 'lucide-react';
 import { useSectors } from '@/hooks/useSectors';
+import { useHomeStats } from '@/hooks/useHomeStats';
 import { getRollingMonths } from '@/utils/monthUtils';
 import { EVENT_TYPES } from '@/constants/eventTypes';
 import type { SearchFilters } from '@/types/event';
@@ -23,6 +23,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
   const navigate = useNavigate();
 
   const { data: sectorsData = [] } = useSectors();
+  const { data: stats, isLoading } = useHomeStats();
 
   // Load regions
   useEffect(() => {
@@ -160,11 +161,15 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-accent">1200+</div>
+              <div className="text-3xl md:text-4xl font-bold text-accent">
+                {isLoading ? '...' : `${stats?.totalEvents || 0}+`}
+              </div>
               <div className="text-gray-300 mt-2">Salons référencés</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-accent">50+</div>
+              <div className="text-3xl md:text-4xl font-bold text-accent">
+                {isLoading ? '...' : `${stats?.totalSectors || 0}+`}
+              </div>
               <div className="text-gray-300 mt-2">Secteurs d'activité</div>
             </div>
             <div className="text-center">
