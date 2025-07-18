@@ -7,7 +7,7 @@ import type { Event } from '@/types/event';
 // Mock event data
 const mockSalonEvent: Event = {
   id: '1',
-  name_event: 'Salon Test',
+  nom_event: 'Salon Test',
   description_event: 'Description du salon',
   date_debut: '2024-03-15',
   date_fin: '2024-03-17',
@@ -22,7 +22,7 @@ const mockSalonEvent: Event = {
 
 const mockConventionEvent: Event = {
   id: '3',
-  name_event: 'Convention Tech',
+  nom_event: 'Convention Tech',
   description_event: 'Convention technologique',
   date_debut: '2024-04-10',
   date_fin: '2024-04-12',

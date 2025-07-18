@@ -14,7 +14,7 @@ jest.mock('@/hooks/useEvents');
 const mockEvents: Event[] = [
   {
     id: '1',
-    name_event: 'Salon Test 1',
+    nom_event: 'Salon Test 1',
     description_event: 'Description du salon 1',
     date_debut: '2024-03-15',
     date_fin: '2024-03-17',
@@ -29,7 +29,7 @@ const mockEvents: Event[] = [
   },
   {
     id: '2',
-    name_event: 'Convention Tech 2',
+    nom_event: 'Convention Tech 2',
     description_event: 'Description de la convention 2',
     date_debut: '2024-04-10',
     date_fin: '2024-04-12',
@@ -44,7 +44,7 @@ const mockEvents: Event[] = [
   },
   {
     id: '3',
-    name_event: 'Salon Innovation 3',
+    nom_event: 'Salon Innovation 3',
     description_event: 'Description du salon 3',
     date_debut: '2024-05-20',
     date_fin: '2024-05-22',
@@ -176,7 +176,7 @@ describe('RecentEventsSection', () => {
     const manyEvents = Array.from({ length: 12 }, (_, i) => ({
       ...mockEvents[0],
       id: `${i + 1}`,
-      name_event: `Event ${i + 1}`,
+      nom_event: `Event ${i + 1}`,
       secteur: `Sector ${i + 1}`
     }));
 

@@ -14,11 +14,11 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
   };
 
-  const title = `${event.name_event} – ${formatDateShort(event.date_debut)}${
+  const title = `${event.nom_event} – ${formatDateShort(event.date_debut)}${
     event.date_debut !== event.date_fin ? ` au ${formatDateShort(event.date_fin)}` : ''
   } – ${event.ville}`;
 
-  const description = `Découvrez les infos, exposants et contacts de l'événement ${event.name_event}. ${
+  const description = `Découvrez les infos, exposants et contacts de l'événement ${event.nom_event}. ${
     event.affluence ? `${event.affluence.toLocaleString('fr-FR')} visiteurs attendus.` : ''
   } Du ${formatDateShort(event.date_debut)}${
     event.date_debut !== event.date_fin ? ` au ${formatDateShort(event.date_fin)}` : ''
@@ -28,7 +28,7 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
-    "name": event.name_event,
+    "name": event.nom_event,
     "startDate": event.date_debut,
     "endDate": event.date_fin,
     "location": {

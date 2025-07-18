@@ -27,7 +27,7 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
       details += `\n\n🎯 Vos prospects exposants :\n${prospects}`;
     }
     
-    const encodedTitle = encodeURIComponent(event.name_event);
+    const encodedTitle = encodeURIComponent(event.nom_event);
     const encodedLocation = encodeURIComponent(`${event.nom_lieu || ''} ${event.rue || ''} ${event.ville}`.trim());
 
     if (type === 'gcal') {

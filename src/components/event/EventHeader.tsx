@@ -48,7 +48,7 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
         </div>
 
         <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-          {event.name_event}
+          {event.nom_event}
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

@@ -26,9 +26,9 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           .from('events')
           .select('*')
           .neq('id', currentEvent.id)
-          .or(`sector.eq.${sector},city.eq.${city}`)
-          .gte('start_date', new Date().toISOString().split('T')[0])
-          .order('start_date', { ascending: true })
+          .or(`secteur.eq.${sector},ville.eq.${city}`)
+          .gte('date_debut', new Date().toISOString().split('T')[0])
+          .order('date_debut', { ascending: true })
           .limit(3);
 
         if (error) {
@@ -39,29 +39,29 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
         // Transform data to match our Event interface
         const transformedEvents: Event[] = (data || []).map(event => ({
           id: event.id,
-          name_event: event.name || '',
-          description_event: event.description,
-          date_debut: event.start_date,
-          date_fin: event.end_date,
-          secteur: event.sector || '',
-          nom_lieu: event.venue_name,
-          ville: event.city,
+          nom_event: event.nom_event || '',
+          description_event: event.description_event,
+          date_debut: event.date_debut,
+          date_fin: event.date_fin,
+          secteur: event.secteur || '',
+          nom_lieu: event.nom_lieu,
+          ville: event.ville,
           region: event.region,
           country: event.country,
-          url_image: event.image_url,
-          url_site_officiel: event.website_url,
+          url_image: event.url_image,
+          url_site_officiel: event.url_site_officiel,
           tags: event.tags,
-          tarif: event.entry_fee,
-          affluence: event.estimated_visitors,
+          tarif: event.tarif,
+          affluence: event.affluence,
           estimated_exhibitors: event.estimated_exhibitors,
           is_b2b: event.is_b2b,
-          type_event: event.event_type as Event['type_event'],
+          type_event: event.type_event as Event['type_event'],
           created_at: event.created_at,
           updated_at: event.updated_at,
           last_scraped_at: event.last_scraped_at,
           scraped_from: event.scraped_from,
-          rue: event.address,
-          code_postal: event.postal_code,
+          rue: event.rue,
+          code_postal: event.code_postal,
           visible: event.visible,
           slug: event.slug,
           sectors: []
@@ -122,7 +122,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
                     {event.url_image ? (
                       <img
                         src={event.url_image}
-                        alt={`Image de ${event.name_event}`}
+                        alt={`Image de ${event.nom_event}`}
                         className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg"
                       />
                     ) : (
@@ -135,7 +135,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
                   {/* Colonne de droite : détails textuels */}
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-gray-900 mb-2 line-clamp-2 text-left hover:text-accent transition-colors">
-                      {event.name_event}
+                      {event.nom_event}
                     </h4>
                     <div className="space-y-1 text-sm text-gray-600">
                       <div className="flex items-center">

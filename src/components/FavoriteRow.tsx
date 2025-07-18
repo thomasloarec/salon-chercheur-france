@@ -70,7 +70,7 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
         {event.url_image ? (
           <img
             src={event.url_image}
-            alt={`Affiche de ${event.name_event}`}
+            alt={`Affiche de ${event.nom_event}`}
             className="h-14 w-14 rounded-md object-cover flex-shrink-0"
           />
         ) : (
@@ -82,7 +82,7 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
         {/* Contenu */}
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate text-gray-900 group-hover:text-primary transition-colors">
-            {event.name_event}
+            {event.nom_event}
           </p>
           <div className="text-sm text-muted-foreground flex flex-wrap gap-3 mt-1">
             <span className="flex items-center gap-1">

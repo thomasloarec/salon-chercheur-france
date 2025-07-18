@@ -71,7 +71,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           {/* Titre principal avec bouton Favoris */}
           <div className="inline-flex items-center space-x-2 mb-6">
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left">
-              {event.name_event}
+              {event.nom_event}
             </h1>
             <FavoriteButton
               eventId={event.id}
@@ -123,7 +123,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
         {event.url_image && (
           <img
             src={event.url_image}
-            alt={`Affiche de ${event.name_event}`}
+            alt={`Affiche de ${event.nom_event}`}
             loading="lazy"
             className="w-28 sm:w-40 lg:w-48 h-auto object-contain flex-shrink-0 rounded-md shadow-lg"
           />

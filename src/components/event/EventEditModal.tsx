@@ -447,21 +447,21 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             </div>
 
             <div>
-              <Label htmlFor="rue">Adresse complète</Label>
+              <Label htmlFor="rue">Adresse</Label>
               <Input
                 id="rue"
-                placeholder="Ex: Route de Saint-Joseph de Porterie, 44300 Nantes"
+                placeholder="Ex: 1 route de Saint-Joseph de Porterie"
                 {...register('rue')}
               />
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              {isLoading ? 'Enregistrement...' : 'Enregistrer'}
             </Button>
           </div>
         </form>

@@ -60,7 +60,7 @@ export const EventHero = ({ event }: EventHeroProps) => {
               )}
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-              {event.name_event}
+              {event.nom_event}
             </h1>
           </div>
 
@@ -105,7 +105,7 @@ export const EventHero = ({ event }: EventHeroProps) => {
         ">
           <img
             src={event.url_image || ''}
-            alt={`Affiche de ${event.name_event}`}
+            alt={`Affiche de ${event.nom_event}`}
             loading="lazy"
             className="
               h-full
