@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -18,35 +19,29 @@ function findHeader(headers: string[], key: string): number {
 // Convertit 'DD/MM/YYYY' ou 'D/M/YY' en 'YYYY-MM-DD'
 function normalizeDate(input: string | null): string | null {
   if (!input || input.trim() === '') return null;
-  // Si déjà au format YYYY-MM-DD, on renvoie tel quel
   if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
-  // Pattern DD/MM/YYYY
   const m = input.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-  if (!m) return null; // format inconnu
-  const [ , d, mth, y ] = m;
-  // 2-digit year → 20xx
+  if (!m) return null;
+  const [, d, mth, y] = m;
   const year = y.length === 2 ? `20${y}` : y.padStart(4,'0');
   const month = mth.padStart(2,'0');
-  const day   = d.padStart(2,'0');
+  const day = d.padStart(2,'0');
   return `${year}-${month}-${day}`;
 }
 
-// Supprime les accents et met en minuscule
 function slugify(str: string) {
   return str
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')   // retire accents
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 }
 
-// Mapping vers les valeurs autorisées par la contrainte CHECK
 const EVENT_TYPE_ALLOWED = ['salon','conference','congres','convention','ceremonie'];
 
 function normalizeEventType(raw: string | null): string {
-  if (!raw) return 'salon';            // fallback
+  if (!raw) return 'salon';
   const slug = slugify(raw.trim());
   if (EVENT_TYPE_ALLOWED.includes(slug)) return slug as typeof EVENT_TYPE_ALLOWED[number];
-  // valeur inconnue -> fallback
   return 'salon';
 }
 
@@ -66,7 +61,9 @@ interface EventData {
   affluence: string;
   tarifs: string;
   nom_lieu: string;
-  adresse: string;
+  rue: string;
+  postal_code: string;
+  ville: string;
   chatgpt_prompt: string;
 }
 
@@ -101,7 +98,6 @@ async function getAccessToken(): Promise<string> {
 
   const keyData = JSON.parse(serviceAccountKey);
   
-  // Importer la clé privée comme CryptoKey
   const keyDer = pemToArrayBuffer(keyData.private_key);
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
@@ -111,7 +107,6 @@ async function getAccessToken(): Promise<string> {
     ['sign']
   );
 
-  // Préparer et signer le JWT
   const header = { alg: 'RS256', typ: 'JWT' } as const;
   const payload = {
     iss: keyData.client_email,
@@ -123,7 +118,6 @@ async function getAccessToken(): Promise<string> {
 
   const assertion = await create(header, payload, cryptoKey);
 
-  // Échanger l'assertion contre un access_token
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -203,7 +197,6 @@ serve(async (req) => {
         throw new Error('Au moins un ID de spreadsheet est requis');
       }
 
-      // Get access token using service account
       const accessToken = await getAccessToken();
 
       console.log(`Importing from spreadsheets: ${spreadsheetId1 || 'none'} and ${spreadsheetId2 || 'none'}`);
@@ -211,7 +204,6 @@ serve(async (req) => {
       let eventsToInsert: any[] = [];
       let exposantsInserted = 0;
       
-      // Déclaration unique de approvedIds
       let approvedIds: Set<string> = new Set();
 
       // Import events from All_Evenements sheet (if provided)
@@ -234,27 +226,25 @@ serve(async (req) => {
         if (!eventsRows || eventsRows.length < 2) {
           console.log('No events data found or invalid format, skipping events import');
         } else {
-          // Get headers and map data
           const eventsHeaders = eventsRows[0];
           console.log('📋 Headers found:', eventsHeaders);
 
           for (let i = 1; i < eventsRows.length; i++) {
             const row = eventsRows[i];
             
-            // Vérifier si l'événement est approuvé
             const statusRaw = row[eventsHeaders.indexOf('Status_Event')] || '';
             const isApproved = statusRaw.trim().toLowerCase() === 'approved';
-            if (!isApproved) continue; // on ignore la ligne
+            if (!isApproved) continue;
             
-            // 🛂 DIAGNOSTIC: Mapping explicite des colonnes d'adresse
-            const address = row[eventsHeaders.indexOf('Rue')] || '';
-            const postal_code = row[eventsHeaders.indexOf('Code Postal')] || '';
-            const city = row[eventsHeaders.indexOf('Ville')] || '';
+            // Updated mapping for new column names
+            const rue = row[eventsHeaders.indexOf('Rue')] || '';
+            const code_postal = row[eventsHeaders.indexOf('Code Postal')] || '';
+            const ville = row[eventsHeaders.indexOf('Ville')] || '';
             
             console.log('🛂 mapping sample', { 
-              address: address, 
-              postal_code: postal_code, 
-              city: city,
+              rue: rue, 
+              code_postal: code_postal, 
+              ville: ville,
               raw_row_sample: {
                 rue_index: eventsHeaders.indexOf('Rue'),
                 postal_index: eventsHeaders.indexOf('Code Postal'), 
@@ -281,9 +271,9 @@ serve(async (req) => {
               affluence: row[eventsHeaders.indexOf('Affluence')] || '',
               tarifs: row[eventsHeaders.indexOf('Tarifs')] || '',
               nom_lieu: row[eventsHeaders.indexOf('Nom_Lieu')] || '',
-              rue: address,                    // 🛂 EXPLICIT mapping
-              postal_code: postal_code,        // 🛂 EXPLICIT mapping  
-              ville: city,                     // 🛂 EXPLICIT mapping
+              rue: rue,
+              postal_code: code_postal,  
+              ville: ville,
               chatgpt_prompt: row[eventsHeaders.indexOf('ChatGPT_Prompt')] || ''
             };
 
@@ -293,10 +283,8 @@ serve(async (req) => {
           }
 
           console.log(`Events ignorés (non Approved) : ${eventsRows.length - 1 - eventsToInsert.length}`);
-
           console.log(`Prepared ${eventsToInsert.length} events for insertion`);
 
-          // Dédupliquer eventsToInsert par id
           const originalLength = eventsToInsert.length;
           const uniqueEventsMap: Record<string, any> = {};
           eventsToInsert.forEach(ev => {
@@ -306,9 +294,7 @@ serve(async (req) => {
           
           console.log(`Deduplicated events: from ${originalLength} to ${eventsToInsert.length}`);
 
-          // Insert events into Supabase
           if (eventsToInsert.length > 0) {
-            // TODO: Remove debug log after diagnosis phase
             console.log(
               '📤 upsert payload (events_import)',
               JSON.stringify(eventsToInsert[0], null, 2)
@@ -324,10 +310,8 @@ serve(async (req) => {
             }
             console.log(`Successfully inserted ${eventsToInsert.length} events`);
 
-            // ------- PROMOTION VERS LA TABLE DE PRODUCTION -------
             console.log('Starting promotion to production events table...');
             
-            // Lire depuis events_import avec les colonnes address nécessaires
             const { data: importedEvents, error: selectError } = await supabaseClient
               .from('events_import')
               .select('id, nom_event, status_event, type_event, date_debut, date_fin, secteur, url_image, url_site_officiel, description_event, affluence, tarifs, nom_lieu, rue, postal_code, ville')
@@ -341,43 +325,35 @@ serve(async (req) => {
             if (!importedEvents || importedEvents.length === 0) {
               console.log('No imported events found for promotion');
             } else {
-              // Construction des événements avec gestion des colonnes NOT NULL
               const productionEvents = importedEvents.map(ev => {
-                // 🏭 DIAGNOSTIC: Log avant insertion en production
                 console.log('🏭 Production mapping', {
                   event_id: ev.id,
-                  address: ev.rue || null,
-                  postal_code: ev.postal_code || null, 
-                  city: ev.ville || 'Inconnue'
+                  rue: ev.rue || null,
+                  code_postal: ev.postal_code || null, 
+                  ville: ev.ville || 'Inconnue'
                 });
                 
                 return {
-                  id_event: ev.id,                                  // liaison avec events_import
-                  name: ev.nom_event?.trim() || 'Sans titre',
-                  visible: false,                                   // ⬅️ par défaut invisible
-                  event_type: ev.type_event || 'salon',
-                  start_date: ev.date_debut || '1970-01-01',
-                  end_date: ev.date_fin || ev.date_debut || '1970-01-01',
-                  sector: ev.secteur || 'Autre',
-                  location: ev.nom_lieu || 'Non précisé',
-                  address: ev.rue || null,                          // Rue → address (CORRECTED)
-                  postal_code: ev.postal_code || null,              // Code Postal → postal_code (CORRECTED)
-                  city: ev.ville || 'Inconnue',                     // Ville → city (CORRECTED)
+                  id_event: ev.id,
+                  name_event: ev.nom_event?.trim() || 'Sans titre',
+                  visible: false,
+                  type_event: ev.type_event || 'salon',
+                  date_debut: ev.date_debut || '1970-01-01',
+                  date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
+                  secteur: ev.secteur || 'Autre',
+                  rue: ev.rue || null,
+                  code_postal: ev.postal_code || null,
+                  ville: ev.ville || 'Inconnue',
                   country: 'France',
-                  image_url: ev.url_image || null,
-                  website_url: ev.url_site_officiel || null,        // URL_site_officiel → website_url (CORRECTED)
-                  description: ev.description_event || null,
-                  estimated_visitors: ev.affluence && ev.affluence.trim() !== '' ? Number(ev.affluence) : null,
-                  entry_fee: ev.tarifs || null,
-                  venue_name: ev.nom_lieu || null,
-                  // Supabase générera created_at / updated_at
+                  url_image: ev.url_image || null,
+                  url_site_officiel: ev.url_site_officiel || null,
+                  description_event: ev.description_event || null,
+                  affluence: ev.affluence && ev.affluence.trim() !== '' ? Number(ev.affluence) : null,
+                  tarif: ev.tarifs || null,
+                  nom_lieu: ev.nom_lieu || null,
                 };
               });
 
-              // 📤 Log temporaire pour diagnostic
-              console.log('📤 mapping to events prod', productionEvents[0]);
-
-              // 📤 Log du premier enregistrement pour confirmer postal_code et city
               console.log(
                 '📤 upsert payload (events prod)',
                 JSON.stringify(productionEvents[0], null, 2)
@@ -396,14 +372,11 @@ serve(async (req) => {
               }
               console.log(`Successfully promoted ${productionEvents.length} events to production table (visible=false by default)`);
             }
-            // ------------------------------------------------------
           }
         }
       }
 
-      // Construire approvedIds même si aucun événement n'est importé
       if (eventsToInsert.length === 0) {
-        // 🔄 Fallback quand aucun nouvel évènement n'a été importé
         console.log('No events imported, loading approved IDs from events_import…');
 
         const { data: approvedFromDB, error: approvedErr } = await supabaseClient
@@ -422,7 +395,6 @@ serve(async (req) => {
         console.log(`Using ${approvedIds.size} approved IDs from imported events`);
       }
 
-      // 📤 Log des approvedIds après construction
       console.log('✅ approvedIds sample', Array.from(approvedIds).slice(0, 20));
       console.log('✅ approvedIds size', approvedIds.size);
 
@@ -446,11 +418,9 @@ serve(async (req) => {
         if (!exposantsRows || exposantsRows.length < 2) {
           console.log('No exposants data found, skipping exposants import');
         } else {
-          // Get headers and map data
           const exposantsHeaders = exposantsRows[0];
           const exposantsToInsert: any[] = [];
 
-          // 🧩 DIAGNOSTIC: Log headers and first raw row
           console.log('🧩 Expo headers', exposantsHeaders);
           console.log('🧩 First expo raw row', exposantsRows[1]);
 
@@ -465,31 +435,26 @@ serve(async (req) => {
               exposant_description: row[findHeader(exposantsHeaders, 'exposant_description')]?.trim() || ''
             };
 
-            // 👉 DEBUG : seulement pour les 5 premières lignes
             if (i <= 5) {
               console.log('🧐 Expo row', i, exposantData);
             }
 
-            // 🔍 Log du test d'appartenance aux approvedIds
             if (i <= 5) {
               console.log('🔍 expo id', exposantData.id_event,
                          '| nom', exposantData.exposant_nom,
                          '| in approvedIds ?', approvedIds.has(exposantData.id_event));
             }
 
-            // Filtre 1 : l'événement doit être approuvé
             if (!approvedIds.has(exposantData.id_event)) {
               if (i <= 5) console.log('❌ Event not approved, skipping');
               continue;
             }
 
-            // Filtre 2 : le nom doit être rempli
             if (exposantData.exposant_nom === '') {
               if (i <= 5) console.log('❌ Empty name, skipping');
               continue;
             }
 
-            // 👉 DEBUG : seulement pour les 5 premières lignes
             if (i <= 5) {
               console.log('➡️  push?', true);
             }
@@ -497,11 +462,9 @@ serve(async (req) => {
             exposantsToInsert.push(exposantData);
           }
 
-          // Après la boucle, juste avant l'insert
           console.log('📊 exposantsToInsert length =', exposantsToInsert.length);
           console.log('📊 Sample expo to insert', exposantsToInsert[0]);
 
-          // Insert exposants into Supabase
           if (exposantsToInsert.length > 0) {
             const { error: exposantsError } = await supabaseClient
               .from('exposants')
@@ -517,7 +480,6 @@ serve(async (req) => {
         }
       }
 
-      // Return summary
       const summary = {
         success: true,
         eventsImported: eventsToInsert.length,
@@ -544,7 +506,6 @@ serve(async (req) => {
     }
   }
 
-  // If neither GET nor POST, return method not allowed
   return new Response(JSON.stringify({ error: 'Method not allowed' }), {
     status: 405,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },

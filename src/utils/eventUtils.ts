@@ -1,7 +1,8 @@
+
 import type { Event } from '@/types/event';
 
 export const generateEventSlug = (event: Event): string => {
-  const name = event.name
+  const name = event.name_event
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove accents
@@ -10,8 +11,8 @@ export const generateEventSlug = (event: Event): string => {
     .replace(/-+/g, '-') // Remove duplicate hyphens
     .trim();
   
-  const year = new Date(event.start_date).getFullYear();
-  const city = event.city
+  const year = new Date(event.date_debut).getFullYear();
+  const city = event.ville
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')

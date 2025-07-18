@@ -26,9 +26,9 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           .from('events')
           .select('*')
           .neq('id', currentEvent.id)
-          .or(`sector.eq.${sector},city.eq.${city}`)
-          .gte('start_date', new Date().toISOString().split('T')[0])
-          .order('start_date', { ascending: true })
+          .or(`secteur.eq.${sector},ville.eq.${city}`)
+          .gte('date_debut', new Date().toISOString().split('T')[0])
+          .order('date_debut', { ascending: true })
           .limit(3);
 
         if (error) {
@@ -36,10 +36,10 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           return;
         }
 
-        // Ensure event_type is properly typed
+        // Ensure type_event is properly typed
         const typedEvents = (data || []).map(event => ({
           ...event,
-          event_type: event.event_type as Event['event_type']
+          type_event: event.type_event as Event['type_event']
         })) as Event[];
 
         setSimilarEvents(typedEvents);
@@ -94,10 +94,10 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
                 <div className="flex gap-4 items-start">
                   {/* Colonne de gauche : miniature/carte */}
                   <div className="flex-shrink-0">
-                    {event.image_url ? (
+                    {event.url_image ? (
                       <img
-                        src={event.image_url}
-                        alt={`Image de ${event.name}`}
+                        src={event.url_image}
+                        alt={`Image de ${event.name_event}`}
                         className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg"
                       />
                     ) : (
@@ -110,16 +110,16 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
                   {/* Colonne de droite : détails textuels */}
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-gray-900 mb-2 line-clamp-2 text-left hover:text-accent transition-colors">
-                      {event.name}
+                      {event.name_event}
                     </h4>
                     <div className="space-y-1 text-sm text-gray-600">
                       <div className="flex items-center">
                         <CalendarDays className="h-3 w-3 mr-2 flex-shrink-0" />
-                        <span>{format(new Date(event.start_date), 'dd MMM yyyy', { locale: fr })}</span>
+                        <span>{format(new Date(event.date_debut), 'dd MMM yyyy', { locale: fr })}</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="h-3 w-3 mr-2 flex-shrink-0" />
-                        <span className="truncate">{event.city}</span>
+                        <span className="truncate">{event.ville}</span>
                       </div>
                     </div>
                   </div>

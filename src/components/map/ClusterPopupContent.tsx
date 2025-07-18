@@ -3,12 +3,12 @@ import dayjs from 'dayjs';
 
 interface ClusterEvent {
   id: string;
-  name: string;
-  start_date: string;
-  end_date: string;
-  city: string;
-  sector: string;
-  event_url?: string;
+  name_event: string;
+  date_debut: string;
+  date_fin: string;
+  ville: string;
+  secteur: string;
+  url_site_officiel?: string;
 }
 
 interface ClusterPopupContentProps {
@@ -18,7 +18,7 @@ interface ClusterPopupContentProps {
 
 export const ClusterPopupContent = ({ events, count }: ClusterPopupContentProps) => {
   const sortedEvents = events.sort((a, b) =>
-    dayjs(a.start_date).isAfter(dayjs(b.start_date)) ? 1 : -1
+    dayjs(a.date_debut).isAfter(dayjs(b.date_debut)) ? 1 : -1
   );
 
   return (
@@ -27,15 +27,15 @@ export const ClusterPopupContent = ({ events, count }: ClusterPopupContentProps)
       {sortedEvents.map((ev) => (
         <div key={ev.id} className="mb-2 pb-2 border-b border-gray-200 last:border-b-0">
           <div className="text-xs text-blue-600 mb-1">
-            📅 {dayjs(ev.start_date).format('DD/MM/YY')}
-            {ev.start_date !== ev.end_date ? ` - ${dayjs(ev.end_date).format('DD/MM/YY')}` : ''}
+            📅 {dayjs(ev.date_debut).format('DD/MM/YY')}
+            {ev.date_debut !== ev.date_fin ? ` - ${dayjs(ev.date_fin).format('DD/MM/YY')}` : ''}
           </div>
-          <div className="font-medium text-sm text-gray-900 mb-1">{ev.name}</div>
-          <div className="text-xs text-gray-600 mb-1">{ev.city}</div>
-          <div className="text-xs text-blue-600 mb-1">{ev.sector}</div>
-          {ev.event_url && (
+          <div className="font-medium text-sm text-gray-900 mb-1">{ev.name_event}</div>
+          <div className="text-xs text-gray-600 mb-1">{ev.ville}</div>
+          <div className="text-xs text-blue-600 mb-1">{ev.secteur}</div>
+          {ev.url_site_officiel && (
             <a 
-              href={ev.event_url} 
+              href={ev.url_site_officiel} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-primary text-xs underline"

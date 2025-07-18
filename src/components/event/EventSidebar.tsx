@@ -25,12 +25,12 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
         <CardContent className="space-y-6">
           {/* Lieu & Adresse */}
           <dl className="space-y-4 text-left">
-            {event.venue_name && (
+            {event.nom_lieu && (
               <div className="flex items-start gap-2">
                 <Building className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                 <div className="text-left">
                   <dt className="font-semibold text-gray-900">Nom du lieu</dt>
-                  <dd className="text-gray-600">{event.venue_name}</dd>
+                  <dd className="text-gray-600">{event.nom_lieu}</dd>
                 </div>
               </div>
             )}
@@ -38,7 +38,7 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
               <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
               <div className="text-left">
                 <dt className="font-semibold text-gray-900">Adresse</dt>
-                <dd className="text-gray-600">{formatAddress(event.address, event.postal_code, event.city)}</dd>
+                <dd className="text-gray-600">{formatAddress(event.rue, event.code_postal, event.ville)}</dd>
               </div>
             </div>
           </dl>
@@ -62,8 +62,8 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
       {/* Événements similaires */}
       <SimilarEvents 
         currentEvent={event} 
-        sector={event.sector} 
-        city={event.city} 
+        sector={event.secteur} 
+        city={event.ville} 
       />
     </aside>
   );

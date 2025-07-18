@@ -14,46 +14,42 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
   };
 
-  const title = `${event.name} – ${formatDateShort(event.start_date)}${
-    event.start_date !== event.end_date ? ` au ${formatDateShort(event.end_date)}` : ''
-  } – ${event.city}`;
+  const title = `${event.name_event} – ${formatDateShort(event.date_debut)}${
+    event.date_debut !== event.date_fin ? ` au ${formatDateShort(event.date_fin)}` : ''
+  } – ${event.ville}`;
 
-  const description = `Découvrez les infos, exposants et contacts de l'événement ${event.name}. ${
-    event.estimated_visitors ? `${event.estimated_visitors.toLocaleString('fr-FR')} visiteurs attendus.` : ''
-  } Du ${formatDateShort(event.start_date)}${
-    event.start_date !== event.end_date ? ` au ${formatDateShort(event.end_date)}` : ''
+  const description = `Découvrez les infos, exposants et contacts de l'événement ${event.name_event}. ${
+    event.affluence ? `${event.affluence.toLocaleString('fr-FR')} visiteurs attendus.` : ''
+  } Du ${formatDateShort(event.date_debut)}${
+    event.date_debut !== event.date_fin ? ` au ${formatDateShort(event.date_fin)}` : ''
   }.`;
 
   // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
-    "name": event.name,
-    "startDate": event.start_date,
-    "endDate": event.end_date,
+    "name": event.name_event,
+    "startDate": event.date_debut,
+    "endDate": event.date_fin,
     "location": {
       "@type": "Place",
-      "name": event.venue_name || event.location,
+      "name": event.nom_lieu,
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": event.city,
+        "addressLocality": event.ville,
         "addressRegion": event.region,
         "addressCountry": event.country || "France"
       }
     },
-    "organizer": event.organizer_name ? {
-      "@type": "Organization",
-      "name": event.organizer_name
-    } : undefined,
-    "description": event.description,
-    "url": event.event_url,
-    "image": event.image_url,
+    "description": event.description_event,
+    "url": event.url_site_officiel,
+    "image": event.url_image,
     "eventStatus": "https://schema.org/EventScheduled",
     "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-    "offers": event.entry_fee ? {
+    "offers": event.tarif ? {
       "@type": "Offer",
-      "description": event.entry_fee,
-      "url": event.event_url
+      "description": event.tarif,
+      "url": event.url_site_officiel
     } : undefined
   };
 
@@ -67,13 +63,13 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
-      {event.image_url && <meta property="og:image" content={event.image_url} />}
+      {event.url_image && <meta property="og:image" content={event.url_image} />}
       
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      {event.image_url && <meta name="twitter:image" content={event.image_url} />}
+      {event.url_image && <meta name="twitter:image" content={event.url_image} />}
       
       {/* JSON-LD */}
       <script type="application/ld+json">

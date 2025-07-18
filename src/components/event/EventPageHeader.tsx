@@ -28,7 +28,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
 
-  const official = event.website_url || event.event_url;
+  const official = event.url_site_officiel;
 
   return (
     <section className={cn(
@@ -58,10 +58,10 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
                 />
               ))
             ) : (
-              // Fallback vers l'ancien champ sector si aucun secteur n'est trouvé
-              event.sector && (
+              // Fallback vers l'ancien champ secteur si aucun secteur n'est trouvé
+              event.secteur && (
                 <SectorBadge 
-                  label={event.sector}
+                  label={event.secteur}
                   className="text-sm px-3 py-1"
                 />
               )
@@ -71,7 +71,7 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           {/* Titre principal avec bouton Favoris */}
           <div className="inline-flex items-center space-x-2 mb-6">
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left">
-              {event.name}
+              {event.name_event}
             </h1>
             <FavoriteButton
               eventId={event.id}
@@ -84,9 +84,9 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
           <div className="flex items-center text-lg text-gray-600 mb-6">
             <CalendarDays className="h-6 w-6 mr-3 text-accent" />
             <span className="font-medium">
-              {formatDate(event.start_date)}
-              {event.start_date !== event.end_date && (
-                <> - {formatDate(event.end_date)}</>
+              {formatDate(event.date_debut)}
+              {event.date_debut !== event.date_fin && (
+                <> - {formatDate(event.date_fin)}</>
               )}
             </span>
           </div>
@@ -120,10 +120,10 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
         </div>
 
         {/* Image de l'événement */}
-        {event.image_url && (
+        {event.url_image && (
           <img
-            src={event.image_url}
-            alt={`Affiche de ${event.name}`}
+            src={event.url_image}
+            alt={`Affiche de ${event.name_event}`}
             loading="lazy"
             className="w-28 sm:w-40 lg:w-48 h-auto object-contain flex-shrink-0 rounded-md shadow-lg"
           />

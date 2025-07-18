@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -43,23 +44,23 @@ interface EventEditModalProps {
 }
 
 interface EventFormData {
-  name: string;
-  start_date: Date;
-  end_date: Date;
-  image_url: string;
-  description: string;
-  estimated_visitors: string;
-  entry_fee: string;
-  venue_name: string;
-  address: string;
-  event_url: string;
-  event_type: string;
+  name_event: string;
+  date_debut: Date;
+  date_fin: Date;
+  url_image: string;
+  description_event: string;
+  affluence: string;
+  tarif: string;
+  nom_lieu: string;
+  rue: string;
+  url_site_officiel: string;
+  type_event: string;
   sector_ids: string[];
 }
 
 export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: EventEditModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [description, setDescription] = useState(event.description || '');
+  const [description, setDescription] = useState(event.description_event || '');
   const { toast } = useToast();
   const { data: allSectors = [] } = useSectors();
   const { data: eventSectors = [] } = useEventSectors(event.id);
@@ -72,25 +73,25 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     formState: { errors },
   } = useForm<EventFormData>({
     defaultValues: {
-      name: event.name,
-      start_date: new Date(event.start_date),
-      end_date: new Date(event.end_date),
-      image_url: event.image_url || '',
-      description: event.description || '',
-      estimated_visitors: event.estimated_visitors?.toString() || '',
-      entry_fee: event.entry_fee || '',
-      venue_name: event.venue_name || '',
-      address: event.address || '',
-      event_url: event.event_url || '',
-      event_type: event.event_type || 'salon',
+      name_event: event.name_event,
+      date_debut: new Date(event.date_debut),
+      date_fin: new Date(event.date_fin),
+      url_image: event.url_image || '',
+      description_event: event.description_event || '',
+      affluence: event.affluence?.toString() || '',
+      tarif: event.tarif || '',
+      nom_lieu: event.nom_lieu || '',
+      rue: event.rue || '',
+      url_site_officiel: event.url_site_officiel || '',
+      type_event: event.type_event || 'salon',
       sector_ids: eventSectors.map(s => s.id),
     },
   });
 
-  const startDate = watch('start_date');
-  const endDate = watch('end_date');
+  const date_debut = watch('date_debut');
+  const date_fin = watch('date_fin');
   const sectorIds = watch('sector_ids');
-  const eventType = watch('event_type');
+  const type_event = watch('type_event');
 
   const updateEventSectors = async (eventId: string, newSectorIds: string[]) => {
     // Supprimer les anciennes relations
@@ -124,7 +125,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
   const onSubmit = async (data: EventFormData) => {
     // Validate dates
-    if (data.start_date > data.end_date) {
+    if (data.date_debut > data.date_fin) {
       toast({
         title: "Erreur de validation",
         description: "La date de début ne peut pas être postérieure à la date de fin.",
@@ -137,17 +138,17 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
     try {
       const updateData = {
-        name: data.name,
-        start_date: format(data.start_date, 'yyyy-MM-dd'),
-        end_date: format(data.end_date, 'yyyy-MM-dd'),
-        image_url: data.image_url || null,
-        description: description || null,
-        estimated_visitors: data.estimated_visitors ? parseInt(data.estimated_visitors) : null,
-        entry_fee: data.entry_fee || null,
-        venue_name: data.venue_name || null,
-        address: data.address || null,
-        event_url: data.event_url || null,
-        event_type: data.event_type,
+        name_event: data.name_event,
+        date_debut: format(data.date_debut, 'yyyy-MM-dd'),
+        date_fin: format(data.date_fin, 'yyyy-MM-dd'),
+        url_image: data.url_image || null,
+        description_event: description || null,
+        affluence: data.affluence ? parseInt(data.affluence) : null,
+        tarif: data.tarif || null,
+        nom_lieu: data.nom_lieu || null,
+        rue: data.rue || null,
+        url_site_officiel: data.url_site_officiel || null,
+        type_event: data.type_event,
         updated_at: new Date().toISOString(),
       };
 
@@ -195,7 +196,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       // Ensure proper typing for the updated event
       const typedRefreshedEvent = {
         ...refreshedEvent,
-        event_type: refreshedEvent.event_type as Event['event_type']
+        type_event: refreshedEvent.type_event as Event['type_event']
       } as Event;
 
       // Check if the slug has changed
@@ -259,19 +260,19 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             <h3 className="text-lg font-semibold">Informations générales</h3>
             
             <div>
-              <Label htmlFor="name">Nom de l'événement</Label>
+              <Label htmlFor="name_event">Nom de l'événement</Label>
               <Input
-                id="name"
-                {...register('name', { required: 'Le nom est requis' })}
+                id="name_event"
+                {...register('name_event', { required: 'Le nom est requis' })}
               />
-              {errors.name && (
-                <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
+              {errors.name_event && (
+                <p className="text-sm text-destructive mt-1">{errors.name_event.message}</p>
               )}
             </div>
 
             <div>
               <Label>Type d'événement</Label>
-              <Select value={eventType} onValueChange={(value) => setValue('event_type', value)}>
+              <Select value={type_event} onValueChange={(value) => setValue('type_event', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un type" />
                 </SelectTrigger>
@@ -304,18 +305,18 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !startDate && "text-muted-foreground"
+                        !date_debut && "text-muted-foreground"
                       )}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, "dd/MM/yyyy") : "Sélectionner"}
+                      {date_debut ? format(date_debut, "dd/MM/yyyy") : "Sélectionner"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <CalendarComponent
                       mode="single"
-                      selected={startDate}
-                      onSelect={(date) => date && setValue('start_date', date)}
+                      selected={date_debut}
+                      onSelect={(date) => date && setValue('date_debut', date)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -330,18 +331,18 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
+                        !date_fin && "text-muted-foreground"
                       )}
                     >
                       <Calendar className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "dd/MM/yyyy") : "Sélectionner"}
+                      {date_fin ? format(date_fin, "dd/MM/yyyy") : "Sélectionner"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <CalendarComponent
                       mode="single"
-                      selected={endDate}
-                      onSelect={(date) => date && setValue('end_date', date)}
+                      selected={date_fin}
+                      onSelect={(date) => date && setValue('date_fin', date)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -350,22 +351,22 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             </div>
 
             <div>
-              <Label htmlFor="image_url">URL de l'image</Label>
+              <Label htmlFor="url_image">URL de l'image</Label>
               <Input
-                id="image_url"
+                id="url_image"
                 type="url"
                 placeholder="https://exemple.com/image.jpg"
-                {...register('image_url')}
+                {...register('url_image')}
               />
             </div>
 
             <div>
-              <Label htmlFor="event_url">Site officiel</Label>
+              <Label htmlFor="url_site_officiel">Site officiel</Label>
               <Input
-                id="event_url"
+                id="url_site_officiel"
                 type="url"
                 placeholder="https://exemple.com"
-                {...register('event_url')}
+                {...register('url_site_officiel')}
               />
             </div>
           </div>
@@ -375,7 +376,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             <h3 className="text-lg font-semibold">À propos de l'événement</h3>
             
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description_event">Description</Label>
               <ReactQuill
                 theme="snow"
                 value={description}
@@ -388,21 +389,21 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             </div>
 
             <div>
-              <Label htmlFor="estimated_visitors">Affluence</Label>
+              <Label htmlFor="affluence">Affluence</Label>
               <Input
-                id="estimated_visitors"
+                id="affluence"
                 type="number"
                 placeholder="Ex: 5000 ou laisser vide"
-                {...register('estimated_visitors')}
+                {...register('affluence')}
               />
             </div>
 
             <div>
-              <Label htmlFor="entry_fee">Tarifs</Label>
+              <Label htmlFor="tarif">Tarifs</Label>
               <Input
-                id="entry_fee"
+                id="tarif"
                 placeholder="Ex: Gratuit, Entrée 5€, Non communiqué"
-                {...register('entry_fee')}
+                {...register('tarif')}
               />
             </div>
           </div>
@@ -412,20 +413,20 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             <h3 className="text-lg font-semibold">Informations pratiques</h3>
             
             <div>
-              <Label htmlFor="venue_name">Nom du lieu</Label>
+              <Label htmlFor="nom_lieu">Nom du lieu</Label>
               <Input
-                id="venue_name"
+                id="nom_lieu"
                 placeholder="Ex: Parc des Expositions de Nantes"
-                {...register('venue_name')}
+                {...register('nom_lieu')}
               />
             </div>
 
             <div>
-              <Label htmlFor="address">Adresse complète</Label>
+              <Label htmlFor="rue">Adresse complète</Label>
               <Input
-                id="address"
+                id="rue"
                 placeholder="Ex: Route de Saint-Joseph de Porterie, 44300 Nantes"
-                {...register('address')}
+                {...register('rue')}
               />
             </div>
           </div>
