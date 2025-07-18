@@ -1,5 +1,5 @@
+
 import { createClient } from '@supabase/supabase-js';
-import { JSDOM } from 'jsdom';
 
 interface ScrapedEventData {
   name: string;
@@ -44,8 +44,9 @@ export class ScrapingService {
   }
 
   parseHtmlContent(html: string): Document {
-    const dom = new JSDOM(html);
-    return dom.window.document;
+    // Use DOMParser for browser environments instead of jsdom
+    const parser = new DOMParser();
+    return parser.parseFromString(html, 'text/html');
   }
 
   async uploadImage(imageUrl: string, imageName: string): Promise<string | null> {
@@ -89,8 +90,8 @@ export class ScrapingService {
         ville: eventData.city,
         rue: eventData.address,
         location: eventData.location || `${eventData.venueName || ''} ${eventData.address || ''} ${eventData.city}`.trim(),
-        country: eventData.country || 'France',
-        url_site_officiel: eventData.websiteUrl,
+        pays: eventData.country || 'France',
+        event_url: eventData.websiteUrl,
         url_image: eventData.imageUrl,
         secteur: eventData.sector,
         type_event: eventData.eventType,

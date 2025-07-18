@@ -92,7 +92,7 @@ const Favorites = () => {
                   region: favorite.events.region,
                   country: favorite.events.pays,
                   url_image: favorite.events.url_image,
-                  url_site_officiel: favorite.events.url_site_officiel,
+                  url_site_officiel: favorite.events.event_url || favorite.events.url_site_officiel,
                   tags: favorite.events.tags,
                   tarif: favorite.events.tarif,
                   affluence: favorite.events.affluence,
