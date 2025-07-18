@@ -87,7 +87,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
           <div className="relative w-full event-card__image-wrapper">
             <img
               src={event.url_image || '/placeholder.svg'}
-              alt={`Affiche de ${event.name_event}`}
+              alt={`Affiche de ${event.nom_event}`}
               loading="lazy"
               className="event-card__image"
             />
@@ -108,8 +108,8 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
         
         <CardContent className="flex flex-col gap-1 p-4">
           <CardWrapper>
-            <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.name_event}>
-              {event.name_event}
+            <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.nom_event}>
+              {event.nom_event}
             </h3>
           </CardWrapper>
           

@@ -2,62 +2,64 @@
 import type { Event } from '@/types/event';
 
 export const generateEventSlug = (event: Event): string => {
-  const name = event.name_event
+  if (event.slug) return event.slug;
+  
+  const eventName = event.nom_event || '';
+  const city = event.ville || '';
+  const year = new Date(event.date_debut).getFullYear();
+  
+  const cleanName = eventName
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove accents
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Remove duplicate hyphens
-    .trim();
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
   
-  const year = new Date(event.date_debut).getFullYear();
-  const city = event.ville
+  const cleanCity = city
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/g, '');
   
-  return `${name}-${year}-${city}`;
+  return `${cleanName}-${year}-${cleanCity}`;
 };
 
-// This function is now deprecated since we use database-generated slugs
-// Keeping it for backward compatibility if needed
-export const parseEventSlug = (slug: string) => {
-  console.log('🔍 Parsing slug (deprecated):', slug);
+export const formatEventTitle = (event: Event): string => {
+  return event.nom_event || 'Événement sans nom';
+};
+
+export const formatEventDescription = (event: Event): string => {
+  if (!event.description_event) return '';
   
-  const parts = slug.split('-');
-  console.log('🔍 Slug parts:', parts);
+  // Strip HTML tags for meta descriptions
+  return event.description_event
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 160);
+};
+
+export const isEventUpcoming = (event: Event): boolean => {
+  const today = new Date();
+  const eventDate = new Date(event.date_debut);
+  return eventDate >= today;
+};
+
+export const isEventActive = (event: Event): boolean => {
+  const today = new Date();
+  const startDate = new Date(event.date_debut);
+  const endDate = new Date(event.date_fin);
+  return today >= startDate && today <= endDate;
+};
+
+export const getEventStatus = (event: Event): 'upcoming' | 'active' | 'past' => {
+  const today = new Date();
+  const startDate = new Date(event.date_debut);
+  const endDate = new Date(event.date_fin);
   
-  if (parts.length < 3) {
-    console.log('❌ Not enough parts in slug');
-    return null;
-  }
-  
-  // Find the year (should be a 4-digit number)
-  let yearIndex = -1;
-  let year = 0;
-  
-  for (let i = parts.length - 2; i >= 0; i--) {
-    const potentialYear = parseInt(parts[i]);
-    if (potentialYear >= 2020 && potentialYear <= 2030 && parts[i].length === 4) {
-      yearIndex = i;
-      year = potentialYear;
-      break;
-    }
-  }
-  
-  if (yearIndex === -1) {
-    console.log('❌ No valid year found in slug');
-    return null;
-  }
-  
-  // Everything before the year is the name
-  const name = parts.slice(0, yearIndex).join('-');
-  // Everything after the year is the city
-  const city = parts.slice(yearIndex + 1).join('');
-  
-  console.log('✅ Parsed result:', { name, year, city });
-  
-  return { name, year, city };
+  if (today < startDate) return 'upcoming';
+  if (today >= startDate && today <= endDate) return 'active';
+  return 'past';
 };

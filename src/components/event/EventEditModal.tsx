@@ -44,7 +44,7 @@ interface EventEditModalProps {
 }
 
 interface EventFormData {
-  name_event: string;
+  nom_event: string;
   date_debut: Date;
   date_fin: Date;
   url_image: string;
@@ -73,7 +73,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     formState: { errors },
   } = useForm<EventFormData>({
     defaultValues: {
-      name_event: event.name_event,
+      nom_event: event.nom_event,
       date_debut: new Date(event.date_debut),
       date_fin: new Date(event.date_fin),
       url_image: event.url_image || '',
@@ -138,7 +138,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
     try {
       const updateData = {
-        name_event: data.name_event,
+        nom_event: data.nom_event,
         date_debut: format(data.date_debut, 'yyyy-MM-dd'),
         date_fin: format(data.date_fin, 'yyyy-MM-dd'),
         url_image: data.url_image || null,
@@ -196,7 +196,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       // Transform the database result to match the Event interface
       const typedRefreshedEvent: Event = {
         id: refreshedEventData.id,
-        name_event: refreshedEventData.name_event || '',
+        nom_event: refreshedEventData.nom_event || '',
         description_event: refreshedEventData.description_event,
         date_debut: refreshedEventData.date_debut,
         date_fin: refreshedEventData.date_fin,
@@ -285,13 +285,13 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             <h3 className="text-lg font-semibold">Informations générales</h3>
             
             <div>
-              <Label htmlFor="name_event">Nom de l'événement</Label>
+              <Label htmlFor="nom_event">Nom de l'événement</Label>
               <Input
-                id="name_event"
-                {...register('name_event', { required: 'Le nom est requis' })}
+                id="nom_event"
+                {...register('nom_event', { required: 'Le nom est requis' })}
               />
-              {errors.name_event && (
-                <p className="text-sm text-destructive mt-1">{errors.name_event.message}</p>
+              {errors.nom_event && (
+                <p className="text-sm text-destructive mt-1">{errors.nom_event.message}</p>
               )}
             </div>
 

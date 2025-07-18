@@ -145,52 +145,6 @@ export type Database = {
           },
         ]
       }
-      event_exhibitors: {
-        Row: {
-          company_id: string
-          event_id: string
-          scraped_at: string | null
-          source_url: string | null
-          stand: string | null
-        }
-        Insert: {
-          company_id: string
-          event_id: string
-          scraped_at?: string | null
-          source_url?: string | null
-          stand?: string | null
-        }
-        Update: {
-          company_id?: string
-          event_id?: string
-          scraped_at?: string | null
-          source_url?: string | null
-          stand?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "event_exhibitors_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "event_exhibitors_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "event_exhibitors_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events_geo"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       event_sectors: {
         Row: {
           created_at: string

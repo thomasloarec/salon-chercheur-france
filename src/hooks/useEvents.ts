@@ -32,7 +32,7 @@ export const useEvents = (filters?: SearchFilters) => {
 
       query = query
         .eq('is_b2b', true)
-        .order('start_date', { ascending: true });
+        .order('date_debut', { ascending: true });
 
       // Filtres secteurs - utiliser les IDs des secteurs pour le filtrage
       if (filters?.sectorIds && filters.sectorIds.length > 0) {
@@ -54,12 +54,12 @@ export const useEvents = (filters?: SearchFilters) => {
 
         query = query
           .eq('is_b2b', true)
-          .order('start_date', { ascending: true });
+          .order('date_debut', { ascending: true });
       }
 
       // Filtre « à partir d'aujourd'hui » par défaut (sauf si des mois sont précisés)
       if (!filters?.months || filters.months.length === 0) {
-        query = query.gte('start_date', new Date().toISOString().split('T')[0]);
+        query = query.gte('date_debut', new Date().toISOString().split('T')[0]);
       }
 
       // Corriger le filtre Mois - un seul mois
@@ -69,8 +69,8 @@ export const useEvents = (filters?: SearchFilters) => {
         const { fromISO, toISO } = getMonthRange(year, month - 1);
 
         query = query
-          .gte('start_date', fromISO)
-          .lt('start_date', toISO);
+          .gte('date_debut', fromISO)
+          .lt('date_debut', toISO);
       }
 
       // Gestion multi-mois
@@ -80,7 +80,7 @@ export const useEvents = (filters?: SearchFilters) => {
         const orString = filters.months
           .map(m => {
             const { fromISO, toISO } = getMonthRange(year, m - 1);
-            return `and(start_date.gte.${fromISO},start_date.lt.${toISO})`;
+            return `and(date_debut.gte.${fromISO},date_debut.lt.${toISO})`;
           })
           .join(',');
 
@@ -90,22 +90,22 @@ export const useEvents = (filters?: SearchFilters) => {
       // Legacy support for old sectors filter (by name)
       if (filters?.sectors && filters.sectors.length > 0) {
         const sectorConditions = filters.sectors.map(sectorName => 
-          `sector.eq.${sectorName}`
+          `secteur.eq.${sectorName}`
         ).join(',');
         query = query.or(sectorConditions);
       }
 
       if (filters?.types && filters.types.length > 0) {
-        query = query.in('event_type', filters.types);
+        query = query.in('type_event', filters.types);
       }
 
       // Filtres existants conservés pour compatibilité
       if (filters?.query) {
-        query = query.or(`name.ilike.%${filters.query}%,description.ilike.%${filters.query}%,tags.cs.{${filters.query}}`);
+        query = query.or(`nom_event.ilike.%${filters.query}%,description_event.ilike.%${filters.query}%,tags.cs.{${filters.query}}`);
       }
 
       if (filters?.city) {
-        query = query.ilike('city', `%${filters.city}%`);
+        query = query.ilike('ville', `%${filters.city}%`);
       }
 
       if (filters?.region) {
@@ -113,19 +113,19 @@ export const useEvents = (filters?: SearchFilters) => {
       }
 
       if (filters?.startDate) {
-        query = query.gte('start_date', filters.startDate);
+        query = query.gte('date_debut', filters.startDate);
       }
 
       if (filters?.endDate) {
-        query = query.lte('end_date', filters.endDate);
+        query = query.lte('date_fin', filters.endDate);
       }
 
       if (filters?.minVisitors) {
-        query = query.gte('estimated_visitors', filters.minVisitors);
+        query = query.gte('affluence', filters.minVisitors);
       }
 
       if (filters?.maxVisitors) {
-        query = query.lte('estimated_visitors', filters.maxVisitors);
+        query = query.lte('affluence', filters.maxVisitors);
       }
 
       const { data, error } = await query;
@@ -138,29 +138,29 @@ export const useEvents = (filters?: SearchFilters) => {
       // Transform the data to include sectors and ensure type_event is properly typed
       const eventsWithSectors = data?.map(event => ({
         id: event.id,
-        name_event: event.name || '',
-        description_event: event.description,
-        date_debut: event.start_date,
-        date_fin: event.end_date,
-        secteur: event.sector || '',
-        nom_lieu: event.venue_name,
-        ville: event.city,
+        nom_event: event.nom_event || '',
+        description_event: event.description_event,
+        date_debut: event.date_debut,
+        date_fin: event.date_fin,
+        secteur: event.secteur || '',
+        nom_lieu: event.nom_lieu,
+        ville: event.ville,
         region: event.region,
         country: event.country,
-        url_image: event.image_url,
-        url_site_officiel: event.website_url,
+        url_image: event.url_image,
+        url_site_officiel: event.url_site_officiel,
         tags: event.tags,
-        tarif: event.entry_fee,
-        affluence: event.estimated_visitors,
+        tarif: event.tarif,
+        affluence: event.affluence,
         estimated_exhibitors: event.estimated_exhibitors,
         is_b2b: event.is_b2b,
-        type_event: event.event_type as Event['type_event'],
+        type_event: event.type_event as Event['type_event'],
         created_at: event.created_at,
         updated_at: event.updated_at,
         last_scraped_at: event.last_scraped_at,
         scraped_from: event.scraped_from,
-        rue: event.address,
-        code_postal: event.postal_code,
+        rue: event.rue,
+        code_postal: event.code_postal,
         visible: event.visible,
         slug: event.slug,
         sectors: event.event_sectors?.map(es => ({

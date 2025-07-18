@@ -6,7 +6,7 @@ export type EventType = 'salon' | 'convention' | 'congres' | 'conference' | 'cer
 export interface Event {
   id: string;
   id_event?: string;
-  name_event: string;
+  nom_event: string;
   description_event?: string;
   date_debut: string;
   date_fin: string;
