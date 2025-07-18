@@ -77,6 +77,8 @@ const Favorites = () => {
           ) : favorites && favorites.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {favorites.map((favorite) => {
+                if (!favorite.events) return null;
+                
                 // Transform the favorite data to match Event type with proper field mapping
                 const eventData = {
                   id: favorite.events.id,
