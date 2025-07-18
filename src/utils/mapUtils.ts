@@ -29,7 +29,7 @@ export interface EventWithCoords extends Event {
 export const prepareEventsWithCoords = (events: Event[]): EventWithCoords[] => {
   return events
     .map(event => {
-      const [lng, lat] = getCityCoordinates(event.city);
+      const [lng, lat] = getCityCoordinates(event.ville);
       return {
         ...event,
         coordinates: [lng, lat] as [number, number],
@@ -57,13 +57,13 @@ export const toFeatureCollection = (events: EventWithCoords[]) => {
         },
         properties: {
           id: e.id,
-          name: e.name,
-          start_date: e.start_date,
-          end_date: e.end_date,
-          city: e.city,
-          sector: e.sector,
-          event_url: e.event_url,
-          image_url: e.image_url,
+          name: e.name_event,
+          start_date: e.date_debut,
+          end_date: e.date_fin,
+          city: e.ville,
+          sector: e.secteur,
+          event_url: e.url_site_officiel,
+          image_url: e.url_image,
         },
       })),
   };

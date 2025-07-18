@@ -90,7 +90,7 @@ const Favorites = () => {
                   region: favorite.events.region,
                   country: favorite.events.country,
                   url_image: favorite.events.image_url,
-                  url_site_officiel: favorite.events.website_url,
+                  url_site_officiel: favorite.events.website_url || favorite.events.event_url,
                   tags: favorite.events.tags,
                   tarif: favorite.events.entry_fee,
                   affluence: favorite.events.estimated_visitors,
@@ -102,7 +102,7 @@ const Favorites = () => {
                   last_scraped_at: favorite.events.last_scraped_at,
                   scraped_from: favorite.events.scraped_from,
                   rue: favorite.events.address,
-                  code_postal: favorite.events.postal_code,
+                  code_postal: favorite.events.postal_code || '',
                   visible: favorite.events.visible,
                   slug: favorite.events.slug,
                   sectors: favorite.events.event_sectors?.map(es => ({

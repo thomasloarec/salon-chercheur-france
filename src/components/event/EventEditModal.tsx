@@ -174,8 +174,8 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       await updateEventSectors(event.id, data.sector_ids);
       console.log('✅ DEBUG: Event sectors updated successfully');
 
-      // Step 3: Fetch the updated event
-      const { data: refreshedEvent, error: fetchError } = await supabase
+      // Step 3: Fetch the updated event with proper field mapping
+      const { data: refreshedEventData, error: fetchError } = await supabase
         .from('events')
         .select('*')
         .eq('id', event.id)
@@ -186,18 +186,43 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         throw fetchError;
       }
 
-      if (!refreshedEvent) {
+      if (!refreshedEventData) {
         console.error('❌ DEBUG: No event found after update');
         throw new Error('Event not found after update');
       }
 
-      console.log('✅ DEBUG: Fetched updated event:', refreshedEvent);
+      console.log('✅ DEBUG: Fetched updated event:', refreshedEventData);
 
-      // Ensure proper typing for the updated event
-      const typedRefreshedEvent = {
-        ...refreshedEvent,
-        type_event: refreshedEvent.type_event as Event['type_event']
-      } as Event;
+      // Transform the database result to match the Event interface
+      const typedRefreshedEvent: Event = {
+        id: refreshedEventData.id,
+        name_event: refreshedEventData.name_event || '',
+        description_event: refreshedEventData.description_event,
+        date_debut: refreshedEventData.date_debut,
+        date_fin: refreshedEventData.date_fin,
+        secteur: refreshedEventData.secteur || '',
+        nom_lieu: refreshedEventData.nom_lieu,
+        ville: refreshedEventData.ville,
+        region: refreshedEventData.region,
+        country: refreshedEventData.country,
+        url_image: refreshedEventData.url_image,
+        url_site_officiel: refreshedEventData.url_site_officiel,
+        tags: refreshedEventData.tags,
+        tarif: refreshedEventData.tarif,
+        affluence: refreshedEventData.affluence,
+        estimated_exhibitors: refreshedEventData.estimated_exhibitors,
+        is_b2b: refreshedEventData.is_b2b,
+        type_event: refreshedEventData.type_event as Event['type_event'],
+        created_at: refreshedEventData.created_at,
+        updated_at: refreshedEventData.updated_at,
+        last_scraped_at: refreshedEventData.last_scraped_at,
+        scraped_from: refreshedEventData.scraped_from,
+        rue: refreshedEventData.rue,
+        code_postal: refreshedEventData.code_postal,
+        visible: refreshedEventData.visible,
+        slug: refreshedEventData.slug,
+        sectors: []
+      };
 
       // Check if the slug has changed
       const slugChanged = typedRefreshedEvent.slug !== event.slug;
