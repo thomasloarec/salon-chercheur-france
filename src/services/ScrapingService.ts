@@ -148,11 +148,11 @@ export class ScrapingService {
     try {
       console.log(`💾 ScrapingService - Attempting to save: "${eventData.title}"`);
       
-      // Check if event already exists (deduplication using website_url)
+      // Check if event already exists (deduplication using url_site_officiel)
       const { data: existing, error: selectError } = await supabase
         .from('events')
         .select('id')
-        .eq('website_url', eventData.websiteUrl)
+        .eq('url_site_officiel', eventData.websiteUrl)
         .maybeSingle();
 
       if (selectError) {
@@ -160,26 +160,23 @@ export class ScrapingService {
         return false;
       }
 
-      // Prepare data for database with explicit typing
+      // Prepare data for database with explicit typing - using NEW column names
       const dbData = {
-        name: eventData.title,
-        description: eventData.description,
-        start_date: eventData.startDate.toISOString().split('T')[0],
-        end_date: eventData.endDate?.toISOString().split('T')[0] || null,
-        venue_name: eventData.venue,
-        city: eventData.city,
-        address: eventData.address,
-        location: `${eventData.city}, France`,
+        nom_event: eventData.title,
+        description_event: eventData.description,
+        date_debut: eventData.startDate.toISOString().split('T')[0],
+        date_fin: eventData.endDate?.toISOString().split('T')[0] || null,
+        nom_lieu: eventData.venue,
+        ville: eventData.city,
+        rue: eventData.address,
         country: 'France',
-        event_url: eventData.websiteUrl,
-        website_url: eventData.websiteUrl,
-        estimated_visitors: eventData.estimatedVisitors,
+        url_site_officiel: eventData.websiteUrl,
+        affluence: eventData.estimatedVisitors,
         estimated_exhibitors: eventData.estimatedExhibitors,
-        entry_fee: eventData.entryFee,
-        organizer_name: eventData.organizer,
-        sector: eventData.sector,
+        tarif: eventData.entryFee,
+        secteur: eventData.sector,
         tags: eventData.tags,
-        event_type: eventData.event_type,
+        type_event: eventData.event_type,
         scraped_from: eventData.source,
         last_scraped_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
