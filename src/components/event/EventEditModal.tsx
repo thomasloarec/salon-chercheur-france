@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -194,32 +193,32 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       console.log('✅ DEBUG: Fetched updated event:', refreshedEventData);
 
       // Transform the database result to match the Event interface
-      // Map from database column names to our Event interface
+      // Map from actual database column names to our Event interface
       const typedRefreshedEvent: Event = {
         id: refreshedEventData.id,
-        nom_event: refreshedEventData.nom_event || '',
-        description_event: refreshedEventData.description_event,
-        date_debut: refreshedEventData.date_debut,
-        date_fin: refreshedEventData.date_fin,
-        secteur: refreshedEventData.secteur || '',
-        nom_lieu: refreshedEventData.nom_lieu,
-        ville: refreshedEventData.ville,
+        nom_event: refreshedEventData.nom_event || refreshedEventData.name || '',
+        description_event: refreshedEventData.description_event || refreshedEventData.description,
+        date_debut: refreshedEventData.date_debut || refreshedEventData.start_date,
+        date_fin: refreshedEventData.date_fin || refreshedEventData.end_date,
+        secteur: refreshedEventData.secteur || refreshedEventData.sector || '',
+        nom_lieu: refreshedEventData.nom_lieu || refreshedEventData.venue_name,
+        ville: refreshedEventData.ville || refreshedEventData.city,
         region: refreshedEventData.region,
         country: refreshedEventData.country || refreshedEventData.pays,
-        url_image: refreshedEventData.url_image,
-        url_site_officiel: refreshedEventData.url_site_officiel,
+        url_image: refreshedEventData.url_image || refreshedEventData.image_url,
+        url_site_officiel: refreshedEventData.url_site_officiel || refreshedEventData.website_url,
         tags: refreshedEventData.tags,
-        tarif: refreshedEventData.tarif,
-        affluence: refreshedEventData.affluence,
+        tarif: refreshedEventData.tarif || refreshedEventData.entry_fee,
+        affluence: refreshedEventData.affluence || refreshedEventData.estimated_visitors,
         estimated_exhibitors: refreshedEventData.estimated_exhibitors,
         is_b2b: refreshedEventData.is_b2b,
-        type_event: refreshedEventData.type_event as Event['type_event'],
+        type_event: (refreshedEventData.type_event || refreshedEventData.event_type) as Event['type_event'],
         created_at: refreshedEventData.created_at,
         updated_at: refreshedEventData.updated_at,
         last_scraped_at: refreshedEventData.last_scraped_at,
         scraped_from: refreshedEventData.scraped_from,
-        rue: refreshedEventData.rue,
-        code_postal: refreshedEventData.code_postal,
+        rue: refreshedEventData.rue || refreshedEventData.address,
+        code_postal: refreshedEventData.code_postal || refreshedEventData.postal_code,
         visible: refreshedEventData.visible,
         slug: refreshedEventData.slug,
         sectors: []
