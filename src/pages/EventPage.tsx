@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -94,7 +93,7 @@ const EventPage = () => {
         nom_lieu: eventData.nom_lieu,
         ville: eventData.ville,
         region: eventData.region,
-        country: eventData.country,
+        country: eventData.pays,
         url_image: eventData.url_image,
         url_site_officiel: eventData.url_site_officiel,
         tags: eventData.tags,

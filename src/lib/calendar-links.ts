@@ -9,7 +9,7 @@ export const getGoogleCalUrl = (event: Event): string => {
   const gStart = format(start, 'yyyyMMdd');
   const gEnd = format(endExclusive, 'yyyyMMdd');
   
-  const encodedTitle = encodeURIComponent(event.name_event);
+  const encodedTitle = encodeURIComponent(event.nom_event);
   const encodedLocation = encodeURIComponent(`${event.nom_lieu || ''} ${event.rue || ''} ${event.ville}`.trim());
   const encodedDetails = encodeURIComponent(event.description_event || '');
   
@@ -28,7 +28,7 @@ export const getOutlookCalUrl = (event: Event): string => {
   const isoStart = format(start, 'yyyy-MM-dd');
   const isoEnd = format(endExclusive, 'yyyy-MM-dd');
   
-  const encodedTitle = encodeURIComponent(event.name_event);
+  const encodedTitle = encodeURIComponent(event.nom_event);
   const encodedLocation = encodeURIComponent(`${event.nom_lieu || ''} ${event.rue || ''} ${event.ville}`.trim());
   const encodedBody = encodeURIComponent(event.description_event || '');
   
