@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Trash2, Edit, EyeOff, Eye, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,29 +59,29 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       // Transform the response to match our Event interface
       const transformedEvent: Event = {
         id: data.id,
-        nom_event: data.nom_event || '',
-        description_event: data.description_event,
-        date_debut: data.date_debut,
-        date_fin: data.date_fin,
-        secteur: data.secteur || '',
-        nom_lieu: data.nom_lieu,
-        ville: data.ville,
+        nom_event: data.name || '',
+        description_event: data.description,
+        date_debut: data.start_date,
+        date_fin: data.end_date,
+        secteur: data.sector || '',
+        nom_lieu: data.venue_name,
+        ville: data.city,
         region: data.region,
         country: data.country,
-        url_image: data.url_image,
-        url_site_officiel: data.url_site_officiel,
+        url_image: data.image_url,
+        url_site_officiel: data.website_url,
         tags: data.tags,
-        tarif: data.tarif,
-        affluence: data.affluence,
+        tarif: data.entry_fee,
+        affluence: data.estimated_visitors,
         estimated_exhibitors: data.estimated_exhibitors,
         is_b2b: data.is_b2b,
-        type_event: data.type_event as Event['type_event'],
+        type_event: data.event_type as Event['type_event'],
         created_at: data.created_at,
         updated_at: data.updated_at,
         last_scraped_at: data.last_scraped_at,
         scraped_from: data.scraped_from,
-        rue: data.rue,
-        code_postal: data.code_postal,
+        rue: data.address,
+        code_postal: data.postal_code,
         visible: data.visible,
         slug: data.slug,
         sectors: []
