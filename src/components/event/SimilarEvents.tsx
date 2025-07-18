@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
         }
 
         // Transform data to match our Event interface
-        // Map from actual database column names to our Event interface
+        // Using actual database column names with fallbacks
         const transformedEvents: Event[] = (data || []).map(event => ({
           id: event.id,
           nom_event: event.nom_event || event.name || '',

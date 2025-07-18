@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -193,7 +194,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       console.log('✅ DEBUG: Fetched updated event:', refreshedEventData);
 
       // Transform the database result to match the Event interface
-      // Map from actual database column names to our Event interface
+      // Using actual database column names
       const typedRefreshedEvent: Event = {
         id: refreshedEventData.id,
         nom_event: refreshedEventData.nom_event || refreshedEventData.name || '',
