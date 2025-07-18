@@ -37,9 +37,9 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
               );
             })
           ) : (
-            // Fallback vers l'ancien champ sector
-            event.sector && (
-              <Badge variant="secondary">{event.sector}</Badge>
+            // Fallback vers l'ancien champ secteur
+            event.secteur && (
+              <Badge variant="secondary">{event.secteur}</Badge>
             )
           )}
           {event.tags?.map((tag, index) => (
@@ -48,23 +48,23 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
         </div>
 
         <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-          {event.name}
+          {event.name_event}
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="flex items-center text-gray-600">
             <CalendarDays className="h-5 w-5 mr-3 text-accent" />
             <span>
-              {formatDate(event.start_date)}
-              {event.start_date !== event.end_date && (
-                <> - {formatDate(event.end_date)}</>
+              {formatDate(event.date_debut)}
+              {event.date_debut !== event.date_fin && (
+                <> - {formatDate(event.date_fin)}</>
               )}
             </span>
           </div>
 
           <div className="flex items-center text-gray-600">
             <MapPin className="h-5 w-5 mr-3 text-accent" />
-            <span>{event.city}, {event.region || 'France'}</span>
+            <span>{event.ville}, {event.region || 'France'}</span>
           </div>
         </div>
 

@@ -36,13 +36,13 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           return;
         }
 
-        // Ensure type_event is properly typed
-        const typedEvents = (data || []).map(event => ({
+        // Transform data to match our Event interface
+        const transformedEvents: Event[] = (data || []).map(event => ({
           ...event,
           type_event: event.type_event as Event['type_event']
-        })) as Event[];
+        }));
 
-        setSimilarEvents(typedEvents);
+        setSimilarEvents(transformedEvents);
       } catch (error) {
         console.error('Error:', error);
       } finally {

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin, Users, ExternalLink, Building } from 'lucide-react';
@@ -16,7 +17,7 @@ export const EventInfo = ({ event }: EventInfoProps) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
 
-  const official = event.website_url || event.event_url;
+  const official = event.url_site_officiel;
 
   return (
     <Card className="text-left">
@@ -30,19 +31,19 @@ export const EventInfo = ({ event }: EventInfoProps) => {
         <div className="text-left">
           <h4 className="font-medium text-gray-900 mb-1 text-left">Dates</h4>
           <p className="text-gray-600 text-left">
-            Du {formatDate(event.start_date)} au {formatDate(event.end_date)}
+            Du {formatDate(event.date_debut)} au {formatDate(event.date_fin)}
           </p>
         </div>
 
         <div className="text-left">
           <h4 className="font-medium text-gray-900 mb-1 text-left">Lieu</h4>
           <dl className="space-y-2 text-left">
-            {event.venue_name && (
+            {event.nom_lieu && (
               <div className="flex items-start gap-2">
                 <Building className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
                 <div className="text-left">
                   <dt className="sr-only">Nom du lieu</dt>
-                  <dd className="font-medium text-left">{event.venue_name}</dd>
+                  <dd className="font-medium text-left">{event.nom_lieu}</dd>
                 </div>
               </div>
             )}
@@ -50,28 +51,21 @@ export const EventInfo = ({ event }: EventInfoProps) => {
               <MapPin className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
               <div className="text-left">
                 <dt className="sr-only">Adresse</dt>
-                <dd className="text-gray-600 text-left">{formatAddress(event.address, event.postal_code, event.city)}</dd>
+                <dd className="text-gray-600 text-left">{formatAddress(event.rue, event.code_postal, event.ville)}</dd>
               </div>
             </div>
           </dl>
         </div>
 
-        {event.estimated_visitors && (
+        {event.affluence && (
           <div className="text-left">
             <h4 className="font-medium text-gray-900 mb-1 text-left">Visiteurs attendus</h4>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-accent" />
               <span className="text-gray-600 text-left">
-                {event.estimated_visitors.toLocaleString('fr-FR')} visiteurs
+                {event.affluence.toLocaleString('fr-FR')} visiteurs
               </span>
             </div>
-          </div>
-        )}
-
-        {event.organizer_name && (
-          <div className="text-left">
-            <h4 className="font-medium text-gray-900 mb-1 text-left">Organisateur</h4>
-            <p className="text-gray-600 text-left">{event.organizer_name}</p>
           </div>
         )}
 

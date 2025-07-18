@@ -51,16 +51,16 @@ export const EventHero = ({ event }: EventHeroProps) => {
                   );
                 })
               ) : (
-                // Fallback vers l'ancien champ sector
-                event.sector && (
+                // Fallback vers l'ancien champ secteur
+                event.secteur && (
                   <Badge variant="secondary" className="w-fit">
-                    {event.sector}
+                    {event.secteur}
                   </Badge>
                 )
               )}
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-              {event.name}
+              {event.name_event}
             </h1>
           </div>
 
@@ -68,30 +68,30 @@ export const EventHero = ({ event }: EventHeroProps) => {
             <div className="flex items-center text-lg text-gray-600">
               <CalendarDays className="h-5 w-5 mr-3 text-accent" />
               <span>
-                {formatDate(event.start_date)}
-                {event.start_date !== event.end_date && (
-                  <> - {formatDate(event.end_date)}</>
+                {formatDate(event.date_debut)}
+                {event.date_debut !== event.date_fin && (
+                  <> - {formatDate(event.date_fin)}</>
                 )}
               </span>
             </div>
 
             <div className="flex items-center text-lg text-gray-600">
               <MapPin className="h-5 w-5 mr-3 text-accent" />
-              <span>{event.city}, {event.region || 'France'}</span>
+              <span>{event.ville}, {event.region || 'France'}</span>
             </div>
 
-            {event.venue_name && (
+            {event.nom_lieu && (
               <div className="flex items-center text-lg text-gray-600">
                 <Building className="h-5 w-5 mr-3 text-accent" />
-                <span>{event.venue_name}</span>
+                <span>{event.nom_lieu}</span>
               </div>
             )}
           </div>
 
-          {event.estimated_visitors && (
+          {event.affluence && (
             <div className="bg-accent/10 rounded-lg p-4">
               <p className="text-accent font-semibold">
-                {event.estimated_visitors.toLocaleString()} visiteurs attendus
+                {event.affluence.toLocaleString()} visiteurs attendus
               </p>
             </div>
           )}
@@ -104,8 +104,8 @@ export const EventHero = ({ event }: EventHeroProps) => {
           overflow-hidden
         ">
           <img
-            src={event.image_url || ''}
-            alt={`Affiche de ${event.name}`}
+            src={event.url_image || ''}
+            alt={`Affiche de ${event.name_event}`}
             loading="lazy"
             className="
               h-full

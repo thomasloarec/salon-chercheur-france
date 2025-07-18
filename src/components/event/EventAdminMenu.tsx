@@ -57,7 +57,13 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         description: `L'événement est maintenant ${newStatus ? 'visible' : 'invisible'} au public.`,
       });
 
-      onEventUpdated(data as Event);
+      // Transform the response to match our Event interface
+      const transformedEvent: Event = {
+        ...data,
+        type_event: data.type_event as Event['type_event']
+      };
+
+      onEventUpdated(transformedEvent);
     } catch (error) {
       console.error('Error toggling event visibility:', error);
       toast({

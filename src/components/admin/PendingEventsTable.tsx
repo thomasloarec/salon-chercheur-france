@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,7 +38,7 @@ export const PendingEventsTable = () => {
     },
   });
 
-  const publishEvent = async (eventId: string) => {
+  async function publishEvent(eventId: string) {
     setPublishingId(eventId);
     try {
       const { error } = await supabase
@@ -67,9 +66,9 @@ export const PendingEventsTable = () => {
     } finally {
       setPublishingId(null);
     }
-  };
+  }
 
-  const deleteAllPending = async () => {
+  async function deleteAllPending() {
     setDeletingAll(true);
     try {
       const { error } = await supabase
@@ -95,7 +94,7 @@ export const PendingEventsTable = () => {
     } finally {
       setDeletingAll(false);
     }
-  };
+  }
 
   if (isLoading) {
     return <div className="text-center p-4">Chargement des événements en attente...</div>;
