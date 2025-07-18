@@ -26,9 +26,9 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           .from('events')
           .select('*')
           .neq('id', currentEvent.id)
-          .or(`secteur.eq.${sector},ville.eq.${city}`)
-          .gte('date_debut', new Date().toISOString().split('T')[0])
-          .order('date_debut', { ascending: true })
+          .or(`sector.eq.${sector},city.eq.${city}`)
+          .gte('start_date', new Date().toISOString().split('T')[0])
+          .order('start_date', { ascending: true })
           .limit(3);
 
         if (error) {
@@ -37,32 +37,32 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
         }
 
         // Transform data to match our Event interface
-        // Using actual database column names with fallbacks
+        // Using actual database column names
         const transformedEvents: Event[] = (data || []).map(event => ({
           id: event.id,
-          nom_event: event.nom_event || event.name || '',
-          description_event: event.description_event || event.description,
-          date_debut: event.date_debut || event.start_date,
-          date_fin: event.date_fin || event.end_date,
-          secteur: event.secteur || event.sector || '',
-          nom_lieu: event.nom_lieu || event.venue_name,
-          ville: event.ville || event.city,
+          nom_event: event.name || '',
+          description_event: event.description,
+          date_debut: event.start_date,
+          date_fin: event.end_date,
+          secteur: event.sector || '',
+          nom_lieu: event.venue_name,
+          ville: event.city,
           region: event.region,
-          country: event.country || event.pays,
-          url_image: event.url_image || event.image_url,
-          url_site_officiel: event.url_site_officiel || event.website_url,
+          country: event.country,
+          url_image: event.image_url,
+          url_site_officiel: event.website_url,
           tags: event.tags,
-          tarif: event.tarif || event.entry_fee,
-          affluence: event.affluence || event.estimated_visitors,
+          tarif: event.entry_fee,
+          affluence: event.estimated_visitors,
           estimated_exhibitors: event.estimated_exhibitors,
           is_b2b: event.is_b2b,
-          type_event: (event.type_event || event.event_type) as Event['type_event'],
+          type_event: event.event_type as Event['type_event'],
           created_at: event.created_at,
           updated_at: event.updated_at,
           last_scraped_at: event.last_scraped_at,
           scraped_from: event.scraped_from,
-          rue: event.rue || event.address,
-          code_postal: event.code_postal || event.postal_code,
+          rue: event.address,
+          code_postal: event.postal_code,
           visible: event.visible,
           slug: event.slug,
           sectors: []
