@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -82,12 +83,37 @@ const EventPage = () => {
       // Check if user has favorited this event
       const isFavorite = user ? eventData.favorites?.some((fav: any) => fav.user_id === user.id) : false;
       
-      // Ensure event_type is properly typed and add is_favorite
-      const typedEvent = {
-        ...eventData,
-        event_type: eventData.event_type as Event['event_type'],
+      // Transform database result to Event interface
+      const typedEvent: Event = {
+        id: eventData.id,
+        name_event: eventData.name || '',
+        description_event: eventData.description,
+        date_debut: eventData.start_date,
+        date_fin: eventData.end_date,
+        secteur: eventData.sector || '',
+        nom_lieu: eventData.venue_name,
+        ville: eventData.city,
+        region: eventData.region,
+        country: eventData.country,
+        url_image: eventData.image_url,
+        url_site_officiel: eventData.website_url,
+        tags: eventData.tags,
+        tarif: eventData.entry_fee,
+        affluence: eventData.estimated_visitors,
+        estimated_exhibitors: eventData.estimated_exhibitors,
+        is_b2b: eventData.is_b2b,
+        type_event: eventData.event_type as Event['type_event'],
+        created_at: eventData.created_at,
+        updated_at: eventData.updated_at,
+        last_scraped_at: eventData.last_scraped_at,
+        scraped_from: eventData.scraped_from,
+        rue: eventData.address,
+        code_postal: eventData.postal_code,
+        visible: eventData.visible,
+        slug: eventData.slug,
+        sectors: [],
         is_favorite: isFavorite
-      } as Event;
+      };
       
       setEvent(typedEvent);
 
@@ -115,11 +141,37 @@ const EventPage = () => {
     console.log('🔄 Event updated:', refreshedEvent);
     console.log('🔄 Slug changed:', slugChanged);
     
-    // Ensure the refreshed event has proper typing
-    const typedRefreshedEvent = {
-      ...refreshedEvent,
-      event_type: refreshedEvent.event_type as Event['event_type']
-    } as Event;
+    // Transform the refreshed event to match Event interface
+    const typedRefreshedEvent: Event = {
+      id: refreshedEvent.id,
+      name_event: refreshedEvent.name_event,
+      description_event: refreshedEvent.description_event,
+      date_debut: refreshedEvent.date_debut,
+      date_fin: refreshedEvent.date_fin,
+      secteur: refreshedEvent.secteur,
+      nom_lieu: refreshedEvent.nom_lieu,
+      ville: refreshedEvent.ville,
+      region: refreshedEvent.region,
+      country: refreshedEvent.country,
+      url_image: refreshedEvent.url_image,
+      url_site_officiel: refreshedEvent.url_site_officiel,
+      tags: refreshedEvent.tags,
+      tarif: refreshedEvent.tarif,
+      affluence: refreshedEvent.affluence,
+      estimated_exhibitors: refreshedEvent.estimated_exhibitors,
+      is_b2b: refreshedEvent.is_b2b,
+      type_event: refreshedEvent.type_event,
+      created_at: refreshedEvent.created_at,
+      updated_at: refreshedEvent.updated_at,
+      last_scraped_at: refreshedEvent.last_scraped_at,
+      scraped_from: refreshedEvent.scraped_from,
+      rue: refreshedEvent.rue,
+      code_postal: refreshedEvent.code_postal,
+      visible: refreshedEvent.visible,
+      slug: refreshedEvent.slug,
+      sectors: refreshedEvent.sectors || [],
+      is_favorite: refreshedEvent.is_favorite
+    };
     
     // Update local state immediately with the refreshed event data
     setEvent(typedRefreshedEvent);

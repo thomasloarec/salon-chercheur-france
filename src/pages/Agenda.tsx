@@ -35,7 +35,7 @@ const Agenda = () => {
   };
 
   // Find next upcoming event
-  const nextEvent = events.find(event => new Date(event.start_date) >= new Date());
+  const nextEvent = events.find(event => new Date(event.date_debut) >= new Date());
 
   if (!user) {
     return (
@@ -88,7 +88,7 @@ const Agenda = () => {
                   </p>
                   {nextEvent && (
                     <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
-                      Prochain : {format(new Date(nextEvent.start_date), 'dd MMM yyyy', { locale: fr })}
+                      Prochain : {format(new Date(nextEvent.date_debut), 'dd MMM yyyy', { locale: fr })}
                     </Badge>
                   )}
                 </div>

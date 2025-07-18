@@ -59,8 +59,33 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
 
       // Transform the response to match our Event interface
       const transformedEvent: Event = {
-        ...data,
-        type_event: data.type_event as Event['type_event']
+        id: data.id,
+        name_event: data.name || '',
+        description_event: data.description,
+        date_debut: data.start_date,
+        date_fin: data.end_date,
+        secteur: data.sector || '',
+        nom_lieu: data.venue_name,
+        ville: data.city,
+        region: data.region,
+        country: data.country,
+        url_image: data.image_url,
+        url_site_officiel: data.website_url,
+        tags: data.tags,
+        tarif: data.entry_fee,
+        affluence: data.estimated_visitors,
+        estimated_exhibitors: data.estimated_exhibitors,
+        is_b2b: data.is_b2b,
+        type_event: data.event_type as Event['type_event'],
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        last_scraped_at: data.last_scraped_at,
+        scraped_from: data.scraped_from,
+        rue: data.address,
+        code_postal: data.postal_code,
+        visible: data.visible,
+        slug: data.slug,
+        sectors: []
       };
 
       onEventUpdated(transformedEvent);

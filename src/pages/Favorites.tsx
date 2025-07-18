@@ -77,12 +77,34 @@ const Favorites = () => {
           ) : favorites && favorites.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {favorites.map((favorite) => {
-                // Transform the favorite data to match Event type with proper type casting
+                // Transform the favorite data to match Event type with proper field mapping
                 const eventData = {
-                  ...favorite.events,
-                  // Ensure event_type is properly typed
-                  event_type: favorite.events.event_type as EventType,
-                  // Transform sectors from event_sectors relation
+                  id: favorite.events.id,
+                  name_event: favorite.events.name || '',
+                  description_event: favorite.events.description,
+                  date_debut: favorite.events.start_date,
+                  date_fin: favorite.events.end_date,
+                  secteur: favorite.events.sector || '',
+                  nom_lieu: favorite.events.venue_name,
+                  ville: favorite.events.city,
+                  region: favorite.events.region,
+                  country: favorite.events.country,
+                  url_image: favorite.events.image_url,
+                  url_site_officiel: favorite.events.website_url,
+                  tags: favorite.events.tags,
+                  tarif: favorite.events.entry_fee,
+                  affluence: favorite.events.estimated_visitors,
+                  estimated_exhibitors: favorite.events.estimated_exhibitors,
+                  is_b2b: favorite.events.is_b2b,
+                  type_event: favorite.events.event_type as EventType,
+                  created_at: favorite.events.created_at,
+                  updated_at: favorite.events.updated_at,
+                  last_scraped_at: favorite.events.last_scraped_at,
+                  scraped_from: favorite.events.scraped_from,
+                  rue: favorite.events.address,
+                  code_postal: favorite.events.postal_code,
+                  visible: favorite.events.visible,
+                  slug: favorite.events.slug,
                   sectors: favorite.events.event_sectors?.map(es => ({
                     id: es.sectors.id,
                     name: es.sectors.name,

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,12 +30,42 @@ export const PendingEventsTable = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('*, rue, code_postal, ville')
+        .select('*')
         .eq('visible', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Event[];
+      
+      // Transform database results to match Event interface
+      return (data || []).map(event => ({
+        id: event.id,
+        name_event: event.name || '',
+        description_event: event.description,
+        date_debut: event.start_date,
+        date_fin: event.end_date,
+        secteur: event.sector || '',
+        nom_lieu: event.venue_name,
+        ville: event.city,
+        region: event.region,
+        country: event.country,
+        url_image: event.image_url,
+        url_site_officiel: event.website_url,
+        tags: event.tags,
+        tarif: event.entry_fee,
+        affluence: event.estimated_visitors,
+        estimated_exhibitors: event.estimated_exhibitors,
+        is_b2b: event.is_b2b,
+        type_event: event.event_type as Event['type_event'],
+        created_at: event.created_at,
+        updated_at: event.updated_at,
+        last_scraped_at: event.last_scraped_at,
+        scraped_from: event.scraped_from,
+        rue: event.address,
+        code_postal: event.postal_code,
+        visible: event.visible,
+        slug: event.slug,
+        sectors: []
+      })) as Event[];
     },
   });
 
