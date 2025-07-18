@@ -37,6 +37,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
         }
 
         // Transform data to match our Event interface
+        // Map from database column names to our Event interface
         const transformedEvents: Event[] = (data || []).map(event => ({
           id: event.id,
           nom_event: event.nom_event || '',
@@ -47,7 +48,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           nom_lieu: event.nom_lieu,
           ville: event.ville,
           region: event.region,
-          country: event.country,
+          country: event.country || event.pays,
           url_image: event.url_image,
           url_site_officiel: event.url_site_officiel,
           tags: event.tags,

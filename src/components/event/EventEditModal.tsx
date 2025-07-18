@@ -194,6 +194,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       console.log('✅ DEBUG: Fetched updated event:', refreshedEventData);
 
       // Transform the database result to match the Event interface
+      // Map from database column names to our Event interface
       const typedRefreshedEvent: Event = {
         id: refreshedEventData.id,
         nom_event: refreshedEventData.nom_event || '',
@@ -204,7 +205,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         nom_lieu: refreshedEventData.nom_lieu,
         ville: refreshedEventData.ville,
         region: refreshedEventData.region,
-        country: refreshedEventData.country,
+        country: refreshedEventData.country || refreshedEventData.pays,
         url_image: refreshedEventData.url_image,
         url_site_officiel: refreshedEventData.url_site_officiel,
         tags: refreshedEventData.tags,
