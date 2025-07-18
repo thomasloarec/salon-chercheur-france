@@ -13,11 +13,11 @@ interface CalBtnProps {
 const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
   const handleAddToCalendar = () => {
     // Prepare dates for all-day events
-    const start = new Date(event.start_date);
-    const endExclusive = addDays(new Date(event.end_date), 1);
+    const start = new Date(event.date_debut);
+    const endExclusive = addDays(new Date(event.date_fin), 1);
     
     // Build dynamic description
-    let details = event.description || '';
+    let details = event.description_event || '';
     
     // Add CRM prospects if available
     if (crmProspects.length > 0) {
@@ -27,8 +27,8 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
       details += `\n\n🎯 Vos prospects exposants :\n${prospects}`;
     }
     
-    const encodedTitle = encodeURIComponent(event.name);
-    const encodedLocation = encodeURIComponent(`${event.venue_name || ''} ${event.address || ''} ${event.city}`.trim());
+    const encodedTitle = encodeURIComponent(event.name_event);
+    const encodedLocation = encodeURIComponent(`${event.nom_lieu || ''} ${event.rue || ''} ${event.ville}`.trim());
 
     if (type === 'gcal') {
       // Google Calendar URL for all-day events
@@ -52,7 +52,7 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
       const isoEnd = format(endExclusive, 'yyyy-MM-dd');
       
       // Build compact description for Outlook
-      let outlookDescription = event.description || '';
+      let outlookDescription = event.description_event || '';
       
       if (crmProspects.length > 0) {
         const compactProspectsList = crmProspects

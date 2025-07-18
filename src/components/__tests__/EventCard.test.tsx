@@ -7,34 +7,32 @@ import type { Event } from '@/types/event';
 // Mock event data
 const mockSalonEvent: Event = {
   id: '1',
-  name: 'Salon Test',
-  description: 'Description du salon',
-  start_date: '2024-03-15',
-  end_date: '2024-03-17',
-  sector: 'Technologie',
-  location: 'Paris',
-  city: 'Paris',
+  name_event: 'Salon Test',
+  description_event: 'Description du salon',
+  date_debut: '2024-03-15',
+  date_fin: '2024-03-17',
+  secteur: 'Technologie',
+  ville: 'Paris',
   country: 'France',
   is_b2b: true,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
-  event_type: 'salon'
+  type_event: 'salon'
 };
 
 const mockConventionEvent: Event = {
   id: '3',
-  name: 'Convention Tech',
-  description: 'Convention technologique',
-  start_date: '2024-04-10',
-  end_date: '2024-04-12',
-  sector: 'Informatique',
-  location: 'Marseille',
-  city: 'Marseille',
+  name_event: 'Convention Tech',
+  description_event: 'Convention technologique',
+  date_debut: '2024-04-10',
+  date_fin: '2024-04-12',
+  secteur: 'Informatique',
+  ville: 'Marseille',
   country: 'France',
   is_b2b: true,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
-  event_type: 'convention'
+  type_event: 'convention'
 };
 
 describe('EventCard', () => {

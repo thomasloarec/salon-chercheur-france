@@ -8,17 +8,27 @@ export interface GroupedEvents {
   events: Event[];
 }
 
-export function groupEventsByMonth(events: Event[]): GroupedEvents[] {
-  return events.reduce((acc: GroupedEvents[], evt: Event) => {
-    const label = format(new Date(evt.start_date), 'LLLL yyyy', { locale: fr });
-    const bucket = acc.find(b => b.monthLabel === label);
+export const groupEventsByMonth = (events: Event[]): GroupedEvents[] => {
+  const grouped = events.reduce((acc, event) => {
+    const eventDate = new Date(event.date_debut);
+    const monthKey = format(eventDate, 'yyyy-MM');
+    const monthLabel = format(eventDate, 'MMMM yyyy', { locale: fr });
     
-    if (bucket) {
-      bucket.events.push(evt);
-    } else {
-      acc.push({ monthLabel: label, events: [evt] });
+    if (!acc[monthKey]) {
+      acc[monthKey] = {
+        monthLabel,
+        events: []
+      };
     }
     
+    acc[monthKey].events.push(event);
     return acc;
-  }, []);
-}
+  }, {} as Record<string, GroupedEvents>);
+  
+  // Convert to array and sort by month
+  return Object.values(grouped).sort((a, b) => {
+    const dateA = new Date(a.events[0].date_debut);
+    const dateB = new Date(b.events[0].date_debut);
+    return dateA.getTime() - dateB.getTime();
+  });
+};

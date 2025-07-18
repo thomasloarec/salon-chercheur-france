@@ -14,51 +14,48 @@ jest.mock('@/hooks/useEvents');
 const mockEvents: Event[] = [
   {
     id: '1',
-    name: 'Salon Test 1',
-    description: 'Description du salon 1',
-    start_date: '2024-03-15',
-    end_date: '2024-03-17',
-    sector: 'Technologie',
-    location: 'Paris',
-    city: 'Paris',
+    name_event: 'Salon Test 1',
+    description_event: 'Description du salon 1',
+    date_debut: '2024-03-15',
+    date_fin: '2024-03-17',
+    secteur: 'Technologie',
+    ville: 'Paris',
     country: 'France',
     is_b2b: true,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
-    event_type: 'salon',
-    image_url: '/test-image-1.jpg'
+    type_event: 'salon',
+    url_image: '/test-image-1.jpg'
   },
   {
     id: '2',
-    name: 'Convention Tech 2',
-    description: 'Description de la convention 2',
-    start_date: '2024-04-10',
-    end_date: '2024-04-12',
-    sector: 'Informatique',
-    location: 'Lyon',
-    city: 'Lyon',
+    name_event: 'Convention Tech 2',
+    description_event: 'Description de la convention 2',
+    date_debut: '2024-04-10',
+    date_fin: '2024-04-12',
+    secteur: 'Informatique',
+    ville: 'Lyon',
     country: 'France',
     is_b2b: true,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
-    event_type: 'convention',
-    image_url: '/test-image-2.jpg'
+    type_event: 'convention',
+    url_image: '/test-image-2.jpg'
   },
   {
     id: '3',
-    name: 'Salon Innovation 3',
-    description: 'Description du salon 3',
-    start_date: '2024-05-20',
-    end_date: '2024-05-22',
-    sector: 'Innovation',
-    location: 'Marseille',
-    city: 'Marseille',
+    name_event: 'Salon Innovation 3',
+    description_event: 'Description du salon 3',
+    date_debut: '2024-05-20',
+    date_fin: '2024-05-22',
+    secteur: 'Innovation',
+    ville: 'Marseille',
     country: 'France',
     is_b2b: true,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
-    event_type: 'salon',
-    image_url: '/test-image-3.jpg'
+    type_event: 'salon',
+    url_image: '/test-image-3.jpg'
   }
 ];
 
@@ -179,8 +176,8 @@ describe('RecentEventsSection', () => {
     const manyEvents = Array.from({ length: 12 }, (_, i) => ({
       ...mockEvents[0],
       id: `${i + 1}`,
-      name: `Event ${i + 1}`,
-      sector: `Sector ${i + 1}`
+      name_event: `Event ${i + 1}`,
+      secteur: `Sector ${i + 1}`
     }));
 
     mockUseEvents.mockReturnValue({

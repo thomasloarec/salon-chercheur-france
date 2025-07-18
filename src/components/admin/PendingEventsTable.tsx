@@ -30,7 +30,7 @@ export const PendingEventsTable = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('*, address, postal_code, city')
+        .select('*, rue, code_postal, ville')
         .eq('visible', false)
         .order('created_at', { ascending: false });
 

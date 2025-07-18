@@ -67,10 +67,10 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
         className="flex items-center gap-3 flex-1 min-w-0"
       >
         {/* Thumbnail */}
-        {event.image_url ? (
+        {event.url_image ? (
           <img
-            src={event.image_url}
-            alt={`Affiche de ${event.name}`}
+            src={event.url_image}
+            alt={`Affiche de ${event.name_event}`}
             className="h-14 w-14 rounded-md object-cover flex-shrink-0"
           />
         ) : (
@@ -82,20 +82,20 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
         {/* Contenu */}
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate text-gray-900 group-hover:text-primary transition-colors">
-            {event.name}
+            {event.name_event}
           </p>
           <div className="text-sm text-muted-foreground flex flex-wrap gap-3 mt-1">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {formatDateRange(event.start_date, event.end_date)}
+              {formatDateRange(event.date_debut, event.date_fin)}
             </span>
             <span className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
-              {event.city}
+              {event.ville}
             </span>
-            {event.sector && (
+            {event.secteur && (
               <Badge variant="outline" className="text-xs">
-                {event.sector}
+                {event.secteur}
               </Badge>
             )}
           </div>

@@ -21,12 +21,12 @@ export const EventDetails = ({ event }: EventDetailsProps) => {
         <div className="text-left">
           <h4 className="font-medium text-gray-900 mb-2 text-left">Lieu</h4>
           <dl className="space-y-2 text-gray-600 text-left">
-            {event.venue_name && (
+            {event.nom_lieu && (
               <div className="flex items-start gap-2">
                 <Building className="h-4 w-4 text-accent flex-shrink-0 mt-1" />
                 <div className="text-left">
                   <dt className="sr-only">Nom du lieu</dt>
-                  <dd className="font-medium text-left">{event.venue_name}</dd>
+                  <dd className="font-medium text-left">{event.nom_lieu}</dd>
                 </div>
               </div>
             )}
@@ -34,33 +34,26 @@ export const EventDetails = ({ event }: EventDetailsProps) => {
               <MapPin className="h-4 w-4 text-accent flex-shrink-0 mt-1" />
               <div className="text-left">
                 <dt className="sr-only">Adresse</dt>
-                <dd className="text-left">{formatAddress(event.address, event.postal_code, event.city)}</dd>
+                <dd className="text-left">{formatAddress(event.rue, event.code_postal, event.ville)}</dd>
               </div>
             </div>
           </dl>
         </div>
 
-        {event.estimated_visitors && (
+        {event.affluence && (
           <div className="text-left">
             <h4 className="font-medium text-gray-900 mb-2 text-left">Affluence</h4>
             <div className="flex items-center text-gray-600">
               <Users className="h-4 w-4 text-accent mr-2" />
-              <span className="text-left">{event.estimated_visitors.toLocaleString('fr-FR')} visiteurs attendus</span>
+              <span className="text-left">{event.affluence.toLocaleString('fr-FR')} visiteurs attendus</span>
             </div>
           </div>
         )}
 
-        {event.organizer_name && (
-          <div className="text-left">
-            <h4 className="font-medium text-gray-900 mb-2 text-left">Organisateur</h4>
-            <p className="text-gray-600 text-left ml-6">{event.organizer_name}</p>
-          </div>
-        )}
-
-        {event.entry_fee && (
+        {event.tarif && (
           <div className="text-left">
             <h4 className="font-medium text-gray-900 mb-2 text-left">Tarifs</h4>
-            <p className="text-gray-600 text-left ml-6">{event.entry_fee}</p>
+            <p className="text-gray-600 text-left ml-6">{event.tarif}</p>
           </div>
         )}
 

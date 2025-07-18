@@ -18,7 +18,7 @@ const sanitize = (dirtyHtml: string) => {
 };
 
 export const EventAbout = ({ event }: EventAboutProps) => {
-  const defaultDescription = `Découvrez ${event.name}, un événement incontournable du secteur ${event.sector.toLowerCase()}. 
+  const defaultDescription = `Découvrez ${event.name_event}, un événement incontournable du secteur ${event.secteur.toLowerCase()}. 
     Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`;
 
   return (
@@ -36,8 +36,8 @@ export const EventAbout = ({ event }: EventAboutProps) => {
         <div
           className="prose max-w-none text-gray-700 leading-relaxed"
           dangerouslySetInnerHTML={{
-            __html: event.description 
-              ? sanitize(event.description)
+            __html: event.description_event 
+              ? sanitize(event.description_event)
               : defaultDescription
           }}
         />
@@ -49,7 +49,7 @@ export const EventAbout = ({ event }: EventAboutProps) => {
             <Calendar size={18} className="mt-0.5 text-orange-500" />
             <div>
               <p className="font-medium">Type</p>
-              <p className="text-gray-600">{getEventTypeLabel(event.event_type)}</p>
+              <p className="text-gray-600">{getEventTypeLabel(event.type_event)}</p>
             </div>
           </div>
 
@@ -59,8 +59,8 @@ export const EventAbout = ({ event }: EventAboutProps) => {
             <div>
               <p className="font-medium">Affluence</p>
               <p className="text-gray-600">
-                {event.estimated_visitors 
-                  ? `${event.estimated_visitors.toLocaleString('fr-FR')} visiteurs attendus` 
+                {event.affluence 
+                  ? `${event.affluence.toLocaleString('fr-FR')} visiteurs attendus` 
                   : '—'
                 }
               </p>
@@ -72,7 +72,7 @@ export const EventAbout = ({ event }: EventAboutProps) => {
             <Euro size={18} className="mt-0.5 text-orange-500" />
             <div>
               <p className="font-medium">Tarifs</p>
-              <p className="text-gray-600">{event.entry_fee || '—'}</p>
+              <p className="text-gray-600">{event.tarif || '—'}</p>
             </div>
           </div>
         </div>

@@ -22,7 +22,7 @@ export const EventsResults = ({ events, isLoading }: EventsResultsProps) => {
     // Les événements sont déjà triés par date côté DB, 
     // mais on s'assure du tri côté client aussi
     const sortedEvents = [...events].sort((a, b) => 
-      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime()
     );
     
     return groupEventsByMonth(sortedEvents);

@@ -86,8 +86,8 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
         <CardWrapper>
           <div className="relative w-full event-card__image-wrapper">
             <img
-              src={event.image_url || '/placeholder.svg'}
-              alt={`Affiche de ${event.name}`}
+              src={event.url_image || '/placeholder.svg'}
+              alt={`Affiche de ${event.name_event}`}
               loading="lazy"
               className="event-card__image"
             />
@@ -101,25 +101,25 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             )}
             
             <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
-              <SectorBadge label={event.sector} className="shadow-sm" />
+              <SectorBadge label={event.secteur} className="shadow-sm" />
             </div>
           </div>
         </CardWrapper>
         
         <CardContent className="flex flex-col gap-1 p-4">
           <CardWrapper>
-            <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.name}>
-              {event.name}
+            <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.name_event}>
+              {event.name_event}
             </h3>
           </CardWrapper>
           
           <p className="text-sm text-gray-600">
-            {formatDateRange(event.start_date, event.end_date)}
+            {formatDateRange(event.date_debut, event.date_fin)}
           </p>
           
           <p className="text-sm text-gray-500 flex items-center gap-1">
             <MapPin className="h-4 w-4 shrink-0" />
-            {formatAddress(event.address, event.postal_code, event.city) || '—'}
+            {formatAddress(event.rue, event.code_postal, event.ville) || '—'}
           </p>
           
           <CardWrapper>
