@@ -23,9 +23,9 @@ export const AdminPastEvents = () => {
       const today = new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from('events')
-        .select('id, id_event, slug, name, start_date, end_date, city, visible')
-        .lt('end_date', today)
-        .order('end_date', { ascending: false })
+        .select('id, id_event, slug, nom_event, date_debut, date_fin, ville, visible')
+        .lt('date_fin', today)
+        .order('date_fin', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (error) throw error;
@@ -74,15 +74,15 @@ export const AdminPastEvents = () => {
                       to={`/events/${event.slug || event.id}`}
                       className="text-blue-600 hover:underline"
                     >
-                      {event.name}
+                      {event.nom_event}
                     </Link>
                   </TableCell>
-                  <TableCell>{event.city}</TableCell>
+                  <TableCell>{event.ville}</TableCell>
                   <TableCell>
-                    {new Date(event.start_date).toLocaleDateString('fr-FR')}
+                    {new Date(event.date_debut).toLocaleDateString('fr-FR')}
                   </TableCell>
                   <TableCell>
-                    {new Date(event.end_date).toLocaleDateString('fr-FR')}
+                    {new Date(event.date_fin).toLocaleDateString('fr-FR')}
                   </TableCell>
                   <TableCell>
                     <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
