@@ -135,7 +135,7 @@ export const useEvents = (filters?: SearchFilters) => {
         throw error;
       }
 
-      // Transform the data to include sectors and ensure type_event is properly typed
+      // Transform the data to include sectors and map database columns to Event interface
       const eventsWithSectors = data?.map(event => ({
         id: event.id,
         nom_event: event.nom_event || '',
@@ -146,7 +146,7 @@ export const useEvents = (filters?: SearchFilters) => {
         nom_lieu: event.nom_lieu,
         ville: event.ville,
         region: event.region,
-        country: event.country,
+        country: event.pays || event.country,
         url_image: event.url_image,
         url_site_officiel: event.url_site_officiel,
         tags: event.tags,
