@@ -187,103 +187,103 @@ export type Database = {
       }
       events: {
         Row: {
-          address: string | null
-          city: string
-          country: string | null
+          affluence: number | null
+          code_postal: string | null
           created_at: string
-          description: string | null
-          end_date: string
-          entry_fee: string | null
+          date_debut: string
+          date_fin: string
+          description_event: string | null
           estimated_exhibitors: number | null
-          estimated_visitors: number | null
-          event_type: string
           event_url: string | null
           id: string
           id_event: string | null
-          image_url: string | null
           is_b2b: boolean | null
           last_scraped_at: string | null
           location: string
-          name: string
+          nom_event: string
+          nom_lieu: string | null
           organizer_contact: string | null
           organizer_name: string | null
-          postal_code: string | null
+          pays: string | null
           region: string | null
+          rue: string | null
           scraped_from: string | null
-          sector: string
+          secteur: string
           slug: string | null
-          start_date: string
           tags: string[] | null
+          tarif: string | null
+          type_event: string
           updated_at: string
-          venue_name: string | null
+          url_image: string | null
+          url_site_officiel: string | null
+          ville: string
           visible: boolean | null
-          website_url: string | null
         }
         Insert: {
-          address?: string | null
-          city: string
-          country?: string | null
+          affluence?: number | null
+          code_postal?: string | null
           created_at?: string
-          description?: string | null
-          end_date: string
-          entry_fee?: string | null
+          date_debut: string
+          date_fin: string
+          description_event?: string | null
           estimated_exhibitors?: number | null
-          estimated_visitors?: number | null
-          event_type?: string
           event_url?: string | null
           id?: string
           id_event?: string | null
-          image_url?: string | null
           is_b2b?: boolean | null
           last_scraped_at?: string | null
           location: string
-          name: string
+          nom_event: string
+          nom_lieu?: string | null
           organizer_contact?: string | null
           organizer_name?: string | null
-          postal_code?: string | null
+          pays?: string | null
           region?: string | null
+          rue?: string | null
           scraped_from?: string | null
-          sector: string
+          secteur: string
           slug?: string | null
-          start_date: string
           tags?: string[] | null
+          tarif?: string | null
+          type_event?: string
           updated_at?: string
-          venue_name?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville: string
           visible?: boolean | null
-          website_url?: string | null
         }
         Update: {
-          address?: string | null
-          city?: string
-          country?: string | null
+          affluence?: number | null
+          code_postal?: string | null
           created_at?: string
-          description?: string | null
-          end_date?: string
-          entry_fee?: string | null
+          date_debut?: string
+          date_fin?: string
+          description_event?: string | null
           estimated_exhibitors?: number | null
-          estimated_visitors?: number | null
-          event_type?: string
           event_url?: string | null
           id?: string
           id_event?: string | null
-          image_url?: string | null
           is_b2b?: boolean | null
           last_scraped_at?: string | null
           location?: string
-          name?: string
+          nom_event?: string
+          nom_lieu?: string | null
           organizer_contact?: string | null
           organizer_name?: string | null
-          postal_code?: string | null
+          pays?: string | null
           region?: string | null
+          rue?: string | null
           scraped_from?: string | null
-          sector?: string
+          secteur?: string
           slug?: string | null
-          start_date?: string
           tags?: string[] | null
+          tarif?: string | null
+          type_event?: string
           updated_at?: string
-          venue_name?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string
           visible?: boolean | null
-          website_url?: string | null
         }
         Relationships: []
       }
@@ -418,29 +418,29 @@ export type Database = {
         Row: {
           created_at: string | null
           exposant_description: string | null
-          exposant_nom: string | null
-          exposant_stand: string | null
-          exposant_website: string | null
           id: number
           id_event: string
+          id_exposant: string | null
+          nom_exposant: string | null
+          website_exposant: string | null
         }
         Insert: {
           created_at?: string | null
           exposant_description?: string | null
-          exposant_nom?: string | null
-          exposant_stand?: string | null
-          exposant_website?: string | null
           id?: number
           id_event: string
+          id_exposant?: string | null
+          nom_exposant?: string | null
+          website_exposant?: string | null
         }
         Update: {
           created_at?: string | null
           exposant_description?: string | null
-          exposant_nom?: string | null
-          exposant_stand?: string | null
-          exposant_website?: string | null
           id?: number
           id_event?: string
+          id_exposant?: string | null
+          nom_exposant?: string | null
+          website_exposant?: string | null
         }
         Relationships: [
           {
@@ -508,6 +508,58 @@ export type Database = {
           sectors?: string[]
         }
         Relationships: []
+      }
+      participation: {
+        Row: {
+          created_at: string | null
+          id_event: string
+          id_exposant: string
+          id_participation: string
+          stand_exposant: string | null
+          urlexpo_event: string | null
+          website_exposant: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id_event: string
+          id_exposant: string
+          id_participation?: string
+          stand_exposant?: string | null
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id_event?: string
+          id_exposant?: string
+          id_participation?: string
+          stand_exposant?: string | null
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participation_id_event_fkey"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_id_event_fkey"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_id_exposant_fkey"
+            columns: ["id_exposant"]
+            isOneToOne: false
+            referencedRelation: "exposants"
+            referencedColumns: ["id_exposant"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -729,39 +781,32 @@ export type Database = {
     Views: {
       events_geo: {
         Row: {
-          address: string | null
-          city: string | null
+          code_postal: string | null
           commune_id: number | null
-          country: string | null
           created_at: string | null
+          date_debut: string | null
+          date_fin: string | null
           dep_code: string | null
-          description: string | null
-          end_date: string | null
-          entry_fee: string | null
-          estimated_exhibitors: number | null
-          estimated_visitors: number | null
-          event_type: string | null
-          event_url: string | null
+          description_event: string | null
           id: string | null
-          image_url: string | null
-          is_b2b: boolean | null
+          id_event: string | null
           last_scraped_at: string | null
-          location: string | null
-          name: string | null
-          organizer_contact: string | null
-          organizer_name: string | null
-          postal_code: string | null
+          nom_event: string | null
+          nom_lieu: string | null
+          pays: string | null
           region: string | null
           region_code: string | null
+          rue: string | null
           scraped_from: string | null
-          sector: string | null
+          secteur: string | null
           slug: string | null
-          start_date: string | null
-          tags: string[] | null
+          tarif: string | null
+          type_event: string | null
           updated_at: string | null
-          venue_name: string | null
+          url_image: string | null
+          url_site_officiel: string | null
+          ville: string | null
           visible: boolean | null
-          website_url: string | null
         }
         Relationships: [
           {

@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Building, ExternalLink, Link } from 'lucide-react';
 
 interface Exhibitor {
-  name: string;
-  stand?: string;
-  website?: string;
+  nom_exposant: string;
+  stand_exposant?: string;
+  website_exposant?: string;
 }
 
 interface EventExhibitorsProps {
@@ -84,19 +84,19 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
             {exhibitors.map((exhibitor, index) => (
               <TableRow key={index} className="hover:bg-gray-50">
                 <TableCell className="font-medium text-left">
-                  {exhibitor.name}
+                  {exhibitor.nom_exposant}
                 </TableCell>
                 <TableCell className="text-left">
-                  {exhibitor.stand && (
+                  {exhibitor.stand_exposant && (
                     <Badge variant="outline" className="font-normal">
-                      {exhibitor.stand}
+                      {exhibitor.stand_exposant}
                     </Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-left">
-                  {exhibitor.website && (
+                  {exhibitor.website_exposant && (
                     <a 
-                      href={`https://${exhibitor.website}`}
+                      href={`https://${exhibitor.website_exposant}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center text-accent hover:underline"

@@ -1,6 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { EventExhibitors } from './EventExhibitors';
 import {
   Dialog,
   DialogContent,
@@ -13,17 +13,11 @@ import { ExternalLink } from 'lucide-react';
 import type { Event } from '@/types/event';
 
 interface Exhibitor {
-  name: string;
-  stand?: string;
-  website?: string;
-  description?: string;
-}
-
-interface RawExhibitor {
-  exposant_nom: string;
-  exposant_stand?: string;
-  exposant_website?: string;
+  nom_exposant: string;
+  stand_exposant?: string;
+  website_exposant?: string;
   exposant_description?: string;
+  urlexpo_event?: string;
 }
 
 interface EventExhibitorsSectionProps {
@@ -44,37 +38,38 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
       }
 
       try {
-        // Fetch exposants sans aucune condition de filtrage sur le statut
-        let { data, error } = await supabase
-          .from('exposants')
-          .select('*')
-          .eq('id_event', event.id_event || event.id);
-
-        // Si pas de résultats avec id_event, essayer avec l'id principal
-        if ((!data || data.length === 0) && event.id_event) {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('exposants')
-            .select('*')
-            .eq('id_event', event.id);
-          
-          if (!fallbackError) {
-            data = fallbackData;
-            error = fallbackError;
-          }
-        }
+        // Nouvelle requête utilisant la table participation avec jointure
+        const { data, error } = await supabase
+          .from('participation')
+          .select(`
+            stand_exposant,
+            website_exposant,
+            urlexpo_event,
+            exposants!inner (
+              nom_exposant,
+              website_exposant,
+              exposant_description
+            )
+          `)
+          .eq('id_event', event.id);
 
         if (error) {
           console.error('Error fetching exhibitors:', error);
           setExhibitors([]);
         } else {
-          console.log('📤 Exposants chargés:', data?.length || 0);
+          console.log('📤 Exposants chargés via participation:', data?.length || 0);
           
-          const mappedExhibitors: Exhibitor[] = (data || []).map((exp: RawExhibitor) => ({
-            name: exp.exposant_nom || 'Nom non disponible',
-            stand: exp.exposant_stand || undefined,
-            website: exp.exposant_website || undefined,
-            description: exp.exposant_description || undefined
-          }));
+          const mappedExhibitors: Exhibitor[] = (data || []).map((participation: any) => {
+            const exposant = participation.exposants;
+            return {
+              nom_exposant: exposant.nom_exposant || 'Nom non disponible',
+              stand_exposant: participation.stand_exposant,
+              // Priorité au website de participation, fallback vers exposant
+              website_exposant: participation.website_exposant || exposant.website_exposant,
+              exposant_description: exposant.exposant_description,
+              urlexpo_event: participation.urlexpo_event
+            };
+          });
           
           setExhibitors(mappedExhibitors);
         }
@@ -87,7 +82,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     };
 
     fetchExhibitors();
-  }, [event.id, event.id_event]);
+  }, [event.id]);
 
   if (loading) {
     return (
@@ -117,7 +112,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     );
   }
 
-  // Slice selon showAll - changed from 7 to 9
+  // Slice selon showAll - limité à 9 exposants par défaut
   const toDisplay = showAll ? exhibitors : exhibitors.slice(0, 9);
 
   return (
@@ -133,10 +128,10 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
             onClick={() => setSelectedExhibitor(exhibitor)}
             className="w-full text-left border rounded-lg p-4 hover:shadow-md hover:bg-gray-50 transition-all"
           >
-            <p className="font-medium text-gray-900">{exhibitor.name}</p>
-            {exhibitor.stand && (
+            <p className="font-medium text-gray-900">{exhibitor.nom_exposant}</p>
+            {exhibitor.stand_exposant && (
               <p className="text-sm text-gray-600 mt-1">
-                Stand : {exhibitor.stand}
+                Stand : {exhibitor.stand_exposant}
               </p>
             )}
           </button>
@@ -158,7 +153,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
       <Dialog open={!!selectedExhibitor} onOpenChange={() => setSelectedExhibitor(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{selectedExhibitor?.name}</DialogTitle>
+            <DialogTitle>{selectedExhibitor?.nom_exposant}</DialogTitle>
             <DialogDescription>
               Informations détaillées sur cet exposant
             </DialogDescription>
@@ -166,40 +161,58 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           
           {selectedExhibitor && (
             <div className="space-y-4">
-              {selectedExhibitor.stand && (
+              {selectedExhibitor.stand_exposant && (
                 <div>
                   <p className="font-semibold text-sm text-gray-600">Stand</p>
-                  <p className="text-gray-900">{selectedExhibitor.stand}</p>
+                  <p className="text-gray-900">{selectedExhibitor.stand_exposant}</p>
                 </div>
               )}
               
-              {selectedExhibitor.website && (
+              {selectedExhibitor.website_exposant && (
                 <div>
                   <p className="font-semibold text-sm text-gray-600">Site web</p>
                   <a
-                    href={selectedExhibitor.website.startsWith('http') 
-                      ? selectedExhibitor.website 
-                      : `https://${selectedExhibitor.website}`}
+                    href={selectedExhibitor.website_exposant.startsWith('http') 
+                      ? selectedExhibitor.website_exposant 
+                      : `https://${selectedExhibitor.website_exposant}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline flex items-center gap-1"
                   >
-                    {selectedExhibitor.website}
+                    {selectedExhibitor.website_exposant}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
               )}
               
-              {selectedExhibitor.description && (
+              {selectedExhibitor.urlexpo_event && (
+                <div>
+                  <p className="font-semibold text-sm text-gray-600">Page événement</p>
+                  <a
+                    href={selectedExhibitor.urlexpo_event.startsWith('http') 
+                      ? selectedExhibitor.urlexpo_event 
+                      : `https://${selectedExhibitor.urlexpo_event}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    Voir sur le site
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+              
+              {selectedExhibitor.exposant_description && (
                 <div>
                   <p className="font-semibold text-sm text-gray-600">Description</p>
                   <p className="text-sm text-gray-700 mt-1 leading-relaxed">
-                    {selectedExhibitor.description}
+                    {selectedExhibitor.exposant_description}
                   </p>
                 </div>
               )}
               
-              {!selectedExhibitor.stand && !selectedExhibitor.website && !selectedExhibitor.description && (
+              {!selectedExhibitor.stand_exposant && !selectedExhibitor.website_exposant && 
+               !selectedExhibitor.urlexpo_event && !selectedExhibitor.exposant_description && (
                 <p className="text-gray-500 italic">
                   Aucune information supplémentaire disponible.
                 </p>

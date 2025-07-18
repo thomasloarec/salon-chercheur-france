@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Building, ExternalLink, Target } from 'lucide-react';
 
 interface Exhibitor {
-  name: string;
-  stand?: string;
-  website?: string;
+  nom_exposant: string;
+  stand_exposant?: string;
+  website_exposant?: string;
 }
 
 interface ExhibitorsListProps {
@@ -17,7 +17,7 @@ interface ExhibitorsListProps {
 
 export const ExhibitorsList = ({ exhibitors, crmTargets }: ExhibitorsListProps) => {
   const isTarget = (exhibitor: Exhibitor) => {
-    return crmTargets.some(target => target.name === exhibitor.name);
+    return crmTargets.some(target => target.nom_exposant === exhibitor.nom_exposant);
   };
 
   if (exhibitors.length === 0) {
@@ -75,18 +75,18 @@ export const ExhibitorsList = ({ exhibitors, crmTargets }: ExhibitorsListProps) 
                     {isTarget(exhibitor) && (
                       <Target className="h-4 w-4 text-accent mr-2" />
                     )}
-                    {exhibitor.name}
+                    {exhibitor.nom_exposant}
                   </div>
                 </TableCell>
                 <TableCell>
-                  {exhibitor.stand && (
-                    <Badge variant="outline">{exhibitor.stand}</Badge>
+                  {exhibitor.stand_exposant && (
+                    <Badge variant="outline">{exhibitor.stand_exposant}</Badge>
                   )}
                 </TableCell>
                 <TableCell>
-                  {exhibitor.website && (
+                  {exhibitor.website_exposant && (
                     <a 
-                      href={`https://${exhibitor.website}`}
+                      href={`https://${exhibitor.website_exposant}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center text-accent hover:underline"

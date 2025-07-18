@@ -64,7 +64,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
 
         // Log de contrôle temporaire
         if (process.env.NODE_ENV === 'development') {
-          console.log('🪝 events sample →', data?.[0]?.address || data?.[0]?.rue, data?.[0]?.postal_code || data?.[0]?.code_postal, data?.[0]?.city || data?.[0]?.ville);
+          console.log('🪝 events sample →', data?.[0]?.rue, data?.[0]?.code_postal, data?.[0]?.ville);
         }
 
         // Transformer les données pour correspondre au format attendu
@@ -72,9 +72,9 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           // 📡 DIAGNOSTIC: Log RPC row data
           console.log('📡 RPC row', { 
             id: item.id,
-            code_postal: item.code_postal || item.postal_code, 
-            ville: item.ville || item.city,
-            rue: item.rue || item.address,
+            code_postal: item.code_postal, 
+            ville: item.ville,
+            rue: item.rue,
             visible: item.visible,
             full_item: item
           });
@@ -161,15 +161,15 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
 
         // Log de contrôle temporaire pour le fallback
         if (process.env.NODE_ENV === 'development') {
-          console.log('🪝 fallback events sample →', fallbackData?.[0]?.address || fallbackData?.[0]?.rue, fallbackData?.[0]?.postal_code || fallbackData?.[0]?.code_postal, fallbackData?.[0]?.city || fallbackData?.[0]?.ville);
+          console.log('🪝 fallback events sample →', fallbackData?.[0]?.rue, fallbackData?.[0]?.code_postal, fallbackData?.[0]?.ville);
         }
 
         // 📡 DIAGNOSTIC: Log fallback data
         if (fallbackData && fallbackData.length > 0) {
           console.log('📡 Fallback row', { 
-            code_postal: fallbackData[0].code_postal || fallbackData[0].postal_code, 
-            ville: fallbackData[0].ville || fallbackData[0].city,
-            rue: fallbackData[0].rue || fallbackData[0].address,
+            code_postal: fallbackData[0].code_postal, 
+            ville: fallbackData[0].ville,
+            rue: fallbackData[0].rue,
             visible: fallbackData[0].visible
           });
         }
@@ -178,29 +178,29 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         const fallbackEvents: Event[] = (fallbackData || []).map(item => {
           return {
             id: item.id,
-            nom_event: item.nom_event || item.name || '',
-            description_event: item.description_event || item.description,
-            date_debut: item.date_debut || item.start_date,
-            date_fin: item.date_fin || item.end_date,
-            secteur: item.secteur || item.sector || '',
-            nom_lieu: item.nom_lieu || item.venue_name,
-            ville: item.ville || item.city,
+            nom_event: item.nom_event || '',
+            description_event: item.description_event,
+            date_debut: item.date_debut,
+            date_fin: item.date_fin,
+            secteur: item.secteur || '',
+            nom_lieu: item.nom_lieu,
+            ville: item.ville,
             region: item.region,
-            country: item.pays || item.country,
-            url_image: item.url_image || item.image_url,
-            url_site_officiel: item.url_site_officiel || item.website_url,
+            country: item.pays,
+            url_image: item.url_image,
+            url_site_officiel: item.url_site_officiel,
             tags: item.tags,
-            tarif: item.tarif || item.entry_fee,
-            affluence: item.affluence || item.estimated_visitors,
+            tarif: item.tarif,
+            affluence: item.affluence,
             estimated_exhibitors: item.estimated_exhibitors,
             is_b2b: item.is_b2b,
-            type_event: (item.type_event || item.event_type) as Event['type_event'],
+            type_event: item.type_event as Event['type_event'],
             created_at: item.created_at,
             updated_at: item.updated_at,
             last_scraped_at: item.last_scraped_at,
             scraped_from: item.scraped_from,
-            rue: item.rue || item.address,
-            code_postal: item.code_postal || item.postal_code,
+            rue: item.rue,
+            code_postal: item.code_postal,
             visible: item.visible,
             slug: item.slug,
             sectors: []
