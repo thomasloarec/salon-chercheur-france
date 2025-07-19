@@ -93,7 +93,7 @@ const Favorites = () => {
                   region: undefined, // Region no longer exists in events table
                   country: favorite.events.pays,
                   url_image: favorite.events.url_image,
-                  url_site_officiel: favorite.events.event_url,
+                  url_site_officiel: favorite.events.url_site_officiel,
                   tags: favorite.events.tags,
                   tarif: favorite.events.tarif,
                   affluence: favorite.events.affluence,
@@ -105,7 +105,7 @@ const Favorites = () => {
                   last_scraped_at: favorite.events.last_scraped_at,
                   scraped_from: favorite.events.scraped_from,
                   rue: favorite.events.rue,
-                  code_postal: '', // This field doesn't exist in the query result, using empty string
+                  code_postal: favorite.events.code_postal,
                   visible: favorite.events.visible,
                   slug: favorite.events.slug,
                   sectors: favorite.events.event_sectors?.map(es => ({

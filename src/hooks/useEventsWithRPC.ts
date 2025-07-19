@@ -74,7 +74,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             secteur: convertSecteurToString(item.secteur),
             nom_lieu: item.nom_lieu,
             ville: item.ville,
-            region: item.region,
+            region: undefined, // Region no longer exists in events table
             country: item.pays,
             url_image: item.url_image,
             url_site_officiel: item.url_site_officiel,
@@ -221,7 +221,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             secteur: convertSecteurToString(item.secteur),
             nom_lieu: item.nom_lieu,
             ville: item.ville,
-            region: item.region,
+            region: undefined, // Region no longer exists in events table
             country: item.pays,
             url_image: item.url_image,
             url_site_officiel: item.url_site_officiel,
