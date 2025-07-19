@@ -1,19 +1,14 @@
 
-import type { Sector } from './sector';
-
-export type EventType = 'salon' | 'convention' | 'congres' | 'conference' | 'ceremonie';
-
 export interface Event {
   id: string;
-  id_event?: string;
   nom_event: string;
   description_event?: string;
   date_debut: string;
-  date_fin: string;
-  secteur: string;
+  date_fin?: string;
+  secteur?: string;
   nom_lieu?: string;
-  ville: string;
-  region?: string;
+  ville?: string;
+  // Region removed - now handled via events_geo view
   country?: string;
   url_image?: string;
   url_site_officiel?: string;
@@ -21,38 +16,45 @@ export interface Event {
   tarif?: string;
   affluence?: number;
   estimated_exhibitors?: number;
-  is_b2b: boolean;
-  type_event: EventType;
-  created_at: string;
-  updated_at: string;
+  is_b2b?: boolean;
+  type_event?: 'salon' | 'conference' | 'convention' | 'exposition' | 'congres' | 'forum' | 'autre';
+  created_at?: string;
+  updated_at?: string;
   last_scraped_at?: string;
   scraped_from?: string;
   rue?: string;
   code_postal?: string;
   visible?: boolean;
   slug?: string;
-  sectors?: Sector[];
-  is_favorite?: boolean;
-}
-
-export interface LocationSuggestion {
-  type: 'department' | 'region' | 'city' | 'text';
-  value: string;
-  label: string;
+  sectors?: {
+    id: string;
+    name: string;
+    created_at: string;
+  }[];
 }
 
 export interface SearchFilters {
   query?: string;
-  sector?: string;
   sectors?: string[];
   sectorIds?: string[];
   types?: string[];
   months?: number[];
   city?: string;
-  region?: string;
+  // Region filtering now handled via locationSuggestion
   startDate?: string;
   endDate?: string;
   minVisitors?: number;
   maxVisitors?: number;
-  locationSuggestion?: LocationSuggestion;
+  locationSuggestion?: {
+    type: 'city' | 'region' | 'department' | 'text';
+    value: string;
+    label: string;
+  };
+}
+
+export interface LocationSuggestion {
+  rank: number;
+  type: 'city' | 'region' | 'department';
+  label: string;
+  value: string;
 }

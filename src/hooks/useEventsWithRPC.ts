@@ -17,19 +17,28 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
   return useQuery({
     queryKey: ['events-rpc', filters, page, pageSize, isAdmin],
     queryFn: async (): Promise<SearchEventsResult> => {
-      // Construire les paramètres pour la RPC avec region_codes
+      // Construire les paramètres pour la RPC avec region_names
       const params = {
         sector_ids: filters?.sectorIds || [],
         event_types: filters?.types || [],
         months: filters?.months || [],
-        region_codes: [], // Nouveau paramètre pour les codes région
+        region_names: [], // Nouveau paramètre pour les noms de région
         page_num: page,
         page_size: pageSize
       };
 
       // Gestion de la région via locationSuggestion
       if (filters?.locationSuggestion?.type === 'region') {
-        params.region_codes = [filters.locationSuggestion.value];
+        // Récupérer le nom de la région à partir du code
+        const { data: regionData, error: regionError } = await supabase
+          .from('regions')
+          .select('nom')
+          .eq('code', filters.locationSuggestion.value)
+          .single();
+        
+        if (!regionError && regionData) {
+          params.region_names = [regionData.nom];
+        }
       }
 
       // Log détaillé des paramètres envoyés
@@ -37,7 +46,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       console.log('📊 Secteurs sélectionnés (UUIDs):', params.sector_ids);
       console.log('🎯 Types d\'événements:', params.event_types);
       console.log('📅 Mois filtrés:', params.months);
-      console.log('🌍 Codes région:', params.region_codes);
+      console.log('🌍 Noms région:', params.region_names);
       console.log('📄 Page:', params.page_num, '| Taille:', params.page_size);
 
       try {
@@ -74,7 +83,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             secteur: convertSecteurToString(item.secteur),
             nom_lieu: item.nom_lieu,
             ville: item.ville,
-            region: undefined, // Region no longer exists in events table
             country: item.pays,
             url_image: item.url_image,
             url_site_officiel: item.url_site_officiel,
@@ -110,7 +118,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       } catch (error) {
         console.error('❌ Erreur lors de l\'appel RPC:', error);
         
-        // Fallback vers une requête normale si la RPC échoue
+        // Fallback vers une requête directe si la RPC échoue
         console.log('🔄 Fallback vers requête directe...');
         
         let query = supabase
@@ -120,13 +128,13 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           .gte('date_debut', new Date().toISOString().slice(0, 10))
           .order('date_debut', { ascending: true });
 
-        // Appliquer les filtres de localisation en fallback - CORRIGÉ
+        // Appliquer les filtres de localisation en fallback
         if (filters?.locationSuggestion) {
           const { type, value } = filters.locationSuggestion;
           if (type === 'city') {
             query = query.ilike('ville', `%${value}%`);
           } else if (type === 'region') {
-            // ✅ NOUVEAU: Utiliser events_geo au lieu de events.region
+            // Utiliser events_geo pour le filtrage par région
             try {
               const { data: geoEvents, error: geoError } = await supabase
                 .from('events_geo')
@@ -155,12 +163,11 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           }
         }
 
-        // Filtrage par secteur en fallback - utiliser les IDs des secteurs via event_sectors
+        // Filtrage par secteur en fallback
         if (filters?.sectorIds && filters.sectorIds.length > 0) {
           console.log('🔍 Fallback - Filtrage par secteurs (IDs):', filters.sectorIds);
           
           try {
-            // Get event IDs that match the sector IDs
             const { data: eventSectors, error: sectorError } = await supabase
               .from('event_sectors')
               .select('event_id')
@@ -195,7 +202,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         }
 
         if (filters?.months && filters.months.length > 0) {
-          // Use a simpler approach for month filtering in fallback
           const monthFilters = filters.months.map(month => `date_debut >= '${new Date().getFullYear()}-${month.toString().padStart(2, '0')}-01' AND date_debut < '${new Date().getFullYear()}-${(month + 1).toString().padStart(2, '0')}-01'`).join(' OR ');
           query = query.or(monthFilters);
         }
@@ -221,7 +227,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             secteur: convertSecteurToString(item.secteur),
             nom_lieu: item.nom_lieu,
             ville: item.ville,
-            region: undefined, // Region no longer exists in events table
             country: item.pays,
             url_image: item.url_image,
             url_site_officiel: item.url_site_officiel,
