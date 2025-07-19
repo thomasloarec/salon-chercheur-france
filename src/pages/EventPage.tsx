@@ -89,7 +89,7 @@ const EventPage = () => {
         description_event: eventData.description_event,
         date_debut: eventData.date_debut,
         date_fin: eventData.date_fin,
-        secteur: eventData.secteur || '',
+        secteur: typeof eventData.secteur === 'string' ? eventData.secteur : (Array.isArray(eventData.secteur) ? eventData.secteur[0] : '') || '',
         nom_lieu: eventData.nom_lieu,
         ville: eventData.ville,
         region: eventData.region,

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Trash2, Edit, EyeOff, Eye, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,7 +63,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         description_event: data.description_event,
         date_debut: data.date_debut,
         date_fin: data.date_fin,
-        secteur: data.secteur || '',
+        secteur: typeof data.secteur === 'string' ? data.secteur : (Array.isArray(data.secteur) ? data.secteur[0] : '') || '',
         nom_lieu: data.nom_lieu,
         ville: data.ville,
         region: data.region,

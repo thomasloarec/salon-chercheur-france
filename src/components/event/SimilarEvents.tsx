@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           description_event: event.description_event,
           date_debut: event.date_debut,
           date_fin: event.date_fin,
-          secteur: event.secteur || '',
+          secteur: typeof event.secteur === 'string' ? event.secteur : (Array.isArray(event.secteur) ? event.secteur[0] : '') || '',
           nom_lieu: event.nom_lieu,
           ville: event.ville,
           region: event.region,

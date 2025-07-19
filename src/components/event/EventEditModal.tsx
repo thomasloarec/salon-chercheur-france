@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -124,7 +123,6 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   };
 
   const onSubmit = async (data: EventFormData) => {
-    // Validate dates
     if (data.date_debut > data.date_fin) {
       toast({
         title: "Erreur de validation",
@@ -201,7 +199,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         description_event: refreshedEventData.description_event,
         date_debut: refreshedEventData.date_debut,
         date_fin: refreshedEventData.date_fin,
-        secteur: refreshedEventData.secteur || '',
+        secteur: typeof refreshedEventData.secteur === 'string' ? refreshedEventData.secteur : (Array.isArray(refreshedEventData.secteur) ? refreshedEventData.secteur[0] : '') || '',
         nom_lieu: refreshedEventData.nom_lieu,
         ville: refreshedEventData.ville,
         region: refreshedEventData.region,

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -86,7 +85,7 @@ const Favorites = () => {
                   description_event: favorite.events.description_event,
                   date_debut: favorite.events.date_debut,
                   date_fin: favorite.events.date_fin,
-                  secteur: favorite.events.secteur || '',
+                  secteur: typeof favorite.events.secteur === 'string' ? favorite.events.secteur : (Array.isArray(favorite.events.secteur) ? favorite.events.secteur[0] : '') || '',
                   nom_lieu: favorite.events.nom_lieu,
                   ville: favorite.events.ville,
                   region: favorite.events.region,
