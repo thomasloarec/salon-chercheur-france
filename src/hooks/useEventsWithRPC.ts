@@ -4,16 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface SearchEventsParams {
-  location_type?: 'department' | 'region' | 'city' | 'text';
-  location_value?: string;
-  sector_ids?: string[];
-  event_types?: string[];
-  months?: number[];
-  page_num?: number;
-  page_size?: number;
-}
-
 interface SearchEventsResult {
   events: Event[];
   total_count: number;
@@ -26,35 +16,16 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
   return useQuery({
     queryKey: ['events-rpc', filters, page, pageSize, isAdmin],
     queryFn: async (): Promise<SearchEventsResult> => {
-      // Construire les paramètres pour la RPC avec des valeurs par défaut
-      const params: SearchEventsParams = {
-        page_num: page,
+      // Construire les paramètres pour la RPC avec des clés nommées
+      const params = {
         page_size: pageSize,
-        location_type: 'text',
-        location_value: '',
-        sector_ids: [],
-        event_types: [],
-        months: [],
+        page_num: page,
+        sector_ids: filters?.sectorIds || [],
+        event_types: filters?.types || [],
+        months: filters?.months || [],
+        location_type: filters?.locationSuggestion?.type || 'text',
+        location_value: filters?.locationSuggestion?.value || '',
       };
-
-      // Gérer la localisation via la RPC
-      if (filters?.locationSuggestion) {
-        params.location_type = filters.locationSuggestion.type;
-        params.location_value = filters.locationSuggestion.value;
-      }
-
-      // Ajouter les filtres secteurs - utiliser les UUIDs des secteurs
-      if (filters?.sectorIds && filters.sectorIds.length > 0) {
-        params.sector_ids = filters.sectorIds;
-      }
-
-      if (filters?.types && filters.types.length > 0) {
-        params.event_types = filters.types;
-      }
-
-      if (filters?.months && filters.months.length > 0) {
-        params.months = filters.months;
-      }
 
       // Log unique pour vérifier les paramètres
       console.log('🚀 RPC search_events - Paramètres envoyés:', params);
