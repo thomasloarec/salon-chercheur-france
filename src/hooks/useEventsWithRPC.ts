@@ -26,10 +26,15 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
   return useQuery({
     queryKey: ['events-rpc', filters, page, pageSize, isAdmin],
     queryFn: async (): Promise<SearchEventsResult> => {
-      // Construire les paramètres pour la RPC
+      // Construire les paramètres pour la RPC avec des valeurs par défaut
       const params: SearchEventsParams = {
         page_num: page,
         page_size: pageSize,
+        location_type: 'text',
+        location_value: '',
+        sector_ids: [],
+        event_types: [],
+        months: [],
       };
 
       // Gérer la localisation via la RPC
@@ -41,7 +46,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       // Ajouter les filtres secteurs - utiliser les UUIDs des secteurs
       if (filters?.sectorIds && filters.sectorIds.length > 0) {
         params.sector_ids = filters.sectorIds;
-        console.log('🔍 useEventsWithRPC - Envoi des sector_ids à la RPC:', filters.sectorIds);
       }
 
       if (filters?.types && filters.types.length > 0) {
@@ -52,9 +56,10 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         params.months = filters.months;
       }
 
+      // Log unique pour vérifier les paramètres
+      console.log('🚀 RPC search_events - Paramètres envoyés:', params);
+
       try {
-        console.log('🚀 RPC search_events appelée avec params:', params);
-        
         // Appel à la RPC avec le bon typage
         const { data, error } = await supabase.rpc('search_events' as any, params);
 
@@ -63,7 +68,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           throw error;
         }
 
-        console.log('✅ RPC search_events - résultats:', data?.length || 0);
+        console.log('✅ RPC search_events - Données reçues:', data?.length || 0);
 
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {

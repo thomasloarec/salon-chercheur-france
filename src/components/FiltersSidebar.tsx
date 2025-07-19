@@ -134,7 +134,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
       console.log('🔍 Sidebar - Applying region filter:', regionCode);
     }
     
-    console.log('FiltersSidebar: Applying filters after user interaction:', filters);
+    console.log('🎯 FiltersSidebar - Filtres finaux appliqués:', filters);
     onFiltersChange(filters);
   }, [sectorIds, types, months, selectedRegion, isInitialized, onFiltersChange, regions, sectorsData]);
 
