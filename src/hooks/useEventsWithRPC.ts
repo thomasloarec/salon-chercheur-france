@@ -1,6 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { convertSecteurToString } from '@/utils/sectorUtils';
 import type { Event, SearchFilters } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -21,7 +22,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         sector_ids: filters?.sectorIds || [],
         event_types: filters?.types || [],
         months: filters?.months || [],
-        region_names: filters?.sectors || [], // Pour compatibilité avec l'ancien système
+        region_names: [], // Pour compatibilité avec l'ancien système
         page_num: page,
         page_size: pageSize
       };
@@ -65,7 +66,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             description_event: item.description_event,
             date_debut: item.date_debut,
             date_fin: item.date_fin,
-            secteur: typeof item.secteur === 'string' ? item.secteur : (Array.isArray(item.secteur) ? item.secteur[0] : '') || '',
+            secteur: convertSecteurToString(item.secteur),
             nom_lieu: item.nom_lieu,
             ville: item.ville,
             region: item.region,
@@ -168,10 +169,9 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         }
 
         if (filters?.months && filters.months.length > 0) {
-          const monthConditions = filters.months.map(month => 
-            `extract(month from date_debut).eq.${month}`
-          ).join(',');
-          query = query.or(monthConditions);
+          // Use a simpler approach for month filtering in fallback
+          const monthFilters = filters.months.map(month => `date_debut >= '${new Date().getFullYear()}-${month.toString().padStart(2, '0')}-01' AND date_debut < '${new Date().getFullYear()}-${(month + 1).toString().padStart(2, '0')}-01'`).join(' OR ');
+          query = query.or(monthFilters);
         }
 
         const { data: fallbackData, error: fallbackError } = await query
@@ -192,7 +192,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             description_event: item.description_event,
             date_debut: item.date_debut,
             date_fin: item.date_fin,
-            secteur: typeof item.secteur === 'string' ? item.secteur : (Array.isArray(item.secteur) ? item.secteur[0] : '') || '',
+            secteur: convertSecteurToString(item.secteur),
             nom_lieu: item.nom_lieu,
             ville: item.ville,
             region: item.region,

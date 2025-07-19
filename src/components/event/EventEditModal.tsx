@@ -33,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSectors, useEventSectors } from '@/hooks/useSectors';
 import { EVENT_TYPES } from '@/constants/eventTypes';
 import { cn } from '@/lib/utils';
+import { convertSecteurToString } from '@/utils/sectorUtils';
 import type { Event } from '@/types/event';
 
 interface EventEditModalProps {
@@ -199,7 +200,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         description_event: refreshedEventData.description_event,
         date_debut: refreshedEventData.date_debut,
         date_fin: refreshedEventData.date_fin,
-        secteur: typeof refreshedEventData.secteur === 'string' ? refreshedEventData.secteur : (Array.isArray(refreshedEventData.secteur) ? refreshedEventData.secteur[0] : '') || '',
+        secteur: convertSecteurToString(refreshedEventData.secteur),
         nom_lieu: refreshedEventData.nom_lieu,
         ville: refreshedEventData.ville,
         region: refreshedEventData.region,

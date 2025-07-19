@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { convertSecteurToString } from '@/utils/sectorUtils';
 import type { Event } from '@/types/event';
 
 interface SimilarEventsProps {
@@ -43,7 +44,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           description_event: event.description_event,
           date_debut: event.date_debut,
           date_fin: event.date_fin,
-          secteur: typeof event.secteur === 'string' ? event.secteur : (Array.isArray(event.secteur) ? event.secteur[0] : '') || '',
+          secteur: convertSecteurToString(event.secteur),
           nom_lieu: event.nom_lieu,
           ville: event.ville,
           region: event.region,

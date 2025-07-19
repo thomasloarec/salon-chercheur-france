@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -5,6 +6,7 @@ import EventCard from '@/components/EventCard';
 import { Button } from '@/components/ui/button';
 import { Heart, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { convertSecteurToString } from '@/utils/sectorUtils';
 import type { EventType } from '@/types/event';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -85,7 +87,7 @@ const Favorites = () => {
                   description_event: favorite.events.description_event,
                   date_debut: favorite.events.date_debut,
                   date_fin: favorite.events.date_fin,
-                  secteur: typeof favorite.events.secteur === 'string' ? favorite.events.secteur : (Array.isArray(favorite.events.secteur) ? favorite.events.secteur[0] : '') || '',
+                  secteur: convertSecteurToString(favorite.events.secteur),
                   nom_lieu: favorite.events.nom_lieu,
                   ville: favorite.events.ville,
                   region: favorite.events.region,

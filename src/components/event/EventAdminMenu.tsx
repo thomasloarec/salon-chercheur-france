@@ -20,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EventEditModal } from './EventEditModal';
+import { convertSecteurToString } from '@/utils/sectorUtils';
 import type { Event } from '@/types/event';
 
 interface EventAdminMenuProps {
@@ -63,7 +64,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         description_event: data.description_event,
         date_debut: data.date_debut,
         date_fin: data.date_fin,
-        secteur: typeof data.secteur === 'string' ? data.secteur : (Array.isArray(data.secteur) ? data.secteur[0] : '') || '',
+        secteur: convertSecteurToString(data.secteur),
         nom_lieu: data.nom_lieu,
         ville: data.ville,
         region: data.region,
