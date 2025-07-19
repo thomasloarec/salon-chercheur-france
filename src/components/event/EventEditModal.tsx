@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -88,8 +89,14 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       
       let newSlug = event.slug;
       if (shouldRegenerateSlug) {
-        const year = new Date(formData.date_debut).getFullYear();
-        newSlug = generateEventSlug(formData.nom_event, formData.ville, year);
+        // Create a temporary event object for slug generation
+        const tempEvent: Event = {
+          ...event,
+          nom_event: formData.nom_event,
+          ville: formData.ville,
+          date_debut: formData.date_debut,
+        };
+        newSlug = generateEventSlug(tempEvent);
       }
 
       const { data, error } = await supabase
@@ -133,7 +140,6 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         secteur: convertSecteurToString(data.secteur),
         nom_lieu: data.nom_lieu,
         ville: data.ville,
-        // Region no longer exists - handled via events_geo view
         country: data.pays,
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,

@@ -10,7 +10,6 @@ const mockEvent: Event = {
   date_fin: '2024-01-17',
   ville: 'Paris',
   secteur: 'Test',
-  // Region no longer exists - handled via events_geo view
   country: 'France',
   is_b2b: true,
   type_event: 'salon',
@@ -32,9 +31,9 @@ describe('eventGrouping', () => {
       const grouped = groupEventsByMonth(events);
 
       expect(grouped).toHaveLength(2);
-      expect(grouped[0].month).toBe('Janvier 2024');
+      expect(grouped[0].monthLabel).toBe('janvier 2024');
       expect(grouped[0].events).toHaveLength(2);
-      expect(grouped[1].month).toBe('Février 2024');
+      expect(grouped[1].monthLabel).toBe('février 2024');
       expect(grouped[1].events).toHaveLength(1);
     });
 
