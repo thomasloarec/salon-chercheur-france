@@ -17,12 +17,12 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
   return useQuery({
     queryKey: ['events-rpc', filters, page, pageSize, isAdmin],
     queryFn: async (): Promise<SearchEventsResult> => {
-      // Construire les paramètres pour la RPC avec le nouveau nom region_codes
+      // Construire les paramètres pour la RPC avec region_codes
       const params = {
         sector_ids: filters?.sectorIds || [],
         event_types: filters?.types || [],
         months: filters?.months || [],
-        region_codes: [], // Nouveau paramètre pour remplacer region_names
+        region_codes: [], // Nouveau paramètre pour les codes région
         page_num: page,
         page_size: pageSize
       };
@@ -33,7 +33,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       }
 
       // Log détaillé des paramètres envoyés
-      console.log('🚀 RPC search_events - Paramètres avec region_codes:', params);
+      console.log('🚀 RPC search_events - Paramètres:', params);
       console.log('📊 Secteurs sélectionnés (UUIDs):', params.sector_ids);
       console.log('🎯 Types d\'événements:', params.event_types);
       console.log('📅 Mois filtrés:', params.months);

@@ -205,7 +205,6 @@ export type Database = {
           organizer_contact: string | null
           organizer_name: string | null
           pays: string | null
-          region: string | null
           rue: string | null
           scraped_from: string | null
           secteur: Json
@@ -238,7 +237,6 @@ export type Database = {
           organizer_contact?: string | null
           organizer_name?: string | null
           pays?: string | null
-          region?: string | null
           rue?: string | null
           scraped_from?: string | null
           secteur: Json
@@ -271,7 +269,6 @@ export type Database = {
           organizer_contact?: string | null
           organizer_name?: string | null
           pays?: string | null
-          region?: string | null
           rue?: string | null
           scraped_from?: string | null
           secteur?: Json
@@ -782,31 +779,9 @@ export type Database = {
       events_geo: {
         Row: {
           code_postal: string | null
-          commune_id: number | null
-          created_at: string | null
-          date_debut: string | null
-          date_fin: string | null
           dep_code: string | null
-          description_event: string | null
           id: string | null
-          id_event: string | null
-          last_scraped_at: string | null
-          nom_event: string | null
-          nom_lieu: string | null
-          pays: string | null
-          region: string | null
           region_code: string | null
-          rue: string | null
-          scraped_from: string | null
-          secteur: Json | null
-          slug: string | null
-          tarif: string | null
-          type_event: string | null
-          updated_at: string | null
-          url_image: string | null
-          url_site_officiel: string | null
-          ville: string | null
-          visible: boolean | null
         }
         Relationships: [
           {
@@ -817,7 +792,7 @@ export type Database = {
             referencedColumns: ["code"]
           },
           {
-            foreignKeyName: "departements_region_code_fkey"
+            foreignKeyName: "communes_region_code_fkey"
             columns: ["region_code"]
             isOneToOne: false
             referencedRelation: "regions"
@@ -869,52 +844,31 @@ export type Database = {
         Returns: unknown
       }
       search_events: {
-        Args:
-          | {
-              location_type?: string
-              location_value?: string
-              sector_ids?: string[]
-              event_types?: string[]
-              months?: number[]
-              page_num?: number
-              page_size?: number
-            }
-          | {
-              sector_ids?: string[]
-              event_types?: string[]
-              months?: number[]
-              region_names?: string[]
-              page_num?: number
-              page_size?: number
-            }
+        Args: {
+          sector_ids?: string[]
+          event_types?: string[]
+          months?: number[]
+          region_codes?: string[]
+          page_num?: number
+          page_size?: number
+        }
         Returns: {
           id: string
           nom_event: string
-          description_event: string
           date_debut: string
           date_fin: string
-          secteur: string
           ville: string
-          region: string
-          pays: string
-          nom_lieu: string
+          secteur: Json
           url_image: string
-          tags: string[]
-          affluence: number
-          estimated_exhibitors: number
-          is_b2b: boolean
-          type_event: string
-          created_at: string
-          updated_at: string
-          last_scraped_at: string
-          scraped_from: string
-          rue: string
-          visible: boolean
           slug: string
-          total_count: number
+          rue: string
           code_postal: string
+          nom_lieu: string
           url_site_officiel: string
-          tarif: string
+          type_event: string
+          is_b2b: boolean
+          visible: boolean
+          total_count: number
         }[]
       }
       set_limit: {
