@@ -14,9 +14,9 @@ const SectorsSection = () => {
     !HIDDEN_SECTORS_ON_HOME.includes(sector.name)
   );
 
-  const handleSectorClick = (sectorName: string) => {
-    // Navigation vers /events avec le nom du secteur en query param
-    navigate(`/events?sectors=${encodeURIComponent(sectorName)}`);
+  const handleSectorClick = (sectorId: string) => {
+    // Navigation vers /events avec l'ID du secteur (UUID)
+    navigate(`/events?sectors=${encodeURIComponent(sectorId)}`);
   };
 
   if (isLoading) {
@@ -56,7 +56,7 @@ const SectorsSection = () => {
               <Card 
                 key={sector.id} 
                 className="hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group border-2 hover:border-accent/20"
-                onClick={() => handleSectorClick(sector.name)}
+                onClick={() => handleSectorClick(sector.id)}
               >
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-4">

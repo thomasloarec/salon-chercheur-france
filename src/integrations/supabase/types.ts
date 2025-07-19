@@ -880,34 +880,32 @@ export type Database = {
         }
         Returns: {
           id: string
-          name: string
-          description: string
-          start_date: string
-          end_date: string
-          sector: string
-          location: string
-          city: string
+          nom_event: string
+          description_event: string
+          date_debut: string
+          date_fin: string
+          secteur: string
+          ville: string
           region: string
-          country: string
-          venue_name: string
-          event_url: string
-          image_url: string
+          pays: string
+          nom_lieu: string
+          url_image: string
           tags: string[]
-          organizer_name: string
-          organizer_contact: string
-          entry_fee: string
-          estimated_visitors: number
+          affluence: number
           estimated_exhibitors: number
           is_b2b: boolean
-          event_type: string
+          type_event: string
           created_at: string
           updated_at: string
           last_scraped_at: string
           scraped_from: string
-          address: string
+          rue: string
           visible: boolean
           slug: string
           total_count: number
+          code_postal: string
+          url_site_officiel: string
+          tarif: string
         }[]
       }
       set_limit: {

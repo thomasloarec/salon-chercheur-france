@@ -38,7 +38,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         params.location_value = filters.locationSuggestion.value;
       }
 
-      // Ajouter les filtres secteurs - utiliser les noms des secteurs directement
+      // Ajouter les filtres secteurs - utiliser les UUIDs des secteurs
       if (filters?.sectors && filters.sectors.length > 0) {
         params.sector_ids = filters.sectors;
       } else if (filters?.sectorIds && filters.sectorIds.length > 0) {
@@ -62,51 +62,36 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           throw error;
         }
 
-        // Log de contrôle temporaire
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🪝 events sample →', data?.[0]?.rue, data?.[0]?.code_postal, data?.[0]?.ville);
-        }
-
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {
-          // 📡 DIAGNOSTIC: Log RPC row data
-          console.log('📡 RPC row', { 
-            id: item.id,
-            code_postal: item.code_postal, 
-            ville: item.ville,
-            rue: item.rue,
-            visible: item.visible,
-            full_item: item
-          });
-          
           return {
             id: item.id,
-            nom_event: item.nom_event || item.name || '',
-            description_event: item.description_event || item.description,
-            date_debut: item.date_debut || item.start_date,
-            date_fin: item.date_fin || item.end_date,
-            secteur: item.secteur || item.sector || '',
-            nom_lieu: item.nom_lieu || item.venue_name,
-            ville: item.ville || item.city,
+            nom_event: item.nom_event || '',
+            description_event: item.description_event,
+            date_debut: item.date_debut,
+            date_fin: item.date_fin,
+            secteur: item.secteur || '',
+            nom_lieu: item.nom_lieu,
+            ville: item.ville,
             region: item.region,
-            country: item.pays || item.country,
-            url_image: item.url_image || item.image_url,
-            url_site_officiel: item.url_site_officiel || item.website_url,
+            country: item.pays,
+            url_image: item.url_image,
+            url_site_officiel: item.url_site_officiel,
             tags: item.tags,
-            tarif: item.tarif || item.entry_fee,
-            affluence: item.affluence || item.estimated_visitors,
+            tarif: item.tarif,
+            affluence: item.affluence,
             estimated_exhibitors: item.estimated_exhibitors,
             is_b2b: item.is_b2b,
-            type_event: (item.type_event || item.event_type) as Event['type_event'],
+            type_event: item.type_event as Event['type_event'],
             created_at: item.created_at,
             updated_at: item.updated_at,
             last_scraped_at: item.last_scraped_at,
             scraped_from: item.scraped_from,
-            rue: item.rue || item.address,
-            code_postal: item.code_postal || item.postal_code,
+            rue: item.rue,
+            code_postal: item.code_postal,
             visible: item.visible,
             slug: item.slug,
-            sectors: item.sectors || []
+            sectors: []
           };
         }) || [];
 
@@ -123,7 +108,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         let query = supabase
           .from('events')
           .select('*')
-          .eq('visible', true) // IMPORTANT: ne charger que les événements visibles
+          .eq('visible', true)
           .gte('date_debut', new Date().toISOString().slice(0, 10))
           .order('date_debut', { ascending: true });
 
@@ -131,25 +116,26 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         if (filters?.locationSuggestion) {
           const { type, value } = filters.locationSuggestion;
           if (type === 'city') {
-            query = query.or(`ville.ilike.%${value}%,city.ilike.%${value}%`);
+            query = query.ilike('ville', `%${value}%`);
           } else if (type === 'region') {
             query = query.ilike('region', `%${value}%`);
           } else if (type === 'text') {
-            query = query.or(`ville.ilike.%${value}%,city.ilike.%${value}%,region.ilike.%${value}%`);
+            query = query.or(`ville.ilike.%${value}%,region.ilike.%${value}%`);
           }
         }
 
-        // Filtrage par secteur en fallback - utiliser contains pour JSON
+        // Filtrage par secteur en fallback
         if (filters?.sectors && filters.sectors.length > 0) {
-          const sectorConditions = filters.sectors.map(sector => 
-            `secteur.cs.["${sector}"]`
-          ).join(',');
-          query = query.or(sectorConditions);
-        } else if (filters?.sectorIds && filters.sectorIds.length > 0) {
-          const sectorConditions = filters.sectorIds.map(sectorId => 
-            `secteur.cs.["${sectorId}"]`
-          ).join(',');
-          query = query.or(sectorConditions);
+          // Si ce sont des UUIDs, utiliser event_sectors
+          const isUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (filters.sectors.some(s => isUuidPattern.test(s))) {
+            query = query.in('id', 
+              supabase.from('event_sectors').select('event_id').in('sector_id', filters.sectors)
+            );
+          } else {
+            // Sinon, utiliser le nom du secteur
+            query = query.in('secteur', filters.sectors);
+          }
         }
 
         const { data: fallbackData, error: fallbackError } = await query
@@ -157,21 +143,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
 
         if (fallbackError) {
           throw fallbackError;
-        }
-
-        // Log de contrôle temporaire pour le fallback
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🪝 fallback events sample →', fallbackData?.[0]?.rue, fallbackData?.[0]?.code_postal, fallbackData?.[0]?.ville);
-        }
-
-        // 📡 DIAGNOSTIC: Log fallback data
-        if (fallbackData && fallbackData.length > 0) {
-          console.log('📡 Fallback row', { 
-            code_postal: fallbackData[0].code_postal, 
-            ville: fallbackData[0].ville,
-            rue: fallbackData[0].rue,
-            visible: fallbackData[0].visible
-          });
         }
 
         // Mapper les données de fallback au format Event

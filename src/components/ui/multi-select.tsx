@@ -79,34 +79,23 @@ export function MultiSelect({
               {selected.map((value) => {
                 const option = options.find((option) => option.value === value);
                 return (
-                  <Badge
-                    variant="secondary"
+                  <span
                     key={value}
-                    className="mr-1 mb-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!disabled) handleUnselect(value);
-                    }}
+                    className="inline-flex items-center bg-secondary text-secondary-foreground rounded-full px-2 py-1 text-xs font-medium mr-1 mb-1"
                   >
                     {option?.label}
                     {!disabled && (
-                      <button
-                        className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleUnselect(value);
-                          }
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
+                      <span
+                        className="ml-1 cursor-pointer hover:text-foreground"
+                        onClick={(e) => {
                           e.stopPropagation();
+                          handleUnselect(value);
                         }}
-                        onClick={() => handleUnselect(value)}
                       >
-                        <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                      </button>
+                        <X className="h-3 w-3" />
+                      </span>
                     )}
-                  </Badge>
+                  </span>
                 );
               })}
             </div>

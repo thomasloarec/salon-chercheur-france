@@ -59,7 +59,7 @@ export const useEvents = (filters?: SearchFilters) => {
 
       // Filtre « à partir d'aujourd'hui » par défaut (sauf si des mois sont précisés)
       if (!filters?.months || filters.months.length === 0) {
-        query = query.gte('date_debut', new Date().toISOString().split('T')[0]);
+        query = query.gte('date_debut', new Date().toISOString().slice(0, 10));
       }
 
       // Corriger le filtre Mois - un seul mois
