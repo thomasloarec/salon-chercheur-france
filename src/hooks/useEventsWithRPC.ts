@@ -129,13 +129,51 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           // Si ce sont des UUIDs, utiliser event_sectors
           const isUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           if (filters.sectors.some(s => isUuidPattern.test(s))) {
-            query = query.in('id', 
-              supabase.from('event_sectors').select('event_id').in('sector_id', filters.sectors)
-            );
+            // Get event IDs that match the sector IDs
+            const { data: eventSectors } = await supabase
+              .from('event_sectors')
+              .select('event_id')
+              .in('sector_id', filters.sectors);
+            
+            if (eventSectors && eventSectors.length > 0) {
+              const eventIds = eventSectors.map(es => es.event_id);
+              query = query.in('id', eventIds);
+            } else {
+              // No events match these sectors, return empty result
+              return { events: [], total_count: 0 };
+            }
           } else {
             // Sinon, utiliser le nom du secteur
             query = query.in('secteur', filters.sectors);
           }
+        }
+
+        if (filters?.sectorIds && filters.sectorIds.length > 0) {
+          // Get event IDs that match the sector IDs
+          const { data: eventSectors } = await supabase
+            .from('event_sectors')
+            .select('event_id')
+            .in('sector_id', filters.sectorIds);
+          
+          if (eventSectors && eventSectors.length > 0) {
+            const eventIds = eventSectors.map(es => es.event_id);
+            query = query.in('id', eventIds);
+          } else {
+            // No events match these sectors, return empty result
+            return { events: [], total_count: 0 };
+          }
+        }
+
+        // Apply other filters
+        if (filters?.types && filters.types.length > 0) {
+          query = query.in('type_event', filters.types);
+        }
+
+        if (filters?.months && filters.months.length > 0) {
+          const monthConditions = filters.months.map(month => 
+            `extract(month from date_debut).eq.${month}`
+          ).join(',');
+          query = query.or(monthConditions);
         }
 
         const { data: fallbackData, error: fallbackError } = await query
