@@ -90,6 +90,19 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     setSelectedRegion(codes);
   };
 
+  const handleSectorChange = (newSectorIds: string[]) => {
+    console.log('🎯 Sidebar - Secteurs sélectionnés (IDs):', newSectorIds);
+    
+    // Log des noms des secteurs pour debug
+    const selectedSectorNames = newSectorIds.map(id => {
+      const sector = sectorsData.find(s => s.id === id);
+      return sector ? sector.name : id;
+    });
+    console.log('🏷️ Sidebar - Secteurs sélectionnés (noms):', selectedSectorNames);
+    
+    setSectorIds(newSectorIds);
+  };
+
   // Application des filtres uniquement après initialisation et quand les valeurs changent
   useEffect(() => {
     if (!isInitialized) return;
@@ -98,6 +111,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     
     if (sectorIds.length > 0) {
       filters.sectorIds = sectorIds;
+      console.log('🔍 Sidebar - Application filtres secteurs (IDs):', sectorIds);
     }
     
     if (types.length > 0) {
@@ -122,7 +136,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
     
     console.log('FiltersSidebar: Applying filters after user interaction:', filters);
     onFiltersChange(filters);
-  }, [sectorIds, types, months, selectedRegion, isInitialized, onFiltersChange, regions]);
+  }, [sectorIds, types, months, selectedRegion, isInitialized, onFiltersChange, regions, sectorsData]);
 
   const clearAllFilters = () => {
     console.log('FiltersSidebar: Clearing all filters');
@@ -161,7 +175,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
           <MultiSelect
             options={sectorOptions}
             selected={sectorIds}
-            onChange={setSectorIds}
+            onChange={handleSectorChange}
             placeholder="Sélectionner des secteurs..."
           />
         </div>

@@ -39,9 +39,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       }
 
       // Ajouter les filtres secteurs - utiliser les UUIDs des secteurs
-      if (filters?.sectors && filters.sectors.length > 0) {
-        params.sector_ids = filters.sectors;
-      } else if (filters?.sectorIds && filters.sectorIds.length > 0) {
+      if (filters?.sectorIds && filters.sectorIds.length > 0) {
         params.sector_ids = filters.sectorIds;
       }
 
@@ -54,6 +52,8 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       }
 
       try {
+        console.log('🚀 RPC search_events appelée avec params:', params);
+        
         // Appel à la RPC avec le bon typage
         const { data, error } = await supabase.rpc('search_events' as any, params);
 
@@ -61,6 +61,8 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           console.error('❌ Erreur RPC search_events:', error);
           throw error;
         }
+
+        console.log('✅ RPC search_events - résultats:', data?.length || 0);
 
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {
@@ -105,6 +107,8 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         console.error('❌ Erreur lors de l\'appel RPC:', error);
         
         // Fallback vers une requête normale si la RPC échoue
+        console.log('🔄 Fallback vers requête directe...');
+        
         let query = supabase
           .from('events')
           .select('*')
@@ -124,42 +128,30 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           }
         }
 
-        // Filtrage par secteur en fallback
-        if (filters?.sectors && filters.sectors.length > 0) {
-          // Si ce sont des UUIDs, utiliser event_sectors
-          const isUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (filters.sectors.some(s => isUuidPattern.test(s))) {
-            // Get event IDs that match the sector IDs
-            const { data: eventSectors } = await supabase
-              .from('event_sectors')
-              .select('event_id')
-              .in('sector_id', filters.sectors);
-            
-            if (eventSectors && eventSectors.length > 0) {
-              const eventIds = eventSectors.map(es => es.event_id);
-              query = query.in('id', eventIds);
-            } else {
-              // No events match these sectors, return empty result
-              return { events: [], total_count: 0 };
-            }
-          } else {
-            // Sinon, utiliser le nom du secteur
-            query = query.in('secteur', filters.sectors);
-          }
-        }
-
+        // Filtrage par secteur en fallback - utiliser les IDs des secteurs
         if (filters?.sectorIds && filters.sectorIds.length > 0) {
+          console.log('🔍 Filtrage par secteurs (IDs):', filters.sectorIds);
+          
           // Get event IDs that match the sector IDs
-          const { data: eventSectors } = await supabase
+          const { data: eventSectors, error: sectorError } = await supabase
             .from('event_sectors')
             .select('event_id')
             .in('sector_id', filters.sectorIds);
           
+          if (sectorError) {
+            console.error('❌ Erreur lors de la récupération des event_sectors:', sectorError);
+            throw sectorError;
+          }
+          
+          console.log('📊 event_sectors trouvés:', eventSectors?.length || 0);
+          
           if (eventSectors && eventSectors.length > 0) {
             const eventIds = eventSectors.map(es => es.event_id);
+            console.log('🎯 Event IDs correspondants:', eventIds.length);
             query = query.in('id', eventIds);
           } else {
             // No events match these sectors, return empty result
+            console.log('⚠️ Aucun événement trouvé pour ces secteurs');
             return { events: [], total_count: 0 };
           }
         }
@@ -180,8 +172,11 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           .range((page - 1) * pageSize, page * pageSize - 1);
 
         if (fallbackError) {
+          console.error('❌ Erreur fallback:', fallbackError);
           throw fallbackError;
         }
+
+        console.log('✅ Fallback - événements trouvés:', fallbackData?.length || 0);
 
         // Mapper les données de fallback au format Event
         const fallbackEvents: Event[] = (fallbackData || []).map(item => {
