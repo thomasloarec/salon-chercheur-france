@@ -47,7 +47,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           secteur: convertSecteurToString(event.secteur),
           nom_lieu: event.nom_lieu,
           ville: event.ville,
-          region: event.region,
+          region: undefined, // Region no longer exists in events table
           country: event.pays,
           url_image: event.url_image,
           url_site_officiel: event.url_site_officiel,

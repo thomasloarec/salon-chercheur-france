@@ -203,7 +203,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         secteur: convertSecteurToString(refreshedEventData.secteur),
         nom_lieu: refreshedEventData.nom_lieu,
         ville: refreshedEventData.ville,
-        region: refreshedEventData.region,
+        region: undefined, // Region no longer exists in events table
         country: refreshedEventData.pays,
         url_image: refreshedEventData.url_image,
         url_site_officiel: refreshedEventData.url_site_officiel,

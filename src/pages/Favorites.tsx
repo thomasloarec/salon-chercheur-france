@@ -90,7 +90,7 @@ const Favorites = () => {
                   secteur: convertSecteurToString(favorite.events.secteur),
                   nom_lieu: favorite.events.nom_lieu,
                   ville: favorite.events.ville,
-                  region: favorite.events.region,
+                  region: undefined, // Region no longer exists in events table
                   country: favorite.events.pays,
                   url_image: favorite.events.url_image,
                   url_site_officiel: favorite.events.event_url,

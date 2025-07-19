@@ -67,7 +67,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         secteur: convertSecteurToString(data.secteur),
         nom_lieu: data.nom_lieu,
         ville: data.ville,
-        region: data.region,
+        region: undefined, // Region no longer exists in events table
         country: data.pays,
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,

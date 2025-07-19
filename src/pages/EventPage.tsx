@@ -9,7 +9,6 @@ import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitors } from '@/components/event/EventExhibitors';
 import { EventSidebar } from '@/components/event/EventSidebar';
-import { SimilarEvents } from '@/components/event/SimilarEvents';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -93,7 +92,7 @@ const EventPage = () => {
         secteur: convertSecteurToString(eventData.secteur),
         nom_lieu: eventData.nom_lieu,
         ville: eventData.ville,
-        region: eventData.region,
+        region: undefined, // Region no longer exists in events table
         country: eventData.pays,
         url_image: eventData.url_image,
         url_site_officiel: eventData.url_site_officiel,

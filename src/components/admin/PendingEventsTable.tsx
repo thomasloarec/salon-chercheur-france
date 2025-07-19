@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,7 +45,7 @@ export const PendingEventsTable = () => {
         secteur: event.secteur || '',
         nom_lieu: event.nom_lieu,
         ville: event.ville,
-        region: event.region,
+        region: undefined, // Region no longer exists in events table
         country: event.pays,
         url_image: event.url_image,
         url_site_officiel: event.url_site_officiel,
