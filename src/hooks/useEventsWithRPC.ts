@@ -41,6 +41,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       // Ajouter les filtres secteurs - utiliser les UUIDs des secteurs
       if (filters?.sectorIds && filters.sectorIds.length > 0) {
         params.sector_ids = filters.sectorIds;
+        console.log('🔍 useEventsWithRPC - Envoi des sector_ids à la RPC:', filters.sectorIds);
       }
 
       if (filters?.types && filters.types.length > 0) {
@@ -128,30 +129,35 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           }
         }
 
-        // Filtrage par secteur en fallback - utiliser les IDs des secteurs
+        // Filtrage par secteur en fallback - utiliser les IDs des secteurs via event_sectors
         if (filters?.sectorIds && filters.sectorIds.length > 0) {
-          console.log('🔍 Filtrage par secteurs (IDs):', filters.sectorIds);
+          console.log('🔍 Fallback - Filtrage par secteurs (IDs):', filters.sectorIds);
           
-          // Get event IDs that match the sector IDs
-          const { data: eventSectors, error: sectorError } = await supabase
-            .from('event_sectors')
-            .select('event_id')
-            .in('sector_id', filters.sectorIds);
-          
-          if (sectorError) {
-            console.error('❌ Erreur lors de la récupération des event_sectors:', sectorError);
-            throw sectorError;
-          }
-          
-          console.log('📊 event_sectors trouvés:', eventSectors?.length || 0);
-          
-          if (eventSectors && eventSectors.length > 0) {
-            const eventIds = eventSectors.map(es => es.event_id);
-            console.log('🎯 Event IDs correspondants:', eventIds.length);
-            query = query.in('id', eventIds);
-          } else {
-            // No events match these sectors, return empty result
-            console.log('⚠️ Aucun événement trouvé pour ces secteurs');
+          try {
+            // Get event IDs that match the sector IDs
+            const { data: eventSectors, error: sectorError } = await supabase
+              .from('event_sectors')
+              .select('event_id')
+              .in('sector_id', filters.sectorIds);
+            
+            if (sectorError) {
+              console.error('❌ Erreur lors de la récupération des event_sectors:', sectorError);
+              throw sectorError;
+            }
+            
+            console.log('📊 event_sectors trouvés:', eventSectors?.length || 0);
+            
+            if (eventSectors && eventSectors.length > 0) {
+              const eventIds = eventSectors.map(es => es.event_id);
+              console.log('🎯 Event IDs correspondants:', eventIds.length);
+              query = query.in('id', eventIds);
+            } else {
+              // No events match these sectors, return empty result
+              console.log('⚠️ Aucun événement trouvé pour ces secteurs');
+              return { events: [], total_count: 0 };
+            }
+          } catch (sectorFallbackError) {
+            console.error('❌ Erreur fallback secteurs:', sectorFallbackError);
             return { events: [], total_count: 0 };
           }
         }
@@ -213,7 +219,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
 
         return {
           events: fallbackEvents,
-          total_count: fallbackEvents.length
+          total_count: fallbackData?.length || 0
         };
       }
     },
