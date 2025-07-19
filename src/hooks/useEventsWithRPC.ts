@@ -17,28 +17,19 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
   return useQuery({
     queryKey: ['events-rpc', filters, page, pageSize, isAdmin],
     queryFn: async (): Promise<SearchEventsResult> => {
-      // Construire les paramètres pour la RPC avec region_names
+      // Construire les paramètres pour la RPC avec region_codes
       const params = {
         sector_ids: filters?.sectorIds || [],
         event_types: filters?.types || [],
         months: filters?.months || [],
-        region_names: [], // Nouveau paramètre pour les noms de région
+        region_codes: [], // Utiliser region_codes au lieu de region_names
         page_num: page,
         page_size: pageSize
       };
 
       // Gestion de la région via locationSuggestion
       if (filters?.locationSuggestion?.type === 'region') {
-        // Récupérer le nom de la région à partir du code
-        const { data: regionData, error: regionError } = await supabase
-          .from('regions')
-          .select('nom')
-          .eq('code', filters.locationSuggestion.value)
-          .single();
-        
-        if (!regionError && regionData) {
-          params.region_names = [regionData.nom];
-        }
+        params.region_codes = [filters.locationSuggestion.value];
       }
 
       // Log détaillé des paramètres envoyés
@@ -46,7 +37,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       console.log('📊 Secteurs sélectionnés (UUIDs):', params.sector_ids);
       console.log('🎯 Types d\'événements:', params.event_types);
       console.log('📅 Mois filtrés:', params.months);
-      console.log('🌍 Noms région:', params.region_names);
+      console.log('🌍 Codes région:', params.region_codes);
       console.log('📄 Page:', params.page_num, '| Taille:', params.page_size);
 
       try {

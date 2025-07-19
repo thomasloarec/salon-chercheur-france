@@ -49,7 +49,6 @@ export const useFavoriteEvents = () => {
             secteur: event.secteur || '',
             nom_lieu: event.nom_lieu,
             ville: event.ville,
-            region: event.region,
             country: event.country,
             url_image: event.url_image,
             url_site_officiel: event.url_site_officiel,
