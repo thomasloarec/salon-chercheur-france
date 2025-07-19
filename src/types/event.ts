@@ -31,7 +31,7 @@ export interface Event {
     name: string;
     created_at: string;
   }[];
-  is_favorite?: boolean; // Added missing property
+  is_favorite?: boolean;
 }
 
 // Export EventType for backwards compatibility
