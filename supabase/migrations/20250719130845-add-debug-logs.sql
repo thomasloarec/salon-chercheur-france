@@ -1,4 +1,5 @@
 
+
 -- Add debug logging to search_events RPC function
 CREATE OR REPLACE FUNCTION public.search_events(
   location_type text DEFAULT 'text',
@@ -46,6 +47,14 @@ BEGIN
   -- Log tous les paramètres d'entrée immédiatement
   RAISE NOTICE 'search_events paramètres – location_type=%, location_value=%, sector_ids=%, event_types=%, months=%',
     location_type, location_value, sector_ids, event_types, months;
+  
+  -- Log détaillé pour le filtre secteur
+  RAISE NOTICE '▶ search_events called with sector_ids = %', sector_ids;
+  RAISE NOTICE '▶ matching event_sectors count = %', (
+    SELECT COUNT(*) 
+    FROM event_sectors 
+    WHERE sector_id = ANY(sector_ids)
+  );
   
   -- Calculate offset
   offset_value := (page_num - 1) * page_size;
@@ -109,3 +118,4 @@ BEGIN
   RAISE NOTICE 'RPC search_events: Returned % events', total_events;
 END;
 $$;
+

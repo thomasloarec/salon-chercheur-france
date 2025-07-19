@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
@@ -32,14 +33,14 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       console.log('📄 Page:', params.page_num, '| Taille:', params.page_size);
 
       // Log juste avant l'appel RPC
-      console.log('→ Calling search_events with params:', params);
+      console.log('→ CALL search_events params:', params);
 
       try {
         // Appel à la RPC avec le bon typage
         const { data, error } = await supabase.rpc('search_events' as any, params);
 
         // Log juste après la réponse
-        console.log('← search_events résultat:', data);
+        console.log('← search_events response data:', data);
 
         if (error) {
           console.error('❌ Erreur RPC search_events:', error);
@@ -139,6 +140,9 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
               .from('event_sectors')
               .select('event_id')
               .in('sector_id', filters.sectorIds);
+            
+            // Log détaillé pour le fallback
+            console.log('↪ fallback event_sectors rows:', eventSectors);
             
             if (sectorError) {
               console.error('❌ Erreur lors de la récupération des event_sectors:', sectorError);
