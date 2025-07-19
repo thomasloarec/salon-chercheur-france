@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
@@ -32,9 +31,15 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       console.log('📊 Secteurs sélectionnés (UUIDs):', params.sector_ids);
       console.log('📄 Page:', params.page_num, '| Taille:', params.page_size);
 
+      // Log juste avant l'appel RPC
+      console.log('→ Calling search_events with params:', params);
+
       try {
         // Appel à la RPC avec le bon typage
         const { data, error } = await supabase.rpc('search_events' as any, params);
+
+        // Log juste après la réponse
+        console.log('← search_events résultat:', data);
 
         if (error) {
           console.error('❌ Erreur RPC search_events:', error);
