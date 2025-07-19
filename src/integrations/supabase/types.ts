@@ -208,7 +208,7 @@ export type Database = {
           region: string | null
           rue: string | null
           scraped_from: string | null
-          secteur: string
+          secteur: Json
           slug: string | null
           tags: string[] | null
           tarif: string | null
@@ -241,7 +241,7 @@ export type Database = {
           region?: string | null
           rue?: string | null
           scraped_from?: string | null
-          secteur: string
+          secteur: Json
           slug?: string | null
           tags?: string[] | null
           tarif?: string | null
@@ -274,7 +274,7 @@ export type Database = {
           region?: string | null
           rue?: string | null
           scraped_from?: string | null
-          secteur?: string
+          secteur?: Json
           slug?: string | null
           tags?: string[] | null
           tarif?: string | null
@@ -798,7 +798,7 @@ export type Database = {
           region_code: string | null
           rue: string | null
           scraped_from: string | null
-          secteur: string | null
+          secteur: Json | null
           slug: string | null
           tarif: string | null
           type_event: string | null
@@ -869,15 +869,24 @@ export type Database = {
         Returns: unknown
       }
       search_events: {
-        Args: {
-          location_type?: string
-          location_value?: string
-          sector_ids?: string[]
-          event_types?: string[]
-          months?: number[]
-          page_num?: number
-          page_size?: number
-        }
+        Args:
+          | {
+              location_type?: string
+              location_value?: string
+              sector_ids?: string[]
+              event_types?: string[]
+              months?: number[]
+              page_num?: number
+              page_size?: number
+            }
+          | {
+              sector_ids?: string[]
+              event_types?: string[]
+              months?: number[]
+              region_names?: string[]
+              page_num?: number
+              page_size?: number
+            }
         Returns: {
           id: string
           nom_event: string

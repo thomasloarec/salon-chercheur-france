@@ -16,31 +16,27 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
   return useQuery({
     queryKey: ['events-rpc', filters, page, pageSize, isAdmin],
     queryFn: async (): Promise<SearchEventsResult> => {
-      // Construire les paramètres pour la RPC avec des clés nommées
+      // Construire les paramètres pour la RPC dans le bon ordre
       const params = {
-        page_size: pageSize,
-        page_num: page,
         sector_ids: filters?.sectorIds || [],
         event_types: filters?.types || [],
         months: filters?.months || [],
-        location_type: filters?.locationSuggestion?.type || 'text',
-        location_value: filters?.locationSuggestion?.value || '',
+        region_names: filters?.sectors || [], // Pour compatibilité avec l'ancien système
+        page_num: page,
+        page_size: pageSize
       };
 
       // Log détaillé des paramètres envoyés
-      console.log('🚀 RPC search_events - Paramètres envoyés:', params);
+      console.log('🚀 RPC search_events - Nouveaux paramètres:', params);
       console.log('📊 Secteurs sélectionnés (UUIDs):', params.sector_ids);
+      console.log('🎯 Types d\'événements:', params.event_types);
+      console.log('📅 Mois filtrés:', params.months);
+      console.log('🌍 Régions:', params.region_names);
       console.log('📄 Page:', params.page_num, '| Taille:', params.page_size);
 
-      // Log juste avant l'appel RPC
-      console.log('→ CALL search_events params:', params);
-
       try {
-        // Appel à la RPC avec le bon typage
-        const { data, error } = await supabase.rpc('search_events' as any, params);
-
-        // Log juste après la réponse
-        console.log('← search_events response data:', data);
+        // Appel à la RPC avec la nouvelle signature
+        const { data, error } = await supabase.rpc('search_events', params);
 
         if (error) {
           console.error('❌ Erreur RPC search_events:', error);
