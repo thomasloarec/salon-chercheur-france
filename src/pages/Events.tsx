@@ -56,7 +56,7 @@ const Events = () => {
         });
       }
       
-      // Nouvelle gestion standardisée de la localisation
+      // ✅ CORRIGÉ: Gestion standardisée et simplifiée de la localisation
       const locationTypeParam = searchParams.get('location_type');
       const locationValueParam = searchParams.get('location_value');
       
@@ -65,16 +65,6 @@ const Events = () => {
           type: locationTypeParam as 'department' | 'region' | 'city' | 'text',
           value: locationValueParam,
           label: locationValueParam
-        };
-      }
-      
-      // Fallback pour l'ancien système city (à supprimer progressivement)
-      const cityParam = searchParams.get('city');
-      if (cityParam && !initialFilters.locationSuggestion) {
-        initialFilters.locationSuggestion = {
-          type: 'text',
-          value: cityParam,
-          label: cityParam
         };
       }
       
@@ -119,7 +109,7 @@ const Events = () => {
       newParams.set('months', newFilters.months.join(','));
     }
     
-    // Nouvelle gestion standardisée de la localisation
+    // ✅ NETTOYÉ: Gestion standardisée de la localisation
     if (newFilters.locationSuggestion) {
       newParams.set('location_type', newFilters.locationSuggestion.type);
       newParams.set('location_value', newFilters.locationSuggestion.value);

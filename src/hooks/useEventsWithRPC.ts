@@ -17,22 +17,27 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
   return useQuery({
     queryKey: ['events-rpc', filters, page, pageSize, isAdmin],
     queryFn: async (): Promise<SearchEventsResult> => {
-      // Construire les paramètres pour la RPC dans le bon ordre
+      // Construire les paramètres pour la RPC avec le nouveau nom region_codes
       const params = {
         sector_ids: filters?.sectorIds || [],
         event_types: filters?.types || [],
         months: filters?.months || [],
-        region_names: [], // Pour compatibilité avec l'ancien système
+        region_codes: [], // Nouveau paramètre pour remplacer region_names
         page_num: page,
         page_size: pageSize
       };
 
+      // Gestion de la région via locationSuggestion
+      if (filters?.locationSuggestion?.type === 'region') {
+        params.region_codes = [filters.locationSuggestion.value];
+      }
+
       // Log détaillé des paramètres envoyés
-      console.log('🚀 RPC search_events - Nouveaux paramètres:', params);
+      console.log('🚀 RPC search_events - Paramètres avec region_codes:', params);
       console.log('📊 Secteurs sélectionnés (UUIDs):', params.sector_ids);
       console.log('🎯 Types d\'événements:', params.event_types);
       console.log('📅 Mois filtrés:', params.months);
-      console.log('🌍 Régions:', params.region_names);
+      console.log('🌍 Codes région:', params.region_codes);
       console.log('📄 Page:', params.page_num, '| Taille:', params.page_size);
 
       try {
@@ -115,15 +120,38 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           .gte('date_debut', new Date().toISOString().slice(0, 10))
           .order('date_debut', { ascending: true });
 
-        // Appliquer les filtres de localisation en fallback
+        // Appliquer les filtres de localisation en fallback - CORRIGÉ
         if (filters?.locationSuggestion) {
           const { type, value } = filters.locationSuggestion;
           if (type === 'city') {
             query = query.ilike('ville', `%${value}%`);
           } else if (type === 'region') {
-            query = query.ilike('region', `%${value}%`);
+            // ✅ NOUVEAU: Utiliser events_geo au lieu de events.region
+            try {
+              const { data: geoEvents, error: geoError } = await supabase
+                .from('events_geo')
+                .select('id')
+                .eq('region_code', value);
+              
+              if (geoError) {
+                console.error('❌ Erreur events_geo:', geoError);
+                return { events: [], total_count: 0 };
+              }
+              
+              const eventIds = geoEvents?.map(g => g.id) || [];
+              console.log('🗺️ Events IDs trouvés pour région', value, ':', eventIds.length);
+              
+              if (eventIds.length > 0) {
+                query = query.in('id', eventIds);
+              } else {
+                return { events: [], total_count: 0 };
+              }
+            } catch (geoFallbackError) {
+              console.error('❌ Erreur fallback geo:', geoFallbackError);
+              return { events: [], total_count: 0 };
+            }
           } else if (type === 'text') {
-            query = query.or(`ville.ilike.%${value}%,region.ilike.%${value}%`);
+            query = query.or(`ville.ilike.%${value}%,nom_lieu.ilike.%${value}%`);
           }
         }
 
@@ -138,7 +166,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
               .select('event_id')
               .in('sector_id', filters.sectorIds);
             
-            // Log détaillé pour le fallback
             console.log('↪ fallback event_sectors rows:', eventSectors);
             
             if (sectorError) {
@@ -153,7 +180,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
               console.log('🎯 Event IDs correspondants:', eventIds.length);
               query = query.in('id', eventIds);
             } else {
-              // No events match these sectors, return empty result
               console.log('⚠️ Aucun événement trouvé pour ces secteurs');
               return { events: [], total_count: 0 };
             }

@@ -108,8 +108,32 @@ export const useEvents = (filters?: SearchFilters) => {
         query = query.ilike('ville', `%${filters.city}%`);
       }
 
+      // ✅ CORRIGÉ: Remplacer le filtre region par events_geo
       if (filters?.region) {
-        query = query.ilike('region', `%${filters.region}%`);
+        try {
+          const { data: geoEvents, error: geoError } = await supabase
+            .from('events_geo')
+            .select('id')
+            .eq('region_code', filters.region);
+          
+          if (geoError) {
+            console.error('❌ Erreur events_geo dans useEvents:', geoError);
+            throw geoError;
+          }
+          
+          const eventIds = geoEvents?.map(g => g.id) || [];
+          console.log('🗺️ Events IDs trouvés pour région', filters.region, ':', eventIds.length);
+          
+          if (eventIds.length > 0) {
+            query = query.in('id', eventIds);
+          } else {
+            // Aucun événement dans cette région
+            return [];
+          }
+        } catch (geoError) {
+          console.error('❌ Erreur fallback geo dans useEvents:', geoError);
+          return [];
+        }
       }
 
       if (filters?.startDate) {
