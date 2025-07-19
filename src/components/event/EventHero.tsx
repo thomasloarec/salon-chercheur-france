@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarDays, MapPin, Building } from 'lucide-react';
@@ -77,7 +76,7 @@ export const EventHero = ({ event }: EventHeroProps) => {
 
             <div className="flex items-center text-lg text-gray-600">
               <MapPin className="h-5 w-5 mr-3 text-accent" />
-              <span>{event.ville}, {event.region || 'France'}</span>
+              <span>{event.ville}, France</span>
             </div>
 
             {event.nom_lieu && (

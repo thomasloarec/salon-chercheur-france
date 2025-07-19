@@ -92,7 +92,7 @@ const EventPage = () => {
         secteur: convertSecteurToString(eventData.secteur),
         nom_lieu: eventData.nom_lieu,
         ville: eventData.ville,
-        region: undefined, // Region no longer exists in events table
+        // Region no longer exists in events table
         country: eventData.pays,
         url_image: eventData.url_image,
         url_site_officiel: eventData.url_site_officiel,
@@ -150,7 +150,7 @@ const EventPage = () => {
       secteur: refreshedEvent.secteur,
       nom_lieu: refreshedEvent.nom_lieu,
       ville: refreshedEvent.ville,
-      region: refreshedEvent.region,
+      // Region no longer exists in events table
       country: refreshedEvent.country,
       url_image: refreshedEvent.url_image,
       url_site_officiel: refreshedEvent.url_site_officiel,

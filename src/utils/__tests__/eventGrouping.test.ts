@@ -14,7 +14,7 @@ const mockEvent: Event = {
   type_event: 'salon',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
-  region: 'Île-de-France',
+  // Region no longer exists in Event type
   country: 'France',
   url_image: null,
   url_site_officiel: null,

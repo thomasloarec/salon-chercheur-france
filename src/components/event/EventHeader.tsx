@@ -64,7 +64,7 @@ export const EventHeader = ({ event }: EventHeaderProps) => {
 
           <div className="flex items-center text-gray-600">
             <MapPin className="h-5 w-5 mr-3 text-accent" />
-            <span>{event.ville}, {event.region || 'France'}</span>
+            <span>{event.ville}, France</span>
           </div>
         </div>
 

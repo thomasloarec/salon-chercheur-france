@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
@@ -108,13 +107,13 @@ export const useEvents = (filters?: SearchFilters) => {
         query = query.ilike('ville', `%${filters.city}%`);
       }
 
-      // ✅ CORRIGÉ: Remplacer le filtre region par events_geo
-      if (filters?.region) {
+      // ✅ CORRIGÉ: Remplacer le filtre region par events_geo via locationSuggestion
+      if (filters?.locationSuggestion?.type === 'region') {
         try {
           const { data: geoEvents, error: geoError } = await supabase
             .from('events_geo')
             .select('id')
-            .eq('region_code', filters.region);
+            .eq('region_code', filters.locationSuggestion.value);
           
           if (geoError) {
             console.error('❌ Erreur events_geo dans useEvents:', geoError);
@@ -122,7 +121,7 @@ export const useEvents = (filters?: SearchFilters) => {
           }
           
           const eventIds = geoEvents?.map(g => g.id) || [];
-          console.log('🗺️ Events IDs trouvés pour région', filters.region, ':', eventIds.length);
+          console.log('🗺️ Events IDs trouvés pour région', filters.locationSuggestion.value, ':', eventIds.length);
           
           if (eventIds.length > 0) {
             query = query.in('id', eventIds);
@@ -169,7 +168,7 @@ export const useEvents = (filters?: SearchFilters) => {
         secteur: event.secteur,
         nom_lieu: event.nom_lieu,
         ville: event.ville,
-        region: undefined, // Region no longer exists in events table
+        // Region no longer exists in events table
         country: event.pays,
         url_image: event.url_image,
         url_site_officiel: event.url_site_officiel,

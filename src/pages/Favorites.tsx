@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { convertSecteurToString } from '@/utils/sectorUtils';
-import type { EventType } from '@/types/event';
+import type { Event } from '@/types/event';
 import MainLayout from '@/components/layout/MainLayout';
 
 const Favorites = () => {
@@ -81,7 +80,7 @@ const Favorites = () => {
                 if (!favorite.events) return null;
                 
                 // Transform the favorite data to match Event type with proper field mapping
-                const eventData = {
+                const eventData: Event = {
                   id: favorite.events.id,
                   nom_event: favorite.events.nom_event || '',
                   description_event: favorite.events.description_event,
@@ -90,7 +89,7 @@ const Favorites = () => {
                   secteur: convertSecteurToString(favorite.events.secteur),
                   nom_lieu: favorite.events.nom_lieu,
                   ville: favorite.events.ville,
-                  region: undefined, // Region no longer exists in events table
+                  // Region no longer exists in events table
                   country: favorite.events.pays,
                   url_image: favorite.events.url_image,
                   url_site_officiel: favorite.events.url_site_officiel,
@@ -99,7 +98,7 @@ const Favorites = () => {
                   affluence: favorite.events.affluence,
                   estimated_exhibitors: favorite.events.estimated_exhibitors,
                   is_b2b: favorite.events.is_b2b,
-                  type_event: favorite.events.type_event as EventType,
+                  type_event: favorite.events.type_event as Event['type_event'],
                   created_at: favorite.events.created_at,
                   updated_at: favorite.events.updated_at,
                   last_scraped_at: favorite.events.last_scraped_at,

@@ -1,4 +1,3 @@
-
 import { Helmet } from 'react-helmet-async';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -37,7 +36,6 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
       "address": {
         "@type": "PostalAddress",
         "addressLocality": event.ville,
-        "addressRegion": event.region,
         "addressCountry": event.country || "France"
       }
     },

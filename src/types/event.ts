@@ -31,7 +31,11 @@ export interface Event {
     name: string;
     created_at: string;
   }[];
+  is_favorite?: boolean; // Added missing property
 }
+
+// Export EventType for backwards compatibility
+export type EventType = Event['type_event'];
 
 export interface SearchFilters {
   query?: string;
