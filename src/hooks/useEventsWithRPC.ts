@@ -27,8 +27,10 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         location_value: filters?.locationSuggestion?.value || '',
       };
 
-      // Log unique pour vérifier les paramètres
+      // Log détaillé des paramètres envoyés
       console.log('🚀 RPC search_events - Paramètres envoyés:', params);
+      console.log('📊 Secteurs sélectionnés (UUIDs):', params.sector_ids);
+      console.log('📄 Page:', params.page_num, '| Taille:', params.page_size);
 
       try {
         // Appel à la RPC avec le bon typage
@@ -39,7 +41,19 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           throw error;
         }
 
-        console.log('✅ RPC search_events - Données reçues:', data?.length || 0);
+        // Log détaillé des résultats reçus
+        console.log('✅ RPC search_events - Données reçues:', data?.length || 0, 'événements');
+        
+        if (data && data.length > 0) {
+          console.log('🔢 Total count du premier élément:', data[0]?.total_count);
+          console.log('🎯 Premier événement reçu:', {
+            id: data[0]?.id,
+            nom: data[0]?.nom_event,
+            ville: data[0]?.ville
+          });
+        } else {
+          console.log('⚠️ Aucun événement retourné par la RPC');
+        }
 
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {
@@ -75,6 +89,11 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         }) || [];
 
         const totalCount = (data as any)?.[0]?.total_count || 0;
+
+        console.log('📋 Résultat final:', {
+          events_count: events.length,
+          total_count: totalCount
+        });
 
         return {
           events,
