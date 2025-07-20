@@ -21,6 +21,11 @@ interface TableSchema {
 }
 
 serve(async (req) => {
+  // Log pour vérifier qu'on entre dans la fonction
+  console.log('🔍 FUNCTION ENTRY - Method:', req.method);
+  console.log('🔍 FUNCTION ENTRY - URL:', req.url);
+  console.log('🔍 FUNCTION ENTRY - Headers preview:', req.headers.get('authorization') ? 'AUTH present' : 'NO AUTH');
+
   if (req.method === 'OPTIONS') return preflight();
 
   // 🔍 DEBUG: Logger tous les détails de la requête

@@ -31,10 +31,24 @@ export const fetchAirtableSchemas = async () => {
   console.log(`[AirtableUtils] 🔄 Fetching schemas`);
   
   try {
+    // Récupérer la session utilisateur pour le token
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log(`[AirtableUtils] 🔑 Session status:`, session ? 'authenticated' : 'anonymous');
+    
+    const headers: Record<string, string> = {
+      'X-Lovable-Admin': 'true'
+    };
+    
+    // Ajouter le token si disponible
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+      console.log(`[AirtableUtils] 🔑 Adding auth token to request`);
+    } else {
+      console.warn(`[AirtableUtils] ⚠️ No auth token available`);
+    }
+    
     const { data, error } = await supabase.functions.invoke('airtable-schema-discovery', {
-      headers: {
-        'X-Lovable-Admin': 'true'
-      }
+      headers
     });
     
     if (error) {

@@ -3,12 +3,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Search, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Search, CheckCircle, XCircle, AlertTriangle, TestTube } from 'lucide-react';
 import { fetchAirtableSchemas } from '@/utils/airtableUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 const AirtableDiagnostic = () => {
   const [isScanning, setIsScanning] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const [scanResults, setScanResults] = useState<any>(null);
+  const [testResults, setTestResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleScanSchemas = async () => {
@@ -32,6 +35,41 @@ const AirtableDiagnostic = () => {
     }
   };
 
+  const testFunctionAccess = async () => {
+    setIsTesting(true);
+    setTestResults(null);
+    
+    try {
+      console.log('🧪 Testing direct function access...');
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session ? 'authenticated' : 'anonymous');
+      
+      // Test direct avec logs détaillés
+      const { data, error } = await supabase.functions.invoke('airtable-schema-discovery', {
+        headers: {
+          'X-Lovable-Admin': 'true'
+        }
+      });
+      
+      setTestResults({
+        success: !error,
+        session: session ? 'authenticated' : 'anonymous',
+        data: data || null,
+        error: error || null
+      });
+      
+      console.log('Function test response:', { data, error });
+    } catch (error) {
+      console.error('Function test error:', error);
+      setTestResults({
+        success: false,
+        error: error instanceof Error ? error.message : 'Test failed'
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -52,7 +90,37 @@ const AirtableDiagnostic = () => {
               <Search className="h-4 w-4" />
               {isScanning ? 'Scan en cours...' : 'Scanner les schémas Airtable'}
             </Button>
+            
+            <Button
+              onClick={testFunctionAccess}
+              disabled={isTesting}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <TestTube className="h-4 w-4" />
+              {isTesting ? 'Test...' : 'Test Fonction'}
+            </Button>
           </div>
+
+          {testResults && (
+            <div className={`p-4 border rounded-lg ${testResults.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                {testResults.success ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-red-600" />
+                )}
+                <h4 className="text-sm font-medium">Test d'accès à la fonction</h4>
+              </div>
+              <div className="text-xs space-y-1">
+                <p><strong>Session:</strong> {testResults.session}</p>
+                <p><strong>Succès:</strong> {testResults.success ? 'Oui' : 'Non'}</p>
+                {testResults.error && <p><strong>Erreur:</strong> {JSON.stringify(testResults.error)}</p>}
+                {testResults.data && <p><strong>Données:</strong> {JSON.stringify(testResults.data, null, 2)}</p>}
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
