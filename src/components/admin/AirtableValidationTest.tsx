@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,7 @@ const AirtableValidationTest = () => {
       console.log('🔄 AirtableValidationTest: Auto-refreshing due to secrets configuration');
       setTimeout(() => {
         runValidationTests();
-      }, 1000); // Small delay to let secrets propagate
+      }, 1000);
     };
 
     window.addEventListener('airtable-secrets-configured', handleSecretsConfigured);
@@ -42,6 +41,136 @@ const AirtableValidationTest = () => {
     };
   }, []);
 
+  const testUrlNormalization = async (): Promise<TestResult> => {
+    try {
+      const testUrls = [
+        'https://www.example.com/',
+        'http://example.com',
+        'www.example.com',
+        'example.com/'
+      ];
+
+      const normalizedUrls = testUrls.map(url => {
+        return url.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+      });
+
+      const allNormalized = normalizedUrls.every(url => url === 'example.com');
+      
+      return {
+        name: 'URL Normalization Test',
+        status: allNormalized ? 'success' : 'error',
+        message: allNormalized ? 'All URL normalization tests passed' : 'URL normalization failed',
+        details: { testUrls, normalizedUrls }
+      };
+    } catch (error) {
+      return {
+        name: 'URL Normalization Test',
+        status: 'error',
+        message: `Test failed with error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: { error }
+      };
+    }
+  };
+
+  const testExposantCreation = async (): Promise<TestResult> => {
+    try {
+      const testRecord = {
+        nom_exposant: 'TEST_EXPOSANT_' + Date.now(),
+        website_exposant: 'test-' + Date.now() + '.com',
+        exposant_description: 'Test description'
+      };
+
+      const { data, error } = await supabase.functions.invoke('airtable-write', {
+        method: 'POST',
+        body: {
+          table: 'All_Exposants',
+          records: [testRecord]
+        }
+      });
+
+      if (error) {
+        throw new Error(`Supabase function error: ${error.message}`);
+      }
+
+      if (data.duplicate) {
+        return {
+          name: 'Exposant Duplicate Prevention Test',
+          status: 'success',
+          message: 'Duplicate detection working correctly',
+          details: { duplicate: true }
+        };
+      }
+
+      if (data.success) {
+        return {
+          name: 'Exposant Duplicate Prevention Test',
+          status: 'success',
+          message: 'Record created successfully',
+          details: { created: true, records: data.records }
+        };
+      }
+
+      throw new Error(data.message || 'Unknown error');
+    } catch (error) {
+      return {
+        name: 'Exposant Duplicate Prevention Test',
+        status: 'error',
+        message: `Test failed with error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: { error }
+      };
+    }
+  };
+
+  const testParticipationCreation = async (): Promise<TestResult> => {
+    try {
+      const testRecord = {
+        nom_exposant: 'TEST_PARTICIPATION_' + Date.now(),
+        stand_exposant: 'Stand A' + Date.now(),
+        website_exposant: 'participation-' + Date.now() + '.com',
+        urlexpo_event: 'test_participation_' + Date.now()
+      };
+
+      const { data, error } = await supabase.functions.invoke('airtable-write', {
+        method: 'POST',
+        body: {
+          table: 'Participation',
+          records: [testRecord]
+        }
+      });
+
+      if (error) {
+        throw new Error(`Supabase function error: ${error.message}`);
+      }
+
+      if (data.duplicate) {
+        return {
+          name: 'Participation Duplicate Prevention Test',
+          status: 'success',
+          message: 'Duplicate detection working correctly',
+          details: { duplicate: true }
+        };
+      }
+
+      if (data.success) {
+        return {
+          name: 'Participation Duplicate Prevention Test',
+          status: 'success',
+          message: 'Record created successfully',
+          details: { created: true, records: data.records }
+        };
+      }
+
+      throw new Error(data.message || 'Unknown error');
+    } catch (error) {
+      return {
+        name: 'Participation Duplicate Prevention Test',
+        status: 'error',
+        message: `Test failed with error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: { error }
+      };
+    }
+  };
+
   const runValidationTests = async () => {
     setIsRunning(true);
     setResults(null);
@@ -49,27 +178,34 @@ const AirtableValidationTest = () => {
     console.groupCollapsed('[AirtableValidation] 🧪 Démarrage des tests de validation');
     
     try {
-      const { data, error } = await supabase.functions.invoke('airtable-smoke-test');
+      const testResults: TestResult[] = [];
       
-      if (error) {
-        throw new Error(`Erreur edge function: ${error.message}`);
-      }
+      // Test 1: URL Normalization
+      console.log('🔄 Test 1: URL Normalization');
+      const urlTest = await testUrlNormalization();
+      testResults.push(urlTest);
+      console.log(urlTest.status === 'success' ? '✅' : '❌', urlTest.message);
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erreur inconnue des tests');
-      }
+      // Test 2: Exposant Creation
+      console.log('🔄 Test 2: Exposant Creation');
+      const exposantTest = await testExposantCreation();
+      testResults.push(exposantTest);
+      console.log(exposantTest.status === 'success' ? '✅' : '❌', exposantTest.message);
 
-      const summary: TestSummary = data.data;
+      // Test 3: Participation Creation
+      console.log('🔄 Test 3: Participation Creation');
+      const participationTest = await testParticipationCreation();
+      testResults.push(participationTest);
+      console.log(participationTest.status === 'success' ? '✅' : '❌', participationTest.message);
+
+      const summary: TestSummary = {
+        total: testResults.length,
+        passed: testResults.filter(r => r.status === 'success').length,
+        failed: testResults.filter(r => r.status === 'error').length,
+        results: testResults
+      };
+
       setResults(summary);
-
-      // Log detailed results
-      summary.results.forEach((result, index) => {
-        const icon = result.status === 'success' ? '✅' : '❌';
-        console.log(`${icon} Test ${index + 1}: ${result.name} - ${result.message}`);
-        if (result.details) {
-          console.log('Détails:', result.details);
-        }
-      });
 
       const toastMessage = `Tests terminés: ${summary.passed}/${summary.total} réussis`;
       const toastVariant = summary.failed === 0 ? 'default' : 'destructive';

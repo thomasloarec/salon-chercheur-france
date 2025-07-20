@@ -1,116 +1,94 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useAirtableEvents, useAirtableExposants, useAirtableParticipation, useAirtableSync } from '@/hooks/useAirtable';
-import { RefreshCw, Database, Users, Link, ArrowUpDown } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from 'lucide-react';
 import { useSecretsCheck } from '@/hooks/useSecretsCheck';
 import MissingSecretsAlert from '@/components/admin/MissingSecretsAlert';
+import AirtableSyncButtons from '@/components/admin/AirtableSyncButtons';
 
 const AirtableSync = () => {
+  const { toast } = useToast();
   const { checkSecrets, isChecking, result } = useSecretsCheck();
-  const { data: events, isLoading: eventsLoading, error: eventsError } = useAirtableEvents();
-  const { data: exposants, isLoading: exposantsLoading, error: exposantsError } = useAirtableExposants();
-  const { data: participation, isLoading: participationLoading, error: participationError } = useAirtableParticipation();
-  
-  const { syncEvents, syncExposants, syncParticipation, isLoading: syncLoading } = useAirtableSync();
+  const [isLoading, setIsLoading] = useState(false);
+  const [eventsData, setEventsData] = useState<any[]>([]);
+  const [exposantsData, setExposantsData] = useState<any[]>([]);
+  const [participationData, setParticipationData] = useState<any[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Check secrets on component mount
   useEffect(() => {
     checkSecrets();
+    loadAirtableData();
   }, [checkSecrets]);
+
+  const loadAirtableData = async () => {
+    if (dataLoading) return;
+    
+    setDataLoading(true);
+    setError(null);
+    
+    try {
+      // Load Events
+      const { data: eventsResponse, error: eventsError } = await supabase.functions.invoke('airtable-read', {
+        body: { table: 'All_Events' }
+      });
+
+      if (eventsError) throw eventsError;
+      
+      if (eventsResponse?.success) {
+        setEventsData(eventsResponse.records || []);
+      }
+
+      // Load Exposants
+      const { data: exposantsResponse, error: exposantsError } = await supabase.functions.invoke('airtable-read', {
+        body: { table: 'All_Exposants' }
+      });
+
+      if (exposantsError) throw exposantsError;
+      
+      if (exposantsResponse?.success) {
+        setExposantsData(exposantsResponse.records || []);
+      }
+
+      // Load Participation
+      const { data: participationResponse, error: participationError } = await supabase.functions.invoke('airtable-read', {
+        body: { table: 'Participation' }
+      });
+
+      if (participationError) throw participationError;
+      
+      if (participationResponse?.success) {
+        setParticipationData(participationResponse.records || []);
+      }
+
+    } catch (error) {
+      console.error('[AIRTABLE] Erreur chargement données:', error);
+      setError(error instanceof Error ? error.message : 'Erreur inconnue');
+      toast({
+        title: 'Erreur de chargement',
+        description: 'Impossible de charger les données Airtable',
+        variant: 'destructive'
+      });
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
   const handleSecretsConfigured = async () => {
     await checkSecrets();
+    await loadAirtableData();
   };
 
-  const handleSyncEvents = () => {
-    if (events) {
-      syncEvents.mutate(events.map(event => ({
-        id_event: event.id_event,
-        nom_event: event.nom_event,
-        type_event: event.type_event,
-        date_debut: event.date_debut,
-        date_fin: event.date_fin,
-        secteur: event.secteur,
-        url_image: event.url_image,
-        url_site_officiel: event.url_site_officiel,
-        description_event: event.description_event,
-        affluence: event.affluence,
-        tarif: event.tarif,
-        nom_lieu: event.nom_lieu,
-        rue: event.rue,
-        code_postal: event.code_postal,
-        ville: event.ville,
-        pays: event.pays || 'France'
-      })));
-    }
+  const handleSync = async (type: 'events' | 'exposants' | 'participation') => {
+    console.log(`[AirtableSync] Synchronisation ${type} terminée`);
+    // Optionally reload data after sync
+    await loadAirtableData();
   };
-
-  const handleSyncExposants = () => {
-    if (exposants) {
-      syncExposants.mutate(exposants.map(exposant => ({
-        id_exposant: exposant.id_exposant,
-        nom_exposant: exposant.nom_exposant,
-        website_exposant: exposant.website_exposant,
-        exposant_description: exposant.exposant_description,
-      })));
-    }
-  };
-
-  const handleSyncParticipation = () => {
-    if (participation) {
-      syncParticipation.mutate(participation.map(p => ({
-        id_participation: p.id_participation,
-        id_event: p.id_event,
-        nom_exposant: p.nom_exposant,
-        stand_exposant: p.stand_exposant,
-        website_exposant: p.website_exposant,
-        urlexpo_event: p.urlexpo_event || `${p.id_participation}_${Date.now()}`,
-      })));
-    }
-  };
-
-  const renderStatsCard = (
-    title: string,
-    count: number | undefined, 
-    isLoading: boolean, 
-    error: any,
-    icon: React.ReactNode,
-    onSync: () => void
-  ) => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {isLoading ? (
-            <div className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Chargement...</span>
-            </div>
-          ) : error ? (
-            <Badge variant="destructive">Erreur</Badge>
-          ) : (
-            count?.toLocaleString() || '0'
-          )}
-        </div>
-        <Button 
-          onClick={onSync}
-          disabled={syncLoading || isLoading || !!error || (result && !result.ok)}
-          variant="outline"
-          size="sm"
-          className="mt-2 w-full"
-        >
-          <ArrowUpDown className="h-4 w-4 mr-2" />
-          Synchroniser
-        </Button>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-6">
@@ -122,7 +100,7 @@ const AirtableSync = () => {
           </CardTitle>
           <CardDescription>
             Synchronisez les données entre votre base Supabase et Airtable. 
-            Événements utilisent id_event, Exposants utilisent website_exposant, Participation utilise urlexpo_event.
+            Utilise les nouvelles fonctions airtable-read et airtable-write avec mapping automatique.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -143,78 +121,52 @@ const AirtableSync = () => {
               <div className="flex items-center gap-2 mb-2">
                 <div className="h-2 w-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm font-medium">Base Airtable connectée</span>
-                <Badge variant="outline">Proxy sécurisé</Badge>
+                <Badge variant="outline">Nouvelle pile read/write</Badge>
               </div>
               <p className="text-xs text-gray-500">
-                Tables: All_Events (id_event), All_Exposants (website_exposant), Participation (urlexpo_event)
+                Tables: All_Events, All_Exposants, Participation avec mapping automatique
               </p>
             </div>
           )}
 
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {renderStatsCard(
-              'Événements',
-              events?.length,
-              eventsLoading,
-              eventsError,
-              <Database className="h-4 w-4" />,
-              handleSyncEvents
-            )}
-            
-            {renderStatsCard(
-              'Exposants', 
-              exposants?.length,
-              exposantsLoading,
-              exposantsError,
-              <Users className="h-4 w-4" />,
-              handleSyncExposants
-            )}
-            
-            {renderStatsCard(
-              'Participations',
-              participation?.length,
-              participationLoading,
-              participationError,
-              <Link className="h-4 w-4" />,
-              handleSyncParticipation
-            )}
-          </div>
-
-          <Separator className="my-4" />
-
-          {/* Sync All Button */}
-          <div className="flex justify-center">
-            <Button 
-              onClick={() => {
-                handleSyncEvents();
-                handleSyncExposants();
-                handleSyncParticipation();
-              }}
-              disabled={syncLoading || eventsLoading || exposantsLoading || participationLoading || (result && !result.ok)}
-              size="lg"
-              className="w-full md:w-auto"
-            >
-              {syncLoading ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-              )}
-              Synchroniser tout avec Airtable
-            </Button>
-          </div>
-
-          {/* Error Messages */}
-          {(eventsError || exposantsError || participationError) && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <h4 className="text-sm font-medium text-red-800 mb-2">Erreurs de connexion :</h4>
-              <ul className="text-sm text-red-600 space-y-1">
-                {eventsError && <li>• Événements : {eventsError.message}</li>}
-                {exposantsError && <li>• Exposants : {exposantsError.message}</li>}
-                {participationError && <li>• Participations : {participationError.message}</li>}
-              </ul>
+          {/* Data Loading Status */}
+          {dataLoading && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">Chargement des données Airtable...</p>
             </div>
           )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h4 className="text-sm font-medium text-red-800 mb-2">Erreur de connexion :</h4>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Sync Buttons */}
+          {result?.ok && !dataLoading && (
+            <AirtableSyncButtons
+              eventsData={eventsData}
+              exposantsData={exposantsData}
+              participationData={participationData}
+              isLoading={isLoading}
+              onSync={handleSync}
+            />
+          )}
+
+          <Separator className="my-6" />
+
+          {/* Migration Status */}
+          <div className="p-4 bg-green-50 rounded-lg">
+            <h4 className="text-sm font-medium text-green-800 mb-2">Migration terminée ✅</h4>
+            <ul className="text-sm text-green-600 space-y-1">
+              <li>• Utilisation des nouvelles fonctions airtable-read/write</li>
+              <li>• Mapping automatique des champs</li>
+              <li>• Gestion des doublons intégrée</li>
+              <li>• Logs détaillés pour le debugging</li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
     </div>

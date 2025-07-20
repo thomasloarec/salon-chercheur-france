@@ -21,14 +21,12 @@
   "All_Exposants": {
     "id_exposant": "id_exposant",
     "nom_exposant": "nom_exposant",
-    "exposant_nom": "nom_exposant",
     "website_exposant": "website_exposant",
     "exposant_description": "exposant_description"
   },
   "Participation": {
     "id_participation": "id_participation",
     "nom_exposant": "nom_exposant",
-    "exposant_nom": "nom_exposant",
     "stand_exposant": "stand_exposant",
     "website_exposant": "website_exposant",
     "id_event": "id_event",

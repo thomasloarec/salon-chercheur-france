@@ -62,8 +62,9 @@ serve(async (req) => {
     for (const record of records) {
       const fields: Record<string, any> = {};
       const unknownKeys: string[] = [];
+      const keysBefore = Object.keys(record);
 
-      console.log(`[airtable-write] 🔍 Keys avant mapping:`, Object.keys(record));
+      console.log(`[airtable-write] 🔍 Keys avant mapping:`, keysBefore);
 
       for (const [payloadKey, value] of Object.entries(record)) {
         const airtableKey = tableMap[payloadKey as keyof typeof tableMap];
@@ -73,10 +74,13 @@ serve(async (req) => {
           console.warn(`[airtable-write] ⚠️ Champ inconnu ignoré: ${payloadKey}`);
         } else {
           fields[airtableKey] = value;
+          console.log(`[airtable-write] 📍 Mapping appliqué: ${payloadKey} → ${airtableKey}`);
         }
       }
 
-      console.log(`[airtable-write] ✅ Keys après mapping:`, Object.keys(fields));
+      const keysAfter = Object.keys(fields);
+      console.log(`[airtable-write] ✅ Keys après mapping:`, keysAfter);
+      console.log(`[airtable-write] 📊 Mapping stage: { stage: "map", keys_before: ${JSON.stringify(keysBefore)}, keys_after: ${JSON.stringify(keysAfter)} }`);
       
       if (unknownKeys.length > 0) {
         console.warn(`[airtable-write] ⚠️ Champs ignorés:`, unknownKeys);
