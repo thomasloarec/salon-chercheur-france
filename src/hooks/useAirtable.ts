@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { airtableProxy } from '@/services/airtableProxy';
 import { useToast } from '@/hooks/use-toast';
@@ -5,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 interface AirtableEvent {
   id_event: string;
   nom_event: string;
-  status_event: string;
   type_event: string;
   date_debut: string;
   date_fin: string;
@@ -19,22 +19,23 @@ interface AirtableEvent {
   rue?: string;
   code_postal?: string;
   ville?: string;
+  pays?: string; // Ajout du champ pays
 }
 
 interface AirtableExposant {
   id_exposant?: string;
-  exposant_nom: string;
-  exposant_stand?: string;
-  exposant_website?: string;
+  nom_exposant: string; // Champ principal
+  website_exposant: string;
   exposant_description?: string;
-  website_exposant: string; // New unique field
 }
 
 interface AirtableParticipation {
   id_participation?: string;
   id_event: string;
-  id_exposant: string;
-  urlexpo_event: string; // New unique field (website_exposant + stand_exposant)
+  nom_exposant?: string; // Ajout de ce champ
+  stand_exposant?: string; // Ajout de ce champ
+  website_exposant?: string; // Ajout de ce champ
+  urlexpo_event: string;
 }
 
 export function useAirtableEvents() {
@@ -88,10 +89,10 @@ export function useAirtableSync() {
       return await airtableProxy.upsertRecords('All_Events', events, 'id_event');
     },
     onSuccess: (result) => {
-      const total = result.created.length + result.updated.length;
+      const total = result.created?.length || 0 + result.updated?.length || 0;
       toast({
         title: 'Synchronisation réussie',
-        description: `${total} événements synchronisés avec Airtable (${result.created.length} créés, ${result.updated.length} mis à jour)`,
+        description: `${total} événements synchronisés avec Airtable`,
       });
       queryClient.invalidateQueries({ queryKey: ['airtable', 'events'] });
     },
@@ -110,10 +111,10 @@ export function useAirtableSync() {
       return await airtableProxy.upsertRecords('All_Exposants', exposants, 'website_exposant');
     },
     onSuccess: (result) => {
-      const total = result.created.length + result.updated.length;
+      const total = result.created?.length || 0 + result.updated?.length || 0;
       toast({
         title: 'Synchronisation réussie',
-        description: `${total} exposants synchronisés avec Airtable (${result.created.length} créés, ${result.updated.length} mis à jour)`,
+        description: `${total} exposants synchronisés avec Airtable`,
       });
       queryClient.invalidateQueries({ queryKey: ['airtable', 'exposants'] });
     },
@@ -132,10 +133,10 @@ export function useAirtableSync() {
       return await airtableProxy.upsertRecords('Participation', participations, 'urlexpo_event');
     },
     onSuccess: (result) => {
-      const total = result.created.length + result.updated.length;
+      const total = result.created?.length || 0 + result.updated?.length || 0;
       toast({
         title: 'Synchronisation réussie',
-        description: `${total} participations synchronisées avec Airtable (${result.created.length} créées, ${result.updated.length} mises à jour)`,
+        description: `${total} participations synchronisées avec Airtable`,
       });
       queryClient.invalidateQueries({ queryKey: ['airtable', 'participation'] });
     },

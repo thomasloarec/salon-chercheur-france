@@ -52,8 +52,8 @@ const AirtableSync = () => {
     if (exposants) {
       syncExposants.mutate(exposants.map(exposant => ({
         id_exposant: exposant.id_exposant,
-        nom_exposant: exposant.exposant_nom || exposant.nom_exposant,
-        website_exposant: exposant.exposant_website || exposant.website_exposant || `${exposant.exposant_nom?.toLowerCase().replace(/\s+/g, '-')}.com`,
+        nom_exposant: exposant.nom_exposant,
+        website_exposant: exposant.website_exposant,
         exposant_description: exposant.exposant_description,
       })));
     }
@@ -63,11 +63,10 @@ const AirtableSync = () => {
     if (participation) {
       syncParticipation.mutate(participation.map(p => ({
         id_participation: p.id_participation,
-        id_event: p.id_event,
         nom_exposant: p.nom_exposant,
         stand_exposant: p.stand_exposant,
         website_exposant: p.website_exposant,
-        urlexpo_event: p.urlexpo_event || `${p.id_exposant}_${p.id_event}`,
+        urlexpo_event: p.urlexpo_event || `${p.id_participation}_${Date.now()}`,
       })));
     }
   };
