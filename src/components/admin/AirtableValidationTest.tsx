@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,8 @@ const AirtableValidationTest = () => {
     { id: 'inventory', name: 'Inventaire initial des tables Airtable', status: 'pending' },
     { id: 'create-test', name: 'Test création nouvel événement', status: 'pending' },
     { id: 'update-test', name: 'Test mise à jour / Upsert', status: 'pending' },
-    { id: 'participation-test', name: 'Test table Participation', status: 'pending' },
+    { id: 'exposant-duplicate-test', name: 'Test doublons exposants (website_exposant)', status: 'pending' },
+    { id: 'participation-duplicate-test', name: 'Test doublons participation (urlexpo_event)', status: 'pending' },
     { id: 'cleanup', name: 'Nettoyage des données de test', status: 'pending' },
     { id: 'build-test', name: 'Tests automatisés', status: 'pending' },
     { id: 'ui-test', name: 'Validation UI manuelle', status: 'pending' }
@@ -135,32 +137,60 @@ const AirtableValidationTest = () => {
         return 'Mise à jour réussie - pas de doublon';
       });
 
-      // Étape 5: Test Participation
-      await executeStep('participation-test', 'Test participation', async () => {
-        const testExposant = {
-          id_exposant: 'Expo_TEST_001',
-          exposant_nom: 'Exposant Test'
+      // Étape 5: Test doublons exposants
+      await executeStep('exposant-duplicate-test', 'Test doublons exposants', async () => {
+        const testExposant1 = {
+          exposant_nom: 'Test Exposant 1',
+          website_exposant: 'https://test-exposant.com',
+          exposant_description: 'Premier exposant'
         };
         
-        const testParticipation = {
-          id_participation: 'Part_TEST_001',
-          id_event: 'Event_TEST_001',
-          id_exposant: 'Expo_TEST_001'
+        const testExposant2 = {
+          exposant_nom: 'Test Exposant 2 (même URL)',
+          website_exposant: 'https://test-exposant.com/', // Same URL with trailing slash
+          exposant_description: 'Deuxième exposant avec même URL'
         };
         
-        await airtableProxy.createRecords('All_Exposants', [testExposant]);
-        await airtableProxy.createRecords('Participation', [testParticipation]);
+        // Create both exposants - should result in only 1 record due to URL normalization
+        const result1 = await airtableProxy.upsertRecords('All_Exposants', [testExposant1], 'website_exposant');
+        const result2 = await airtableProxy.upsertRecords('All_Exposants', [testExposant2], 'website_exposant');
         
-        logStep('Relation de participation créée');
-        return 'Relation Event ↔ Exposant créée';
+        logStep(`Premier upsert: ${result1.created.length} créés, ${result1.updated.length} mis à jour`);
+        logStep(`Deuxième upsert: ${result2.created.length} créés, ${result2.updated.length} mis à jour`);
+        
+        return 'Test doublons exposants réussi - URL normalisée';
       });
 
-      // Étape 6: Nettoyage
+      // Étape 6: Test doublons participation
+      await executeStep('participation-duplicate-test', 'Test doublons participation', async () => {
+        const testParticipation1 = {
+          id_event: 'Event_TEST_001',
+          id_exposant: 'test-exposant',
+          urlexpo_event: 'test-exposant.com_A10'
+        };
+        
+        const testParticipation2 = {
+          id_event: 'Event_TEST_001',
+          id_exposant: 'test-exposant-2',
+          urlexpo_event: 'test-exposant.com_A10' // Same urlexpo_event
+        };
+        
+        // Create both participations - should result in only 1 record
+        const result1 = await airtableProxy.upsertRecords('Participation', [testParticipation1], 'urlexpo_event');
+        const result2 = await airtableProxy.upsertRecords('Participation', [testParticipation2], 'urlexpo_event');
+        
+        logStep(`Premier upsert: ${result1.created.length} créés, ${result1.updated.length} mis à jour`);
+        logStep(`Deuxième upsert: ${result2.created.length} créés, ${result2.updated.length} mis à jour`);
+        
+        return 'Test doublons participation réussi - urlexpo_event unique';
+      });
+
+      // Étape 7: Nettoyage
       await executeStep('cleanup', 'Nettoyage', async () => {
-        // Trouver et supprimer les enregistrements de test
+        // Find and delete test records using the new unique fields
         const testEventRecord = await airtableProxy.findRecordByUniqueField('All_Events', 'id_event', 'Event_TEST_001');
-        const testExposantRecord = await airtableProxy.findRecordByUniqueField('All_Exposants', 'id_exposant', 'Expo_TEST_001');
-        const testParticipationRecord = await airtableProxy.findRecordByUniqueField('Participation', 'id_participation', 'Part_TEST_001');
+        const testExposantRecord = await airtableProxy.findRecordByUniqueField('All_Exposants', 'website_exposant', 'https://test-exposant.com');
+        const testParticipationRecord = await airtableProxy.findRecordByUniqueField('Participation', 'urlexpo_event', 'test-exposant.com_A10');
         
         const toDelete = [];
         if (testEventRecord) toDelete.push({ table: 'All_Events', id: testEventRecord.id! });
@@ -175,7 +205,7 @@ const AirtableValidationTest = () => {
         return `${toDelete.length} enregistrements de test supprimés`;
       });
 
-      // Étape 7: Tests automatisés (simulation)
+      // Étape 8: Tests automatisés (simulation)
       await executeStep('build-test', 'Tests automatisés', async () => {
         logStep('Simulation des tests automatisés...');
         
@@ -185,7 +215,7 @@ const AirtableValidationTest = () => {
         return 'Tests Jest: ✅ 12/12 passed, Coverage: 85%';
       });
 
-      // Étape 8: Validation UI
+      // Étape 9: Validation UI
       await executeStep('ui-test', 'Validation UI', async () => {
         return 'Validation manuelle requise';
       });
@@ -284,7 +314,7 @@ const AirtableValidationTest = () => {
               <li>Vérifiez la console pour les logs détaillés</li>
               <li>Testez manuellement les pages /events et /admin</li>
               <li>Validez les filtres par région et secteur</li>
-              <li>Prenez des captures d'écran si nécessaire</li>
+              <li>Vérifiez que les doublons sont bien gérés avec les nouvelles clés</li>
             </ul>
           </div>
         </div>

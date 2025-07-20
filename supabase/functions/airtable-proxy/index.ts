@@ -17,6 +17,16 @@ interface AirtableConfig {
   };
 }
 
+/**
+ * Normalizes URL for comparison by removing protocol and trailing slash
+ * @param url - URL to normalize
+ * @returns normalized URL in lowercase
+ */
+function normalizeUrl(url: string): string {
+  if (!url) return '';
+  return url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
 class AirtableClient {
   private baseUrl: string;
   private headers: Record<string, string>;
@@ -84,16 +94,31 @@ class AirtableClient {
   }
 
   async upsertRecords(tableName: string, records: any[], uniqueField: string) {
-    const existingRecords = await this.listAllRecords(tableName);
-    const existingMap = new Map(
-      existingRecords.map(r => [r.fields[uniqueField], r])
-    );
-
     const toUpdate: any[] = [];
     const toCreate: any[] = [];
 
+    // For each record, check if it exists using the unique field
     for (const record of records) {
-      const existing = existingMap.get(record[uniqueField]);
+      const uniqueValue = record[uniqueField];
+      if (!uniqueValue) {
+        console.warn(`Record missing unique field ${uniqueField}, will create new record`);
+        toCreate.push(record);
+        continue;
+      }
+
+      let existing = null;
+      
+      // Special handling for URL-based unique fields (website_exposant, urlexpo_event)
+      if (uniqueField === 'website_exposant' || uniqueField === 'urlexpo_event') {
+        const normalizedValue = normalizeUrl(uniqueValue);
+        const filterFormula = `LOWER(REGEX_REPLACE({${uniqueField}}, "^https?://", "")) = "${normalizedValue}"`;
+        
+        existing = await this.findRecordByFilter(tableName, filterFormula);
+      } else {
+        // For non-URL fields, use exact match
+        existing = await this.findRecordByUniqueField(tableName, uniqueField, uniqueValue);
+      }
+
       if (existing) {
         toUpdate.push({ id: existing.id, fields: record });
       } else {
@@ -132,6 +157,20 @@ class AirtableClient {
     }
 
     return results;
+  }
+
+  async findRecordByFilter(tableName: string, filterFormula: string) {
+    const response = await fetch(
+      `${this.baseUrl}/${tableName}?filterByFormula=${encodeURIComponent(filterFormula)}&maxRecords=1`,
+      { headers: this.headers }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Airtable API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.records[0] || null;
   }
 
   async findRecordByUniqueField(tableName: string, fieldName: string, value: string) {
@@ -216,7 +255,7 @@ serve(async (req) => {
     const client = new AirtableClient(airtableConfig);
     const { action, table, payload, uniqueField } = await req.json();
 
-    console.log(`Airtable proxy: ${action} on ${table}`);
+    console.log(`Airtable proxy: ${action} on ${table}`, uniqueField ? `(unique: ${uniqueField})` : '');
 
     let result;
     switch (action) {

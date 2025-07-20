@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { airtableProxy } from '@/services/airtableProxy';
 import { useToast } from '@/hooks/use-toast';
@@ -23,17 +22,19 @@ interface AirtableEvent {
 }
 
 interface AirtableExposant {
-  id_exposant: string;
+  id_exposant?: string;
   exposant_nom: string;
   exposant_stand?: string;
   exposant_website?: string;
   exposant_description?: string;
+  website_exposant: string; // New unique field
 }
 
 interface AirtableParticipation {
-  id_participation: string;
+  id_participation?: string;
   id_event: string;
   id_exposant: string;
+  urlexpo_event: string; // New unique field (website_exposant + stand_exposant)
 }
 
 export function useAirtableEvents() {
@@ -106,7 +107,7 @@ export function useAirtableSync() {
 
   const syncExposants = useMutation({
     mutationFn: async (exposants: AirtableExposant[]) => {
-      return await airtableProxy.upsertRecords('All_Exposants', exposants, 'id_exposant');
+      return await airtableProxy.upsertRecords('All_Exposants', exposants, 'website_exposant');
     },
     onSuccess: (result) => {
       const total = result.created.length + result.updated.length;
@@ -128,7 +129,7 @@ export function useAirtableSync() {
 
   const syncParticipation = useMutation({
     mutationFn: async (participations: AirtableParticipation[]) => {
-      return await airtableProxy.upsertRecords('Participation', participations, 'id_participation');
+      return await airtableProxy.upsertRecords('Participation', participations, 'urlexpo_event');
     },
     onSuccess: (result) => {
       const total = result.created.length + result.updated.length;

@@ -43,8 +43,8 @@ const AirtableSync = () => {
         id_exposant: exposant.id_exposant,
         exposant_nom: exposant.exposant_nom,
         exposant_stand: exposant.exposant_stand,
-        exposant_website: exposant.exposant_website,
         exposant_description: exposant.exposant_description,
+        website_exposant: exposant.exposant_website || exposant.website_exposant || `${exposant.exposant_nom?.toLowerCase().replace(/\s+/g, '-')}.com`,
       })));
     }
   };
@@ -55,6 +55,7 @@ const AirtableSync = () => {
         id_participation: p.id_participation,
         id_event: p.id_event,
         id_exposant: p.id_exposant,
+        urlexpo_event: p.urlexpo_event || `${p.id_exposant}_${p.id_event}`, // Fallback if urlexpo_event is missing
       })));
     }
   };
@@ -109,7 +110,7 @@ const AirtableSync = () => {
           </CardTitle>
           <CardDescription>
             Synchronisez les données entre votre base Supabase et Airtable. 
-            Les enregistrements existants seront mis à jour, les nouveaux seront créés.
+            Événements utilisent id_event, Exposants utilisent website_exposant, Participation utilise urlexpo_event.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -121,7 +122,7 @@ const AirtableSync = () => {
               <Badge variant="outline">Proxy sécurisé</Badge>
             </div>
             <p className="text-xs text-gray-500">
-              Tables: All_Events, All_Exposants, Participation
+              Tables: All_Events (id_event), All_Exposants (website_exposant), Participation (urlexpo_event)
             </p>
           </div>
 
