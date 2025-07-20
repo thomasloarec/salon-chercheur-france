@@ -1,18 +1,29 @@
-
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAirtableEvents, useAirtableExposants, useAirtableParticipation, useAirtableSync } from '@/hooks/useAirtable';
 import { RefreshCw, Database, Users, Link, ArrowUpDown } from 'lucide-react';
+import { useSecretsCheck } from '@/hooks/useSecretsCheck';
+import MissingSecretsAlert from '@/components/admin/MissingSecretsAlert';
 
 const AirtableSync = () => {
+  const { checkSecrets, isChecking, result } = useSecretsCheck();
   const { data: events, isLoading: eventsLoading, error: eventsError } = useAirtableEvents();
   const { data: exposants, isLoading: exposantsLoading, error: exposantsError } = useAirtableExposants();
   const { data: participation, isLoading: participationLoading, error: participationError } = useAirtableParticipation();
   
   const { syncEvents, syncExposants, syncParticipation, isLoading: syncLoading } = useAirtableSync();
+
+  // Check secrets on component mount
+  useEffect(() => {
+    checkSecrets();
+  }, [checkSecrets]);
+
+  const handleSecretsConfigured = async () => {
+    await checkSecrets();
+  };
 
   const handleSyncEvents = () => {
     if (events) {
@@ -88,7 +99,7 @@ const AirtableSync = () => {
         </div>
         <Button 
           onClick={onSync}
-          disabled={syncLoading || isLoading || !!error}
+          disabled={syncLoading || isLoading || !!error || (result && !result.ok)}
           variant="outline"
           size="sm"
           className="mt-2 w-full"
@@ -114,17 +125,30 @@ const AirtableSync = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Connection Status */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium">Base Airtable connectée</span>
-              <Badge variant="outline">Proxy sécurisé</Badge>
+          {/* Show missing secrets alert if needed */}
+          {result && !result.ok && result.missing && (
+            <div className="mb-6">
+              <MissingSecretsAlert
+                missing={result.missing}
+                onMarkAsDone={handleSecretsConfigured}
+                isRefreshing={isChecking}
+              />
             </div>
-            <p className="text-xs text-gray-500">
-              Tables: All_Events (id_event), All_Exposants (website_exposant), Participation (urlexpo_event)
-            </p>
-          </div>
+          )}
+
+          {/* Connection Status */}
+          {result?.ok && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium">Base Airtable connectée</span>
+                <Badge variant="outline">Proxy sécurisé</Badge>
+              </div>
+              <p className="text-xs text-gray-500">
+                Tables: All_Events (id_event), All_Exposants (website_exposant), Participation (urlexpo_event)
+              </p>
+            </div>
+          )}
 
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -166,7 +190,7 @@ const AirtableSync = () => {
                 handleSyncExposants();
                 handleSyncParticipation();
               }}
-              disabled={syncLoading || eventsLoading || exposantsLoading || participationLoading}
+              disabled={syncLoading || eventsLoading || exposantsLoading || participationLoading || (result && !result.ok)}
               size="lg"
               className="w-full md:w-auto"
             >

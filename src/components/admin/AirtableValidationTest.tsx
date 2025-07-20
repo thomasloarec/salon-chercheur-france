@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { airtableProxy } from '@/services/airtableProxy';
-import { CheckCircle, XCircle, Clock, Play, AlertTriangle, Copy } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Play, AlertTriangle } from 'lucide-react';
+import { useSecretsCheck } from '@/hooks/useSecretsCheck';
+import MissingSecretsAlert from '@/components/admin/MissingSecretsAlert';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TestStep {
@@ -23,8 +25,8 @@ interface EnvCheckResult {
 
 const AirtableValidationTest = () => {
   const { toast } = useToast();
+  const { checkSecrets, isChecking, result } = useSecretsCheck();
   const [isRunning, setIsRunning] = useState(false);
-  const [envStatus, setEnvStatus] = useState<EnvCheckResult | null>(null);
   const [steps, setSteps] = useState<TestStep[]>([
     { id: 'env-check', name: 'Vérification des variables d\'environnement', status: 'pending' },
     { id: 'inventory', name: 'Inventaire initial des tables Airtable', status: 'pending' },
@@ -36,6 +38,11 @@ const AirtableValidationTest = () => {
     { id: 'build-test', name: 'Tests automatisés', status: 'pending' },
     { id: 'ui-test', name: 'Validation UI manuelle', status: 'pending' }
   ]);
+
+  // Check secrets on component mount
+  useEffect(() => {
+    checkSecrets();
+  }, [checkSecrets]);
 
   const updateStep = (stepId: string, updates: Partial<TestStep>) => {
     setSteps(prev => prev.map(step => 
@@ -70,30 +77,19 @@ const AirtableValidationTest = () => {
     }
   };
 
-  const generateSecretsCommand = (missing: string[]) => {
-    const defaults = {
-      'EVENTS_TABLE_NAME': 'All_Events',
-      'EXHIBITORS_TABLE_NAME': 'All_Exposants',
-      'PARTICIPATION_TABLE_NAME': 'Participation'
-    };
-    
-    const secretPairs = missing.map(key => {
-      const defaultValue = (defaults as any)[key];
-      return defaultValue ? `${key}="${defaultValue}"` : `${key}="YOUR_${key}_HERE"`;
-    });
-    
-    return `supabase functions secrets set ${secretPairs.join(' ')}`;
-  };
-
-  const copySecretsCommand = (command: string) => {
-    navigator.clipboard.writeText(command);
-    toast({
-      title: 'Commande copiée',
-      description: 'La commande des secrets a été copiée dans le presse-papiers',
-    });
-  };
-
   const runTests = async () => {
+    // First check secrets before running tests
+    const secretsResult = await checkSecrets();
+    
+    if (!secretsResult.ok) {
+      toast({
+        title: 'Tests interrompus',
+        description: 'Veuillez configurer les variables d\'environnement manquantes',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsRunning(true);
     
     try {
@@ -108,7 +104,6 @@ const AirtableValidationTest = () => {
         }
 
         const { data } = response;
-        setEnvStatus(data);
         
         if (!data.ok) {
           throw new Error(`Variables manquantes: ${data.missing.join(', ')}`);
@@ -290,6 +285,10 @@ const AirtableValidationTest = () => {
     }
   };
 
+  const handleSecretsConfigured = async () => {
+    await checkSecrets();
+  };
+
   const getStatusIcon = (status: TestStep['status']) => {
     switch (status) {
       case 'success': return <CheckCircle className="h-4 w-4 text-green-600" />;
@@ -320,48 +319,24 @@ const AirtableValidationTest = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Show missing secrets alert if needed */}
+          {result && !result.ok && result.missing && (
+            <MissingSecretsAlert
+              missing={result.missing}
+              onMarkAsDone={handleSecretsConfigured}
+              isRefreshing={isChecking}
+            />
+          )}
+
           <Button 
             onClick={runTests} 
-            disabled={isRunning}
+            disabled={isRunning || (result && !result.ok)}
             className="w-full"
           >
             {isRunning ? 'Tests en cours...' : 'Lancer la batterie de tests'}
           </Button>
 
-          {/* Environment Variables Warning */}
-          {envStatus && !envStatus.ok && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-red-800 mb-2">
-                    Variables d'environnement manquantes
-                  </h4>
-                  <p className="text-sm text-red-700 mb-3">
-                    Les variables suivantes doivent être configurées dans Supabase Functions :
-                  </p>
-                  <ul className="list-disc list-inside text-sm text-red-700 mb-4">
-                    {envStatus.missing?.map(variable => (
-                      <li key={variable}>{variable}</li>
-                    ))}
-                  </ul>
-                  <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm mb-3">
-                    {generateSecretsCommand(envStatus.missing || [])}
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copySecretsCommand(generateSecretsCommand(envStatus.missing || []))}
-                    className="flex items-center gap-2"
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copier la commande
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
+          {/* Tests steps */}
           <div className="space-y-3">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center gap-3 p-3 border rounded-lg">
