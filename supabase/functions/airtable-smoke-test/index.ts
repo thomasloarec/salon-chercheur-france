@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { getEnvOrConfig, checkMissingVars } from '../_shared/airtable-config.ts';
+import { getEnvOrConfig, listMissing, debugVariables } from '../_shared/airtable-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,16 +13,21 @@ serve(async (req) => {
   }
 
   try {
-    // Check for required environment variables with unified function
-    const missing = checkMissingVars();
+    console.log('[airtable-smoke-test] 🔍 Début des tests');
+    
+    // Check for required environment variables avec fonction stricte
+    const missingSecrets = listMissing();
 
-    if (missing.length > 0) {
-      console.error(`Missing required environment variables: ${JSON.stringify(missing)}`);
+    if (missingSecrets.length > 0) {
+      console.error(`[airtable-smoke-test] ❌ Variables Supabase manquantes:`, missingSecrets);
+      console.log('[airtable-smoke-test] 📊 Debug variables:', debugVariables());
+      
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: 'missing_env', 
-          missing,
-          message: `Missing required environment variables: ${missing.join(', ')}`
+          missing: missingSecrets,
+          message: `Variables Supabase manquantes: ${missingSecrets.join(', ')}`
         }),
         {
           status: 400,
@@ -37,6 +42,8 @@ serve(async (req) => {
     const EVENTS_TABLE_NAME = getEnvOrConfig('EVENTS_TABLE_NAME');
     const EXHIBITORS_TABLE_NAME = getEnvOrConfig('EXHIBITORS_TABLE_NAME');
     const PARTICIPATION_TABLE_NAME = getEnvOrConfig('PARTICIPATION_TABLE_NAME');
+
+    console.log('[airtable-smoke-test] ✅ Variables OK, Base ID:', AIRTABLE_BASE_ID.substring(0, 10) + '...');
 
     // --------------------------------------------------------------------
     // 1. Helpers & Utils
@@ -400,10 +407,11 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Airtable smoke test error:', error);
+    console.error('[airtable-smoke-test] ❌ Erreur générale:', error);
     
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error' 
       }),
       {

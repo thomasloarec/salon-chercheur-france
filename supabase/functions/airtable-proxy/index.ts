@@ -1,5 +1,6 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { AIRTABLE_CONFIG } from '../_shared/airtable-config.ts';
+import { AIRTABLE_CONFIG, listMissing, getEnvOrConfig, debugVariables } from '../_shared/airtable-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,41 +14,20 @@ serve(async (req) => {
   }
 
   try {
-    // Check for required environment variables with fallbacks
-    const REQUIRED_VARS = [
-      'AIRTABLE_PAT',
-      'AIRTABLE_BASE_ID', 
-      'EVENTS_TABLE_NAME',
-      'EXHIBITORS_TABLE_NAME',
-      'PARTICIPATION_TABLE_NAME'
-    ];
-
-    const missing = REQUIRED_VARS.filter(key => {
-      const envValue = Deno.env.get(key);
-      if (envValue) return false;
+    console.log('[airtable-proxy] 🔍 Début de la requête');
+    
+    // 1. Vérification stricte des secrets Supabase (sans fallback)
+    const missingSecrets = listMissing();
+    if (missingSecrets.length > 0) {
+      console.error('[airtable-proxy] ❌ Variables Supabase manquantes:', missingSecrets);
+      console.log('[airtable-proxy] 📊 Debug variables:', debugVariables());
       
-      // Check if we have a fallback value from config
-      switch (key) {
-        case 'AIRTABLE_BASE_ID':
-          return !AIRTABLE_CONFIG.BASE_ID;
-        case 'EVENTS_TABLE_NAME':
-          return !AIRTABLE_CONFIG.TABLES.EVENTS;
-        case 'EXHIBITORS_TABLE_NAME':
-          return !AIRTABLE_CONFIG.TABLES.EXHIBITORS;
-        case 'PARTICIPATION_TABLE_NAME':
-          return !AIRTABLE_CONFIG.TABLES.PARTICIPATION;
-        default:
-          return true; // No fallback for sensitive vars like PAT
-      }
-    });
-
-    if (missing.length > 0) {
-      console.error(`Missing required environment variables: ${JSON.stringify(missing)}`);
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: 'missing_env', 
-          missing,
-          message: `Missing required environment variables: ${missing.join(', ')}`
+          missing: missingSecrets,
+          message: `Variables Supabase manquantes: ${missingSecrets.join(', ')}`
         }),
         {
           status: 400,
@@ -56,35 +36,22 @@ serve(async (req) => {
       );
     }
 
-    // Get values with fallbacks
-    const getConfigValue = (key: string): string => {
-      const envValue = Deno.env.get(key);
-      if (envValue) return envValue;
-      
-      switch (key) {
-        case 'AIRTABLE_BASE_ID':
-          return AIRTABLE_CONFIG.BASE_ID;
-        case 'EVENTS_TABLE_NAME':
-          return AIRTABLE_CONFIG.TABLES.EVENTS;
-        case 'EXHIBITORS_TABLE_NAME':
-          return AIRTABLE_CONFIG.TABLES.EXHIBITORS;
-        case 'PARTICIPATION_TABLE_NAME':
-          return AIRTABLE_CONFIG.TABLES.PARTICIPATION;
-        default:
-          throw new Error(`No fallback available for ${key}`);
-      }
-    };
+    // 2. Récupération des valeurs (avec fallbacks)
+    const AIRTABLE_PAT = getEnvOrConfig('AIRTABLE_PAT');
+    const AIRTABLE_BASE_ID = getEnvOrConfig('AIRTABLE_BASE_ID');
+    
+    console.log('[airtable-proxy] ✅ Variables OK, Base ID:', AIRTABLE_BASE_ID.substring(0, 10) + '...');
 
-    const AIRTABLE_PAT = getConfigValue('AIRTABLE_PAT');
-    const AIRTABLE_BASE_ID = getConfigValue('AIRTABLE_BASE_ID');
-    const EVENTS_TABLE_NAME = getConfigValue('EVENTS_TABLE_NAME');
-    const EXHIBITORS_TABLE_NAME = getConfigValue('EXHIBITORS_TABLE_NAME');
-    const PARTICIPATION_TABLE_NAME = getConfigValue('PARTICIPATION_TABLE_NAME');
-
+    // 3. Vérification API key Supabase
     const apiKey = req.headers.get('apikey');
     if (apiKey !== Deno.env.get('SUPABASE_ANON_KEY')) {
+      console.error('[airtable-proxy] ❌ Clé API Supabase invalide');
       return new Response(
-        JSON.stringify({ error: 'unauthorized', message: 'Invalid API key' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'unauthorized', 
+          message: 'Invalid API key' 
+        }),
         {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -92,11 +59,16 @@ serve(async (req) => {
       );
     }
 
-    const { table, method, data, uniqueField } = await req.json();
+    // 4. Parsing des paramètres
+    const { action, table, payload, uniqueField } = await req.json();
 
     if (!table) {
       return new Response(
-        JSON.stringify({ error: 'missing_table', message: 'Table name is required' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'missing_table', 
+          message: 'Table name is required' 
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -104,9 +76,13 @@ serve(async (req) => {
       );
     }
 
-    if (!method) {
+    if (!action) {
       return new Response(
-        JSON.stringify({ error: 'missing_method', message: 'Method is required' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'missing_action', 
+          message: 'Action is required' 
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -114,210 +90,267 @@ serve(async (req) => {
       );
     }
 
-    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
+    console.log(`[airtable-proxy] 📋 Action: ${action}, Table: ${table}`);
 
+    // 5. Construction de l'URL Airtable
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
+    console.log(`[airtable-proxy] 🌐 URL Airtable: ${airtableUrl}`);
+
+    // 6. Exécution de l'action
     let response;
-    switch (method) {
-      case 'list':
-        response = await fetch(`${airtableUrl}`, {
-          headers: {
-            Authorization: `Bearer ${AIRTABLE_PAT}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        break;
-      case 'create':
-        response = await fetch(`${airtableUrl}`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${AIRTABLE_PAT}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ records: data.map((item: any) => ({ fields: item })) }),
-        });
-        break;
-      case 'update':
-        response = await fetch(`${airtableUrl}`, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${AIRTABLE_PAT}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ records: data.map((item: any) => ({ id: item.id, fields: item.fields })) }),
-        });
-        break;
-      case 'delete':
-        response = await fetch(`${airtableUrl}`, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${AIRTABLE_PAT}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ records: data.map((item: any) => ({ id: item.id })) }),
-        });
-        break;
-      case 'upsert':
-        if (!uniqueField) {
+    try {
+      switch (action) {
+        case 'LIST':
+          response = await fetch(`${airtableUrl}`, {
+            headers: {
+              Authorization: `Bearer ${AIRTABLE_PAT}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          break;
+          
+        case 'CREATE':
+          response = await fetch(`${airtableUrl}`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${AIRTABLE_PAT}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ records: payload.map((item: any) => ({ fields: item })) }),
+          });
+          break;
+          
+        case 'FIND':
+          const findUrl = `${airtableUrl}?filterByFormula=({${payload.fieldName}}="${payload.value}")`;
+          response = await fetch(findUrl, {
+            headers: {
+              Authorization: `Bearer ${AIRTABLE_PAT}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          break;
+          
+        case 'UPSERT':
+          if (!uniqueField) {
+            return new Response(
+              JSON.stringify({ 
+                success: false,
+                error: 'missing_unique_field', 
+                message: 'Unique field is required for upsert' 
+              }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
+
+          // Logique UPSERT complète...
+          const findExistingUrl = `${airtableUrl}?filterByFormula=OR(${payload
+            .map((item: any) => `({${uniqueField}}="${item[uniqueField]}")`)
+            .join(',')})`;
+
+          const findExistingResponse = await fetch(findExistingUrl, {
+            headers: {
+              Authorization: `Bearer ${AIRTABLE_PAT}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!findExistingResponse.ok) {
+            const errorText = await findExistingResponse.text();
+            console.error(`[airtable-proxy] ❌ Erreur FIND pour UPSERT (${findExistingResponse.status}):`, errorText);
+            
+            return new Response(
+              JSON.stringify({ 
+                success: false,
+                error: 'airtable_error',
+                status: findExistingResponse.status,
+                statusText: findExistingResponse.statusText,
+                body: errorText,
+                context: 'UPSERT_FIND'
+              }),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
+
+          const findResult = await findExistingResponse.json();
+          const existingRecords = findResult.records || [];
+
+          const toCreate = payload.filter(
+            (item: any) => !existingRecords.find((record: any) => record.fields[uniqueField] === item[uniqueField])
+          );
+          const toUpdate = payload.filter((item: any) =>
+            existingRecords.find((record: any) => record.fields[uniqueField] === item[uniqueField])
+          );
+
+          const results = { created: [], updated: [], toCreate: toCreate.length, toUpdate: toUpdate.length };
+
+          if (toCreate.length > 0) {
+            const createResponse = await fetch(`${airtableUrl}`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${AIRTABLE_PAT}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ records: toCreate.map((item: any) => ({ fields: item })) }),
+            });
+
+            if (createResponse.ok) {
+              const createResult = await createResponse.json();
+              results.created = createResult.records || [];
+            }
+          }
+
+          if (toUpdate.length > 0) {
+            const updateResponse = await fetch(`${airtableUrl}`, {
+              method: 'PUT',
+              headers: {
+                Authorization: `Bearer ${AIRTABLE_PAT}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                records: toUpdate.map((item: any) => {
+                  const existingRecord = existingRecords.find((record: any) => record.fields[uniqueField] === item[uniqueField]);
+                  return { id: existingRecord.id, fields: item };
+                }),
+              }),
+            });
+
+            if (updateResponse.ok) {
+              const updateResult = await updateResponse.json();
+              results.updated = updateResult.records || [];
+            }
+          }
+
           return new Response(
-            JSON.stringify({ error: 'missing_unique_field', message: 'Unique field is required for upsert' }),
+            JSON.stringify({
+              success: true,
+              data: results,
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+
+        case 'DELETE':
+          response = await fetch(`${airtableUrl}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${AIRTABLE_PAT}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ records: payload.map((id: string) => ({ id })) }),
+          });
+          break;
+
+        default:
+          return new Response(
+            JSON.stringify({ 
+              success: false,
+              error: 'invalid_action', 
+              message: `Invalid action: ${action}` 
+            }),
             {
               status: 400,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             }
           );
+      }
+
+      // 7. Gestion de la réponse Airtable
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[airtable-proxy] ❌ Erreur Airtable (${response.status} ${response.statusText}):`, errorText);
+        
+        // Diagnostic détaillé selon le code d'erreur
+        let errorMessage = `Airtable API Error: ${response.status} ${response.statusText}`;
+        let context = '';
+        
+        switch (response.status) {
+          case 401:
+            errorMessage = 'Authentification Airtable échouée - vérifiez AIRTABLE_PAT';
+            context = 'INVALID_PAT';
+            break;
+          case 404:
+            errorMessage = `Table "${table}" introuvable dans la base "${AIRTABLE_BASE_ID}" - vérifiez AIRTABLE_BASE_ID et le nom de table`;
+            context = 'TABLE_NOT_FOUND';
+            break;
+          case 422:
+            errorMessage = 'Données invalides envoyées à Airtable';
+            context = 'INVALID_DATA';
+            break;
+          case 429:
+            errorMessage = 'Quota Airtable dépassé - trop de requêtes';
+            context = 'RATE_LIMIT';
+            break;
         }
-
-        // 1. Find existing records
-        const findUrl = `${airtableUrl}?filterByFormula=OR(${data
-          .map((item: any) => `({${uniqueField}}="${item[uniqueField]}")`)
-          .join(',')})`;
-
-        const findResponse = await fetch(findUrl, {
-          headers: {
-            Authorization: `Bearer ${AIRTABLE_PAT}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!findResponse.ok) {
-          console.error('Airtable find error:', await findResponse.text());
-          throw new Error(`Airtable find failed: ${findResponse.statusText}`);
-        }
-
-        const findResult = await findResponse.json();
-        const existingRecords = findResult.records || [];
-
-        const toCreate = data.filter(
-          (item: any) => !existingRecords.find((record: any) => record.fields[uniqueField] === item[uniqueField])
-        );
-        const toUpdate = data.filter((item: any) =>
-          existingRecords.find((record: any) => record.fields[uniqueField] === item[uniqueField])
-        );
-
-        const createPromises = toCreate.length > 0
-          ? [
-              fetch(`${airtableUrl}`, {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${AIRTABLE_PAT}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ records: toCreate.map((item: any) => ({ fields: item })) }),
-              }).then(res => res.json())
-            ]
-          : [];
-
-        const updatePromises = toUpdate.length > 0
-          ? [
-              fetch(`${airtableUrl}`, {
-                method: 'PUT',
-                headers: {
-                  Authorization: `Bearer ${AIRTABLE_PAT}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  records: toUpdate.map((item: any) => {
-                    const existingRecord = existingRecords.find((record: any) => record.fields[uniqueField] === item[uniqueField]);
-                    return { id: existingRecord.id, fields: item };
-                  }),
-                }),
-              }).then(res => res.json())
-            ]
-          : [];
-
-        const [createResult, updateResult] = await Promise.all(createPromises.concat(updatePromises));
-
-        const created = createResult ? createResult.records || [] : [];
-        const updated = updateResult ? updateResult.records || [] : [];
 
         return new Response(
           JSON.stringify({
-            created,
-            updated,
-            toCreate: toCreate.length,
-            toUpdate: toUpdate.length,
-            existing: existingRecords.length,
+            success: false,
+            error: 'airtable_error',
+            status: response.status,
+            statusText: response.statusText,
+            message: errorMessage,
+            body: errorText,
+            context: context,
+            debug: {
+              action,
+              table,
+              baseId: AIRTABLE_BASE_ID.substring(0, 10) + '...',
+              url: airtableUrl
+            }
           }),
           {
+            status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           }
         );
-
-      case 'findRecordByUniqueField':
-        if (!uniqueField) {
-          return new Response(
-            JSON.stringify({ error: 'missing_unique_field', message: 'Unique field is required' }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            }
-          );
-        }
-
-        if (!data || !data.uniqueValue) {
-          return new Response(
-            JSON.stringify({ error: 'missing_unique_value', message: 'Unique value is required' }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            }
-          );
-        }
-
-        const findByUrl = `${airtableUrl}?filterByFormula=({${uniqueField}}="${data.uniqueValue}")`;
-
-        const findByResponse = await fetch(findByUrl, {
-          headers: {
-            Authorization: `Bearer ${AIRTABLE_PAT}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!findByResponse.ok) {
-          console.error('Airtable find error:', await findByResponse.text());
-          throw new Error(`Airtable find failed: ${findByResponse.statusText}`);
-        }
-
-        const findByResult = await findByResponse.json();
-        const foundRecord = findByResult.records && findByResult.records.length > 0 ? findByResult.records[0] : null;
-
-        return new Response(
-          JSON.stringify(foundRecord),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-
-      default:
-        return new Response(
-          JSON.stringify({ error: 'invalid_method', message: 'Invalid method' }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-    }
-
-    if (!response.ok) {
-      console.error('Airtable error:', await response.text());
-      throw new Error(`Airtable request failed: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-
-    return new Response(
-      JSON.stringify(result),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
-    );
+
+      const result = await response.json();
+      console.log(`[airtable-proxy] ✅ Succès ${action} sur ${table}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: result,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+
+    } catch (fetchError) {
+      console.error('[airtable-proxy] ❌ Erreur réseau/fetch:', fetchError);
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'network_error',
+          message: `Network/Fetch error: ${fetchError.message}`,
+          context: 'FETCH_FAILED'
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
   } catch (error) {
-    console.error('Airtable proxy error:', error);
+    console.error('[airtable-proxy] ❌ Erreur générale:', error);
     
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        success: false,
+        error: 'internal_error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        context: 'GENERAL_ERROR'
       }),
       {
         status: 500,

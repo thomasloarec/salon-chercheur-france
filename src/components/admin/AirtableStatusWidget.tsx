@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, RefreshCw, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, AlertCircle, Bug, ExternalLink } from 'lucide-react';
 import { useAirtableStatus } from '@/hooks/useAirtableStatus';
 
 interface AirtableStatusWidgetProps {
@@ -51,6 +51,48 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
       </Badge>
     );
   };
+
+  const getErrorMessage = () => {
+    if (!status?.testsError) return null;
+
+    const { error, status: httpStatus, message, context } = status.testsError;
+
+    switch (error) {
+      case 'missing_env':
+        return {
+          title: 'Variables manquantes',
+          message: `Variables Supabase manquantes: ${status.missing?.join(', ')}`,
+          type: 'config' as const
+        };
+      case 'airtable_error':
+        if (httpStatus === 404) {
+          return {
+            title: 'Airtable 404 - Base ou table introuvable',
+            message: 'Vérifiez AIRTABLE_BASE_ID et que les tables All_Events, All_Exposants, Participation existent dans cette base',
+            type: 'airtable' as const
+          };
+        } else if (httpStatus === 401) {
+          return {
+            title: 'Airtable 401 - Authentification échouée',
+            message: 'Vérifiez votre AIRTABLE_PAT (Personal Access Token)',
+            type: 'auth' as const
+          };
+        }
+        return {
+          title: `Airtable ${httpStatus}`,
+          message: message || 'Erreur Airtable',
+          type: 'airtable' as const
+        };
+      default:
+        return {
+          title: 'Erreur technique',
+          message: message || error,
+          type: 'technical' as const
+        };
+    }
+  };
+
+  const errorInfo = getErrorMessage();
 
   return (
     <Card>
@@ -106,11 +148,7 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                   <div className="font-medium">Tests de validation</div>
                   {status.testsFailStep && (
                     <div className="text-sm text-red-600">
-                      {status.testsFailStep === 'Variables manquantes' && status.missing ? (
-                        <>Échec: variables manquantes ({status.missing.join(', ')})</>
-                      ) : (
-                        <>Échec: {status.testsFailStep}</>
-                      )}
+                      Échec: {status.testsFailStep}
                     </div>
                   )}
                 </div>
@@ -122,11 +160,6 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                 {getStatusIcon(status.dedupOk, isLoading)}
                 <div className="flex-1">
                   <div className="font-medium">Anti-doublons</div>
-                  {!status.dedupOk && status.testsFailStep === 'Variables manquantes' && status.missing && (
-                    <div className="text-sm text-red-600">
-                      Variables manquantes: {status.missing.join(', ')}
-                    </div>
-                  )}
                 </div>
                 {getStatusBadge(status.dedupOk, status.dedupOk ? 'OK' : 'KO')}
               </div>
@@ -138,6 +171,51 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                   <div className="font-medium">Boutons synchronisation</div>
                 </div>
                 {getStatusBadge(status.buttonsActive, status.buttonsActive ? 'Actifs' : 'Désactivés')}
+              </div>
+            </div>
+          )}
+
+          {/* Error Details */}
+          {errorInfo && (
+            <div className={`p-4 rounded-lg border-l-4 ${
+              errorInfo.type === 'config' ? 'bg-orange-50 border-orange-400' :
+              errorInfo.type === 'airtable' ? 'bg-red-50 border-red-400' :
+              errorInfo.type === 'auth' ? 'bg-yellow-50 border-yellow-400' :
+              'bg-gray-50 border-gray-400'
+            }`}>
+              <div className="flex items-start gap-3">
+                <AlertCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                  errorInfo.type === 'config' ? 'text-orange-600' :
+                  errorInfo.type === 'airtable' ? 'text-red-600' :
+                  errorInfo.type === 'auth' ? 'text-yellow-600' :
+                  'text-gray-600'
+                }`} />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm mb-1">{errorInfo.title}</h4>
+                  <p className="text-sm">{errorInfo.message}</p>
+                  
+                  {errorInfo.type === 'airtable' && status?.testsError?.status === 404 && (
+                    <div className="mt-3 space-y-2 text-xs">
+                      <p className="font-medium">Étapes de diagnostic :</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Vérifiez que votre base Airtable ID est correcte</li>
+                        <li>
+                          Connectez-vous à{' '}
+                          <a 
+                            href="https://airtable.com" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                          >
+                            Airtable <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </li>
+                        <li>Vérifiez que les tables existent : All_Events, All_Exposants, Participation</li>
+                        <li>Vérifiez les permissions de votre Personal Access Token</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -154,6 +232,20 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                   {status.secretsOk && status.testsOk && status.dedupOk ? '🟢 Tout fonctionne' : '🔴 Action requise'}
                 </Badge>
               </div>
+              
+              {/* Debug info toggle */}
+              {status.debug && (
+                <details className="mt-3">
+                  <summary className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
+                    <Bug className="h-3 w-3" />
+                    Informations de debug
+                  </summary>
+                  <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto">
+                    {JSON.stringify(status.debug, null, 2)}
+                  </pre>
+                </details>
+              )}
+
               {status.missing && status.missing.length > 0 && (
                 <div className="mt-2 text-sm text-red-600">
                   <strong>⚠️ Variables manquantes:</strong> {status.missing.join(', ')}
@@ -161,6 +253,7 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                   <span className="text-xs">Configurez ces variables puis redéployez toutes les functions avec: <code>supabase functions deploy --all</code></span>
                 </div>
               )}
+
               {!status.secretsOk && status.missing && status.missing.length > 0 && (
                 <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
                   <strong>📋 Étapes suivantes:</strong>

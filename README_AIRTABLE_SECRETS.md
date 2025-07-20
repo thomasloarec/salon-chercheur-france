@@ -56,6 +56,81 @@ supabase functions deploy --all
 2. Le widget "Vérification finale" doit afficher tous les voyants verts
 3. Les tests de validation et anti-doublons se déclenchent automatiquement
 
+## Diagnostic des erreurs
+
+### 🔍 Widget "Vérification finale"
+
+Le widget affiche maintenant des informations de diagnostic détaillées :
+
+- **Configuration secrets** : Vérifie la présence des 5 variables Supabase
+- **Tests de validation** : Test de connexion réelle à Airtable
+- **Messages d'erreur spécifiques** selon le type de problème
+
+### 🚨 Erreurs courantes et solutions
+
+#### Erreur "Variables manquantes"
+```
+❌ Configuration secrets : Variables manquantes: AIRTABLE_PAT
+```
+**Solution :** Configurez les secrets manqués et redéployez
+
+#### Erreur "Airtable 404"
+```
+❌ Tests de validation : Airtable 404 - Base ou table introuvable
+```
+**Solutions :**
+1. Vérifiez `AIRTABLE_BASE_ID` : doit être `SLxgKrY3BSA1nX`
+2. Connectez-vous à Airtable et vérifiez que les tables existent :
+   - `All_Events`
+   - `All_Exposants` 
+   - `Participation`
+3. Vérifiez les permissions de votre PAT
+
+#### Erreur "Airtable 401"
+```
+❌ Tests de validation : Airtable 401 - Authentification échouée
+```
+**Solution :** Vérifiez votre `AIRTABLE_PAT` (Personal Access Token)
+
+### 🛠️ Commandes de diagnostic
+
+#### Vérifier les secrets d'une function spécifique
+```bash
+supabase functions secrets list airtable-proxy
+supabase functions secrets list airtable-smoke-test
+supabase functions secrets list check-secrets
+supabase functions secrets list airtable-status
+```
+
+#### Vérifier les logs d'une function
+```bash
+supabase functions logs airtable-proxy
+supabase functions logs airtable-status
+```
+
+#### Tester une function manuellement
+```bash
+# Test simple de vérification des secrets
+curl -X POST "https://[votre-projet].supabase.co/functions/v1/check-secrets" \
+  -H "Authorization: Bearer [votre-anon-key]" \
+  -H "apikey: [votre-anon-key]"
+```
+
+### 🔧 Debug avancé
+
+#### Informations de debug dans le widget
+Cliquez sur "Informations de debug" dans le widget pour voir :
+- Quelles variables sont définies via l'environnement vs config
+- Les premiers caractères des valeurs (pour vérification sans exposer les secrets)
+- Le contexte détaillé des erreurs
+
+#### Logs détaillés dans les edge functions
+Toutes les functions loggent maintenant :
+- `[nom-function] 🔍 Début...` : Démarrage
+- `[nom-function] ✅ Variables OK` : Variables trouvées  
+- `[nom-function] ❌ Erreur...` : Erreurs avec contexte
+- `[nom-function] 📊 Debug variables` : Informations détaillées
+
 ## Configuration manuelle
 
 Si vous préférez configurer manuellement :
@@ -113,12 +188,34 @@ Après configuration des secrets, les tests se lancent automatiquement pour conf
 1. Vérifiez les permissions de votre PAT Airtable
 2. Confirmez que les noms de tables correspondent à votre base
 3. Consultez les logs des edge functions dans le dashboard Supabase
+4. Utilisez les informations de debug dans le widget
+
+### Incohérence "secrets OK / variables manquantes"
+Si le widget affiche "Configuration secrets ✅" mais "Tests ❌ Variables manquantes" :
+
+1. **Vérification différentielle** : Les edge functions utilisent maintenant deux vérifications :
+   - `listMissing()` : vérification stricte des secrets Supabase (sans fallback)
+   - `checkMissingVars()` : vérification logique avec fallbacks de configuration
+
+2. **Solution** : Toutes les variables doivent être définies comme secrets Supabase :
+   ```bash
+   supabase functions secrets set \
+     AIRTABLE_PAT="votre_pat" \
+     AIRTABLE_BASE_ID="SLxgKrY3BSA1nX" \
+     EVENTS_TABLE_NAME="All_Events" \
+     EXHIBITORS_TABLE_NAME="All_Exposants" \
+     PARTICIPATION_TABLE_NAME="Participation"
+   ```
+
+3. **Redéploiement obligatoire** après chaque modification de secrets
 
 ### Différence entre edge functions
 Toutes les edge functions utilisent maintenant une **fonction unifiée** pour lire les variables :
+- `listMissing()` : diagnostic strict des secrets Supabase
 - `getEnvOrConfig()` : utilise d'abord la variable d'environnement, puis la config par défaut
-- `checkMissingVars()` : liste identique des variables manquantes dans toutes les functions
-- Cohérence garantie entre `airtable-status`, `airtable-smoke-test`, et `check-secrets`
+- `checkMissingVars()` : liste des variables manquantes avec fallbacks
+- `debugVariables()` : informations détaillées pour le diagnostic
+- Cohérence garantie entre toutes les functions
 
 ## Sécurité
 
@@ -148,3 +245,5 @@ supabase functions deploy --all
 - [ ] Widget "Vérification finale" tout vert sur `/admin`
 - [ ] Tests de validation et anti-doublons passent automatiquement
 - [ ] Boutons de synchronisation actifs
+- [ ] Aucune erreur 404 ou 401 dans les logs
+- [ ] Messages d'erreur spécifiques si problème persistant

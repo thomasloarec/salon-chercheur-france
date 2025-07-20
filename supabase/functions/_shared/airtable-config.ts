@@ -43,7 +43,27 @@ export function getEnvOrConfig(key: string): string {
 }
 
 /**
- * Vérifie quelles variables requises sont manquantes
+ * Liste simplifiée des variables manquantes (sans fallback)
+ * Utilisée pour un diagnostic précis des secrets Supabase
+ */
+export function listMissing(): string[] {
+  const REQUIRED_VARS = [
+    'AIRTABLE_PAT',
+    'AIRTABLE_BASE_ID',
+    'EVENTS_TABLE_NAME',
+    'EXHIBITORS_TABLE_NAME',
+    'PARTICIPATION_TABLE_NAME'
+  ];
+
+  return REQUIRED_VARS.filter(key => {
+    const value = Deno.env.get(key);
+    return !value || value.trim() === '';
+  });
+}
+
+/**
+ * Vérifie quelles variables requises sont manquantes (avec fallbacks)
+ * Utilisée pour la logique métier normale
  */
 export function checkMissingVars(): string[] {
   const REQUIRED_VARS = [
@@ -58,4 +78,33 @@ export function checkMissingVars(): string[] {
     const value = getEnvOrConfig(key);
     return !value || value.trim() === '';
   });
+}
+
+/**
+ * Diagnostic détaillé pour debug
+ */
+export function debugVariables(): Record<string, any> {
+  const REQUIRED_VARS = [
+    'AIRTABLE_PAT',
+    'AIRTABLE_BASE_ID',
+    'EVENTS_TABLE_NAME',
+    'EXHIBITORS_TABLE_NAME',
+    'PARTICIPATION_TABLE_NAME'
+  ];
+
+  const debug: Record<string, any> = {};
+  
+  for (const key of REQUIRED_VARS) {
+    const envValue = Deno.env.get(key);
+    const configValue = getEnvOrConfig(key);
+    
+    debug[key] = {
+      hasEnvVar: !!envValue,
+      envValue: envValue ? `${envValue.substring(0, 10)}...` : null,
+      hasConfigFallback: envValue !== configValue,
+      finalValue: configValue ? `${configValue.substring(0, 10)}...` : null,
+    };
+  }
+  
+  return debug;
 }
