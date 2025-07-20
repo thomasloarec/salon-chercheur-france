@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Copy, RefreshCw, Check } from 'lucide-react';
 import { buildSecretCommand, copyToClipboard } from '@/utils/secretsCommandBuilder';
 import { useToast } from '@/hooks/use-toast';
+import AirtableStatusWidget from './AirtableStatusWidget';
 
 interface MissingSecretsAlertProps {
   missing: string[];
@@ -39,75 +39,63 @@ const MissingSecretsAlert: React.FC<MissingSecretsAlertProps> = ({
   };
 
   return (
-    <Alert variant="destructive" className="mb-6">
-      <AlertTriangle className="h-4 w-4" />
-      <AlertTitle className="flex items-center gap-2">
-        Variables d'environnement manquantes
-        <Badge variant="destructive">{missing.length}</Badge>
-      </AlertTitle>
-      <AlertDescription>
-        <div className="space-y-4">
-          <p>
-            Les variables suivantes doivent être configurées dans Supabase Functions :
-          </p>
-          
-          <div className="flex flex-wrap gap-2">
-            {missing.map(variable => (
-              <Badge key={variable} variant="outline" className="font-mono text-xs">
-                {variable}
-              </Badge>
-            ))}
-          </div>
-
-          <div>
-            <p className="text-sm font-medium mb-2">Commande à exécuter :</p>
-            <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
-              <code>{command}</code>
-            </div>
-          </div>
-
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleCopyCommand}
-              className="flex items-center gap-2"
-            >
-              <Copy className="h-4 w-4" />
-              Copier la commande
-            </Button>
+    <div className="space-y-6">
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle className="flex items-center gap-2">
+          Variables d'environnement manquantes
+          <Badge variant="destructive">{missing.length}</Badge>
+        </AlertTitle>
+        <AlertDescription>
+          <div className="space-y-4">
+            <p>
+              Les variables suivantes doivent être configurées dans Supabase Functions :
+            </p>
             
-            {onMarkAsDone && (
+            <div className="flex flex-wrap gap-2">
+              {missing.map(variable => (
+                <Badge key={variable} variant="outline" className="font-mono text-xs">
+                  {variable}
+                </Badge>
+              ))}
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-2">Commande à exécuter :</p>
+              <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
+                <code>{command}</code>
+              </div>
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
               <Button
                 size="sm"
-                variant="secondary"
-                onClick={onMarkAsDone}
-                disabled={isRefreshing}
+                variant="outline"
+                onClick={handleCopyCommand}
                 className="flex items-center gap-2"
               >
-                {isRefreshing ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-                {isRefreshing ? 'Vérification...' : 'J\'ai configuré les secrets'}
+                <Copy className="h-4 w-4" />
+                Copier la commande
               </Button>
-            )}
-          </div>
+            </div>
 
-          <div className="text-xs text-gray-600 border-t pt-3">
-            <p><strong>Instructions :</strong></p>
-            <ol className="list-decimal list-inside space-y-1 mt-1">
-              <li>Copiez la commande ci-dessus</li>
-              <li><strong>Complétez AIRTABLE_PAT=""</strong> avec votre Personal Access Token</li>
-              <li>Exécutez la commande dans votre terminal</li>
-              <li>Redéployez les functions : <code className="bg-gray-100 px-1 rounded">supabase functions deploy</code></li>
-              <li>Cliquez sur "J'ai configuré les secrets" pour revérifier</li>
-            </ol>
+            <div className="text-xs text-gray-600 border-t pt-3">
+              <p><strong>Instructions :</strong></p>
+              <ol className="list-decimal list-inside space-y-1 mt-1">
+                <li>Copiez la commande ci-dessus</li>
+                <li><strong>Complétez AIRTABLE_PAT=""</strong> avec votre Personal Access Token</li>
+                <li>Exécutez la commande dans votre terminal</li>
+                <li>Redéployez les functions : <code className="bg-gray-100 px-1 rounded">supabase functions deploy</code></li>
+                <li>Utilisez le widget ci-dessous pour vérifier que tout fonctionne</li>
+              </ol>
+            </div>
           </div>
-        </div>
-      </AlertDescription>
-    </Alert>
+        </AlertDescription>
+      </Alert>
+
+      {/* Widget de vérification post-configuration */}
+      <AirtableStatusWidget onSecretsConfigured={onMarkAsDone} />
+    </div>
   );
 };
 
