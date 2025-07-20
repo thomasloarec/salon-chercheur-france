@@ -8,6 +8,7 @@ import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import MainLayout from '@/components/layout/MainLayout';
 import AirtableStatusWidget from '@/components/admin/AirtableStatusWidget';
+import AirtableDiagnostic from '@/components/admin/AirtableDiagnostic';
 
 const Admin = () => {
   const { user, loading } = useAuth();
@@ -43,6 +44,9 @@ const Admin = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Administration</h1>
           <p className="text-gray-600">Gestion des événements et synchronisation des données</p>
         </div>
+
+        {/* Nouveau composant de diagnostic */}
+        <AirtableDiagnostic />
 
         {/* Widget de vérification finale */}
         <AirtableStatusWidget 

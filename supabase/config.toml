@@ -5,59 +5,30 @@ project_id = "vxivdvzzhebobveedxbj"
 enabled = true
 port = 54321
 schemas = ["public", "graphql_public"]
-extra_search_path = ["public", "extensions"]
+extra_search_path = ["public"]
 max_rows = 1000
+
+[auth]
+enabled = true
+port = 54324
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://lovable.dev"]
+jwt_expiry = 3600
+enable_signup = true
+enable_email_confirmations = false
+enable_email_change_confirmations = true
+enable_phone_confirmations = false
+enable_phone_change_confirmations = true
 
 [db]
 port = 54322
 
-[db.pooler]
-enabled = false
-port = 54329
-pool_mode = "transaction"
-default_pool_size = 20
-max_client_conn = 100
-
-[realtime]
-enabled = true
-ip_version = "ipv6"
-port = 54324
-
 [studio]
 enabled = true
 port = 54323
-api_url = "http://127.0.0.1:54321"
 
-[inbucket]
-enabled = true
-port = 54324
-smtp_port = 54325
-pop3_port = 54326
-
-[storage]
-enabled = true
-port = 54325
-file_size_limit = "50MiB"
-
-[auth]
-enabled = true
-port = 54326
-site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://localhost:3000"]
-jwt_expiry = 3600
-enable_signup = true
-email_double_confirm_changes = true
-enable_anonymous_sign_ins = false
-
-[auth.email]
-enable_signup = true
-double_confirm_changes = true
-enable_confirmations = false
-
-[auth.sms]
-enable_signup = true
-enable_confirmations = false
-template = "Your code is {{ .Code }} ."
+[inbound_webhooks]
+enabled = false
 
 [functions.airtable-metadata]
 verify_jwt = false
@@ -68,22 +39,34 @@ verify_jwt = false
 [functions.airtable-write]
 verify_jwt = false
 
-[functions.airtable-status]
+[functions.airtable-schema-discovery]
+verify_jwt = false
+
+[functions.airtable-code-analysis]
+verify_jwt = false
+
+[functions.airtable-mapping-generator]
+verify_jwt = false
+
+[functions.airtable-write-diagnostic]
 verify_jwt = false
 
 [functions.airtable-debug]
 verify_jwt = false
 
-[functions.debug-airtable-create-test]
+[functions.airtable-smoke-test]
 verify_jwt = false
 
-[functions.airtable-smoke-test]
+[functions.airtable-status]
 verify_jwt = false
 
 [functions.check-secrets]
 verify_jwt = false
 
 [functions.clear-import-buffer]
+verify_jwt = false
+
+[functions.debug-airtable-create-test]
 verify_jwt = false
 
 [functions.env-check]
@@ -106,3 +89,6 @@ verify_jwt = false
 
 [functions.sync-crm]
 verify_jwt = false
+
+[edge_runtime]
+policy = "per_worker"
