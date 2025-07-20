@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { AIRTABLE_CONFIG } from '../../../src/config/airtable.ts';
+import { AIRTABLE_CONFIG } from '../_shared/airtable-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
