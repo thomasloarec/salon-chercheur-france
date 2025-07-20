@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { AIRTABLE_CONFIG, listMissing, getEnvOrConfig, debugVariables } from '../_shared/airtable-config.ts';
 
@@ -113,6 +112,11 @@ serve(async (req) => {
           break;
           
         case 'CREATE':
+          // 🔍 DEBUG AVANCÉ: Logging détaillé avant l'appel
+          console.log(`[airtable-proxy][DEBUG] CREATE sur table: ${table}`);
+          console.log(`[airtable-proxy][DEBUG] Payload envoyé:`, JSON.stringify(payload, null, 2));
+          console.log(`[airtable-proxy][DEBUG] URL complète: ${airtableUrl}`);
+          
           try {
             response = await fetch(`${airtableUrl}`, {
               method: 'POST',
@@ -123,18 +127,28 @@ serve(async (req) => {
               body: JSON.stringify({ records: payload.map((item: any) => ({ fields: item })) }),
             });
 
-            // Gestion spéciale des erreurs 422 (doublons)
+            // Gestion spéciale des erreurs 422 (doublons) avec debug détaillé
             if (!response.ok && response.status === 422) {
               const errorBody = await response.text();
+              
+              // 🔍 DEBUG AVANCÉ: Logging détaillé de l'erreur 422
+              console.log(`[airtable-proxy][DEBUG] 422 payload:`, JSON.stringify(payload, null, 2));
+              console.log(`[airtable-proxy][DEBUG] 422 response body:`, errorBody);
               console.log(`[airtable-proxy] Duplicate detected on ${table}, returning 200.`);
               
+              // Provisoirement, renvoyer l'erreur 422 avec le body complet pour diagnostic
               return new Response(
                 JSON.stringify({
-                  success: true,
-                  data: { duplicate: true }
+                  success: false,
+                  error: 'airtable_422_debug',
+                  status: 422,
+                  table: table,
+                  payload: payload,
+                  airtableErrorBody: errorBody,
+                  message: 'Debug 422 - voir logs pour détails'
                 }),
                 {
-                  status: 200,
+                  status: 422,
                   headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 }
               );

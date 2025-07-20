@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, RefreshCw, AlertCircle, Bug, ExternalLink, Search } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, AlertCircle, Bug, ExternalLink, Search, TestTube } from 'lucide-react';
 import { useAirtableStatus } from '@/hooks/useAirtableStatus';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,6 +19,7 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
   const { status, isLoading, checkStatus } = useAirtableStatus();
   const prevSecretsOk = useRef<boolean | null>(null);
   const [isInspecting, setIsInspecting] = useState(false);
+  const [isTestingCreate, setIsTestingCreate] = useState(false);
 
   useEffect(() => {
     if (autoRefresh) {
@@ -39,6 +40,53 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
 
   const handleRefresh = async () => {
     await checkStatus();
+  };
+
+  const handleTestCreate = async () => {
+    setIsTestingCreate(true);
+    try {
+      console.log('🧪 Test de création Airtable en cours...');
+      
+      const { data, error } = await supabase.functions.invoke('debug-airtable-create-test');
+      
+      if (error) {
+        console.error('❌ Erreur test création:', error);
+        return;
+      }
+
+      console.log('📊 Résultat test création:', data);
+      
+      if (data.success) {
+        console.group('🧪 TEST DE CRÉATION AIRTABLE');
+        console.log('📤 Payload envoyé:', data.payload_sent);
+        console.log('📨 Réponse Airtable:');
+        console.log(`   Status: ${data.airtable_response.status} ${data.airtable_response.statusText}`);
+        console.log(`   Body: ${data.airtable_response.body}`);
+        console.log(`💡 Interprétation: ${data.interpretation}`);
+        console.groupEnd();
+        
+        if (data.airtable_response.status === 422) {
+          console.group('🔍 ANALYSE ERREUR 422');
+          try {
+            const errorDetails = JSON.parse(data.airtable_response.body);
+            console.log('📋 Détails de l\'erreur:', errorDetails);
+            
+            if (errorDetails.error) {
+              console.log(`   Type: ${errorDetails.error.type}`);
+              console.log(`   Message: ${errorDetails.error.message}`);
+            }
+          } catch (parseError) {
+            console.log('❌ Impossible de parser le body de l\'erreur');
+          }
+          console.groupEnd();
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Exception lors du test de création:', error);
+    } finally {
+      setIsTestingCreate(false);
+    }
   };
 
   const handleInspectAirtable = async () => {
@@ -185,6 +233,20 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
             Vérification finale
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={handleTestCreate}
+              disabled={isTestingCreate}
+              variant="outline"
+              size="sm"
+              className="text-purple-600 border-purple-200 hover:bg-purple-50"
+            >
+              {isTestingCreate ? (
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <TestTube className="h-4 w-4 mr-2" />
+              )}
+              Test Création
+            </Button>
             {isAirtable404Error && (
               <Button
                 onClick={handleInspectAirtable}
@@ -298,6 +360,7 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                     <div className="mt-3 space-y-2 text-xs">
                       <p className="font-medium">Étapes de diagnostic :</p>
                       <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Cliquez sur le bouton "Test Création" pour diagnostiquer les 422</li>
                         <li>Cliquez sur le bouton "Inspecter Airtable" ci-dessus</li>
                         <li>Ouvrez la console de votre navigateur (F12)</li>
                         <li>Vérifiez que votre base Airtable ID est correct</li>
