@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { jest } from '@jest/globals';
 import AirtableStatusWidget from '../AirtableStatusWidget';
-import { useAirtableStatus } from '@/hooks/useAirtableStatus';
+import { useAirtableStatus, type AirtableStatus } from '@/hooks/useAirtableStatus';
 
 // Mock the hook
 jest.mock('@/hooks/useAirtableStatus');
@@ -17,7 +17,12 @@ describe('AirtableStatusWidget', () => {
 
   it('should call onSecretsConfigured when secrets become OK', async () => {
     const mockOnSecretsConfigured = jest.fn();
-    const mockCheckStatus = jest.fn();
+    const mockCheckStatus = jest.fn().mockResolvedValue({
+      secretsOk: true,
+      testsOk: true,
+      dedupOk: true,
+      buttonsActive: true
+    } as AirtableStatus);
 
     // First render: secrets not OK
     mockUseAirtableStatus.mockReturnValue({
@@ -56,6 +61,14 @@ describe('AirtableStatusWidget', () => {
   });
 
   it('should display missing variables instructions when secrets are not OK', () => {
+    const mockCheckStatus = jest.fn().mockResolvedValue({
+      secretsOk: false,
+      missing: ['AIRTABLE_PAT', 'AIRTABLE_BASE_ID'],
+      testsOk: false,
+      dedupOk: false,
+      buttonsActive: false
+    } as AirtableStatus);
+
     mockUseAirtableStatus.mockReturnValue({
       status: {
         secretsOk: false,
@@ -65,7 +78,7 @@ describe('AirtableStatusWidget', () => {
         buttonsActive: false
       },
       isLoading: false,
-      checkStatus: jest.fn()
+      checkStatus: mockCheckStatus
     });
 
     render(<AirtableStatusWidget />);
@@ -76,6 +89,13 @@ describe('AirtableStatusWidget', () => {
   });
 
   it('should show success state when all checks pass', () => {
+    const mockCheckStatus = jest.fn().mockResolvedValue({
+      secretsOk: true,
+      testsOk: true,
+      dedupOk: true,
+      buttonsActive: true
+    } as AirtableStatus);
+
     mockUseAirtableStatus.mockReturnValue({
       status: {
         secretsOk: true,
@@ -84,7 +104,7 @@ describe('AirtableStatusWidget', () => {
         buttonsActive: true
       },
       isLoading: false,
-      checkStatus: jest.fn()
+      checkStatus: mockCheckStatus
     });
 
     render(<AirtableStatusWidget />);
