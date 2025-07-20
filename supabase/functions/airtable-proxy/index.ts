@@ -1,9 +1,161 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { AIRTABLE_CONFIG, listMissing, getEnvOrConfig, debugVariables } from '../_shared/airtable-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Cache pour stocker les champs valides de chaque table
+const tableFieldsCache = new Map<string, string[]>();
+
+// Fonction pour calculer la distance de Levenshtein
+function levenshteinDistance(a: string, b: string): number {
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+// Fonction pour normaliser une chaîne (supprime accents, espaces, met en minuscules)
+function normalizeString(str: string): string {
+  return str.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+// Fonction pour trouver le champ le plus proche
+function findClosestField(key: string, validFields: string[]): string | null {
+  const normalizedKey = normalizeString(key);
+  let bestMatch = null;
+  let bestScore = Infinity;
+  
+  for (const field of validFields) {
+    const normalizedField = normalizeString(field);
+    
+    // Correspondance exacte après normalisation
+    if (normalizedKey === normalizedField) {
+      return field;
+    }
+    
+    // Calcul de la distance de Levenshtein
+    const distance = levenshteinDistance(normalizedKey, normalizedField);
+    const maxLength = Math.max(normalizedKey.length, normalizedField.length);
+    const similarity = 1 - (distance / maxLength);
+    
+    // Accepter seulement si similarité > 70%
+    if (similarity > 0.7 && distance < bestScore) {
+      bestScore = distance;
+      bestMatch = field;
+    }
+  }
+  
+  return bestScore <= 2 ? bestMatch : null;
+}
+
+// Fonction pour récupérer les champs valides d'une table
+async function getValidFields(tableName: string, AIRTABLE_PAT: string, AIRTABLE_BASE_ID: string): Promise<string[]> {
+  const cacheKey = `${AIRTABLE_BASE_ID}_${tableName}`;
+  
+  // Vérifier le cache d'abord
+  if (tableFieldsCache.has(cacheKey)) {
+    console.log(`[airtable-proxy] 📋 Using cached fields for ${tableName}`);
+    return tableFieldsCache.get(cacheKey)!;
+  }
+  
+  try {
+    console.log(`[airtable-proxy] 📡 Fetching metadata for table: ${tableName}`);
+    
+    const metadataUrl = `https://api.airtable.com/v0/meta/bases/${AIRTABLE_BASE_ID}`;
+    const response = await fetch(metadataUrl, {
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_PAT}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.error(`[airtable-proxy] ❌ Failed to fetch metadata: ${response.status}`);
+      return [];
+    }
+    
+    const metadata = await response.json();
+    const table = metadata.tables?.find((t: any) => t.name === tableName);
+    
+    if (!table) {
+      console.error(`[airtable-proxy] ❌ Table ${tableName} not found in metadata`);
+      return [];
+    }
+    
+    const validFields = table.fields?.map((field: any) => field.name) || [];
+    console.log(`[airtable-proxy] ✅ Retrieved ${validFields.length} fields for ${tableName}:`, validFields);
+    
+    // Mettre en cache pour 5 minutes
+    tableFieldsCache.set(cacheKey, validFields);
+    setTimeout(() => tableFieldsCache.delete(cacheKey), 5 * 60 * 1000);
+    
+    return validFields;
+  } catch (error) {
+    console.error(`[airtable-proxy] ❌ Error fetching metadata for ${tableName}:`, error);
+    return [];
+  }
+}
+
+// Fonction pour normaliser le payload
+function normalizePayload(payload: any[], validFields: string[], tableName: string): any[] {
+  console.log(`[airtable-proxy] 🔧 Normalizing payload for ${tableName}`);
+  console.log(`[airtable-proxy] 📋 Valid fields:`, validFields);
+  
+  return payload.map((record, index) => {
+    console.log(`[airtable-proxy] 📝 Record ${index + 1} - Keys before normalization:`, Object.keys(record));
+    
+    const normalizedRecord: any = {};
+    const ignoredKeys: string[] = [];
+    
+    for (const [key, value] of Object.entries(record)) {
+      // Vérifier si le champ existe exactement
+      if (validFields.includes(key)) {
+        normalizedRecord[key] = value;
+        continue;
+      }
+      
+      // Chercher le champ le plus proche
+      const closestField = findClosestField(key, validFields);
+      if (closestField) {
+        console.log(`[airtable-proxy] 🔄 Mapping "${key}" → "${closestField}"`);
+        normalizedRecord[closestField] = value;
+      } else {
+        console.log(`[airtable-proxy] ⚠️ Ignored unknown field: "${key}"`);
+        ignoredKeys.push(key);
+      }
+    }
+    
+    console.log(`[airtable-proxy] 📝 Record ${index + 1} - Keys after normalization:`, Object.keys(normalizedRecord));
+    if (ignoredKeys.length > 0) {
+      console.log(`[airtable-proxy] 🗑️ Record ${index + 1} - Ignored keys:`, ignoredKeys);
+    }
+    
+    return normalizedRecord;
+  });
 }
 
 serve(async (req) => {
@@ -112,9 +264,22 @@ serve(async (req) => {
           break;
           
         case 'CREATE':
-          // 🔍 DEBUG AVANCÉ: Logging détaillé avant l'appel
+          // 🆕 RÉCUPÉRATION DES CHAMPS VALIDES ET NORMALISATION
           console.log(`[airtable-proxy][DEBUG] CREATE sur table: ${table}`);
-          console.log(`[airtable-proxy][DEBUG] Payload envoyé:`, JSON.stringify(payload, null, 2));
+          
+          // Récupérer les champs valides pour cette table
+          const validFields = await getValidFields(table, AIRTABLE_PAT, AIRTABLE_BASE_ID);
+          
+          if (validFields.length === 0) {
+            console.warn(`[airtable-proxy] ⚠️ No valid fields found for table ${table}, proceeding without normalization`);
+          }
+          
+          // Normaliser le payload
+          const normalizedPayload = validFields.length > 0 
+            ? normalizePayload(payload, validFields, table)
+            : payload;
+          
+          console.log(`[airtable-proxy][DEBUG] Payload normalisé:`, JSON.stringify(normalizedPayload, null, 2));
           console.log(`[airtable-proxy][DEBUG] URL complète: ${airtableUrl}`);
           
           try {
@@ -124,7 +289,7 @@ serve(async (req) => {
                 Authorization: `Bearer ${AIRTABLE_PAT}`,
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ records: payload.map((item: any) => ({ fields: item })) }),
+              body: JSON.stringify({ records: normalizedPayload.map((item: any) => ({ fields: item })) }),
             });
 
             // Gestion spéciale des erreurs 422 (doublons) avec debug détaillé
@@ -132,18 +297,37 @@ serve(async (req) => {
               const errorBody = await response.text();
               
               // 🔍 DEBUG AVANCÉ: Logging détaillé de l'erreur 422
-              console.log(`[airtable-proxy][DEBUG] 422 payload:`, JSON.stringify(payload, null, 2));
+              console.log(`[airtable-proxy][DEBUG] 422 payload:`, JSON.stringify(normalizedPayload, null, 2));
               console.log(`[airtable-proxy][DEBUG] 422 response body:`, errorBody);
-              console.log(`[airtable-proxy] Duplicate detected on ${table}, returning 200.`);
               
-              // Provisoirement, renvoyer l'erreur 422 avec le body complet pour diagnostic
+              try {
+                const errorJson = JSON.parse(errorBody);
+                if (errorJson.error?.type === 'UNPROCESSABLE_ENTITY') {
+                  console.log(`[airtable-proxy] Duplicate detected on ${table}, returning 200.`);
+                  return new Response(
+                    JSON.stringify({
+                      success: true,
+                      duplicate: true,
+                      message: 'Record already exists'
+                    }),
+                    {
+                      status: 200,
+                      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    }
+                  );
+                }
+              } catch (parseError) {
+                console.log(`[airtable-proxy] Could not parse 422 error body as JSON:`, parseError);
+              }
+              
+              // Si ce n'est pas un doublon reconnu, provisoirement renvoyer l'erreur 422 avec le body complet pour diagnostic
               return new Response(
                 JSON.stringify({
                   success: false,
                   error: 'airtable_422_debug',
                   status: 422,
                   table: table,
-                  payload: payload,
+                  payload: normalizedPayload,
                   airtableErrorBody: errorBody,
                   message: 'Debug 422 - voir logs pour détails'
                 }),
