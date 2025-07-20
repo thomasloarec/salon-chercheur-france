@@ -90,5 +90,8 @@ verify_jwt = false
 [functions.sync-crm]
 verify_jwt = false
 
+[functions.test-nojwt]
+verify_jwt = false
+
 [edge_runtime]
 policy = "per_worker"
