@@ -36,32 +36,51 @@ const AirtableSync = () => {
       console.log('[AirtableSync] 🔄 Chargement des données...');
       
       // Load Events
-      const eventsResponse = await fetchAirtableTable('All_Events');
-      if (eventsResponse?.success) {
-        setEventsData(eventsResponse.records || []);
-        console.log('[AirtableSync] ✅ Events chargés:', eventsResponse.records?.length || 0);
+      try {
+        const eventsResponse = await fetchAirtableTable('All_Events');
+        if (eventsResponse?.success) {
+          setEventsData(eventsResponse.records || []);
+          console.log('[AirtableSync] ✅ Events chargés:', eventsResponse.records?.length || 0);
+        } else {
+          console.error('[AirtableSync] ❌ Events - pas de succès:', eventsResponse);
+        }
+      } catch (eventsError) {
+        console.error('[AirtableSync] ❌ Erreur Events:', eventsError);
       }
 
       // Load Exposants
-      const exposantsResponse = await fetchAirtableTable('All_Exposants');
-      if (exposantsResponse?.success) {
-        setExposantsData(exposantsResponse.records || []);
-        console.log('[AirtableSync] ✅ Exposants chargés:', exposantsResponse.records?.length || 0);
+      try {
+        const exposantsResponse = await fetchAirtableTable('All_Exposants');
+        if (exposantsResponse?.success) {
+          setExposantsData(exposantsResponse.records || []);
+          console.log('[AirtableSync] ✅ Exposants chargés:', exposantsResponse.records?.length || 0);
+        } else {
+          console.error('[AirtableSync] ❌ Exposants - pas de succès:', exposantsResponse);
+        }
+      } catch (exposantsError) {
+        console.error('[AirtableSync] ❌ Erreur Exposants:', exposantsError);
       }
 
       // Load Participation
-      const participationResponse = await fetchAirtableTable('Participation');
-      if (participationResponse?.success) {
-        setParticipationData(participationResponse.records || []);
-        console.log('[AirtableSync] ✅ Participation chargée:', participationResponse.records?.length || 0);
+      try {
+        const participationResponse = await fetchAirtableTable('Participation');
+        if (participationResponse?.success) {
+          setParticipationData(participationResponse.records || []);
+          console.log('[AirtableSync] ✅ Participation chargée:', participationResponse.records?.length || 0);
+        } else {
+          console.error('[AirtableSync] ❌ Participation - pas de succès:', participationResponse);
+        }
+      } catch (participationError) {
+        console.error('[AirtableSync] ❌ Erreur Participation:', participationError);
       }
 
     } catch (error) {
       console.error('[AirtableSync] ❌ Erreur chargement données:', error);
-      setError(error instanceof Error ? error.message : 'Erreur inconnue');
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      setError(errorMessage);
       toast({
         title: 'Erreur de chargement',
-        description: 'Impossible de charger les données Airtable',
+        description: `Impossible de charger les données Airtable: ${errorMessage}`,
         variant: 'destructive'
       });
     } finally {
@@ -134,6 +153,18 @@ const AirtableSync = () => {
             </div>
           )}
 
+          {/* Data Summary */}
+          {!dataLoading && !error && (
+            <div className="mb-6 p-4 bg-green-50 rounded-lg">
+              <h4 className="text-sm font-medium text-green-800 mb-2">Données chargées :</h4>
+              <div className="space-y-1 text-sm text-green-600">
+                <p>• Events: {eventsData.length} enregistrements</p>
+                <p>• Exposants: {exposantsData.length} enregistrements</p>
+                <p>• Participation: {participationData.length} enregistrements</p>
+              </div>
+            </div>
+          )}
+
           {/* Sync Buttons */}
           {result?.ok && !dataLoading && (
             <AirtableSyncButtons
@@ -157,6 +188,7 @@ const AirtableSync = () => {
               <li>• Logs détaillés pour le debugging</li>
               <li>• Support GET/POST pour airtable-read</li>
               <li>• CORS corrigé pour schema-discovery</li>
+              <li>• Réponses JSON garanties même en erreur</li>
             </ul>
           </div>
         </CardContent>

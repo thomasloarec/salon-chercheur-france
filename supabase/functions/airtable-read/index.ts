@@ -1,18 +1,11 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { CORS_HEADERS, preflight } from '../_shared/cors.ts'
 
 const ALLOWED_TABLES = ['All_Events', 'All_Exposants', 'Participation'];
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return preflight();
 
   try {
     console.log('[airtable-read] 🔍 Début de la requête de lecture');
@@ -41,10 +34,7 @@ serve(async (req) => {
 
     if (!table) {
       console.error('[airtable-read] ❌ Table parameter missing');
-      return new Response(
-        JSON.stringify({ success: false, message: "Missing 'table' query/body param" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({ success: false, message: "Missing 'table' query/body param" }, 400);
     }
 
     // Tolérance casse + espaces
@@ -52,10 +42,7 @@ serve(async (req) => {
     const matched = ALLOWED_TABLES.find(t => t.toLowerCase() === table.toLowerCase());
     if (!matched) {
       console.error(`[airtable-read] ❌ Table '${table}' not allowed`);
-      return new Response(
-        JSON.stringify({ success: false, message: `Table '${table}' not allowed` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({ success: false, message: `Table '${table}' not allowed` }, 400);
     }
     table = matched;
 
@@ -65,10 +52,11 @@ serve(async (req) => {
 
     if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
       console.error('[airtable-read] ❌ Variables manquantes');
-      return new Response(
-        JSON.stringify({ success: false, error: 'missing_env', missing: ['AIRTABLE_PAT', 'AIRTABLE_BASE_ID'] }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({
+        success: false,
+        error: 'missing_env',
+        missing: ['AIRTABLE_PAT', 'AIRTABLE_BASE_ID']
+      }, 500);
     }
 
     console.log(`[airtable-read] 📋 Lecture table: ${table}`);
@@ -91,37 +79,35 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error(`[airtable-read] ❌ Erreur Airtable ${response.status}: ${errorText}`);
       
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'airtable_error',
-          status: response.status,
-          message: errorText
-        }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({
+        success: false,
+        error: 'airtable_error',
+        status: response.status,
+        message: errorText
+      }, response.status);
     }
 
     const data = await response.json();
     console.log(`[airtable-read] ✅ Succès lecture ${table}: ${data.records?.length || 0} records`);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        records: data.records || []
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return json({
+      success: true,
+      records: data.records || []
+    }, 200);
 
   } catch (error) {
     console.error('[airtable-read] ❌ Exception:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'internal_error',
-        message: error.message
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return json({
+      success: false,
+      error: 'internal_error',
+      message: error.message
+    }, 500);
   }
 });
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS }
+  });
+}

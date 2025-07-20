@@ -1,11 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-lovable-admin',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-}
+import { CORS_HEADERS, preflight } from '../_shared/cors.ts'
 
 interface ColumnInfo {
   name: string;
@@ -26,10 +21,7 @@ interface TableSchema {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return preflight();
 
   try {
     console.log('[airtable-schema-discovery] 🔍 Début de la découverte des schémas');
@@ -39,20 +31,14 @@ serve(async (req) => {
     
     if (!isLovableAdmin) {
       console.error('[schema-discovery] ❌ Access denied - x-lovable-admin header missing or invalid');
-      return new Response(
-        JSON.stringify({ success: false, error: 'access_denied' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({ success: false, error: 'access_denied' }, 403);
     }
 
     const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT');
     const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID');
 
     if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'missing_env' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({ success: false, error: 'missing_env' }, 500);
     }
 
     const TABLES_TO_SCAN = ['All_Events', 'All_Exposants', 'Participation'];
@@ -71,14 +57,11 @@ serve(async (req) => {
 
     if (!metaResponse.ok) {
       console.error('[schema-discovery] ❌ Erreur métadonnées:', metaResponse.status);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'metadata_error',
-          status: metaResponse.status 
-        }),
-        { status: metaResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return json({ 
+        success: false, 
+        error: 'metadata_error',
+        status: metaResponse.status 
+      }, metaResponse.status);
     }
 
     const metaData = await metaResponse.json();
@@ -106,9 +89,6 @@ serve(async (req) => {
         }));
 
         console.log(`[schema-discovery] 📊 ${tableName}: ${columns.length} colonnes détectées`);
-        columns.forEach(col => {
-          console.log(`  - ${col.name} (${col.type}) ${col.required ? '[OBLIGATOIRE]' : '[OPTIONNEL]'}`);
-        });
 
         // Récupérer des échantillons de données
         console.log(`[schema-discovery] 📥 Récupération d'échantillons pour ${tableName}...`);
@@ -182,20 +162,21 @@ serve(async (req) => {
     console.log('[schema-discovery] 🎉 Diagnostic terminé avec succès');
     console.log(`[schema-discovery] 📊 Résumé: ${diagnosticReport.summary.totalTables} tables, ${diagnosticReport.summary.totalColumns} colonnes au total`);
 
-    return new Response(
-      JSON.stringify(diagnosticReport, null, 2),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return json(diagnosticReport, 200);
 
   } catch (error) {
     console.error('[schema-discovery] ❌ Erreur générale:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'internal_error',
-        message: error.message
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return json({
+      success: false,
+      error: 'internal_error',
+      message: error.message
+    }, 500);
   }
 });
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS }
+  });
+}
