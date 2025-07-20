@@ -17,12 +17,14 @@ describe('AirtableStatusWidget', () => {
 
   it('should call onSecretsConfigured when secrets become OK', async () => {
     const mockOnSecretsConfigured = jest.fn();
-    const mockCheckStatus = jest.fn().mockResolvedValue({
+    const mockCheckStatus = jest.fn<() => Promise<AirtableStatus>>();
+    
+    mockCheckStatus.mockResolvedValue({
       secretsOk: true,
       testsOk: true,
       dedupOk: true,
       buttonsActive: true
-    } as AirtableStatus);
+    });
 
     // First render: secrets not OK
     mockUseAirtableStatus.mockReturnValue({
@@ -61,13 +63,15 @@ describe('AirtableStatusWidget', () => {
   });
 
   it('should display missing variables instructions when secrets are not OK', () => {
-    const mockCheckStatus = jest.fn().mockResolvedValue({
+    const mockCheckStatus = jest.fn<() => Promise<AirtableStatus>>();
+    
+    mockCheckStatus.mockResolvedValue({
       secretsOk: false,
       missing: ['AIRTABLE_PAT', 'AIRTABLE_BASE_ID'],
       testsOk: false,
       dedupOk: false,
       buttonsActive: false
-    } as AirtableStatus);
+    });
 
     mockUseAirtableStatus.mockReturnValue({
       status: {
@@ -89,12 +93,14 @@ describe('AirtableStatusWidget', () => {
   });
 
   it('should show success state when all checks pass', () => {
-    const mockCheckStatus = jest.fn().mockResolvedValue({
+    const mockCheckStatus = jest.fn<() => Promise<AirtableStatus>>();
+    
+    mockCheckStatus.mockResolvedValue({
       secretsOk: true,
       testsOk: true,
       dedupOk: true,
       buttonsActive: true
-    } as AirtableStatus);
+    });
 
     mockUseAirtableStatus.mockReturnValue({
       status: {
