@@ -35,7 +35,12 @@ const AirtableDiagnostic = () => {
     try {
       console.log('🔍 Lancement du scan des schémas Airtable...');
       
-      const { data, error } = await supabase.functions.invoke('airtable-schema-discovery');
+      const { data, error } = await supabase.functions.invoke('airtable-schema-discovery', {
+        method: 'POST',
+        headers: {
+          'X-Lovable-Admin': 'true'
+        }
+      });
       
       if (error) {
         throw error;

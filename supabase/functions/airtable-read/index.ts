@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const ALLOWED_TABLES = ['All_Events', 'All_Exposants', 'Participation'];
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -15,13 +17,37 @@ serve(async (req) => {
   try {
     console.log('[airtable-read] 🔍 Début de la requête de lecture');
 
-    const url = new URL(req.url);
-    const table = url.searchParams.get('table');
+    // -------- 1. EXTRACTION TABLE (dual mode GET/POST) --------
+    let table: string | null = null;
+    
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      table = url.searchParams.get('table');
+    } else {
+      try {
+        const body = await req.json();
+        table = body?.table;
+      } catch (jsonError) {
+        console.log('[airtable-read] No JSON body, checking URL params as fallback');
+        const url = new URL(req.url);
+        table = url.searchParams.get('table');
+      }
+    }
 
     if (!table) {
+      console.error('[airtable-read] ❌ Table parameter missing');
       return new Response(
         JSON.stringify({ success: false, error: 'Table parameter required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Security check
+    if (!ALLOWED_TABLES.includes(table)) {
+      console.error(`[airtable-read] ❌ Table non autorisée: ${table}`);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Table not allowed' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

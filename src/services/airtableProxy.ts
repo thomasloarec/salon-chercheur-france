@@ -25,6 +25,7 @@ export class AirtableProxyClient {
     console.log(`[AirtableProxy] 🔄 Lecture ${table}`);
     
     try {
+      // Use GET mode with query parameter for better compatibility
       const { data, error } = await supabase.functions.invoke('airtable-read', {
         method: 'GET',
         body: { table }
