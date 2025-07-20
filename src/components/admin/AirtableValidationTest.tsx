@@ -1,24 +1,30 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { airtableProxy } from '@/services/airtableProxy';
-import { CheckCircle, XCircle, Clock, Play } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Play, AlertTriangle, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TestStep {
   id: string;
   name: string;
-  status: 'pending' | 'running' | 'success' | 'error';
+  status: 'pending' | 'running' | 'success' | 'error' | 'skipped';
   result?: string;
   error?: string;
+}
+
+interface EnvCheckResult {
+  ok: boolean;
+  missing?: string[];
+  defined?: string[];
 }
 
 const AirtableValidationTest = () => {
   const { toast } = useToast();
   const [isRunning, setIsRunning] = useState(false);
+  const [envStatus, setEnvStatus] = useState<EnvCheckResult | null>(null);
   const [steps, setSteps] = useState<TestStep[]>([
     { id: 'env-check', name: 'Vérification des variables d\'environnement', status: 'pending' },
     { id: 'inventory', name: 'Inventaire initial des tables Airtable', status: 'pending' },
@@ -64,6 +70,29 @@ const AirtableValidationTest = () => {
     }
   };
 
+  const generateSecretsCommand = (missing: string[]) => {
+    const defaults = {
+      'EVENTS_TABLE_NAME': 'All_Events',
+      'EXHIBITORS_TABLE_NAME': 'All_Exposants',
+      'PARTICIPATION_TABLE_NAME': 'Participation'
+    };
+    
+    const secretPairs = missing.map(key => {
+      const defaultValue = (defaults as any)[key];
+      return defaultValue ? `${key}="${defaultValue}"` : `${key}="YOUR_${key}_HERE"`;
+    });
+    
+    return `supabase functions secrets set ${secretPairs.join(' ')}`;
+  };
+
+  const copySecretsCommand = (command: string) => {
+    navigator.clipboard.writeText(command);
+    toast({
+      title: 'Commande copiée',
+      description: 'La commande des secrets a été copiée dans le presse-papiers',
+    });
+  };
+
   const runTests = async () => {
     setIsRunning(true);
     
@@ -71,7 +100,7 @@ const AirtableValidationTest = () => {
       logStep('🚀 Démarrage de la batterie de tests Airtable');
 
       // Étape 1: Vérification des variables d'environnement
-      await executeStep('env-check', 'Vérification environnement', async () => {
+      const envCheckSuccess = await executeStep('env-check', 'Vérification environnement', async () => {
         const response = await supabase.functions.invoke('env-check');
         
         if (response.error) {
@@ -79,6 +108,8 @@ const AirtableValidationTest = () => {
         }
 
         const { data } = response;
+        setEnvStatus(data);
+        
         if (!data.ok) {
           throw new Error(`Variables manquantes: ${data.missing.join(', ')}`);
         }
@@ -86,6 +117,25 @@ const AirtableValidationTest = () => {
         logStep(`Variables définies: ${JSON.stringify(data.defined, null, 2)}`);
         return 'Toutes les variables sont définies';
       });
+
+      // Skip remaining tests if environment check failed
+      if (!envCheckSuccess) {
+        const remainingSteps = steps.slice(1);
+        remainingSteps.forEach(step => {
+          updateStep(step.id, { 
+            status: 'skipped', 
+            result: 'Variables d\'environnement manquantes' 
+          });
+        });
+        
+        toast({
+          title: 'Tests interrompus',
+          description: 'Veuillez configurer les variables d\'environnement manquantes',
+          variant: 'destructive'
+        });
+        
+        return;
+      }
 
       // Étape 2: Inventaire initial
       await executeStep('inventory', 'Inventaire initial', async () => {
@@ -245,6 +295,7 @@ const AirtableValidationTest = () => {
       case 'success': return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'error': return <XCircle className="h-4 w-4 text-red-600" />;
       case 'running': return <Clock className="h-4 w-4 text-blue-600 animate-spin" />;
+      case 'skipped': return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
       default: return <div className="h-4 w-4 rounded-full bg-gray-300" />;
     }
   };
@@ -254,6 +305,7 @@ const AirtableValidationTest = () => {
       case 'success': return <Badge variant="default" className="bg-green-100 text-green-800">Succès</Badge>;
       case 'error': return <Badge variant="destructive">Erreur</Badge>;
       case 'running': return <Badge variant="secondary">En cours...</Badge>;
+      case 'skipped': return <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Ignoré</Badge>;
       default: return <Badge variant="outline">En attente</Badge>;
     }
   };
@@ -275,6 +327,40 @@ const AirtableValidationTest = () => {
           >
             {isRunning ? 'Tests en cours...' : 'Lancer la batterie de tests'}
           </Button>
+
+          {/* Environment Variables Warning */}
+          {envStatus && !envStatus.ok && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-red-800 mb-2">
+                    Variables d'environnement manquantes
+                  </h4>
+                  <p className="text-sm text-red-700 mb-3">
+                    Les variables suivantes doivent être configurées dans Supabase Functions :
+                  </p>
+                  <ul className="list-disc list-inside text-sm text-red-700 mb-4">
+                    {envStatus.missing?.map(variable => (
+                      <li key={variable}>{variable}</li>
+                    ))}
+                  </ul>
+                  <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm mb-3">
+                    {generateSecretsCommand(envStatus.missing || [])}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copySecretsCommand(generateSecretsCommand(envStatus.missing || []))}
+                    className="flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copier la commande
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3">
             {steps.map((step, index) => (

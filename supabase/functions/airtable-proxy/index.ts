@@ -238,6 +238,33 @@ serve(async (req) => {
   }
 
   try {
+    // Check for required environment variables
+    const REQUIRED_VARS = [
+      'AIRTABLE_PAT',
+      'AIRTABLE_BASE_ID',
+      'EVENTS_TABLE_NAME',
+      'EXHIBITORS_TABLE_NAME',
+      'PARTICIPATION_TABLE_NAME'
+    ];
+    
+    const missing = REQUIRED_VARS.filter(key => !Deno.env.get(key));
+    
+    if (missing.length > 0) {
+      console.error('Missing required environment variables:', missing);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'missing_env', 
+          missing,
+          message: `Missing required environment variables: ${missing.join(', ')}`
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Get environment variables
     const airtableConfig: AirtableConfig = {
       baseId: Deno.env.get('AIRTABLE_BASE_ID') || '',
@@ -248,17 +275,6 @@ serve(async (req) => {
         participation: Deno.env.get('PARTICIPATION_TABLE_NAME') || 'Participation',
       }
     };
-
-    // Validate configuration
-    if (!airtableConfig.baseId || !airtableConfig.pat) {
-      return new Response(
-        JSON.stringify({ error: 'Missing Airtable configuration' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
 
     const client = new AirtableClient(airtableConfig);
     const { action, table, payload, uniqueField } = await req.json();
