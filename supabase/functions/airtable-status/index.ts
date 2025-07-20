@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { AIRTABLE_CONFIG } from '../_shared/airtable-config.ts';
+import { getEnvOrConfig, checkMissingVars } from '../_shared/airtable-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,36 +22,8 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Vérifier les secrets
-    const REQUIRED_VARS = [
-      'AIRTABLE_PAT',
-      'AIRTABLE_BASE_ID',
-      'EVENTS_TABLE_NAME',
-      'EXHIBITORS_TABLE_NAME',
-      'PARTICIPATION_TABLE_NAME'
-    ];
-
-    const missing: string[] = [];
-    for (const key of REQUIRED_VARS) {
-      const envValue = Deno.env.get(key);
-      const hasConfigFallback = ['AIRTABLE_BASE_ID', 'EVENTS_TABLE_NAME', 'EXHIBITORS_TABLE_NAME', 'PARTICIPATION_TABLE_NAME'].includes(key);
-      
-      if (!envValue && !hasConfigFallback) {
-        missing.push(key);
-      } else if (!envValue && hasConfigFallback) {
-        // Vérifier si la config a la valeur
-        const hasValue = key === 'AIRTABLE_BASE_ID' ? !!AIRTABLE_CONFIG.BASE_ID :
-                         key === 'EVENTS_TABLE_NAME' ? !!AIRTABLE_CONFIG.TABLES.EVENTS :
-                         key === 'EXHIBITORS_TABLE_NAME' ? !!AIRTABLE_CONFIG.TABLES.EXHIBITORS :
-                         key === 'PARTICIPATION_TABLE_NAME' ? !!AIRTABLE_CONFIG.TABLES.PARTICIPATION :
-                         false;
-        
-        if (!hasValue) {
-          missing.push(key);
-        }
-      }
-    }
-
+    // 1. Vérifier les secrets de manière unifiée
+    const missing = checkMissingVars();
     const secretsOk = missing.length === 0;
     const buttonsActive = secretsOk;
 
@@ -63,9 +35,9 @@ serve(async (req) => {
     if (secretsOk) {
       try {
         // Test rapide de connexion à Airtable
-        const airtablePat = Deno.env.get('AIRTABLE_PAT');
-        const baseId = Deno.env.get('AIRTABLE_BASE_ID') || AIRTABLE_CONFIG.BASE_ID;
-        const eventsTable = Deno.env.get('EVENTS_TABLE_NAME') || AIRTABLE_CONFIG.TABLES.EVENTS;
+        const airtablePat = getEnvOrConfig('AIRTABLE_PAT');
+        const baseId = getEnvOrConfig('AIRTABLE_BASE_ID');
+        const eventsTable = getEnvOrConfig('EVENTS_TABLE_NAME');
 
         const testResponse = await fetch(`https://api.airtable.com/v0/${baseId}/${eventsTable}?maxRecords=1`, {
           headers: {
@@ -84,7 +56,7 @@ serve(async (req) => {
         testsFailStep = `Erreur de connexion: ${error instanceof Error ? error.message : 'Erreur inconnue'}`;
       }
     } else {
-      testsFailStep = 'Secrets manquants';
+      testsFailStep = 'Variables manquantes';
     }
 
     const status: AirtableStatus = {

@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { AIRTABLE_CONFIG } from '../_shared/airtable-config.ts';
+import { getEnvOrConfig, checkMissingVars } from '../_shared/airtable-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +13,10 @@ serve(async (req) => {
   }
 
   try {
+    const missing = checkMissingVars();
+    const defined: string[] = [];
+
+    // Liste des variables définies
     const REQUIRED_VARS = [
       'AIRTABLE_PAT',
       'AIRTABLE_BASE_ID',
@@ -21,30 +25,14 @@ serve(async (req) => {
       'PARTICIPATION_TABLE_NAME'
     ];
 
-    const defined: string[] = [];
-    const missing: string[] = [];
-
     for (const key of REQUIRED_VARS) {
-      const envValue = Deno.env.get(key);
-      const hasConfigFallback = ['AIRTABLE_BASE_ID', 'EVENTS_TABLE_NAME', 'EXHIBITORS_TABLE_NAME', 'PARTICIPATION_TABLE_NAME'].includes(key);
-      
-      if (envValue) {
-        defined.push(key);
-      } else if (hasConfigFallback) {
-        // Check if config has the value
-        const hasValue = key === 'AIRTABLE_BASE_ID' ? !!AIRTABLE_CONFIG.BASE_ID :
-                         key === 'EVENTS_TABLE_NAME' ? !!AIRTABLE_CONFIG.TABLES.EVENTS :
-                         key === 'EXHIBITORS_TABLE_NAME' ? !!AIRTABLE_CONFIG.TABLES.EXHIBITORS :
-                         key === 'PARTICIPATION_TABLE_NAME' ? !!AIRTABLE_CONFIG.TABLES.PARTICIPATION :
-                         false;
-        
-        if (hasValue) {
+      if (!missing.includes(key)) {
+        const hasConfigFallback = ['AIRTABLE_BASE_ID', 'EVENTS_TABLE_NAME', 'EXHIBITORS_TABLE_NAME', 'PARTICIPATION_TABLE_NAME'].includes(key);
+        if (Deno.env.get(key)) {
+          defined.push(key);
+        } else if (hasConfigFallback) {
           defined.push(`${key} (via config)`);
-        } else {
-          missing.push(key);
         }
-      } else {
-        missing.push(key);
       }
     }
 

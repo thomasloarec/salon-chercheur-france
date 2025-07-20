@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { AIRTABLE_CONFIG } from '../_shared/airtable-config.ts';
+import { getEnvOrConfig, checkMissingVars } from '../_shared/airtable-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,33 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    // Check for required environment variables with fallbacks
-    const REQUIRED_VARS = [
-      'AIRTABLE_PAT',
-      'AIRTABLE_BASE_ID',
-      'EVENTS_TABLE_NAME', 
-      'EXHIBITORS_TABLE_NAME',
-      'PARTICIPATION_TABLE_NAME'
-    ];
-
-    const missing = REQUIRED_VARS.filter(key => {
-      const envValue = Deno.env.get(key);
-      if (envValue) return false;
-      
-      // Check if we have a fallback value from config
-      switch (key) {
-        case 'AIRTABLE_BASE_ID':
-          return !AIRTABLE_CONFIG.BASE_ID;
-        case 'EVENTS_TABLE_NAME':
-          return !AIRTABLE_CONFIG.TABLES.EVENTS;
-        case 'EXHIBITORS_TABLE_NAME':
-          return !AIRTABLE_CONFIG.TABLES.EXHIBITORS;
-        case 'PARTICIPATION_TABLE_NAME':
-          return !AIRTABLE_CONFIG.TABLES.PARTICIPATION;
-        default:
-          return true; // No fallback for sensitive vars like PAT
-      }
-    });
+    // Check for required environment variables with unified function
+    const missing = checkMissingVars();
 
     if (missing.length > 0) {
       console.error(`Missing required environment variables: ${JSON.stringify(missing)}`);
@@ -56,30 +31,12 @@ serve(async (req) => {
       );
     }
 
-    // Get values with fallbacks
-    const getConfigValue = (key: string): string => {
-      const envValue = Deno.env.get(key);
-      if (envValue) return envValue;
-      
-      switch (key) {
-        case 'AIRTABLE_BASE_ID':
-          return AIRTABLE_CONFIG.BASE_ID;
-        case 'EVENTS_TABLE_NAME':
-          return AIRTABLE_CONFIG.TABLES.EVENTS;
-        case 'EXHIBITORS_TABLE_NAME':
-          return AIRTABLE_CONFIG.TABLES.EXHIBITORS;
-        case 'PARTICIPATION_TABLE_NAME':
-          return AIRTABLE_CONFIG.TABLES.PARTICIPATION;
-        default:
-          throw new Error(`No fallback available for ${key}`);
-      }
-    };
-
-    const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT')!;
-    const AIRTABLE_BASE_ID = getConfigValue('AIRTABLE_BASE_ID');
-    const EVENTS_TABLE_NAME = getConfigValue('EVENTS_TABLE_NAME');
-    const EXHIBITORS_TABLE_NAME = getConfigValue('EXHIBITORS_TABLE_NAME');
-    const PARTICIPATION_TABLE_NAME = getConfigValue('PARTICIPATION_TABLE_NAME');
+    // Get values using unified function
+    const AIRTABLE_PAT = getEnvOrConfig('AIRTABLE_PAT');
+    const AIRTABLE_BASE_ID = getEnvOrConfig('AIRTABLE_BASE_ID');
+    const EVENTS_TABLE_NAME = getEnvOrConfig('EVENTS_TABLE_NAME');
+    const EXHIBITORS_TABLE_NAME = getEnvOrConfig('EXHIBITORS_TABLE_NAME');
+    const PARTICIPATION_TABLE_NAME = getEnvOrConfig('PARTICIPATION_TABLE_NAME');
 
     // --------------------------------------------------------------------
     // 1. Helpers & Utils

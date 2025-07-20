@@ -83,7 +83,7 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                   <div className="font-medium">Configuration secrets</div>
                   {status.missing && status.missing.length > 0 && (
                     <div className="text-sm text-red-600">
-                      Manquants: {status.missing.join(', ')}
+                      Variables manquantes: {status.missing.join(', ')}
                     </div>
                   )}
                 </div>
@@ -97,7 +97,11 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                   <div className="font-medium">Tests de validation</div>
                   {status.testsFailStep && (
                     <div className="text-sm text-red-600">
-                      Échec: {status.testsFailStep}
+                      {status.testsFailStep === 'Variables manquantes' && status.missing ? (
+                        <>Échec: variables manquantes ({status.missing.join(', ')})</>
+                      ) : (
+                        <>Échec: {status.testsFailStep}</>
+                      )}
                     </div>
                   )}
                 </div>
@@ -109,6 +113,11 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                 {getStatusIcon(status.dedupOk, isLoading)}
                 <div className="flex-1">
                   <div className="font-medium">Anti-doublons</div>
+                  {!status.dedupOk && status.testsFailStep === 'Variables manquantes' && status.missing && (
+                    <div className="text-sm text-red-600">
+                      Variables manquantes: {status.missing.join(', ')}
+                    </div>
+                  )}
                 </div>
                 {getStatusBadge(status.dedupOk, status.dedupOk ? 'OK' : 'KO')}
               </div>
@@ -136,6 +145,13 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                   {status.secretsOk && status.testsOk && status.dedupOk ? '🟢 Tout fonctionne' : '🔴 Action requise'}
                 </Badge>
               </div>
+              {status.missing && status.missing.length > 0 && (
+                <div className="mt-2 text-sm text-red-600">
+                  <strong>⚠️ Variables manquantes:</strong> {status.missing.join(', ')}
+                  <br />
+                  <span className="text-xs">Configurez ces variables puis redéployez toutes les functions avec: <code>supabase functions deploy --all</code></span>
+                </div>
+              )}
             </div>
           )}
         </div>
