@@ -29,6 +29,13 @@ const Admin = () => {
     return <Navigate to="/" replace />;
   }
 
+  const handleSecretsConfigured = () => {
+    console.log('🔄 Secrets configured - triggering component refreshes');
+    // This will be called when secrets transition from false to true
+    // Components can listen to this event to refresh their data
+    window.dispatchEvent(new CustomEvent('airtable-secrets-configured'));
+  };
+
   return (
     <MainLayout title="Administration">
       <div className="container mx-auto py-8 space-y-10">
@@ -38,7 +45,10 @@ const Admin = () => {
         </div>
 
         {/* Widget de vérification finale */}
-        <AirtableStatusWidget autoRefresh={true} />
+        <AirtableStatusWidget 
+          autoRefresh={true} 
+          onSecretsConfigured={handleSecretsConfigured}
+        />
 
         {/* Tests de validation Airtable */}
         <AirtableValidationTest />

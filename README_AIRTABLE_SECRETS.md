@@ -32,6 +32,30 @@ Les edge functions Airtable nécessitent les variables d'environnement suivantes
    **Cette étape est cruciale** car toutes les edge functions doivent être redéployées pour accéder aux nouveaux secrets.
 7. **Utilisez le widget "Vérification finale"** pour confirmer que tout fonctionne
 
+## Processus pas-à-pas détaillé
+
+### Étape 1 : Configuration des secrets
+```bash
+# Copiez la commande depuis l'interface admin et complétez AIRTABLE_PAT
+supabase functions secrets set \
+  AIRTABLE_PAT="votre_pat_ici" \
+  AIRTABLE_BASE_ID="SLxgKrY3BSA1nX" \
+  EVENTS_TABLE_NAME="All_Events" \
+  EXHIBITORS_TABLE_NAME="All_Exposants" \
+  PARTICIPATION_TABLE_NAME="Participation"
+```
+
+### Étape 2 : Redéploiement obligatoire
+```bash
+# OBLIGATOIRE: Redéployez toutes les functions
+supabase functions deploy --all
+```
+
+### Étape 3 : Vérification
+1. Retournez sur `/admin`
+2. Le widget "Vérification finale" doit afficher tous les voyants verts
+3. Les tests de validation et anti-doublons se déclenchent automatiquement
+
 ## Configuration manuelle
 
 Si vous préférez configurer manuellement :
@@ -47,6 +71,8 @@ supabase functions secrets set \
 
 # 2. OBLIGATOIRE: Redéployez toutes les functions
 supabase functions deploy --all
+
+# 3. Vérifiez sur /admin
 ```
 
 ## Obtenir les valeurs Airtable
@@ -64,9 +90,13 @@ L'ID de votre base Airtable est `SLxgKrY3BSA1nX` (pré-configuré).
 ## Vérification
 
 L'interface admin vérifie automatiquement la configuration via le **Widget "Vérification finale"** :
-- ✅ **Voyant vert** : Toutes les variables sont configurées et fonctionnelles
-- ❌ **Alerte rouge** : Variables manquantes avec liste exacte
-- 🔄 **Tests automatiques** : Connexion Airtable et anti-doublons testés en temps réel
+- ✅ **Configuration secrets** : Toutes les variables sont présentes
+- ✅ **Tests de validation** : Connexion Airtable et accès aux tables
+- ✅ **Anti-doublons** : Normalisation d'URL et prévention des doublons
+- ✅ **Boutons actifs** : Synchronisation disponible
+
+### Déclenchement automatique
+Après configuration des secrets, les tests se lancent automatiquement pour confirmer que tout fonctionne.
 
 ## Dépannage
 
@@ -110,3 +140,11 @@ supabase functions secrets set AIRTABLE_PAT="$AIRTABLE_PAT_SECRET" # etc.
 # OBLIGATOIRE: Déploiement de toutes les functions
 supabase functions deploy --all
 ```
+
+## Checklist finale
+
+- [ ] Secrets configurés avec `supabase functions secrets set`
+- [ ] Functions redéployées avec `supabase functions deploy --all`
+- [ ] Widget "Vérification finale" tout vert sur `/admin`
+- [ ] Tests de validation et anti-doublons passent automatiquement
+- [ ] Boutons de synchronisation actifs

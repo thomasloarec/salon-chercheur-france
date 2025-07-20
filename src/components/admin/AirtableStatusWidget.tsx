@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
   autoRefresh = false
 }) => {
   const { status, isLoading, checkStatus } = useAirtableStatus();
+  const prevSecretsOk = useRef<boolean | null>(null);
 
   useEffect(() => {
     if (autoRefresh) {
@@ -23,11 +24,19 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
     }
   }, [autoRefresh, checkStatus]);
 
+  // Auto-trigger callbacks when secrets become OK
+  useEffect(() => {
+    if (status && prevSecretsOk.current === false && status.secretsOk === true) {
+      console.log('🎉 Secrets are now configured! Auto-triggering tests...');
+      if (onSecretsConfigured) {
+        onSecretsConfigured();
+      }
+    }
+    prevSecretsOk.current = status?.secretsOk ?? null;
+  }, [status?.secretsOk, onSecretsConfigured]);
+
   const handleRefresh = async () => {
     await checkStatus();
-    if (onSecretsConfigured) {
-      onSecretsConfigured();
-    }
   };
 
   const getStatusIcon = (isOk: boolean, isLoading: boolean = false) => {
@@ -150,6 +159,17 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                   <strong>⚠️ Variables manquantes:</strong> {status.missing.join(', ')}
                   <br />
                   <span className="text-xs">Configurez ces variables puis redéployez toutes les functions avec: <code>supabase functions deploy --all</code></span>
+                </div>
+              )}
+              {!status.secretsOk && status.missing && status.missing.length > 0 && (
+                <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                  <strong>📋 Étapes suivantes:</strong>
+                  <ol className="list-decimal list-inside mt-1 space-y-1 text-xs">
+                    <li>Copiez la commande depuis l'alerte rouge ci-dessus</li>
+                    <li>Remplacez <code>AIRTABLE_PAT=""</code> par votre vraie clé</li>
+                    <li>Exécutez: <code className="bg-gray-100 px-1 rounded">supabase functions deploy --all</code></li>
+                    <li>Cliquez sur "Actualiser" ci-dessus</li>
+                  </ol>
                 </div>
               )}
             </div>

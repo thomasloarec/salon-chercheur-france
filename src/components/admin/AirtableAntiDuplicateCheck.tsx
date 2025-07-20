@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, XCircle, AlertTriangle, Play } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, Play, RefreshCw } from 'lucide-react';
 
 interface TestResult {
   name: string;
@@ -25,6 +25,22 @@ const AirtableAntiDuplicateCheck = () => {
   const { toast } = useToast();
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<SmokeTestSummary | null>(null);
+
+  // Listen for secrets configuration event
+  useEffect(() => {
+    const handleSecretsConfigured = () => {
+      console.log('🔄 AirtableAntiDuplicateCheck: Auto-refreshing due to secrets configuration');
+      setTimeout(() => {
+        runAntiDuplicateCheck();
+      }, 1500); // Slightly longer delay to avoid conflicts
+    };
+
+    window.addEventListener('airtable-secrets-configured', handleSecretsConfigured);
+    
+    return () => {
+      window.removeEventListener('airtable-secrets-configured', handleSecretsConfigured);
+    };
+  }, []);
 
   const runAntiDuplicateCheck = async () => {
     setIsRunning(true);
@@ -121,7 +137,14 @@ const AirtableAntiDuplicateCheck = () => {
               disabled={isRunning}
               variant="outline"
             >
-              {isRunning ? 'Tests en cours...' : 'Vérifier anti-doublons'}
+              {isRunning ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                  Tests en cours...
+                </>
+              ) : (
+                'Vérifier anti-doublons'
+              )}
             </Button>
           </div>
 
