@@ -8,8 +8,6 @@ import { useAirtableEvents, useAirtableExposants, useAirtableParticipation, useA
 import { RefreshCw, Database, Users, Link, ArrowUpDown } from 'lucide-react';
 
 const AirtableSync = () => {
-  const [activeTab, setActiveTab] = useState<'events' | 'exposants' | 'participation'>('events');
-  
   const { data: events, isLoading: eventsLoading, error: eventsError } = useAirtableEvents();
   const { data: exposants, isLoading: exposantsLoading, error: exposantsError } = useAirtableExposants();
   const { data: participation, isLoading: participationLoading, error: participationError } = useAirtableParticipation();
@@ -120,7 +118,7 @@ const AirtableSync = () => {
             <div className="flex items-center gap-2 mb-2">
               <div className="h-2 w-2 bg-green-500 rounded-full"></div>
               <span className="text-sm font-medium">Base Airtable connectée</span>
-              <Badge variant="outline">SLxgKrY3BSA1nX</Badge>
+              <Badge variant="outline">Proxy sécurisé</Badge>
             </div>
             <p className="text-xs text-gray-500">
               Tables: All_Events, All_Exposants, Participation

@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { createAirtableClient } from '@/services/airtableClient';
+import { airtableProxy } from '@/services/airtableProxy';
 import { CheckCircle, XCircle, Clock, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -88,18 +87,16 @@ const AirtableValidationTest = () => {
 
       // Étape 2: Inventaire initial
       await executeStep('inventory', 'Inventaire initial', async () => {
-        const client = createAirtableClient();
-        
         const [eventsResult, exposantsResult, participationResult] = await Promise.all([
-          client.listRecords('All_Events', { maxRecords: 1 }),
-          client.listRecords('All_Exposants', { maxRecords: 1 }),
-          client.listRecords('Participation', { maxRecords: 1 })
+          airtableProxy.listAllRecords('All_Events'),
+          airtableProxy.listAllRecords('All_Exposants'),
+          airtableProxy.listAllRecords('Participation')
         ]);
         
         const inventory = {
-          events: eventsResult.records.length,
-          exposants: exposantsResult.records.length,
-          participation: participationResult.records.length
+          events: eventsResult.length,
+          exposants: exposantsResult.length,
+          participation: participationResult.length
         };
         
         logStep(`Inventaire: ${JSON.stringify(inventory)}`);
@@ -108,8 +105,6 @@ const AirtableValidationTest = () => {
 
       // Étape 3: Test création nouvel événement
       await executeStep('create-test', 'Test création événement', async () => {
-        const client = createAirtableClient();
-        
         const testEvent = {
           id_event: 'Event_TEST_001',
           nom_event: 'Salon Test Migration',
@@ -117,11 +112,11 @@ const AirtableValidationTest = () => {
           date_fin: new Date(Date.now() + 31 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           status_event: 'test',
           type_event: 'salon',
-          secteur: ['Test'],
+          secteur: 'Test',
           ville: 'Test City'
         };
         
-        const createdEvent = await client.createRecords('All_Events', [testEvent]);
+        const createdEvent = await airtableProxy.createRecords('All_Events', [testEvent]);
         logStep(`Événement créé: ${createdEvent[0].id}`);
         
         return 'Événement TEST_001 créé avec succès';
@@ -129,14 +124,12 @@ const AirtableValidationTest = () => {
 
       // Étape 4: Test mise à jour
       await executeStep('update-test', 'Test upsert', async () => {
-        const client = createAirtableClient();
-        
         const updatedEvent = {
           id_event: 'Event_TEST_001',
           nom_event: 'Salon Test Migration – v2'
         };
         
-        const upsertResult = await client.upsertRecords('All_Events', [updatedEvent], 'id_event');
+        const upsertResult = await airtableProxy.upsertRecords('All_Events', [updatedEvent], 'id_event');
         logStep(`Upsert: ${upsertResult.updated.length} mis à jour, ${upsertResult.created.length} créés`);
         
         return 'Mise à jour réussie - pas de doublon';
@@ -144,8 +137,6 @@ const AirtableValidationTest = () => {
 
       // Étape 5: Test Participation
       await executeStep('participation-test', 'Test participation', async () => {
-        const client = createAirtableClient();
-        
         const testExposant = {
           id_exposant: 'Expo_TEST_001',
           exposant_nom: 'Exposant Test'
@@ -157,8 +148,8 @@ const AirtableValidationTest = () => {
           id_exposant: 'Expo_TEST_001'
         };
         
-        await client.createRecords('All_Exposants', [testExposant]);
-        await client.createRecords('Participation', [testParticipation]);
+        await airtableProxy.createRecords('All_Exposants', [testExposant]);
+        await airtableProxy.createRecords('Participation', [testParticipation]);
         
         logStep('Relation de participation créée');
         return 'Relation Event ↔ Exposant créée';
@@ -166,12 +157,10 @@ const AirtableValidationTest = () => {
 
       // Étape 6: Nettoyage
       await executeStep('cleanup', 'Nettoyage', async () => {
-        const client = createAirtableClient();
-        
         // Trouver et supprimer les enregistrements de test
-        const testEventRecord = await client.findRecordByUniqueField('All_Events', 'id_event', 'Event_TEST_001');
-        const testExposantRecord = await client.findRecordByUniqueField('All_Exposants', 'id_exposant', 'Expo_TEST_001');
-        const testParticipationRecord = await client.findRecordByUniqueField('Participation', 'id_participation', 'Part_TEST_001');
+        const testEventRecord = await airtableProxy.findRecordByUniqueField('All_Events', 'id_event', 'Event_TEST_001');
+        const testExposantRecord = await airtableProxy.findRecordByUniqueField('All_Exposants', 'id_exposant', 'Expo_TEST_001');
+        const testParticipationRecord = await airtableProxy.findRecordByUniqueField('Participation', 'id_participation', 'Part_TEST_001');
         
         const toDelete = [];
         if (testEventRecord) toDelete.push({ table: 'All_Events', id: testEventRecord.id! });
@@ -179,7 +168,7 @@ const AirtableValidationTest = () => {
         if (testParticipationRecord) toDelete.push({ table: 'Participation', id: testParticipationRecord.id! });
         
         for (const { table, id } of toDelete) {
-          await client.deleteRecords(table, [id]);
+          await airtableProxy.deleteRecords(table, [id]);
         }
         
         logStep(`Nettoyage: ${toDelete.length} enregistrements supprimés`);

@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createAirtableClient, AirtableClient } from '@/services/airtableClient';
+import { airtableProxy } from '@/services/airtableProxy';
 import { useToast } from '@/hooks/use-toast';
 
 interface AirtableEvent {
@@ -40,9 +40,8 @@ export function useAirtableEvents() {
   return useQuery({
     queryKey: ['airtable', 'events'],
     queryFn: async () => {
-      const client = createAirtableClient();
-      const records = await client.listAllRecords('All_Events');
-      return records.map(record => ({
+      const records = await airtableProxy.listAllRecords('All_Events');
+      return records.map((record: any) => ({
         airtableId: record.id,
         ...record.fields
       })) as Array<AirtableEvent & { airtableId: string }>;
@@ -55,9 +54,8 @@ export function useAirtableExposants() {
   return useQuery({
     queryKey: ['airtable', 'exposants'],
     queryFn: async () => {
-      const client = createAirtableClient();
-      const records = await client.listAllRecords('All_Exposants');
-      return records.map(record => ({
+      const records = await airtableProxy.listAllRecords('All_Exposants');
+      return records.map((record: any) => ({
         airtableId: record.id,
         ...record.fields
       })) as Array<AirtableExposant & { airtableId: string }>;
@@ -70,9 +68,8 @@ export function useAirtableParticipation() {
   return useQuery({
     queryKey: ['airtable', 'participation'],
     queryFn: async () => {
-      const client = createAirtableClient();
-      const records = await client.listAllRecords('Participation');
-      return records.map(record => ({
+      const records = await airtableProxy.listAllRecords('Participation');
+      return records.map((record: any) => ({
         airtableId: record.id,
         ...record.fields
       })) as Array<AirtableParticipation & { airtableId: string }>;
@@ -87,8 +84,7 @@ export function useAirtableSync() {
 
   const syncEvents = useMutation({
     mutationFn: async (events: AirtableEvent[]) => {
-      const client = createAirtableClient();
-      return await client.upsertRecords('All_Events', events, 'id_event');
+      return await airtableProxy.upsertRecords('All_Events', events, 'id_event');
     },
     onSuccess: (result) => {
       const total = result.created.length + result.updated.length;
@@ -110,8 +106,7 @@ export function useAirtableSync() {
 
   const syncExposants = useMutation({
     mutationFn: async (exposants: AirtableExposant[]) => {
-      const client = createAirtableClient();
-      return await client.upsertRecords('All_Exposants', exposants, 'id_exposant');
+      return await airtableProxy.upsertRecords('All_Exposants', exposants, 'id_exposant');
     },
     onSuccess: (result) => {
       const total = result.created.length + result.updated.length;
@@ -133,8 +128,7 @@ export function useAirtableSync() {
 
   const syncParticipation = useMutation({
     mutationFn: async (participations: AirtableParticipation[]) => {
-      const client = createAirtableClient();
-      return await client.upsertRecords('Participation', participations, 'id_participation');
+      return await airtableProxy.upsertRecords('Participation', participations, 'id_participation');
     },
     onSuccess: (result) => {
       const total = result.created.length + result.updated.length;
