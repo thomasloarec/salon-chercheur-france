@@ -62,7 +62,7 @@ const MissingSecretsAlert: React.FC<MissingSecretsAlertProps> = ({
           <div>
             <p className="text-sm font-medium mb-2">Commande à exécuter :</p>
             <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
-              {command}
+              <code>{command}</code>
             </div>
           </div>
 
@@ -99,7 +99,7 @@ const MissingSecretsAlert: React.FC<MissingSecretsAlertProps> = ({
             <p><strong>Instructions :</strong></p>
             <ol className="list-decimal list-inside space-y-1 mt-1">
               <li>Copiez la commande ci-dessus</li>
-              <li>Remplacez les valeurs YOUR_*_HERE par vos vraies valeurs</li>
+              <li><strong>Complétez AIRTABLE_PAT=""</strong> avec votre Personal Access Token</li>
               <li>Exécutez la commande dans votre terminal</li>
               <li>Redéployez les functions : <code className="bg-gray-100 px-1 rounded">supabase functions deploy</code></li>
               <li>Cliquez sur "J'ai configuré les secrets" pour revérifier</li>

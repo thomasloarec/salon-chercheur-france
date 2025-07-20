@@ -1,170 +1,9 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { AIRTABLE_CONFIG } from '../../../src/config/airtable.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface TestResult {
-  name: string;
-  status: 'success' | 'error';
-  message: string;
-  details?: any;
-}
-
-// Helper function to call airtable-proxy
-async function callAirtableProxy(action: string, table: string, payload?: any, uniqueField?: string) {
-  const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/airtable-proxy`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-    },
-    body: JSON.stringify({ action, table, payload, uniqueField })
-  });
-
-  if (!response.ok) {
-    throw new Error(`Airtable proxy error: ${response.status} ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.error || 'Unknown error from Airtable proxy');
-  }
-
-  return data.data;
-}
-
-async function runSmokeTests(): Promise<TestResult[]> {
-  const results: TestResult[] = [];
-  const testTimestamp = Date.now();
-
-  try {
-    // Test 1: Create exposant with https://test-smoke.com/
-    console.log('🧪 Test 1: Create exposant with https://test-smoke.com/');
-    const exposant1 = {
-      exposant_nom: `Test Smoke 1 - ${testTimestamp}`,
-      website_exposant: 'https://test-smoke.com/',
-      exposant_description: 'Premier exposant de test'
-    };
-
-    const result1 = await callAirtableProxy('UPSERT', 'All_Exposants', [exposant1], 'website_exposant');
-    results.push({
-      name: 'Create exposant https://test-smoke.com/',
-      status: 'success',
-      message: `Created: ${result1.created.length}, Updated: ${result1.updated.length}`,
-      details: result1
-    });
-
-    // Test 2: Try to create exposant with https://www.test-smoke.com (should update, not create)
-    console.log('🧪 Test 2: Try to create exposant with https://www.test-smoke.com');
-    const exposant2 = {
-      exposant_nom: `Test Smoke 2 - ${testTimestamp}`,
-      website_exposant: 'https://www.test-smoke.com',
-      exposant_description: 'Deuxième exposant avec même URL'
-    };
-
-    const result2 = await callAirtableProxy('UPSERT', 'All_Exposants', [exposant2], 'website_exposant');
-    
-    if (result2.created.length === 0 && result2.updated.length === 1) {
-      results.push({
-        name: 'URL normalization test (www)',
-        status: 'success',
-        message: 'Correctly updated existing record instead of creating duplicate',
-        details: result2
-      });
-    } else {
-      results.push({
-        name: 'URL normalization test (www)',
-        status: 'error',
-        message: `Expected 0 created, 1 updated. Got ${result2.created.length} created, ${result2.updated.length} updated`,
-        details: result2
-      });
-    }
-
-    // Test 3: Create participation with unique urlexpo_event
-    console.log('🧪 Test 3: Create participation with unique urlexpo_event');
-    const participation1 = {
-      id_event: `Event_SMOKE_${testTimestamp}`,
-      id_exposant: `exposant_smoke_${testTimestamp}`,
-      urlexpo_event: `test-smoke.com_A${testTimestamp}`
-    };
-
-    const result3 = await callAirtableProxy('UPSERT', 'Participation', [participation1], 'urlexpo_event');
-    results.push({
-      name: 'Create participation',
-      status: 'success',
-      message: `Created: ${result3.created.length}, Updated: ${result3.updated.length}`,
-      details: result3
-    });
-
-    // Test 4: Try to create another participation with same urlexpo_event
-    console.log('🧪 Test 4: Try to create participation with same urlexpo_event');
-    const participation2 = {
-      id_event: `Event_SMOKE_2_${testTimestamp}`,
-      id_exposant: `exposant_smoke_2_${testTimestamp}`,
-      urlexpo_event: `test-smoke.com_A${testTimestamp}` // Same as before
-    };
-
-    const result4 = await callAirtableProxy('UPSERT', 'Participation', [participation2], 'urlexpo_event');
-    
-    if (result4.created.length === 0 && result4.updated.length === 1) {
-      results.push({
-        name: 'Participation duplicate prevention',
-        status: 'success',
-        message: 'Correctly updated existing participation instead of creating duplicate',
-        details: result4
-      });
-    } else {
-      results.push({
-        name: 'Participation duplicate prevention',
-        status: 'error',
-        message: `Expected 0 created, 1 updated. Got ${result4.created.length} created, ${result4.updated.length} updated`,
-        details: result4
-      });
-    }
-
-    // Cleanup: Delete test records
-    console.log('🧪 Cleanup: Deleting test records');
-    
-    // Find and delete test exposant
-    const testExposant = await callAirtableProxy('FIND', 'All_Exposants', { 
-      fieldName: 'website_exposant', 
-      value: 'https://test-smoke.com/' 
-    });
-    
-    if (testExposant && testExposant.id) {
-      await callAirtableProxy('DELETE', 'All_Exposants', [testExposant.id]);
-    }
-
-    // Find and delete test participation
-    const testParticipation = await callAirtableProxy('FIND', 'Participation', { 
-      fieldName: 'urlexpo_event', 
-      value: `test-smoke.com_A${testTimestamp}` 
-    });
-    
-    if (testParticipation && testParticipation.id) {
-      await callAirtableProxy('DELETE', 'Participation', [testParticipation.id]);
-    }
-
-    results.push({
-      name: 'Cleanup test records',
-      status: 'success',
-      message: 'Test records cleaned up successfully'
-    });
-
-  } catch (error) {
-    console.error('Smoke test error:', error);
-    results.push({
-      name: 'Smoke test execution',
-      status: 'error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      details: error
-    });
-  }
-
-  return results;
 }
 
 serve(async (req) => {
@@ -174,22 +13,38 @@ serve(async (req) => {
   }
 
   try {
-    // Check for required environment variables
+    // Check for required environment variables with fallbacks
     const REQUIRED_VARS = [
       'AIRTABLE_PAT',
-      'AIRTABLE_BASE_ID', 
-      'EVENTS_TABLE_NAME',
+      'AIRTABLE_BASE_ID',
+      'EVENTS_TABLE_NAME', 
       'EXHIBITORS_TABLE_NAME',
       'PARTICIPATION_TABLE_NAME'
     ];
-    
-    const missing = REQUIRED_VARS.filter(key => !Deno.env.get(key));
-    
+
+    const missing = REQUIRED_VARS.filter(key => {
+      const envValue = Deno.env.get(key);
+      if (envValue) return false;
+      
+      // Check if we have a fallback value from config
+      switch (key) {
+        case 'AIRTABLE_BASE_ID':
+          return !AIRTABLE_CONFIG.BASE_ID;
+        case 'EVENTS_TABLE_NAME':
+          return !AIRTABLE_CONFIG.TABLES.EVENTS;
+        case 'EXHIBITORS_TABLE_NAME':
+          return !AIRTABLE_CONFIG.TABLES.EXHIBITORS;
+        case 'PARTICIPATION_TABLE_NAME':
+          return !AIRTABLE_CONFIG.TABLES.PARTICIPATION;
+        default:
+          return true; // No fallback for sensitive vars like PAT
+      }
+    });
+
     if (missing.length > 0) {
-      console.error('Missing required environment variables:', missing);
+      console.error(`Missing required environment variables: ${JSON.stringify(missing)}`);
       return new Response(
         JSON.stringify({ 
-          success: false,
           error: 'missing_env', 
           missing,
           message: `Missing required environment variables: ${missing.join(', ')}`
@@ -201,32 +56,397 @@ serve(async (req) => {
       );
     }
 
-    console.log('🚀 Starting Airtable smoke tests');
-    
-    const results = await runSmokeTests();
-    
-    const summary = {
-      total: results.length,
-      passed: results.filter(r => r.status === 'success').length,
-      failed: results.filter(r => r.status === 'error').length,
-      results
+    // Get values with fallbacks
+    const getConfigValue = (key: string): string => {
+      const envValue = Deno.env.get(key);
+      if (envValue) return envValue;
+      
+      switch (key) {
+        case 'AIRTABLE_BASE_ID':
+          return AIRTABLE_CONFIG.BASE_ID;
+        case 'EVENTS_TABLE_NAME':
+          return AIRTABLE_CONFIG.TABLES.EVENTS;
+        case 'EXHIBITORS_TABLE_NAME':
+          return AIRTABLE_CONFIG.TABLES.EXHIBITORS;
+        case 'PARTICIPATION_TABLE_NAME':
+          return AIRTABLE_CONFIG.TABLES.PARTICIPATION;
+        default:
+          throw new Error(`No fallback available for ${key}`);
+      }
     };
 
-    console.log('📊 Smoke test summary:', summary);
+    const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT')!;
+    const AIRTABLE_BASE_ID = getConfigValue('AIRTABLE_BASE_ID');
+    const EVENTS_TABLE_NAME = getConfigValue('EVENTS_TABLE_NAME');
+    const EXHIBITORS_TABLE_NAME = getConfigValue('EXHIBITORS_TABLE_NAME');
+    const PARTICIPATION_TABLE_NAME = getConfigValue('PARTICIPATION_TABLE_NAME');
+
+    // --------------------------------------------------------------------
+    // 1. Helpers & Utils
+    // --------------------------------------------------------------------
+
+    const normalizeUrl = (url: string): string => {
+      if (!url) return '';
+      let normalized = url.trim();
+
+      // Remove protocol (http/https)
+      normalized = normalized.replace(/^https?:\/\//i, '');
+
+      // Remove "www."
+      normalized = normalized.replace(/^www\./i, '');
+
+      // Remove trailing slash
+      normalized = normalized.replace(/\/$/, '');
+
+      return normalized.toLowerCase();
+    };
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // --------------------------------------------------------------------
+    // 2. Airtable Interaction
+    // --------------------------------------------------------------------
+
+    const fetchAirtable = async (table: string, params: URLSearchParams) => {
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}?${params.toString()}`;
+      const headers = {
+        'Authorization': `Bearer ${AIRTABLE_PAT}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) {
+        console.error(`Airtable API Error for table ${table}:`, response.status, response.statusText);
+        try {
+          const errorBody = await response.json();
+          console.error('Error Details:', JSON.stringify(errorBody, null, 2));
+        } catch (parseError) {
+          console.error('Failed to parse error body:', parseError);
+        }
+        throw new Error(`Airtable API Error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    };
+
+    const createRecord = async (table: string, fields: any) => {
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
+      const headers = {
+        'Authorization': `Bearer ${AIRTABLE_PAT}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ fields }),
+      });
+
+      if (!response.ok) {
+        console.error(`Error creating record in ${table}:`, response.status, response.statusText);
+        try {
+          const errorBody = await response.json();
+          console.error('Error Details:', JSON.stringify(errorBody, null, 2));
+        } catch (parseError) {
+          console.error('Failed to parse error body:', parseError);
+        }
+        throw new Error(`Failed to create record: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    };
+
+    const updateRecord = async (table: string, recordId: string, fields: any) => {
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}/${recordId}`;
+      const headers = {
+        'Authorization': `Bearer ${AIRTABLE_PAT}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ fields }),
+      });
+
+      if (!response.ok) {
+        console.error(`Error updating record ${recordId} in ${table}:`, response.status, response.statusText);
+        try {
+          const errorBody = await response.json();
+          console.error('Error Details:', JSON.stringify(errorBody, null, 2));
+        } catch (parseError) {
+          console.error('Failed to parse error body:', parseError);
+        }
+        throw new Error(`Failed to update record: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    };
+
+    const deleteRecord = async (table: string, recordId: string) => {
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}/${recordId}`;
+      const headers = {
+        'Authorization': `Bearer ${AIRTABLE_PAT}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (!response.ok) {
+        console.error(`Error deleting record ${recordId} from ${table}:`, response.status, response.statusText);
+        try {
+          const errorBody = await response.json();
+          console.error('Error Details:', JSON.stringify(errorBody, null, 2));
+        } catch (parseError) {
+          console.error('Failed to parse error body:', parseError);
+        }
+        throw new Error(`Failed to delete record: ${response.status} ${response.statusText}`);
+      }
+
+      return { deleted: true, id: recordId };
+    };
+
+    const findRecordByField = async (table: string, fieldName: string, fieldValue: string) => {
+      const params = new URLSearchParams({
+        filterByFormula: `{${fieldName}}="${fieldValue}"`,
+      });
+
+      const data = await fetchAirtable(table, params);
+
+      if (data.records && data.records.length > 0) {
+        return data.records[0];
+      }
+
+      return null;
+    };
+
+    // --------------------------------------------------------------------
+    // 3. Test Functions
+    // --------------------------------------------------------------------
+
+    const testUrlNormalization = async (): Promise<TestResult> => {
+      const testCases = [
+        { input: 'https://example.com', expected: 'example.com' },
+        { input: 'http://www.example.com', expected: 'example.com' },
+        { input: 'example.com/', expected: 'example.com' },
+        { input: '  https://www.example.com/  ', expected: 'example.com' },
+      ];
+
+      for (const testCase of testCases) {
+        const normalized = normalizeUrl(testCase.input);
+        if (normalized !== testCase.expected) {
+          return {
+            name: 'URL Normalization Test',
+            status: 'error',
+            message: `Normalization failed for ${testCase.input}. Expected ${testCase.expected}, got ${normalized}`,
+            details: { input: testCase.input, expected: testCase.expected, actual: normalized },
+          };
+        }
+      }
+
+      return {
+        name: 'URL Normalization Test',
+        status: 'success',
+        message: 'All URL normalization tests passed',
+      };
+    };
+
+    const testExposantDuplicatePrevention = async (): Promise<TestResult> => {
+      const testWebsite = `test${Date.now()}.com`;
+      const testExposant1 = { exposant_nom: 'Test Exposant 1', website_exposant: `https://${testWebsite}` };
+      const testExposant2 = { exposant_nom: 'Test Exposant 2', website_exposant: `http://www.${testWebsite}/` };
+
+      try {
+        // Clean up any existing records with the test website
+        const existingRecord = await findRecordByField(EXHIBITORS_TABLE_NAME, 'website_exposant', normalizeUrl(testWebsite));
+        if (existingRecord) {
+          await deleteRecord(EXHIBITORS_TABLE_NAME, existingRecord.id);
+          await sleep(1000); // Wait for deletion to propagate
+        }
+
+        // Create the first record
+        await createRecord(EXHIBITORS_TABLE_NAME, testExposant1);
+        await sleep(1000); // Wait for creation to propagate
+
+        // Attempt to create the second record (should update the first)
+        await createRecord(EXHIBITORS_TABLE_NAME, testExposant2);
+        await sleep(1000); // Wait for creation to propagate
+
+        // Verify that only one record exists with the normalized URL
+        const records = await fetchAirtable(EXHIBITORS_TABLE_NAME, new URLSearchParams({
+          filterByFormula: `{website_exposant}="${normalizeUrl(testWebsite)}"`
+        }));
+
+        if (records.records.length !== 1) {
+          return {
+            name: 'Exposant Duplicate Prevention Test',
+            status: 'error',
+            message: `Expected 1 record, found ${records.records.length}`,
+            details: { records: records.records },
+          };
+        }
+
+        return {
+          name: 'Exposant Duplicate Prevention Test',
+          status: 'success',
+          message: 'Duplicate exposants were successfully prevented',
+        };
+      } catch (error) {
+        return {
+          name: 'Exposant Duplicate Prevention Test',
+          status: 'error',
+          message: `Test failed with error: ${error.message}`,
+          details: { error: error.message },
+        };
+      } finally {
+        // Clean up the test record
+        const testRecord = await findRecordByField(EXHIBITORS_TABLE_NAME, 'website_exposant', normalizeUrl(testWebsite));
+        if (testRecord) {
+          await deleteRecord(EXHIBITORS_TABLE_NAME, testRecord.id);
+        }
+      }
+    };
+
+    const testParticipationDuplicatePrevention = async (): Promise<TestResult> => {
+      const testEventId = `event${Date.now()}`;
+      const testExposantId = `exposant${Date.now()}`;
+      const testUrlexpoEvent = `${testExposantId}_${testEventId}`;
+
+      const testParticipation1 = { id_event: testEventId, id_exposant: testExposantId, urlexpo_event: testUrlexpoEvent };
+      const testParticipation2 = { id_event: testEventId, id_exposant: testExposantId, urlexpo_event: testUrlexpoEvent };
+
+      try {
+        // Clean up any existing records
+        const existingRecord = await findRecordByField(PARTICIPATION_TABLE_NAME, 'urlexpo_event', testUrlexpoEvent);
+        if (existingRecord) {
+          await deleteRecord(PARTICIPATION_TABLE_NAME, existingRecord.id);
+          await sleep(1000); // Wait for deletion to propagate
+        }
+
+        // Create the first record
+        await createRecord(PARTICIPATION_TABLE_NAME, testParticipation1);
+        await sleep(1000); // Wait for creation to propagate
+
+        // Attempt to create the second record (should update the first)
+        await createRecord(PARTICIPATION_TABLE_NAME, testParticipation2);
+        await sleep(1000); // Wait for creation to propagate
+
+        // Verify that only one record exists
+        const records = await fetchAirtable(PARTICIPATION_TABLE_NAME, new URLSearchParams({
+          filterByFormula: `{urlexpo_event}="${testUrlexpoEvent}"`
+        }));
+
+        if (records.records.length !== 1) {
+          return {
+            name: 'Participation Duplicate Prevention Test',
+            status: 'error',
+            message: `Expected 1 record, found ${records.records.length}`,
+            details: { records: records.records },
+          };
+        }
+
+        return {
+          name: 'Participation Duplicate Prevention Test',
+          status: 'success',
+          message: 'Duplicate participations were successfully prevented',
+        };
+      } catch (error) {
+        return {
+          name: 'Participation Duplicate Prevention Test',
+          status: 'error',
+          message: `Test failed with error: ${error.message}`,
+          details: { error: error.message },
+        };
+      } finally {
+        // Clean up the test record
+        const testRecord = await findRecordByField(PARTICIPATION_TABLE_NAME, 'urlexpo_event', testUrlexpoEvent);
+        if (testRecord) {
+          await deleteRecord(PARTICIPATION_TABLE_NAME, testRecord.id);
+        }
+      }
+    };
+
+    // --------------------------------------------------------------------
+    // 4. Orchestration & Response
+    // --------------------------------------------------------------------
+
+    interface TestResult {
+      name: string;
+      status: 'success' | 'error';
+      message: string;
+      details?: any;
+    }
+
+    interface SmokeTestSummary {
+      total: number;
+      passed: number;
+      failed: number;
+      results: TestResult[];
+    }
+
+    const runAllTests = async (): Promise<SmokeTestSummary> => {
+      const testFunctions = [
+        testUrlNormalization,
+        testExposantDuplicatePrevention,
+        testParticipationDuplicatePrevention,
+      ];
+
+      const results: TestResult[] = [];
+      let passed = 0;
+      let failed = 0;
+
+      for (const testFunction of testFunctions) {
+        try {
+          const result = await testFunction();
+          results.push(result);
+
+          if (result.status === 'success') {
+            passed++;
+          } else {
+            failed++;
+          }
+        } catch (error) {
+          console.error(`Test ${testFunction.name} crashed:`, error);
+          failed++;
+          results.push({
+            name: testFunction.name,
+            status: 'error',
+            message: `Test crashed: ${error.message}`,
+            details: { error: error.message },
+          });
+        }
+      }
+
+      const total = testFunctions.length;
+
+      return {
+        total,
+        passed,
+        failed,
+        results,
+      };
+    };
+
+    const summary = await runAllTests();
 
     return new Response(
-      JSON.stringify({ success: true, data: summary }),
+      JSON.stringify({
+        success: true,
+        data: summary,
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
-
   } catch (error) {
-    console.error('Smoke test runner error:', error);
+    console.error('Airtable smoke test error:', error);
     
     return new Response(
       JSON.stringify({ 
-        success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
       }),
       {

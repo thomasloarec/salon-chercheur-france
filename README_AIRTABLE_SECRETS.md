@@ -5,10 +5,10 @@
 
 Les edge functions Airtable nécessitent les variables d'environnement suivantes :
 
-| Variable | Description | Exemple |
+| Variable | Description | Valeur |
 |----------|-------------|---------|
 | `AIRTABLE_PAT` | Personal Access Token Airtable | `patXXXXXXXXXXXXXX` |
-| `AIRTABLE_BASE_ID` | ID de la base Airtable | `appXXXXXXXXXXXXXX` |
+| `AIRTABLE_BASE_ID` | ID de la base Airtable | `SLxgKrY3BSA1nX` |
 | `EVENTS_TABLE_NAME` | Nom de la table des événements | `All_Events` |
 | `EXHIBITORS_TABLE_NAME` | Nom de la table des exposants | `All_Exposants` |
 | `PARTICIPATION_TABLE_NAME` | Nom de la table participation | `Participation` |
@@ -19,11 +19,11 @@ Les edge functions Airtable nécessitent les variables d'environnement suivantes
 2. **Vérification automatique** : L'interface vérifie automatiquement les variables manquantes
 3. **Si des variables manquent** :
    - Un encart rouge s'affiche avec la liste des variables manquantes
-   - Une commande pré-générée est fournie avec les bonnes valeurs par défaut
+   - Une commande pré-remplie est fournie avec les bonnes valeurs
    - Cliquez sur **"Copier la commande"** pour copier automatiquement
-4. **Personnalisez les valeurs sensibles** :
-   - Remplacez `YOUR_AIRTABLE_PAT_HERE` par votre Personal Access Token
-   - Remplacez `YOUR_AIRTABLE_BASE_ID_HERE` par l'ID de votre base
+4. **⚠️ Important** : La clé `AIRTABLE_PAT` n'est pas pré-remplie par sécurité
+   - Complétez `AIRTABLE_PAT=""` avec votre Personal Access Token
+   - Exemple : `AIRTABLE_PAT="patXXXXXXXXXXXXXX"`
 5. **Exécutez la commande** dans votre terminal
 6. **Redéployez les functions** :
    ```bash
@@ -38,7 +38,7 @@ Si vous préférez configurer manuellement :
 ```bash
 supabase functions secrets set \
   AIRTABLE_PAT="votre_pat_ici" \
-  AIRTABLE_BASE_ID="votre_base_id_ici" \
+  AIRTABLE_BASE_ID="SLxgKrY3BSA1nX" \
   EVENTS_TABLE_NAME="All_Events" \
   EXHIBITORS_TABLE_NAME="All_Exposants" \
   PARTICIPATION_TABLE_NAME="Participation"
@@ -54,9 +54,7 @@ supabase functions secrets set \
    - `schema.bases:read`
 
 ### Base ID
-1. Ouvrez votre base Airtable
-2. L'ID se trouve dans l'URL : `https://airtable.com/appXXXXXXXXXXXXXX/...`
-3. Ou via l'API documentation de votre base
+L'ID de votre base Airtable est `SLxgKrY3BSA1nX` (pré-configuré).
 
 ## Vérification
 
@@ -85,3 +83,4 @@ L'interface admin vérifie automatiquement la configuration :
 - Utilisez uniquement `supabase functions secrets set`
 - Les secrets sont chiffrés et sécurisés dans Supabase
 - L'interface admin ne stocke aucune valeur sensible côté client
+- Les valeurs de configuration (base ID, noms de tables) sont partagées mais le PAT reste sécurisé

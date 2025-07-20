@@ -1,13 +1,21 @@
 
+import {
+  AIRTABLE_BASE_ID,
+  EVENTS_TABLE_NAME,
+  EXHIBITORS_TABLE_NAME,
+  PARTICIPATION_TABLE_NAME,
+} from '@/config/airtable';
+
 /**
  * Builds the supabase functions secrets set command with available values
  */
 export function buildSecretCommand(missing: string[]): string {
-  // Default values for table names (non-sensitive)
+  // Default values - use real config values instead of placeholders
   const defaultValues: Record<string, string> = {
-    'EVENTS_TABLE_NAME': 'All_Events',
-    'EXHIBITORS_TABLE_NAME': 'All_Exposants',  
-    'PARTICIPATION_TABLE_NAME': 'Participation'
+    'AIRTABLE_BASE_ID': AIRTABLE_BASE_ID,
+    'EVENTS_TABLE_NAME': EVENTS_TABLE_NAME,
+    'EXHIBITORS_TABLE_NAME': EXHIBITORS_TABLE_NAME,  
+    'PARTICIPATION_TABLE_NAME': PARTICIPATION_TABLE_NAME
   };
 
   // Build command parts
@@ -16,8 +24,8 @@ export function buildSecretCommand(missing: string[]): string {
     if (defaultValue) {
       return `${key}="${defaultValue}"`;
     } else {
-      // For sensitive values like PAT and BASE_ID, leave placeholder
-      return `${key}="YOUR_${key}_HERE"`;
+      // For sensitive values like PAT, leave empty for security
+      return `${key}=""`;
     }
   });
 
