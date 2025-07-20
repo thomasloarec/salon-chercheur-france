@@ -1,23 +1,23 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import { jest } from '@jest/globals';
 import AirtableStatusWidget from '../AirtableStatusWidget';
 import { useAirtableStatus } from '@/hooks/useAirtableStatus';
 
 // Mock the hook
-vi.mock('@/hooks/useAirtableStatus');
+jest.mock('@/hooks/useAirtableStatus');
 
-const mockUseAirtableStatus = vi.mocked(useAirtableStatus);
+const mockUseAirtableStatus = useAirtableStatus as jest.MockedFunction<typeof useAirtableStatus>;
 
 describe('AirtableStatusWidget', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('should call onSecretsConfigured when secrets become OK', async () => {
-    const mockOnSecretsConfigured = vi.fn();
-    const mockCheckStatus = vi.fn();
+    const mockOnSecretsConfigured = jest.fn();
+    const mockCheckStatus = jest.fn();
 
     // First render: secrets not OK
     mockUseAirtableStatus.mockReturnValue({
@@ -65,7 +65,7 @@ describe('AirtableStatusWidget', () => {
         buttonsActive: false
       },
       isLoading: false,
-      checkStatus: vi.fn()
+      checkStatus: jest.fn()
     });
 
     render(<AirtableStatusWidget />);
@@ -84,7 +84,7 @@ describe('AirtableStatusWidget', () => {
         buttonsActive: true
       },
       isLoading: false,
-      checkStatus: vi.fn()
+      checkStatus: jest.fn()
     });
 
     render(<AirtableStatusWidget />);
