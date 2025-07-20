@@ -30,7 +30,6 @@ const AirtableSync = () => {
       syncEvents.mutate(events.map(event => ({
         id_event: event.id_event,
         nom_event: event.nom_event,
-        status_event: event.status_event,
         type_event: event.type_event,
         date_debut: event.date_debut,
         date_fin: event.date_fin,
@@ -44,6 +43,7 @@ const AirtableSync = () => {
         rue: event.rue,
         code_postal: event.code_postal,
         ville: event.ville,
+        pays: event.pays || 'France'
       })));
     }
   };
@@ -52,10 +52,9 @@ const AirtableSync = () => {
     if (exposants) {
       syncExposants.mutate(exposants.map(exposant => ({
         id_exposant: exposant.id_exposant,
-        exposant_nom: exposant.exposant_nom,
-        exposant_stand: exposant.exposant_stand,
-        exposant_description: exposant.exposant_description,
+        nom_exposant: exposant.exposant_nom || exposant.nom_exposant,
         website_exposant: exposant.exposant_website || exposant.website_exposant || `${exposant.exposant_nom?.toLowerCase().replace(/\s+/g, '-')}.com`,
+        exposant_description: exposant.exposant_description,
       })));
     }
   };
@@ -65,8 +64,10 @@ const AirtableSync = () => {
       syncParticipation.mutate(participation.map(p => ({
         id_participation: p.id_participation,
         id_event: p.id_event,
-        id_exposant: p.id_exposant,
-        urlexpo_event: p.urlexpo_event || `${p.id_exposant}_${p.id_event}`, // Fallback if urlexpo_event is missing
+        nom_exposant: p.nom_exposant,
+        stand_exposant: p.stand_exposant,
+        website_exposant: p.website_exposant,
+        urlexpo_event: p.urlexpo_event || `${p.id_exposant}_${p.id_event}`,
       })));
     }
   };

@@ -9,10 +9,7 @@ extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-enabled = true
 port = 54322
-shadow_port = 54320
-major_version = 15
 
 [db.pooler]
 enabled = false
@@ -23,42 +20,89 @@ max_client_conn = 100
 
 [realtime]
 enabled = true
-ip_version = "ipv4"
+ip_version = "ipv6"
 port = 54324
-max_header_length = 4096
 
 [studio]
 enabled = true
 port = 54323
 api_url = "http://127.0.0.1:54321"
-openai_api_key = "env(OPENAI_API_KEY)"
 
 [inbucket]
 enabled = true
-port = 54325
-smtp_port = 54326
-pop3_port = 54327
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
 
 [storage]
 enabled = true
+port = 54325
 file_size_limit = "50MiB"
-port = 54328
 
 [auth]
 enabled = true
+port = 54326
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
+enable_signup = true
+email_double_confirm_changes = true
 enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.sms]
 enable_signup = true
 enable_confirmations = false
+template = "Your code is {{ .Code }} ."
+
+[functions.airtable-metadata]
+verify_jwt = false
+
+[functions.airtable-read]
+verify_jwt = false
+
+[functions.airtable-write]
+verify_jwt = false
+
+[functions.airtable-status]
+verify_jwt = false
+
+[functions.airtable-debug]
+verify_jwt = false
+
+[functions.debug-airtable-create-test]
+verify_jwt = false
+
+[functions.airtable-smoke-test]
+verify_jwt = false
+
+[functions.check-secrets]
+verify_jwt = false
+
+[functions.clear-import-buffer]
+verify_jwt = false
+
+[functions.env-check]
+verify_jwt = false
+
+[functions.import-airtable]
+verify_jwt = false
+
+[functions.import-airtable-exposants]
+verify_jwt = false
+
+[functions.newsletter-subscribe]
+verify_jwt = false
 
 [functions.scrape]
 verify_jwt = false
 
-[functions.sync-crm]
+[functions.send-newsletters]
 verify_jwt = false
 
-[edge_runtime]
-enabled = true
-inspector_port = 8083
+[functions.sync-crm]
+verify_jwt = false

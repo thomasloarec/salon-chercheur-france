@@ -1,0 +1,37 @@
+
+{
+  "All_Events": {
+    "id_event": "id_event",
+    "nom_event": "nom_event",
+    "type_event": "type_event",
+    "date_debut": "date_debut",
+    "date_fin": "date_fin",
+    "secteur": "secteur",
+    "url_image": "url_image",
+    "url_site_officiel": "url_site_officiel",
+    "description_event": "description_event",
+    "affluence": "affluence",
+    "tarif": "tarif",
+    "nom_lieu": "nom_lieu",
+    "rue": "rue",
+    "code_postal": "code_postal",
+    "ville": "ville",
+    "pays": "pays"
+  },
+  "All_Exposants": {
+    "id_exposant": "id_exposant",
+    "nom_exposant": "nom_exposant",
+    "exposant_nom": "nom_exposant",
+    "website_exposant": "website_exposant",
+    "exposant_description": "exposant_description"
+  },
+  "Participation": {
+    "id_participation": "id_participation",
+    "nom_exposant": "nom_exposant",
+    "exposant_nom": "nom_exposant",
+    "stand_exposant": "stand_exposant",
+    "website_exposant": "website_exposant",
+    "id_event": "id_event",
+    "urlexpo_event": "urlexpo_event"
+  }
+}
