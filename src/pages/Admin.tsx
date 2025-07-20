@@ -3,6 +3,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import AirtableSync from '@/components/admin/AirtableSync';
+import AirtableValidationTest from '@/components/admin/AirtableValidationTest';
 import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import MainLayout from '@/components/layout/MainLayout';
@@ -34,6 +35,9 @@ const Admin = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Administration</h1>
           <p className="text-gray-600">Gestion des événements et synchronisation des données</p>
         </div>
+
+        {/* Tests de validation Airtable */}
+        <AirtableValidationTest />
 
         {/* Synchronisation Airtable */}
         <AirtableSync />
