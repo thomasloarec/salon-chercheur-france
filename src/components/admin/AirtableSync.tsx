@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Database } from 'lucide-react';
 import { useSecretsCheck } from '@/hooks/useSecretsCheck';
 import MissingSecretsAlert from '@/components/admin/MissingSecretsAlert';
 import AirtableSyncButtons from '@/components/admin/AirtableSyncButtons';
+import { fetchAirtableTable } from '@/utils/airtableUtils';
 
 const AirtableSync = () => {
   const { toast } = useToast();
@@ -33,41 +33,31 @@ const AirtableSync = () => {
     setError(null);
     
     try {
-      // Load Events
-      const { data: eventsResponse, error: eventsError } = await supabase.functions.invoke('airtable-read', {
-        body: { table: 'All_Events' }
-      });
-
-      if (eventsError) throw eventsError;
+      console.log('[AirtableSync] 🔄 Chargement des données...');
       
+      // Load Events
+      const eventsResponse = await fetchAirtableTable('All_Events');
       if (eventsResponse?.success) {
         setEventsData(eventsResponse.records || []);
+        console.log('[AirtableSync] ✅ Events chargés:', eventsResponse.records?.length || 0);
       }
 
       // Load Exposants
-      const { data: exposantsResponse, error: exposantsError } = await supabase.functions.invoke('airtable-read', {
-        body: { table: 'All_Exposants' }
-      });
-
-      if (exposantsError) throw exposantsError;
-      
+      const exposantsResponse = await fetchAirtableTable('All_Exposants');
       if (exposantsResponse?.success) {
         setExposantsData(exposantsResponse.records || []);
+        console.log('[AirtableSync] ✅ Exposants chargés:', exposantsResponse.records?.length || 0);
       }
 
       // Load Participation
-      const { data: participationResponse, error: participationError } = await supabase.functions.invoke('airtable-read', {
-        body: { table: 'Participation' }
-      });
-
-      if (participationError) throw participationError;
-      
+      const participationResponse = await fetchAirtableTable('Participation');
       if (participationResponse?.success) {
         setParticipationData(participationResponse.records || []);
+        console.log('[AirtableSync] ✅ Participation chargée:', participationResponse.records?.length || 0);
       }
 
     } catch (error) {
-      console.error('[AIRTABLE] Erreur chargement données:', error);
+      console.error('[AirtableSync] ❌ Erreur chargement données:', error);
       setError(error instanceof Error ? error.message : 'Erreur inconnue');
       toast({
         title: 'Erreur de chargement',
@@ -165,6 +155,8 @@ const AirtableSync = () => {
               <li>• Mapping automatique des champs</li>
               <li>• Gestion des doublons intégrée</li>
               <li>• Logs détaillés pour le debugging</li>
+              <li>• Support GET/POST pour airtable-read</li>
+              <li>• CORS corrigé pour schema-discovery</li>
             </ul>
           </div>
         </CardContent>

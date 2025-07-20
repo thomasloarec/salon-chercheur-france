@@ -18,38 +18,46 @@ serve(async (req) => {
     console.log('[airtable-read] 🔍 Début de la requête de lecture');
 
     // -------- 1. EXTRACTION TABLE (dual mode GET/POST) --------
+    const url = new URL(req.url);
+    console.log('[airtable-read] url=', url.href);
+    
     let table: string | null = null;
     
     if (req.method === 'GET') {
-      const url = new URL(req.url);
       table = url.searchParams.get('table');
+      console.log('[airtable-read] Mode GET, table param =', table);
     } else {
       try {
         const body = await req.json();
         table = body?.table;
+        console.log('[airtable-read] Mode POST, table from body =', table);
       } catch (jsonError) {
         console.log('[airtable-read] No JSON body, checking URL params as fallback');
-        const url = new URL(req.url);
         table = url.searchParams.get('table');
       }
     }
 
+    console.log('[airtable-read] tableParam final =', table);
+
     if (!table) {
       console.error('[airtable-read] ❌ Table parameter missing');
       return new Response(
-        JSON.stringify({ success: false, error: 'Table parameter required' }),
+        JSON.stringify({ success: false, message: "Missing 'table' query/body param" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Security check
-    if (!ALLOWED_TABLES.includes(table)) {
-      console.error(`[airtable-read] ❌ Table non autorisée: ${table}`);
+    // Tolérance casse + espaces
+    table = table.trim();
+    const matched = ALLOWED_TABLES.find(t => t.toLowerCase() === table.toLowerCase());
+    if (!matched) {
+      console.error(`[airtable-read] ❌ Table '${table}' not allowed`);
       return new Response(
-        JSON.stringify({ success: false, error: 'Table not allowed' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, message: `Table '${table}' not allowed` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    table = matched;
 
     // Get environment variables
     const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT');
