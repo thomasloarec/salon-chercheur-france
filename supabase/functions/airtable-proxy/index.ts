@@ -94,7 +94,10 @@ serve(async (req) => {
 
     // 5. Construction de l'URL Airtable
     const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
-    console.log(`[airtable-proxy] 🌐 URL Airtable: ${airtableUrl}`);
+    
+    // 🔍 NOUVEAU: Log détaillé de l'URL (sans exposer la PAT)
+    console.log(`[airtable-proxy] 🌐 URL Airtable: https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`);
+    console.log(`[airtable-proxy] 🔑 PAT présente: ${AIRTABLE_PAT ? 'OUI (***' + AIRTABLE_PAT.slice(-4) + ')' : 'NON'}`);
 
     // 6. Exécution de l'action
     let response;
@@ -122,6 +125,7 @@ serve(async (req) => {
           
         case 'FIND':
           const findUrl = `${airtableUrl}?filterByFormula=({${payload.fieldName}}="${payload.value}")`;
+          console.log(`[airtable-proxy] 🔍 FIND URL: ${findUrl}`);
           response = await fetch(findUrl, {
             headers: {
               Authorization: `Bearer ${AIRTABLE_PAT}`,
@@ -149,6 +153,8 @@ serve(async (req) => {
           const findExistingUrl = `${airtableUrl}?filterByFormula=OR(${payload
             .map((item: any) => `({${uniqueField}}="${item[uniqueField]}")`)
             .join(',')})`;
+
+          console.log(`[airtable-proxy] 🔍 UPSERT FIND URL: ${findExistingUrl}`);
 
           const findExistingResponse = await fetch(findExistingUrl, {
             headers: {
@@ -265,6 +271,7 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`[airtable-proxy] ❌ Erreur Airtable (${response.status} ${response.statusText}):`, errorText);
+        console.error(`[airtable-proxy] 🔍 URL qui a échoué: https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`);
         
         // Diagnostic détaillé selon le code d'erreur
         let errorMessage = `Airtable API Error: ${response.status} ${response.statusText}`;
@@ -302,7 +309,7 @@ serve(async (req) => {
               action,
               table,
               baseId: AIRTABLE_BASE_ID.substring(0, 10) + '...',
-              url: airtableUrl
+              url: `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`
             }
           }),
           {

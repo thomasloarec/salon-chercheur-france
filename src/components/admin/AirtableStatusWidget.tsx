@@ -1,10 +1,11 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, RefreshCw, AlertCircle, Bug, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, AlertCircle, Bug, ExternalLink, Search } from 'lucide-react';
 import { useAirtableStatus } from '@/hooks/useAirtableStatus';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AirtableStatusWidgetProps {
   onSecretsConfigured?: () => void;
@@ -17,6 +18,7 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
 }) => {
   const { status, isLoading, checkStatus } = useAirtableStatus();
   const prevSecretsOk = useRef<boolean | null>(null);
+  const [isInspecting, setIsInspecting] = useState(false);
 
   useEffect(() => {
     if (autoRefresh) {
@@ -37,6 +39,85 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
 
   const handleRefresh = async () => {
     await checkStatus();
+  };
+
+  const handleInspectAirtable = async () => {
+    setIsInspecting(true);
+    try {
+      console.log('🔍 Inspection Airtable en cours...');
+      
+      const { data, error } = await supabase.functions.invoke('airtable-debug');
+      
+      if (error) {
+        console.error('❌ Erreur inspection Airtable:', error);
+        return;
+      }
+
+      console.log('📊 Résultat inspection Airtable:', data);
+      
+      if (data.success && data.debug) {
+        const debug = data.debug;
+        
+        console.group('🏢 BASES AIRTABLE ACCESSIBLES');
+        if (debug.bases && debug.bases.length > 0) {
+          debug.bases.forEach((base: any) => {
+            const isCurrent = base.id === debug.baseId;
+            console.log(`${isCurrent ? '👉' : '  '} ${base.name} (${base.id}) - ${base.permissionLevel}`);
+          });
+        } else {
+          console.log('❌ Aucune base accessible ou erreur');
+        }
+        console.groupEnd();
+
+        console.group(`📋 TABLES DANS LA BASE ${debug.baseId}`);
+        if (debug.tables && debug.tables.length > 0) {
+          debug.tables.forEach((table: any) => {
+            console.log(`  📄 ${table.name} (${table.id})`);
+          });
+          
+          if (debug.tablesCheck) {
+            console.log('\n🔍 VÉRIFICATION DES TABLES REQUISES:');
+            debug.tablesCheck.required.forEach((tableName: string) => {
+              const found = debug.tablesCheck.found.includes(tableName);
+              console.log(`  ${found ? '✅' : '❌'} ${tableName}`);
+            });
+            
+            if (debug.tablesCheck.missing.length > 0) {
+              console.log(`\n❌ Tables manquantes: ${debug.tablesCheck.missing.join(', ')}`);
+            }
+          }
+        } else {
+          console.log('❌ Aucune table trouvée ou base inaccessible');
+        }
+        console.groupEnd();
+
+        if (debug.errors.length > 0) {
+          console.group('⚠️ ERREURS DÉTECTÉES');
+          debug.errors.forEach((error: string) => {
+            console.error(`  • ${error}`);
+          });
+          console.groupEnd();
+        }
+
+        // Diagnostic automatique
+        console.group('🔧 DIAGNOSTIC');
+        if (!debug.bases || debug.bases.length === 0) {
+          console.log('❌ Problème: PAT invalide ou pas de bases accessibles');
+        } else if (!debug.bases.find((b: any) => b.id === debug.baseId)) {
+          console.log(`❌ Problème: Base ID "${debug.baseId}" introuvable dans vos bases accessibles`);
+        } else if (debug.tablesCheck && debug.tablesCheck.missing.length > 0) {
+          console.log(`❌ Problème: Tables manquantes dans votre base: ${debug.tablesCheck.missing.join(', ')}`);
+        } else {
+          console.log('✅ Configuration semble correcte - vérifiez les logs détaillés ci-dessus');
+        }
+        console.groupEnd();
+      }
+      
+    } catch (error) {
+      console.error('❌ Exception lors de l\'inspection:', error);
+    } finally {
+      setIsInspecting(false);
+    }
   };
 
   const getStatusIcon = (isOk: boolean, isLoading: boolean = false) => {
@@ -93,6 +174,7 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
   };
 
   const errorInfo = getErrorMessage();
+  const isAirtable404Error = status?.testsError?.error === 'airtable_error' && status?.testsError?.status === 404;
 
   return (
     <Card>
@@ -102,19 +184,37 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
             <AlertCircle className="h-5 w-5" />
             Vérification finale
           </div>
-          <Button
-            onClick={handleRefresh}
-            disabled={isLoading}
-            variant="outline"
-            size="sm"
-          >
-            {isLoading ? (
-              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
+          <div className="flex items-center gap-2">
+            {isAirtable404Error && (
+              <Button
+                onClick={handleInspectAirtable}
+                disabled={isInspecting}
+                variant="outline"
+                size="sm"
+                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+              >
+                {isInspecting ? (
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Search className="h-4 w-4 mr-2" />
+                )}
+                Inspecter Airtable
+              </Button>
             )}
-            Actualiser
-          </Button>
+            <Button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
+            >
+              {isLoading ? (
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Actualiser
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -198,7 +298,9 @@ const AirtableStatusWidget: React.FC<AirtableStatusWidgetProps> = ({
                     <div className="mt-3 space-y-2 text-xs">
                       <p className="font-medium">Étapes de diagnostic :</p>
                       <ol className="list-decimal list-inside space-y-1 ml-2">
-                        <li>Vérifiez que votre base Airtable ID est correcte</li>
+                        <li>Cliquez sur le bouton "Inspecter Airtable" ci-dessus</li>
+                        <li>Ouvrez la console de votre navigateur (F12)</li>
+                        <li>Vérifiez que votre base Airtable ID est correct</li>
                         <li>
                           Connectez-vous à{' '}
                           <a 
