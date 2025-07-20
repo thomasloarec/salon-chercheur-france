@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import AirtableSync from '@/components/admin/AirtableSync';
 import AirtableValidationTest from '@/components/admin/AirtableValidationTest';
+import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
 import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import MainLayout from '@/components/layout/MainLayout';
@@ -41,6 +42,9 @@ const Admin = () => {
 
         {/* Synchronisation Airtable */}
         <AirtableSync />
+
+        {/* Vérification anti-doublons */}
+        <AirtableAntiDuplicateCheck />
 
         {/* Événements en attente de publication */}
         <PendingEventsTable />

@@ -18,13 +18,21 @@ interface AirtableConfig {
 }
 
 /**
- * Normalizes URL for comparison by removing protocol and trailing slash
+ * Normalizes URL for comparison by removing protocol, www, and trailing slash
+ * Examples:
+ * - https://www.example.com/ → example.com
+ * - http://example.com → example.com
+ * - www.example.com → example.com
  * @param url - URL to normalize
  * @returns normalized URL in lowercase
  */
 function normalizeUrl(url: string): string {
   if (!url) return '';
-  return url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  return url
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/$/, '');
 }
 
 class AirtableClient {
@@ -111,7 +119,7 @@ class AirtableClient {
       // Special handling for URL-based unique fields (website_exposant, urlexpo_event)
       if (uniqueField === 'website_exposant' || uniqueField === 'urlexpo_event') {
         const normalizedValue = normalizeUrl(uniqueValue);
-        const filterFormula = `LOWER(REGEX_REPLACE({${uniqueField}}, "^https?://", "")) = "${normalizedValue}"`;
+        const filterFormula = `LOWER(REGEX_REPLACE(REGEX_REPLACE({${uniqueField}}, "^https?://", ""), "^www\\.", "")) = "${normalizedValue}"`;
         
         existing = await this.findRecordByFilter(tableName, filterFormula);
       } else {
