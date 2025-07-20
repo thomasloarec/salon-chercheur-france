@@ -113,14 +113,36 @@ serve(async (req) => {
           break;
           
         case 'CREATE':
-          response = await fetch(`${airtableUrl}`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${AIRTABLE_PAT}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ records: payload.map((item: any) => ({ fields: item })) }),
-          });
+          try {
+            response = await fetch(`${airtableUrl}`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${AIRTABLE_PAT}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ records: payload.map((item: any) => ({ fields: item })) }),
+            });
+
+            // Gestion spéciale des erreurs 422 (doublons)
+            if (!response.ok && response.status === 422) {
+              const errorBody = await response.text();
+              console.log(`[airtable-proxy] Duplicate detected on ${table}, returning 200.`);
+              
+              return new Response(
+                JSON.stringify({
+                  success: true,
+                  data: { duplicate: true }
+                }),
+                {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                }
+              );
+            }
+          } catch (createError) {
+            console.error(`[airtable-proxy] ❌ Erreur lors de la création:`, createError);
+            throw createError;
+          }
           break;
           
         case 'FIND':
