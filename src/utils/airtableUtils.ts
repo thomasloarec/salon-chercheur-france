@@ -1,22 +1,21 @@
 
+import { supabase } from '@/integrations/supabase/client';
+
 export const fetchAirtableTable = async (tableName: string) => {
   console.log(`[AirtableUtils] 🔄 Fetching table: ${tableName}`);
   
   try {
-    const url = `/functions/v1/airtable-read?table=${encodeURIComponent(tableName)}`;
-    const response = await fetch(url);
+    const { data, error } = await supabase.functions.invoke('airtable-read', {
+      body: { table: tableName }
+    });
     
-    // Vérifier le Content-Type avant de parser le JSON
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status} non-JSON response.\n${text.slice(0, 200)}`);
+    if (error) {
+      console.error(`[AirtableUtils] ❌ Supabase function error:`, error);
+      throw new Error(`Erreur lors de la lecture de la table ${tableName}: ${error.message}`);
     }
     
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Erreur inconnue');
+    if (!data?.success) {
+      throw new Error(data?.message || 'Réponse invalide de la fonction');
     }
     
     console.log(`[AirtableUtils] ✅ Success fetching ${tableName}: ${data.records?.length || 0} records`);
@@ -24,6 +23,34 @@ export const fetchAirtableTable = async (tableName: string) => {
     
   } catch (error) {
     console.error(`[AirtableUtils] ❌ Error fetching ${tableName}:`, error);
+    throw error;
+  }
+};
+
+export const fetchAirtableSchemas = async () => {
+  console.log(`[AirtableUtils] 🔄 Fetching schemas`);
+  
+  try {
+    const { data, error } = await supabase.functions.invoke('airtable-schema-discovery', {
+      headers: {
+        'X-Lovable-Admin': 'true'
+      }
+    });
+    
+    if (error) {
+      console.error(`[AirtableUtils] ❌ Schema discovery error:`, error);
+      throw new Error(`Erreur lors du scan des schémas: ${error.message}`);
+    }
+    
+    if (!data?.success) {
+      throw new Error(data?.message || 'Échec du scan des schémas');
+    }
+    
+    console.log(`[AirtableUtils] ✅ Success fetching schemas`);
+    return data;
+    
+  } catch (error) {
+    console.error(`[AirtableUtils] ❌ Error fetching schemas:`, error);
     throw error;
   }
 };

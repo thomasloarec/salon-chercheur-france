@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Search, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchAirtableSchemas } from '@/utils/airtableUtils';
 
 const AirtableDiagnostic = () => {
   const [isScanning, setIsScanning] = useState(false);
@@ -19,20 +19,8 @@ const AirtableDiagnostic = () => {
     try {
       console.log('🔍 Lancement du scan des schémas Airtable...');
       
-      const { data, error: supabaseError } = await supabase.functions.invoke('airtable-schema-discovery', {
-        headers: {
-          'X-Lovable-Admin': 'true'
-        }
-      });
-
-      if (supabaseError) {
-        throw new Error(`Erreur Supabase: ${supabaseError.message}`);
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.message || 'Erreur lors du scan des schémas');
-      }
-
+      const data = await fetchAirtableSchemas();
+      
       console.log('✅ Scan terminé avec succès:', data);
       setScanResults(data);
     } catch (err) {
