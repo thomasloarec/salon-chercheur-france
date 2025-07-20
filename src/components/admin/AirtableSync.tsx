@@ -63,6 +63,7 @@ const AirtableSync = () => {
     if (participation) {
       syncParticipation.mutate(participation.map(p => ({
         id_participation: p.id_participation,
+        id_event: p.id_event,
         nom_exposant: p.nom_exposant,
         stand_exposant: p.stand_exposant,
         website_exposant: p.website_exposant,

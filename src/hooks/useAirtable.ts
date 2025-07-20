@@ -31,7 +31,7 @@ interface AirtableExposant {
 
 interface AirtableParticipation {
   id_participation?: string;
-  id_event: string;
+  id_event?: string; // Made optional since it might not always be provided
   nom_exposant?: string; // Ajout de ce champ
   stand_exposant?: string; // Ajout de ce champ
   website_exposant?: string; // Ajout de ce champ
