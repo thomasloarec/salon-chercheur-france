@@ -21,6 +21,13 @@ interface TableSchema {
 }
 
 serve(async (req) => {
+  // 🚨 DEBUG CRITIQUE - Ces logs doivent apparaître même avec JWT ON
+  console.log('🔥 CRITICAL DEBUG - Function called at all:', new Date().toISOString());
+  console.log('🔥 Method:', req.method);
+  console.log('🔥 URL:', req.url);
+  console.log('🔥 Headers count:', req.headers.size);
+  console.log('🔥 Full headers object:', Object.fromEntries(req.headers.entries()));
+  
   // Log pour vérifier qu'on entre dans la fonction
   console.log('🔍 FUNCTION ENTRY - Method:', req.method);
   console.log('🔍 FUNCTION ENTRY - URL:', req.url);
