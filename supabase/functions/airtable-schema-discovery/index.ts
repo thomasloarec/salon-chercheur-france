@@ -23,16 +23,33 @@ interface TableSchema {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return preflight();
 
+  // 🔍 DEBUG: Logger tous les détails de la requête
+  console.log('=== DEBUG SCHEMA DISCOVERY ===');
+  console.log('Method:', req.method);
+  console.log('Headers:', Object.fromEntries(req.headers));
+  
+  try {
+    const body = await req.clone().text();
+    console.log('Body:', body);
+  } catch (e) {
+    console.log('No body or body read error:', e);
+  }
+  
+  // Vérifier l'en-tête admin (avec debug de la casse)
+  const adminHeader = req.headers.get('X-Lovable-Admin');
+  const adminHeaderLower = req.headers.get('x-lovable-admin');
+  console.log('Admin header (X-Lovable-Admin):', adminHeader);
+  console.log('Admin header (x-lovable-admin):', adminHeaderLower);
+  
+  if (adminHeader !== 'true' && adminHeaderLower !== 'true') {
+    console.log('❌ REJECTING: Admin header not found or not "true"');
+    return json({ success: false, error: 'access_denied', message: 'Accès non autorisé - header admin manquant' }, 403);
+  }
+  
+  console.log('✅ Admin header OK, proceeding...');
+
   try {
     console.log('[airtable-schema-discovery] 🔍 Début de la découverte des schémas');
-
-    // -------- AUTH CHECK --------
-    const isLovableAdmin = req.headers.get('x-lovable-admin') === 'true';
-    
-    if (!isLovableAdmin) {
-      console.error('[schema-discovery] ❌ Access denied - x-lovable-admin header missing or invalid');
-      return json({ success: false, error: 'access_denied' }, 403);
-    }
 
     const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT');
     const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID');
