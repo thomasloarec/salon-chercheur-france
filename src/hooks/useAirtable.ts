@@ -1,0 +1,163 @@
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createAirtableClient, AirtableClient } from '@/services/airtableClient';
+import { useToast } from '@/hooks/use-toast';
+
+interface AirtableEvent {
+  id_event: string;
+  nom_event: string;
+  status_event: string;
+  type_event: string;
+  date_debut: string;
+  date_fin: string;
+  secteur: string;
+  url_image?: string;
+  url_site_officiel?: string;
+  description_event?: string;
+  affluence?: number;
+  tarif?: string;
+  nom_lieu?: string;
+  rue?: string;
+  code_postal?: string;
+  ville?: string;
+}
+
+interface AirtableExposant {
+  id_exposant: string;
+  exposant_nom: string;
+  exposant_stand?: string;
+  exposant_website?: string;
+  exposant_description?: string;
+}
+
+interface AirtableParticipation {
+  id_participation: string;
+  id_event: string;
+  id_exposant: string;
+}
+
+export function useAirtableEvents() {
+  return useQuery({
+    queryKey: ['airtable', 'events'],
+    queryFn: async () => {
+      const client = createAirtableClient();
+      const records = await client.listAllRecords('All_Events');
+      return records.map(record => ({
+        airtableId: record.id,
+        ...record.fields
+      })) as Array<AirtableEvent & { airtableId: string }>;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useAirtableExposants() {
+  return useQuery({
+    queryKey: ['airtable', 'exposants'],
+    queryFn: async () => {
+      const client = createAirtableClient();
+      const records = await client.listAllRecords('All_Exposants');
+      return records.map(record => ({
+        airtableId: record.id,
+        ...record.fields
+      })) as Array<AirtableExposant & { airtableId: string }>;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useAirtableParticipation() {
+  return useQuery({
+    queryKey: ['airtable', 'participation'],
+    queryFn: async () => {
+      const client = createAirtableClient();
+      const records = await client.listAllRecords('Participation');
+      return records.map(record => ({
+        airtableId: record.id,
+        ...record.fields
+      })) as Array<AirtableParticipation & { airtableId: string }>;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useAirtableSync() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const syncEvents = useMutation({
+    mutationFn: async (events: AirtableEvent[]) => {
+      const client = createAirtableClient();
+      return await client.upsertRecords('All_Events', events, 'id_event');
+    },
+    onSuccess: (result) => {
+      const total = result.created.length + result.updated.length;
+      toast({
+        title: 'Synchronisation réussie',
+        description: `${total} événements synchronisés avec Airtable (${result.created.length} créés, ${result.updated.length} mis à jour)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['airtable', 'events'] });
+    },
+    onError: (error) => {
+      console.error('Sync error:', error);
+      toast({
+        title: 'Erreur de synchronisation',
+        description: error instanceof Error ? error.message : 'Erreur inconnue',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const syncExposants = useMutation({
+    mutationFn: async (exposants: AirtableExposant[]) => {
+      const client = createAirtableClient();
+      return await client.upsertRecords('All_Exposants', exposants, 'id_exposant');
+    },
+    onSuccess: (result) => {
+      const total = result.created.length + result.updated.length;
+      toast({
+        title: 'Synchronisation réussie',
+        description: `${total} exposants synchronisés avec Airtable (${result.created.length} créés, ${result.updated.length} mis à jour)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['airtable', 'exposants'] });
+    },
+    onError: (error) => {
+      console.error('Sync error:', error);
+      toast({
+        title: 'Erreur de synchronisation',
+        description: error instanceof Error ? error.message : 'Erreur inconnue',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const syncParticipation = useMutation({
+    mutationFn: async (participations: AirtableParticipation[]) => {
+      const client = createAirtableClient();
+      return await client.upsertRecords('Participation', participations, 'id_participation');
+    },
+    onSuccess: (result) => {
+      const total = result.created.length + result.updated.length;
+      toast({
+        title: 'Synchronisation réussie',
+        description: `${total} participations synchronisées avec Airtable (${result.created.length} créées, ${result.updated.length} mises à jour)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['airtable', 'participation'] });
+    },
+    onError: (error) => {
+      console.error('Sync error:', error);
+      toast({
+        title: 'Erreur de synchronisation',
+        description: error instanceof Error ? error.message : 'Erreur inconnue',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  return {
+    syncEvents,
+    syncExposants,
+    syncParticipation,
+    isLoading: syncEvents.isPending || syncExposants.isPending || syncParticipation.isPending
+  };
+}

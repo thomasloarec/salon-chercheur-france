@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import GoogleSheetsImporter from '@/components/GoogleSheetsImporter';
+import AirtableSync from '@/components/admin/AirtableSync';
 import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import MainLayout from '@/components/layout/MainLayout';
@@ -32,17 +32,17 @@ const Admin = () => {
       <div className="container mx-auto py-8 space-y-10">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Administration</h1>
-          <p className="text-gray-600">Gestion des événements et imports de données</p>
+          <p className="text-gray-600">Gestion des événements et synchronisation des données</p>
         </div>
+
+        {/* Synchronisation Airtable */}
+        <AirtableSync />
 
         {/* Événements en attente de publication */}
         <PendingEventsTable />
         
         {/* Événements passés */}
         <AdminPastEvents />
-        
-        {/* Import Google Sheets */}
-        <GoogleSheetsImporter />
 
         {/* Statistiques rapides */}
         <div className="bg-card rounded-lg border p-6">
