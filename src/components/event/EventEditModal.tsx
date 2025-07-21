@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { convertSecteurToString } from '@/utils/sectorUtils';
@@ -55,6 +55,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (event) {
@@ -188,6 +189,20 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         title: "Événement mis à jour",
         description: "Les modifications ont été sauvegardées avec succès.",
       });
+
+      // Invalider les requêtes pour forcer le rechargement des données
+      if (isEventsImport) {
+        // Pour les événements en attente, invalider la requête admin-event-detail
+        queryClient.invalidateQueries({ queryKey: ['admin-event-detail', event.id] });
+      } else {
+        // Pour les événements publiés, invalider les requêtes event et related
+        queryClient.invalidateQueries({ queryKey: ['event', event.slug] });
+        queryClient.invalidateQueries({ queryKey: ['event-by-id', event.id] });
+      }
+
+      // Invalider aussi les requêtes globales des événements
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] });
 
       // Transform the response to match our Event interface
       const transformedEvent: Event = isEventsImport ? {

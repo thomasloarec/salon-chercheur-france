@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -17,6 +16,7 @@ const AdminEventDetail = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   if (loading) {
     return (
@@ -90,10 +90,17 @@ const AdminEventDetail = () => {
       return transformedEvent;
     },
     enabled: !!id,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const handleEventUpdated = (refreshedEvent: Event, slugChanged?: boolean) => {
     console.log('Event updated in admin:', refreshedEvent);
+    
+    // Invalider et refetcher les données immédiatement
+    queryClient.invalidateQueries({ queryKey: ['admin-event-detail', id] });
+    queryClient.refetchQueries({ queryKey: ['admin-event-detail', id] });
+    
     // Optionnel : rediriger vers la page d'événement publié si publié
     if (refreshedEvent.visible && refreshedEvent.slug) {
       navigate(`/events/${refreshedEvent.slug}`);
