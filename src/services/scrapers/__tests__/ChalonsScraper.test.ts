@@ -25,7 +25,7 @@ describe('ChalonsScraper', () => {
       expect(event.city).toBe('Châlons-en-Champagne');
       expect(event.venue).toBeDefined();
       expect(event.source).toBe('chalons-tourisme.com');
-      expect(event.startDate).toBeInstanceOf(Date);
+      expect(event.dateDebut).toBeInstanceOf(Date);
       expect(event.websiteUrl).toBeDefined();
       expect(event.websiteUrl).toMatch(/^https?:\/\//);
     }

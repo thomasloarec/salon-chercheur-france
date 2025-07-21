@@ -29,7 +29,7 @@ describe('ViparisScraper', () => {
     expect(firstEvent.title).toContain('INDUSTRIE');
     expect(firstEvent.description).toBeTruthy();
     expect(firstEvent.venue).toBeTruthy();
-    expect(firstEvent.startDate).toBeInstanceOf(Date);
+    expect(firstEvent.dateDebut).toBeInstanceOf(Date);
     expect(firstEvent.source).toBe('viparis.com');
     expect(firstEvent.sector).toBeTruthy();
   });
@@ -73,13 +73,13 @@ describe('ViparisScraper', () => {
     const events = await scraper.scrapeEvents();
     
     events.forEach(event => {
-      expect(event.startDate).toBeInstanceOf(Date);
-      expect(event.startDate.getTime()).not.toBeNaN();
+      expect(event.dateDebut).toBeInstanceOf(Date);
+      expect(event.dateDebut.getTime()).not.toBeNaN();
       
-      if (event.endDate) {
-        expect(event.endDate).toBeInstanceOf(Date);
-        expect(event.endDate.getTime()).not.toBeNaN();
-        expect(event.endDate.getTime()).toBeGreaterThanOrEqual(event.startDate.getTime());
+      if (event.dateFin) {
+        expect(event.dateFin).toBeInstanceOf(Date);
+        expect(event.dateFin.getTime()).not.toBeNaN();
+        expect(event.dateFin.getTime()).toBeGreaterThanOrEqual(event.dateDebut.getTime());
       }
     });
   });

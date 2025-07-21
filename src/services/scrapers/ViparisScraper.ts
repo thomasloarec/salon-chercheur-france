@@ -214,8 +214,8 @@ export class ViparisScraper extends BaseScraper {
             const event: ScrapedEvent = {
               title: title.trim(),
               description: description.trim() || '',
-              startDate: dates.start || new Date(),
-              endDate: dates.end,
+              dateDebut: dates.start || new Date(),
+              dateFin: dates.end,
               venue: venue.trim(),
               websiteUrl: eventUrl || url,
               source: this.source,

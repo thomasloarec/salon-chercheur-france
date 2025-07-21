@@ -56,8 +56,8 @@ export class VipariseScraper extends BaseScraper {
         {
           title: `Salon INDUSTRIE Paris ${new Date().getFullYear() + 1}`,
           description: 'Le salon international de l\'industrie et des technologies innovantes',
-          startDate: new Date(new Date().getFullYear() + 1, 2, 15), // March 15 next year
-          endDate: new Date(new Date().getFullYear() + 1, 2, 17), // March 17 next year
+          dateDebut: new Date(new Date().getFullYear() + 1, 2, 15), // March 15 next year
+          dateFin: new Date(new Date().getFullYear() + 1, 2, 17), // March 17 next year
           venue: venue.venue,
           websiteUrl: 'https://www.salon-industrie.com',
           source: venue.url,

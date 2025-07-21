@@ -136,12 +136,12 @@ export const useEvents = (filters?: SearchFilters) => {
         }
       }
 
-      if (filters?.startDate) {
-        query = query.gte('date_debut', filters.startDate);
+      if (filters?.dateDebut) {
+        query = query.gte('date_debut', filters.dateDebut);
       }
 
-      if (filters?.endDate) {
-        query = query.lte('date_fin', filters.endDate);
+      if (filters?.dateFin) {
+        query = query.lte('date_fin', filters.dateFin);
       }
 
       if (filters?.minVisitors) {

@@ -128,7 +128,7 @@ export class ChalonsScraper extends BaseScraper {
               : `https://www.chalons-tourisme.com${href.split('?')[0]}`;
             
             // Parse dates
-            const [startDate, endDate] = this.parseDateRangeFr(dateText);
+            const [dateDebut, dateFin] = this.parseDateRangeFr(dateText);
             
             // Use fallback title if none found
             if (!title) {
@@ -145,8 +145,8 @@ export class ChalonsScraper extends BaseScraper {
             const event: ScrapedEvent = {
               title,
               description: description || 'Événement à Châlons-en-Champagne',
-              startDate: startDate || new Date(),
-              endDate: endDate || startDate || new Date(),
+              dateDebut: dateDebut || new Date(),
+              dateFin: dateFin || dateDebut || new Date(),
               venue: place,
               city: 'Châlons-en-Champagne',
               address: 'Châlons-en-Champagne, France',
@@ -189,8 +189,8 @@ export class ChalonsScraper extends BaseScraper {
       {
         title: 'Foire de Châlons 2025',
         description: 'Grande foire commerciale et artisanale de Châlons-en-Champagne',
-        startDate: new Date(2025, 3, 15), // April 15, 2025
-        endDate: new Date(2025, 3, 17), // April 17, 2025
+        dateDebut: new Date(2025, 3, 15), // April 15, 2025
+        dateFin: new Date(2025, 3, 17), // April 17, 2025
         venue: 'Le Capitole',
         city: 'Châlons-en-Champagne',
         address: 'Place Foch, 51000 Châlons-en-Champagne',
@@ -206,8 +206,8 @@ export class ChalonsScraper extends BaseScraper {
       {
         title: 'Salon Habitat & Décoration Châlons',
         description: 'Salon professionnel de l\'habitat et de la décoration',
-        startDate: new Date(2025, 4, 20), // May 20, 2025
-        endDate: new Date(2025, 4, 22), // May 22, 2025
+        dateDebut: new Date(2025, 4, 20), // May 20, 2025
+        dateFin: new Date(2025, 4, 22), // May 22, 2025
         venue: 'Le Capitole',
         city: 'Châlons-en-Champagne',
         address: 'Place Foch, 51000 Châlons-en-Champagne',
