@@ -73,6 +73,14 @@ serve(async (req) => {
   console.log('⏱️ import-airtable called at', new Date().toISOString());
   console.log('🗒️ Raw request body:', rawBody);
 
+  // Lecture et validation des secrets dès le démarrage
+  const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT');
+  const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID');
+  
+  // Logs masqués pour debug (derniers 4 caractères)
+  console.log('🔑 AIRTABLE_PAT présent:', AIRTABLE_PAT ? `***${AIRTABLE_PAT.slice(-4)}` : 'ABSENT');
+  console.log('🔑 AIRTABLE_BASE_ID présent:', AIRTABLE_BASE_ID ? `***${AIRTABLE_BASE_ID.slice(-4)}` : 'ABSENT');
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       status: 204,
@@ -100,18 +108,29 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
-      const { 
-        apiKey, 
-        baseId, 
-        eventsTableName = 'Events',
-        exposantsTableName = 'Exposants'
-      } = params;
+      // Vérification des secrets requis avec messages d'erreur détaillés
+      const errors = [];
+      if (!AIRTABLE_PAT) errors.push('AIRTABLE_PAT manquant');
+      if (!AIRTABLE_BASE_ID) errors.push('AIRTABLE_BASE_ID manquant');
       
-      if (!apiKey || !baseId) {
-        throw new Error('API Key et Base ID sont requis');
+      if (errors.length > 0) {
+        console.error('❌ Secrets manquants:', errors);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'missing_secrets',
+          details: errors 
+        }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
       }
 
-      console.log(`Importing from Airtable base: ${baseId}`);
+      const { 
+        eventsTableName = 'All_Events',
+        exposantsTableName = 'All_Exposants'
+      } = params;
+
+      console.log(`🔄 Import configuré avec Base ID: ${AIRTABLE_BASE_ID?.slice(-4)} et tables: ${eventsTableName}, ${exposantsTableName}`);
 
       let eventsToInsert: any[] = [];
       let exposantsInserted = 0;
@@ -119,10 +138,10 @@ serve(async (req) => {
       // TODO: Uncomment these lines when ready to activate Airtable import
       /*
       // Import events from Airtable
-      const eventsUrl = `https://api.airtable.com/v0/${baseId}/${eventsTableName}`;
+      const eventsUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${eventsTableName}`;
       const eventsResponse = await fetch(eventsUrl, {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${AIRTABLE_PAT}`,
           'Content-Type': 'application/json'
         }
       });
@@ -213,10 +232,10 @@ serve(async (req) => {
       }
 
       // Import exposants from Airtable
-      const exposantsUrl = `https://api.airtable.com/v0/${baseId}/${exposantsTableName}`;
+      const exposantsUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${exposantsTableName}`;
       const exposantsResponse = await fetch(exposantsUrl, {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${AIRTABLE_PAT}`,
           'Content-Type': 'application/json'
         }
       });
@@ -273,17 +292,17 @@ serve(async (req) => {
         success: true,
         eventsImported: 0, // Will be eventsToInsert.length when activated
         exposantsImported: 0, // Will be exposantsInserted when activated
-        message: 'Airtable import function created - TODO: Activate API calls when ready'
+        message: 'Secrets validés - Import Airtable prêt (TODO: Activer les appels API)'
       };
 
-      console.log('Airtable import function ready:', summary);
+      console.log('✅ Import Airtable configuré:', summary);
 
       return new Response(JSON.stringify(summary), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
     } catch (error) {
-      console.error('Error in import-airtable function:', error);
+      console.error('❌ Error in import-airtable function:', error);
       return new Response(JSON.stringify({ 
         success: false, 
         error: error.message,
