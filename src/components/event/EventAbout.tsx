@@ -25,10 +25,10 @@ export const EventAbout = ({ event }: EventAboutProps) => {
     <Card className="mb-8">
       <CardHeader className="pb-4">
         <CardTitle className="text-2xl">
-          <h2 className="flex items-center">
+          <div className="flex items-center">
             <FileText className="h-6 w-6 mr-3 text-accent" />
             À propos de l'événement
-          </h2>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -82,13 +81,16 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     setIsLoading(true);
 
     try {
+      // Determine if we're updating events or events_import table
+      const isEventsImport = event.slug?.startsWith('pending-');
+      
       // Generate slug if name or city changed
       const nameChanged = formData.nom_event !== event.nom_event;
       const cityChanged = formData.ville !== event.ville;
       const shouldRegenerateSlug = nameChanged || cityChanged;
       
       let newSlug = event.slug;
-      if (shouldRegenerateSlug) {
+      if (shouldRegenerateSlug && !isEventsImport) {
         // Create a temporary event object for slug generation
         const tempEvent: Event = {
           ...event,
@@ -99,9 +101,38 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         newSlug = generateEventSlug(tempEvent);
       }
 
-      const { data, error } = await supabase
-        .from('events')
-        .update({
+      let data, error;
+
+      if (isEventsImport) {
+        // Update events_import table using id_event as the key
+        const updateData = {
+          nom_event: formData.nom_event,
+          description_event: formData.description_event || null,
+          date_debut: formData.date_debut,
+          date_fin: formData.date_fin || formData.date_debut,
+          nom_lieu: formData.nom_lieu || null,
+          ville: formData.ville,
+          rue: formData.rue || null,
+          code_postal: formData.code_postal || null,
+          url_image: formData.url_image || null,
+          url_site_officiel: formData.url_site_officiel || null,
+          type_event: formData.type_event,
+          tarifs: formData.tarif || null, // Note: events_import uses 'tarifs' not 'tarif'
+          updated_at: new Date().toISOString(),
+        };
+
+        const result = await supabase
+          .from('events_import')
+          .update(updateData)
+          .eq('id', event.id) // events_import uses 'id' as primary key
+          .select()
+          .single();
+
+        data = result.data;
+        error = result.error;
+      } else {
+        // Update events table
+        const updateData = {
           nom_event: formData.nom_event,
           description_event: formData.description_event || null,
           date_debut: formData.date_debut,
@@ -118,10 +149,18 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           visible: formData.visible,
           slug: newSlug,
           updated_at: new Date().toISOString(),
-        })
-        .eq('id', event.id)
-        .select()
-        .single();
+        };
+
+        const result = await supabase
+          .from('events')
+          .update(updateData)
+          .eq('id', event.id)
+          .select()
+          .single();
+
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) throw error;
 
@@ -130,8 +169,38 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         description: "Les modifications ont été sauvegardées avec succès.",
       });
 
-      // Transform the response to match our Event interface using actual DB column names
-      const transformedEvent: Event = {
+      // Transform the response to match our Event interface
+      const transformedEvent: Event = isEventsImport ? {
+        // For events_import, transform the data
+        id: data.id,
+        nom_event: data.nom_event || '',
+        description_event: data.description_event,
+        date_debut: data.date_debut,
+        date_fin: data.date_fin,
+        secteur: convertSecteurToString(data.secteur),
+        nom_lieu: data.nom_lieu,
+        ville: data.ville,
+        country: 'France',
+        url_image: data.url_image,
+        url_site_officiel: data.url_site_officiel,
+        tags: [],
+        tarif: data.tarifs, // events_import uses 'tarifs'
+        affluence: data.affluence ? parseInt(data.affluence) : null,
+        estimated_exhibitors: null,
+        is_b2b: true,
+        type_event: data.type_event as Event['type_event'],
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        last_scraped_at: null,
+        scraped_from: null,
+        rue: data.rue,
+        code_postal: data.code_postal,
+        visible: false,
+        slug: event.slug, // Keep existing slug for events_import
+        sectors: event.sectors || [],
+        is_favorite: event.is_favorite
+      } : {
+        // For events table, use actual DB column names
         id: data.id,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
