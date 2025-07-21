@@ -42,7 +42,7 @@ interface EventImport {
   updated_at: string | null;
   ville: string | null;
   rue: string | null;
-  code_postal: string | null; // Made nullable to match database schema
+  code_postal: string | null;
 }
 
 export function PendingEventsImport() {
@@ -61,7 +61,7 @@ export function PendingEventsImport() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as EventImport[];
     },
   });
 
