@@ -66,12 +66,12 @@ describe('useEvents hook', () => {
     expect(supabase.from).toHaveBeenCalledWith('events');
     expect(mockQuery.select).toHaveBeenCalledWith('*');
     expect(mockQuery.eq).toHaveBeenCalledWith('is_b2b', true);
-    expect(mockQuery.gte).toHaveBeenCalledWith('start_date', expect.any(String));
+    expect(mockQuery.gte).toHaveBeenCalledWith('date_debut', expect.any(String));
     expect(mockQuery.in).toHaveBeenCalledWith('sector', ['tech', 'health']);
     expect(mockQuery.in).toHaveBeenCalledWith('event_type', ['salon', 'conference']);
-    expect(mockQuery.filter).toHaveBeenCalledWith('extract(month from start_date)::int', 'in', '(3,4,5)');
+    expect(mockQuery.filter).toHaveBeenCalledWith('extract(month from date_debut)::int', 'in', '(3,4,5)');
     expect(mockQuery.ilike).toHaveBeenCalledWith('city', '%Paris%');
-    expect(mockQuery.order).toHaveBeenCalledWith('start_date', { ascending: true });
+    expect(mockQuery.order).toHaveBeenCalledWith('date_debut', { ascending: true });
   });
 
   test('should exclude past events', () => {
@@ -87,7 +87,7 @@ describe('useEvents hook', () => {
     renderHook(() => useEvents({}), { wrapper: createWrapper() });
 
     const today = new Date().toISOString().split('T')[0];
-    expect(mockQuery.gte).toHaveBeenCalledWith('start_date', today);
+    expect(mockQuery.gte).toHaveBeenCalledWith('date_debut', today);
   });
 
   test('should not apply filters when arrays are empty', () => {

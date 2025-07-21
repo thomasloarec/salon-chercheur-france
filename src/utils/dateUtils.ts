@@ -12,9 +12,9 @@ export function getMonthRange(year: number, monthIndexZeroBased: number) {
 }
 
 // Utility function for date formatting
-export function formatDateRange(start: string, end: string) {
+export function formatDateRange(dateDebut: string, dateFin: string) {
   const opt: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
-  const sd = new Date(start).toLocaleDateString('fr-FR', opt);
-  const ed = new Date(end).toLocaleDateString('fr-FR', opt);
-  return start === end ? sd : `${sd} – ${ed}`;
+  const sd = new Date(dateDebut).toLocaleDateString('fr-FR', opt);
+  const ed = new Date(dateFin).toLocaleDateString('fr-FR', opt);
+  return dateDebut === dateFin ? sd : `${sd} – ${ed}`;
 }
