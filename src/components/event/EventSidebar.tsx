@@ -42,7 +42,7 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
       return result;
     }
     
-    // Pour les événements publiés (events), utiliser la logique existante avec formatAddress
+    // Pour les événements publiés (events), utiliser la logique existante
     const addressParts = [];
     
     if (event.rue && event.rue.trim() !== '') {
@@ -64,8 +64,34 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
     return result;
   };
 
+  // Debug temporaire
+  const addressResult = getEventAddress(event);
+  console.log('🔍 DEBUG - Address result:', addressResult);
+  console.log('🔍 DEBUG - Event data:', JSON.stringify({
+    rue: event.rue,
+    code_postal: event.code_postal,
+    ville: event.ville,
+    slug: event.slug,
+    visible: event.visible
+  }, null, 2));
+
   return (
     <aside className="space-y-6">
+      {/* DEBUG temporaire - À supprimer après résolution */}
+      <div style={{ color: 'red', border: '2px solid red', padding: '10px', marginBottom: '20px' }}>
+        <strong>🧪 DEBUG - Adresse calculée:</strong> "{addressResult}"
+        <br />
+        <strong>Rue:</strong> "{event.rue || 'N/A'}"
+        <br />
+        <strong>Code postal:</strong> "{event.code_postal || 'N/A'}"
+        <br />
+        <strong>Ville:</strong> "{event.ville || 'N/A'}"
+        <br />
+        <strong>Visible:</strong> {event.visible ? 'true' : 'false'}
+        <br />
+        <strong>Slug:</strong> "{event.slug || 'N/A'}"
+      </div>
+
       {/* Informations pratiques */}
       <Card>
         <CardHeader className="pb-4">
@@ -88,11 +114,19 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
                 </div>
               </div>
             )}
+            
+            {/* ADRESSE - avec debug visible */}
             <div className="flex items-start gap-2">
               <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
               <div className="text-left">
                 <dt className="font-semibold text-gray-900">Adresse</dt>
-                <dd className="text-gray-600">{getEventAddress(event)}</dd>
+                <dd className="text-gray-600">
+                  {addressResult}
+                  {/* Debug inline temporaire */}
+                  <div style={{ fontSize: '10px', color: 'blue', marginTop: '5px' }}>
+                    DEBUG: {JSON.stringify({ rue: event.rue, cp: event.code_postal, ville: event.ville })}
+                  </div>
+                </dd>
               </div>
             </div>
           </dl>
