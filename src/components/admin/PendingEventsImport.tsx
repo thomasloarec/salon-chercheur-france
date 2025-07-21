@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,7 +43,7 @@ interface EventImport {
   updated_at: string | null;
   ville: string | null;
   rue: string | null;
-  code_postal?: string | null; // Made optional to handle missing data
+  code_postal?: string | null;
 }
 
 export function PendingEventsImport() {
@@ -77,7 +76,7 @@ export function PendingEventsImport() {
       const productionEvent = {
         id_event: eventImport.id,
         nom_event: eventImport.nom_event || '',
-        visible: true, // Publier directement
+        visible: true,
         type_event: eventImport.type_event || 'salon',
         date_debut: eventImport.date_debut || '1970-01-01',
         date_fin: eventImport.date_fin || eventImport.date_debut || '1970-01-01',
@@ -159,7 +158,6 @@ export function PendingEventsImport() {
     }
   };
 
-  // Convertir EventImport en Event pour EventGrid
   const convertToEvents = (imports: EventImport[]): Event[] => {
     return imports.map(eventImport => ({
       id: eventImport.id,
@@ -178,7 +176,7 @@ export function PendingEventsImport() {
       tarif: eventImport.tarifs || null,
       affluence: eventImport.affluence ? parseInt(eventImport.affluence) : null,
       type_event: (eventImport.type_event as Event['type_event']) || 'salon',
-      visible: false, // Événements en attente
+      visible: false,
       location: eventImport.ville || 'Inconnue'
     }));
   };
