@@ -112,6 +112,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       });
 
       // Transform the response to match our Event interface
+      // Handle schema differences between events and events_import tables
       const transformedEvent: Event = {
         id: data.id,
         nom_event: data.nom_event || '',
@@ -121,23 +122,23 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         secteur: convertSecteurToString(data.secteur || data.secteur),
         nom_lieu: data.nom_lieu,
         ville: data.ville || 'Ville non précisée',
-        country: data.pays || data.country || 'France',
+        country: (data as any).pays || (data as any).country || 'France',
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
-        tags: data.tags || [],
+        tags: (data as any).tags || [],
         tarif: data.tarif,
         affluence: typeof data.affluence === 'string' ? parseInt(data.affluence) || undefined : data.affluence,
-        estimated_exhibitors: data.estimated_exhibitors || undefined,
-        is_b2b: data.is_b2b || false,
+        estimated_exhibitors: (data as any).estimated_exhibitors || undefined,
+        is_b2b: (data as any).is_b2b || false,
         type_event: (data.type_event as Event['type_event']) || 'salon',
         created_at: data.created_at,
         updated_at: data.updated_at,
-        last_scraped_at: data.last_scraped_at || undefined,
-        scraped_from: data.scraped_from || undefined,
+        last_scraped_at: (data as any).last_scraped_at || undefined,
+        scraped_from: (data as any).scraped_from || undefined,
         rue: data.rue,
         code_postal: data.code_postal,
-        visible: data.visible ?? true,
-        slug: data.slug || undefined,
+        visible: (data as any).visible ?? true,
+        slug: (data as any).slug || undefined,
         sectors: [],
         is_favorite: false
       };
