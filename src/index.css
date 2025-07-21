@@ -256,3 +256,31 @@
   color: #94a3b8;
   font-style: normal;
 }
+
+/* Corrections d'alignement pour la description d'événement */
+.description_event,
+.description_event p,
+.description_event div,
+.prose p,
+.prose div {
+  text-align: left !important;
+}
+
+/* Corrections d'alignement pour le titre H1 */
+.event-title h1,
+h1.event-title {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  text-align: left !important;
+}
+
+/* Force l'alignement à gauche pour tous les éléments de contenu d'événement */
+.event-content h1,
+.event-content h2,
+.event-content h3,
+.event-content p,
+.event-content div {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
