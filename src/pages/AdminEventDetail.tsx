@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -75,7 +74,7 @@ const AdminEventDetail = () => {
         url_site_officiel: event.url_site_officiel || null,
         description_event: event.description_event || null,
         affluence: event.affluence ? parseInt(event.affluence) : null,
-        tarif: event.tarif || null,
+        tarifs: event.tarifs || null,
         nom_lieu: event.nom_lieu || null,
         location: event.ville || 'Inconnue'
       };
@@ -273,10 +272,10 @@ const AdminEventDetail = () => {
                   </div>
                 )}
                 
-                {event.tarif && (
+                {event.tarifs && (
                   <div>
                     <span className="text-sm font-medium">Tarifs:</span>
-                    <p className="text-gray-700">{event.tarif}</p>
+                    <p className="text-gray-700">{event.tarifs}</p>
                   </div>
                 )}
                 
