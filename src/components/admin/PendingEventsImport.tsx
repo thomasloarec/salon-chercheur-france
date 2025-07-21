@@ -94,6 +94,8 @@ export function PendingEventsImport() {
         location: eventImport.ville || 'Inconnue'
       };
 
+      console.log('Publishing event with payload:', productionEvent);
+
       const { error: insertError } = await supabase
         .from('events')
         .upsert(productionEvent, { 
@@ -101,7 +103,10 @@ export function PendingEventsImport() {
           ignoreDuplicates: false 
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw insertError;
+      }
 
       // Supprimer de la table d'import
       const { error: deleteError } = await supabase
@@ -109,7 +114,10 @@ export function PendingEventsImport() {
         .delete()
         .eq('id', eventImport.id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        throw deleteError;
+      }
 
       toast({
         title: "Événement publié",
