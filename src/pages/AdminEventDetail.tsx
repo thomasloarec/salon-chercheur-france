@@ -5,13 +5,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin, ExternalLink, Eye, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { SectorBadge } from '@/components/ui/sector-badge';
+import { convertSecteurToString } from '@/utils/sectorUtils';
+import type { Event } from '@/types/event';
+import { AdminEventWrapper } from '@/components/admin/AdminEventWrapper';
+import { EventPageContent } from '@/components/event/EventPageContent';
 
 const AdminEventDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -48,273 +46,97 @@ const AdminEventDetail = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Transformer les données de events_import vers le format Event
+      const transformedEvent: Event = {
+        id: data.id,
+        nom_event: data.nom_event || '',
+        description_event: data.description_event,
+        date_debut: data.date_debut || '1970-01-01',
+        date_fin: data.date_fin || data.date_debut || '1970-01-01',
+        secteur: convertSecteurToString(data.secteur || 'Autre'),
+        nom_lieu: data.nom_lieu,
+        ville: data.ville || 'Ville non précisée',
+        country: 'France',
+        url_image: data.url_image,
+        url_site_officiel: data.url_site_officiel,
+        tags: [],
+        tarif: data.tarif,
+        affluence: data.affluence ? parseInt(data.affluence) : null,
+        estimated_exhibitors: null,
+        is_b2b: true,
+        type_event: (data.type_event as Event['type_event']) || 'salon',
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        last_scraped_at: null,
+        scraped_from: null,
+        rue: data.rue,
+        code_postal: data.code_postal,
+        visible: false, // Événement en attente, donc non visible
+        slug: `pending-${data.id}`, // Slug temporaire pour événement en attente
+        sectors: [],
+        is_favorite: false
+      };
+
+      return transformedEvent;
     },
     enabled: !!id,
   });
 
-  const publishEvent = async () => {
-    if (!event) return;
-
-    try {
-      // Créer l'événement dans la table events de production
-      const productionEvent = {
-        id_event: event.id,
-        nom_event: event.nom_event || '',
-        visible: true,
-        type_event: event.type_event || 'salon',
-        date_debut: event.date_debut || '1970-01-01',
-        date_fin: event.date_fin || event.date_debut || '1970-01-01',
-        secteur: [event.secteur || 'Autre'],
-        ville: event.ville || 'Inconnue',
-        rue: event.rue || null,
-        code_postal: null,
-        pays: 'France',
-        url_image: event.url_image || null,
-        url_site_officiel: event.url_site_officiel || null,
-        description_event: event.description_event || null,
-        affluence: event.affluence ? parseInt(event.affluence) : null,
-        tarif: event.tarifs || null,
-        nom_lieu: event.nom_lieu || null,
-        location: event.ville || 'Inconnue'
-      };
-
-      const { error: insertError } = await supabase
-        .from('events')
-        .upsert(productionEvent, { 
-          onConflict: 'id_event',
-          ignoreDuplicates: false 
-        });
-
-      if (insertError) throw insertError;
-
-      // Supprimer de la table d'import
-      const { error: deleteError } = await supabase
-        .from('events_import')
-        .delete()
-        .eq('id', event.id);
-
-      if (deleteError) throw deleteError;
-
-      toast({
-        title: "Événement publié",
-        description: "L'événement est maintenant visible au public.",
-      });
-
-      navigate('/admin');
-    } catch (error) {
-      console.error('Error publishing event:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de publier l'événement.",
-        variant: "destructive",
-      });
+  const handleEventUpdated = (refreshedEvent: Event, slugChanged?: boolean) => {
+    console.log('Event updated in admin:', refreshedEvent);
+    // Optionnel : rediriger vers la page d'événement publié si publié
+    if (refreshedEvent.visible && refreshedEvent.slug) {
+      navigate(`/events/${refreshedEvent.slug}`);
     }
   };
 
-  const deleteEvent = async () => {
-    if (!event) return;
-
-    try {
-      const { error } = await supabase
-        .from('events_import')
-        .delete()
-        .eq('id', event.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Événement supprimé",
-        description: "L'événement a été supprimé.",
-      });
-
-      navigate('/admin');
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer l'événement.",
-        variant: "destructive",
-      });
-    }
+  const handleEventDeleted = () => {
+    console.log('Event deleted, returning to admin');
+    navigate('/admin');
   };
 
   if (isLoading) {
     return (
-      <MainLayout title="Chargement...">
-        <div className="container mx-auto py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-gray-600">Chargement de l'événement...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-gray-600">Chargement de l'événement...</p>
         </div>
-      </MainLayout>
+      </div>
     );
   }
 
-  if (error) {
+  if (error || !event) {
     return (
-      <MainLayout title="Erreur">
-        <div className="container mx-auto py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Erreur de chargement</h1>
-            <p className="text-gray-600 mb-6">Une erreur s'est produite lors du chargement de l'événement.</p>
-            <Button onClick={() => navigate('/admin')} variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour à l'administration
-            </Button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">
+            {error ? 'Erreur de chargement' : 'Événement introuvable'}
+          </h1>
+          <p className="text-gray-600 mb-6">
+            {error ? 'Une erreur s\'est produite lors du chargement de l\'événement.' : 'L\'événement demandé n\'existe pas ou a été supprimé.'}
+          </p>
+          <button
+            onClick={() => navigate('/admin')}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+          >
+            Retour à l'administration
+          </button>
         </div>
-      </MainLayout>
-    );
-  }
-
-  if (!event) {
-    return (
-      <MainLayout title="Événement introuvable">
-        <div className="container mx-auto py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Événement introuvable</h1>
-            <p className="text-gray-600 mb-6">L'événement demandé n'existe pas ou a été supprimé.</p>
-            <Button onClick={() => navigate('/admin')} variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour à l'administration
-            </Button>
-          </div>
-        </div>
-      </MainLayout>
+      </div>
     );
   }
 
   return (
-    <MainLayout title={`Admin - ${event.nom_event || 'Événement'}`}>
-      <div className="container mx-auto py-8 space-y-6">
-        {/* Header avec navigation */}
-        <div className="flex items-center justify-between">
-          <Button onClick={() => navigate('/admin')} variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
-          </Button>
-          
-          <div className="flex gap-2">
-            <Button onClick={publishEvent} variant="default">
-              <Eye className="h-4 w-4 mr-2" />
-              Publier
-            </Button>
-            <Button onClick={deleteEvent} variant="destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Supprimer
-            </Button>
-          </div>
-        </div>
-
-        {/* Badge de statut */}
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-300">
-            En attente de publication
-          </Badge>
-        </div>
-
-        {/* Contenu principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Image et informations principales */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">{event.nom_event || 'Événement sans nom'}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {event.url_image && (
-                  <img
-                    src={event.url_image}
-                    alt={event.nom_event || 'Image événement'}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                )}
-                
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    {event.date_debut} {event.date_fin && event.date_fin !== event.date_debut && `- ${event.date_fin}`}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="h-4 w-4" />
-                  <span>{event.ville || 'Ville non précisée'}</span>
-                </div>
-                
-                {event.secteur && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Secteur:</span>
-                    <SectorBadge label={event.secteur} />
-                  </div>
-                )}
-                
-                {event.description_event && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Description</h3>
-                    <p className="text-gray-700 whitespace-pre-wrap">{event.description_event}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Informations complémentaires */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Détails</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {event.type_event && (
-                  <div>
-                    <span className="text-sm font-medium">Type:</span>
-                    <p className="text-gray-700">{event.type_event}</p>
-                  </div>
-                )}
-                
-                {event.nom_lieu && (
-                  <div>
-                    <span className="text-sm font-medium">Lieu:</span>
-                    <p className="text-gray-700">{event.nom_lieu}</p>
-                  </div>
-                )}
-                
-                {event.affluence && (
-                  <div>
-                    <span className="text-sm font-medium">Affluence:</span>
-                    <p className="text-gray-700">{event.affluence}</p>
-                  </div>
-                )}
-                
-                {event.tarifs && (
-                  <div>
-                    <span className="text-sm font-medium">Tarifs:</span>
-                    <p className="text-gray-700">{event.tarifs}</p>
-                  </div>
-                )}
-                
-                {event.url_site_officiel && (
-                  <div>
-                    <span className="text-sm font-medium">Site officiel:</span>
-                    <a 
-                      href={event.url_site_officiel}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      Visiter <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </MainLayout>
+    <AdminEventWrapper>
+      <EventPageContent
+        event={event}
+        isPreview={true}
+        onEventUpdated={handleEventUpdated}
+        onEventDeleted={handleEventDeleted}
+      />
+    </AdminEventWrapper>
   );
 };
 

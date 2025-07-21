@@ -1,17 +1,8 @@
+
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { matchExhibitorsWithCRM } from '@/utils/crmMatching';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import { EventPageHeader } from '@/components/event/EventPageHeader';
-import { EventAbout } from '@/components/event/EventAbout';
-import { EventExhibitors } from '@/components/event/EventExhibitors';
-import { EventSidebar } from '@/components/event/EventSidebar';
-import { SEOHead } from '@/components/event/SEOHead';
-import { EventAdminMenu } from '@/components/event/EventAdminMenu';
-import FavoriteButton from '@/components/FavoriteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { Button } from '@/components/ui/button';
@@ -19,7 +10,7 @@ import { Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { convertSecteurToString } from '@/utils/sectorUtils';
 import type { Event } from '@/types/event';
-import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
+import { EventPageContent } from '@/components/event/EventPageContent';
 
 const EventPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -32,10 +23,7 @@ const EventPage = () => {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [exhibitors, setExhibitors] = useState<any[]>([]);
-  const [crmProspects, setCrmProspects] = useState<Array<{ name: string; stand?: string }>>([]);
 
-  // Simple admin check - in a real app, this would come from user roles
   const isAdmin = user?.email === 'admin@salonspro.com';
 
   const fetchEvent = async () => {
@@ -56,7 +44,6 @@ const EventPage = () => {
         `)
         .eq('slug', slug);
 
-      // IMPORTANT: Pour les non-admins, ne charger que les événements visibles
       if (!isAdmin && !isPreview) {
         query = query.eq('visible', true);
       }
@@ -79,10 +66,8 @@ const EventPage = () => {
 
       console.log('✅ Event found:', eventData);
       
-      // Check if user has favorited this event
       const isFavorite = user ? eventData.favorites?.some((fav: any) => fav.user_id === user.id) : false;
       
-      // Transform database result to Event interface
       const typedEvent: Event = {
         id: eventData.id,
         nom_event: eventData.nom_event || '',
@@ -92,7 +77,6 @@ const EventPage = () => {
         secteur: convertSecteurToString(eventData.secteur),
         nom_lieu: eventData.nom_lieu,
         ville: eventData.ville,
-        // Region no longer exists in events table
         country: eventData.pays,
         url_image: eventData.url_image,
         url_site_officiel: eventData.url_site_officiel,
@@ -116,14 +100,6 @@ const EventPage = () => {
       
       setEvent(typedEvent);
 
-      // Mock CRM prospects data (these would be matched from actual CRM in real implementation)
-      const mockCrmProspects = [
-        { name: 'Entreprise A', stand: 'A12' },
-        { name: 'Entreprise B', stand: 'B15' },
-      ];
-
-      setCrmProspects(mockCrmProspects);
-
     } catch (error) {
       console.error('❌ Unexpected error:', error);
       setError('Une erreur inattendue s\'est produite');
@@ -138,62 +114,20 @@ const EventPage = () => {
 
   const handleEventUpdated = async (refreshedEvent: Event, slugChanged?: boolean) => {
     console.log('🔄 Event updated:', refreshedEvent);
-    console.log('🔄 Slug changed:', slugChanged);
     
-    // Transform the refreshed event to match Event interface
-    const typedRefreshedEvent: Event = {
-      id: refreshedEvent.id,
-      nom_event: refreshedEvent.nom_event,
-      description_event: refreshedEvent.description_event,
-      date_debut: refreshedEvent.date_debut,
-      date_fin: refreshedEvent.date_fin,
-      secteur: refreshedEvent.secteur,
-      nom_lieu: refreshedEvent.nom_lieu,
-      ville: refreshedEvent.ville,
-      // Region no longer exists in events table
-      country: refreshedEvent.country,
-      url_image: refreshedEvent.url_image,
-      url_site_officiel: refreshedEvent.url_site_officiel,
-      tags: refreshedEvent.tags,
-      tarif: refreshedEvent.tarif,
-      affluence: refreshedEvent.affluence,
-      estimated_exhibitors: refreshedEvent.estimated_exhibitors,
-      is_b2b: refreshedEvent.is_b2b,
-      type_event: refreshedEvent.type_event,
-      created_at: refreshedEvent.created_at,
-      updated_at: refreshedEvent.updated_at,
-      last_scraped_at: refreshedEvent.last_scraped_at,
-      scraped_from: refreshedEvent.scraped_from,
-      rue: refreshedEvent.rue,
-      code_postal: refreshedEvent.code_postal,
-      visible: refreshedEvent.visible,
-      slug: refreshedEvent.slug,
-      sectors: refreshedEvent.sectors || [],
-      is_favorite: refreshedEvent.is_favorite
-    };
-    
-    // Update local state immediately with the refreshed event data
-    setEvent(typedRefreshedEvent);
-    
-    // Invalidate events cache to update lists
+    setEvent(refreshedEvent);
     invalidateEvents();
-    // Invalidate the sectors for this specific event to force a refetch
-    queryClient.invalidateQueries({ queryKey: ['event-sectors', typedRefreshedEvent.id] });
+    queryClient.invalidateQueries({ queryKey: ['event-sectors', refreshedEvent.id] });
     
-    // If the slug has changed, redirect to the new URL
-    if (slugChanged && typedRefreshedEvent.slug) {
-      console.log('🔄 Redirecting to new slug:', typedRefreshedEvent.slug);
-      navigate(`/events/${typedRefreshedEvent.slug}`, { replace: true });
+    if (slugChanged && refreshedEvent.slug) {
+      console.log('🔄 Redirecting to new slug:', refreshedEvent.slug);
+      navigate(`/events/${refreshedEvent.slug}`, { replace: true });
     }
   };
 
   const handleEventDeleted = () => {
     console.log('🗑️ Event deleted, invalidating cache and redirecting');
-    
-    // Invalidate events cache to update lists immediately
     invalidateEvents();
-    
-    // Navigate to events list
     navigate('/events');
   };
 
@@ -209,14 +143,8 @@ const EventPage = () => {
       if (error) throw error;
 
       toast.success('Événement publié !');
-      
-      // Update local state
       setEvent({ ...event, visible: true });
-      
-      // Invalidate cache
       invalidateEvents();
-      
-      // Redirect to normal view
       navigate(`/events/${event.slug}`, { replace: true });
       
     } catch (error) {
@@ -228,23 +156,12 @@ const EventPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="py-8">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="animate-pulse space-y-8">
-              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="h-32 bg-gray-200 rounded"></div>
-                  <div className="h-48 bg-gray-200 rounded"></div>
-                </div>
-                <div className="h-64 bg-gray-200 rounded"></div>
-              </div>
-            </div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-gray-600">Chargement...</p>
           </div>
-        </main>
-        <Footer />
+        </div>
       </div>
     );
   }
@@ -252,89 +169,27 @@ const EventPage = () => {
   if (error || !event) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="py-12">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <div className="space-y-4">
-              <h1 className="text-3xl font-bold text-gray-900">
-                Événement introuvable
-              </h1>
-              <p className="text-lg text-gray-600">
-                {error || 'L\'événement que vous recherchez n\'existe pas ou a été supprimé.'}
-              </p>
-            </div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Événement introuvable
+            </h1>
+            <p className="text-lg text-gray-600 mt-4">
+              {error || 'L\'événement que vous recherchez n\'existe pas ou a été supprimé.'}
+            </p>
           </div>
-        </main>
-        <Footer />
+        </div>
       </div>
     );
   }
 
-  const isDraft = !event.visible;
-
   return (
-    <>
-      <SEOHead event={event} noIndex={isPreview} />
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        
-        <main className="py-8">
-          <div className="max-w-7xl mx-auto px-4 space-y-8">
-            {/* Preview notice */}
-            {isPreview && (
-              <div className="bg-orange-100 border-l-4 border-orange-500 p-4 rounded">
-                <div className="flex items-center">
-                  <div className="ml-3">
-                    <p className="text-sm text-orange-700">
-                      <strong>Mode aperçu:</strong> Cet événement n'est pas encore publié et n'est visible que par les administrateurs.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Admin Menu et boutons d'action */}
-            <section className="flex items-center justify-between">
-              <div></div>
-              <div className="flex items-center gap-2">
-                {/* Bouton Publier pour les admins sur les brouillons */}
-                {isAdmin && isDraft && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={handlePublish}
-                  >
-                    <Eye className="mr-2 h-4 w-4" /> Publier
-                  </Button>
-                )}
-                
-                <EventAdminMenu
-                  event={event}
-                  isAdmin={isAdmin}
-                  onEventUpdated={handleEventUpdated}
-                  onEventDeleted={handleEventDeleted}
-                />
-              </div>
-            </section>
-            
-            <EventPageHeader event={event} crmProspects={crmProspects} />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Colonne principale */}
-              <div className="lg:col-span-2 space-y-8">
-                <EventAbout event={event} />
-                <EventExhibitorsSection event={event} />
-              </div>
-
-              {/* Sidebar */}
-              <EventSidebar event={event} />
-            </div>
-          </div>
-        </main>
-
-        <Footer />
-      </div>
-    </>
+    <EventPageContent
+      event={event}
+      isPreview={isPreview}
+      onEventUpdated={handleEventUpdated}
+      onEventDeleted={handleEventDeleted}
+    />
   );
 };
 
