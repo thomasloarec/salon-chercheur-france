@@ -290,6 +290,7 @@ export type Database = {
           affluence: string | null
           ai_certainty: string | null
           chatgpt_prompt: string | null
+          code_postal: string | null
           created_at: string | null
           date_complete: string | null
           date_debut: string | null
@@ -298,11 +299,10 @@ export type Database = {
           id: string
           nom_event: string | null
           nom_lieu: string | null
-          postal_code: string | null
           rue: string | null
           secteur: string | null
           status_event: string | null
-          tarifs: string | null
+          tarif: string | null
           type_event: string | null
           updated_at: string | null
           url_image: string | null
@@ -314,6 +314,7 @@ export type Database = {
           affluence?: string | null
           ai_certainty?: string | null
           chatgpt_prompt?: string | null
+          code_postal?: string | null
           created_at?: string | null
           date_complete?: string | null
           date_debut?: string | null
@@ -322,11 +323,10 @@ export type Database = {
           id: string
           nom_event?: string | null
           nom_lieu?: string | null
-          postal_code?: string | null
           rue?: string | null
           secteur?: string | null
           status_event?: string | null
-          tarifs?: string | null
+          tarif?: string | null
           type_event?: string | null
           updated_at?: string | null
           url_image?: string | null
@@ -338,6 +338,7 @@ export type Database = {
           affluence?: string | null
           ai_certainty?: string | null
           chatgpt_prompt?: string | null
+          code_postal?: string | null
           created_at?: string | null
           date_complete?: string | null
           date_debut?: string | null
@@ -346,11 +347,10 @@ export type Database = {
           id?: string
           nom_event?: string | null
           nom_lieu?: string | null
-          postal_code?: string | null
           rue?: string | null
           secteur?: string | null
           status_event?: string | null
-          tarifs?: string | null
+          tarif?: string | null
           type_event?: string | null
           updated_at?: string | null
           url_image?: string | null

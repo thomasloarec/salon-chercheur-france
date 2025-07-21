@@ -97,7 +97,7 @@ export function PendingEventsImport() {
       };
 
       // Log de debug pour voir exactement ce qui est envoyé
-      console.log('Publishing event with payload:', productionEvent);
+      console.log('🔶 REQUEST publishEvent payload:', productionEvent);
       console.log('Payload keys:', Object.keys(productionEvent));
 
       const { error: insertError } = await supabase
@@ -108,7 +108,7 @@ export function PendingEventsImport() {
         });
 
       if (insertError) {
-        console.error('Insert error:', insertError);
+        console.error('🔴 RESPONSE publishEvent error:', insertError);
         throw insertError;
       }
 
@@ -119,7 +119,7 @@ export function PendingEventsImport() {
         .eq('id', eventImport.id);
 
       if (deleteError) {
-        console.error('Delete error:', deleteError);
+        console.error('🔴 RESPONSE delete error:', deleteError);
         throw deleteError;
       }
 
@@ -131,7 +131,7 @@ export function PendingEventsImport() {
       queryClient.invalidateQueries({ queryKey: ['events-import-pending'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
     } catch (error) {
-      console.error('Error publishing event:', error);
+      console.error('🔴 RESPONSE publishEvent error:', error);
       toast({
         title: "Erreur",
         description: "Impossible de publier l'événement.",
