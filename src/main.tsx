@@ -6,10 +6,8 @@ import { Buffer } from 'buffer';
 import App from "./App.tsx";
 import "./index.css";
 
-// Make Buffer available globally for packages that expect it
-if (typeof globalThis !== 'undefined') {
-  globalThis.Buffer = Buffer;
-}
+// Make Buffer available globally BEFORE any other imports
+globalThis.Buffer = Buffer;
 
 // Also make it available as a global variable for older code
 if (typeof window !== 'undefined') {

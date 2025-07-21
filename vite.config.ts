@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     global: 'globalThis',
+    Buffer: 'globalThis.Buffer',
   },
   build: {
     rollupOptions: {
