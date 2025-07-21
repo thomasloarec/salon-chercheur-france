@@ -22,22 +22,23 @@ import {
 
 interface EventImport {
   id: string;
-  nom_event: string;
-  type_event: string;
-  date_debut: string;
-  date_fin: string;
-  secteur: string;
-  ville: string;
-  nom_lieu: string;
-  url_image: string;
-  url_site_officiel: string;
-  description_event: string;
-  affluence: string;
-  tarifs: string;
-  rue: string;
-  code_postal: string;
+  nom_event: string | null;
+  type_event: string | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  secteur: string | null;
+  ville: string | null;
+  nom_lieu: string | null;
+  url_image: string | null;
+  url_site_officiel: string | null;
+  description_event: string | null;
+  affluence: string | null;
+  tarifs: string | null;
+  rue: string | null;
+  code_postal: string | null;
+  adresse: string | null;
   created_at: string;
-  status_event: string;
+  status_event: string | null;
 }
 
 export function PendingEventsImport() {
@@ -66,22 +67,22 @@ export function PendingEventsImport() {
       // Créer l'événement dans la table events de production
       const productionEvent = {
         id_event: eventImport.id,
-        nom_event: eventImport.nom_event,
+        nom_event: eventImport.nom_event || '',
         visible: true, // Publier directement
-        type_event: eventImport.type_event,
+        type_event: eventImport.type_event || 'salon',
         date_debut: eventImport.date_debut || '1970-01-01',
         date_fin: eventImport.date_fin || eventImport.date_debut || '1970-01-01',
         secteur: [eventImport.secteur || 'Autre'],
         ville: eventImport.ville || 'Inconnue',
-        rue: eventImport.rue,
-        code_postal: eventImport.code_postal,
+        rue: eventImport.rue || null,
+        code_postal: eventImport.code_postal || null,
         pays: 'France',
-        url_image: eventImport.url_image,
-        url_site_officiel: eventImport.url_site_officiel,
-        description_event: eventImport.description_event,
+        url_image: eventImport.url_image || null,
+        url_site_officiel: eventImport.url_site_officiel || null,
+        description_event: eventImport.description_event || null,
         affluence: eventImport.affluence ? parseInt(eventImport.affluence) : null,
-        tarif: eventImport.tarifs,
-        nom_lieu: eventImport.nom_lieu,
+        tarif: eventImport.tarifs || null,
+        nom_lieu: eventImport.nom_lieu || null,
         location: eventImport.ville || 'Inconnue'
       };
 
@@ -215,23 +216,23 @@ export function PendingEventsImport() {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-medium">{event.nom_event}</h3>
+                    <h3 className="font-medium">{event.nom_event || 'Événement sans nom'}</h3>
                     <Badge variant="outline">
-                      {getEventTypeLabel(event.type_event)}
+                      {getEventTypeLabel(event.type_event || 'salon')}
                     </Badge>
                   </div>
                   
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {new Date(event.date_debut).toLocaleDateString('fr-FR')}
+                      {event.date_debut ? new Date(event.date_debut).toLocaleDateString('fr-FR') : 'Date non définie'}
                       {event.date_fin && event.date_fin !== event.date_debut && (
                         <span> - {new Date(event.date_fin).toLocaleDateString('fr-FR')}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
-                      {event.ville}
+                      {event.ville || 'Ville non définie'}
                     </div>
                   </div>
                   
@@ -242,7 +243,7 @@ export function PendingEventsImport() {
                   )}
                   
                   <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary">{event.secteur}</Badge>
+                    <Badge variant="secondary">{event.secteur || 'Autre'}</Badge>
                     {event.affluence && (
                       <Badge variant="outline">{event.affluence} visiteurs</Badge>
                     )}
@@ -254,7 +255,7 @@ export function PendingEventsImport() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => window.open(event.url_site_officiel, '_blank')}
+                      onClick={() => window.open(event.url_site_officiel!, '_blank')}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
