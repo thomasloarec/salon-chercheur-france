@@ -1,5 +1,5 @@
-
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trash2, Edit, EyeOff, Eye, Settings, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,6 +44,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   if (!isAdmin) {
     return null;
@@ -74,11 +75,9 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
 
       setShowPublishDialog(false);
       
-      // Rafraîchir ou rediriger
-      if (onEventUpdated) {
-        const refreshedEvent = { ...event, visible: true };
-        onEventUpdated(refreshedEvent);
-      }
+      // Redirection automatique après publication
+      console.log('Redirecting to admin page after successful publication');
+      navigate('/admin');
       
     } catch (error) {
       console.error('Error publishing event:', error);
