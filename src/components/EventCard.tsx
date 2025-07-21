@@ -44,6 +44,35 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
 
+  // Fonction utilitaire pour formater le secteur dans la vue grille
+  const formatSectorForGrid = (secteur: string | string[]) => {
+    if (!secteur) return null;
+    
+    let sectors = [];
+    
+    if (Array.isArray(secteur)) {
+      sectors = secteur;
+    } else if (typeof secteur === 'string') {
+      // Si c'est une string qui contient du JSON
+      if (secteur.startsWith('[') && secteur.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(secteur);
+          sectors = Array.isArray(parsed) ? parsed : [secteur];
+        } catch {
+          sectors = [secteur];
+        }
+      } else {
+        sectors = [secteur];
+      }
+    }
+    
+    // Nettoyer les secteurs en retirant les crochets supplémentaires
+    return sectors
+      .map(s => typeof s === 'string' ? s.replace(/^\["|"\]$/g, '').replace(/"/g, '') : s)
+      .filter(Boolean)
+      .join(', ');
+  };
+
   const CardWrapper = ({ children }: { children: React.ReactNode }) => {
     if (adminPreview) {
       // Pour les événements en attente, utiliser l'ID direct pour la page d'admin
@@ -112,7 +141,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             )}
             
             <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)] z-[2]">
-              <SectorBadge label={event.secteur} className="shadow-sm" />
+              <SectorBadge label={formatSectorForGrid(event.secteur)} className="shadow-sm" />
             </div>
           </div>
         </CardWrapper>
