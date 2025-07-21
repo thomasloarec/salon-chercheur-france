@@ -70,10 +70,10 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-xl">
-            <h2 className="flex items-center text-left">
+            <div className="flex items-center text-left">
               <MapPin className="h-5 w-5 mr-2 text-accent" />
               Informations pratiques
-            </h2>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
