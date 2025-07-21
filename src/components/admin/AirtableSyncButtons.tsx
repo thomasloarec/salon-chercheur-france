@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, Database, Users, Link, ArrowUpDown } from 'lucide-react';
+import { RefreshCw, Database, Users, Link, ArrowUpDown, Download } from 'lucide-react';
 
 interface SyncButtonsProps {
   eventsData: any[];
@@ -24,7 +24,8 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
 }) => {
   const { toast } = useToast();
 
-  const handleSyncEvents = async () => {
+  // Synchronisation VERS Airtable (upload)
+  const handleSyncEventsToAirtable = async () => {
     try {
       if (!eventsData || eventsData.length === 0) {
         toast({
@@ -41,7 +42,7 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
           'X-Lovable-Admin': 'true'
         },
         body: {
-          table: 'All_Events',
+          table: 'All_Events', // Table Airtable correcte
           records: eventsData.map(event => ({
             id_event: event.id_event,
             nom_event: event.nom_event,
@@ -68,16 +69,87 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
       if (data.success) {
         toast({
           title: 'Synchronisation réussie',
-          description: `Événements synchronisés avec Airtable`,
+          description: `Événements envoyés vers Airtable`,
         });
         onSync('events');
       } else {
         throw new Error(data.message || 'Erreur inconnue');
       }
     } catch (error) {
-      console.error('[AIRTABLE] Erreur sync events:', error);
+      console.error('[AIRTABLE] Erreur sync events vers Airtable:', error);
       toast({
         title: 'Erreur de synchronisation',
+        description: error instanceof Error ? error.message : 'Erreur inconnue',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Import DEPUIS Airtable vers Supabase
+  const handleImportEventsFromAirtable = async () => {
+    try {
+      console.log('[SYNC] Import depuis Airtable vers events_import...');
+      
+      // 1. Lire les données depuis Airtable
+      const { data: airtableData, error: readError } = await supabase.functions.invoke('airtable-read', {
+        method: 'POST',
+        headers: {
+          'X-Lovable-Admin': 'true'
+        },
+        body: {
+          table: 'All_Events'
+        }
+      });
+
+      if (readError) throw readError;
+
+      if (!airtableData.success || !airtableData.records) {
+        throw new Error('Aucune donnée reçue d\'Airtable');
+      }
+
+      console.log('[SYNC] Données reçues d\'Airtable:', airtableData.records.length);
+
+      // 2. Transformer et insérer dans events_import
+      const recordsToInsert = airtableData.records.map((record: any) => ({
+        id: record.id_event || `airtable_${Date.now()}_${Math.random()}`,
+        nom_event: record.nom_event,
+        type_event: record.type_event,
+        date_debut: record.date_debut,
+        date_fin: record.date_fin,
+        secteur: record.secteur,
+        ville: record.ville,
+        rue: record.rue,
+        code_postal: record.code_postal || record.postal_code,
+        nom_lieu: record.nom_lieu,
+        url_image: record.url_image,
+        url_site_officiel: record.url_site_officiel,
+        description_event: record.description_event,
+        affluence: record.affluence?.toString(),
+        tarifs: record.tarif,
+        status_event: 'imported_from_airtable'
+      }));
+
+      // 3. Insérer dans Supabase events_import
+      const { data: insertData, error: insertError } = await supabase
+        .from('events_import')
+        .upsert(recordsToInsert, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        });
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: 'Import réussi',
+        description: `${recordsToInsert.length} événements importés depuis Airtable vers events_import`,
+      });
+
+      onSync('events');
+
+    } catch (error) {
+      console.error('[SYNC] Erreur import depuis Airtable:', error);
+      toast({
+        title: 'Erreur d\'import',
         description: error instanceof Error ? error.message : 'Erreur inconnue',
         variant: 'destructive'
       });
@@ -184,7 +256,7 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
 
   const handleSyncAll = async () => {
     try {
-      await handleSyncEvents();
+      await handleSyncEventsToAirtable();
       await handleSyncExposants();
       await handleSyncParticipation();
     } catch (error) {
@@ -201,7 +273,8 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
     title: string,
     count: number,
     icon: React.ReactNode,
-    onSyncClick: () => void
+    onSyncClick: () => void,
+    onImportClick?: () => void
   ) => (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -210,16 +283,30 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{count.toLocaleString()}</div>
-        <Button 
-          onClick={onSyncClick}
-          disabled={isLoading || count === 0}
-          variant="outline"
-          size="sm"
-          className="mt-2 w-full"
-        >
-          <ArrowUpDown className="h-4 w-4 mr-2" />
-          Synchroniser
-        </Button>
+        <div className="space-y-2 mt-2">
+          <Button 
+            onClick={onSyncClick}
+            disabled={isLoading || count === 0}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <ArrowUpDown className="h-4 w-4 mr-2" />
+            Sync → Airtable
+          </Button>
+          {onImportClick && (
+            <Button 
+              onClick={onImportClick}
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Import ← Airtable
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -231,7 +318,8 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
           'Événements',
           eventsData?.length || 0,
           <Database className="h-4 w-4" />,
-          handleSyncEvents
+          handleSyncEventsToAirtable,
+          handleImportEventsFromAirtable
         )}
         
         {renderStatsCard(
@@ -261,7 +349,7 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
           ) : (
             <ArrowUpDown className="h-4 w-4 mr-2" />
           )}
-          Synchroniser tout avec Airtable
+          Synchroniser tout vers Airtable
         </Button>
       </div>
     </div>
