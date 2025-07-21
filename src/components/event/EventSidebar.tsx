@@ -104,13 +104,13 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Lieu & Adresse */}
-          <dl className="space-y-4 text-left">
+          <div className="space-y-4 text-left">
             {event.nom_lieu && (
               <div className="flex items-start gap-2">
                 <Building className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                 <div className="text-left">
-                  <dt className="font-semibold text-gray-900">Nom du lieu</dt>
-                  <dd className="text-gray-600">{event.nom_lieu}</dd>
+                  <div className="font-semibold text-gray-900">Nom du lieu</div>
+                  <div className="text-gray-600">{event.nom_lieu}</div>
                 </div>
               </div>
             )}
@@ -119,17 +119,17 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
             <div className="flex items-start gap-2">
               <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
               <div className="text-left">
-                <dt className="font-semibold text-gray-900">Adresse</dt>
-                <dd className="text-gray-600">
+                <div className="font-semibold text-gray-900">Adresse</div>
+                <div className="text-gray-600">
                   {addressResult}
                   {/* Debug inline temporaire */}
                   <div style={{ fontSize: '10px', color: 'blue', marginTop: '5px' }}>
                     DEBUG: {JSON.stringify({ rue: event.rue, cp: event.code_postal, ville: event.ville })}
                   </div>
-                </dd>
+                </div>
               </div>
             </div>
-          </dl>
+          </div>
 
           {/* Carte */}
           <div className="text-left">
