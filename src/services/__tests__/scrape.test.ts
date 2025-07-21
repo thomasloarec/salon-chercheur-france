@@ -169,8 +169,8 @@ describe('Viparis API Pagination', () => {
     expect(mappedEvent).toEqual({
       name: 'Salon TEST 2025',
       description: 'Description du salon test',
-      start_date: '2025-06-15',
-      end_date: '2025-06-17',
+      date_debut: '2025-06-15',
+      date_fin: '2025-06-17',
       venue_name: 'Paris Expo Porte de Versailles',
       event_url: 'https://www.viparis.com/e/salon-test-2025',
       city: 'Paris',
@@ -208,8 +208,8 @@ function mapViparisEvent(event: any) {
   return {
     name: event.title,
     description: event.excerpt || '',
-    start_date: new Date(event.beginDate).toISOString().split('T')[0],
-    end_date: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : new Date(event.beginDate).toISOString().split('T')[0],
+    date_debut: new Date(event.beginDate).toISOString().split('T')[0],
+    date_fin: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : new Date(event.beginDate).toISOString().split('T')[0],
     venue_name: event.venue || 'Viparis',
     event_url: `https://www.viparis.com/e/${event.id}`,
     city: 'Paris',
