@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -194,4 +195,35 @@
   width: 100%;              /* toujours full width du wrapper limité */
   height: auto;             /* conserve le ratio et affichage complet */
   object-fit: contain;      /* affiche toute l'affiche sans crop */
+}
+
+/* Styles spécifiques pour les événements en attente */
+.event-card.admin-preview {
+  position: relative;
+}
+
+.event-card.admin-preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.05);
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.event-card.admin-preview:hover::before {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Amélioration des transitions pour les overlays */
+.event-card .overlay-transition {
+  transition: all 0.3s ease;
+}
+
+.event-card:hover .overlay-transition {
+  opacity: 0.8;
 }

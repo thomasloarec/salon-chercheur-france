@@ -69,7 +69,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             className="absolute top-2 left-2 z-10 bg-orange-100 text-orange-800 border-orange-300"
             title="Événement en attente de publication"
           >
-            Brouillon
+            En attente
           </Badge>
         )}
 
@@ -85,6 +85,11 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
         
         <CardWrapper>
           <div className="relative w-full event-card__image-wrapper">
+            {/* Overlay sombre pour les événements en attente */}
+            {adminPreview && (
+              <div className="absolute inset-0 bg-black/20 z-[1] transition-opacity group-hover:bg-black/10" />
+            )}
+            
             <img
               src={event.url_image || '/placeholder.svg'}
               alt={`Affiche de ${event.nom_event}`}
@@ -100,7 +105,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
               />
             )}
             
-            <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)]">
+            <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)] z-[2]">
               <SectorBadge label={event.secteur} className="shadow-sm" />
             </div>
           </div>
@@ -128,7 +133,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
               size="sm" 
               className="w-full mt-4 bg-accent hover:bg-accent/90"
             >
-              Voir le salon
+              {adminPreview ? 'Voir / Éditer' : 'Voir le salon'}
             </Button>
           </CardWrapper>
         </CardContent>

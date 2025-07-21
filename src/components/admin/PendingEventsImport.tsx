@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, Calendar, MapPin, ExternalLink, Trash2 } from 'lucide-react';
+import { CheckCircle, Trash2 } from 'lucide-react';
 import { getEventTypeLabel } from '@/constants/eventTypes';
 import {
   AlertDialog,
@@ -18,6 +19,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import EventGrid from '@/components/EventGrid';
+import type { Event } from '@/types/event';
 
 interface EventImport {
   id: string;
@@ -64,8 +67,11 @@ export function PendingEventsImport() {
     },
   });
 
-  const publishEvent = async (eventImport: EventImport) => {
-    setPublishingId(eventImport.id);
+  const publishEvent = async (eventId: string) => {
+    const eventImport = pendingEvents?.find(e => e.id === eventId);
+    if (!eventImport) return;
+
+    setPublishingId(eventId);
     try {
       // Créer l'événement dans la table events de production
       const productionEvent = {
@@ -153,6 +159,30 @@ export function PendingEventsImport() {
     }
   };
 
+  // Convertir EventImport en Event pour EventGrid
+  const convertToEvents = (imports: EventImport[]): Event[] => {
+    return imports.map(eventImport => ({
+      id: eventImport.id,
+      nom_event: eventImport.nom_event || '',
+      description_event: eventImport.description_event || null,
+      date_debut: eventImport.date_debut || '1970-01-01',
+      date_fin: eventImport.date_fin || eventImport.date_debut || '1970-01-01',
+      secteur: eventImport.secteur || 'Autre',
+      nom_lieu: eventImport.nom_lieu || null,
+      ville: eventImport.ville || 'Inconnue',
+      rue: eventImport.rue || null,
+      code_postal: eventImport.code_postal || null,
+      pays: 'France',
+      url_image: eventImport.url_image || null,
+      url_site_officiel: eventImport.url_site_officiel || null,
+      tarif: eventImport.tarifs || null,
+      affluence: eventImport.affluence ? parseInt(eventImport.affluence) : null,
+      type_event: (eventImport.type_event as Event['type_event']) || 'salon',
+      visible: false, // Événements en attente
+      location: eventImport.ville || 'Inconnue'
+    }));
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -180,6 +210,8 @@ export function PendingEventsImport() {
       </Card>
     );
   }
+
+  const eventsForGrid = convertToEvents(pendingEvents);
 
   return (
     <Card>
@@ -213,79 +245,11 @@ export function PendingEventsImport() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {pendingEvents.map((event) => (
-            <div key={event.id} className="border rounded-lg p-4 space-y-3">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-medium">{event.nom_event || 'Événement sans nom'}</h3>
-                    <Badge variant="outline">
-                      {getEventTypeLabel(event.type_event || 'salon')}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {event.date_debut ? new Date(event.date_debut).toLocaleDateString('fr-FR') : 'Date non définie'}
-                      {event.date_fin && event.date_fin !== event.date_debut && (
-                        <span> - {new Date(event.date_fin).toLocaleDateString('fr-FR')}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {event.ville || 'Ville non définie'}
-                    </div>
-                  </div>
-                  
-                  {event.description_event && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {event.description_event}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary">{event.secteur || 'Autre'}</Badge>
-                    {event.affluence && (
-                      <Badge variant="outline">{event.affluence} visiteurs</Badge>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {event.url_site_officiel && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => window.open(event.url_site_officiel!, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button
-                    onClick={() => publishEvent(event)}
-                    disabled={publishingId === event.id}
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    {publishingId === event.id ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        Publication...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Publier
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <EventGrid 
+          events={eventsForGrid} 
+          adminPreview={true}
+          onPublish={publishEvent}
+        />
       </CardContent>
     </Card>
   );
