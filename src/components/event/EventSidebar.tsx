@@ -3,22 +3,65 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building } from 'lucide-react';
 import { SimilarEvents } from './SimilarEvents';
 import type { Event } from '@/types/event';
-import { formatAddress } from '@/utils/formatAddress';
 
 interface EventSidebarProps {
   event: Event;
 }
 
 export const EventSidebar = ({ event }: EventSidebarProps) => {
-  // Format address differently based on whether it's a pending event or not
+  // Format address for pending events (events_import) vs published events (events)
   const getEventAddress = (event: Event): string => {
-    // Pour les événements en attente (events_import), utiliser les champs rue, code_postal, ville
+    console.log('getEventAddress called with event:', {
+      slug: event.slug,
+      visible: event.visible,
+      rue: event.rue,
+      code_postal: event.code_postal,
+      ville: event.ville
+    });
+
+    // Pour les événements en attente (events_import), construire l'adresse manuellement
     if (event.slug?.startsWith('pending-') || !event.visible) {
-      return formatAddress(event.rue, event.code_postal, event.ville);
+      const addressParts = [];
+      
+      if (event.rue && event.rue.trim() !== '') {
+        addressParts.push(event.rue.trim());
+      }
+      
+      if (event.code_postal && event.code_postal.trim() !== '') {
+        if (event.ville && event.ville.trim() !== '') {
+          addressParts.push(`${event.code_postal.trim()} ${event.ville.trim()}`);
+        } else {
+          addressParts.push(event.code_postal.trim());
+        }
+      } else if (event.ville && event.ville.trim() !== '') {
+        addressParts.push(event.ville.trim());
+      }
+      
+      const result = addressParts.length > 0 ? addressParts.join(', ') : 'Adresse non précisée';
+      console.log('Pending event address result:', result);
+      return result;
     }
     
-    // Pour les événements publiés (events), utiliser la logique existante
-    return formatAddress(event.rue, event.code_postal, event.ville);
+    // Pour les événements publiés (events), utiliser la logique existante avec formatAddress
+    const addressParts = [];
+    
+    if (event.rue && event.rue.trim() !== '') {
+      addressParts.push(event.rue.trim());
+    }
+    
+    if (event.code_postal && event.code_postal.trim() !== '') {
+      if (event.ville && event.ville.trim() !== '') {
+        addressParts.push(`${event.code_postal.trim()} ${event.ville.trim()}`);
+      } else {
+        addressParts.push(event.code_postal.trim());
+      }
+    } else if (event.ville && event.ville.trim() !== '') {
+      addressParts.push(event.ville.trim());
+    }
+    
+    const result = addressParts.length > 0 ? addressParts.join(', ') : 'Adresse non précisée';
+    console.log('Published event address result:', result);
+    return result;
   };
 
   return (
