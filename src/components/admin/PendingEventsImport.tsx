@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +74,7 @@ export function PendingEventsImport() {
     setPublishingId(eventId);
     try {
       // Créer l'événement dans la table events de production
+      // IMPORTANT: Utiliser UNIQUEMENT les colonnes de la table events
       const productionEvent = {
         id_event: eventImport.id,
         nom_event: eventImport.nom_event || '',
@@ -94,7 +96,9 @@ export function PendingEventsImport() {
         location: eventImport.ville || 'Inconnue'
       };
 
+      // Log de debug pour voir exactement ce qui est envoyé
       console.log('Publishing event with payload:', productionEvent);
+      console.log('Payload keys:', Object.keys(productionEvent));
 
       const { error: insertError } = await supabase
         .from('events')
