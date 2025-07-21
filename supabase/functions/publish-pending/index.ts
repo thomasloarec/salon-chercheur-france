@@ -121,6 +121,9 @@ Deno.serve(async (req) => {
       date_fin: productionEvent.date_fin
     });
 
+    // 🔍 DEBUG: Log complet de l'objet avant upsert
+    console.log('🔧 FULL PAYLOAD:', JSON.stringify(productionEvent, null, 2));
+
     // 3. Upsert dans la table events
     const { error: upsertError } = await supabase
       .from('events')
