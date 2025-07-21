@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,22 +22,26 @@ import {
 interface EventImport {
   id: string;
   nom_event: string | null;
+  status_event: string | null;
+  ai_certainty: string | null;
   type_event: string | null;
   date_debut: string | null;
   date_fin: string | null;
+  date_complete: string | null;
   secteur: string | null;
-  ville: string | null;
-  nom_lieu: string | null;
   url_image: string | null;
   url_site_officiel: string | null;
   description_event: string | null;
   affluence: string | null;
   tarifs: string | null;
+  nom_lieu: string | null;
+  adresse: string | null;
+  chatgpt_prompt: string | null;
+  created_at: string;
+  updated_at: string | null;
+  ville: string | null;
   rue: string | null;
   code_postal: string | null;
-  adresse: string | null;
-  created_at: string;
-  status_event: string | null;
 }
 
 export function PendingEventsImport() {
@@ -183,7 +186,7 @@ export function PendingEventsImport() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>
-            Événements en attente de publication ({pendingEvents.length})
+            Événements en attente de publication ({pendingEvents?.length || 0})
           </CardTitle>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -196,7 +199,7 @@ export function PendingEventsImport() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Supprimer tous les événements en attente</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Cette action supprimera définitivement tous les {pendingEvents.length} événements en attente de publication. Cette action ne peut pas être annulée.
+                  Cette action supprimera définitivement tous les {pendingEvents?.length || 0} événements en attente de publication. Cette action ne peut pas être annulée.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -210,79 +213,87 @@ export function PendingEventsImport() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {pendingEvents.map((event) => (
-            <div key={event.id} className="border rounded-lg p-4 space-y-3">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-medium">{event.nom_event || 'Événement sans nom'}</h3>
-                    <Badge variant="outline">
-                      {getEventTypeLabel(event.type_event || 'salon')}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {event.date_debut ? new Date(event.date_debut).toLocaleDateString('fr-FR') : 'Date non définie'}
-                      {event.date_fin && event.date_fin !== event.date_debut && (
-                        <span> - {new Date(event.date_fin).toLocaleDateString('fr-FR')}</span>
+        {isLoading ? (
+          <div className="text-center p-4">Chargement des événements en attente...</div>
+        ) : !pendingEvents || pendingEvents.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            Aucun événement en attente de publication.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {pendingEvents.map((event) => (
+              <div key={event.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-medium">{event.nom_event || 'Événement sans nom'}</h3>
+                      <Badge variant="outline">
+                        {getEventTypeLabel(event.type_event || 'salon')}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {event.date_debut ? new Date(event.date_debut).toLocaleDateString('fr-FR') : 'Date non définie'}
+                        {event.date_fin && event.date_fin !== event.date_debut && (
+                          <span> - {new Date(event.date_fin).toLocaleDateString('fr-FR')}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {event.ville || 'Ville non définie'}
+                      </div>
+                    </div>
+                    
+                    {event.description_event && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {event.description_event}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="secondary">{event.secteur || 'Autre'}</Badge>
+                      {event.affluence && (
+                        <Badge variant="outline">{event.affluence} visiteurs</Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {event.ville || 'Ville non définie'}
-                    </div>
                   </div>
                   
-                  {event.description_event && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {event.description_event}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary">{event.secteur || 'Autre'}</Badge>
-                    {event.affluence && (
-                      <Badge variant="outline">{event.affluence} visiteurs</Badge>
+                  <div className="flex items-center gap-2">
+                    {event.url_site_officiel && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(event.url_site_officiel!, '_blank')}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
                     )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {event.url_site_officiel && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      onClick={() => publishEvent(event)}
+                      disabled={publishingId === event.id}
                       size="sm"
-                      onClick={() => window.open(event.url_site_officiel!, '_blank')}
+                      className="bg-green-600 hover:bg-green-700"
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      {publishingId === event.id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Publication...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Publier
+                        </>
+                      )}
                     </Button>
-                  )}
-                  <Button
-                    onClick={() => publishEvent(event)}
-                    disabled={publishingId === event.id}
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    {publishingId === event.id ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        Publication...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Publier
-                      </>
-                    )}
-                  </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
