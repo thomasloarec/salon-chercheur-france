@@ -68,6 +68,41 @@ interface AirtableExposantRecord {
   };
 }
 
+// Fonction pour récupérer tous les enregistrements d'une table Airtable avec pagination
+async function fetchAllAirtableRecords(baseId: string, tableName: string, apiKey: string): Promise<any[]> {
+  const allRecords: any[] = [];
+  let offset: string | undefined;
+  
+  do {
+    const url = new URL(`https://api.airtable.com/v0/${baseId}/${tableName}`);
+    if (offset) {
+      url.searchParams.set('offset', offset);
+    }
+    
+    console.log(`📡 Fetching ${tableName} records${offset ? ` (offset: ${offset})` : ''}`);
+    
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${tableName}: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    allRecords.push(...data.records);
+    offset = data.offset;
+    
+    console.log(`📊 Récupéré ${data.records.length} enregistrements de ${tableName} (total: ${allRecords.length})`);
+    
+  } while (offset);
+  
+  return allRecords;
+}
+
 serve(async (req) => {
   const rawBody = await req.clone().text();
   console.log('⏱️ import-airtable called at', new Date().toISOString());
@@ -132,38 +167,28 @@ serve(async (req) => {
 
       console.log(`🔄 Import configuré avec Base ID: ${AIRTABLE_BASE_ID?.slice(-4)} et tables: ${eventsTableName}, ${exposantsTableName}`);
 
-      let eventsToInsert: any[] = [];
-      let exposantsInserted = 0;
+      let eventsImported = 0;
+      let exposantsImported = 0;
 
-      // TODO: Uncomment these lines when ready to activate Airtable import
-      /*
       // Import events from Airtable
-      const eventsUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${eventsTableName}`;
-      const eventsResponse = await fetch(eventsUrl, {
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_PAT}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      console.log('🎯 Début import des événements...');
+      const eventRecords = await fetchAllAirtableRecords(AIRTABLE_BASE_ID!, eventsTableName, AIRTABLE_PAT!);
       
-      if (!eventsResponse.ok) {
-        throw new Error(`Failed to fetch events: ${eventsResponse.statusText}`);
-      }
-
-      const eventsData = await eventsResponse.json();
-      const eventRecords: AirtableEventRecord[] = eventsData.records;
-
+      const eventsToInsert: any[] = [];
+      
       for (const record of eventRecords) {
         const fields = record.fields;
         
         // Only process approved events
         if (fields['Status_Event']?.toLowerCase() !== 'approved') {
+          console.log(`⚠️ Événement ${fields['ID_Event']} ignoré (statut: ${fields['Status_Event']})`);
           continue;
         }
 
         const eventData = {
           id: fields['ID_Event'],
-          name_event: fields['Nom_Event'] || '',
+          nom_event: fields['Nom_Event'] || '',
+          status_event: fields['Status_Event'] || '',
           type_event: normalizeEventType(fields['Type_Event']),
           date_debut: normalizeDate(fields['Date_debut']),
           date_fin: normalizeDate(fields['Date_Fin']),
@@ -171,8 +196,8 @@ serve(async (req) => {
           url_image: fields['URL_image'] || null,
           url_site_officiel: fields['URL_site_officiel'] || null,
           description_event: fields['Description_Event'] || null,
-          affluence: fields['Affluence'] && fields['Affluence'].trim() !== '' ? Number(fields['Affluence']) : null,
-          tarif: fields['Tarifs'] || null,
+          affluence: fields['Affluence'] && fields['Affluence'].trim() !== '' ? fields['Affluence'] : null,
+          tarifs: fields['Tarifs'] || null,
           nom_lieu: fields['Nom_Lieu'] || null,
           rue: fields['Rue'] || null,
           code_postal: fields['Code_Postal'] || null,
@@ -184,7 +209,7 @@ serve(async (req) => {
         }
       }
 
-      console.log(`Prepared ${eventsToInsert.length} events for insertion`);
+      console.log(`📋 Préparé ${eventsToInsert.length} événements pour insertion`);
 
       // Insert events into Supabase events_import table
       if (eventsToInsert.length > 0) {
@@ -193,28 +218,33 @@ serve(async (req) => {
           .upsert(eventsToInsert, { onConflict: 'id' });
 
         if (eventsError) {
+          console.error('❌ Erreur insertion événements:', eventsError);
           throw new Error(`Failed to insert events: ${eventsError.message}`);
         }
+
+        eventsImported = eventsToInsert.length;
+        console.log(`✅ ${eventsImported} événements insérés avec succès`);
 
         // Promote to production events table
         const productionEvents = eventsToInsert.map(ev => ({
           id_event: ev.id,
-          name_event: ev.name_event,
+          nom_event: ev.nom_event,
           visible: false, // Default invisible
           type_event: ev.type_event,
           date_debut: ev.date_debut || '1970-01-01',
           date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
-          secteur: ev.secteur || 'Autre',
+          secteur: [ev.secteur || 'Autre'], // Convert to jsonb array
           ville: ev.ville,
           rue: ev.rue,
           code_postal: ev.code_postal,
-          country: 'France',
+          pays: 'France',
           url_image: ev.url_image,
           url_site_officiel: ev.url_site_officiel,
           description_event: ev.description_event,
-          affluence: ev.affluence,
-          tarif: ev.tarif,
+          affluence: ev.affluence ? parseInt(ev.affluence) : null,
+          tarif: ev.tarifs,
           nom_lieu: ev.nom_lieu,
+          location: ev.ville || 'Inconnue'
         }));
 
         const { error: prodError } = await supabaseClient
@@ -225,27 +255,16 @@ serve(async (req) => {
           });
 
         if (prodError) {
+          console.error('❌ Erreur promotion événements:', prodError);
           throw new Error(`Failed to upsert production events: ${prodError.message}`);
         }
 
-        console.log(`Successfully promoted ${productionEvents.length} events to production`);
+        console.log(`✅ ${productionEvents.length} événements promus en production`);
       }
 
       // Import exposants from Airtable
-      const exposantsUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${exposantsTableName}`;
-      const exposantsResponse = await fetch(exposantsUrl, {
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_PAT}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!exposantsResponse.ok) {
-        throw new Error(`Failed to fetch exposants: ${exposantsResponse.statusText}`);
-      }
-
-      const exposantsData = await exposantsResponse.json();
-      const exposantRecords: AirtableExposantRecord[] = exposantsData.records;
+      console.log('🏢 Début import des exposants...');
+      const exposantRecords = await fetchAllAirtableRecords(AIRTABLE_BASE_ID!, exposantsTableName, AIRTABLE_PAT!);
 
       const approvedEventIds = new Set(eventsToInsert.map(ev => ev.id));
       const exposantsToInsert: any[] = [];
@@ -264,14 +283,16 @@ serve(async (req) => {
 
         const exposantData = {
           id_event: fields['ID_Event'],
-          exposant_nom: fields['exposant_nom'].trim(),
-          exposant_stand: fields['exposant_stand']?.trim() || '',
-          exposant_website: fields['exposant_website']?.trim() || '',
+          nom_exposant: fields['exposant_nom'].trim(),
+          id_exposant: fields['exposant_stand']?.trim() || '',
+          website_exposant: fields['exposant_website']?.trim() || '',
           exposant_description: fields['exposant_description']?.trim() || ''
         };
 
         exposantsToInsert.push(exposantData);
       }
+
+      console.log(`📋 Préparé ${exposantsToInsert.length} exposants pour insertion`);
 
       if (exposantsToInsert.length > 0) {
         const { error: exposantsError } = await supabaseClient
@@ -279,23 +300,23 @@ serve(async (req) => {
           .insert(exposantsToInsert);
 
         if (exposantsError) {
+          console.error('❌ Erreur insertion exposants:', exposantsError);
           throw new Error(`Failed to insert exposants: ${exposantsError.message}`);
         }
         
-        exposantsInserted = exposantsToInsert.length;
-        console.log(`Successfully inserted ${exposantsInserted} exposants`);
+        exposantsImported = exposantsToInsert.length;
+        console.log(`✅ ${exposantsImported} exposants insérés avec succès`);
       }
-      */
 
-      // For now, return a placeholder response
+      // Summary response
       const summary = {
         success: true,
-        eventsImported: 0, // Will be eventsToInsert.length when activated
-        exposantsImported: 0, // Will be exposantsInserted when activated
-        message: 'Secrets validés - Import Airtable prêt (TODO: Activer les appels API)'
+        eventsImported,
+        exposantsImported,
+        message: `Import terminé: ${eventsImported} événements, ${exposantsImported} exposants`
       };
 
-      console.log('✅ Import Airtable configuré:', summary);
+      console.log('✅ Import Airtable terminé:', summary);
 
       return new Response(JSON.stringify(summary), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
