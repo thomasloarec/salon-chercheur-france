@@ -10,6 +10,17 @@ interface EventSidebarProps {
 }
 
 export const EventSidebar = ({ event }: EventSidebarProps) => {
+  // Format address differently based on whether it's a pending event or not
+  const getEventAddress = (event: Event): string => {
+    // Pour les événements en attente (events_import), utiliser les champs rue, code_postal, ville
+    if (event.slug?.startsWith('pending-') || !event.visible) {
+      return formatAddress(event.rue, event.code_postal, event.ville);
+    }
+    
+    // Pour les événements publiés (events), utiliser la logique existante
+    return formatAddress(event.rue, event.code_postal, event.ville);
+  };
+
   return (
     <aside className="space-y-6">
       {/* Informations pratiques */}
@@ -38,7 +49,7 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
               <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
               <div className="text-left">
                 <dt className="font-semibold text-gray-900">Adresse</dt>
-                <dd className="text-gray-600">{formatAddress(event.rue, event.code_postal, event.ville)}</dd>
+                <dd className="text-gray-600">{getEventAddress(event)}</dd>
               </div>
             </div>
           </dl>
