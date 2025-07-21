@@ -42,7 +42,7 @@ interface EventImport {
   updated_at: string | null;
   ville: string | null;
   rue: string | null;
-  code_postal: string | null;
+  code_postal: string | null; // Made nullable to match database schema
 }
 
 export function PendingEventsImport() {
