@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -30,8 +29,38 @@ const EVENT_TYPE_ALLOWED = ['salon', 'conference', 'congres', 'convention', 'cer
 
 function normalizeEventType(raw: string | null): string {
   if (!raw) return 'salon';
-  const slug = raw.toLowerCase().trim();
-  if (EVENT_TYPE_ALLOWED.includes(slug)) return slug as typeof EVENT_TYPE_ALLOWED[number];
+  
+  const normalized = raw.toLowerCase().trim();
+  
+  // Mapping des variantes vers les valeurs autorisées
+  const mappings: Record<string, string> = {
+    'salon': 'salon',
+    'salons': 'salon',
+    'congrès': 'congres',
+    'congres': 'congres',
+    'congress': 'congres',
+    'conférence': 'conference',
+    'conference': 'conference',
+    'convention': 'convention',
+    'conventions': 'convention',
+    'cérémonie': 'ceremonie',
+    'ceremonie': 'ceremonie',
+    'ceremony': 'ceremonie'
+  };
+  
+  // Chercher d'abord dans les mappings exacts
+  if (mappings[normalized]) {
+    return mappings[normalized];
+  }
+  
+  // Si pas trouvé, chercher une correspondance partielle
+  for (const [key, value] of Object.entries(mappings)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return value;
+    }
+  }
+  
+  // Par défaut, retourner salon
   return 'salon';
 }
 
@@ -313,7 +342,7 @@ serve(async (req) => {
         success: true,
         eventsImported,
         exposantsImported,
-        message: `Import terminé: ${eventsImported} événements, ${exposantsImported} exposants`
+        message: `Import terminé : ${eventsImported} événements et ${exposantsImported} exposants importés`
       };
 
       console.log('✅ Import Airtable terminé:', summary);

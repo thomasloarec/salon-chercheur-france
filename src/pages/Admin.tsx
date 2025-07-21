@@ -5,6 +5,7 @@ import { Navigate } from 'react-router-dom';
 import AirtableValidationTest from '@/components/admin/AirtableValidationTest';
 import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
 import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
+import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import MainLayout from '@/components/layout/MainLayout';
 import AirtableStatusWidget from '@/components/admin/AirtableStatusWidget';
@@ -61,10 +62,13 @@ const Admin = () => {
         {/* Import Airtable simplifié */}
         <AirtableImport />
 
+        {/* Événements importés en attente de publication */}
+        <PendingEventsImport />
+
         {/* Vérification anti-doublons */}
         <AirtableAntiDuplicateCheck />
 
-        {/* Événements en attente de publication */}
+        {/* Événements en attente de publication (table events) */}
         <PendingEventsTable />
         
         {/* Événements passés */}

@@ -8,14 +8,18 @@ import { Download, Loader2 } from 'lucide-react';
 
 export function AirtableImport() {
   const [loading, setLoading] = useState(false);
-  const [count, setCount] = useState<number | null>(null);
+  const [results, setResults] = useState<{
+    eventsImported: number;
+    exposantsImported: number;
+    message: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleImport = async () => {
     setLoading(true);
     setError(null);
-    setCount(null);
+    setResults(null);
     
     try {
       console.log('[AirtableImport] 🔄 Début de l\'import depuis Airtable...');
@@ -38,14 +42,19 @@ export function AirtableImport() {
         throw new Error(data.error || data.message || 'Erreur inconnue');
       }
 
-      const totalImported = (data.eventsImported || 0) + (data.exposantsImported || 0);
-      setCount(totalImported);
+      const importResults = {
+        eventsImported: data.eventsImported || 0,
+        exposantsImported: data.exposantsImported || 0,
+        message: data.message || `Import terminé : ${data.eventsImported || 0} événements et ${data.exposantsImported || 0} exposants importés`
+      };
       
-      console.log(`[AirtableImport] ✅ Import terminé: ${totalImported} enregistrements`);
+      setResults(importResults);
+      
+      console.log(`[AirtableImport] ✅ Import terminé:`, importResults);
       
       toast({
         title: 'Import réussi',
-        description: `${totalImported} enregistrements importés depuis Airtable`,
+        description: importResults.message,
       });
 
     } catch (err: any) {
@@ -65,7 +74,7 @@ export function AirtableImport() {
 
   const getStatusMessage = () => {
     if (loading) return 'Import en cours…';
-    if (count !== null) return `✅ ${count} enregistrements importés`;
+    if (results) return `✅ ${results.message}`;
     return 'Cliquez pour démarrer l\'import';
   };
 
@@ -86,6 +95,18 @@ export function AirtableImport() {
           <p className="text-destructive text-sm">
             Erreur : {error}
           </p>
+        )}
+        
+        {results && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
+            <div className="font-medium text-green-800">Détails de l'import :</div>
+            <div className="text-green-700 mt-1">
+              • {results.eventsImported} événements importés
+            </div>
+            <div className="text-green-700">
+              • {results.exposantsImported} exposants importés
+            </div>
+          </div>
         )}
         
         <Button
