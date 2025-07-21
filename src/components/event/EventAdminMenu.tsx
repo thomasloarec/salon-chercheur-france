@@ -77,7 +77,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       // Rafraîchir ou rediriger
       if (onEventUpdated) {
         const refreshedEvent = { ...event, visible: true };
-        onEventUpdated(refreshedEvent, true);
+        onEventUpdated(refreshedEvent);
       }
       
     } catch (error) {
@@ -111,33 +111,33 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         description: `L'événement est maintenant ${newStatus ? 'visible' : 'invisible'} au public.`,
       });
 
-      // Transform the response to match our Event interface using actual DB column names
+      // Transform the response to match our Event interface
       const transformedEvent: Event = {
         id: data.id,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
         date_fin: data.date_fin,
-        secteur: convertSecteurToString(data.secteur),
+        secteur: convertSecteurToString(data.secteur || data.secteur),
         nom_lieu: data.nom_lieu,
         ville: data.ville || 'Ville non précisée',
-        country: data.pays || 'France',
+        country: data.pays || data.country || 'France',
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
         tags: data.tags || [],
         tarif: data.tarif,
-        affluence: data.affluence,
-        estimated_exhibitors: data.estimated_exhibitors,
-        is_b2b: data.is_b2b,
-        type_event: data.type_event as Event['type_event'],
+        affluence: typeof data.affluence === 'string' ? parseInt(data.affluence) || undefined : data.affluence,
+        estimated_exhibitors: data.estimated_exhibitors || undefined,
+        is_b2b: data.is_b2b || false,
+        type_event: (data.type_event as Event['type_event']) || 'salon',
         created_at: data.created_at,
         updated_at: data.updated_at,
-        last_scraped_at: data.last_scraped_at,
-        scraped_from: data.scraped_from,
+        last_scraped_at: data.last_scraped_at || undefined,
+        scraped_from: data.scraped_from || undefined,
         rue: data.rue,
         code_postal: data.code_postal,
-        visible: data.visible,
-        slug: data.slug,
+        visible: data.visible ?? true,
+        slug: data.slug || undefined,
         sectors: [],
         is_favorite: false
       };
