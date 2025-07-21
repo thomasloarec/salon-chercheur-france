@@ -2,8 +2,8 @@
 export interface ScrapedEvent {
   title: string;
   description: string;
-  startDate: Date;
-  endDate: Date | null;
+  dateDebut: Date;
+  dateFin: Date | null;
   venue: string;
   websiteUrl: string;
   source: string;

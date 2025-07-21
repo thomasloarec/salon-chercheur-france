@@ -58,8 +58,8 @@ export const toFeatureCollection = (events: EventWithCoords[]) => {
         properties: {
           id: e.id,
           name: e.nom_event,
-          start_date: e.date_debut,
-          end_date: e.date_fin,
+          date_debut: e.date_debut,
+          date_fin: e.date_fin,
           city: e.ville,
           sector: e.secteur,
           event_url: e.url_site_officiel,

@@ -45,8 +45,8 @@ export interface SearchFilters {
   months?: number[];
   city?: string;
   // Region filtering now handled via locationSuggestion
-  startDate?: string;
-  endDate?: string;
+  dateDebut?: string;
+  dateFin?: string;
   minVisitors?: number;
   maxVisitors?: number;
   locationSuggestion?: {
