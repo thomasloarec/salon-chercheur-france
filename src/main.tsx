@@ -1,17 +1,14 @@
 
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { HelmetProvider } from 'react-helmet-async';
+import App from "./App.tsx";
+import "./index.css";
 
-// Polyfill Buffer for browser compatibility
-import { Buffer } from 'buffer'
-if (typeof window !== 'undefined' && !(window as any).Buffer) {
-  (window as any).Buffer = Buffer
-}
-
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
-  </StrictMode>,
-)
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+  </StrictMode>
+);

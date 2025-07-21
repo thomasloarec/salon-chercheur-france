@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -97,54 +98,7 @@ interface AirtableExposantRecord {
   };
 }
 
-// Fonction pour récupérer tous les enregistrements d'une table Airtable avec pagination
-async function fetchAllAirtableRecords(baseId: string, tableName: string, apiKey: string): Promise<any[]> {
-  const allRecords: any[] = [];
-  let offset: string | undefined;
-  
-  do {
-    const url = new URL(`https://api.airtable.com/v0/${baseId}/${tableName}`);
-    if (offset) {
-      url.searchParams.set('offset', offset);
-    }
-    
-    console.log(`📡 Fetching ${tableName} records${offset ? ` (offset: ${offset})` : ''}`);
-    
-    const response = await fetch(url.toString(), {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${tableName}: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    allRecords.push(...data.records);
-    offset = data.offset;
-    
-    console.log(`📊 Récupéré ${data.records.length} enregistrements de ${tableName} (total: ${allRecords.length})`);
-    
-  } while (offset);
-  
-  return allRecords;
-}
-
 serve(async (req) => {
-  const rawBody = await req.clone().text();
-  console.log('⏱️ import-airtable called at', new Date().toISOString());
-  console.log('🗒️ Raw request body:', rawBody);
-
-  // Lecture et validation des secrets dès le démarrage
-  const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT');
-  const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID');
-  
-  // Logs masqués pour debug (derniers 4 caractères)
-  console.log('🔑 AIRTABLE_PAT présent:', AIRTABLE_PAT ? `***${AIRTABLE_PAT.slice(-4)}` : 'ABSENT');
-  console.log('🔑 AIRTABLE_BASE_ID présent:', AIRTABLE_BASE_ID ? `***${AIRTABLE_BASE_ID.slice(-4)}` : 'ABSENT');
-
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       status: 204,
@@ -156,63 +110,49 @@ serve(async (req) => {
     try {
       console.log('Starting Airtable import...');
       
-      let params: any = {};
-      try {
-        params = rawBody ? JSON.parse(rawBody) : {};
-      } catch (e) {
-        console.error('❌ import-airtable: invalid JSON', e);
-        return new Response(JSON.stringify({ success: false, error: 'invalid_json' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        });
-      }
-      
       const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
-      // Vérification des secrets requis avec messages d'erreur détaillés
-      const errors = [];
-      if (!AIRTABLE_PAT) errors.push('AIRTABLE_PAT manquant');
-      if (!AIRTABLE_BASE_ID) errors.push('AIRTABLE_BASE_ID manquant');
-      
-      if (errors.length > 0) {
-        console.error('❌ Secrets manquants:', errors);
+      const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT');
+      const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID');
+
+      if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
+        console.error('Missing Airtable credentials');
         return new Response(JSON.stringify({ 
           success: false, 
-          error: 'missing_secrets',
-          details: errors 
+          error: 'missing_credentials' 
         }), {
           status: 500,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
       }
 
-      const { 
-        eventsTableName = 'All_Events',
-        exposantsTableName = 'All_Exposants'
-      } = params;
-
-      console.log(`🔄 Import configuré avec Base ID: ${AIRTABLE_BASE_ID?.slice(-4)} et tables: ${eventsTableName}, ${exposantsTableName}`);
-
       let eventsImported = 0;
       let exposantsImported = 0;
 
       // Import events from Airtable
-      console.log('🎯 Début import des événements...');
-      const eventRecords = await fetchAllAirtableRecords(AIRTABLE_BASE_ID!, eventsTableName, AIRTABLE_PAT!);
-      
+      console.log('Importing events...');
+      const eventsResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/All_Events`, {
+        headers: {
+          'Authorization': `Bearer ${AIRTABLE_PAT}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!eventsResponse.ok) {
+        throw new Error(`Failed to fetch events: ${eventsResponse.status}`);
+      }
+
+      const eventsData = await eventsResponse.json();
       const eventsToInsert: any[] = [];
-      // Créer un mapping des record IDs Airtable vers les IDs d'événements
-      const airtableRecordToEventId = new Map<string, string>();
-      
-      for (const record of eventRecords) {
+
+      for (const record of eventsData.records) {
         const fields = record.fields;
         
         // Only process approved events
         if (fields['Status_Event']?.toLowerCase() !== 'approved') {
-          console.log(`⚠️ Événement ${fields['ID_Event']} ignoré (statut: ${fields['Status_Event']})`);
           continue;
         }
 
@@ -237,13 +177,8 @@ serve(async (req) => {
 
         if (eventData.id) {
           eventsToInsert.push(eventData);
-          // Mapper le record ID Airtable vers l'ID d'événement
-          airtableRecordToEventId.set(record.id, eventData.id);
         }
       }
-
-      console.log(`📋 Préparé ${eventsToInsert.length} événements pour insertion`);
-      console.log(`🗺️ Mapping créé : ${airtableRecordToEventId.size} correspondances record->event`);
 
       // Insert events into Supabase events_import table
       if (eventsToInsert.length > 0) {
@@ -252,12 +187,12 @@ serve(async (req) => {
           .upsert(eventsToInsert, { onConflict: 'id' });
 
         if (eventsError) {
-          console.error('❌ Erreur insertion événements:', eventsError);
+          console.error('Error inserting events:', eventsError);
           throw new Error(`Failed to insert events: ${eventsError.message}`);
         }
 
         eventsImported = eventsToInsert.length;
-        console.log(`✅ ${eventsImported} événements insérés avec succès`);
+        console.log(`Imported ${eventsImported} events`);
 
         // Promote to production events table
         const productionEvents = eventsToInsert.map(ev => ({
@@ -289,75 +224,48 @@ serve(async (req) => {
           });
 
         if (prodError) {
-          console.error('❌ Erreur promotion événements:', prodError);
+          console.error('Error promoting events:', prodError);
           throw new Error(`Failed to upsert production events: ${prodError.message}`);
         }
 
-        console.log(`✅ ${productionEvents.length} événements promus en production`);
+        console.log(`Promoted ${productionEvents.length} events to production`);
       }
 
       // Import exposants from Airtable
-      console.log('🏢 Début import des exposants...');
-      const exposantRecords = await fetchAllAirtableRecords(AIRTABLE_BASE_ID!, exposantsTableName, AIRTABLE_PAT!);
-      
-      console.log(`📢 exposantRecords récupérés : ${exposantRecords.length}`);
-      
-      // Créer un Set des IDs d'événements approuvés pour la comparaison
-      const approvedEventIds = new Set(eventsToInsert.map(ev => ev.id));
-      console.log(`📦 approvedEventIds:`, Array.from(approvedEventIds));
+      console.log('Importing exposants...');
+      const exposantsResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/All_Exposants`, {
+        headers: {
+          'Authorization': `Bearer ${AIRTABLE_PAT}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
+      if (!exposantsResponse.ok) {
+        throw new Error(`Failed to fetch exposants: ${exposantsResponse.status}`);
+      }
+
+      const exposantsData = await exposantsResponse.json();
       const exposantsToInsert: any[] = [];
 
-      for (const record of exposantRecords) {
+      for (const record of exposantsData.records) {
         const fields = record.fields;
         
-        // Debug pour voir la structure des données
-        console.log(`🔍 exposant fields:`, Object.keys(fields));
-        console.log(`🔍 rec.fields.id_event:`, fields['id_event']);
-        console.log(`🔍 rec.fields.ID_Event:`, fields['ID_Event']);
-        
-        // Le champ id_event est un tableau de record IDs Airtable
-        const eventRecordIds = fields['id_event'] || [];
-        console.log(`🔍 eventRecordIds reçus:`, eventRecordIds);
-        
-        // Vérifier si cet exposant est lié à un événement approuvé
-        let isLinkedToApprovedEvent = false;
-        for (const recordId of eventRecordIds) {
-          const eventId = airtableRecordToEventId.get(recordId);
-          console.log(`🔍 recordId ${recordId} -> eventId ${eventId}`);
-          if (eventId && approvedEventIds.has(eventId)) {
-            isLinkedToApprovedEvent = true;
-            break;
-          }
-        }
-        
-        if (!isLinkedToApprovedEvent) {
-          console.log(`⚠️ Exposant ${fields['nom_exposant']} ignoré (pas lié à un événement approuvé)`);
+        if (!fields['exposant_nom']?.trim()) {
           continue;
         }
-
-        if (!fields['nom_exposant']?.trim()) {
-          console.log(`⚠️ Exposant ignoré (nom vide)`);
-          continue;
-        }
-
-        // Utiliser le premier événement lié pour l'insertion
-        const firstEventRecordId = eventRecordIds[0];
-        const eventId = airtableRecordToEventId.get(firstEventRecordId);
 
         const exposantData = {
-          id_event: eventId,
-          nom_exposant: fields['nom_exposant'].trim(),
+          id_event: fields['ID_Event'],
+          nom_exposant: fields['exposant_nom'].trim(),
           id_exposant: fields['exposant_stand']?.trim() || '',
           website_exposant: fields['exposant_website']?.trim() || '',
           exposant_description: fields['exposant_description']?.trim() || ''
         };
 
-        exposantsToInsert.push(exposantData);
-        console.log(`✅ Exposant ${exposantData.nom_exposant} ajouté pour l'événement ${eventId}`);
+        if (exposantData.id_event && exposantData.nom_exposant) {
+          exposantsToInsert.push(exposantData);
+        }
       }
-
-      console.log(`📋 Préparé ${exposantsToInsert.length} exposants pour insertion`);
 
       if (exposantsToInsert.length > 0) {
         const { error: exposantsError } = await supabaseClient
@@ -365,12 +273,12 @@ serve(async (req) => {
           .insert(exposantsToInsert);
 
         if (exposantsError) {
-          console.error('❌ Erreur insertion exposants:', exposantsError);
+          console.error('Error inserting exposants:', exposantsError);
           throw new Error(`Failed to insert exposants: ${exposantsError.message}`);
         }
         
         exposantsImported = exposantsToInsert.length;
-        console.log(`✅ ${exposantsImported} exposants insérés avec succès`);
+        console.log(`Imported ${exposantsImported} exposants`);
       }
 
       // Summary response
@@ -378,21 +286,20 @@ serve(async (req) => {
         success: true,
         eventsImported,
         exposantsImported,
-        message: `Import terminé : ${eventsImported} événements et ${exposantsImported} exposants importés`
+        message: `Import completed: ${eventsImported} events and ${exposantsImported} exposants imported`
       };
 
-      console.log('✅ Import Airtable terminé:', summary);
+      console.log('Import completed:', summary);
 
       return new Response(JSON.stringify(summary), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
     } catch (error) {
-      console.error('❌ Error in import-airtable function:', error);
+      console.error('Error in import-airtable function:', error);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: error.message,
-        details: error.stack 
+        error: error.message 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

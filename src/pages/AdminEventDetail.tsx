@@ -19,8 +19,6 @@ const AdminEventDetail = () => {
   const { user, loading } = useAuth();
   const { toast } = useToast();
 
-  console.log('AdminEventDetail - id from params:', id);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -43,20 +41,13 @@ const AdminEventDetail = () => {
     queryFn: async () => {
       if (!id) throw new Error('ID manquant');
       
-      console.log('Fetching event with id:', id);
-      
       const { data, error } = await supabase
         .from('events_import')
         .select('*')
         .eq('id', id)
         .single();
 
-      console.log('Query result:', { data, error });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
     enabled: !!id,
@@ -66,8 +57,6 @@ const AdminEventDetail = () => {
     if (!event) return;
 
     try {
-      console.log('Publishing event:', event);
-      
       // Créer l'événement dans la table events de production
       const productionEvent = {
         id_event: event.id,
@@ -85,12 +74,10 @@ const AdminEventDetail = () => {
         url_site_officiel: event.url_site_officiel || null,
         description_event: event.description_event || null,
         affluence: event.affluence ? parseInt(event.affluence) : null,
-        tarifs: event.tarifs || null,
+        tarif: event.tarifs || null,
         nom_lieu: event.nom_lieu || null,
         location: event.ville || 'Inconnue'
       };
-
-      console.log('Creating production event:', productionEvent);
 
       const { error: insertError } = await supabase
         .from('events')
@@ -99,10 +86,7 @@ const AdminEventDetail = () => {
           ignoreDuplicates: false 
         });
 
-      if (insertError) {
-        console.error('Insert error:', insertError);
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
       // Supprimer de la table d'import
       const { error: deleteError } = await supabase
@@ -110,10 +94,7 @@ const AdminEventDetail = () => {
         .delete()
         .eq('id', event.id);
 
-      if (deleteError) {
-        console.error('Delete error:', deleteError);
-        throw deleteError;
-      }
+      if (deleteError) throw deleteError;
 
       toast({
         title: "Événement publié",
@@ -135,17 +116,12 @@ const AdminEventDetail = () => {
     if (!event) return;
 
     try {
-      console.log('Deleting event:', event.id);
-      
       const { error } = await supabase
         .from('events_import')
         .delete()
         .eq('id', event.id);
 
-      if (error) {
-        console.error('Delete error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Événement supprimé",
@@ -177,13 +153,12 @@ const AdminEventDetail = () => {
   }
 
   if (error) {
-    console.error('Query error:', error);
     return (
       <MainLayout title="Erreur">
         <div className="container mx-auto py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600 mb-4">Erreur de chargement</h1>
-            <p className="text-gray-600 mb-6">Une erreur s'est produite : {error.message}</p>
+            <p className="text-gray-600 mb-6">Une erreur s'est produite lors du chargement de l'événement.</p>
             <Button onClick={() => navigate('/admin')} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Retour à l'administration
