@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -199,11 +199,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
             <div className="md:col-span-2">
               <Label htmlFor="description_event">Description</Label>
-              <Textarea
-                id="description_event"
+              <RichTextEditor
                 value={formData.description_event}
-                onChange={(e) => setFormData({ ...formData, description_event: e.target.value })}
-                rows={3}
+                onChange={(value) => setFormData({ ...formData, description_event: value })}
+                placeholder="Décrivez l'événement..."
+                className="mt-2"
               />
             </div>
 
