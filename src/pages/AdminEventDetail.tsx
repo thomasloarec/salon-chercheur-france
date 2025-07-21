@@ -69,13 +69,13 @@ const AdminEventDetail = () => {
         secteur: [event.secteur || 'Autre'],
         ville: event.ville || 'Inconnue',
         rue: event.rue || null,
-        code_postal: event.code_postal || null,
+        code_postal: null, // events_import doesn't have code_postal
         pays: 'France',
         url_image: event.url_image || null,
         url_site_officiel: event.url_site_officiel || null,
         description_event: event.description_event || null,
         affluence: event.affluence ? parseInt(event.affluence) : null,
-        tarif: event.tarifs || null,
+        tarif: event.tarif || null,
         nom_lieu: event.nom_lieu || null,
         location: event.ville || 'Inconnue'
       };
@@ -225,7 +225,7 @@ const AdminEventDetail = () => {
                 
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <MapPin className="h-4 w-4" />
-                  <span>{formatAddress(event.rue, event.code_postal, event.ville)}</span>
+                  <span>{event.ville || 'Ville non précisée'}</span>
                 </div>
                 
                 {event.secteur && (
@@ -273,10 +273,10 @@ const AdminEventDetail = () => {
                   </div>
                 )}
                 
-                {event.tarifs && (
+                {event.tarif && (
                   <div>
                     <span className="text-sm font-medium">Tarifs:</span>
-                    <p className="text-gray-700">{event.tarifs}</p>
+                    <p className="text-gray-700">{event.tarif}</p>
                   </div>
                 )}
                 
