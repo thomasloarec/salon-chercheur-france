@@ -19,36 +19,15 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
       ville: event.ville
     });
 
-    // Pour les événements en attente (events_import), construire l'adresse manuellement
-    if (event.slug?.startsWith('pending-') || !event.visible) {
-      const addressParts = [];
-      
-      if (event.rue && event.rue.trim() !== '') {
-        addressParts.push(event.rue.trim());
-      }
-      
-      if (event.code_postal && event.code_postal.trim() !== '') {
-        if (event.ville && event.ville.trim() !== '') {
-          addressParts.push(`${event.code_postal.trim()} ${event.ville.trim()}`);
-        } else {
-          addressParts.push(event.code_postal.trim());
-        }
-      } else if (event.ville && event.ville.trim() !== '') {
-        addressParts.push(event.ville.trim());
-      }
-      
-      const result = addressParts.length > 0 ? addressParts.join(', ') : 'Adresse non précisée';
-      console.log('Pending event address result:', result);
-      return result;
-    }
-    
-    // Pour les événements publiés (events), utiliser la logique existante
+    // Construire l'adresse avec fallback intelligent
     const addressParts = [];
     
+    // Rue
     if (event.rue && event.rue.trim() !== '') {
       addressParts.push(event.rue.trim());
     }
     
+    // Code postal et ville
     if (event.code_postal && event.code_postal.trim() !== '') {
       if (event.ville && event.ville.trim() !== '') {
         addressParts.push(`${event.code_postal.trim()} ${event.ville.trim()}`);
@@ -60,26 +39,22 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
     }
     
     const result = addressParts.length > 0 ? addressParts.join(', ') : 'Adresse non précisée';
-    console.log('Published event address result:', result);
+    console.log('Final address result:', result);
     return result;
   };
 
-  // Debug temporaire
+  // Debug temporaire - calculer l'adresse
   const addressResult = getEventAddress(event);
   console.log('🔍 DEBUG - Address result:', addressResult);
-  console.log('🔍 DEBUG - Event data:', JSON.stringify({
-    rue: event.rue,
-    code_postal: event.code_postal,
-    ville: event.ville,
-    slug: event.slug,
-    visible: event.visible
-  }, null, 2));
+  console.log('🔍 DEBUG - Complete event object:', JSON.stringify(event, null, 2));
 
   return (
     <aside className="space-y-6">
       {/* DEBUG temporaire - À supprimer après résolution */}
       <div style={{ color: 'red', border: '2px solid red', padding: '10px', marginBottom: '20px' }}>
-        <strong>🧪 DEBUG - Adresse calculée:</strong> "{addressResult}"
+        <strong>🧪 DEBUG - Données complètes:</strong>
+        <br />
+        <strong>Adresse calculée:</strong> "{addressResult}"
         <br />
         <strong>Rue:</strong> "{event.rue || 'N/A'}"
         <br />
@@ -90,6 +65,8 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
         <strong>Visible:</strong> {event.visible ? 'true' : 'false'}
         <br />
         <strong>Slug:</strong> "{event.slug || 'N/A'}"
+        <br />
+        <strong>Event ID:</strong> "{event.id}"
       </div>
 
       {/* Informations pratiques */}
@@ -124,7 +101,7 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
                   {addressResult}
                   {/* Debug inline temporaire */}
                   <div style={{ fontSize: '10px', color: 'blue', marginTop: '5px' }}>
-                    DEBUG: {JSON.stringify({ rue: event.rue, cp: event.code_postal, ville: event.ville })}
+                    DEBUG RAW: rue="{event.rue}", cp="{event.code_postal}", ville="{event.ville}"
                   </div>
                 </div>
               </div>

@@ -48,13 +48,51 @@ const AdminEventDetail = () => {
 
       if (error) throw error;
       
-      // Extraire rue et code_postal depuis l'adresse
-      const addressParts = formatAddress(data.adresse);
-      const codePostalMatch = data.adresse?.match(/(\d{5})/);
-      const codePostal = codePostalMatch ? codePostalMatch[1] : '';
+      console.log('🔍 DEBUG - Raw event data from events_import:', data);
       
-      // Extraire la rue (tout ce qui précède le code postal)
-      const rue = data.adresse?.replace(/\d{5}.*$/, '').trim() || '';
+      // Améliorer l'extraction de l'adresse depuis le champ 'adresse'
+      let rue = '';
+      let codePostal = '';
+      let ville = data.ville || '';
+      
+      if (data.adresse) {
+        console.log('🔍 DEBUG - Original adresse field:', data.adresse);
+        
+        // Extraire le code postal (5 chiffres)
+        const codePostalMatch = data.adresse.match(/(\d{5})/);
+        if (codePostalMatch) {
+          codePostal = codePostalMatch[1];
+          console.log('🔍 DEBUG - Extracted code postal:', codePostal);
+        }
+        
+        // Extraire la rue (tout ce qui précède le code postal)
+        if (codePostal) {
+          rue = data.adresse.split(codePostal)[0].trim();
+          // Nettoyer la rue en supprimant les virgules finales
+          rue = rue.replace(/[,\s]+$/, '');
+          console.log('🔍 DEBUG - Extracted rue:', rue);
+          
+          // Extraire la ville (tout ce qui suit le code postal)
+          const villeFromAddress = data.adresse.split(codePostal)[1];
+          if (villeFromAddress) {
+            ville = villeFromAddress.replace(/^[,\s]+/, '').trim();
+            console.log('🔍 DEBUG - Extracted ville from address:', ville);
+          }
+        } else {
+          // Si pas de code postal trouvé, prendre toute l'adresse comme rue
+          rue = data.adresse.trim();
+        }
+      }
+      
+      // Utiliser les champs individuels rue/code_postal s'ils existent
+      if (data.rue && data.rue.trim()) {
+        rue = data.rue.trim();
+      }
+      if (data.code_postal && data.code_postal.trim()) {
+        codePostal = data.code_postal.trim();
+      }
+      
+      console.log('🔍 DEBUG - Final extracted data:', { rue, codePostal, ville });
       
       // Transformer les données de events_import vers le format Event
       const transformedEvent: Event = {
@@ -65,12 +103,12 @@ const AdminEventDetail = () => {
         date_fin: data.date_fin || data.date_debut || '1970-01-01',
         secteur: convertSecteurToString(data.secteur || 'Autre'),
         nom_lieu: data.nom_lieu,
-        ville: data.ville || 'Ville non précisée',
+        ville: ville || 'Ville non précisée',
         country: 'France',
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
         tags: [],
-        tarif: data.tarif, // Utiliser 'tarif' depuis events_import
+        tarif: data.tarif,
         affluence: data.affluence ? parseInt(data.affluence) : null,
         estimated_exhibitors: null,
         is_b2b: true,
@@ -79,14 +117,15 @@ const AdminEventDetail = () => {
         updated_at: data.updated_at,
         last_scraped_at: null,
         scraped_from: null,
-        rue: rue, // Rue extraite de l'adresse
-        code_postal: codePostal, // Code postal extrait de l'adresse
-        visible: false, // Événement en attente, donc non visible
-        slug: `pending-${data.id}`, // Slug temporaire pour événement en attente
+        rue: rue, // Rue extraite et nettoyée
+        code_postal: codePostal, // Code postal extrait
+        visible: false,
+        slug: `pending-${data.id}`,
         sectors: [],
         is_favorite: false
       };
 
+      console.log('🔍 DEBUG - Final transformed event:', transformedEvent);
       return transformedEvent;
     },
     enabled: !!id,
