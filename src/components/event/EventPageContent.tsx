@@ -35,7 +35,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   ]);
 
   const isAdmin = user?.email === 'admin@salonspro.com';
-  const isDraft = !event.visible;
 
   const handleEventUpdated = (refreshedEvent: Event, slugChanged?: boolean) => {
     if (onEventUpdated) {

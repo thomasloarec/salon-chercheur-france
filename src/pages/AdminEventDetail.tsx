@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -48,21 +49,16 @@ const AdminEventDetail = () => {
 
       if (error) throw error;
       
-      console.log('🔍 DEBUG - Raw event data from events_import:', data);
-      
       // Améliorer l'extraction de l'adresse depuis le champ 'adresse'
       let rue = '';
       let codePostal = '';
       let ville = data.ville || '';
       
       if (data.adresse) {
-        console.log('🔍 DEBUG - Original adresse field:', data.adresse);
-        
         // Extraire le code postal (5 chiffres)
         const codePostalMatch = data.adresse.match(/(\d{5})/);
         if (codePostalMatch) {
           codePostal = codePostalMatch[1];
-          console.log('🔍 DEBUG - Extracted code postal:', codePostal);
         }
         
         // Extraire la rue (tout ce qui précède le code postal)
@@ -70,13 +66,11 @@ const AdminEventDetail = () => {
           rue = data.adresse.split(codePostal)[0].trim();
           // Nettoyer la rue en supprimant les virgules finales
           rue = rue.replace(/[,\s]+$/, '');
-          console.log('🔍 DEBUG - Extracted rue:', rue);
           
           // Extraire la ville (tout ce qui suit le code postal)
           const villeFromAddress = data.adresse.split(codePostal)[1];
           if (villeFromAddress) {
             ville = villeFromAddress.replace(/^[,\s]+/, '').trim();
-            console.log('🔍 DEBUG - Extracted ville from address:', ville);
           }
         } else {
           // Si pas de code postal trouvé, prendre toute l'adresse comme rue
@@ -91,8 +85,6 @@ const AdminEventDetail = () => {
       if (data.code_postal && data.code_postal.trim()) {
         codePostal = data.code_postal.trim();
       }
-      
-      console.log('🔍 DEBUG - Final extracted data:', { rue, codePostal, ville });
       
       // Transformer les données de events_import vers le format Event
       const transformedEvent: Event = {
@@ -117,15 +109,14 @@ const AdminEventDetail = () => {
         updated_at: data.updated_at,
         last_scraped_at: null,
         scraped_from: null,
-        rue: rue, // Rue extraite et nettoyée
-        code_postal: codePostal, // Code postal extrait
+        rue: rue,
+        code_postal: codePostal,
         visible: false,
         slug: `pending-${data.id}`,
         sectors: [],
         is_favorite: false
       };
 
-      console.log('🔍 DEBUG - Final transformed event:', transformedEvent);
       return transformedEvent;
     },
     enabled: !!id,
