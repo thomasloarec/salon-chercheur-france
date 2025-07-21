@@ -204,6 +204,8 @@ serve(async (req) => {
       const eventRecords = await fetchAllAirtableRecords(AIRTABLE_BASE_ID!, eventsTableName, AIRTABLE_PAT!);
       
       const eventsToInsert: any[] = [];
+      // Créer un mapping des record IDs Airtable vers les IDs d'événements
+      const airtableRecordToEventId = new Map<string, string>();
       
       for (const record of eventRecords) {
         const fields = record.fields;
@@ -235,10 +237,13 @@ serve(async (req) => {
 
         if (eventData.id) {
           eventsToInsert.push(eventData);
+          // Mapper le record ID Airtable vers l'ID d'événement
+          airtableRecordToEventId.set(record.id, eventData.id);
         }
       }
 
       console.log(`📋 Préparé ${eventsToInsert.length} événements pour insertion`);
+      console.log(`🗺️ Mapping créé : ${airtableRecordToEventId.size} correspondances record->event`);
 
       // Insert events into Supabase events_import table
       if (eventsToInsert.length > 0) {
@@ -294,31 +299,62 @@ serve(async (req) => {
       // Import exposants from Airtable
       console.log('🏢 Début import des exposants...');
       const exposantRecords = await fetchAllAirtableRecords(AIRTABLE_BASE_ID!, exposantsTableName, AIRTABLE_PAT!);
-
+      
+      console.log(`📢 exposantRecords récupérés : ${exposantRecords.length}`);
+      
+      // Créer un Set des IDs d'événements approuvés pour la comparaison
       const approvedEventIds = new Set(eventsToInsert.map(ev => ev.id));
+      console.log(`📦 approvedEventIds:`, Array.from(approvedEventIds));
+
       const exposantsToInsert: any[] = [];
 
       for (const record of exposantRecords) {
         const fields = record.fields;
         
-        // Only include exposants for approved events
-        if (!approvedEventIds.has(fields['ID_Event'])) {
+        // Debug pour voir la structure des données
+        console.log(`🔍 exposant fields:`, Object.keys(fields));
+        console.log(`🔍 rec.fields.id_event:`, fields['id_event']);
+        console.log(`🔍 rec.fields.ID_Event:`, fields['ID_Event']);
+        
+        // Le champ id_event est un tableau de record IDs Airtable
+        const eventRecordIds = fields['id_event'] || [];
+        console.log(`🔍 eventRecordIds reçus:`, eventRecordIds);
+        
+        // Vérifier si cet exposant est lié à un événement approuvé
+        let isLinkedToApprovedEvent = false;
+        for (const recordId of eventRecordIds) {
+          const eventId = airtableRecordToEventId.get(recordId);
+          console.log(`🔍 recordId ${recordId} -> eventId ${eventId}`);
+          if (eventId && approvedEventIds.has(eventId)) {
+            isLinkedToApprovedEvent = true;
+            break;
+          }
+        }
+        
+        if (!isLinkedToApprovedEvent) {
+          console.log(`⚠️ Exposant ${fields['nom_exposant']} ignoré (pas lié à un événement approuvé)`);
           continue;
         }
 
-        if (!fields['exposant_nom']?.trim()) {
+        if (!fields['nom_exposant']?.trim()) {
+          console.log(`⚠️ Exposant ignoré (nom vide)`);
           continue;
         }
+
+        // Utiliser le premier événement lié pour l'insertion
+        const firstEventRecordId = eventRecordIds[0];
+        const eventId = airtableRecordToEventId.get(firstEventRecordId);
 
         const exposantData = {
-          id_event: fields['ID_Event'],
-          nom_exposant: fields['exposant_nom'].trim(),
+          id_event: eventId,
+          nom_exposant: fields['nom_exposant'].trim(),
           id_exposant: fields['exposant_stand']?.trim() || '',
           website_exposant: fields['exposant_website']?.trim() || '',
           exposant_description: fields['exposant_description']?.trim() || ''
         };
 
         exposantsToInsert.push(exposantData);
+        console.log(`✅ Exposant ${exposantData.nom_exposant} ajouté pour l'événement ${eventId}`);
       }
 
       console.log(`📋 Préparé ${exposantsToInsert.length} exposants pour insertion`);
