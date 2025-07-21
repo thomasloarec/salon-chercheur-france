@@ -70,7 +70,7 @@ const AdminEventDetail = () => {
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
         tags: [],
-        tarif: data.tarifs, // Utiliser 'tarifs' depuis events_import
+        tarif: data.tarif, // Utiliser 'tarif' depuis events_import
         affluence: data.affluence ? parseInt(data.affluence) : null,
         estimated_exhibitors: null,
         is_b2b: true,
