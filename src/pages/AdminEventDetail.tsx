@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, MapPin, ExternalLink, Eye, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { formatAddress } from '@/utils/formatAddress';
 import { SectorBadge } from '@/components/ui/sector-badge';
 
 const AdminEventDetail = () => {
@@ -18,6 +18,8 @@ const AdminEventDetail = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { toast } = useToast();
+
+  console.log('AdminEventDetail - id from params:', id);
 
   if (loading) {
     return (
@@ -41,13 +43,20 @@ const AdminEventDetail = () => {
     queryFn: async () => {
       if (!id) throw new Error('ID manquant');
       
+      console.log('Fetching event with id:', id);
+      
       const { data, error } = await supabase
         .from('events_import')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      console.log('Query result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       return data;
     },
     enabled: !!id,
@@ -57,6 +66,8 @@ const AdminEventDetail = () => {
     if (!event) return;
 
     try {
+      console.log('Publishing event:', event);
+      
       // Créer l'événement dans la table events de production
       const productionEvent = {
         id_event: event.id,
@@ -68,7 +79,7 @@ const AdminEventDetail = () => {
         secteur: [event.secteur || 'Autre'],
         ville: event.ville || 'Inconnue',
         rue: event.rue || null,
-        code_postal: null, // events_import doesn't have code_postal
+        code_postal: null,
         pays: 'France',
         url_image: event.url_image || null,
         url_site_officiel: event.url_site_officiel || null,
@@ -79,6 +90,8 @@ const AdminEventDetail = () => {
         location: event.ville || 'Inconnue'
       };
 
+      console.log('Creating production event:', productionEvent);
+
       const { error: insertError } = await supabase
         .from('events')
         .upsert(productionEvent, { 
@@ -86,7 +99,10 @@ const AdminEventDetail = () => {
           ignoreDuplicates: false 
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw insertError;
+      }
 
       // Supprimer de la table d'import
       const { error: deleteError } = await supabase
@@ -94,7 +110,10 @@ const AdminEventDetail = () => {
         .delete()
         .eq('id', event.id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        throw deleteError;
+      }
 
       toast({
         title: "Événement publié",
@@ -116,12 +135,17 @@ const AdminEventDetail = () => {
     if (!event) return;
 
     try {
+      console.log('Deleting event:', event.id);
+      
       const { error } = await supabase
         .from('events_import')
         .delete()
         .eq('id', event.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
 
       toast({
         title: "Événement supprimé",
@@ -152,7 +176,25 @@ const AdminEventDetail = () => {
     );
   }
 
-  if (error || !event) {
+  if (error) {
+    console.error('Query error:', error);
+    return (
+      <MainLayout title="Erreur">
+        <div className="container mx-auto py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Erreur de chargement</h1>
+            <p className="text-gray-600 mb-6">Une erreur s'est produite : {error.message}</p>
+            <Button onClick={() => navigate('/admin')} variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour à l'administration
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!event) {
     return (
       <MainLayout title="Événement introuvable">
         <div className="container mx-auto py-8">
@@ -170,7 +212,7 @@ const AdminEventDetail = () => {
   }
 
   return (
-    <MainLayout title={`Admin - ${event.nom_event}`}>
+    <MainLayout title={`Admin - ${event.nom_event || 'Événement'}`}>
       <div className="container mx-auto py-8 space-y-6">
         {/* Header avec navigation */}
         <div className="flex items-center justify-between">
@@ -204,13 +246,13 @@ const AdminEventDetail = () => {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl">{event.nom_event}</CardTitle>
+                <CardTitle className="text-2xl">{event.nom_event || 'Événement sans nom'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {event.url_image && (
                   <img
                     src={event.url_image}
-                    alt={event.nom_event}
+                    alt={event.nom_event || 'Image événement'}
                     className="w-full h-64 object-cover rounded-lg"
                   />
                 )}
