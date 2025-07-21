@@ -11,14 +11,6 @@ interface EventSidebarProps {
 export const EventSidebar = ({ event }: EventSidebarProps) => {
   // Format address for pending events (events_import) vs published events (events)
   const getEventAddress = (event: Event): string => {
-    console.log('getEventAddress called with event:', {
-      slug: event.slug,
-      visible: event.visible,
-      rue: event.rue,
-      code_postal: event.code_postal,
-      ville: event.ville
-    });
-
     // Construire l'adresse avec fallback intelligent
     const addressParts = [];
     
@@ -38,37 +30,13 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
       addressParts.push(event.ville.trim());
     }
     
-    const result = addressParts.length > 0 ? addressParts.join(', ') : 'Adresse non précisée';
-    console.log('Final address result:', result);
-    return result;
+    return addressParts.length > 0 ? addressParts.join(', ') : 'Adresse non précisée';
   };
 
-  // Debug temporaire - calculer l'adresse
   const addressResult = getEventAddress(event);
-  console.log('🔍 DEBUG - Address result:', addressResult);
-  console.log('🔍 DEBUG - Complete event object:', JSON.stringify(event, null, 2));
 
   return (
     <aside className="space-y-6">
-      {/* DEBUG temporaire - À supprimer après résolution */}
-      <div style={{ color: 'red', border: '2px solid red', padding: '10px', marginBottom: '20px' }}>
-        <strong>🧪 DEBUG - Données complètes:</strong>
-        <br />
-        <strong>Adresse calculée:</strong> "{addressResult}"
-        <br />
-        <strong>Rue:</strong> "{event.rue || 'N/A'}"
-        <br />
-        <strong>Code postal:</strong> "{event.code_postal || 'N/A'}"
-        <br />
-        <strong>Ville:</strong> "{event.ville || 'N/A'}"
-        <br />
-        <strong>Visible:</strong> {event.visible ? 'true' : 'false'}
-        <br />
-        <strong>Slug:</strong> "{event.slug || 'N/A'}"
-        <br />
-        <strong>Event ID:</strong> "{event.id}"
-      </div>
-
       {/* Informations pratiques */}
       <Card>
         <CardHeader className="pb-4">
@@ -92,17 +60,13 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
               </div>
             )}
             
-            {/* ADRESSE - avec debug visible */}
+            {/* Adresse */}
             <div className="flex items-start gap-2">
               <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
               <div className="text-left">
                 <div className="font-semibold text-gray-900">Adresse</div>
                 <div className="text-gray-600">
                   {addressResult}
-                  {/* Debug inline temporaire */}
-                  <div style={{ fontSize: '10px', color: 'blue', marginTop: '5px' }}>
-                    DEBUG RAW: rue="{event.rue}", cp="{event.code_postal}", ville="{event.ville}"
-                  </div>
                 </div>
               </div>
             </div>
