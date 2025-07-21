@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { convertSecteurToString } from '@/utils/sectorUtils';
+import { formatAddress } from '@/utils/formatAddress';
 import type { Event } from '@/types/event';
 import { AdminEventWrapper } from '@/components/admin/AdminEventWrapper';
 import { EventPageContent } from '@/components/event/EventPageContent';
@@ -47,6 +48,14 @@ const AdminEventDetail = () => {
 
       if (error) throw error;
       
+      // Extraire rue et code_postal depuis l'adresse
+      const addressParts = formatAddress(data.adresse);
+      const codePostalMatch = data.adresse?.match(/(\d{5})/);
+      const codePostal = codePostalMatch ? codePostalMatch[1] : '';
+      
+      // Extraire la rue (tout ce qui précède le code postal)
+      const rue = data.adresse?.replace(/\d{5}.*$/, '').trim() || '';
+      
       // Transformer les données de events_import vers le format Event
       const transformedEvent: Event = {
         id: data.id,
@@ -61,7 +70,7 @@ const AdminEventDetail = () => {
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
         tags: [],
-        tarif: data.tarif,
+        tarif: data.tarifs, // Utiliser 'tarifs' depuis events_import
         affluence: data.affluence ? parseInt(data.affluence) : null,
         estimated_exhibitors: null,
         is_b2b: true,
@@ -70,8 +79,8 @@ const AdminEventDetail = () => {
         updated_at: data.updated_at,
         last_scraped_at: null,
         scraped_from: null,
-        rue: data.rue,
-        code_postal: data.code_postal,
+        rue: rue, // Rue extraite de l'adresse
+        code_postal: codePostal, // Code postal extrait de l'adresse
         visible: false, // Événement en attente, donc non visible
         slug: `pending-${data.id}`, // Slug temporaire pour événement en attente
         sectors: [],
