@@ -44,16 +44,22 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   // Use database-generated slug if available, otherwise fallback to client-generated
   const eventSlug = event.slug || generateEventSlug(event);
 
-  const CardWrapper = ({ children }: { children: React.ReactNode }) => 
-    adminPreview ? (
-      <Link to={`/events/${eventSlug}?preview=1`} className="block">
-        {children}
-      </Link>
-    ) : (
-      <Link to={`/events/${eventSlug}`} className="block">
-        {children}
-      </Link>
-    );
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (adminPreview) {
+      // Pour les événements en attente, utiliser l'ID direct pour la page d'admin
+      return (
+        <Link to={`/admin/events/${event.id}`} className="block">
+          {children}
+        </Link>
+      );
+    } else {
+      return (
+        <Link to={`/events/${eventSlug}`} className="block">
+          {children}
+        </Link>
+      );
+    }
+  };
 
   return (
     <div className="relative group">
