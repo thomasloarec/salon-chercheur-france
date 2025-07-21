@@ -27,6 +27,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    global: 'globalThis',
+  },
   build: {
     rollupOptions: {
       external: ['cheerio', 'boolbase', 'css-select', 'css-what', 'domelementtype', 'domhandler', 'domutils'],
@@ -45,6 +48,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   optimizeDeps: {
+    include: ['buffer'],
     exclude: ['cheerio', 'boolbase', 'css-select', 'css-what', 'domelementtype', 'domhandler', 'domutils']
   }
 }));
