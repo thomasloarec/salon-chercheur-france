@@ -67,74 +67,49 @@ export function PendingEventsImport() {
     },
   });
 
-  const publishEvent = async (eventId: string) => {
+  const publishPendingEvent = async (eventId: string) => {
     const eventImport = pendingEvents?.find(e => e.id === eventId);
-    if (!eventImport) return;
+    if (!eventImport) {
+      console.error('❌ Événement non trouvé dans la liste:', eventId);
+      return;
+    }
 
     setPublishingId(eventId);
+    
     try {
-      // Créer l'événement dans la table events de production
-      // IMPORTANT: Utiliser UNIQUEMENT les colonnes de la table events
-      const productionEvent = {
-        id_event: eventImport.id,
-        nom_event: eventImport.nom_event || '',
-        visible: true,
-        type_event: eventImport.type_event || 'salon',
-        date_debut: eventImport.date_debut || '1970-01-01',
-        date_fin: eventImport.date_fin || eventImport.date_debut || '1970-01-01',
-        secteur: [eventImport.secteur || 'Autre'],
-        ville: eventImport.ville || 'Inconnue',
-        rue: eventImport.rue || null,
-        code_postal: eventImport.code_postal || null,
-        pays: 'France',
-        url_image: eventImport.url_image || null,
-        url_site_officiel: eventImport.url_site_officiel || null,
-        description_event: eventImport.description_event || null,
-        affluence: eventImport.affluence ? parseInt(eventImport.affluence) : null,
-        tarif: eventImport.tarifs || null,
-        nom_lieu: eventImport.nom_lieu || null,
-        location: eventImport.ville || 'Inconnue'
-      };
+      console.log('🔵 Début publication événement:', eventImport.nom_event);
 
-      // Log de debug pour voir exactement ce qui est envoyé
-      console.log('🔶 REQUEST publishEvent payload:', productionEvent);
-      console.log('Payload keys:', Object.keys(productionEvent));
+      // Appeler la nouvelle fonction edge
+      const { data, error } = await supabase.functions.invoke('publish-pending', {
+        body: { id_event: eventId }
+      });
 
-      const { error: insertError } = await supabase
-        .from('events')
-        .upsert(productionEvent, { 
-          onConflict: 'id_event',
-          ignoreDuplicates: false 
-        });
-
-      if (insertError) {
-        console.error('🔴 RESPONSE publishEvent error:', insertError);
-        throw insertError;
+      if (error) {
+        console.error('❌ Erreur fonction edge publish-pending:', error);
+        throw error;
       }
 
-      // Supprimer de la table d'import
-      const { error: deleteError } = await supabase
-        .from('events_import')
-        .delete()
-        .eq('id', eventImport.id);
-
-      if (deleteError) {
-        console.error('🔴 RESPONSE delete error:', deleteError);
-        throw deleteError;
+      if (!data.success) {
+        console.error('❌ Échec publication:', data);
+        throw new Error(data.error || 'Erreur inconnue');
       }
+
+      console.log('✅ Événement publié avec succès:', data);
 
       toast({
         title: "Événement publié",
-        description: "L'événement est maintenant visible au public.",
+        description: `${eventImport.nom_event} est maintenant visible au public.`,
       });
 
+      // Invalider les caches pour rafraîchir les listes
       queryClient.invalidateQueries({ queryKey: ['events-import-pending'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+
     } catch (error) {
-      console.error('🔴 RESPONSE publishEvent error:', error);
+      console.error('❌ Erreur publication événement:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de publier l'événement.",
+        title: "Erreur de publication",
+        description: error.message || "Impossible de publier l'événement.",
         variant: "destructive",
       });
     } finally {
@@ -258,7 +233,7 @@ export function PendingEventsImport() {
         <EventGrid 
           events={eventsForGrid} 
           adminPreview={true}
-          onPublish={publishEvent}
+          onPublish={publishPendingEvent}
         />
       </CardContent>
     </Card>
