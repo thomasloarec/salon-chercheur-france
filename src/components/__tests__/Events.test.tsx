@@ -36,8 +36,8 @@ const mockEvents = [
   {
     id: '1',
     name: 'Test Event 1',
-    start_date: '2024-12-15',
-    end_date: '2024-12-17',
+    date_debut: '2024-12-15',
+    date_fin: '2024-12-17',
     city: 'Paris',
     sector: 'Technology',
     location: 'Test Location',
@@ -48,8 +48,8 @@ const mockEvents = [
   {
     id: '2',
     name: 'Test Event 2',
-    start_date: '2024-12-20',
-    end_date: '2024-12-22',
+    date_debut: '2024-12-20',
+    date_fin: '2024-12-22',
     city: 'Lyon',
     sector: 'Health',
     location: 'Test Location 2',

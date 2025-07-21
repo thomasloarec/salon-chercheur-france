@@ -11,8 +11,8 @@ export const renderClusterPopup = (map: MaplibreMap, coordinates: [number, numbe
       return `
         <div style="margin: 4px 0; padding: 4px 0; border-bottom: 1px solid #eee;">
           <div style="font-size: 11px; color: #0366d6; margin-bottom: 2px;">
-            📅 ${dayjs(event.start_date).format('DD/MM/YY')}
-            ${event.start_date !== event.end_date ? ` - ${dayjs(event.end_date).format('DD/MM/YY')}` : ''}
+            📅 ${dayjs(event.date_debut).format('DD/MM/YY')}
+            ${event.date_debut !== event.date_fin ? ` - ${dayjs(event.date_fin).format('DD/MM/YY')}` : ''}
           </div>
           <div style="font-weight: 500; font-size: 12px; color: #333; margin-bottom: 2px;">
             <a href="/events/${slug}" style="color: #333; text-decoration: none;">
@@ -56,8 +56,8 @@ export const renderEventPopup = (map: MaplibreMap, coordinates: [number, number]
         style="height: 64px; width: 100%; object-fit: cover; border-radius: 4px; margin-bottom: 8px;"
       />
       <div style="font-size: 11px; color: #0366d6; margin-bottom: 4px;">
-        📅 ${dayjs(event.start_date).format('DD/MM/YY')}
-        ${event.start_date !== event.end_date ? ` - ${dayjs(event.end_date).format('DD/MM/YY')}` : ''}
+        📅 ${dayjs(event.date_debut).format('DD/MM/YY')}
+        ${event.date_debut !== event.date_fin ? ` - ${dayjs(event.date_fin).format('DD/MM/YY')}` : ''}
       </div>
       <div style="font-weight: 500; font-size: 13px; color: #333; margin-bottom: 4px;">
         <a href="/events/${slug}" style="color: #333; text-decoration: none;">

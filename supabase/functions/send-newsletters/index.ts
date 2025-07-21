@@ -92,8 +92,8 @@ const handler = async (req: Request): Promise<Response> => {
         const { data: nextMonthEvents, error: nextMonthError } = await supabase
           .from('events')
           .select('*')
-          .gte('start_date', nextMonth.toISOString().split('T')[0])
-          .lt('start_date', monthAfterNext.toISOString().split('T')[0])
+          .gte('date_debut', nextMonth.toISOString().split('T')[0])
+          .lt('date_debut', monthAfterNext.toISOString().split('T')[0])
           .in('sector', subscription.sectors.map(id => sectorMap.get(id)).filter(Boolean));
 
         if (nextMonthError) {
@@ -107,7 +107,7 @@ const handler = async (req: Request): Promise<Response> => {
           .select('*')
           .gte('created_at', lastMonthCronDate.toISOString())
           .lt('created_at', now.toISOString())
-          .gte('start_date', monthAfterNext.toISOString().split('T')[0])
+          .gte('date_debut', monthAfterNext.toISOString().split('T')[0])
           .in('sector', subscription.sectors.map(id => sectorMap.get(id)).filter(Boolean));
 
         if (newFutureError) {
@@ -200,7 +200,7 @@ function generateEmailHtml({ sectorNames, nextMonthName, nextMonthEvents, newFut
       <div style="margin-bottom: 16px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px;">
         <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 18px;">${event.name}</h3>
         <p style="margin: 4px 0; color: #6b7280;">
-          📅 ${formatDate(event.start_date)}${event.end_date !== event.start_date ? ` - ${formatDate(event.end_date)}` : ''}
+          📅 ${formatDate(event.date_debut)}${event.date_fin !== event.date_debut ? ` - ${formatDate(event.date_fin)}` : ''}
         </p>
         <p style="margin: 4px 0; color: #6b7280;">📍 ${event.city}${event.venue_name ? ` - ${event.venue_name}` : ''}</p>
         ${event.description ? `<p style="margin: 8px 0 0 0; color: #4b5563; font-size: 14px;">${event.description.substring(0, 200)}${event.description.length > 200 ? '...' : ''}</p>` : ''}
