@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import AirtableSync from '@/components/admin/AirtableSync';
 import AirtableValidationTest from '@/components/admin/AirtableValidationTest';
 import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
 import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
@@ -9,6 +9,7 @@ import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import MainLayout from '@/components/layout/MainLayout';
 import AirtableStatusWidget from '@/components/admin/AirtableStatusWidget';
 import AirtableDiagnostic from '@/components/admin/AirtableDiagnostic';
+import { AirtableImport } from '@/components/admin/AirtableImport';
 
 const Admin = () => {
   const { user, loading } = useAuth();
@@ -57,8 +58,8 @@ const Admin = () => {
         {/* Tests de validation Airtable */}
         <AirtableValidationTest />
 
-        {/* Synchronisation Airtable */}
-        <AirtableSync />
+        {/* Import Airtable simplifié */}
+        <AirtableImport />
 
         {/* Vérification anti-doublons */}
         <AirtableAntiDuplicateCheck />
