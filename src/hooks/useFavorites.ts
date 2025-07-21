@@ -74,12 +74,13 @@ export const useIsFavorite = (eventId: string) => {
     queryFn: async () => {
       if (!user) return false;
       
+      // Utiliser maybeSingle() au lieu de single() pour éviter les erreurs 406
       const { data, error } = await supabase
         .from('favorites')
         .select('id')
         .eq('user_id', user.id)
         .eq('event_id', eventId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
       return !!data;

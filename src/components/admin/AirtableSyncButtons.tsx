@@ -37,6 +37,9 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
 
       const { data, error } = await supabase.functions.invoke('airtable-write', {
         method: 'POST',
+        headers: {
+          'X-Lovable-Admin': 'true'
+        },
         body: {
           table: 'All_Events',
           records: eventsData.map(event => ({
@@ -94,6 +97,9 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
 
       const { data, error } = await supabase.functions.invoke('airtable-write', {
         method: 'POST',
+        headers: {
+          'X-Lovable-Admin': 'true'
+        },
         body: {
           table: 'All_Exposants',
           records: exposantsData.map(exposant => ({
@@ -139,6 +145,9 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
 
       const { data, error } = await supabase.functions.invoke('airtable-write', {
         method: 'POST',
+        headers: {
+          'X-Lovable-Admin': 'true'
+        },
         body: {
           table: 'Participation',
           records: participationData.map(p => ({

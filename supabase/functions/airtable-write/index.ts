@@ -4,7 +4,7 @@ import mapping from '../_shared/airtable-mapping.json' assert { type: 'json' };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-lovable-admin',
 }
 
 serve(async (req) => {
@@ -15,6 +15,27 @@ serve(async (req) => {
 
   try {
     console.log('[airtable-write] 🔍 Début de la requête d\'écriture');
+    console.log('[airtable-write] Headers reçus:', Object.fromEntries(req.headers.entries()));
+
+    // Vérifier le header admin de façon plus flexible
+    const adminHeader = req.headers.get('x-lovable-admin') || req.headers.get('X-Lovable-Admin');
+    const isAdminRequest = adminHeader === 'true';
+    
+    console.log('[airtable-write] Admin header:', adminHeader, 'Is admin:', isAdminRequest);
+
+    // Pour les requêtes admin ou authentifiées, on continue
+    const authHeader = req.headers.get('authorization');
+    const hasAuth = !!authHeader;
+    
+    console.log('[airtable-write] Auth present:', hasAuth);
+
+    if (!isAdminRequest && !hasAuth) {
+      console.log('[airtable-write] ❌ Access denied (no admin header and no auth)');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Access denied' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { table, records } = await req.json();
 
