@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -82,9 +83,16 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
     try {
       // Determine if we're updating events or events_import table
-      const isEventsImport = event.slug?.startsWith('pending-');
+      const isEventsImport = event.slug?.startsWith('pending-') || !event.visible;
       
-      // Generate slug if name or city changed
+      console.log('Updating event:', { 
+        eventId: event.id, 
+        isEventsImport, 
+        slug: event.slug, 
+        visible: event.visible 
+      });
+
+      // Generate slug if name or city changed for published events
       const nameChanged = formData.nom_event !== event.nom_event;
       const cityChanged = formData.ville !== event.ville;
       const shouldRegenerateSlug = nameChanged || cityChanged;
@@ -104,7 +112,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       let data, error;
 
       if (isEventsImport) {
-        // Update events_import table using id_event as the key
+        // Update events_import table - use only fields that exist in this table
         const updateData = {
           nom_event: formData.nom_event,
           description_event: formData.description_event || null,
@@ -117,19 +125,25 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           url_image: formData.url_image || null,
           url_site_officiel: formData.url_site_officiel || null,
           type_event: formData.type_event,
-          tarifs: formData.tarif || null, // Note: events_import uses 'tarifs' not 'tarif'
+          tarif: formData.tarif || null, // events_import uses 'tarif' not 'tarifs'
           updated_at: new Date().toISOString(),
         };
+
+        console.log('Updating events_import with data:', updateData);
 
         const result = await supabase
           .from('events_import')
           .update(updateData)
-          .eq('id', event.id) // events_import uses 'id' as primary key
+          .eq('id', event.id)
           .select()
           .single();
 
         data = result.data;
         error = result.error;
+        
+        if (error) {
+          console.error('Error updating events_import:', error);
+        }
       } else {
         // Update events table
         const updateData = {
@@ -151,6 +165,8 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           updated_at: new Date().toISOString(),
         };
 
+        console.log('Updating events with data:', updateData);
+
         const result = await supabase
           .from('events')
           .update(updateData)
@@ -160,6 +176,10 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
         data = result.data;
         error = result.error;
+        
+        if (error) {
+          console.error('Error updating events:', error);
+        }
       }
 
       if (error) throw error;
@@ -184,7 +204,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
         tags: [],
-        tarif: data.tarifs, // events_import uses 'tarifs'
+        tarif: data.tarif, // events_import uses 'tarif'
         affluence: data.affluence ? parseInt(data.affluence) : null,
         estimated_exhibitors: null,
         is_b2b: true,
@@ -195,7 +215,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         scraped_from: null,
         rue: data.rue,
         code_postal: data.code_postal,
-        visible: false,
+        visible: false, // events_import events are not visible by default
         slug: event.slug, // Keep existing slug for events_import
         sectors: event.sectors || [],
         is_favorite: event.is_favorite
