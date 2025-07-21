@@ -1,9 +1,6 @@
 
-import { getOAuthConfig, createOAuthClient } from '@/lib/oauth';
 import { supabase } from '@/integrations/supabase/client';
-import { syncCrmAccounts } from '@/lib/syncCrmAccounts';
 import { CrmProvider } from '@/types/crm';
-import dayjs from 'dayjs';
 
 export async function handleOAuthLogin(provider: CrmProvider) {
   try {
@@ -20,19 +17,13 @@ export async function handleOAuthLogin(provider: CrmProvider) {
 
     // Get OAuth configuration
     const config = getOAuthConfig(provider);
-    const client = createOAuthClient(config);
     
     // Build redirect URI
     const baseUrl = window.location.origin;
     const redirectUri = `${baseUrl}/crm-integrations?callback=${provider}`;
     
     // Generate authorization URL
-    const authUrl = client.authorizeURL({
-      redirect_uri: redirectUri,
-      scope: config.scopes.join(' '),
-      state: user.id, // Use user ID as state for security
-      ...config.extraAuthParams,
-    });
+    const authUrl = buildAuthUrl(config, redirectUri, user.id);
 
     // Redirect to OAuth provider
     window.location.href = authUrl;
@@ -56,27 +47,36 @@ export async function handleOAuthCallback(provider: CrmProvider, code: string, s
       throw new Error('Invalid callback parameters');
     }
 
-    // Get OAuth configuration and client
-    const config = getOAuthConfig(provider);
-    const client = createOAuthClient(config);
-    
-    // Build redirect URI
-    const baseUrl = window.location.origin;
-    const redirectUri = `${baseUrl}/crm-integrations?callback=${provider}`;
+    console.log(`🔄 Processing OAuth callback for ${provider}`);
 
-    // Exchange code for tokens
-    const tokenParams = {
-      code,
-      redirect_uri: redirectUri,
-      scope: config.scopes.join(' '),
-    };
+    // Use the OAuth proxy to exchange code for token
+    const { data, error: functionError } = await supabase.functions.invoke('oauth-proxy', {
+      body: { code, provider }
+    });
 
-    const accessToken = await client.getToken(tokenParams);
-    const token = accessToken.token;
+    if (functionError) {
+      throw new Error(`OAuth proxy error: ${functionError.message}`);
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error || 'OAuth exchange failed');
+    }
+
+    // Handle mock mode
+    if (data.mock) {
+      console.log('🔧 OAuth callback completed in mock mode');
+      return { success: true, mock: true };
+    }
+
+    // Real OAuth flow - save token to database
+    const token = data.token;
+    if (!token?.access_token) {
+      throw new Error('No access token received');
+    }
 
     // Calculate expiration time
     const expiresAt = token.expires_in 
-      ? dayjs().add(token.expires_in, 'seconds').toISOString()
+      ? new Date(Date.now() + token.expires_in * 1000).toISOString()
       : null;
 
     // Upsert connection in database
@@ -99,15 +99,8 @@ export async function handleOAuthCallback(provider: CrmProvider, code: string, s
       throw new Error('Failed to save connection');
     }
 
-    // Trigger initial sync
-    try {
-      await syncCrmAccounts(user.id, provider);
-    } catch (syncError) {
-      console.error(`Initial sync failed for ${provider}:`, syncError);
-      // Don't fail the connection if sync fails
-    }
-
-    return { success: true };
+    console.log('✅ OAuth callback completed successfully');
+    return { success: true, mock: false };
 
   } catch (error) {
     console.error(`OAuth callback error for ${provider}:`, error);
@@ -146,4 +139,41 @@ export async function handleDisconnectCrm(provider: CrmProvider) {
     console.error(`Delete connection error for ${provider}:`, error);
     throw error;
   }
+}
+
+function getOAuthConfig(provider: CrmProvider) {
+  const configs = {
+    salesforce: {
+      authUrl: 'https://login.salesforce.com/services/oauth2/authorize',
+      scopes: ['api', 'refresh_token'],
+    },
+    hubspot: {
+      authUrl: 'https://app.hubspot.com/oauth/authorize',
+      scopes: ['crm.objects.companies.read'],
+    },
+    pipedrive: {
+      authUrl: 'https://oauth.pipedrive.com/oauth/authorize',
+      scopes: ['organizations:read'],
+    },
+    zoho: {
+      authUrl: 'https://accounts.zoho.com/oauth/v2/auth',
+      scopes: ['ZohoCRM.modules.accounts.READ'],
+      extraParams: { access_type: 'offline' },
+    },
+  };
+
+  return configs[provider];
+}
+
+function buildAuthUrl(config: any, redirectUri: string, userId: string): string {
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: 'placeholder', // Will be handled by the Edge Function
+    redirect_uri: redirectUri,
+    scope: config.scopes.join(' '),
+    state: userId,
+    ...config.extraParams,
+  });
+
+  return `${config.authUrl}?${params.toString()}`;
 }

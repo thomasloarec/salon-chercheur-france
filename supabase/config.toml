@@ -5,93 +5,35 @@ project_id = "vxivdvzzhebobveedxbj"
 enabled = true
 port = 54321
 schemas = ["public", "graphql_public"]
-extra_search_path = ["public"]
+extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [auth]
 enabled = true
-port = 54324
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://lovable.dev"]
+port = 54322
+external_url = "http://localhost:54321"
 jwt_expiry = 3600
+refresh_token_rotation_enabled = true
+refresh_token_reuse_interval = 10
 enable_signup = true
-enable_email_confirmations = false
-enable_email_change_confirmations = true
-enable_phone_confirmations = false
-enable_phone_change_confirmations = true
 
 [db]
-port = 54322
+enabled = true
+port = 54323
+major_version = 15
 
 [studio]
 enabled = true
-port = 54323
+port = 54324
+api_url = "http://localhost:54321"
 
-[inbound_webhooks]
-enabled = false
+[storage]
+enabled = true
+port = 54325
+file_size_limit = "50MiB"
+image_transformation = {
+  enabled = true
+}
 
-[functions.airtable-metadata]
+[functions.oauth-proxy]
 verify_jwt = false
-
-[functions.airtable-read]
-verify_jwt = false
-
-[functions.airtable-write]
-verify_jwt = false
-
-[functions.airtable-schema-discovery]
-verify_jwt = false
-
-[functions.airtable-code-analysis]
-verify_jwt = false
-
-[functions.airtable-mapping-generator]
-verify_jwt = false
-
-[functions.airtable-write-diagnostic]
-verify_jwt = false
-
-[functions.airtable-debug]
-verify_jwt = false
-
-[functions.airtable-smoke-test]
-verify_jwt = false
-
-[functions.airtable-status]
-verify_jwt = false
-
-[functions.check-secrets]
-verify_jwt = false
-
-[functions.clear-import-buffer]
-verify_jwt = false
-
-[functions.debug-airtable-create-test]
-verify_jwt = false
-
-[functions.env-check]
-verify_jwt = false
-
-[functions.import-airtable]
-verify_jwt = false
-
-[functions.import-airtable-exposants]
-verify_jwt = false
-
-[functions.newsletter-subscribe]
-verify_jwt = false
-
-[functions.scrape]
-verify_jwt = false
-
-[functions.send-newsletters]
-verify_jwt = false
-
-[functions.sync-crm]
-verify_jwt = false
-
-[functions.test-nojwt]
-verify_jwt = false
-
-[edge_runtime]
-policy = "per_worker"
