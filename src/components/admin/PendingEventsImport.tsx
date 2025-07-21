@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,7 +41,7 @@ interface EventImport {
   updated_at: string | null;
   ville: string | null;
   rue: string | null;
-  code_postal: string | null;
+  code_postal?: string | null; // Made optional to handle missing data
 }
 
 export function PendingEventsImport() {
@@ -61,7 +60,7 @@ export function PendingEventsImport() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as EventImport[];
+      return (data as unknown) as EventImport[];
     },
   });
 
