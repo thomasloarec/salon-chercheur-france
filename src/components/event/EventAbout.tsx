@@ -32,9 +32,10 @@ export const EventAbout = ({ event }: EventAboutProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Description avec rendu HTML sécurisé */}
+        {/* Description avec rendu HTML sécurisé et alignement forcé à gauche */}
         <div
-          className="prose max-w-none text-gray-700 leading-relaxed"
+          className="prose max-w-none text-gray-700 leading-relaxed text-left [&_*]:text-left"
+          style={{ textAlign: 'left' }}
           dangerouslySetInnerHTML={{
             __html: event.description_event 
               ? sanitize(event.description_event)
