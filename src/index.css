@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -280,6 +279,24 @@ h1.event-title {
 .event-content h3,
 .event-content p,
 .event-content div {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Correction de l'alignement des titres d'événements sur la page agenda (vue liste) */
+.agenda-event-list .event-title,
+.agenda-event-list h1,
+.agenda-event-list p {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Styles spécifiques pour FavoriteRow pour forcer l'alignement à gauche */
+.favorite-row .event-title,
+.favorite-row h1,
+.favorite-row p {
   text-align: left !important;
   margin-left: 0 !important;
   padding-left: 0 !important;

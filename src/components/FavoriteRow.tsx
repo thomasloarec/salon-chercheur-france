@@ -60,8 +60,37 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
     }
   };
 
+  // Fonction utilitaire pour formater le secteur
+  const formatSector = (secteur: string | string[]) => {
+    if (!secteur) return null;
+    
+    let sectors = [];
+    
+    if (Array.isArray(secteur)) {
+      sectors = secteur;
+    } else if (typeof secteur === 'string') {
+      // Si c'est une string qui contient du JSON
+      if (secteur.startsWith('[') && secteur.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(secteur);
+          sectors = Array.isArray(parsed) ? parsed : [secteur];
+        } catch {
+          sectors = [secteur];
+        }
+      } else {
+        sectors = [secteur];
+      }
+    }
+    
+    // Nettoyer les secteurs en retirant les crochets supplémentaires
+    return sectors
+      .map(s => typeof s === 'string' ? s.replace(/^\["|"\]$/g, '').replace(/"/g, '') : s)
+      .filter(Boolean)
+      .join(', ');
+  };
+
   return (
-    <div className="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-muted/50 transition-colors group">
+    <div className="favorite-row flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-muted/50 transition-colors group">
       <Link
         to={`/events/${event.slug || event.id}`}
         className="flex items-center gap-3 flex-1 min-w-0"
@@ -81,7 +110,7 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
 
         {/* Contenu */}
         <div className="flex-1 min-w-0">
-          <p className="font-medium truncate text-gray-900 group-hover:text-primary transition-colors">
+          <p className="event-title font-medium truncate text-gray-900 group-hover:text-primary transition-colors">
             {event.nom_event}
           </p>
           <div className="text-sm text-muted-foreground flex flex-wrap gap-3 mt-1">
@@ -95,7 +124,7 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
             </span>
             {event.secteur && (
               <Badge variant="outline" className="text-xs">
-                {event.secteur}
+                {formatSector(event.secteur)}
               </Badge>
             )}
           </div>

@@ -136,7 +136,7 @@ const Agenda = () => {
           ) : events.length > 0 ? (
             <>
               {viewMode === 'list' ? (
-                <div className="bg-white rounded-lg shadow-sm">
+                <div className="agenda-event-list bg-white rounded-lg shadow-sm">
                   <div role="list" className="divide-y divide-gray-100">
                     {events.map((event) => (
                       <div key={event.id} role="listitem">
