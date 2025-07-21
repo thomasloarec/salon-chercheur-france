@@ -54,32 +54,6 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           borderRadius: '6px',
         }}
       />
-      <style jsx global>{`
-        .ql-toolbar {
-          border-top: 1px solid #e2e8f0;
-          border-left: 1px solid #e2e8f0;
-          border-right: 1px solid #e2e8f0;
-          border-bottom: none;
-          border-radius: 6px 6px 0 0;
-        }
-        .ql-container {
-          border-left: 1px solid #e2e8f0;
-          border-right: 1px solid #e2e8f0;
-          border-bottom: 1px solid #e2e8f0;
-          border-top: none;
-          border-radius: 0 0 6px 6px;
-        }
-        .ql-editor {
-          min-height: 120px;
-          font-family: inherit;
-          font-size: 14px;
-          line-height: 1.5;
-        }
-        .ql-editor.ql-blank::before {
-          color: #94a3b8;
-          font-style: normal;
-        }
-      `}</style>
     </div>
   );
 };
