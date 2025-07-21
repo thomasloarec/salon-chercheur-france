@@ -69,6 +69,10 @@ interface AirtableExposantRecord {
 }
 
 serve(async (req) => {
+  const rawBody = await req.clone().text();
+  console.log('⏱️ import-airtable called at', new Date().toISOString());
+  console.log('🗒️ Raw request body:', rawBody);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       status: 204,
@@ -80,6 +84,17 @@ serve(async (req) => {
     try {
       console.log('Starting Airtable import...');
       
+      let params: any = {};
+      try {
+        params = rawBody ? JSON.parse(rawBody) : {};
+      } catch (e) {
+        console.error('❌ import-airtable: invalid JSON', e);
+        return new Response(JSON.stringify({ success: false, error: 'invalid_json' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
+      
       const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -90,7 +105,7 @@ serve(async (req) => {
         baseId, 
         eventsTableName = 'Events',
         exposantsTableName = 'Exposants'
-      } = await req.json();
+      } = params;
       
       if (!apiKey || !baseId) {
         throw new Error('API Key et Base ID sont requis');
