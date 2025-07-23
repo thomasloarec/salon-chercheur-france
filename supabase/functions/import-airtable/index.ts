@@ -98,6 +98,241 @@ interface AirtableExposantRecord {
   };
 }
 
+// Import functions
+async function importEvents(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
+  console.log('Importing events...');
+  const eventsResponse = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/All_Events`, {
+    headers: {
+      'Authorization': `Bearer ${airtableConfig.pat}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!eventsResponse.ok) {
+    throw new Error(`Failed to fetch events: ${eventsResponse.status}`);
+  }
+
+  const eventsData = await eventsResponse.json();
+  console.log('[DEBUG] Nombre d\'événements récupérés depuis Airtable :', eventsData.records?.length || 0);
+  console.log('[DEBUG] Exemple de 5 événements :', eventsData.records?.slice(0,5) || []);
+  const eventsToInsert: any[] = [];
+
+  for (const record of eventsData.records) {
+    const fields = record.fields;
+    
+    // Only process approved events
+    if (fields['Status_Event']?.toLowerCase() !== 'approved') {
+      continue;
+    }
+
+    const eventData = {
+      id: fields['ID_Event'],
+      nom_event: fields['Nom_Event'] || '',
+      status_event: fields['Status_Event'] || '',
+      type_event: normalizeEventType(fields['Type_Event']),
+      date_debut: normalizeDate(fields['Date_debut']),
+      date_fin: normalizeDate(fields['Date_Fin']),
+      secteur: fields['Secteur'] || '',
+      url_image: fields['URL_image'] || null,
+      url_site_officiel: fields['URL_site_officiel'] || null,
+      description_event: fields['Description_Event'] || null,
+      affluence: fields['Affluence'] && fields['Affluence'].trim() !== '' ? fields['Affluence'] : null,
+      tarifs: fields['Tarifs'] || null,
+      nom_lieu: fields['Nom_Lieu'] || null,
+      rue: fields['Rue'] || null,
+      code_postal: fields['Code_Postal'] || null,
+      ville: fields['Ville'] || 'Inconnue'
+    };
+
+    if (eventData.id) {
+      eventsToInsert.push(eventData);
+    }
+  }
+
+  let eventsImported = 0;
+
+  // Insert events into Supabase events_import table
+  if (eventsToInsert.length > 0) {
+    console.log(`[DEBUG] Insertion de ${eventsToInsert.length} enregistrements dans la table events_import`);
+    const { data: eventsData, error: eventsError } = await supabaseClient
+      .from('events_import')
+      .upsert(eventsToInsert, { onConflict: 'id' })
+      .select();
+
+    if (eventsError) {
+      console.error(`[ERROR] Échec insertion dans events_import :`, eventsError);
+      throw new Error(`Failed to insert events: ${eventsError.message}`);
+    } else {
+      console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans events_import`);
+    }
+
+    eventsImported = eventsToInsert.length;
+    console.log(`Imported ${eventsImported} events`);
+
+    // Promote to production events table
+    const productionEvents = eventsToInsert.map(ev => ({
+      id_event: ev.id,
+      nom_event: ev.nom_event,
+      visible: false, // Default invisible
+      type_event: ev.type_event,
+      date_debut: ev.date_debut || '1970-01-01',
+      date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
+      secteur: [ev.secteur || 'Autre'], // Convert to jsonb array
+      ville: ev.ville,
+      rue: ev.rue,
+      code_postal: ev.code_postal,
+      pays: 'France',
+      url_image: ev.url_image,
+      url_site_officiel: ev.url_site_officiel,
+      description_event: ev.description_event,
+      affluence: ev.affluence ? parseInt(ev.affluence) : null,
+      tarif: ev.tarifs,
+      nom_lieu: ev.nom_lieu,
+      location: ev.ville || 'Inconnue'
+    }));
+
+    console.log(`[DEBUG] Insertion de ${productionEvents.length} enregistrements dans la table events`);
+    const { data: prodData, error: prodError } = await supabaseClient
+      .from('events')
+      .upsert(productionEvents, { 
+        onConflict: 'id_event',
+        ignoreDuplicates: false 
+      })
+      .select();
+
+    if (prodError) {
+      console.error(`[ERROR] Échec insertion dans events :`, prodError);
+      throw new Error(`Failed to upsert production events: ${prodError.message}`);
+    } else {
+      console.log(`[DEBUG] ${prodData?.length || 0} enregistrements insérés avec succès dans events`);
+    }
+
+    console.log(`Promoted ${productionEvents.length} events to production`);
+  }
+
+  return eventsImported;
+}
+
+async function importExposants(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
+  console.log('Importing exposants...');
+  const exposantsResponse = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/All_Exposants`, {
+    headers: {
+      'Authorization': `Bearer ${airtableConfig.pat}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!exposantsResponse.ok) {
+    throw new Error(`Failed to fetch exposants: ${exposantsResponse.status}`);
+  }
+
+  const exposantsData = await exposantsResponse.json();
+  console.log('[DEBUG] Nombre d\'exposants récupérés depuis Airtable :', exposantsData.records?.length || 0);
+  console.log('[DEBUG] Exemple de 5 exposants :', exposantsData.records?.slice(0,5) || []);
+  const exposantsToInsert: any[] = [];
+
+  for (const record of exposantsData.records) {
+    const fields = record.fields;
+    
+    if (!fields['exposant_nom']?.trim()) {
+      continue;
+    }
+
+    const exposantData = {
+      id_event: fields['ID_Event'],
+      nom_exposant: fields['exposant_nom'].trim(),
+      id_exposant: fields['exposant_stand']?.trim() || '',
+      website_exposant: fields['exposant_website']?.trim() || '',
+      exposant_description: fields['exposant_description']?.trim() || ''
+    };
+
+    if (exposantData.id_event && exposantData.nom_exposant) {
+      exposantsToInsert.push(exposantData);
+    }
+  }
+
+  let exposantsImported = 0;
+
+  if (exposantsToInsert.length > 0) {
+    console.log(`[DEBUG] Insertion de ${exposantsToInsert.length} enregistrements dans la table exposants`);
+    const { data: exposantsData, error: exposantsError } = await supabaseClient
+      .from('exposants')
+      .insert(exposantsToInsert)
+      .select();
+
+    if (exposantsError) {
+      console.error(`[ERROR] Échec insertion dans exposants :`, exposantsError);
+      throw new Error(`Failed to insert exposants: ${exposantsError.message}`);
+    } else {
+      console.log(`[DEBUG] ${exposantsData?.length || 0} enregistrements insérés avec succès dans exposants`);
+    }
+    
+    exposantsImported = exposantsToInsert.length;
+    console.log(`Imported ${exposantsImported} exposants`);
+  }
+
+  return exposantsImported;
+}
+
+async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
+  console.log('Importing participation...');
+  const participationResponse = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/Participation`, {
+    headers: {
+      'Authorization': `Bearer ${airtableConfig.pat}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!participationResponse.ok) {
+    throw new Error(`Failed to fetch participation: ${participationResponse.status}`);
+  }
+
+  const participationData = await participationResponse.json();
+  console.log('[DEBUG] Nombre de participations récupérées depuis Airtable :', participationData.records?.length || 0);
+  console.log('[DEBUG] Exemple de 5 participations :', participationData.records?.slice(0,5) || []);
+  const participationToInsert: any[] = [];
+
+  for (const record of participationData.records) {
+    const fields = record.fields;
+    
+    if (!fields['id_exposant'] || !fields['id_event']) {
+      continue;
+    }
+
+    const participationRecord = {
+      id_exposant: fields['id_exposant'],
+      id_event: fields['id_event'],
+      stand_exposant: fields['stand_exposant']?.trim() || '',
+      website_exposant: fields['website_exposant']?.trim() || '',
+      urlexpo_event: fields['urlexpo_event']?.trim() || ''
+    };
+
+    participationToInsert.push(participationRecord);
+  }
+
+  let participationsImported = 0;
+
+  if (participationToInsert.length > 0) {
+    console.log(`[DEBUG] Insertion de ${participationToInsert.length} enregistrements dans la table participation`);
+    const { data: participationData, error: participationError } = await supabaseClient
+      .from('participation')
+      .insert(participationToInsert)
+      .select();
+
+    if (participationError) {
+      console.error(`[ERROR] Échec insertion dans participation :`, participationError);
+      throw new Error(`Failed to insert participation: ${participationError.message}`);
+    } else {
+      console.log(`[DEBUG] ${participationData?.length || 0} enregistrements insérés avec succès dans participation`);
+    }
+    
+    participationsImported = participationToInsert.length;
+    console.log(`Imported ${participationsImported} participations`);
+  }
+
+  return participationsImported;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
@@ -129,187 +364,36 @@ serve(async (req) => {
         });
       }
 
-      let eventsImported = 0;
-      let exposantsImported = 0;
-
       // Debug configuration variables
       console.log('[DEBUG] Config Airtable – Table Events: All_Events');
       console.log('[DEBUG] Config Airtable – Table Exposants: All_Exposants');
       console.log('[DEBUG] Config Airtable – Base ID:', AIRTABLE_BASE_ID);
       console.log('[DEBUG] Config Airtable – PAT présent:', !!AIRTABLE_PAT);
 
-      // Import events from Airtable
-      console.log('Importing events...');
-      const eventsResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/All_Events`, {
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_PAT}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const airtableConfig = {
+        pat: AIRTABLE_PAT,
+        baseId: AIRTABLE_BASE_ID
+      };
 
-      if (!eventsResponse.ok) {
-        throw new Error(`Failed to fetch events: ${eventsResponse.status}`);
-      }
-
-      const eventsData = await eventsResponse.json();
-      console.log('[DEBUG] Nombre d\'événements récupérés depuis Airtable :', eventsData.records?.length || 0);
-      console.log('[DEBUG] Exemple de 5 événements :', eventsData.records?.slice(0,5) || []);
-      const eventsToInsert: any[] = [];
-
-      for (const record of eventsData.records) {
-        const fields = record.fields;
-        
-        // Only process approved events
-        if (fields['Status_Event']?.toLowerCase() !== 'approved') {
-          continue;
-        }
-
-        const eventData = {
-          id: fields['ID_Event'],
-          nom_event: fields['Nom_Event'] || '',
-          status_event: fields['Status_Event'] || '',
-          type_event: normalizeEventType(fields['Type_Event']),
-          date_debut: normalizeDate(fields['Date_debut']),
-          date_fin: normalizeDate(fields['Date_Fin']),
-          secteur: fields['Secteur'] || '',
-          url_image: fields['URL_image'] || null,
-          url_site_officiel: fields['URL_site_officiel'] || null,
-          description_event: fields['Description_Event'] || null,
-          affluence: fields['Affluence'] && fields['Affluence'].trim() !== '' ? fields['Affluence'] : null,
-          tarifs: fields['Tarifs'] || null,
-          nom_lieu: fields['Nom_Lieu'] || null,
-          rue: fields['Rue'] || null,
-          code_postal: fields['Code_Postal'] || null,
-          ville: fields['Ville'] || 'Inconnue'
-        };
-
-        if (eventData.id) {
-          eventsToInsert.push(eventData);
-        }
-      }
-
-      // Insert events into Supabase events_import table
-      if (eventsToInsert.length > 0) {
-        console.log(`[DEBUG] Insertion de ${eventsToInsert.length} enregistrements dans la table events_import`);
-        const { data: eventsData, error: eventsError } = await supabaseClient
-          .from('events_import')
-          .upsert(eventsToInsert, { onConflict: 'id' })
-          .select();
-
-        if (eventsError) {
-          console.error(`[ERROR] Échec insertion dans events_import :`, eventsError);
-          throw new Error(`Failed to insert events: ${eventsError.message}`);
-        } else {
-          console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans events_import`);
-        }
-
-        eventsImported = eventsToInsert.length;
-        console.log(`Imported ${eventsImported} events`);
-
-        // Promote to production events table
-        const productionEvents = eventsToInsert.map(ev => ({
-          id_event: ev.id,
-          nom_event: ev.nom_event,
-          visible: false, // Default invisible
-          type_event: ev.type_event,
-          date_debut: ev.date_debut || '1970-01-01',
-          date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
-          secteur: [ev.secteur || 'Autre'], // Convert to jsonb array
-          ville: ev.ville,
-          rue: ev.rue,
-          code_postal: ev.code_postal,
-          pays: 'France',
-          url_image: ev.url_image,
-          url_site_officiel: ev.url_site_officiel,
-          description_event: ev.description_event,
-          affluence: ev.affluence ? parseInt(ev.affluence) : null,
-          tarif: ev.tarifs,
-          nom_lieu: ev.nom_lieu,
-          location: ev.ville || 'Inconnue'
-        }));
-
-        console.log(`[DEBUG] Insertion de ${productionEvents.length} enregistrements dans la table events`);
-        const { data: prodData, error: prodError } = await supabaseClient
-          .from('events')
-          .upsert(productionEvents, { 
-            onConflict: 'id_event',
-            ignoreDuplicates: false 
-          })
-          .select();
-
-        if (prodError) {
-          console.error(`[ERROR] Échec insertion dans events :`, prodError);
-          throw new Error(`Failed to upsert production events: ${prodError.message}`);
-        } else {
-          console.log(`[DEBUG] ${prodData?.length || 0} enregistrements insérés avec succès dans events`);
-        }
-
-        console.log(`Promoted ${productionEvents.length} events to production`);
-      }
-
-      // Import exposants from Airtable
-      console.log('Importing exposants...');
+      // 1. Import des événements
+      const eventsImported = await importEvents(supabaseClient, airtableConfig);
       console.log('[DEBUG] eventsImported =', eventsImported);
-      const exposantsResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/All_Exposants`, {
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_PAT}`,
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (!exposantsResponse.ok) {
-        throw new Error(`Failed to fetch exposants: ${exposantsResponse.status}`);
-      }
+      // 2. Import des exposants (toujours exécuté)
+      const exposantsImported = await importExposants(supabaseClient, airtableConfig);
+      console.log('[DEBUG] exposantsImported =', exposantsImported);
 
-      const exposantsData = await exposantsResponse.json();
-      console.log('[DEBUG] Nombre d\'exposants récupérés depuis Airtable :', exposantsData.records?.length || 0);
-      console.log('[DEBUG] Exemple de 5 exposants :', exposantsData.records?.slice(0,5) || []);
-      const exposantsToInsert: any[] = [];
-
-      for (const record of exposantsData.records) {
-        const fields = record.fields;
-        
-        if (!fields['exposant_nom']?.trim()) {
-          continue;
-        }
-
-        const exposantData = {
-          id_event: fields['ID_Event'],
-          nom_exposant: fields['exposant_nom'].trim(),
-          id_exposant: fields['exposant_stand']?.trim() || '',
-          website_exposant: fields['exposant_website']?.trim() || '',
-          exposant_description: fields['exposant_description']?.trim() || ''
-        };
-
-        if (exposantData.id_event && exposantData.nom_exposant) {
-          exposantsToInsert.push(exposantData);
-        }
-      }
-
-      if (exposantsToInsert.length > 0) {
-        console.log(`[DEBUG] Insertion de ${exposantsToInsert.length} enregistrements dans la table exposants`);
-        const { data: exposantsData, error: exposantsError } = await supabaseClient
-          .from('exposants')
-          .insert(exposantsToInsert)
-          .select();
-
-        if (exposantsError) {
-          console.error(`[ERROR] Échec insertion dans exposants :`, exposantsError);
-          throw new Error(`Failed to insert exposants: ${exposantsError.message}`);
-        } else {
-          console.log(`[DEBUG] ${exposantsData?.length || 0} enregistrements insérés avec succès dans exposants`);
-        }
-        
-        exposantsImported = exposantsToInsert.length;
-        console.log(`Imported ${exposantsImported} exposants`);
-      }
+      // 3. Import des participations (toujours exécuté)
+      const participationsImported = await importParticipation(supabaseClient, airtableConfig);
+      console.log('[DEBUG] participationsImported =', participationsImported);
 
       // Summary response
       const summary = {
         success: true,
         eventsImported,
         exposantsImported,
-        message: `Import completed: ${eventsImported} events and ${exposantsImported} exposants imported`
+        participationsImported,
+        message: `Import completed: ${eventsImported} events, ${exposantsImported} exposants and ${participationsImported} participations imported`
       };
 
       console.log('Import completed:', summary);
