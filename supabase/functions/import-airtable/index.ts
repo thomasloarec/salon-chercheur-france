@@ -275,7 +275,14 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
   const { records } = await resp.json();
   console.log('[DEBUG] exposants records:', records.length);
 
-  const exposantsToUpsert = records
+  // Filtrer les imports tests
+  const exposantsRaw = records
+    .filter((r: any) =>
+      !/^TEST/.test(r.fields.nom_exposant || '') &&
+      !/test-/.test((r.fields.website_exposant || '').toLowerCase())
+    );
+
+  const exposantsToUpsert = exposantsRaw
     .map((r: any) => {
       const f = r.fields;
       return {
@@ -395,6 +402,7 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   }
 
   // 1.3. Upsert brut (sans validation d'exposant)
+  console.log(`[PHASE 1] toInsert.length = ${toInsert.length}`);
   console.log(`[PHASE 1] Insertion de ${toInsert.length} participations brutes...`);
   let insertedCount = 0;
   
@@ -403,6 +411,8 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
       .from('participation')
       .upsert(toInsert, { onConflict: 'urlexpo_event' })
       .select();
+    
+    console.log(`[PHASE 1] insertedCount = ${data?.length || 0}, error =`, error);
     
     if (error) {
       console.error('[PHASE 1] Upsert participation failed:', error);
@@ -575,8 +585,9 @@ serve(async (req) => {
 
       // 3. Import des participations (toujours exécuté)
       console.log('[DEBUG] Début import participations...');
-      const { inserted: participationsImported, errors: participationErrors } = await importParticipation(supabaseClient, airtableConfig);
+      const { inserted: participationsImported, mapped: mappedParticipations, errors: participationErrors } = await importParticipation(supabaseClient, airtableConfig);
       console.log('[DEBUG] participationsImported =', participationsImported);
+      console.log('[DEBUG] mappedParticipations =', mappedParticipations);
       console.log('[DEBUG] participationErrors =', participationErrors.length);
 
       // DEBUG ROOT-CAUSE: Génération du rapport JSON
@@ -623,8 +634,9 @@ serve(async (req) => {
         eventsImported,
         exposantsImported,
         participationsImported,
+        mappedParticipations,
         participationErrors,
-        message: `Import completed: ${eventsImported} events, ${exposantsImported} exposants, ${participationsImported} participations imported`,
+        message: `Import completed: ${eventsImported} events, ${exposantsImported} exposants, ${mappedParticipations} participations imported`,
         ...(DEBUG_ROOT_CAUSE && { debugMode: true, checkLogs: 'See function logs for detailed root cause analysis' })
       };
 
