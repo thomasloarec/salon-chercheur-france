@@ -36,7 +36,7 @@ const RecentEventsSection = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl p-4 animate-pulse">
                 <div className="h-56 bg-gray-200 rounded mb-4"></div>
@@ -50,7 +50,7 @@ const RecentEventsSection = () => {
             ))}
           </div>
         ) : limitedEvents.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {limitedEvents.map((event) => (
               <EventCard key={event.id} event={event} view="grid" />
             ))}
