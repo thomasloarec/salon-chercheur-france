@@ -265,233 +265,73 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
 }
 
 async function importExposants(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
-  console.log('Importing exposants...');
-  const url = `https://api.airtable.com/v0/${airtableConfig.baseId}/All_Exposants`;
-  
-  if (DEBUG_ROOT_CAUSE) {
-    console.log('[DEBUG_ROOT] Fetch URL:', url);
-  }
-  
-  const exposantsResponse = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${airtableConfig.pat}`,
-      'Content-Type': 'application/json'
-    }
+  console.log('Importing exposants standalone...');
+  const resp = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/All_Exposants`, {
+    headers: { 'Authorization': `Bearer ${airtableConfig.pat}` }
   });
+  if (!resp.ok) throw new Error(`Fetch exposants failed: ${resp.status}`);
+  const { records } = await resp.json();
+  console.log('[DEBUG] exposants records:', records.length);
 
-  if (DEBUG_ROOT_CAUSE) {
-    console.log('[DEBUG_ROOT] Exposants HTTP Status:', exposantsResponse.status);
-  }
+  const exposantsToUpsert = records
+    .map((r: any) => {
+      const f = r.fields;
+      return {
+        id_exposant: f['id_exposant']?.trim(),
+        nom_exposant: f['nom_exposant']?.trim(),
+        website_exposant: f['website_exposant']?.trim() || null,
+        exposant_description: f['exposant_description']?.trim() || null
+      };
+    })
+    .filter((e: any) => e.id_exposant && e.nom_exposant);
 
-  if (!exposantsResponse.ok) {
-    throw new Error(`Failed to fetch exposants: ${exposantsResponse.status}`);
-  }
-
-  const exposantsData = await exposantsResponse.json();
-  
-  if (DEBUG_ROOT_CAUSE) {
-    console.log('[DEBUG_ROOT] Exposants payload size:', exposantsData.records?.length || 0);
-  }
-  
-  console.log('[DEBUG] Nombre d\'exposants récupérés depuis Airtable :', exposantsData.records?.length || 0);
-  console.log('[DEBUG] Exemple de 5 exposants :', exposantsData.records?.slice(0,5) || []);
-  const exposantsToInsert: any[] = [];
-
-  // DEBUG ROOT-CAUSE: Inspection détaillée des mappings
-  if (DEBUG_ROOT_CAUSE && exposantsData.records?.length > 0) {
-    const sampleIndices = [0, Math.floor(exposantsData.records.length / 2), exposantsData.records.length - 1];
-    for (const idx of sampleIndices) {
-      if (exposantsData.records[idx]) {
-        const record = exposantsData.records[idx];
-        console.log(`[DEBUG_ROOT] Exposant sample ${idx}:`);
-        console.log(`[DEBUG_ROOT] - record.id: ${record.id}`);
-        console.log(`[DEBUG_ROOT] - Object.keys(record.fields): ${JSON.stringify(Object.keys(record.fields))}`);
-        console.log(`[DEBUG_ROOT] - All_Events: ${JSON.stringify(record.fields['All_Events'])}`);
-        console.log(`[DEBUG_ROOT] - nom_exposant: ${record.fields['nom_exposant']}`);
-        console.log(`[DEBUG_ROOT] - id_exposant: ${record.fields['id_exposant']}`);
-      }
-    }
-    
-    // Rapport différentiel
-    const actualExposantFields = Object.keys(exposantsData.records[0].fields);
-    const missingFields = expectedExposantFields.filter(f => !actualExposantFields.includes(f));
-    const extraFields = actualExposantFields.filter(f => !expectedExposantFields.includes(f));
-    console.warn('[DEBUG_ROOT] Fields mismatch EXPOSANTS:');
-    console.warn('[DEBUG_ROOT] - Missing fields:', missingFields);
-    console.warn('[DEBUG_ROOT] - Extra fields:', extraFields);
-  }
-
-  for (const record of exposantsData.records) {
-    const fields = record.fields;
-    console.log('[DEBUG] Clés exposant.fields :', Object.keys(record.fields));
-    
-    if (!fields['nom_exposant']?.trim()) {
-      continue;
-    }
-
-    const exposantData = {
-      id_event: fields['All_Events']?.[0] || '',
-      nom_exposant: fields['nom_exposant'].trim(),
-      id_exposant: fields['id_exposant']?.trim() || '',
-      website_exposant: fields['website_exposant']?.trim() || '',
-      exposant_description: fields['exposant_description']?.trim() || ''
-    };
-
-    if (exposantData.id_event && exposantData.nom_exposant) {
-      exposantsToInsert.push(exposantData);
-    }
-  }
-
-  // DEBUG ROOT-CAUSE: Comptage avant insertion
-  if (DEBUG_ROOT_CAUSE) {
-    console.log(`[DEBUG_ROOT] exposantsToInsert.length=${exposantsToInsert.length}`);
-    if (exposantsToInsert.length === 0) {
-      console.error('[DEBUG_ROOT] ARRÊT: Aucun exposant à insérer! Génération du rapport...');
-      console.log('[DEBUG_ROOT] SUGGESTIONS_ROOT_CAUSE:');
-      console.log('[DEBUG_ROOT] 1. Vérifier le nom de la table Airtable (All_Exposants)');
-      console.log('[DEBUG_ROOT] 2. Vérifier les noms de champs (All_Events, nom_exposant, id_exposant)');
-      console.log('[DEBUG_ROOT] 3. Tester un import sur un seul enregistrement');
-      console.log('[DEBUG_ROOT] 4. Comparer le mapping via API REST Airtable (cURL/Postman)');
-      console.log('[DEBUG_ROOT] 5. Vérifier les permissions PAT sur la base');
-      return 0;
-    }
-  }
-
-  let exposantsImported = 0;
-
-  if (exposantsToInsert.length > 0) {
-    console.log(`[DEBUG] Insertion de ${exposantsToInsert.length} enregistrements dans la table exposants`);
-    const { data: exposantsData, error: exposantsError } = await supabaseClient
+  console.log('[DEBUG] exposantsToUpsert.length =', exposantsToUpsert.length);
+  if (exposantsToUpsert.length) {
+    const { data, error } = await supabaseClient
       .from('exposants')
-      .insert(exposantsToInsert)
+      .upsert(exposantsToUpsert, { onConflict: 'id_exposant' })
       .select();
-
-    if (exposantsError) {
-      console.error(`[ERROR] Échec insertion dans exposants :`, exposantsError);
-      throw new Error(`Failed to insert exposants: ${exposantsError.message}`);
-    } else {
-      console.log(`[DEBUG] ${exposantsData?.length || 0} enregistrements insérés avec succès dans exposants`);
-    }
-    
-    exposantsImported = exposantsToInsert.length;
-    console.log(`Imported ${exposantsImported} exposants`);
+    if (error) throw new Error(`Supabase exposants upsert error: ${error.message}`);
+    console.log('[DEBUG] exposants upserted:', data.length);
+    return data.length;
   }
-
-  return exposantsImported;
+  return 0;
 }
 
 async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
   console.log('Importing participation...');
-  const url = `https://api.airtable.com/v0/${airtableConfig.baseId}/Participation`;
-  
-  if (DEBUG_ROOT_CAUSE) {
-    console.log('[DEBUG_ROOT] Fetch URL:', url);
-  }
-  
-  const participationResponse = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${airtableConfig.pat}`,
-      'Content-Type': 'application/json'
-    }
+  const resp = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/Participation`, {
+    headers: { 'Authorization': `Bearer ${airtableConfig.pat}` }
   });
+  if (!resp.ok) throw new Error(`Fetch participation failed: ${resp.status}`);
+  const { records } = await resp.json();
+  console.log('[DEBUG] participations records:', records.length);
 
-  if (DEBUG_ROOT_CAUSE) {
-    console.log('[DEBUG_ROOT] Participation HTTP Status:', participationResponse.status);
-  }
+  const participationToInsert = records
+    .map((r: any) => {
+      const f = r.fields;
+      console.log('[DEBUG] Clés participation.fields :', Object.keys(r.fields));
+      return {
+        id_event: f['id_event'],    // nom exact du champ Airtable
+        id_exposant: f['id_exposant'], // nom exact du champ Airtable
+        stand_exposant: f['stand_exposant']?.trim() || null,
+        website_exposant: f['website_exposant']?.trim() || null,
+        urlexpo_event: f['urlexpo_event']?.trim() || null
+      };
+    })
+    .filter((p: any) => p.id_event && p.id_exposant);
 
-  if (!participationResponse.ok) {
-    throw new Error(`Failed to fetch participation: ${participationResponse.status}`);
-  }
-
-  const participationData = await participationResponse.json();
-  
-  if (DEBUG_ROOT_CAUSE) {
-    console.log('[DEBUG_ROOT] Participation payload size:', participationData.records?.length || 0);
-  }
-  
-  console.log('[DEBUG] Nombre de participations récupérées depuis Airtable :', participationData.records?.length || 0);
-  console.log('[DEBUG] Exemple de 5 participations :', participationData.records?.slice(0,5) || []);
-  const participationToInsert: any[] = [];
-
-  // DEBUG ROOT-CAUSE: Inspection détaillée des mappings
-  if (DEBUG_ROOT_CAUSE && participationData.records?.length > 0) {
-    const sampleIndices = [0, Math.floor(participationData.records.length / 2), participationData.records.length - 1];
-    for (const idx of sampleIndices) {
-      if (participationData.records[idx]) {
-        const record = participationData.records[idx];
-        console.log(`[DEBUG_ROOT] Participation sample ${idx}:`);
-        console.log(`[DEBUG_ROOT] - record.id: ${record.id}`);
-        console.log(`[DEBUG_ROOT] - Object.keys(record.fields): ${JSON.stringify(Object.keys(record.fields))}`);
-        console.log(`[DEBUG_ROOT] - id_event: ${record.fields['id_event']}`);
-        console.log(`[DEBUG_ROOT] - id_exposant: ${record.fields['id_exposant']}`);
-        console.log(`[DEBUG_ROOT] - urlexpo_event: ${record.fields['urlexpo_event']}`);
-      }
-    }
-    
-    // Rapport différentiel
-    const actualParticipationFields = Object.keys(participationData.records[0].fields);
-    const missingFields = expectedParticipationFields.filter(f => !actualParticipationFields.includes(f));
-    const extraFields = actualParticipationFields.filter(f => !expectedParticipationFields.includes(f));
-    console.warn('[DEBUG_ROOT] Fields mismatch PARTICIPATION:');
-    console.warn('[DEBUG_ROOT] - Missing fields:', missingFields);
-    console.warn('[DEBUG_ROOT] - Extra fields:', extraFields);
-  }
-
-  for (const record of participationData.records) {
-    const fields = record.fields;
-    console.log('[DEBUG] Clés participation.fields :', Object.keys(record.fields));
-    
-    if (!fields['id_exposant'] || !fields['id_event']) {
-      continue;
-    }
-
-    const participationRecord = {
-      id_exposant: fields['id_exposant'],
-      id_event: fields['id_event'],
-      stand_exposant: fields['stand_exposant']?.trim() || '',
-      website_exposant: fields['website_exposant']?.trim() || '',
-      urlexpo_event: fields['urlexpo_event']?.trim() || ''
-    };
-
-    participationToInsert.push(participationRecord);
-  }
-
-  // DEBUG ROOT-CAUSE: Comptage avant insertion
-  if (DEBUG_ROOT_CAUSE) {
-    console.log(`[DEBUG_ROOT] participationToInsert.length=${participationToInsert.length}`);
-    if (participationToInsert.length === 0) {
-      console.error('[DEBUG_ROOT] ARRÊT: Aucune participation à insérer! Génération du rapport...');
-      console.log('[DEBUG_ROOT] SUGGESTIONS_ROOT_CAUSE:');
-      console.log('[DEBUG_ROOT] 1. Vérifier le nom de la table Airtable (Participation)');
-      console.log('[DEBUG_ROOT] 2. Vérifier les noms de champs (id_event, id_exposant, urlexpo_event)');
-      console.log('[DEBUG_ROOT] 3. Tester un import sur un seul enregistrement');
-      console.log('[DEBUG_ROOT] 4. Comparer le mapping via API REST Airtable (cURL/Postman)');
-      console.log('[DEBUG_ROOT] 5. Vérifier les permissions PAT sur la base');
-      return 0;
-    }
-  }
-
-  let participationsImported = 0;
-
-  if (participationToInsert.length > 0) {
-    console.log(`[DEBUG] Insertion de ${participationToInsert.length} enregistrements dans la table participation`);
-    const { data: participationData, error: participationError } = await supabaseClient
+  console.log('[DEBUG] participationToInsert.length =', participationToInsert.length);
+  if (participationToInsert.length) {
+    const { data, error } = await supabaseClient
       .from('participation')
       .insert(participationToInsert)
       .select();
-
-    if (participationError) {
-      console.error(`[ERROR] Échec insertion dans participation :`, participationError);
-      throw new Error(`Failed to insert participation: ${participationError.message}`);
-    } else {
-      console.log(`[DEBUG] ${participationData?.length || 0} enregistrements insérés avec succès dans participation`);
-    }
-    
-    participationsImported = participationToInsert.length;
-    console.log(`Imported ${participationsImported} participations`);
+    if (error) throw new Error(`Supabase participation insert error: ${error.message}`);
+    console.log('[DEBUG] participations inserted:', data.length);
+    return data.length;
   }
-
-  return participationsImported;
+  return 0;
 }
 
 serve(async (req) => {
