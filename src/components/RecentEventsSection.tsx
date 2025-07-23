@@ -13,8 +13,8 @@ const RecentEventsSection = () => {
     city: '',
   });
 
-  // Limite à 8 événements pour la section d'accueil
-  const limitedEvents = upcomingEvents?.slice(0, 8) || [];
+  // Limite à 10 événements pour la section d'accueil
+  const limitedEvents = upcomingEvents?.slice(0, 10) || [];
 
   return (
     <section className="py-20 bg-gray-50">
@@ -37,7 +37,7 @@ const RecentEventsSection = () => {
 
         {isLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 8 }).map((_, i) => (
+            {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl p-4 animate-pulse">
                 <div className="h-56 bg-gray-200 rounded mb-4"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
