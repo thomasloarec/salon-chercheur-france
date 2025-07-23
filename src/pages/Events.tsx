@@ -133,23 +133,23 @@ const Events = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen max-w-[1440px] mx-auto px-6">
       <Header />
       
-      <div className="grid md:grid-cols-[280px_1fr] min-h-[calc(100vh-200px)]">
+      <div className="grid lg:grid-cols-[320px_1fr] min-h-[calc(100vh-200px)]">
         {/* Mobile sidebar overlay */}
         {isSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+            className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
         
         {/* Sidebar */}
         <aside className={`
-          fixed md:static z-30 inset-y-0 left-0 w-72 md:w-full
-          bg-white shadow-md transition-transform duration-300 ease-in-out
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          fixed lg:static z-30 inset-y-0 left-0 w-80 lg:w-full
+          bg-white shadow-lg lg:shadow-none border-r transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <FiltersSidebar 
             onClose={() => setIsSidebarOpen(false)}
@@ -159,9 +159,9 @@ const Events = () => {
         </aside>
 
         {/* Content */}
-        <main className="p-4 md:p-6 bg-gray-50">
+        <main className="p-4 lg:p-8 bg-gray-50">
           {/* Mobile menu button */}
-          <div className="md:hidden mb-4">
+          <div className="lg:hidden mb-4">
             <Button 
               variant="outline" 
               size="sm"
@@ -173,13 +173,13 @@ const Events = () => {
           </div>
 
           {/* Header with results count and view toggle */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900">
                 {isLoading ? 'Chargement...' : `${displayEvents.length || 0} salon(s) trouvé(s)`}
               </h1>
               {Object.keys(filters).length > 0 && (
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600 mt-2">
                   Résultats filtrés
                   {filters.locationSuggestion && (
                     <span className="ml-2 text-accent font-medium">

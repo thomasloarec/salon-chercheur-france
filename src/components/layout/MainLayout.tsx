@@ -17,7 +17,7 @@ const MainLayout = ({ title, children }: MainLayoutProps) => {
           <title>{title} - SalonsPro</title>
         </Helmet>
       )}
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col max-w-[1440px] mx-auto px-6">
         <Header />
         <main className="flex-1">
           {children}

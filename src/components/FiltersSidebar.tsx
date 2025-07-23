@@ -149,11 +149,11 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || selectedRegion.length > 0;
 
   return (
-    <aside className="sticky top-0 max-h-screen overflow-y-auto h-full bg-white border-r">
-      <div className="p-4 border-b">
+    <aside className="sticky top-0 max-h-screen overflow-y-auto h-full bg-white">
+      <div className="p-6 border-b">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Filtres</h2>
-          <Button variant="ghost" size="sm" onClick={onClose} className="md:hidden">
+          <h2 className="text-xl font-semibold">Filtres</h2>
+          <Button variant="ghost" size="sm" onClick={onClose} className="lg:hidden">
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -162,14 +162,14 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
             variant="outline" 
             size="sm" 
             onClick={clearAllFilters}
-            className="mt-2 w-full"
+            className="mt-3 w-full"
           >
             Réinitialiser
           </Button>
         )}
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-6 space-y-8">
         <div>
           <Label htmlFor="sectors">Secteurs d'activité</Label>
           <MultiSelect
