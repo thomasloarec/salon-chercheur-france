@@ -173,6 +173,7 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
 
     const eventData = {
       id: fields['ID_Event'],
+      airtable_id: record.id, // Stocker le vrai record ID Airtable
       nom_event: fields['Nom_Event'] || '',
       status_event: fields['Status_Event'] || '',
       type_event: normalizeEventType(fields['Type_Event']),
@@ -223,6 +224,7 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
     // Promote to production events table
     const productionEvents = eventsToInsert.map(ev => ({
       id_event: ev.id,
+      airtable_id: ev.airtable_id, // Inclure l'airtable_id
       nom_event: ev.nom_event,
       visible: false, // Default invisible
       type_event: ev.type_event,
@@ -301,6 +303,15 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
 async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
   console.log('Importing participation en 2 phases...');
   
+  // ÉTAPE PRÉLIMINAIRE: Charger le mapping des événements Airtable → Supabase
+  console.log('[MAPPING] Chargement du mapping des événements...');
+  const { data: events } = await supabaseClient
+    .from('events')
+    .select('id, airtable_id');
+  
+  const eventMap = new Map(events?.map((e: any) => [e.airtable_id, e.id]) || []);
+  console.log(`[MAPPING] ${eventMap.size} événements mappés (Airtable → Supabase)`);
+  
   // PHASE 1: Import brut
   console.log('[PHASE 1] Import brut des participations...');
   
@@ -341,16 +352,29 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     }
     const urlKey = rawUrlKey.trim();
 
-    // Extraire id_event
+    // Extraire id_event (record ID Airtable)
     const rawEventField = f['id_event'];
-    const idEvent = Array.isArray(rawEventField) ? rawEventField[0] : rawEventField;
+    const rawEventRecordId = Array.isArray(rawEventField) ? rawEventField[0] : rawEventField;
     
-    if (!idEvent) {
+    if (!rawEventRecordId) {
       initialErrors.push({ 
         record_id: recordId, 
         urlexpo_event: urlKey, 
         website_exposant: f['website_exposant']?.trim() || null, 
         reason: 'id_event manquant',
+        created_at: new Date().toISOString()
+      });
+      continue;
+    }
+
+    // Mapper le record ID Airtable vers l'UUID Supabase
+    const supabaseEventId = eventMap.get(rawEventRecordId);
+    if (!supabaseEventId) {
+      initialErrors.push({ 
+        record_id: recordId, 
+        urlexpo_event: urlKey, 
+        website_exposant: f['website_exposant']?.trim() || null, 
+        reason: `événement introuvable (${rawEventRecordId})`,
         created_at: new Date().toISOString()
       });
       continue;
@@ -363,7 +387,7 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     // Préparer l'insertion (id_exposant reste NULL)
     toInsert.push({
       urlexpo_event: urlKey,
-      id_event: idEvent,
+      id_event: supabaseEventId, // Utiliser l'UUID Supabase, pas le record ID Airtable
       id_exposant: null, // Sera peuplé en phase 2
       stand_exposant: stand,
       website_exposant: rawWeb?.trim() || null

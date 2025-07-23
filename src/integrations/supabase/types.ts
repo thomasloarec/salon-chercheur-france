@@ -188,6 +188,7 @@ export type Database = {
       events: {
         Row: {
           affluence: number | null
+          airtable_id: string | null
           code_postal: string | null
           created_at: string
           date_debut: string
@@ -220,6 +221,7 @@ export type Database = {
         }
         Insert: {
           affluence?: number | null
+          airtable_id?: string | null
           code_postal?: string | null
           created_at?: string
           date_debut: string
@@ -252,6 +254,7 @@ export type Database = {
         }
         Update: {
           affluence?: number | null
+          airtable_id?: string | null
           code_postal?: string | null
           created_at?: string
           date_debut?: string
@@ -546,6 +549,30 @@ export type Database = {
             referencedColumns: ["id_exposant"]
           },
         ]
+      }
+      participation_import_errors: {
+        Row: {
+          created_at: string | null
+          reason: string
+          record_id: string
+          urlexpo_event: string | null
+          website_exposant: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          reason: string
+          record_id: string
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          reason?: string
+          record_id?: string
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
