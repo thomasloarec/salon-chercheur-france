@@ -416,7 +416,6 @@ export type Database = {
           created_at: string | null
           exposant_description: string | null
           id: number
-          id_event: string
           id_exposant: string | null
           nom_exposant: string | null
           website_exposant: string | null
@@ -425,7 +424,6 @@ export type Database = {
           created_at?: string | null
           exposant_description?: string | null
           id?: number
-          id_event: string
           id_exposant?: string | null
           nom_exposant?: string | null
           website_exposant?: string | null
@@ -434,20 +432,11 @@ export type Database = {
           created_at?: string | null
           exposant_description?: string | null
           id?: number
-          id_event?: string
           id_exposant?: string | null
           nom_exposant?: string | null
           website_exposant?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "exposants_id_event_fkey"
-            columns: ["id_event"]
-            isOneToOne: false
-            referencedRelation: "events_import"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       favorites: {
         Row: {
