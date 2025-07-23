@@ -147,7 +147,8 @@ const Events = () => {
         
         {/* Sidebar */}
         <aside className={`
-          fixed lg:static z-30 inset-y-0 left-0 w-80 lg:w-full
+          fixed lg:static lg:sticky lg:top-[80px] lg:self-start lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto
+          z-30 inset-y-0 left-0 w-80 lg:w-full
           bg-white shadow-lg lg:shadow-none border-r transition-transform duration-300 ease-in-out
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
