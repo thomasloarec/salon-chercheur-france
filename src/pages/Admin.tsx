@@ -11,6 +11,12 @@ import MainLayout from '@/components/layout/MainLayout';
 import AirtableStatusWidget from '@/components/admin/AirtableStatusWidget';
 import AirtableDiagnostic from '@/components/admin/AirtableDiagnostic';
 import { AirtableImport } from '@/components/admin/AirtableImport';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent
+} from '@/components/ui/accordion';
 
 const Admin = () => {
   const { user, loading } = useAuth();
@@ -47,17 +53,26 @@ const Admin = () => {
           <p className="text-gray-600">Gestion des événements et synchronisation des données</p>
         </div>
 
-        {/* Nouveau composant de diagnostic */}
-        <AirtableDiagnostic />
+        <Accordion type="single" collapsible className="mb-8">
+          <AccordionItem value="tests">
+            <AccordionTrigger className="text-xl font-semibold">
+              Tests
+            </AccordionTrigger>
+            <AccordionContent className="space-y-6 pt-4">
+              {/* Nouveau composant de diagnostic */}
+              <AirtableDiagnostic />
 
-        {/* Widget de vérification finale */}
-        <AirtableStatusWidget 
-          autoRefresh={true} 
-          onSecretsConfigured={handleSecretsConfigured}
-        />
+              {/* Widget de vérification finale */}
+              <AirtableStatusWidget 
+                autoRefresh={true} 
+                onSecretsConfigured={handleSecretsConfigured}
+              />
 
-        {/* Tests de validation Airtable */}
-        <AirtableValidationTest />
+              {/* Tests de validation Airtable */}
+              <AirtableValidationTest />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Import Airtable simplifié */}
         <AirtableImport />
