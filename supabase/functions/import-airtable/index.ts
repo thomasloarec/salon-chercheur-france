@@ -298,7 +298,7 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
   return 0;
 }
 
-async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
+async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }, exposantMap: Map<string, string>) {
   console.log('Importing participation...');
   const resp = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/Participation`, {
     headers: { 'Authorization': `Bearer ${airtableConfig.pat}` }
@@ -307,27 +307,35 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   const { records } = await resp.json();
   console.log('[DEBUG] participations records:', records.length);
 
-  const participationToInsert = records
-    .map((r: any) => {
-      const f = r.fields;
-      console.log('[DEBUG] Clés participation.fields :', Object.keys(r.fields));
-      return {
-        id_event: f['id_event'],    // nom exact du champ Airtable
-        id_exposant: f['id_exposant'], // nom exact du champ Airtable
-        stand_exposant: f['stand_exposant']?.trim() || null,
-        website_exposant: f['website_exposant']?.trim() || null,
-        urlexpo_event: f['urlexpo_event']?.trim() || null
-      };
-    })
-    .filter((p: any) => p.id_event && p.id_exposant);
-
-  console.log('[DEBUG] participationToInsert.length =', participationToInsert.length);
-  if (participationToInsert.length) {
+  const toInsert = [];
+  for (const r of records) {
+    const f = r.fields;
+    console.log('[DEBUG] Clés participation.fields :', Object.keys(r.fields));
+    const idEvent = f['id_event'];
+    const exposantName = f['nom_exposant'];
+    const exposantId = exposantMap.get(exposantName);
+    if (!idEvent || !exposantId) {
+      console.warn('[WARN] Skip participation – missing id_event or exposantId:', idEvent, exposantName);
+      continue;
+    }
+    toInsert.push({
+      id_event: idEvent,
+      id_exposant: exposantId,
+      stand_exposant: f['stand_exposant']?.trim() || null,
+      website_exposant: f['website_exposant']?.trim() || null,
+      urlexpo_event: f['urlexpo_event']?.trim() || null
+    });
+  }
+  console.log('[DEBUG] participationToInsert.length =', toInsert.length);
+  if (toInsert.length) {
     const { data, error } = await supabaseClient
       .from('participation')
-      .insert(participationToInsert)
+      .insert(toInsert)
       .select();
-    if (error) throw new Error(`Supabase participation insert error: ${error.message}`);
+    if (error) {
+      console.error('[ERROR] Supabase participation insert error:', error);
+      throw new Error(`Failed to insert participation: ${error.message}`);
+    }
     console.log('[DEBUG] participations inserted:', data.length);
     return data.length;
   }
@@ -384,8 +392,20 @@ serve(async (req) => {
       const exposantsImported = await importExposants(supabaseClient, airtableConfig);
       console.log('[DEBUG] exposantsImported =', exposantsImported);
 
+      // Charger les exposants existants depuis Supabase pour le mapping
+      const { data: existingExposants, error: exposantsFetchError } = await supabaseClient
+        .from('exposants')
+        .select('id_exposant, nom_exposant');
+      if (exposantsFetchError) {
+        console.error('[ERROR] Fetch exposants pour mapping participation failed:', exposantsFetchError);
+        throw new Error('Failed to load exposants for participation mapping');
+      }
+      // Construire un map nom_exposant → id_exposant
+      const exposantMap = new Map(existingExposants.map((e: any) => [e.nom_exposant, e.id_exposant]));
+      console.log('[DEBUG] exposantMap size =', exposantMap.size);
+
       // 3. Import des participations (toujours exécuté)
-      const participationsImported = await importParticipation(supabaseClient, airtableConfig);
+      const participationsImported = await importParticipation(supabaseClient, airtableConfig, exposantMap);
       console.log('[DEBUG] participationsImported =', participationsImported);
 
       // DEBUG ROOT-CAUSE: Génération du rapport JSON
