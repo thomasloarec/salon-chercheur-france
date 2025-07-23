@@ -298,36 +298,35 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
   return 0;
 }
 
-async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }, exposantMap: Map<string, string>) {
+async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }, exposantMapByUrl: Map<string, string>) {
   console.log('Importing participation...');
   const resp = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/Participation`, {
     headers: { 'Authorization': `Bearer ${airtableConfig.pat}` }
   });
   if (!resp.ok) throw new Error(`Fetch participation failed: ${resp.status}`);
   const { records } = await resp.json();
-  console.log('[DEBUG] participations records:', records.length);
+  console.log('[DEBUG] participations records =', records.length);
 
   const toInsert = [];
   for (const r of records) {
     const f = r.fields;
-    console.log('[DEBUG] Clés participation.fields :', Object.keys(r.fields));
     const idEvent = f['id_event'];
-    const rawName = f['nom_exposant'] || '';
-    const key = rawName.trim().toLowerCase();
-    const exposantId = exposantMap.get(key);
+    const rawUrl = f['website_exposant'] || '';
+    const key = rawUrl.trim().toLowerCase();
+    const exposantId = exposantMapByUrl.get(key);
     if (!idEvent) {
-      console.warn(`[WARN] Skip participation – missing id_event; participation ID=${r.id}`);
+      console.warn(`[WARN] Skip – missing id_event for participation ${r.id}`);
       continue;
     }
     if (!exposantId) {
-      console.warn(`[WARN] Skip participation – exposant introuvable dans map; rawName="${rawName}", key="${key}"`);
+      console.warn(`[WARN] Skip – URL introuvable "${rawUrl}"`);
       continue;
     }
     toInsert.push({
       id_event: idEvent,
       id_exposant: exposantId,
       stand_exposant: f['stand_exposant']?.trim() || null,
-      website_exposant: f['website_exposant']?.trim() || null,
+      website_exposant: rawUrl.trim(),
       urlexpo_event: f['urlexpo_event']?.trim() || null
     });
   }
@@ -337,11 +336,8 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
       .from('participation')
       .insert(toInsert)
       .select();
-    if (error) {
-      console.error('[ERROR] Supabase participation insert error:', error);
-      throw new Error(`Failed to insert participation: ${error.message}`);
-    }
-    console.log('[DEBUG] participations inserted:', data.length);
+    if (error) throw new Error(`Insert participation failed: ${error.message}`);
+    console.log('[DEBUG] participations inserted =', data.length);
     return data.length;
   }
   return 0;
@@ -405,16 +401,19 @@ serve(async (req) => {
         console.error('[ERROR] Fetch exposants pour mapping participation failed:', exposantsFetchError);
         throw new Error('Failed to load exposants for participation mapping');
       }
-      // Construire un map nom_exposant → id_exposant (normalisé en minuscules et trim)
-      const exposantMap = new Map(
-        existingExposants
-          .map((e: any) => [e.nom_exposant.trim().toLowerCase(), e.id_exposant])
+      // Construire un map exposant par URL
+      const { data: existingExposantsForUrl } = await supabaseClient
+        .from('exposants')
+        .select('id_exposant, website_exposant');
+      const exposantMapByUrl = new Map(
+        existingExposantsForUrl
+          .filter((e: any) => e.website_exposant)
+          .map((e: any) => [e.website_exposant.trim().toLowerCase(), e.id_exposant])
       );
-      console.log('[DEBUG] exposantMap size =', exposantMap.size);
-      console.log('[DEBUG] exposantMap keys sample:', Array.from(exposantMap.keys()).slice(0,5));
+      console.log('[DEBUG] exposantMapByUrl size =', exposantMapByUrl.size);
 
       // 3. Import des participations (toujours exécuté)
-      const participationsImported = await importParticipation(supabaseClient, airtableConfig, exposantMap);
+      const participationsImported = await importParticipation(supabaseClient, airtableConfig, exposantMapByUrl);
       console.log('[DEBUG] participationsImported =', participationsImported);
 
       // DEBUG ROOT-CAUSE: Génération du rapport JSON
