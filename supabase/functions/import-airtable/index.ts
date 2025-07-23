@@ -337,7 +337,7 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
 
   // 1.2. Préparer batch d'insertion brute
   const toInsert = [];
-  const initialErrors = [];
+    const initialErrors = [];
 
   for (const r of records) {
     const f = r.fields;
@@ -351,7 +351,10 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
       initialErrors.push({ 
         record_id: recordId, 
         urlexpo_event: null, 
-        website_exposant: null, 
+        website_exposant: null,
+        stand_exposant: null,
+        nom_exposant: null,
+        id_event: null,
         reason: 'urlexpo_event manquant',
         created_at: new Date().toISOString()
       });
@@ -367,7 +370,10 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
       initialErrors.push({ 
         record_id: recordId, 
         urlexpo_event: urlKey, 
-        website_exposant: f['website_exposant']?.trim() || null, 
+        website_exposant: f['website_exposant']?.trim() || null,
+        stand_exposant: f['stand_exposant']?.trim() || null,
+        nom_exposant: f['nom_exposant']?.trim() || null,
+        id_event: null,
         reason: 'id_event manquant',
         created_at: new Date().toISOString()
       });
@@ -380,7 +386,10 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
       initialErrors.push({ 
         record_id: recordId, 
         urlexpo_event: urlKey, 
-        website_exposant: f['website_exposant']?.trim() || null, 
+        website_exposant: f['website_exposant']?.trim() || null,
+        stand_exposant: f['stand_exposant']?.trim() || null,
+        nom_exposant: f['nom_exposant']?.trim() || null,
+        id_event: null,
         reason: `événement introuvable (${rawEventRecordId})`,
         created_at: new Date().toISOString()
       });
@@ -401,8 +410,12 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     });
   }
 
+  // 1.3. Logs de debug Phase 1
+  console.log('[PHASE 1] eventMap.size =', eventMap.size);
+  console.log('[PHASE 1] raw records.length =', records.length);
+  console.log('[PHASE 1] toInsert.length =', toInsert.length);
+  
   // 1.3. Upsert brut (sans validation d'exposant)
-  console.log(`[PHASE 1] toInsert.length = ${toInsert.length}`);
   console.log(`[PHASE 1] Insertion de ${toInsert.length} participations brutes...`);
   let insertedCount = 0;
   
@@ -492,10 +505,20 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   
   if (unmappedParticipations?.length > 0) {
     for (const p of unmappedParticipations) {
+      // Récupérer les infos complètes de la participation pour l'erreur
+      const { data: participationDetails } = await supabaseClient
+        .from('participation')
+        .select('id_event, stand_exposant')
+        .eq('urlexpo_event', p.urlexpo_event)
+        .single();
+      
       finalErrors.push({
         record_id: `unmapped_${p.urlexpo_event}`,
         urlexpo_event: p.urlexpo_event,
         website_exposant: p.website_exposant,
+        stand_exposant: participationDetails?.stand_exposant || null,
+        nom_exposant: null, // Non disponible dans unmapped
+        id_event: participationDetails?.id_event || null,
         reason: 'exposant introuvable',
         created_at: new Date().toISOString()
       });
