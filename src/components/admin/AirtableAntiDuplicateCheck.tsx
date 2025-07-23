@@ -80,7 +80,43 @@ const AirtableAntiDuplicateCheck = () => {
         exposant_description: 'Test duplicate prevention'
       };
 
+      // Helper function pour générer un rapport technique automatique
+      const generateTechnicalReport = (url: string, status: number, responseBody: string) => {
+        const keywords = {
+          'could not find': 'Colonne ou table introuvable dans la base de données',
+          'unknown relation': 'Relation/jointure non reconnue par Supabase',
+          'syntax error in select': 'Erreur de syntaxe dans la clause SELECT',
+          'invalid input syntax': 'Syntaxe invalide pour le type de données',
+          'column does not exist': 'La colonne spécifiée n\'existe pas',
+          'permission denied': 'Permissions insuffisantes pour accéder à la ressource',
+          'relation "exposants" does not exist': 'La table exposants n\'est pas accessible ou n\'existe pas',
+          'select list': 'Problème dans la liste des colonnes sélectionnées'
+        };
+
+        let hypothesis = 'Erreur HTTP générique - cause inconnue';
+        const lowerBody = responseBody.toLowerCase();
+        
+        for (const [keyword, description] of Object.entries(keywords)) {
+          if (lowerBody.includes(keyword.toLowerCase())) {
+            hypothesis = description;
+            break;
+          }
+        }
+
+        return {
+          url,
+          httpStatus: status,
+          responseBody,
+          detectedKeywords: Object.keys(keywords).filter(k => lowerBody.includes(k.toLowerCase())),
+          hypothesis,
+          suggestedFix: hypothesis.includes('jointure') || hypothesis.includes('relation') 
+            ? 'Vérifier la syntaxe de jointure Supabase (exposants(...) au lieu de exposants!inner(...))'
+            : 'Vérifier la structure de la base de données et les permissions'
+        };
+      };
+
       // Première tentative - doit créer
+      console.log('🔄 [ExposantDuplicate] Première tentative de création...');
       const { data: firstData, error: firstError } = await supabase.functions.invoke('airtable-write', {
         method: 'POST',
         body: {
@@ -90,10 +126,23 @@ const AirtableAntiDuplicateCheck = () => {
       });
 
       if (firstError) {
+        console.error('❌ [ExposantDuplicate] Erreur première tentative:', firstError);
+        // Si c'est une erreur HTTP, on instrumente
+        if (firstError.message && (firstError.message.includes('400') || firstError.message.includes('HTTP'))) {
+          const rapportTechnique = generateTechnicalReport(
+            'supabase.functions.invoke("airtable-write")',
+            400,
+            firstError.message
+          );
+          console.info('[AirtableAntiDuplicate] Rapport technique:', rapportTechnique);
+        }
         throw new Error(`First creation failed: ${firstError.message}`);
       }
 
+      console.log('✅ [ExposantDuplicate] Première tentative réussie:', firstData);
+
       // Deuxième tentative - doit détecter le doublon
+      console.log('🔄 [ExposantDuplicate] Deuxième tentative (test doublon)...');
       const { data: secondData, error: secondError } = await supabase.functions.invoke('airtable-write', {
         method: 'POST',
         body: {
@@ -103,8 +152,20 @@ const AirtableAntiDuplicateCheck = () => {
       });
 
       if (secondError) {
+        console.error('❌ [ExposantDuplicate] Erreur deuxième tentative:', secondError);
+        // Si c'est une erreur HTTP, on instrumente
+        if (secondError.message && (secondError.message.includes('400') || secondError.message.includes('HTTP'))) {
+          const rapportTechnique = generateTechnicalReport(
+            'supabase.functions.invoke("airtable-write")',
+            400,
+            secondError.message
+          );
+          console.info('[AirtableAntiDuplicate] Rapport technique:', rapportTechnique);
+        }
         throw new Error(`Second creation failed: ${secondError.message}`);
       }
+
+      console.log('✅ [ExposantDuplicate] Deuxième tentative réussie:', secondData);
 
       const duplicateDetected = secondData.duplicate === true;
       
@@ -115,6 +176,7 @@ const AirtableAntiDuplicateCheck = () => {
         details: { firstData, secondData, duplicateDetected }
       };
     } catch (error) {
+      console.error('❌ [ExposantDuplicate] Exception capturée:', error);
       return {
         name: 'Exposant Duplicate Prevention Test',
         status: 'error',
