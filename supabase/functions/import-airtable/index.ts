@@ -298,8 +298,10 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
   return 0;
 }
 
-async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }, exposantMapByUrl: Map<string, string>) {
-  console.log('Importing participation...');
+async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
+  console.log('Importing participation raw…');
+  
+  // 3.1. Charger toutes les participations d'Airtable
   const resp = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/Participation`, {
     headers: { 'Authorization': `Bearer ${airtableConfig.pat}` }
   });
@@ -307,55 +309,93 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   const { records } = await resp.json();
   console.log('[DEBUG] participations records =', records.length);
 
-  // Avant la boucle
-  console.log('[DEBUG] Premier record participation brut:', records[0].fields);
-
+  // 3.2. Préparer listes d'erreurs et batch d'insertion
   const toInsert = [];
+  const errors = [];
+
+  // 3.3. Construire map website_exposant → id_exposant
+  const { data: expoRecs } = await supabaseClient
+    .from('exposants')
+    .select('id_exposant, website_exposant');
+  const exposantMap = new Map(
+    expoRecs
+      .filter((e: any) => e.website_exposant)
+      .map((e: any) => [e.website_exposant.trim().toLowerCase(), e.id_exposant])
+  );
+  console.log('[DEBUG] exposantMap size =', exposantMap.size);
+
+  // 3.4. Boucle sur chaque participation
   for (const r of records) {
     const f = r.fields;
-    
-    // Extraction de l'ID d'événement
-    const rawEventField = r.fields['id_event'];
-    const idEvent = Array.isArray(rawEventField) ? rawEventField[0] : rawEventField;
-    console.log(`[DEBUG] participation ${r.id} idEvent extrait =`, idEvent);
-    
-    // Vérification du champ website_exposant
-    const rawUrlField = r.fields['website_exposant'];
-    const rawUrl = Array.isArray(rawUrlField) ? rawUrlField[0] : rawUrlField;
-    console.log(`[DEBUG] participation ${r.id} rawUrl = "${rawUrl}" (type ${typeof rawUrl})`);
-    
-    const key = rawUrl.trim().toLowerCase();
-    const exposantId = exposantMapByUrl.get(key);
-    if (!idEvent) {
-      console.warn(`[WARN] Skip – missing id_event for participation ${r.id}`);
+    const recordId = r.id;
+
+    // 3.4.1. Extraire et dédupliquer sur urlexpo_event
+    const rawUrlKey = f['urlexpo_event'];
+    if (!rawUrlKey) {
+      errors.push({ recordId, reason: 'urlexpo_event manquant' });
       continue;
     }
+    const urlKey = rawUrlKey.trim();
+    
+    // skip si déjà présent
+    const { data: existing } = await supabaseClient
+      .from('participation')
+      .select('urlexpo_event')
+      .eq('urlexpo_event', urlKey)
+      .single();
+    if (existing) {
+      // déjà en base : ignorer
+      console.log(`[DEBUG] Participation ${urlKey} déjà en base, ignorée`);
+      continue;
+    }
+
+    // 3.4.2. Lier à l'exposant via website_exposant
+    const rawWeb = f['website_exposant'];
+    const keyWeb = rawWeb ? rawWeb.trim().toLowerCase() : '';
+    const exposantId = exposantMap.get(keyWeb);
     if (!exposantId) {
-      console.error(`[ERROR] Skip participation – URL introuvable dans map:
-    record=${r.id}
-    rawUrl="${rawUrl}"
-    exposantMapByUrl.has(rawUrl.trim().toLowerCase())?`, exposantMapByUrl.has(rawUrl.trim().toLowerCase()));
+      errors.push({ recordId, urlexpo_event: urlKey, website_exposant: rawWeb, reason: 'exposant introuvable' });
       continue;
     }
+
+    // 3.4.3. Lier à l'événement via id_event
+    const rawEvt = f['id_event'];
+    const idEvent = Array.isArray(rawEvt) ? rawEvt[0] : rawEvt;
+    if (!idEvent) {
+      errors.push({ recordId, urlexpo_event: urlKey, reason: 'id_event manquant' });
+      continue;
+    }
+
+    // 3.4.4. Récupérer stand_exposant
+    const stand = f['stand_exposant']?.trim() || null;
+
+    // 3.4.5. Préparer l'insertion
     toInsert.push({
+      urlexpo_event: urlKey,
       id_event: idEvent,
       id_exposant: exposantId,
-      stand_exposant: f['stand_exposant']?.trim() || null,
-      website_exposant: rawUrl.trim(),
-      urlexpo_event: f['urlexpo_event']?.trim() || null
+      stand_exposant: stand,
+      website_exposant: rawWeb?.trim() || null
     });
   }
-  console.log('[DEBUG] participationToInsert.length =', toInsert.length);
+
+  // 3.5. Upsert des participations valides
+  console.log('[DEBUG] participationsToInsert.length =', toInsert.length);
   if (toInsert.length) {
     const { data, error } = await supabaseClient
       .from('participation')
-      .insert(toInsert)
+      .upsert(toInsert, { onConflict: 'urlexpo_event' })
       .select();
     if (error) throw new Error(`Insert participation failed: ${error.message}`);
     console.log('[DEBUG] participations inserted =', data.length);
-    return data.length;
   }
-  return 0;
+
+  // 3.6. Retourner les erreurs vers l'interface
+  if (errors.length) {
+    console.error('[PARTICIPATION MAPPING ERRORS]', errors);
+  }
+
+  return { inserted: toInsert.length, errors };
 }
 
 serve(async (req) => {
@@ -408,33 +448,11 @@ serve(async (req) => {
       const exposantsImported = await importExposants(supabaseClient, airtableConfig);
       console.log('[DEBUG] exposantsImported =', exposantsImported);
 
-      // Charger les exposants existants depuis Supabase pour le mapping
-      const { data: existingExposants, error: exposantsFetchError } = await supabaseClient
-        .from('exposants')
-        .select('id_exposant, nom_exposant');
-      if (exposantsFetchError) {
-        console.error('[ERROR] Fetch exposants pour mapping participation failed:', exposantsFetchError);
-        throw new Error('Failed to load exposants for participation mapping');
-      }
-      // Construire un map exposant par URL
-      const { data: existingExposantsForUrl } = await supabaseClient
-        .from('exposants')
-        .select('id_exposant, website_exposant');
-      const exposantMapByUrl = new Map(
-        existingExposantsForUrl
-          .filter((e: any) => e.website_exposant)
-          .map((e: any) => [e.website_exposant.trim().toLowerCase(), e.id_exposant])
-      );
-      console.log('[DEBUG] exposantMapByUrl size =', exposantMapByUrl.size);
-      
-      // Inspecter le map d'exposants
-      console.log('[DEBUG] Clés exposantMapByUrl (10 premières) =', Array.from(exposantMapByUrl.keys()).slice(0,10));
-      console.log('[DEBUG] Valeur map pour "elidose.com" =', exposantMapByUrl.get('elidose.com'));
-      console.log('[DEBUG] Valeur map pour "nuonmedical.com" =', exposantMapByUrl.get('nuonmedical.com'));
 
       // 3. Import des participations (toujours exécuté)
-      const participationsImported = await importParticipation(supabaseClient, airtableConfig, exposantMapByUrl);
+      const { inserted: participationsImported, errors: participationErrors } = await importParticipation(supabaseClient, airtableConfig);
       console.log('[DEBUG] participationsImported =', participationsImported);
+      console.log('[DEBUG] participationErrors =', participationErrors.length);
 
       // DEBUG ROOT-CAUSE: Génération du rapport JSON
       if (DEBUG_ROOT_CAUSE) {
@@ -480,7 +498,8 @@ serve(async (req) => {
         eventsImported,
         exposantsImported,
         participationsImported,
-        message: `Import completed: ${eventsImported} events, ${exposantsImported} exposants and ${participationsImported} participations imported`,
+        participationErrors,
+        message: `Import completed: ${eventsImported} events, ${exposantsImported} exposants, ${participationsImported} participations imported`,
         ...(DEBUG_ROOT_CAUSE && { debugMode: true, checkLogs: 'See function logs for detailed root cause analysis' })
       };
 
