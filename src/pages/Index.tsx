@@ -41,7 +41,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen max-w-[1440px] mx-auto px-6">
+    <div className="min-h-screen w-full px-6 mx-auto">
       <Header />
       <main>
         <SearchSection onSearch={handleSearch} />

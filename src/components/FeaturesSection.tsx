@@ -38,7 +38,7 @@ const features = [
 const FeaturesSection = () => {
   return (
     <section id="fonctionnalites" className="py-20 bg-gray-50">
-      <div className="w-full max-w-[1440px] mx-auto px-6">
+      <div className="w-full px-6 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
             Pourquoi choisir SalonsPro ?

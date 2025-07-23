@@ -35,7 +35,7 @@ const CTASection = () => {
 
   return (
     <section className="py-20 bg-gray-50">
-      <div className="w-full max-w-[1440px] mx-auto px-6 text-center">
+      <div className="w-full px-6 mx-auto text-center">
         <div className="bg-white rounded-2xl p-8 md:p-12 shadow-xl">
           <Bell className="h-16 w-16 text-accent mx-auto mb-6" />
           <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">

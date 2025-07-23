@@ -91,7 +91,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
 
   return (
     <section className="gradient-hero text-white py-20">
-      <div className="w-full max-w-[1440px] mx-auto px-6">
+      <div className="w-full px-6 mx-auto">
         <div className="text-center animate-fade-in-up">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Tous les salons professionnels
