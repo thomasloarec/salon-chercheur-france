@@ -323,6 +323,14 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
       .map((e: any) => [e.website_exposant.trim().toLowerCase(), e.id_exposant])
   );
   console.log('[DEBUG] exposantMap size =', exposantMap.size);
+  console.log('[DEBUG] Clés exposantMap (10 premières) =', Array.from(exposantMap.keys()).slice(0,10));
+  console.log('[DEBUG] Valeur map pour "elidose.com" =', exposantMap.get('elidose.com'));
+  console.log('[DEBUG] Valeur map pour "nuonmedical.com" =', exposantMap.get('nuonmedical.com'));
+
+  // Debug premier record
+  if (records.length > 0) {
+    console.log('[DEBUG] Premier record participation brut:', records[0].fields);
+  }
 
   // 3.4. Boucle sur chaque participation
   for (const r of records) {
@@ -330,37 +338,34 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     const recordId = r.id;
 
     // 3.4.1. Extraire et dédupliquer sur urlexpo_event
-    const rawUrlKey = f['urlexpo_event'];
+    const rawEventField = f['id_event'];
+    const idEvent = Array.isArray(rawEventField) ? rawEventField[0] : rawEventField;
+    console.log(`[DEBUG] participation ${r.id} idEvent extrait =`, idEvent);
+
+    const rawUrlField = f['urlexpo_event'];
+    const rawUrlKey = Array.isArray(rawUrlField) ? rawUrlField[0] : rawUrlField;
+    console.log(`[DEBUG] participation ${r.id} rawUrl = "${rawUrlKey}" (type ${typeof rawUrlKey})`);
+    
     if (!rawUrlKey) {
       errors.push({ recordId, reason: 'urlexpo_event manquant' });
       continue;
     }
     const urlKey = rawUrlKey.trim();
-    
-    // skip si déjà présent
-    const { data: existing } = await supabaseClient
-      .from('participation')
-      .select('urlexpo_event')
-      .eq('urlexpo_event', urlKey)
-      .single();
-    if (existing) {
-      // déjà en base : ignorer
-      console.log(`[DEBUG] Participation ${urlKey} déjà en base, ignorée`);
-      continue;
-    }
 
     // 3.4.2. Lier à l'exposant via website_exposant
     const rawWeb = f['website_exposant'];
     const keyWeb = rawWeb ? rawWeb.trim().toLowerCase() : '';
     const exposantId = exposantMap.get(keyWeb);
     if (!exposantId) {
+      console.error(`[ERROR] Skip participation – URL introuvable dans map:
+        record=${r.id}
+        rawUrl="${rawWeb}"
+        exposantMapByUrl.has(rawWeb.trim().toLowerCase())?`, exposantMap.has(rawWeb ? rawWeb.trim().toLowerCase() : ''));
       errors.push({ recordId, urlexpo_event: urlKey, website_exposant: rawWeb, reason: 'exposant introuvable' });
       continue;
     }
 
-    // 3.4.3. Lier à l'événement via id_event
-    const rawEvt = f['id_event'];
-    const idEvent = Array.isArray(rawEvt) ? rawEvt[0] : rawEvt;
+    // 3.4.3. Lier à l'événement via id_event (déjà extrait plus haut)
     if (!idEvent) {
       errors.push({ recordId, urlexpo_event: urlKey, reason: 'id_event manquant' });
       continue;
@@ -380,13 +385,16 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   }
 
   // 3.5. Upsert des participations valides
-  console.log('[DEBUG] participationsToInsert.length =', toInsert.length);
+  console.log(`[DEBUG] participationsToInsert.length = ${toInsert.length}`);
   if (toInsert.length) {
     const { data, error } = await supabaseClient
       .from('participation')
       .upsert(toInsert, { onConflict: 'urlexpo_event' })
       .select();
-    if (error) throw new Error(`Insert participation failed: ${error.message}`);
+    if (error) {
+      console.error('Upsert participation failed:', error);
+      throw new Error('Upsert failed, vérifiez la contrainte UNIQUE sur urlexpo_event');
+    }
     console.log('[DEBUG] participations inserted =', data.length);
   }
 
