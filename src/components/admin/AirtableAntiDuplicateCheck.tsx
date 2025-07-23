@@ -81,42 +81,60 @@ const AirtableAntiDuplicateCheck = () => {
       };
 
       // Helper function pour générer un rapport technique automatique
-      const generateTechnicalReport = (url: string, status: number, responseBody: string) => {
+      const generateTechnicalReport = (tentative: number, payload: any, response: any, error: any) => {
+        const computedFields = ['urlexpo_event', 'id_exposant']; // Champs calculés connus
+        const payloadComputedFields = Object.keys(payload).filter(key => computedFields.includes(key));
+        
         const keywords = {
-          'could not find': 'Colonne ou table introuvable dans la base de données',
-          'unknown relation': 'Relation/jointure non reconnue par Supabase',
-          'syntax error in select': 'Erreur de syntaxe dans la clause SELECT',
-          'invalid input syntax': 'Syntaxe invalide pour le type de données',
-          'column does not exist': 'La colonne spécifiée n\'existe pas',
-          'permission denied': 'Permissions insuffisantes pour accéder à la ressource',
-          'relation "exposants" does not exist': 'La table exposants n\'est pas accessible ou n\'existe pas',
-          'select list': 'Problème dans la liste des colonnes sélectionnées'
+          'cannot accept a value': 'Le champ ne peut pas accepter de valeur car il est calculé',
+          'computed': 'Champ calculé automatiquement par Airtable',
+          'INVALID_VALUE_FOR_COLUMN': 'Valeur invalide pour la colonne spécifiée',
+          'field is computed': 'Le champ est calculé automatiquement',
         };
 
-        let hypothesis = 'Erreur HTTP générique - cause inconnue';
-        const lowerBody = responseBody.toLowerCase();
+        let hypotheses = [];
         
-        for (const [keyword, description] of Object.entries(keywords)) {
-          if (lowerBody.includes(keyword.toLowerCase())) {
-            hypothesis = description;
-            break;
+        if (payloadComputedFields.length > 0) {
+          hypotheses.push(`Champs calculés détectés dans le payload: ${payloadComputedFields.join(', ')}`);
+          hypotheses.push('Ces champs doivent être exclus du payload d\'écriture');
+        }
+
+        if (error?.message) {
+          const lowerError = error.message.toLowerCase();
+          for (const [keyword, description] of Object.entries(keywords)) {
+            if (lowerError.includes(keyword.toLowerCase())) {
+              hypotheses.push(`Erreur détectée: ${description}`);
+              break;
+            }
           }
         }
 
+        if (response?.success && response?.duplicate !== true && tentative === 2) {
+          hypotheses.push('La détection de doublon ne fonctionne pas - la 2e tentative devrait être rejetée');
+          hypotheses.push('La logique de doublon actuelle ne vérifie probablement pas les champs uniques');
+        }
+
         return {
-          url,
-          httpStatus: status,
-          responseBody,
-          detectedKeywords: Object.keys(keywords).filter(k => lowerBody.includes(k.toLowerCase())),
-          hypothesis,
-          suggestedFix: hypothesis.includes('jointure') || hypothesis.includes('relation') 
-            ? 'Vérifier la syntaxe de jointure Supabase (exposants(...) au lieu de exposants!inner(...))'
-            : 'Vérifier la structure de la base de données et les permissions'
+          tentative,
+          payload,
+          payloadComputedFields,
+          response,
+          error: error?.message || null,
+          hypotheses,
+          suggestedFixes: [
+            'Exclure les champs calculés (urlexpo_event, id_exposant) du payload',
+            'Implémenter une vérification préalable des doublons basée sur website_exposant',
+            'Utiliser une logique upsert plutôt que create pour gérer les doublons'
+          ]
         };
       };
 
+      console.group('[ExposantDuplicate] 📊 Diagnostic détaillé du test de prévention des doublons');
+      
       // Première tentative - doit créer
-      console.log('🔄 [ExposantDuplicate] Première tentative de création...');
+      console.group('[ExposantDuplicate] Tentative de création #1');
+      console.debug('🔄 Payload envoyé (tentative 1):', testRecord);
+      
       const { data: firstData, error: firstError } = await supabase.functions.invoke('airtable-write', {
         method: 'POST',
         body: {
@@ -125,24 +143,23 @@ const AirtableAntiDuplicateCheck = () => {
         }
       });
 
+      console.debug('📥 Réponse Airtable (tentative 1):', { data: firstData, error: firstError });
+      
+      const rapport1 = generateTechnicalReport(1, testRecord, firstData, firstError);
+      console.info('📋 Rapport technique tentative 1:', rapport1);
+      console.groupEnd();
+
       if (firstError) {
         console.error('❌ [ExposantDuplicate] Erreur première tentative:', firstError);
-        // Si c'est une erreur HTTP, on instrumente
-        if (firstError.message && (firstError.message.includes('400') || firstError.message.includes('HTTP'))) {
-          const rapportTechnique = generateTechnicalReport(
-            'supabase.functions.invoke("airtable-write")',
-            400,
-            firstError.message
-          );
-          console.info('[AirtableAntiDuplicate] Rapport technique:', rapportTechnique);
-        }
         throw new Error(`First creation failed: ${firstError.message}`);
       }
 
       console.log('✅ [ExposantDuplicate] Première tentative réussie:', firstData);
 
       // Deuxième tentative - doit détecter le doublon
-      console.log('🔄 [ExposantDuplicate] Deuxième tentative (test doublon)...');
+      console.group('[ExposantDuplicate] Tentative de création #2 (test doublon)');
+      console.debug('🔄 Payload envoyé (tentative 2):', testRecord);
+      
       const { data: secondData, error: secondError } = await supabase.functions.invoke('airtable-write', {
         method: 'POST',
         body: {
@@ -151,32 +168,44 @@ const AirtableAntiDuplicateCheck = () => {
         }
       });
 
+      console.debug('📥 Réponse Airtable (tentative 2):', { data: secondData, error: secondError });
+      
+      const rapport2 = generateTechnicalReport(2, testRecord, secondData, secondError);
+      console.info('📋 Rapport technique tentative 2:', rapport2);
+      console.groupEnd();
+
       if (secondError) {
         console.error('❌ [ExposantDuplicate] Erreur deuxième tentative:', secondError);
-        // Si c'est une erreur HTTP, on instrumente
-        if (secondError.message && (secondError.message.includes('400') || secondError.message.includes('HTTP'))) {
-          const rapportTechnique = generateTechnicalReport(
-            'supabase.functions.invoke("airtable-write")',
-            400,
-            secondError.message
-          );
-          console.info('[AirtableAntiDuplicate] Rapport technique:', rapportTechnique);
-        }
         throw new Error(`Second creation failed: ${secondError.message}`);
       }
 
       console.log('✅ [ExposantDuplicate] Deuxième tentative réussie:', secondData);
 
+      // Analyse finale
       const duplicateDetected = secondData.duplicate === true;
+      
+      console.group('[ExposantDuplicate] 🔍 Analyse finale');
+      console.info('Détection de doublon:', duplicateDetected);
+      console.info('Données première tentative:', firstData);
+      console.info('Données deuxième tentative:', secondData);
+      
+      if (!duplicateDetected) {
+        console.warn('⚠️ PROBLÈME: La deuxième tentative n\'a pas détecté le doublon');
+        console.warn('La logique de prévention des doublons ne fonctionne pas correctement');
+      }
+      
+      console.groupEnd();
+      console.groupEnd();
       
       return {
         name: 'Exposant Duplicate Prevention Test',
         status: duplicateDetected ? 'success' : 'error',
         message: duplicateDetected ? 'Duplicate detection working correctly' : 'Duplicate detection not working',
-        details: { firstData, secondData, duplicateDetected }
+        details: { firstData, secondData, duplicateDetected, rapport1, rapport2 }
       };
     } catch (error) {
       console.error('❌ [ExposantDuplicate] Exception capturée:', error);
+      console.groupEnd(); // S'assurer que les groupes sont fermés en cas d'erreur
       return {
         name: 'Exposant Duplicate Prevention Test',
         status: 'error',
