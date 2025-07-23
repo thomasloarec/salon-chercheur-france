@@ -233,16 +233,17 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
 
   for (const record of exposantsData.records) {
     const fields = record.fields;
+    console.log('[DEBUG] Clés exposant.fields :', Object.keys(record.fields));
     
-    if (!fields['exposant_nom']?.trim()) {
+    if (!fields['nom_exposant']?.trim()) {
       continue;
     }
 
     const exposantData = {
-      id_event: fields['ID_Event'],
-      nom_exposant: fields['exposant_nom'].trim(),
-      id_exposant: fields['exposant_stand']?.trim() || '',
-      website_exposant: fields['exposant_website']?.trim() || '',
+      id_event: fields['All_Events']?.[0] || '',
+      nom_exposant: fields['nom_exposant'].trim(),
+      id_exposant: fields['id_exposant']?.trim() || '',
+      website_exposant: fields['website_exposant']?.trim() || '',
       exposant_description: fields['exposant_description']?.trim() || ''
     };
 
@@ -294,6 +295,7 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
 
   for (const record of participationData.records) {
     const fields = record.fields;
+    console.log('[DEBUG] Clés participation.fields :', Object.keys(record.fields));
     
     if (!fields['id_exposant'] || !fields['id_event']) {
       continue;
