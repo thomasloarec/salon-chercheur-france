@@ -327,12 +327,19 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   console.log('[DEBUG] Valeur map pour "elidose.com" =', exposantMap.get('elidose.com'));
   console.log('[DEBUG] Valeur map pour "nuonmedical.com" =', exposantMap.get('nuonmedical.com'));
 
+  // 3.4. Récupérer les URLs déjà importées en batch
+  const { data: existingRecs } = await supabaseClient
+    .from('participation')
+    .select('urlexpo_event');
+  const existingUrls = new Set(existingRecs?.map((e: any) => e.urlexpo_event) || []);
+  console.log('[DEBUG] URLs déjà existantes =', existingUrls.size);
+
   // Debug premier record
   if (records.length > 0) {
     console.log('[DEBUG] Premier record participation brut:', records[0].fields);
   }
 
-  // 3.4. Boucle sur chaque participation
+  // 3.5. Boucle sur chaque participation
   for (const r of records) {
     const f = r.fields;
     const recordId = r.id;
@@ -351,6 +358,12 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
       continue;
     }
     const urlKey = rawUrlKey.trim();
+    
+    // Skip si déjà présent
+    if (existingUrls.has(urlKey)) {
+      console.log(`Participation ${urlKey} déjà en base, ignorée`);
+      continue;
+    }
 
     // 3.4.2. Lier à l'exposant via website_exposant
     const rawWeb = f['website_exposant'];
