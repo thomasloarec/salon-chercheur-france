@@ -307,11 +307,23 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   const { records } = await resp.json();
   console.log('[DEBUG] participations records =', records.length);
 
+  // Avant la boucle
+  console.log('[DEBUG] Premier record participation brut:', records[0].fields);
+
   const toInsert = [];
   for (const r of records) {
     const f = r.fields;
-    const idEvent = f['id_event'];
-    const rawUrl = f['website_exposant'] || '';
+    
+    // Extraction de l'ID d'événement
+    const rawEventField = r.fields['id_event'];
+    const idEvent = Array.isArray(rawEventField) ? rawEventField[0] : rawEventField;
+    console.log(`[DEBUG] participation ${r.id} idEvent extrait =`, idEvent);
+    
+    // Vérification du champ website_exposant
+    const rawUrlField = r.fields['website_exposant'];
+    const rawUrl = Array.isArray(rawUrlField) ? rawUrlField[0] : rawUrlField;
+    console.log(`[DEBUG] participation ${r.id} rawUrl = "${rawUrl}" (type ${typeof rawUrl})`);
+    
     const key = rawUrl.trim().toLowerCase();
     const exposantId = exposantMapByUrl.get(key);
     if (!idEvent) {
@@ -319,7 +331,10 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
       continue;
     }
     if (!exposantId) {
-      console.warn(`[WARN] Skip – URL introuvable "${rawUrl}"`);
+      console.error(`[ERROR] Skip participation – URL introuvable dans map:
+    record=${r.id}
+    rawUrl="${rawUrl}"
+    exposantMapByUrl.has(rawUrl.trim().toLowerCase())?`, exposantMapByUrl.has(rawUrl.trim().toLowerCase()));
       continue;
     }
     toInsert.push({
@@ -411,6 +426,11 @@ serve(async (req) => {
           .map((e: any) => [e.website_exposant.trim().toLowerCase(), e.id_exposant])
       );
       console.log('[DEBUG] exposantMapByUrl size =', exposantMapByUrl.size);
+      
+      // Inspecter le map d'exposants
+      console.log('[DEBUG] Clés exposantMapByUrl (10 premières) =', Array.from(exposantMapByUrl.keys()).slice(0,10));
+      console.log('[DEBUG] Valeur map pour "elidose.com" =', exposantMapByUrl.get('elidose.com'));
+      console.log('[DEBUG] Valeur map pour "nuonmedical.com" =', exposantMapByUrl.get('nuonmedical.com'));
 
       // 3. Import des participations (toujours exécuté)
       const participationsImported = await importParticipation(supabaseClient, airtableConfig, exposantMapByUrl);
