@@ -132,6 +132,12 @@ serve(async (req) => {
       let eventsImported = 0;
       let exposantsImported = 0;
 
+      // Debug configuration variables
+      console.log('[DEBUG] Config Airtable – Table Events: All_Events');
+      console.log('[DEBUG] Config Airtable – Table Exposants: All_Exposants');
+      console.log('[DEBUG] Config Airtable – Base ID:', AIRTABLE_BASE_ID);
+      console.log('[DEBUG] Config Airtable – PAT présent:', !!AIRTABLE_PAT);
+
       // Import events from Airtable
       console.log('Importing events...');
       const eventsResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/All_Events`, {
@@ -146,6 +152,8 @@ serve(async (req) => {
       }
 
       const eventsData = await eventsResponse.json();
+      console.log('[DEBUG] Nombre d\'événements récupérés depuis Airtable :', eventsData.records?.length || 0);
+      console.log('[DEBUG] Exemple de 5 événements :', eventsData.records?.slice(0,5) || []);
       const eventsToInsert: any[] = [];
 
       for (const record of eventsData.records) {
@@ -182,13 +190,17 @@ serve(async (req) => {
 
       // Insert events into Supabase events_import table
       if (eventsToInsert.length > 0) {
-        const { error: eventsError } = await supabaseClient
+        console.log(`[DEBUG] Insertion de ${eventsToInsert.length} enregistrements dans la table events_import`);
+        const { data: eventsData, error: eventsError } = await supabaseClient
           .from('events_import')
-          .upsert(eventsToInsert, { onConflict: 'id' });
+          .upsert(eventsToInsert, { onConflict: 'id' })
+          .select();
 
         if (eventsError) {
-          console.error('Error inserting events:', eventsError);
+          console.error(`[ERROR] Échec insertion dans events_import :`, eventsError);
           throw new Error(`Failed to insert events: ${eventsError.message}`);
+        } else {
+          console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans events_import`);
         }
 
         eventsImported = eventsToInsert.length;
@@ -216,16 +228,20 @@ serve(async (req) => {
           location: ev.ville || 'Inconnue'
         }));
 
-        const { error: prodError } = await supabaseClient
+        console.log(`[DEBUG] Insertion de ${productionEvents.length} enregistrements dans la table events`);
+        const { data: prodData, error: prodError } = await supabaseClient
           .from('events')
           .upsert(productionEvents, { 
             onConflict: 'id_event',
             ignoreDuplicates: false 
-          });
+          })
+          .select();
 
         if (prodError) {
-          console.error('Error promoting events:', prodError);
+          console.error(`[ERROR] Échec insertion dans events :`, prodError);
           throw new Error(`Failed to upsert production events: ${prodError.message}`);
+        } else {
+          console.log(`[DEBUG] ${prodData?.length || 0} enregistrements insérés avec succès dans events`);
         }
 
         console.log(`Promoted ${productionEvents.length} events to production`);
@@ -233,6 +249,7 @@ serve(async (req) => {
 
       // Import exposants from Airtable
       console.log('Importing exposants...');
+      console.log('[DEBUG] eventsImported =', eventsImported);
       const exposantsResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/All_Exposants`, {
         headers: {
           'Authorization': `Bearer ${AIRTABLE_PAT}`,
@@ -245,6 +262,8 @@ serve(async (req) => {
       }
 
       const exposantsData = await exposantsResponse.json();
+      console.log('[DEBUG] Nombre d\'exposants récupérés depuis Airtable :', exposantsData.records?.length || 0);
+      console.log('[DEBUG] Exemple de 5 exposants :', exposantsData.records?.slice(0,5) || []);
       const exposantsToInsert: any[] = [];
 
       for (const record of exposantsData.records) {
@@ -268,13 +287,17 @@ serve(async (req) => {
       }
 
       if (exposantsToInsert.length > 0) {
-        const { error: exposantsError } = await supabaseClient
+        console.log(`[DEBUG] Insertion de ${exposantsToInsert.length} enregistrements dans la table exposants`);
+        const { data: exposantsData, error: exposantsError } = await supabaseClient
           .from('exposants')
-          .insert(exposantsToInsert);
+          .insert(exposantsToInsert)
+          .select();
 
         if (exposantsError) {
-          console.error('Error inserting exposants:', exposantsError);
+          console.error(`[ERROR] Échec insertion dans exposants :`, exposantsError);
           throw new Error(`Failed to insert exposants: ${exposantsError.message}`);
+        } else {
+          console.log(`[DEBUG] ${exposantsData?.length || 0} enregistrements insérés avec succès dans exposants`);
         }
         
         exposantsImported = exposantsToInsert.length;
