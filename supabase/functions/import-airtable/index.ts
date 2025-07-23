@@ -312,10 +312,15 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     const f = r.fields;
     console.log('[DEBUG] Clés participation.fields :', Object.keys(r.fields));
     const idEvent = f['id_event'];
-    const exposantName = f['nom_exposant'];
-    const exposantId = exposantMap.get(exposantName);
-    if (!idEvent || !exposantId) {
-      console.warn('[WARN] Skip participation – missing id_event or exposantId:', idEvent, exposantName);
+    const rawName = f['nom_exposant'] || '';
+    const key = rawName.trim().toLowerCase();
+    const exposantId = exposantMap.get(key);
+    if (!idEvent) {
+      console.warn(`[WARN] Skip participation – missing id_event; participation ID=${r.id}`);
+      continue;
+    }
+    if (!exposantId) {
+      console.warn(`[WARN] Skip participation – exposant introuvable dans map; rawName="${rawName}", key="${key}"`);
       continue;
     }
     toInsert.push({
@@ -400,9 +405,13 @@ serve(async (req) => {
         console.error('[ERROR] Fetch exposants pour mapping participation failed:', exposantsFetchError);
         throw new Error('Failed to load exposants for participation mapping');
       }
-      // Construire un map nom_exposant → id_exposant
-      const exposantMap = new Map(existingExposants.map((e: any) => [e.nom_exposant, e.id_exposant]));
+      // Construire un map nom_exposant → id_exposant (normalisé en minuscules et trim)
+      const exposantMap = new Map(
+        existingExposants
+          .map((e: any) => [e.nom_exposant.trim().toLowerCase(), e.id_exposant])
+      );
       console.log('[DEBUG] exposantMap size =', exposantMap.size);
+      console.log('[DEBUG] exposantMap keys sample:', Array.from(exposantMap.keys()).slice(0,5));
 
       // 3. Import des participations (toujours exécuté)
       const participationsImported = await importParticipation(supabaseClient, airtableConfig, exposantMap);
