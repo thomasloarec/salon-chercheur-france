@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useEventsWithRPC } from '@/hooks/useEventsWithRPC';
 import { FiltersSidebar } from '@/components/FiltersSidebar';
-import { ViewToggle } from '@/components/ViewToggle';
+
 import { EventsResults } from '@/components/EventsResults';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -173,35 +173,31 @@ const Events = () => {
             </Button>
           </div>
 
-          {/* Header with results count and view toggle */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {isLoading ? 'Chargement...' : `${displayEvents.length || 0} salon(s) trouvé(s)`}
-              </h1>
-              {Object.keys(filters).length > 0 && (
-                <p className="text-gray-600 mt-2">
-                  Résultats filtrés
-                  {filters.locationSuggestion && (
-                    <span className="ml-2 text-accent font-medium">
-                      • Lieu: {filters.locationSuggestion.label}
-                    </span>
-                  )}
-                  {filters.sectors && filters.sectors.length > 0 && (
-                    <span className="ml-2 text-accent font-medium">
-                      • Secteur: {filters.sectors.join(', ')}
-                    </span>
-                  )}
-                  {filters.types && filters.types.length > 0 && (
-                    <span className="ml-2 text-accent font-medium">
-                      • Type: {filters.types.join(', ')}
-                    </span>
-                  )}
-                </p>
-              )}
-            </div>
-            
-            <ViewToggle />
+          {/* Header with results count */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">
+              {isLoading ? 'Chargement...' : `${displayEvents.length || 0} salon(s) trouvé(s)`}
+            </h1>
+            {Object.keys(filters).length > 0 && (
+              <p className="text-gray-600 mt-2">
+                Résultats filtrés
+                {filters.locationSuggestion && (
+                  <span className="ml-2 text-accent font-medium">
+                    • Lieu: {filters.locationSuggestion.label}
+                  </span>
+                )}
+                {filters.sectors && filters.sectors.length > 0 && (
+                  <span className="ml-2 text-accent font-medium">
+                    • Secteur: {filters.sectors.join(', ')}
+                  </span>
+                )}
+                {filters.types && filters.types.length > 0 && (
+                  <span className="ml-2 text-accent font-medium">
+                    • Type: {filters.types.join(', ')}
+                  </span>
+                )}
+              </p>
+            )}
           </div>
 
           {/* Results with month grouping */}

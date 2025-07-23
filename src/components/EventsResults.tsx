@@ -1,6 +1,5 @@
 
 import { useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import EventCard from './EventCard';
 import { Calendar } from 'lucide-react';
 import type { Event } from '@/types/event';
@@ -12,8 +11,6 @@ interface EventsResultsProps {
 }
 
 export const EventsResults = ({ events, isLoading }: EventsResultsProps) => {
-  const [searchParams] = useSearchParams();
-  const viewMode = searchParams.get('view') || 'grid';
 
   // Regrouper les événements par mois
   const groupedEvents = useMemo(() => {
@@ -67,12 +64,9 @@ export const EventsResults = ({ events, isLoading }: EventsResultsProps) => {
           <h2 className="text-2xl font-semibold text-gray-900 mb-6 capitalize">
             {monthLabel}
           </h2>
-          <div className={viewMode === 'grid' ? 
-            'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6' : 
-            'space-y-4'
-          }>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {monthEvents.map((event) => (
-              <EventCard key={event.id} event={event} view={viewMode as 'grid'} />
+              <EventCard key={event.id} event={event} view="grid" />
             ))}
           </div>
         </section>
