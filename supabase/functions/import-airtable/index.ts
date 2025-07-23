@@ -299,9 +299,12 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
 }
 
 async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
-  console.log('Importing participation raw…');
+  console.log('Importing participation en 2 phases...');
   
-  // 3.1. Charger toutes les participations d'Airtable
+  // PHASE 1: Import brut
+  console.log('[PHASE 1] Import brut des participations...');
+  
+  // 1.1. Charger toutes les participations d'Airtable
   const resp = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/Participation`, {
     headers: { 'Authorization': `Bearer ${airtableConfig.pat}` }
   });
@@ -309,114 +312,188 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   const { records } = await resp.json();
   console.log('[DEBUG] participations records =', records.length);
 
-  // 3.2. Préparer listes d'erreurs et batch d'insertion
-  const toInsert = [];
-  const errors = [];
-
-  // 3.3. Construire map website_exposant → id_exposant
-  const { data: expoRecs } = await supabaseClient
-    .from('exposants')
-    .select('id_exposant, website_exposant');
-  const exposantMap = new Map(
-    expoRecs
-      .filter((e: any) => e.website_exposant)
-      .map((e: any) => [e.website_exposant.trim().toLowerCase(), e.id_exposant])
-  );
-  console.log('[DEBUG] exposantMap size =', exposantMap.size);
-  console.log('[DEBUG] Clés exposantMap (10 premières) =', Array.from(exposantMap.keys()).slice(0,10));
-  console.log('[DEBUG] Valeur map pour "elidose.com" =', exposantMap.get('elidose.com'));
-  console.log('[DEBUG] Valeur map pour "nuonmedical.com" =', exposantMap.get('nuonmedical.com'));
-
-  // 3.4. Récupérer les URLs déjà importées en batch
-  const { data: existingRecs } = await supabaseClient
-    .from('participation')
-    .select('urlexpo_event');
-  const existingUrls = new Set(existingRecs?.map((e: any) => e.urlexpo_event) || []);
-  console.log('[DEBUG] URLs déjà existantes =', existingUrls.size);
-
   // Debug premier record
   if (records.length > 0) {
     console.log('[DEBUG] Premier record participation brut:', records[0].fields);
   }
 
-  // 3.5. Boucle sur chaque participation
+  // 1.2. Préparer batch d'insertion brute
+  const toInsert = [];
+  const initialErrors = [];
+
   for (const r of records) {
     const f = r.fields;
     const recordId = r.id;
 
-    // 3.4.1. Extraire et dédupliquer sur urlexpo_event
-    const rawEventField = f['id_event'];
-    const idEvent = Array.isArray(rawEventField) ? rawEventField[0] : rawEventField;
-    console.log(`[DEBUG] participation ${r.id} idEvent extrait =`, idEvent);
-
+    // Extraire urlexpo_event
     const rawUrlField = f['urlexpo_event'];
     const rawUrlKey = Array.isArray(rawUrlField) ? rawUrlField[0] : rawUrlField;
-    console.log(`[DEBUG] participation ${r.id} rawUrl = "${rawUrlKey}" (type ${typeof rawUrlKey})`);
     
     if (!rawUrlKey) {
-      errors.push({ recordId, reason: 'urlexpo_event manquant' });
+      initialErrors.push({ 
+        record_id: recordId, 
+        urlexpo_event: null, 
+        website_exposant: null, 
+        reason: 'urlexpo_event manquant',
+        created_at: new Date().toISOString()
+      });
       continue;
     }
     const urlKey = rawUrlKey.trim();
+
+    // Extraire id_event
+    const rawEventField = f['id_event'];
+    const idEvent = Array.isArray(rawEventField) ? rawEventField[0] : rawEventField;
     
-    // Skip si déjà présent
-    if (existingUrls.has(urlKey)) {
-      console.log(`Participation ${urlKey} déjà en base, ignorée`);
-      continue;
-    }
-
-    // 3.4.2. Lier à l'exposant via website_exposant
-    const rawWeb = f['website_exposant'];
-    const keyWeb = rawWeb ? rawWeb.trim().toLowerCase() : '';
-    const exposantId = exposantMap.get(keyWeb);
-    if (!exposantId) {
-      console.error(`[ERROR] Skip participation – URL introuvable dans map:
-        record=${r.id}
-        rawUrl="${rawWeb}"
-        exposantMapByUrl.has(rawWeb.trim().toLowerCase())?`, exposantMap.has(rawWeb ? rawWeb.trim().toLowerCase() : ''));
-      errors.push({ recordId, urlexpo_event: urlKey, website_exposant: rawWeb, reason: 'exposant introuvable' });
-      continue;
-    }
-
-    // 3.4.3. Lier à l'événement via id_event (déjà extrait plus haut)
     if (!idEvent) {
-      errors.push({ recordId, urlexpo_event: urlKey, reason: 'id_event manquant' });
+      initialErrors.push({ 
+        record_id: recordId, 
+        urlexpo_event: urlKey, 
+        website_exposant: f['website_exposant']?.trim() || null, 
+        reason: 'id_event manquant',
+        created_at: new Date().toISOString()
+      });
       continue;
     }
 
-    // 3.4.4. Récupérer stand_exposant
+    // Extraire les autres champs
+    const rawWeb = f['website_exposant'];
     const stand = f['stand_exposant']?.trim() || null;
 
-    // 3.4.5. Préparer l'insertion
+    // Préparer l'insertion (id_exposant reste NULL)
     toInsert.push({
       urlexpo_event: urlKey,
       id_event: idEvent,
-      id_exposant: exposantId,
+      id_exposant: null, // Sera peuplé en phase 2
       stand_exposant: stand,
       website_exposant: rawWeb?.trim() || null
     });
   }
 
-  // 3.5. Upsert des participations valides
-  console.log(`[DEBUG] participationsToInsert.length = ${toInsert.length}`);
-  if (toInsert.length) {
+  // 1.3. Upsert brut (sans validation d'exposant)
+  console.log(`[PHASE 1] Insertion de ${toInsert.length} participations brutes...`);
+  let insertedCount = 0;
+  
+  if (toInsert.length > 0) {
     const { data, error } = await supabaseClient
       .from('participation')
       .upsert(toInsert, { onConflict: 'urlexpo_event' })
       .select();
+    
     if (error) {
-      console.error('Upsert participation failed:', error);
-      throw new Error('Upsert failed, vérifiez la contrainte UNIQUE sur urlexpo_event');
+      console.error('[PHASE 1] Upsert participation failed:', error);
+      throw new Error(`Phase 1 failed: ${error.message}`);
     }
-    console.log('[DEBUG] participations inserted =', data.length);
+    
+    insertedCount = data?.length || 0;
+    console.log(`[PHASE 1] ${insertedCount} participations insérées`);
   }
 
-  // 3.6. Retourner les erreurs vers l'interface
-  if (errors.length) {
-    console.error('[PARTICIPATION MAPPING ERRORS]', errors);
+  // PHASE 2: Mapping des exposants
+  console.log('[PHASE 2] Mapping des exposants...');
+  
+  // 2.1. UPDATE avec JOIN pour peupler id_exposant
+  // Fonction de normalisation des URLs
+  const normalizeUrl = (url: string) => {
+    if (!url) return '';
+    return url.trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')  // Supprimer http(s)://
+      .replace(/^www\./, '')        // Supprimer www.
+      .replace(/\/$/, '');          // Supprimer slash final
+  };
+
+  // 2.1. Mapping via JavaScript (plus fiable que SQL brut)
+  console.log('[PHASE 2] Mapping via JavaScript...');
+    
+    const { data: participationsToMap } = await supabaseClient
+      .from('participation')
+      .select('urlexpo_event, website_exposant')
+      .is('id_exposant', null)
+      .not('website_exposant', 'is', null);
+    
+    const { data: exposants } = await supabaseClient
+      .from('exposants')
+      .select('id_exposant, website_exposant');
+    
+    // Créer une map normalisée
+    const exposantMap = new Map();
+    exposants?.forEach((e: any) => {
+      if (e.website_exposant) {
+        const normalized = normalizeUrl(e.website_exposant);
+        exposantMap.set(normalized, e.id_exposant);
+      }
+    });
+    
+    // Mettre à jour les participations une par une
+    let mappedCount = 0;
+    for (const p of participationsToMap || []) {
+      const normalized = normalizeUrl(p.website_exposant);
+      const exposantId = exposantMap.get(normalized);
+      
+      if (exposantId) {
+        const { error } = await supabaseClient
+          .from('participation')
+          .update({ id_exposant: exposantId })
+          .eq('urlexpo_event', p.urlexpo_event);
+        
+        if (!error) {
+          mappedCount++;
+        }
+      }
+    }
+    
+    console.log(`[PHASE 2] ${mappedCount} participations mappées avec succès`);
+
+  // 2.2. Identifier les participations sans exposant (erreurs)
+  const { data: unmappedParticipations } = await supabaseClient
+    .from('participation')
+    .select('urlexpo_event, website_exposant')
+    .is('id_exposant', null);
+
+  console.log(`[PHASE 2] ${unmappedParticipations?.length || 0} participations sans exposant trouvé`);
+
+  // 2.3. Insérer les erreurs dans participation_import_errors
+  const finalErrors = [...initialErrors];
+  
+  if (unmappedParticipations?.length > 0) {
+    for (const p of unmappedParticipations) {
+      finalErrors.push({
+        record_id: `unmapped_${p.urlexpo_event}`,
+        urlexpo_event: p.urlexpo_event,
+        website_exposant: p.website_exposant,
+        reason: 'exposant introuvable',
+        created_at: new Date().toISOString()
+      });
+    }
   }
 
-  return { inserted: toInsert.length, errors };
+  // Insérer toutes les erreurs en batch
+  if (finalErrors.length > 0) {
+    const { error: errorInsertError } = await supabaseClient
+      .from('participation_import_errors')
+      .upsert(finalErrors, { onConflict: 'record_id' });
+    
+    if (errorInsertError) {
+      console.error('[PHASE 2] Failed to insert errors:', errorInsertError);
+    } else {
+      console.log(`[PHASE 2] ${finalErrors.length} erreurs insérées dans participation_import_errors`);
+    }
+  }
+
+  // 2.4. Statistiques finales
+  const { data: mappedCount } = await supabaseClient
+    .from('participation')
+    .select('urlexpo_event', { count: 'exact' })
+    .not('id_exposant', 'is', null);
+
+  console.log(`[PHASE 2] Résultat final: ${mappedCount?.length || 0} participations avec exposant mappé`);
+
+  return { 
+    inserted: insertedCount, 
+    mapped: mappedCount?.length || 0,
+    errors: finalErrors 
+  };
 }
 
 serve(async (req) => {
