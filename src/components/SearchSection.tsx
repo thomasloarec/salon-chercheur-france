@@ -91,7 +91,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
 
   return (
     <section className="gradient-hero text-white py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[1440px] mx-auto px-6">
         <div className="text-center animate-fade-in-up">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Tous les salons professionnels
@@ -103,7 +103,7 @@ const SearchSection = ({ onSearch }: SearchSectionProps) => {
           </p>
 
           {/* Search Form */}
-          <form onSubmit={handleFormSubmit} className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-2xl animate-scale-in">
+          <form onSubmit={handleFormSubmit} className="w-full max-w-5xl mx-auto bg-white rounded-lg p-6 shadow-2xl animate-scale-in">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Secteurs d'activité</label>

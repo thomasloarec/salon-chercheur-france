@@ -58,7 +58,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
         <Header />
         
         <main className="py-8">
-          <div className="max-w-7xl mx-auto px-4 space-y-8">
+          <div className="w-full max-w-[1440px] mx-auto px-6 space-y-8">
             {/* Preview notice */}
             {isPreview && (
               <div className="bg-orange-100 border-l-4 border-orange-500 p-4 rounded">
