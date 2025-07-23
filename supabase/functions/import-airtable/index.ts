@@ -462,15 +462,17 @@ serve(async (req) => {
       };
 
       // 1. Import des événements
+      console.log('[DEBUG] Début import événements...');
       const eventsImported = await importEvents(supabaseClient, airtableConfig);
       console.log('[DEBUG] eventsImported =', eventsImported);
 
       // 2. Import des exposants (toujours exécuté)
+      console.log('[DEBUG] Début import exposants...');
       const exposantsImported = await importExposants(supabaseClient, airtableConfig);
       console.log('[DEBUG] exposantsImported =', exposantsImported);
 
-
       // 3. Import des participations (toujours exécuté)
+      console.log('[DEBUG] Début import participations...');
       const { inserted: participationsImported, errors: participationErrors } = await importParticipation(supabaseClient, airtableConfig);
       console.log('[DEBUG] participationsImported =', participationsImported);
       console.log('[DEBUG] participationErrors =', participationErrors.length);
