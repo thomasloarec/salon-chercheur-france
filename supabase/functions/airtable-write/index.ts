@@ -129,6 +129,51 @@ serve(async (req) => {
     const payload = { records: mappedRecords };
     console.log(`[airtable-write] 📤 Payload final:`, JSON.stringify(payload, null, 2));
 
+    // Check for duplicates before creating
+    if (mappedRecords.length > 0) {
+      const firstRecord = mappedRecords[0].fields;
+      let duplicateCheckUrl = '';
+      let filterFormula = '';
+      
+      if (table === 'All_Exposants' && firstRecord.nom_exposant) {
+        filterFormula = `{nom_exposant}='${firstRecord.nom_exposant.replace(/'/g, "\\'")}'`;
+      } else if (table === 'Participation' && firstRecord.website_exposant) {
+        filterFormula = `{website_exposant}='${firstRecord.website_exposant.replace(/'/g, "\\'")}'`;
+      }
+      
+      if (filterFormula) {
+        duplicateCheckUrl = `${airtableUrl}?filterByFormula=${encodeURIComponent(filterFormula)}`;
+        console.log(`[airtable-write] 🔍 Vérification doublon: ${duplicateCheckUrl}`);
+        
+        try {
+          const duplicateResponse = await fetch(duplicateCheckUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${AIRTABLE_PAT}`,
+            },
+          });
+          
+          if (duplicateResponse.ok) {
+            const duplicateData = await duplicateResponse.json();
+            if (duplicateData.records && duplicateData.records.length > 0) {
+              console.log(`[airtable-write] 🔄 Doublon détecté pour ${table}, retour avec duplicate: true`);
+              return new Response(
+                JSON.stringify({
+                  success: true,
+                  duplicate: true,
+                  message: 'Duplicate record found'
+                }),
+                { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+          }
+        } catch (duplicateError) {
+          console.warn(`[airtable-write] ⚠️ Erreur lors de la vérification doublon:`, duplicateError);
+          // Continue with creation if duplicate check fails
+        }
+      }
+    }
+
     try {
       // Make request to Airtable
       const response = await fetch(airtableUrl, {

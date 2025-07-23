@@ -74,6 +74,7 @@ const AirtableAntiDuplicateCheck = () => {
 
   const testExposantDuplicatePrevention = async (): Promise<TestResult> => {
     try {
+      // Exclure les champs calculés (urlexpo_event, id_exposant)
       const testRecord = {
         nom_exposant: 'TEST_DUPLICATE_EXPOSANT',
         website_exposant: 'duplicate-test-exposant.com',
@@ -217,11 +218,11 @@ const AirtableAntiDuplicateCheck = () => {
 
   const testParticipationDuplicatePrevention = async (): Promise<TestResult> => {
     try {
+      // Exclure les champs calculés (urlexpo_event, id_participation)
       const testRecord = {
         nom_exposant: 'TEST_DUPLICATE_PARTICIPATION',
         stand_exposant: 'Stand Test',
-        website_exposant: 'duplicate-participation.com',
-        urlexpo_event: 'test_duplicate_participation_event'
+        website_exposant: 'duplicate-participation.com'
       };
 
       // Première tentative - doit créer
