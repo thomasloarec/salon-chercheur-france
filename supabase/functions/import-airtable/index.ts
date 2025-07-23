@@ -482,24 +482,25 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   }
 
   // 2.4. Statistiques finales
-  const { data: mappedCount } = await supabaseClient
+  const { data: finalMappedParticipations } = await supabaseClient
     .from('participation')
     .select('urlexpo_event', { count: 'exact' })
     .not('id_exposant', 'is', null);
 
-  console.log(`[PHASE 2] Résultat final: ${mappedCount?.length || 0} participations avec exposant mappé`);
+  console.log(`[PHASE 2] Résultat final: ${finalMappedParticipations?.length || 0} participations avec exposant mappé`);
 
   return { 
     inserted: insertedCount, 
-    mapped: mappedCount?.length || 0,
+    mapped: finalMappedParticipations?.length || 0,
     errors: finalErrors 
   };
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      status: 204,
+      status: 200,
       headers: corsHeaders 
     });
   }
