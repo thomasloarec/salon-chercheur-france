@@ -734,6 +734,7 @@ export type Database = {
           job_title: string | null
           last_name: string | null
           primary_sector: string | null
+          role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
           user_id: string
         }
@@ -745,6 +746,7 @@ export type Database = {
           job_title?: string | null
           last_name?: string | null
           primary_sector?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
           user_id: string
         }
@@ -756,6 +758,7 @@ export type Database = {
           job_title?: string | null
           last_name?: string | null
           primary_sector?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
           user_id?: string
         }
@@ -941,6 +944,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       events_geo: {
@@ -981,6 +1005,10 @@ export type Database = {
         Args: { event_name: string; event_city: string; event_year: number }
         Returns: string
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       get_location_suggestions: {
         Args: { q: string }
         Returns: {
@@ -1009,6 +1037,17 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       search_events: {
         Args: {
@@ -1072,6 +1111,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       event_type_enum:
         | "salon"
         | "convention"
@@ -1205,6 +1245,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       event_type_enum: [
         "salon",
         "convention",
