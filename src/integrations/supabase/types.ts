@@ -166,15 +166,8 @@ export type Database = {
             foreignKeyName: "event_sectors_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events_geo"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "event_sectors_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events_old"
-            referencedColumns: ["id"]
+            referencedRelation: "events"
+            referencedColumns: ["id_event"]
           },
           {
             foreignKeyName: "event_sectors_sector_id_fkey"
@@ -195,6 +188,7 @@ export type Database = {
           date_fin: string | null
           description_event: string | null
           id_event: string
+          is_b2b: boolean
           location: string | null
           nom_event: string
           nom_lieu: string | null
@@ -220,6 +214,7 @@ export type Database = {
           date_fin?: string | null
           description_event?: string | null
           id_event: string
+          is_b2b?: boolean
           location?: string | null
           nom_event: string
           nom_lieu?: string | null
@@ -245,6 +240,7 @@ export type Database = {
           date_fin?: string | null
           description_event?: string | null
           id_event?: string
+          is_b2b?: boolean
           location?: string | null
           nom_event?: string
           nom_lieu?: string | null
@@ -268,61 +264,70 @@ export type Database = {
           affluence: string | null
           airtable_id: string | null
           code_postal: string | null
-          created_at: string | null
           date_debut: string | null
           date_fin: string | null
           description_event: string | null
           id_event: string
+          is_b2b: boolean | null
+          location: string | null
           nom_event: string | null
           nom_lieu: string | null
+          pays: string | null
           rue: string | null
-          secteur: Json | null
+          secteur: string[] | null
           status_event: string | null
           tarif: string | null
           type_event: string | null
           url_image: string | null
           url_site_officiel: string | null
           ville: string | null
+          visible: boolean | null
         }
         Insert: {
           affluence?: string | null
           airtable_id?: string | null
           code_postal?: string | null
-          created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
           id_event: string
+          is_b2b?: boolean | null
+          location?: string | null
           nom_event?: string | null
           nom_lieu?: string | null
+          pays?: string | null
           rue?: string | null
-          secteur?: Json | null
+          secteur?: string[] | null
           status_event?: string | null
           tarif?: string | null
           type_event?: string | null
           url_image?: string | null
           url_site_officiel?: string | null
           ville?: string | null
+          visible?: boolean | null
         }
         Update: {
           affluence?: string | null
           airtable_id?: string | null
           code_postal?: string | null
-          created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
           id_event?: string
+          is_b2b?: boolean | null
+          location?: string | null
           nom_event?: string | null
           nom_lieu?: string | null
+          pays?: string | null
           rue?: string | null
-          secteur?: Json | null
+          secteur?: string[] | null
           status_event?: string | null
           tarif?: string | null
           type_event?: string | null
           url_image?: string | null
           url_site_officiel?: string | null
           ville?: string | null
+          visible?: boolean | null
         }
         Relationships: []
       }
@@ -675,15 +680,8 @@ export type Database = {
             foreignKeyName: "participation_id_event_fkey"
             columns: ["id_event"]
             isOneToOne: false
-            referencedRelation: "events_geo"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "participation_id_event_fkey"
-            columns: ["id_event"]
-            isOneToOne: false
-            referencedRelation: "events_old"
-            referencedColumns: ["id"]
+            referencedRelation: "events"
+            referencedColumns: ["id_event"]
           },
           {
             foreignKeyName: "participation_id_exposant_fkey"
