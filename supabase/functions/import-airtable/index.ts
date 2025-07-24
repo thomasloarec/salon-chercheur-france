@@ -261,6 +261,13 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
     }
 
     console.log(`Promoted ${productionEvents.length} events to production`);
+    
+    // Log de vérification airtable_id
+    const { count } = await supabaseClient
+      .from('events')
+      .select('id', { count: 'exact' })
+      .is('airtable_id', null);
+    console.log('[DEBUG] Rows with NULL airtable_id after upsert:', count);
   }
 
   return eventsImported;
@@ -310,14 +317,19 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
 async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
   console.log('Importing participation en 2 phases...');
   
-  // ÉTAPE PRÉLIMINAIRE: Charger le mapping des événements Airtable → Supabase
+  // ÉTAPE PRÉLIMINAIRE: Charger le mapping des événements id_event → Supabase
   console.log('[MAPPING] Chargement du mapping des événements...');
   const { data: events } = await supabaseClient
     .from('events')
-    .select('id, airtable_id');
+    .select('id, id_event');
   
-  const eventMap = new Map(events?.map((e: any) => [e.airtable_id, e.id]) || []);
-  console.log(`[MAPPING] ${eventMap.size} événements mappés (Airtable → Supabase)`);
+  const eventMap = new Map(
+    events
+      ?.filter((e: any) => e.id_event)          // sécurité
+      .map((e: any) => [e.id_event, e.id])      // <— map par id_event
+      || []
+  );
+  console.log(`[MAPPING] ${eventMap.size} événements mappés (id_event → Supabase)`);
   
   // PHASE 1: Import brut
   console.log('[PHASE 1] Import brut des participations...');
@@ -414,6 +426,7 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   console.log('[PHASE 1] eventMap.size =', eventMap.size);
   console.log('[PHASE 1] raw records.length =', records.length);
   console.log('[PHASE 1] toInsert.length =', toInsert.length);
+  console.log('[DEBUG] Sample key in eventMap:', Array.from(eventMap.keys()).slice(0,3));
   
   // 1.3. Upsert brut (sans validation d'exposant)
   console.log(`[PHASE 1] Insertion de ${toInsert.length} participations brutes...`);
