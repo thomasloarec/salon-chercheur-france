@@ -166,14 +166,14 @@ export type Database = {
             foreignKeyName: "event_sectors_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events"
+            referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "event_sectors_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events_geo"
+            referencedRelation: "events_old"
             referencedColumns: ["id"]
           },
           {
@@ -186,6 +186,225 @@ export type Database = {
         ]
       }
       events: {
+        Row: {
+          affluence: string | null
+          airtable_id: string | null
+          code_postal: string | null
+          created_at: string | null
+          date_debut: string | null
+          date_fin: string | null
+          description_event: string | null
+          id_event: string
+          location: string | null
+          nom_event: string
+          nom_lieu: string | null
+          pays: string | null
+          rue: string | null
+          secteur: Json | null
+          slug: string | null
+          status_event: string | null
+          tarif: string | null
+          type_event: string | null
+          updated_at: string | null
+          url_image: string | null
+          url_site_officiel: string | null
+          ville: string | null
+          visible: boolean | null
+        }
+        Insert: {
+          affluence?: string | null
+          airtable_id?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id_event: string
+          location?: string | null
+          nom_event: string
+          nom_lieu?: string | null
+          pays?: string | null
+          rue?: string | null
+          secteur?: Json | null
+          slug?: string | null
+          status_event?: string | null
+          tarif?: string | null
+          type_event?: string | null
+          updated_at?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string | null
+          visible?: boolean | null
+        }
+        Update: {
+          affluence?: string | null
+          airtable_id?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id_event?: string
+          location?: string | null
+          nom_event?: string
+          nom_lieu?: string | null
+          pays?: string | null
+          rue?: string | null
+          secteur?: Json | null
+          slug?: string | null
+          status_event?: string | null
+          tarif?: string | null
+          type_event?: string | null
+          updated_at?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string | null
+          visible?: boolean | null
+        }
+        Relationships: []
+      }
+      events_import: {
+        Row: {
+          affluence: string | null
+          airtable_id: string | null
+          code_postal: string | null
+          created_at: string | null
+          date_debut: string | null
+          date_fin: string | null
+          description_event: string | null
+          id_event: string
+          nom_event: string | null
+          nom_lieu: string | null
+          rue: string | null
+          secteur: Json | null
+          status_event: string | null
+          tarif: string | null
+          type_event: string | null
+          url_image: string | null
+          url_site_officiel: string | null
+          ville: string | null
+        }
+        Insert: {
+          affluence?: string | null
+          airtable_id?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id_event: string
+          nom_event?: string | null
+          nom_lieu?: string | null
+          rue?: string | null
+          secteur?: Json | null
+          status_event?: string | null
+          tarif?: string | null
+          type_event?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string | null
+        }
+        Update: {
+          affluence?: string | null
+          airtable_id?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id_event?: string
+          nom_event?: string | null
+          nom_lieu?: string | null
+          rue?: string | null
+          secteur?: Json | null
+          status_event?: string | null
+          tarif?: string | null
+          type_event?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string | null
+        }
+        Relationships: []
+      }
+      events_import_old: {
+        Row: {
+          adresse: string | null
+          affluence: string | null
+          ai_certainty: string | null
+          airtable_id: string | null
+          chatgpt_prompt: string | null
+          code_postal: string | null
+          created_at: string | null
+          date_complete: string | null
+          date_debut: string | null
+          date_fin: string | null
+          description_event: string | null
+          id: string
+          nom_event: string | null
+          nom_lieu: string | null
+          rue: string | null
+          secteur: string | null
+          status_event: string | null
+          tarif: string | null
+          type_event: string | null
+          updated_at: string | null
+          url_image: string | null
+          url_site_officiel: string | null
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          affluence?: string | null
+          ai_certainty?: string | null
+          airtable_id?: string | null
+          chatgpt_prompt?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_complete?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id: string
+          nom_event?: string | null
+          nom_lieu?: string | null
+          rue?: string | null
+          secteur?: string | null
+          status_event?: string | null
+          tarif?: string | null
+          type_event?: string | null
+          updated_at?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          affluence?: string | null
+          ai_certainty?: string | null
+          airtable_id?: string | null
+          chatgpt_prompt?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_complete?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id?: string
+          nom_event?: string | null
+          nom_lieu?: string | null
+          rue?: string | null
+          secteur?: string | null
+          status_event?: string | null
+          tarif?: string | null
+          type_event?: string | null
+          updated_at?: string | null
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string | null
+        }
+        Relationships: []
+      }
+      events_old: {
         Row: {
           affluence: number | null
           airtable_id: string | null
@@ -287,81 +506,6 @@ export type Database = {
         }
         Relationships: []
       }
-      events_import: {
-        Row: {
-          adresse: string | null
-          affluence: string | null
-          ai_certainty: string | null
-          chatgpt_prompt: string | null
-          code_postal: string | null
-          created_at: string | null
-          date_complete: string | null
-          date_debut: string | null
-          date_fin: string | null
-          description_event: string | null
-          id: string
-          nom_event: string | null
-          nom_lieu: string | null
-          rue: string | null
-          secteur: string | null
-          status_event: string | null
-          tarif: string | null
-          type_event: string | null
-          updated_at: string | null
-          url_image: string | null
-          url_site_officiel: string | null
-          ville: string | null
-        }
-        Insert: {
-          adresse?: string | null
-          affluence?: string | null
-          ai_certainty?: string | null
-          chatgpt_prompt?: string | null
-          code_postal?: string | null
-          created_at?: string | null
-          date_complete?: string | null
-          date_debut?: string | null
-          date_fin?: string | null
-          description_event?: string | null
-          id: string
-          nom_event?: string | null
-          nom_lieu?: string | null
-          rue?: string | null
-          secteur?: string | null
-          status_event?: string | null
-          tarif?: string | null
-          type_event?: string | null
-          updated_at?: string | null
-          url_image?: string | null
-          url_site_officiel?: string | null
-          ville?: string | null
-        }
-        Update: {
-          adresse?: string | null
-          affluence?: string | null
-          ai_certainty?: string | null
-          chatgpt_prompt?: string | null
-          code_postal?: string | null
-          created_at?: string | null
-          date_complete?: string | null
-          date_debut?: string | null
-          date_fin?: string | null
-          description_event?: string | null
-          id?: string
-          nom_event?: string | null
-          nom_lieu?: string | null
-          rue?: string | null
-          secteur?: string | null
-          status_event?: string | null
-          tarif?: string | null
-          type_event?: string | null
-          updated_at?: string | null
-          url_image?: string | null
-          url_site_officiel?: string | null
-          ville?: string | null
-        }
-        Relationships: []
-      }
       exhibitor_matches: {
         Row: {
           company_id: string | null
@@ -402,14 +546,14 @@ export type Database = {
             foreignKeyName: "exhibitor_matches_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events"
+            referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "exhibitor_matches_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events_geo"
+            referencedRelation: "events_old"
             referencedColumns: ["id"]
           },
         ]
@@ -465,14 +609,14 @@ export type Database = {
             foreignKeyName: "favorites_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events"
+            referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "favorites_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events_geo"
+            referencedRelation: "events_old"
             referencedColumns: ["id"]
           },
         ]
@@ -531,14 +675,14 @@ export type Database = {
             foreignKeyName: "participation_id_event_fkey"
             columns: ["id_event"]
             isOneToOne: false
-            referencedRelation: "events"
+            referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "participation_id_event_fkey"
             columns: ["id_event"]
             isOneToOne: false
-            referencedRelation: "events_geo"
+            referencedRelation: "events_old"
             referencedColumns: ["id"]
           },
           {
