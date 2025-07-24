@@ -161,7 +161,7 @@ export function PendingEventsImport() {
       url_image: eventImport.url_image || null,
       url_site_officiel: eventImport.url_site_officiel || null,
       tarif: eventImport.tarifs || null,
-      affluence: eventImport.affluence ? parseInt(eventImport.affluence) : null,
+      affluence: eventImport.affluence ? String(eventImport.affluence) : null, // Convert to string
       type_event: (eventImport.type_event as Event['type_event']) || 'salon',
       visible: false,
       location: eventImport.ville || 'Inconnue'

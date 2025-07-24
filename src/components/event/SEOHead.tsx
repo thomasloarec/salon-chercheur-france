@@ -18,7 +18,7 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
   } – ${event.ville}`;
 
   const description = `Découvrez les infos, exposants et contacts de l'événement ${event.nom_event}. ${
-    event.affluence ? `${event.affluence.toLocaleString('fr-FR')} visiteurs attendus.` : ''
+    event.affluence ? `${parseInt(event.affluence).toLocaleString('fr-FR')} visiteurs attendus.` : ''
   } Du ${formatDateShort(event.date_debut)}${
     event.date_debut !== event.date_fin ? ` au ${formatDateShort(event.date_fin)}` : ''
   }.`;

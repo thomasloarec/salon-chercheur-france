@@ -63,7 +63,7 @@ export const EventInfo = ({ event }: EventInfoProps) => {
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-accent" />
               <span className="text-gray-600 text-left">
-                {event.affluence.toLocaleString('fr-FR')} visiteurs
+                {event.affluence ? parseInt(event.affluence).toLocaleString('fr-FR') : '0'} visiteurs
               </span>
             </div>
           </div>

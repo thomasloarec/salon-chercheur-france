@@ -61,7 +61,7 @@ export const EventAbout = ({ event }: EventAboutProps) => {
               <p className="font-medium">Affluence</p>
               <p className="text-gray-600">
                 {event.affluence 
-                  ? `${event.affluence.toLocaleString('fr-FR')} visiteurs attendus` 
+                  ? `${parseInt(event.affluence).toLocaleString('fr-FR')} visiteurs attendus` 
                   : '—'
                 }
               </p>

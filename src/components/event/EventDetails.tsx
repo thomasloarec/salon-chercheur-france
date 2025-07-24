@@ -45,7 +45,7 @@ export const EventDetails = ({ event }: EventDetailsProps) => {
             <h4 className="font-medium text-gray-900 mb-2 text-left">Affluence</h4>
             <div className="flex items-center text-gray-600">
               <Users className="h-4 w-4 text-accent mr-2" />
-              <span className="text-left">{event.affluence.toLocaleString('fr-FR')} visiteurs attendus</span>
+              <span className="text-left">{event.affluence ? parseInt(event.affluence).toLocaleString('fr-FR') : '0'} visiteurs attendus</span>
             </div>
           </div>
         )}
