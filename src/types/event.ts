@@ -1,6 +1,6 @@
 
 export interface Event {
-  id: string;
+  id: string; // Maps to id_event from database
   nom_event: string;
   description_event?: string;
   date_debut: string;
@@ -8,13 +8,12 @@ export interface Event {
   secteur?: string;
   nom_lieu?: string;
   ville?: string;
-  // Region removed - now handled via events_geo view
   country?: string;
   url_image?: string;
   url_site_officiel?: string;
   tags?: string[];
   tarif?: string;
-  affluence?: number;
+  affluence?: string; // Changed from number to string to match database
   estimated_exhibitors?: number;
   is_b2b?: boolean;
   type_event?: 'salon' | 'conference' | 'convention' | 'exposition' | 'congres' | 'forum' | 'autre';

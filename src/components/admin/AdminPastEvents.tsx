@@ -23,7 +23,7 @@ export const AdminPastEvents = () => {
       const today = new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from('events')
-        .select('id, id_event, slug, nom_event, date_debut, date_fin, ville, visible')
+        .select('id_event, slug, nom_event, date_debut, date_fin, ville, visible')
         .lt('date_fin', today)
         .order('date_fin', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -66,12 +66,12 @@ export const AdminPastEvents = () => {
             <TableBody>
               {pastEvents?.map((event) => (
                 <TableRow 
-                  key={event.id}
+                  key={event.id_event}
                   className="cursor-pointer hover:bg-muted/50"
                 >
                   <TableCell className="font-medium">
                     <Link 
-                      to={`/events/${event.slug || event.id}`}
+                      to={`/events/${event.slug || event.id_event}`}
                       className="text-blue-600 hover:underline"
                     >
                       {event.nom_event}

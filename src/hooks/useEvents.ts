@@ -125,7 +125,7 @@ export const useEvents = (filters?: SearchFilters) => {
           console.log('🗺️ Events IDs trouvés pour région', filters.locationSuggestion.value, ':', eventIds.length);
           
           if (eventIds.length > 0) {
-            query = query.in('id', eventIds);
+            query = query.in('id_event', eventIds);
           } else {
             // Aucun événement dans cette région
             return [];
@@ -161,7 +161,7 @@ export const useEvents = (filters?: SearchFilters) => {
 
       // Transform the data to include sectors and use correct column names
       const eventsWithSectors = data?.map(event => ({
-        id: event.id,
+        id: event.id_event, // Map id_event to id for compatibility
         nom_event: event.nom_event,
         description_event: event.description_event,
         date_debut: event.date_debut,
@@ -169,20 +169,19 @@ export const useEvents = (filters?: SearchFilters) => {
         secteur: event.secteur,
         nom_lieu: event.nom_lieu,
         ville: event.ville,
-        // Region no longer exists in events table
         country: event.pays,
         url_image: event.url_image,
         url_site_officiel: event.url_site_officiel,
-        tags: event.tags,
+        tags: [], // Default empty array as tags don't exist in new schema
         tarif: event.tarif,
         affluence: event.affluence,
-        estimated_exhibitors: event.estimated_exhibitors,
+        estimated_exhibitors: undefined, // Not in new schema
         is_b2b: event.is_b2b,
         type_event: event.type_event as Event['type_event'],
         created_at: event.created_at,
         updated_at: event.updated_at,
-        last_scraped_at: event.last_scraped_at,
-        scraped_from: event.scraped_from,
+        last_scraped_at: undefined, // Not in new schema
+        scraped_from: undefined, // Not in new schema
         rue: event.rue,
         code_postal: event.code_postal,
         visible: event.visible,
