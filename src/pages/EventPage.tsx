@@ -66,10 +66,10 @@ const EventPage = () => {
 
       console.log('✅ Event found:', eventData);
       
-      const isFavorite = user ? eventData.favorites?.some((fav: any) => fav.user_id === user.id) : false;
+      const isFavorite = user && Array.isArray(eventData.favorites) ? eventData.favorites.some((fav: any) => fav.user_id === user.id) : false;
       
       const typedEvent: Event = {
-        id: eventData.id,
+        id: eventData.id_event,
         nom_event: eventData.nom_event || '',
         description_event: eventData.description_event,
         date_debut: eventData.date_debut,
@@ -80,16 +80,16 @@ const EventPage = () => {
         country: eventData.pays,
         url_image: eventData.url_image,
         url_site_officiel: eventData.url_site_officiel,
-        tags: eventData.tags,
+        tags: [],
         tarif: eventData.tarif,
         affluence: eventData.affluence,
-        estimated_exhibitors: eventData.estimated_exhibitors,
+        estimated_exhibitors: undefined,
         is_b2b: eventData.is_b2b,
         type_event: eventData.type_event as Event['type_event'],
         created_at: eventData.created_at,
         updated_at: eventData.updated_at,
-        last_scraped_at: eventData.last_scraped_at,
-        scraped_from: eventData.scraped_from,
+        last_scraped_at: undefined,
+        scraped_from: undefined,
         rue: eventData.rue,
         code_postal: eventData.code_postal,
         visible: eventData.visible,
@@ -138,7 +138,7 @@ const EventPage = () => {
       const { error } = await supabase
         .from('events')
         .update({ visible: true })
-        .eq('id', event.id);
+        .eq('id_event', event.id);
 
       if (error) throw error;
 

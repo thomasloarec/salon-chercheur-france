@@ -55,7 +55,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         if (data && data.length > 0) {
           console.log('🔢 Total count du premier élément:', data[0]?.total_count);
           console.log('🎯 Premier événement reçu:', {
-            id: data[0]?.id,
+            id: data[0]?.id_event,
             nom: data[0]?.nom_event,
             ville: data[0]?.ville
           });
@@ -66,7 +66,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {
           return {
-            id: item.id,
+            id: item.id_event,
             nom_event: item.nom_event || '',
             description_event: item.description_event,
             date_debut: item.date_debut,
@@ -77,16 +77,16 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             country: item.pays,
             url_image: item.url_image,
             url_site_officiel: item.url_site_officiel,
-            tags: item.tags,
+            tags: [],
             tarif: item.tarif,
             affluence: item.affluence,
-            estimated_exhibitors: item.estimated_exhibitors,
+            estimated_exhibitors: undefined,
             is_b2b: item.is_b2b,
             type_event: item.type_event as Event['type_event'],
             created_at: item.created_at,
             updated_at: item.updated_at,
-            last_scraped_at: item.last_scraped_at,
-            scraped_from: item.scraped_from,
+            last_scraped_at: undefined,
+            scraped_from: undefined,
             rue: item.rue,
             code_postal: item.code_postal,
             visible: item.visible,
@@ -141,7 +141,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
               console.log('🗺️ Events IDs trouvés pour région', value, ':', eventIds.length);
               
               if (eventIds.length > 0) {
-                query = query.in('id', eventIds);
+                query = query.in('id_event', eventIds);
               } else {
                 return { events: [], total_count: 0 };
               }
@@ -176,7 +176,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             if (eventSectors && eventSectors.length > 0) {
               const eventIds = eventSectors.map(es => es.event_id);
               console.log('🎯 Event IDs correspondants:', eventIds.length);
-              query = query.in('id', eventIds);
+              query = query.in('id_event', eventIds);
             } else {
               console.log('⚠️ Aucun événement trouvé pour ces secteurs');
               return { events: [], total_count: 0 };
@@ -210,7 +210,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         // Mapper les données de fallback au format Event
         const fallbackEvents: Event[] = (fallbackData || []).map(item => {
           return {
-            id: item.id,
+            id: item.id_event,
             nom_event: item.nom_event || '',
             description_event: item.description_event,
             date_debut: item.date_debut,
@@ -221,16 +221,16 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
             country: item.pays,
             url_image: item.url_image,
             url_site_officiel: item.url_site_officiel,
-            tags: item.tags,
+            tags: [],
             tarif: item.tarif,
             affluence: item.affluence,
-            estimated_exhibitors: item.estimated_exhibitors,
+            estimated_exhibitors: undefined,
             is_b2b: item.is_b2b,
             type_event: item.type_event as Event['type_event'],
             created_at: item.created_at,
             updated_at: item.updated_at,
-            last_scraped_at: item.last_scraped_at,
-            scraped_from: item.scraped_from,
+            last_scraped_at: undefined,
+            scraped_from: undefined,
             rue: item.rue,
             code_postal: item.code_postal,
             visible: item.visible,

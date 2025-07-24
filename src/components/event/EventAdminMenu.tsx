@@ -99,7 +99,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       const { data, error } = await supabase
         .from(tableName)
         .update({ visible: newStatus })
-        .eq('id', event.id)
+        .eq('id_event', event.id)
         .select()
         .single();
 
@@ -113,7 +113,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       // Transform the response to match our Event interface
       // Handle schema differences between events and events_import tables
       const transformedEvent: Event = {
-        id: data.id,
+        id: data.id_event,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
@@ -124,16 +124,16 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         country: (data as any).pays || (data as any).country || 'France',
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
-        tags: (data as any).tags || [],
+        tags: [],
         tarif: data.tarif,
-        affluence: typeof data.affluence === 'string' ? parseInt(data.affluence) || undefined : data.affluence,
-        estimated_exhibitors: (data as any).estimated_exhibitors || undefined,
+        affluence: data.affluence || undefined,
+        estimated_exhibitors: undefined,
         is_b2b: (data as any).is_b2b || false,
         type_event: (data.type_event as Event['type_event']) || 'salon',
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        last_scraped_at: (data as any).last_scraped_at || undefined,
-        scraped_from: (data as any).scraped_from || undefined,
+        created_at: (data as any).created_at || undefined,
+        updated_at: (data as any).updated_at || undefined,
+        last_scraped_at: undefined,
+        scraped_from: undefined,
         rue: data.rue,
         code_postal: data.code_postal,
         visible: (data as any).visible ?? true,
@@ -164,7 +164,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       const { error } = await supabase
         .from(tableName)
         .delete()
-        .eq('id', event.id);
+        .eq('id_event', event.id);
 
       if (error) {
         console.error('Supabase delete error:', error);

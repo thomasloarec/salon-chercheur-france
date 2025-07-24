@@ -135,7 +135,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         const result = await supabase
           .from('events_import')
           .update(updateData)
-          .eq('id', event.id)
+          .eq('id_event', event.id)
           .select()
           .single();
 
@@ -171,7 +171,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         const result = await supabase
           .from('events')
           .update(updateData)
-          .eq('id', event.id)
+          .eq('id_event', event.id)
           .select()
           .single();
 
@@ -207,7 +207,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       // Transform the response to match our Event interface
       const transformedEvent: Event = isEventsImport ? {
         // For events_import, transform the data
-        id: data.id,
+        id: data.id_event,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
@@ -219,24 +219,24 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
         tags: [],
-        tarif: data.tarif, // events_import uses 'tarif'
-        affluence: data.affluence ? parseInt(data.affluence) : null,
-        estimated_exhibitors: null,
+        tarif: data.tarif,
+        affluence: data.affluence || undefined,
+        estimated_exhibitors: undefined,
         is_b2b: true,
         type_event: data.type_event as Event['type_event'],
         created_at: data.created_at,
         updated_at: data.updated_at,
-        last_scraped_at: null,
-        scraped_from: null,
+        last_scraped_at: undefined,
+        scraped_from: undefined,
         rue: data.rue,
         code_postal: data.code_postal,
-        visible: false, // events_import events are not visible by default
-        slug: event.slug, // Keep existing slug for events_import
+        visible: false,
+        slug: event.slug,
         sectors: event.sectors || [],
         is_favorite: event.is_favorite
       } : {
         // For events table, use actual DB column names
-        id: data.id,
+        id: data.id_event,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
@@ -247,16 +247,16 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         country: data.pays,
         url_image: data.url_image,
         url_site_officiel: data.url_site_officiel,
-        tags: data.tags,
+        tags: [],
         tarif: data.tarif,
         affluence: data.affluence,
-        estimated_exhibitors: data.estimated_exhibitors,
+        estimated_exhibitors: undefined,
         is_b2b: data.is_b2b,
         type_event: data.type_event as Event['type_event'],
         created_at: data.created_at,
         updated_at: data.updated_at,
-        last_scraped_at: data.last_scraped_at,
-        scraped_from: data.scraped_from,
+        last_scraped_at: undefined,
+        scraped_from: undefined,
         rue: data.rue,
         code_postal: data.code_postal,
         visible: data.visible,

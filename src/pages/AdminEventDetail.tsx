@@ -44,51 +44,19 @@ const AdminEventDetail = () => {
       const { data, error } = await supabase
         .from('events_import')
         .select('*')
-        .eq('id', id)
+        .eq('id_event', id)
         .single();
 
       if (error) throw error;
       
-      // Améliorer l'extraction de l'adresse depuis le champ 'adresse'
-      let rue = '';
-      let codePostal = '';
+      // Use existing rue/code_postal fields directly from events_import
+      let rue = data.rue || '';
+      let codePostal = data.code_postal || '';
       let ville = data.ville || '';
       
-      if (data.adresse) {
-        // Extraire le code postal (5 chiffres)
-        const codePostalMatch = data.adresse.match(/(\d{5})/);
-        if (codePostalMatch) {
-          codePostal = codePostalMatch[1];
-        }
-        
-        // Extraire la rue (tout ce qui précède le code postal)
-        if (codePostal) {
-          rue = data.adresse.split(codePostal)[0].trim();
-          // Nettoyer la rue en supprimant les virgules finales
-          rue = rue.replace(/[,\s]+$/, '');
-          
-          // Extraire la ville (tout ce qui suit le code postal)
-          const villeFromAddress = data.adresse.split(codePostal)[1];
-          if (villeFromAddress) {
-            ville = villeFromAddress.replace(/^[,\s]+/, '').trim();
-          }
-        } else {
-          // Si pas de code postal trouvé, prendre toute l'adresse comme rue
-          rue = data.adresse.trim();
-        }
-      }
-      
-      // Utiliser les champs individuels rue/code_postal s'ils existent
-      if (data.rue && data.rue.trim()) {
-        rue = data.rue.trim();
-      }
-      if (data.code_postal && data.code_postal.trim()) {
-        codePostal = data.code_postal.trim();
-      }
-      
-      // Transformer les données de events_import vers le format Event
+      // Transform events_import data to Event format
       const transformedEvent: Event = {
-        id: data.id,
+        id: data.id_event,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut || '1970-01-01',
@@ -101,18 +69,18 @@ const AdminEventDetail = () => {
         url_site_officiel: data.url_site_officiel,
         tags: [],
         tarif: data.tarif,
-        affluence: data.affluence ? parseInt(data.affluence) : null,
-        estimated_exhibitors: null,
+        affluence: data.affluence || undefined,
+        estimated_exhibitors: undefined,
         is_b2b: true,
         type_event: (data.type_event as Event['type_event']) || 'salon',
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        last_scraped_at: null,
-        scraped_from: null,
+        created_at: (data as any).created_at,
+        updated_at: (data as any).updated_at,
+        last_scraped_at: undefined,
+        scraped_from: undefined,
         rue: rue,
         code_postal: codePostal,
         visible: false,
-        slug: `pending-${data.id}`,
+        slug: `pending-${data.id_event}`,
         sectors: [],
         is_favorite: false
       };

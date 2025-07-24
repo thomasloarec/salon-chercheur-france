@@ -25,7 +25,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
         const { data, error } = await supabase
           .from('events')
           .select('*')
-          .neq('id', currentEvent.id)
+          .neq('id_event', currentEvent.id)
           .or(`secteur.eq.${sector},ville.eq.${city}`)
           .gte('date_debut', new Date().toISOString().split('T')[0])
           .order('date_debut', { ascending: true })
@@ -39,7 +39,7 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
         // Transform data to match our Event interface
         // Using actual database column names
         const transformedEvents: Event[] = (data || []).map(event => ({
-          id: event.id,
+          id: event.id_event,
           nom_event: event.nom_event || '',
           description_event: event.description_event,
           date_debut: event.date_debut,
@@ -47,20 +47,19 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
           secteur: convertSecteurToString(event.secteur),
           nom_lieu: event.nom_lieu,
           ville: event.ville,
-          region: undefined, // Region no longer exists in events table
           country: event.pays,
           url_image: event.url_image,
           url_site_officiel: event.url_site_officiel,
-          tags: event.tags,
+          tags: [],
           tarif: event.tarif,
           affluence: event.affluence,
-          estimated_exhibitors: event.estimated_exhibitors,
+          estimated_exhibitors: undefined,
           is_b2b: event.is_b2b,
           type_event: event.type_event as Event['type_event'],
           created_at: event.created_at,
           updated_at: event.updated_at,
-          last_scraped_at: event.last_scraped_at,
-          scraped_from: event.scraped_from,
+          last_scraped_at: undefined,
+          scraped_from: undefined,
           rue: event.rue,
           code_postal: event.code_postal,
           visible: event.visible,
