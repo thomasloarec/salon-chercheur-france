@@ -172,8 +172,8 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
     }
 
     const eventData = {
-      id: fields['id_event'],
       airtable_id: record.id, // Stocker le vrai record ID Airtable
+      id_event: fields['id_event'],
       nom_event: fields['nom_event'] || '',
       status_event: fields['status_event'] || '',
       type_event: normalizeEventType(fields['type_event']),
@@ -191,7 +191,7 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
       ville: fields['ville'] || 'Inconnue'
     };
 
-    if (eventData.id) {
+    if (eventData.id_event) {
       eventsToInsert.push(eventData);
     }
   }
@@ -223,7 +223,7 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
 
     // Promote to production events table
     const productionEvents = eventsToInsert.map(ev => ({
-      id_event: ev.id,
+      id_event: ev.id_event,
       airtable_id: ev.airtable_id, // Inclure l'airtable_id
       nom_event: ev.nom_event,
       visible: false, // Default invisible
