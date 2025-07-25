@@ -149,7 +149,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || selectedRegion.length > 0;
 
   return (
-    <aside className="h-full bg-white">
+    <div className="h-full bg-white">
       <div className="p-6 border-b">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Filtres</h2>
@@ -216,6 +216,6 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
           />
         </div>
       </div>
-    </aside>
+    </div>
   );
 };
