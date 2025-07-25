@@ -37,3 +37,6 @@ image_transformation = {
 
 [functions.oauth-proxy]
 verify_jwt = false
+
+[functions.publish-pending]
+verify_jwt = true
