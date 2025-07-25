@@ -53,23 +53,9 @@ const AdminEventDetail = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Move all hooks to the top, before any conditional logic
   const isAdmin = user?.email === 'admin@salonspro.com';
-
-  if (!user || !isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-
+  
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['admin-event-detail', id],
     queryFn: async () => {
@@ -98,10 +84,26 @@ const AdminEventDetail = () => {
 
       return transformEventData(importData, 'events_import');
     },
-    enabled: !!id,
+    enabled: !!id && !!user && isAdmin, // Add conditions here instead of early returns
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
+
+  // Now handle conditional rendering after all hooks are called
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleEventUpdated = (refreshedEvent: Event, slugChanged?: boolean) => {
     console.log('Event updated in admin:', refreshedEvent);
