@@ -12,6 +12,40 @@ import type { Event } from '@/types/event';
 import { AdminEventWrapper } from '@/components/admin/AdminEventWrapper';
 import { EventPageContent } from '@/components/event/EventPageContent';
 
+const transformEventData = (data: any, source: 'events' | 'events_import'): Event => {
+  const isImport = source === 'events_import';
+  
+  return {
+    id: isImport ? data.id_event : data.id,
+    nom_event: data.nom_event || '',
+    description_event: data.description_event,
+    date_debut: data.date_debut || '1970-01-01',
+    date_fin: data.date_fin || data.date_debut || '1970-01-01',
+    secteur: convertSecteurToString(data.secteur || 'Autre'),
+    nom_lieu: data.nom_lieu,
+    ville: data.ville || 'Ville non précisée',
+    country: isImport ? 'France' : (data.pays || 'France'),
+    url_image: data.url_image,
+    url_site_officiel: data.url_site_officiel,
+    tags: [],
+    tarif: data.tarif,
+    affluence: isImport ? data.affluence : (data.affluence ? String(data.affluence) : undefined),
+    estimated_exhibitors: undefined,
+    is_b2b: isImport ? true : (data.is_b2b || false),
+    type_event: (data.type_event as Event['type_event']) || 'salon',
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    last_scraped_at: undefined,
+    scraped_from: undefined,
+    rue: data.rue,
+    code_postal: data.code_postal,
+    visible: isImport ? false : (data.visible ?? true),
+    slug: isImport ? `pending-${data.id_event}` : (data.slug || `event-${data.id}`),
+    sectors: [],
+    is_favorite: false
+  };
+};
+
 const AdminEventDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -41,94 +75,28 @@ const AdminEventDetail = () => {
     queryFn: async () => {
       if (!id) throw new Error('ID manquant');
       
-      // Try to find the event in events_import first (pending events)
-      const { data: importData, error: importError } = await supabase
-        .from('events_import')
-        .select('*')
-        .eq('id_event', id)  // ✅ On garde id_event pour events_import (pas d'UUID)
-        .maybeSingle();
-
-      if (importData) {
-        // Use existing rue/code_postal fields directly from events_import
-        let rue = importData.rue || '';
-        let codePostal = importData.code_postal || '';
-        let ville = importData.ville || '';
-        
-        // Transform events_import data to Event format
-        const transformedEvent: Event = {
-          id: importData.id_event,  // En attente, on garde id_event pour l'ID front-end
-          nom_event: importData.nom_event || '',
-          description_event: importData.description_event,
-          date_debut: importData.date_debut || '1970-01-01',
-          date_fin: importData.date_fin || importData.date_debut || '1970-01-01',
-          secteur: convertSecteurToString(importData.secteur || 'Autre'),
-          nom_lieu: importData.nom_lieu,
-          ville: ville || 'Ville non précisée',
-          country: 'France',
-          url_image: importData.url_image,
-          url_site_officiel: importData.url_site_officiel,
-          tags: [],
-          tarif: importData.tarif,
-          affluence: importData.affluence || undefined,
-          estimated_exhibitors: undefined,
-          is_b2b: true,
-          type_event: (importData.type_event as Event['type_event']) || 'salon',
-          created_at: (importData as any).created_at,
-          updated_at: (importData as any).updated_at,
-          last_scraped_at: undefined,
-          scraped_from: undefined,
-          rue: rue,
-          code_postal: codePostal,
-          visible: false,
-          slug: `pending-${importData.id_event}`,
-          sectors: [],
-          is_favorite: false
-        };
-
-        return transformedEvent;
-      }
-
-      // If not found in events_import, try the events table
-      const { data: eventsData, error: eventsError } = await supabase
+      // 1️⃣ PRIORITÉ : events (UUID)
+      const { data: eventsData } = await supabase
         .from('events')
         .select('*')
-        .eq('id', id)  // ✅ Changé : utilise l'UUID pour les événements publiés
+        .eq('id', id)
         .maybeSingle();
 
-      if (eventsError) throw eventsError;
-      
-      // Transform events data to Event format
-      const transformedEvent: Event = {
-        id: eventsData.id,  // ✅ Utiliser l'UUID directement pour les événements publiés
-        nom_event: eventsData.nom_event || '',
-        description_event: eventsData.description_event,
-        date_debut: eventsData.date_debut || '1970-01-01',
-        date_fin: eventsData.date_fin || eventsData.date_debut || '1970-01-01',
-        secteur: convertSecteurToString(eventsData.secteur || 'Autre'),
-        nom_lieu: eventsData.nom_lieu,
-        ville: eventsData.ville || 'Ville non précisée',
-        country: eventsData.pays || 'France',
-        url_image: eventsData.url_image,
-        url_site_officiel: eventsData.url_site_officiel,
-        tags: [],
-        tarif: eventsData.tarif,
-        affluence: eventsData.affluence ? String(eventsData.affluence) : undefined,
-        estimated_exhibitors: undefined,
-        is_b2b: eventsData.is_b2b || false,
-        type_event: (eventsData.type_event as Event['type_event']) || 'salon',
-        created_at: eventsData.created_at,
-        updated_at: eventsData.updated_at,
-        last_scraped_at: undefined,
-        scraped_from: undefined,
-        rue: eventsData.rue,
-        code_postal: eventsData.code_postal,
-        visible: eventsData.visible ?? true,
-        slug: eventsData.slug || `event-${eventsData.id}`,  // ✅ Utiliser l'UUID pour le slug fallback
-        sectors: [],
-        is_favorite: false
-      };
+      if (eventsData) {
+        return transformEventData(eventsData, 'events');
+      }
 
-      return transformedEvent;
+      // 2️⃣ FALLBACK : events_import (TEXT)
+      const { data: importData, error } = await supabase
+        .from('events_import')
+        .select('*')
+        .eq('id_event', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!importData) throw new Error('Événement introuvable');
+
+      return transformEventData(importData, 'events_import');
     },
     enabled: !!id,
     staleTime: 0,
