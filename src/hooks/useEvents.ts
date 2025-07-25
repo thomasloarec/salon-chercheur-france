@@ -161,7 +161,7 @@ export const useEvents = (filters?: SearchFilters) => {
 
       // Transform the data to include sectors and use correct column names
       const eventsWithSectors = data?.map(event => ({
-        id: event.id_event, // Map id_event to id for compatibility
+        id: event.id, // Utiliser l'UUID directement
         nom_event: event.nom_event,
         description_event: event.description_event,
         date_debut: event.date_debut,

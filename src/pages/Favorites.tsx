@@ -82,7 +82,7 @@ const Favorites = () => {
                 
                 // Transform the favorite data to match Event type with proper field mapping
                 const eventData: Event = {
-                  id: (favorite.events as any).id_event,
+                  id: (favorite.events as any).id,  // Utiliser l'UUID directement
                   nom_event: (favorite.events as any).nom_event || '',
                   description_event: (favorite.events as any).description_event,
                   date_debut: (favorite.events as any).date_debut,

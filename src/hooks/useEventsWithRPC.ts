@@ -66,7 +66,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         // Transformer les données pour correspondre au format attendu
         const events: Event[] = (data as any)?.map((item: any) => {
           return {
-            id: item.id_event,
+            id: item.id_event,  // RPC retourne id_event
             nom_event: item.nom_event || '',
             description_event: item.description_event,
             date_debut: item.date_debut,
@@ -210,7 +210,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         // Mapper les données de fallback au format Event
         const fallbackEvents: Event[] = (fallbackData || []).map(item => {
           return {
-            id: item.id_event,
+            id: item.id,  // Utiliser l'UUID directement
             nom_event: item.nom_event || '',
             description_event: item.description_event,
             date_debut: item.date_debut,

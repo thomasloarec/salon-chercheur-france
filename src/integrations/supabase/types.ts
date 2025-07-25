@@ -187,6 +187,7 @@ export type Database = {
           date_debut: string | null
           date_fin: string | null
           description_event: string | null
+          id: string
           id_event: string
           is_b2b: boolean
           location: string | null
@@ -213,6 +214,7 @@ export type Database = {
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
+          id?: string
           id_event: string
           is_b2b?: boolean
           location?: string | null
@@ -239,6 +241,7 @@ export type Database = {
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
+          id?: string
           id_event?: string
           is_b2b?: boolean
           location?: string | null
@@ -600,22 +603,32 @@ export type Database = {
         Row: {
           created_at: string
           event_id: string
+          event_uuid: string
           id: string
           user_id: string
         }
         Insert: {
           created_at?: string
           event_id: string
+          event_uuid: string
           id?: string
           user_id: string
         }
         Update: {
           created_at?: string
           event_id?: string
+          event_uuid?: string
           id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "favorites_event_fkey"
+            columns: ["event_uuid"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "favorites_event_id_fkey"
             columns: ["event_id"]

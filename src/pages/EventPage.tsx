@@ -70,13 +70,13 @@ const EventPage = () => {
           .from('favorites')
           .select('id')
           .eq('user_id', user.id)
-          .eq('event_uuid', eventData.id)  // Utiliser l'UUID de l'événement
+          .eq('event_uuid', eventData.id)  // Utiliser l'UUID de la table events
           .maybeSingle();
         isFavorite = !!favoriteData;
       }
       
       const typedEvent: Event = {
-        id: eventData.id_event,
+        id: eventData.id,  // Utiliser l'UUID directement
         nom_event: eventData.nom_event || '',
         description_event: eventData.description_event,
         date_debut: eventData.date_debut,
@@ -145,7 +145,7 @@ const EventPage = () => {
       const { error } = await supabase
         .from('events')
         .update({ visible: true })
-        .eq('id_event', event.id);
+        .eq('id', event.id);  // Utiliser l'UUID
 
       if (error) throw error;
 

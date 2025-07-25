@@ -35,10 +35,10 @@ export async function toggleFavorite(eventId: string) {
   }
 
   // 2b. Insère si absent (upsert évite doublons uniques)
-  const { error: insertError } = await supabase.from("favorites").upsert({
+  const { error: insertError } = await supabase.from("favorites").insert({
     user_id: user.id,
     event_uuid: eventId,
-  });
+  } as any);
   if (insertError) throw insertError;
   return { isFavorite: true };
 }

@@ -56,7 +56,7 @@ const AdminEventDetail = () => {
         
         // Transform events_import data to Event format
         const transformedEvent: Event = {
-          id: importData.id_event,
+          id: importData.id_event,  // En attente, on garde id_event pour l'ID front-end
           nom_event: importData.nom_event || '',
           description_event: importData.description_event,
           date_debut: importData.date_debut || '1970-01-01',
@@ -99,7 +99,7 @@ const AdminEventDetail = () => {
       
       // Transform events data to Event format
       const transformedEvent: Event = {
-        id: eventsData.id_event,
+        id: eventsData.id,  // Utiliser l'UUID directement pour les événements publiés
         nom_event: eventsData.nom_event || '',
         description_event: eventsData.description_event,
         date_debut: eventsData.date_debut || '1970-01-01',
