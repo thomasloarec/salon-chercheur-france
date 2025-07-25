@@ -17,6 +17,7 @@ const transformEventData = (data: any, source: 'events' | 'events_import'): Even
   
   return {
     id: isImport ? data.id : data.id,
+    id_event: data.id_event,
     nom_event: data.nom_event || '',
     description_event: data.description_event,
     date_debut: data.date_debut || '1970-01-01',

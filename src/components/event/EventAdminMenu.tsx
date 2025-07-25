@@ -58,7 +58,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       console.log('Publishing pending event with ID:', event.id);
       
       const { data, error } = await supabase.functions.invoke('publish-pending', {
-        body: { id_event: event.id }
+        body: { id_event: event.id_event || event.id }
       });
 
       if (error) {

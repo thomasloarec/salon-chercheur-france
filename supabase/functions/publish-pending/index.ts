@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('id_event', id_event)
       .eq('status_event', 'Approved')
-      .single();
+      .maybeSingle();
 
     if (fetchError) {
       console.error('❌ Erreur récupération événement import:', fetchError);
