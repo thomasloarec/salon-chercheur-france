@@ -71,7 +71,7 @@ export const AdminPastEvents = () => {
                 >
                   <TableCell className="font-medium">
                     <Link 
-                      to={`/events/${event.slug || event.id_event}`}
+                      to={`/events/${event.slug}`}
                       className="text-blue-600 hover:underline"
                     >
                       {event.nom_event}

@@ -92,7 +92,7 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
   return (
     <div className="favorite-row flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-muted/50 transition-colors group">
       <Link
-        to={`/events/${event.slug || event.id}`}
+        to={`/events/${event.slug}`}
         className="flex items-center gap-3 flex-1 min-w-0"
       >
         {/* Thumbnail */}

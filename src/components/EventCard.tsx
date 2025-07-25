@@ -41,8 +41,8 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@salonspro.com';
 
-  // Use database-generated slug if available, otherwise fallback to client-generated
-  const eventSlug = event.slug || generateEventSlug(event);
+  // Use database-generated slug (tous les événements en ont un maintenant)
+  const eventSlug = event.slug;
 
   // Fonction utilitaire pour formater le secteur dans la vue grille
   const formatSectorForGrid = (secteur: string | string[]) => {
