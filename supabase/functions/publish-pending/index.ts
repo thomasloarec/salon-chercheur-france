@@ -124,20 +124,21 @@ Deno.serve(async (req) => {
     // 🔍 DEBUG: Log complet de l'objet avant upsert
     console.log('🔧 FULL PAYLOAD:', JSON.stringify(productionEvent, null, 2));
 
-    // 3. Upsert dans la table events
-    const { error: upsertError } = await supabase
+    // 3. Mettre à jour l'événement existant pour le publier (visible = true)
+    const { error: updateError } = await supabase
       .from('events')
-      .upsert([productionEvent], { 
-        onConflict: 'id_event',
-        ignoreDuplicates: false 
-      });
+      .update({ 
+        visible: true, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id_event', eventImport.id);
 
-    if (upsertError) {
-      console.error('❌ Erreur upsert événement:', upsertError);
+    if (updateError) {
+      console.error('❌ Erreur update événement:', updateError);
       return new Response(
         JSON.stringify({ 
           error: 'Erreur lors de la publication de l\'événement',
-          details: upsertError.message 
+          details: updateError.message 
         }),
         { 
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
