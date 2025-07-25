@@ -171,7 +171,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         const result = await supabase
           .from('events')
           .update(updateData)
-          .eq('id_event', event.id)
+          .eq('id', event.id)
           .select()
           .single();
 
