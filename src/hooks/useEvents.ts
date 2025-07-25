@@ -87,13 +87,7 @@ export const useEvents = (filters?: SearchFilters) => {
         query = query.or(orString);
       }
 
-      // Legacy support for old sectors filter (by name)
-      if (filters?.sectors && filters.sectors.length > 0) {
-        const sectorConditions = filters.sectors.map(sectorName => 
-          `secteur.eq.${sectorName}`
-        ).join(',');
-        query = query.or(sectorConditions);
-      }
+      // TODO: Implement jsonb-compatible sector filter
 
       if (filters?.types && filters.types.length > 0) {
         query = query.in('type_event', filters.types);

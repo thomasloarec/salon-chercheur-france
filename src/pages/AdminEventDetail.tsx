@@ -16,7 +16,7 @@ const transformEventData = (data: any, source: 'events' | 'events_import'): Even
   const isImport = source === 'events_import';
   
   return {
-    id: isImport ? data.id_event : data.id,
+    id: isImport ? data.id : data.id,
     nom_event: data.nom_event || '',
     description_event: data.description_event,
     date_debut: data.date_debut || '1970-01-01',
@@ -40,7 +40,7 @@ const transformEventData = (data: any, source: 'events' | 'events_import'): Even
     rue: data.rue,
     code_postal: data.code_postal,
     visible: isImport ? false : (data.visible ?? true),
-    slug: isImport ? `pending-${data.id_event}` : (data.slug || `event-${data.id}`),
+    slug: isImport ? `pending-${data.id}` : (data.slug || `event-${data.id}`),
     sectors: [],
     is_favorite: false
   };
@@ -90,7 +90,7 @@ const AdminEventDetail = () => {
       const { data: importData, error } = await supabase
         .from('events_import')
         .select('*')
-        .eq('id_event', id)
+        .eq('id', id)
         .maybeSingle();
 
       if (error) throw error;

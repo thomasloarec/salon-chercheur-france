@@ -25,8 +25,8 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
         const { data, error } = await supabase
           .from('events')
           .select('*')
-          .neq('id_event', currentEvent.id)
-          .or(`secteur.eq.${sector},ville.eq.${city}`)
+          .neq('id', currentEvent.id)
+          .eq('ville', city)
           .gte('date_debut', new Date().toISOString().split('T')[0])
           .order('date_debut', { ascending: true })
           .limit(3);

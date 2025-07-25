@@ -135,7 +135,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         const result = await supabase
           .from('events_import')
           .update(updateData)
-          .eq('id_event', event.id)
+          .eq('id', event.id)
           .select()
           .single();
 
@@ -207,7 +207,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       // Transform the response to match our Event interface
       const transformedEvent: Event = isEventsImport ? {
         // For events_import, transform the data
-        id: data.id_event,
+        id: data.id,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
@@ -236,7 +236,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         is_favorite: event.is_favorite
       } : {
         // For events table, use actual DB column names
-        id: data.id_event,
+        id: data.id,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
