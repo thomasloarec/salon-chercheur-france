@@ -264,9 +264,11 @@ export type Database = {
           affluence: string | null
           airtable_id: string | null
           code_postal: string | null
+          created_at: string | null
           date_debut: string | null
           date_fin: string | null
           description_event: string | null
+          id: string | null
           id_event: string
           is_b2b: boolean | null
           location: string | null
@@ -287,9 +289,11 @@ export type Database = {
           affluence?: string | null
           airtable_id?: string | null
           code_postal?: string | null
+          created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
+          id?: string | null
           id_event: string
           is_b2b?: boolean | null
           location?: string | null
@@ -310,9 +314,11 @@ export type Database = {
           affluence?: string | null
           airtable_id?: string | null
           code_postal?: string | null
+          created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
+          id?: string | null
           id_event?: string
           is_b2b?: boolean | null
           location?: string | null
