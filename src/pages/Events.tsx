@@ -136,7 +136,7 @@ const Events = () => {
     <div className="min-h-screen w-full px-6 mx-auto">
       <Header />
       
-      <div className="grid lg:grid-cols-[320px_1fr] min-h-[calc(100vh-200px)]">
+      <div className="lg:flex lg:gap-8 min-h-[calc(100vh-200px)]">
         {/* Mobile sidebar overlay */}
         {isSidebarOpen && (
           <div 
@@ -145,12 +145,11 @@ const Events = () => {
           />
         )}
         
-        {/* Sidebar */}
+        {/* Mobile sidebar */}
         <aside className={`
-          lg:sticky lg:top-[80px] lg:self-start lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto
-          z-30 inset-y-0 left-0 w-80 lg:w-80
-          bg-white shadow-lg lg:shadow-none border-r transition-transform duration-300 ease-in-out
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          fixed inset-y-0 left-0 w-80 z-30 lg:hidden
+          bg-white shadow-lg border-r transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
           <FiltersSidebar 
             onClose={() => setIsSidebarOpen(false)}
@@ -159,8 +158,17 @@ const Events = () => {
           />
         </aside>
 
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:block lg:sticky lg:top-[80px] lg:self-start lg:w-80 lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto lg:flex-shrink-0">
+          <FiltersSidebar 
+            onClose={() => setIsSidebarOpen(false)}
+            onFiltersChange={handleFiltersChange}
+            initialFilters={isInitialized ? filters : {}}
+          />
+        </aside>
+
         {/* Content */}
-        <main className="p-4 lg:p-8 bg-gray-50">
+        <main className="p-4 lg:p-8 bg-gray-50 lg:flex-1">
           {/* Mobile menu button */}
           <div className="lg:hidden mb-4">
             <Button 
