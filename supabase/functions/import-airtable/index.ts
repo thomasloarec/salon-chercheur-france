@@ -241,7 +241,8 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
       affluence: ev.affluence ? parseInt(ev.affluence) : null,
       tarif: ev.tarif,
       nom_lieu: ev.nom_lieu,
-      location: ev.ville || 'Inconnue'
+      location: ev.ville || 'Inconnue',
+      slug: null // ✅ NOUVEAU : Laisser NULL pour déclencher le trigger auto_generate_event_slug
     }));
 
     console.log(`[DEBUG] Insertion de ${productionEvents.length} enregistrements dans la table events`);
