@@ -1078,6 +1078,7 @@ export type Database = {
           page_size?: number
         }
         Returns: {
+          id: string
           id_event: string
           nom_event: string
           date_debut: string

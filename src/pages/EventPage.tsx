@@ -36,16 +36,52 @@ const EventPage = () => {
     console.log('🔍 Searching for event with slug:', slug);
     
     try {
-      let query = supabase
-        .from('events')
-        .select('*')
-        .eq('slug', slug);
+      let eventData: any = null;
+      let fetchError: any = null;
 
-      if (!isAdmin && !isPreview) {
-        query = query.eq('visible', true);
+      // ✅ PRIORITÉ : Chercher par UUID d'abord (si slug ressemble à un UUID)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+      
+      if (isUUID) {
+        console.log('🆔 Trying UUID lookup first:', slug);
+        let query = supabase
+          .from('events')
+          .select('*')
+          .eq('id', slug);  // ✅ Recherche par UUID
+
+        if (!isAdmin && !isPreview) {
+          query = query.eq('visible', true);
+        }
+
+        const { data, error } = await query.maybeSingle();
+        eventData = data;
+        fetchError = error;
+        
+        if (eventData) {
+          console.log('✅ Found by UUID:', eventData);
+        }
       }
 
-      const { data: eventData, error: fetchError } = await query.maybeSingle();
+      // ✅ FALLBACK : Chercher par slug si pas trouvé par UUID
+      if (!eventData && !fetchError) {
+        console.log('🔗 Fallback to slug lookup:', slug);
+        let query = supabase
+          .from('events')
+          .select('*')
+          .eq('slug', slug);
+
+        if (!isAdmin && !isPreview) {
+          query = query.eq('visible', true);
+        }
+
+        const { data, error } = await query.maybeSingle();
+        eventData = data;
+        fetchError = error;
+        
+        if (eventData) {
+          console.log('✅ Found by slug:', eventData);
+        }
+      }
 
       if (fetchError) {
         console.error('❌ Error fetching event:', fetchError);
@@ -76,7 +112,7 @@ const EventPage = () => {
       }
       
       const typedEvent: Event = {
-        id: eventData.id,  // Utiliser l'UUID directement
+        id: eventData.id,  // ✅ Utiliser l'UUID directement
         nom_event: eventData.nom_event || '',
         description_event: eventData.description_event,
         date_debut: eventData.date_debut,

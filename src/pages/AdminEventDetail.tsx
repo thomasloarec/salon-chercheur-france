@@ -45,7 +45,7 @@ const AdminEventDetail = () => {
       const { data: importData, error: importError } = await supabase
         .from('events_import')
         .select('*')
-        .eq('id_event', id)
+        .eq('id_event', id)  // ✅ On garde id_event pour events_import (pas d'UUID)
         .maybeSingle();
 
       if (importData) {
@@ -92,14 +92,14 @@ const AdminEventDetail = () => {
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select('*')
-        .eq('id_event', id)
-        .single();
+        .eq('id', id)  // ✅ Changé : utilise l'UUID pour les événements publiés
+        .maybeSingle();
 
       if (eventsError) throw eventsError;
       
       // Transform events data to Event format
       const transformedEvent: Event = {
-        id: eventsData.id,  // Utiliser l'UUID directement pour les événements publiés
+        id: eventsData.id,  // ✅ Utiliser l'UUID directement pour les événements publiés
         nom_event: eventsData.nom_event || '',
         description_event: eventsData.description_event,
         date_debut: eventsData.date_debut || '1970-01-01',
@@ -123,7 +123,7 @@ const AdminEventDetail = () => {
         rue: eventsData.rue,
         code_postal: eventsData.code_postal,
         visible: eventsData.visible ?? true,
-        slug: eventsData.slug || `event-${eventsData.id_event}`,
+        slug: eventsData.slug || `event-${eventsData.id}`,  // ✅ Utiliser l'UUID pour le slug fallback
         sectors: [],
         is_favorite: false
       };
