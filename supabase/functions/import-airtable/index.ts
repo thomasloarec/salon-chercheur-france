@@ -208,7 +208,7 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
     console.log(`[DEBUG] Insertion de ${eventsToInsert.length} enregistrements dans la table events_import`);
     const { data: eventsData, error: eventsError } = await supabaseClient
       .from('events_import')
-      .upsert(eventsToInsert, { onConflict: 'id' })
+      .upsert(eventsToInsert, { onConflict: 'id_event' })
       .select();
 
     if (eventsError) {
