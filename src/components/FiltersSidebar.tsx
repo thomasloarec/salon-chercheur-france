@@ -149,7 +149,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   const hasActiveFilters = sectorIds.length > 0 || types.length > 0 || months.length > 0 || selectedRegion.length > 0;
 
   return (
-    <aside className="sticky top-[80px] self-start max-h-[calc(100vh-80px)] overflow-y-auto h-full bg-white">(Reminder: You only invoked a single tool call. Remember that for the sake of efficiency, you should try to parallelize tool calls whenever possible.)
+    <aside className="sticky top-[80px] self-start max-h-[calc(100vh-80px)] overflow-y-auto h-full bg-white">
       <div className="p-6 border-b">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Filtres</h2>
