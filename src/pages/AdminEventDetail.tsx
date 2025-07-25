@@ -41,46 +41,89 @@ const AdminEventDetail = () => {
     queryFn: async () => {
       if (!id) throw new Error('ID manquant');
       
-      const { data, error } = await supabase
+      // Try to find the event in events_import first (pending events)
+      const { data: importData, error: importError } = await supabase
         .from('events_import')
+        .select('*')
+        .eq('id_event', id)
+        .maybeSingle();
+
+      if (importData) {
+        // Use existing rue/code_postal fields directly from events_import
+        let rue = importData.rue || '';
+        let codePostal = importData.code_postal || '';
+        let ville = importData.ville || '';
+        
+        // Transform events_import data to Event format
+        const transformedEvent: Event = {
+          id: importData.id_event,
+          nom_event: importData.nom_event || '',
+          description_event: importData.description_event,
+          date_debut: importData.date_debut || '1970-01-01',
+          date_fin: importData.date_fin || importData.date_debut || '1970-01-01',
+          secteur: convertSecteurToString(importData.secteur || 'Autre'),
+          nom_lieu: importData.nom_lieu,
+          ville: ville || 'Ville non précisée',
+          country: 'France',
+          url_image: importData.url_image,
+          url_site_officiel: importData.url_site_officiel,
+          tags: [],
+          tarif: importData.tarif,
+          affluence: importData.affluence || undefined,
+          estimated_exhibitors: undefined,
+          is_b2b: true,
+          type_event: (importData.type_event as Event['type_event']) || 'salon',
+          created_at: (importData as any).created_at,
+          updated_at: (importData as any).updated_at,
+          last_scraped_at: undefined,
+          scraped_from: undefined,
+          rue: rue,
+          code_postal: codePostal,
+          visible: false,
+          slug: `pending-${importData.id_event}`,
+          sectors: [],
+          is_favorite: false
+        };
+
+        return transformedEvent;
+      }
+
+      // If not found in events_import, try the events table
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
         .select('*')
         .eq('id_event', id)
         .single();
 
-      if (error) throw error;
+      if (eventsError) throw eventsError;
       
-      // Use existing rue/code_postal fields directly from events_import
-      let rue = data.rue || '';
-      let codePostal = data.code_postal || '';
-      let ville = data.ville || '';
-      
-      // Transform events_import data to Event format
+      // Transform events data to Event format
       const transformedEvent: Event = {
-        id: data.id_event,
-        nom_event: data.nom_event || '',
-        description_event: data.description_event,
-        date_debut: data.date_debut || '1970-01-01',
-        date_fin: data.date_fin || data.date_debut || '1970-01-01',
-        secteur: convertSecteurToString(data.secteur || 'Autre'),
-        nom_lieu: data.nom_lieu,
-        ville: ville || 'Ville non précisée',
-        country: 'France',
-        url_image: data.url_image,
-        url_site_officiel: data.url_site_officiel,
+        id: eventsData.id_event,
+        nom_event: eventsData.nom_event || '',
+        description_event: eventsData.description_event,
+        date_debut: eventsData.date_debut || '1970-01-01',
+        date_fin: eventsData.date_fin || eventsData.date_debut || '1970-01-01',
+        secteur: convertSecteurToString(eventsData.secteur || 'Autre'),
+        nom_lieu: eventsData.nom_lieu,
+        ville: eventsData.ville || 'Ville non précisée',
+        country: eventsData.pays || 'France',
+        url_image: eventsData.url_image,
+        url_site_officiel: eventsData.url_site_officiel,
         tags: [],
-        tarif: data.tarif,
-        affluence: data.affluence || undefined,
+        tarif: eventsData.tarif,
+        affluence: eventsData.affluence ? String(eventsData.affluence) : undefined,
         estimated_exhibitors: undefined,
-        is_b2b: true,
-        type_event: (data.type_event as Event['type_event']) || 'salon',
-        created_at: (data as any).created_at,
-        updated_at: (data as any).updated_at,
+        is_b2b: eventsData.is_b2b || false,
+        type_event: (eventsData.type_event as Event['type_event']) || 'salon',
+        created_at: eventsData.created_at,
+        updated_at: eventsData.updated_at,
         last_scraped_at: undefined,
         scraped_from: undefined,
-        rue: rue,
-        code_postal: codePostal,
-        visible: false,
-        slug: `pending-${data.id_event}`,
+        rue: eventsData.rue,
+        code_postal: eventsData.code_postal,
+        visible: eventsData.visible ?? true,
+        slug: eventsData.slug || `event-${eventsData.id_event}`,
         sectors: [],
         is_favorite: false
       };
