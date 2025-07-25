@@ -102,7 +102,7 @@ interface AirtableExposantRecord {
 }
 
 // Expected field mappings for debug
-const expectedEventFields = ['ID_Event', 'Nom_Event', 'Status_Event', 'Type_Event', 'Date_debut', 'Date_Fin', 'Secteur', 'URL_image', 'URL_site_officiel', 'Description_Event', 'Affluence', 'Tarifs', 'Nom_Lieu', 'Rue', 'Code_Postal', 'Ville'];
+const expectedEventFields = ['id_event', 'nom_event', 'status_event', 'type_event', 'date_debut', 'date_fin', 'secteur', 'url_image', 'url_site_officiel', 'description_event', 'affluence', 'tarif', 'nom_lieu', 'rue', 'code_postal', 'ville'];
 const expectedExposantFields = ['All_Events', 'nom_exposant', 'id_exposant', 'website_exposant', 'exposant_description'];
 const expectedParticipationFields = ['id_event', 'id_exposant', 'stand_exposant', 'website_exposant', 'urlexpo_event'];
 
@@ -148,9 +148,9 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
         console.log(`[DEBUG_ROOT] Event sample ${idx}:`);
         console.log(`[DEBUG_ROOT] - record.id: ${record.id}`);
         console.log(`[DEBUG_ROOT] - Object.keys(record.fields): ${JSON.stringify(Object.keys(record.fields))}`);
-        console.log(`[DEBUG_ROOT] - ID_Event: ${record.fields['ID_Event']}`);
-        console.log(`[DEBUG_ROOT] - Nom_Event: ${record.fields['Nom_Event']}`);
-        console.log(`[DEBUG_ROOT] - Status_Event: ${record.fields['Status_Event']}`);
+        console.log(`[DEBUG_ROOT] - id_event: ${record.fields['id_event']}`);
+        console.log(`[DEBUG_ROOT] - nom_event: ${record.fields['nom_event']}`);
+        console.log(`[DEBUG_ROOT] - status_event: ${record.fields['status_event']}`);
       }
     }
     
@@ -167,28 +167,28 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
     const fields = record.fields;
     
     // Only process approved events
-    if (fields['Status_Event']?.toLowerCase() !== 'approved') {
+    if (fields['status_event']?.toLowerCase() !== 'approved') {
       continue;
     }
 
     const eventData = {
-      id: fields['ID_Event'],
+      id: fields['id_event'],
       airtable_id: record.id, // Stocker le vrai record ID Airtable
-      nom_event: fields['Nom_Event'] || '',
-      status_event: fields['Status_Event'] || '',
-      type_event: normalizeEventType(fields['Type_Event']),
-      date_debut: normalizeDate(fields['Date_debut']),
-      date_fin: normalizeDate(fields['Date_Fin']),
-      secteur: fields['Secteur'] || '',
-      url_image: fields['URL_image'] || null,
-      url_site_officiel: fields['URL_site_officiel'] || null,
-      description_event: fields['Description_Event'] || null,
-      affluence: fields['Affluence'] && fields['Affluence'].trim() !== '' ? fields['Affluence'] : null,
-      tarifs: fields['Tarifs'] || null,
-      nom_lieu: fields['Nom_Lieu'] || null,
-      rue: fields['Rue'] || null,
-      code_postal: fields['Code_Postal'] || null,
-      ville: fields['Ville'] || 'Inconnue'
+      nom_event: fields['nom_event'] || '',
+      status_event: fields['status_event'] || '',
+      type_event: normalizeEventType(fields['type_event']),
+      date_debut: normalizeDate(fields['date_debut']),
+      date_fin: normalizeDate(fields['date_fin']),
+      secteur: fields['secteur'] || '',
+      url_image: fields['url_image'] || null,
+      url_site_officiel: fields['url_site_officiel'] || null,
+      description_event: fields['description_event'] || null,
+      affluence: fields['affluence'] && fields['affluence'].trim() !== '' ? fields['affluence'] : null,
+      tarifs: fields['tarif'] || null,
+      nom_lieu: fields['nom_lieu'] || null,
+      rue: fields['rue'] || null,
+      code_postal: fields['code_postal'] || null,
+      ville: fields['ville'] || 'Inconnue'
     };
 
     if (eventData.id) {
