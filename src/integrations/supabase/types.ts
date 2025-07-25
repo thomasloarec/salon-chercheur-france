@@ -283,6 +283,7 @@ export type Database = {
           status_event: string | null
           tarif: string | null
           type_event: string | null
+          updated_at: string
           url_image: string | null
           url_site_officiel: string | null
           ville: string | null
@@ -308,6 +309,7 @@ export type Database = {
           status_event?: string | null
           tarif?: string | null
           type_event?: string | null
+          updated_at?: string
           url_image?: string | null
           url_site_officiel?: string | null
           ville?: string | null
@@ -333,6 +335,7 @@ export type Database = {
           status_event?: string | null
           tarif?: string | null
           type_event?: string | null
+          updated_at?: string
           url_image?: string | null
           url_site_officiel?: string | null
           ville?: string | null
@@ -1096,6 +1099,17 @@ export type Database = {
           visible: boolean
           total_count: number
         }[]
+      }
+      search_events_test: {
+        Args: {
+          sector_ids?: string[]
+          event_types?: string[]
+          months?: number[]
+          region_codes?: string[]
+          page_num?: number
+          page_size?: number
+        }
+        Returns: string[]
       }
       set_limit: {
         Args: { "": number }
