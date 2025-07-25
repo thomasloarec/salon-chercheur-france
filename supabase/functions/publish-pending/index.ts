@@ -4,6 +4,7 @@ import { CORS_HEADERS } from '../_shared/cors.ts'
 
 interface EventImport {
   id: string;
+  id_event: string;
   nom_event: string | null;
   status_event: string | null;
   ai_certainty: string | null;
@@ -59,11 +60,11 @@ Deno.serve(async (req) => {
 
     console.log(`🔍 Recherche événement import avec ID: ${id_event}`);
 
-    // 1. Récupérer l'événement depuis events_import
+    // 1. Récupérer l'événement depuis events_import via id_event logique
     const { data: eventImport, error: fetchError } = await supabase
       .from('events_import')
       .select('*')
-      .eq('id', id_event)
+      .eq('id_event', id_event)
       .eq('status_event', 'Approved')
       .single();
 
@@ -131,7 +132,7 @@ Deno.serve(async (req) => {
         visible: true, 
         updated_at: new Date().toISOString() 
       })
-      .eq('id_event', eventImport.id);
+      .eq('id_event', eventImport.id_event);
 
     if (updateError) {
       console.error('❌ Erreur update événement:', updateError);
@@ -153,7 +154,7 @@ Deno.serve(async (req) => {
     const { error: deleteError } = await supabase
       .from('events_import')
       .delete()
-      .eq('id', eventImport.id);
+      .eq('id_event', eventImport.id_event);
 
     if (deleteError) {
       console.error('⚠️ Erreur suppression événement import (mais publication OK):', deleteError);

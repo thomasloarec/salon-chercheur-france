@@ -24,6 +24,7 @@ import type { Event } from '@/types/event';
 
 interface EventImport {
   id: string;
+  id_event: string;
   nom_event: string | null;
   status_event: string | null;
   ai_certainty: string | null;
@@ -79,9 +80,9 @@ export function PendingEventsImport() {
     try {
       console.log('🔵 Début publication événement:', eventImport.nom_event);
 
-      // Appeler la nouvelle fonction edge
+      // Appeler la nouvelle fonction edge avec id_event logique
       const { data, error } = await supabase.functions.invoke('publish-pending', {
-        body: { id_event: eventId }
+        body: { id_event: eventImport.id_event }
       });
 
       if (error) {
