@@ -16,10 +16,11 @@ export const useFavorites = () => {
         .from('favorites')
         .select(`
           id,
-          event_id,
+          event_uuid,
           created_at,
-          events (
+          events!favorites_event_uuid_fkey (
             id,
+            id_event,
             nom_event,
             description_event,
             date_debut,
@@ -29,21 +30,14 @@ export const useFavorites = () => {
             ville,
             pays,
             nom_lieu,
-            event_url,
             url_image,
             url_site_officiel,
-            tags,
-            organizer_name,
-            organizer_contact,
             tarif,
             affluence,
-            estimated_exhibitors,
             is_b2b,
             type_event,
             created_at,
             updated_at,
-            last_scraped_at,
-            scraped_from,
             rue,
             code_postal,
             visible,
@@ -79,7 +73,7 @@ export const useIsFavorite = (eventId: string) => {
         .from('favorites')
         .select('id')
         .eq('user_id', user.id)
-        .eq('event_id', eventId)
+        .eq('event_uuid', eventId)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;

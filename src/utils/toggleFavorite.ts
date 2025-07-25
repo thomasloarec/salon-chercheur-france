@@ -16,7 +16,7 @@ export async function toggleFavorite(eventId: string) {
     .from("favorites")
     .select("id")
     .eq("user_id", user.id)
-    .eq("event_id", eventId)
+    .eq("event_uuid", eventId)
     .maybeSingle(); // ← évite le 406
 
   if (selectError && selectError.code !== "PGRST116") {
@@ -37,7 +37,7 @@ export async function toggleFavorite(eventId: string) {
   // 2b. Insère si absent (upsert évite doublons uniques)
   const { error: insertError } = await supabase.from("favorites").upsert({
     user_id: user.id,
-    event_id: eventId,
+    event_uuid: eventId,
   });
   if (insertError) throw insertError;
   return { isFavorite: true };

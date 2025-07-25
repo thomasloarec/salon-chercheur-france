@@ -38,10 +38,7 @@ const EventPage = () => {
     try {
       let query = supabase
         .from('events')
-        .select(`
-          *,
-          favorites!left(user_id)
-        `)
+        .select('*')
         .eq('slug', slug);
 
       if (!isAdmin && !isPreview) {
@@ -66,7 +63,17 @@ const EventPage = () => {
 
       console.log('✅ Event found:', eventData);
       
-      const isFavorite = user && Array.isArray(eventData.favorites) ? eventData.favorites.some((fav: any) => fav.user_id === user.id) : false;
+      // Vérifier si c'est un favori pour l'utilisateur connecté
+      let isFavorite = false;
+      if (user && eventData) {
+        const { data: favoriteData } = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('event_uuid', eventData.id)  // Utiliser l'UUID de l'événement
+          .maybeSingle();
+        isFavorite = !!favoriteData;
+      }
       
       const typedEvent: Event = {
         id: eventData.id_event,
