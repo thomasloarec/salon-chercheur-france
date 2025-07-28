@@ -375,31 +375,20 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     }
     const urlKey = rawUrlKey.trim();
 
-    // Extraire id_event_text
-    const rawEventId = f['id_event_text']?.trim();
-    if (!rawEventId) {
+    const rawEventField = f['id_event_text'];
+    const rawEventId = Array.isArray(rawEventField) ? rawEventField[0]?.trim() : rawEventField?.trim();
+
+    const supabaseEventId = eventMap.get(rawEventId);
+
+    if (!supabaseEventId) {
       initialErrors.push({
         record_id: recordId,
         urlexpo_event: urlKey,
         website_exposant: f['website_exposant']?.trim() || null,
         stand_exposant: f['stand_exposant']?.trim() || null,
         nom_exposant: f['nom_exposant']?.trim() || null,
-        id_event: null,
-        reason: 'id_event_text manquant',
-        created_at: new Date().toISOString()
-      });
-      continue;
-    }
-    const supabaseEventId = eventMap.get(rawEventId);
-    if (!supabaseEventId) {
-      initialErrors.push({ 
-        record_id: recordId, 
-        urlexpo_event: urlKey, 
-        website_exposant: f['website_exposant']?.trim() || null,
-        stand_exposant: f['stand_exposant']?.trim() || null,
-        nom_exposant: f['nom_exposant']?.trim() || null,
-        id_event: null,
-        reason: `événement introuvable (${rawEventId})`,
+        id_event: rawEventId,
+        reason: 'event non trouvé dans Supabase',
         created_at: new Date().toISOString()
       });
       continue;
