@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      application_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          function_name: string | null
+          id: string
+          ip_address: string | null
+          level: string
+          message: string
+          source: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          function_name?: string | null
+          id?: string
+          ip_address?: string | null
+          level: string
+          message: string
+          source: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          function_name?: string | null
+          id?: string
+          ip_address?: string | null
+          level?: string
+          message?: string
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       communes: {
         Row: {
           code_postal: string | null
@@ -113,6 +152,30 @@ export type Database = {
           name?: string
           siret?: string | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      csrf_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1015,6 +1078,10 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_csrf_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       delete_user_account: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1070,6 +1137,19 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      log_application_event: {
+        Args: {
+          p_level: string
+          p_message: string
+          p_details?: Json
+          p_source?: string
+          p_function_name?: string
+          p_user_id?: string
+          p_ip_address?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
       }
       search_events: {
         Args: {
