@@ -325,87 +325,6 @@ export type Database = {
         }
         Relationships: []
       }
-      events_import: {
-        Row: {
-          affluence: string | null
-          airtable_id: string | null
-          code_postal: string | null
-          created_at: string | null
-          date_debut: string | null
-          date_fin: string | null
-          description_event: string | null
-          id: string | null
-          id_event: string
-          is_b2b: boolean | null
-          location: string | null
-          nom_event: string | null
-          nom_lieu: string | null
-          pays: string | null
-          rue: string | null
-          secteur: string[] | null
-          status_event: string | null
-          tarif: string | null
-          type_event: string | null
-          updated_at: string
-          url_image: string | null
-          url_site_officiel: string | null
-          ville: string | null
-          visible: boolean | null
-        }
-        Insert: {
-          affluence?: string | null
-          airtable_id?: string | null
-          code_postal?: string | null
-          created_at?: string | null
-          date_debut?: string | null
-          date_fin?: string | null
-          description_event?: string | null
-          id?: string | null
-          id_event: string
-          is_b2b?: boolean | null
-          location?: string | null
-          nom_event?: string | null
-          nom_lieu?: string | null
-          pays?: string | null
-          rue?: string | null
-          secteur?: string[] | null
-          status_event?: string | null
-          tarif?: string | null
-          type_event?: string | null
-          updated_at?: string
-          url_image?: string | null
-          url_site_officiel?: string | null
-          ville?: string | null
-          visible?: boolean | null
-        }
-        Update: {
-          affluence?: string | null
-          airtable_id?: string | null
-          code_postal?: string | null
-          created_at?: string | null
-          date_debut?: string | null
-          date_fin?: string | null
-          description_event?: string | null
-          id?: string | null
-          id_event?: string
-          is_b2b?: boolean | null
-          location?: string | null
-          nom_event?: string | null
-          nom_lieu?: string | null
-          pays?: string | null
-          rue?: string | null
-          secteur?: string[] | null
-          status_event?: string | null
-          tarif?: string | null
-          type_event?: string | null
-          updated_at?: string
-          url_image?: string | null
-          url_site_officiel?: string | null
-          ville?: string | null
-          visible?: boolean | null
-        }
-        Relationships: []
-      }
       events_import_old: {
         Row: {
           adresse: string | null
@@ -926,6 +845,87 @@ export type Database = {
           id?: string
           keywords?: string[] | null
           name?: string
+        }
+        Relationships: []
+      }
+      staging_events_import: {
+        Row: {
+          affluence: string | null
+          airtable_id: string | null
+          code_postal: string | null
+          created_at: string | null
+          date_debut: string | null
+          date_fin: string | null
+          description_event: string | null
+          id: string | null
+          id_event: string
+          is_b2b: boolean | null
+          location: string | null
+          nom_event: string | null
+          nom_lieu: string | null
+          pays: string | null
+          rue: string | null
+          secteur: string[] | null
+          status_event: string | null
+          tarif: string | null
+          type_event: string | null
+          updated_at: string
+          url_image: string | null
+          url_site_officiel: string | null
+          ville: string | null
+          visible: boolean | null
+        }
+        Insert: {
+          affluence?: string | null
+          airtable_id?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id?: string | null
+          id_event: string
+          is_b2b?: boolean | null
+          location?: string | null
+          nom_event?: string | null
+          nom_lieu?: string | null
+          pays?: string | null
+          rue?: string | null
+          secteur?: string[] | null
+          status_event?: string | null
+          tarif?: string | null
+          type_event?: string | null
+          updated_at?: string
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string | null
+          visible?: boolean | null
+        }
+        Update: {
+          affluence?: string | null
+          airtable_id?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description_event?: string | null
+          id?: string | null
+          id_event?: string
+          is_b2b?: boolean | null
+          location?: string | null
+          nom_event?: string | null
+          nom_lieu?: string | null
+          pays?: string | null
+          rue?: string | null
+          secteur?: string[] | null
+          status_event?: string | null
+          tarif?: string | null
+          type_event?: string | null
+          updated_at?: string
+          url_image?: string | null
+          url_site_officiel?: string | null
+          ville?: string | null
+          visible?: boolean | null
         }
         Relationships: []
       }
