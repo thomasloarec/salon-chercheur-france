@@ -1,5 +1,6 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import { z } from 'https://esm.sh/zod@3.23.8'
 import { CORS_HEADERS } from '../_shared/cors.ts'
 
 interface EventImport {
@@ -28,6 +29,10 @@ interface EventImport {
   code_postal: string | null;
 }
 
+const schema = z.object({ 
+  id_event: z.string().uuid() 
+});
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -45,12 +50,19 @@ Deno.serve(async (req) => {
 
     console.log('🔵 Début publication événement en attente');
 
-    const { id_event } = await req.json();
-    
-    if (!id_event) {
-      console.error('❌ ID événement manquant');
+    // Validation du payload avec Zod
+    let id_event: string;
+    try {
+      const body = await req.json();
+      const parsed = schema.parse(body);
+      id_event = parsed.id_event;
+    } catch (error) {
+      console.error('❌ Erreur validation payload:', error);
       return new Response(
-        JSON.stringify({ error: 'ID événement requis' }),
+        JSON.stringify({ 
+          error: 'Données invalides', 
+          details: error instanceof z.ZodError ? error.errors : 'Format JSON invalide'
+        }),
         { 
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
           status: 400 
