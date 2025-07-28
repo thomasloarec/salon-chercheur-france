@@ -12,8 +12,8 @@ import type { Event } from '@/types/event';
 import { AdminEventWrapper } from '@/components/admin/AdminEventWrapper';
 import { EventPageContent } from '@/components/event/EventPageContent';
 
-const transformEventData = (data: any, source: 'events' | 'events_import'): Event => {
-  const isImport = source === 'events_import';
+const transformEventData = (data: any, source: 'events' | 'staging_events_import'): Event => {
+  const isImport = source === 'staging_events_import';
   
   return {
     id: isImport ? data.id : data.id,
@@ -83,7 +83,7 @@ const AdminEventDetail = () => {
       if (error) throw error;
       if (!importData) throw new Error('Événement introuvable');
 
-      return transformEventData(importData, 'events_import');
+      return transformEventData(importData, 'staging_events_import');
     },
     enabled: !!id && !!user && isAdmin, // Add conditions here instead of early returns
     staleTime: 0,

@@ -58,7 +58,7 @@ export function PendingEventsImport() {
     queryKey: ['events-import-pending'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('events_import')
+        .from('staging_events_import')
         .select('*')
         .eq('status_event', 'Approved')
         .order('created_at', { ascending: false });
@@ -122,7 +122,7 @@ export function PendingEventsImport() {
     setDeletingAll(true);
     try {
       const { error } = await supabase
-        .from('events_import')
+        .from('staging_events_import')
         .delete()
         .eq('status_event', 'Approved');
 

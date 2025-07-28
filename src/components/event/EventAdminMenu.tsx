@@ -94,7 +94,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
   const handleToggleVisibility = async () => {
     const newStatus = !event.visible;
     try {
-      const tableName = isPendingEvent ? 'events_import' : 'events';
+      const tableName = isPendingEvent ? 'staging_events_import' : 'events';
       
       const { data, error } = await supabase
         .from(tableName)
@@ -111,7 +111,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       });
 
       // Transform the response to match our Event interface
-      // Handle schema differences between events and events_import tables
+      // Handle schema differences between events and staging_events_import tables
       const transformedEvent: Event = {
         id: data.id_event,
         nom_event: data.nom_event || '',
@@ -159,7 +159,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       console.log('Attempting to delete event with ID:', event.id);
       
       // Utiliser la bonne table selon si c'est un événement en attente ou publié
-      const tableName = isPendingEvent ? 'events_import' : 'events';
+      const tableName = isPendingEvent ? 'staging_events_import' : 'events';
       
       const { error } = await supabase
         .from(tableName)

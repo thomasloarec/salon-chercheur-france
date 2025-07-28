@@ -51,7 +51,7 @@ serve(async (req) => {
 
     // Count existing rows before clearing
     const { count: rowCount, error: countError } = await supabase
-      .from('events_import')
+      .from('staging_events_import')
       .select('*', { count: 'exact', head: true })
 
     if (countError) {
@@ -62,21 +62,21 @@ serve(async (req) => {
       )
     }
 
-    // Clear the events_import table
+    // Clear the staging_events_import table
     const { error: deleteError } = await supabase
-      .from('events_import')
+      .from('staging_events_import')
       .delete()
       .neq('id', '') // Delete all rows
 
     if (deleteError) {
-      console.error('Error clearing events_import:', deleteError)
+      console.error('Error clearing staging_events_import:', deleteError)
       return new Response(
         JSON.stringify({ error: 'Failed to clear import buffer' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`Successfully cleared ${rowCount || 0} rows from events_import`)
+    console.log(`Successfully cleared ${rowCount || 0} rows from staging_events_import`)
 
     return new Response(
       JSON.stringify({ 

@@ -205,17 +205,17 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
 
   // Insert events into Supabase events_import table
   if (eventsToInsert.length > 0) {
-    console.log(`[DEBUG] Insertion de ${eventsToInsert.length} enregistrements dans la table events_import`);
+    console.log(`[DEBUG] Insertion de ${eventsToInsert.length} enregistrements dans la table staging_events_import`);
     const { data: eventsData, error: eventsError } = await supabaseClient
-      .from('events_import')
+      .from('staging_events_import')
       .upsert(eventsToInsert, { onConflict: 'id_event' })
       .select();
 
     if (eventsError) {
-      console.error(`[ERROR] Échec insertion dans events_import :`, eventsError);
+      console.error(`[ERROR] Échec insertion dans staging_events_import :`, eventsError);
       throw new Error(`Failed to insert events: ${eventsError.message}`);
     } else {
-      console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans events_import`);
+      console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans staging_events_import`);
     }
 
     eventsImported = eventsToInsert.length;

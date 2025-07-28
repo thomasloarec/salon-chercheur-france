@@ -83,7 +83,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     setIsLoading(true);
 
     try {
-      // Determine if we're updating events or events_import table
+      // Determine if we're updating events or staging_events_import table
       const isEventsImport = event.slug?.startsWith('pending-') || !event.visible;
       
       console.log('Updating event:', { 
@@ -133,7 +133,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         console.log('Updating events_import with data:', updateData);
 
         const result = await supabase
-          .from('events_import')
+          .from('staging_events_import')
           .update(updateData)
           .eq('id', event.id)
           .select()
@@ -143,7 +143,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         error = result.error;
         
         if (error) {
-          console.error('Error updating events_import:', error);
+          console.error('Error updating staging_events_import:', error);
         }
       } else {
         // Update events table
@@ -206,7 +206,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
       // Transform the response to match our Event interface
       const transformedEvent: Event = isEventsImport ? {
-        // For events_import, transform the data
+        // For staging_events_import, transform the data
         id: data.id,
         nom_event: data.nom_event || '',
         description_event: data.description_event,

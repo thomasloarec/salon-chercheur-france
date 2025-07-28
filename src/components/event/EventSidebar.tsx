@@ -9,7 +9,7 @@ interface EventSidebarProps {
 }
 
 export const EventSidebar = ({ event }: EventSidebarProps) => {
-  // Format address for pending events (events_import) vs published events (events)
+  // Format address for pending events (staging_events_import) vs published events (events)
   const getEventAddress = (event: Event): string => {
     // Construire l'adresse avec fallback intelligent
     const addressParts = [];

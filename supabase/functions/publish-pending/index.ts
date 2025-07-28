@@ -72,9 +72,9 @@ Deno.serve(async (req) => {
 
     console.log(`🔍 Recherche événement import avec ID: ${id_event}`);
 
-    // 1. Récupérer l'événement depuis events_import via id_event logique
+    // 1. Récupérer l'événement depuis staging_events_import via id_event logique
     const { data: eventImport, error: fetchError } = await supabase
-      .from('events_import')
+      .from('staging_events_import')
       .select('*')
       .eq('id_event', id_event)
       .eq('status_event', 'Approved')
@@ -162,9 +162,9 @@ Deno.serve(async (req) => {
 
     console.log('✅ Événement publié avec succès');
 
-    // 4. Supprimer de events_import
+    // 4. Supprimer de staging_events_import
     const { error: deleteError } = await supabase
-      .from('events_import')
+      .from('staging_events_import')
       .delete()
       .eq('id_event', eventImport.id_event);
 
@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
       console.error('⚠️ Erreur suppression événement import (mais publication OK):', deleteError);
       // On continue car l'événement est publié
     } else {
-      console.log('✅ Événement supprimé de events_import');
+      console.log('✅ Événement supprimé de staging_events_import');
     }
 
     return new Response(

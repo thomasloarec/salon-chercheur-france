@@ -88,7 +88,7 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
   // Import DEPUIS Airtable vers Supabase
   const handleImportEventsFromAirtable = async () => {
     try {
-      console.log('[SYNC] Import depuis Airtable vers events_import...');
+      console.log('[SYNC] Import depuis Airtable vers staging_events_import...');
       
       // 1. Lire les données depuis Airtable
       const { data: airtableData, error: readError } = await supabase.functions.invoke('airtable-read', {
@@ -129,9 +129,9 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
         status_event: 'imported_from_airtable'
       }));
 
-      // 3. Insérer dans Supabase events_import
+      // 3. Insérer dans Supabase staging_events_import
       const { data: insertData, error: insertError } = await supabase
-        .from('events_import')
+        .from('staging_events_import')
         .upsert(recordsToInsert, { 
           onConflict: 'id',
           ignoreDuplicates: false 
@@ -141,7 +141,7 @@ const AirtableSyncButtons: React.FC<SyncButtonsProps> = ({
 
       toast({
         title: 'Import réussi',
-        description: `${recordsToInsert.length} événements importés depuis Airtable vers events_import`,
+        description: `${recordsToInsert.length} événements importés depuis Airtable vers staging_events_import`,
       });
 
       onSync('events');
