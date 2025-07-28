@@ -73,9 +73,9 @@ const AdminEventDetail = () => {
         return transformEventData(eventsData, 'events');
       }
 
-      // 2️⃣ FALLBACK : events_import (TEXT)
+      // 2️⃣ FALLBACK : staging_events_import (TEXT)
       const { data: importData, error } = await supabase
-        .from('events_import')
+        .from('staging_events_import')
         .select('*')
         .eq('id', id)
         .maybeSingle();

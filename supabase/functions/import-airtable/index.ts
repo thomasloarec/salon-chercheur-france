@@ -375,26 +375,22 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     }
     const urlKey = rawUrlKey.trim();
 
-    // Extraire id_event (record ID Airtable)
-    const rawEventField = f['id_event'];
-    const rawEventRecordId = Array.isArray(rawEventField) ? rawEventField[0] : rawEventField;
-    
-    if (!rawEventRecordId) {
-      initialErrors.push({ 
-        record_id: recordId, 
-        urlexpo_event: urlKey, 
+    // Extraire id_event_text
+    const rawEventId = f['id_event_text']?.trim();
+    if (!rawEventId) {
+      initialErrors.push({
+        record_id: recordId,
+        urlexpo_event: urlKey,
         website_exposant: f['website_exposant']?.trim() || null,
         stand_exposant: f['stand_exposant']?.trim() || null,
         nom_exposant: f['nom_exposant']?.trim() || null,
         id_event: null,
-        reason: 'id_event manquant',
+        reason: 'id_event_text manquant',
         created_at: new Date().toISOString()
       });
       continue;
     }
-
-    // Mapper le record ID Airtable vers l'UUID Supabase
-    const supabaseEventId = eventMap.get(rawEventRecordId);
+    const supabaseEventId = eventMap.get(rawEventId);
     if (!supabaseEventId) {
       initialErrors.push({ 
         record_id: recordId, 
@@ -403,7 +399,7 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
         stand_exposant: f['stand_exposant']?.trim() || null,
         nom_exposant: f['nom_exposant']?.trim() || null,
         id_event: null,
-        reason: `événement introuvable (${rawEventRecordId})`,
+        reason: `événement introuvable (${rawEventId})`,
         created_at: new Date().toISOString()
       });
       continue;
