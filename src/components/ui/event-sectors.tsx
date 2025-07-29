@@ -51,6 +51,9 @@ export const EventSectors = ({ event, className = "", sectorClassName = "" }: Ev
   // Priorité 1 : Utiliser la table normalisée event_sectors
   const { data: eventSectors = [] } = useEventSectors(event.id_event || '');
   
+  // Debug temporaire
+  console.log('EventSectors - Event:', event.nom_event, 'id_event:', event.id_event, 'eventSectors:', eventSectors);
+  
   // Priorité 2 : Fallback sur le parsing du champ JSONB secteur  
   const sectorsFromJson = eventSectors.length === 0 ? parseSectorsFromJson(event.secteur) : [];
   
