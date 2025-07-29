@@ -442,7 +442,7 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
 
     toInsert.push({
       urlexpo_event: urlKey,
-      id_event: supabaseEventId,
+      id_event: rawEventId,
       id_exposant: exposantId,
       stand_exposant: f['stand_exposant']?.trim() || null,
       website_exposant: normalizedWeb
