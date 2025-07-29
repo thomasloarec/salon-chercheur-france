@@ -104,45 +104,43 @@ Deno.serve(async (req) => {
 
     console.log('✅ Événement import trouvé:', eventImport.nom_event);
 
-    // 2. Mapper vers le format events
-    const productionEvent = {
-      id_event: eventImport.id,
-      nom_event: eventImport.nom_event || '',
-      visible: true,
-      type_event: eventImport.type_event || 'salon',
-      date_debut: eventImport.date_debut || '1970-01-01',
-      date_fin: eventImport.date_fin || eventImport.date_debut || '1970-01-01',
-      secteur: eventImport.secteur ? [eventImport.secteur] : ['Autre'],
-      ville: eventImport.ville || 'Inconnue',
-      rue: eventImport.rue || null,
-      code_postal: eventImport.code_postal || null,
-      pays: 'France',
-      url_image: eventImport.url_image || null,
-      url_site_officiel: eventImport.url_site_officiel || null,
-      description_event: eventImport.description_event || null,
-      affluence: eventImport.affluence ? parseInt(eventImport.affluence) : null,
-      tarif: eventImport.tarifs || null,
-      nom_lieu: eventImport.nom_lieu || null,
-      location: eventImport.ville || 'Inconnue'
-    };
+    // 2. Vérifier que l'événement existe dans la table events
+    const { data: existingEvent, error: existsError } = await supabase
+      .from('events')
+      .select('id, id_event, slug')
+      .eq('id_event', eventImport.id_event)
+      .maybeSingle();
 
-    console.log('🔧 Événement mappé pour production:', {
-      id_event: productionEvent.id_event,
-      nom_event: productionEvent.nom_event,
-      ville: productionEvent.ville,
-      date_debut: productionEvent.date_debut,
-      date_fin: productionEvent.date_fin
-    });
+    if (existsError) {
+      console.error('❌ Erreur vérification événement existant:', existsError);
+      return new Response(
+        JSON.stringify({ error: 'Erreur lors de la vérification de l\'événement' }),
+        { 
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      );
+    }
 
-    // 🔍 DEBUG: Log complet de l'objet avant upsert
-    console.log('🔧 FULL PAYLOAD:', JSON.stringify(productionEvent, null, 2));
+    if (!existingEvent) {
+      console.error('❌ Événement non trouvé dans la table events');
+      return new Response(
+        JSON.stringify({ error: 'Événement non trouvé dans la table events' }),
+        { 
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          status: 404 
+        }
+      );
+    }
 
-    // 3. Mettre à jour l'événement existant pour le publier (visible = true)
+    console.log(`🔍 Événement existant trouvé: ${existingEvent.id_event}`);
+
+    // 3. Mettre à jour uniquement les champs nécessaires pour la publication
     const { error: updateError } = await supabase
       .from('events')
       .update({ 
         visible: true, 
-        updated_at: new Date().toISOString() 
+        updated_at: new Date().toISOString()
       })
       .eq('id_event', eventImport.id_event);
 
@@ -179,8 +177,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true,
         message: 'Événement publié avec succès',
-        event_id: productionEvent.id_event,
-        event_name: productionEvent.nom_event
+        event_id: eventImport.id_event,
+        event_name: eventImport.nom_event
       }),
       { 
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
