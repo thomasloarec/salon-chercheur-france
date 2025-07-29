@@ -112,7 +112,8 @@ const EventPage = () => {
       }
       
       const typedEvent: Event = {
-        id: eventData.id,  // ✅ Utiliser l'UUID directement
+        id: eventData.id,  // ✅ UUID directement
+        id_event: eventData.id_event, // ✅ AJOUT : Clé métier pour les participations
         nom_event: eventData.nom_event || '',
         description_event: eventData.description_event,
         date_debut: eventData.date_debut,

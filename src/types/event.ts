@@ -1,7 +1,7 @@
 
 export interface Event {
-  id: string; // Maps to id_event from database
-  id_event?: string; // Database logical event ID
+  id: string; // UUID primary key from database
+  id_event?: string; // Database logical event ID (ex: Event_6) - REQUIRED for exhibitors relations
   nom_event: string;
   description_event?: string;
   date_debut: string;
