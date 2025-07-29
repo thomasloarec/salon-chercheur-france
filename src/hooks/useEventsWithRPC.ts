@@ -67,6 +67,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         const events: Event[] = (data as any)?.map((item: any) => {
           return {
             id: item.id,  // ✅ CHANGÉ : utilise l'UUID maintenant retourné par la RPC
+            id_event: item.id_event, // ✅ AJOUTÉ : champ manquant !
             nom_event: item.nom_event || '',
             description_event: item.description_event,
             date_debut: item.date_debut,
@@ -213,6 +214,7 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         const fallbackEvents: Event[] = (fallbackData || []).map(item => {
           return {
             id: item.id,  // ✅ Utiliser l'UUID directement
+            id_event: item.id_event, // ✅ AJOUTÉ : champ manquant dans le fallback aussi !
             nom_event: item.nom_event || '',
             description_event: item.description_event,
             date_debut: item.date_debut,
