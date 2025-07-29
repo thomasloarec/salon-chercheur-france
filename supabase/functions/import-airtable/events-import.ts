@@ -178,7 +178,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
         url_image: ev.url_image,
         url_site_officiel: ev.url_site_officiel,
         description_event: ev.description_event,
-        affluence: ev.affluence ? parseInt(ev.affluence) : null,
+        affluence: ev.affluence ? (isNaN(parseInt(ev.affluence)) ? ev.affluence : parseInt(ev.affluence)) : null,
         tarif: ev.tarif,
         nom_lieu: ev.nom_lieu,
         location: ev.ville || 'Inconnue',
