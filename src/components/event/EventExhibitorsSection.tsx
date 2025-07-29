@@ -32,12 +32,17 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   useEffect(() => {
     const fetchExhibitors = async () => {
+      console.log('🔍 EventExhibitorsSection - event.id_event:', event.id_event);
+      
       if (!event.id_event) {
+        console.log('❌ Pas d\'id_event, arrêt du chargement');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('📤 Requête participation pour id_event:', event.id_event);
+        
         // Nouvelle requête utilisant la table participation avec jointure
         const { data, error } = await supabase
           .from('participation')
@@ -54,12 +59,14 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           .eq('id_event', event.id_event);
 
         if (error) {
-          console.error('Error fetching exhibitors:', error);
+          console.error('❌ Error fetching exhibitors:', error);
           setExhibitors([]);
         } else {
+          console.log('✅ Données brutes de participation:', data);
           console.log('📤 Exposants chargés via participation:', data?.length || 0);
           
           const mappedExhibitors: Exhibitor[] = (data || []).map((participation: any) => {
+            console.log('🔄 Mapping participation:', participation);
             const exposant = participation.exposants;
             return {
               nom_exposant: exposant.nom_exposant || 'Nom non disponible',
@@ -71,6 +78,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
             };
           });
           
+          console.log('📋 Exposants finaux mappés:', mappedExhibitors);
           setExhibitors(mappedExhibitors);
         }
       } catch (error) {
