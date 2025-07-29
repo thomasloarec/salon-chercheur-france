@@ -135,13 +135,37 @@ Deno.serve(async (req) => {
 
     console.log(`🔍 Événement existant trouvé: ${existingEvent.id_event}`);
 
-    // 3. Mettre à jour uniquement les champs nécessaires pour la publication
+    // 3. Mettre à jour TOUS les champs depuis staging_events_import
+    const updateData = {
+      // Champs métier modifiables
+      nom_event: eventImport.nom_event,
+      type_event: eventImport.type_event,
+      description_event: eventImport.description_event,
+      date_debut: eventImport.date_debut,
+      date_fin: eventImport.date_fin,
+      secteur: eventImport.secteur, // Note: ARRAY → jsonb conversion automatique
+      url_image: eventImport.url_image,
+      url_site_officiel: eventImport.url_site_officiel,
+      affluence: eventImport.affluence,
+      tarif: eventImport.tarif,
+      nom_lieu: eventImport.nom_lieu,
+      rue: eventImport.rue,
+      code_postal: eventImport.code_postal,
+      ville: eventImport.ville,
+      pays: eventImport.pays,
+      location: eventImport.location,
+      is_b2b: eventImport.is_b2b,
+      
+      // Champs de publication
+      visible: true,
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('🔄 Propagation des modifications:', updateData.nom_event, updateData.type_event);
+
     const { error: updateError } = await supabase
       .from('events')
-      .update({ 
-        visible: true, 
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id_event', eventImport.id_event);
 
     if (updateError) {
@@ -160,7 +184,19 @@ Deno.serve(async (req) => {
 
     console.log('✅ Événement publié avec succès');
 
-    // 4. Supprimer de staging_events_import
+    // 4. Vérifier que les relations participation sont maintenues
+    const { data: participationCount, error: participationError } = await supabase
+      .from('participation')
+      .select('id_participation')
+      .eq('id_event', eventImport.id_event);
+
+    if (participationError) {
+      console.error('⚠️ Erreur vérification participation:', participationError);
+    } else {
+      console.log(`✅ ${participationCount?.length || 0} exposants liés à l'événement ${eventImport.id_event}`);
+    }
+
+    // 5. Supprimer de staging_events_import
     const { error: deleteError } = await supabase
       .from('staging_events_import')
       .delete()
