@@ -30,7 +30,7 @@ interface EventImport {
 }
 
 const schema = z.object({ 
-  id_event: z.string().uuid() 
+  id_event: z.string().nonempty() 
 });
 
 Deno.serve(async (req) => {
