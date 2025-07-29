@@ -25,11 +25,11 @@ export const useSectors = () => {
   });
 };
 
-export const useEventSectors = (eventId: string) => {
+export const useEventSectors = (eventIdEvent: string) => {
   return useQuery({
-    queryKey: ['event-sectors', eventId],
+    queryKey: ['event-sectors', eventIdEvent],
     queryFn: async () => {
-      console.log('Fetching sectors for event:', eventId);
+      console.log('Fetching sectors for event id_event:', eventIdEvent);
       const { data, error } = await supabase
         .from('event_sectors')
         .select(`
@@ -39,7 +39,7 @@ export const useEventSectors = (eventId: string) => {
             description
           )
         `)
-        .eq('event_id', eventId);
+        .eq('event_id', eventIdEvent);
 
       if (error) {
         console.error('Error fetching event sectors:', error);
@@ -49,7 +49,7 @@ export const useEventSectors = (eventId: string) => {
       console.log('Event sectors fetched:', data);
       return data?.map(item => item.sectors).filter(Boolean) as Sector[];
     },
-    enabled: !!eventId,
+    enabled: !!eventIdEvent,
     staleTime: 300_000, // 5 minutes
   });
 };

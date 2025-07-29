@@ -9,10 +9,8 @@ import CalBtn from '@/components/CalBtn';
 import FavoriteButton from '@/components/FavoriteButton';
 import type { Event } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEventSectors } from '@/hooks/useSectors';
-import { getSectorConfig } from '@/constants/sectors';
 import { cn } from '@/lib/utils';
-import { SectorBadge } from '@/components/ui/sector-badge';
+import { EventSectors } from '@/components/ui/event-sectors';
 
 interface EventPageHeaderProps {
   event: Event;
@@ -22,7 +20,6 @@ interface EventPageHeaderProps {
 export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderProps) => {
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@salonspro.com';
-  const { data: eventSectors = [] } = useEventSectors(event.id);
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
@@ -48,25 +45,11 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
       <div className="flex flex-col sm:flex-row sm:items-start gap-6">
         <div className="flex-1">
           {/* Secteurs d'activité avec pastilles couleur */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            {eventSectors.length > 0 ? (
-              eventSectors.map((sector) => (
-                <SectorBadge 
-                  key={sector.id} 
-                  label={sector.name}
-                  className="text-sm px-3 py-1"
-                />
-              ))
-            ) : (
-              // Fallback vers l'ancien champ secteur si aucun secteur n'est trouvé
-              event.secteur && (
-                <SectorBadge 
-                  label={event.secteur}
-                  className="text-sm px-3 py-1"
-                />
-              )
-            )}
-          </div>
+          <EventSectors 
+            event={event} 
+            className="flex flex-wrap gap-2 mb-6"
+            sectorClassName="text-sm px-3 py-1"
+          />
 
           {/* Titre principal avec bouton Favoris */}
           <div className="inline-flex items-center space-x-2 mb-6">

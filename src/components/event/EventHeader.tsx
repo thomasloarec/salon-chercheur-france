@@ -13,7 +13,7 @@ interface EventHeaderProps {
 }
 
 export const EventHeader = ({ event }: EventHeaderProps) => {
-  const { data: eventSectors = [] } = useEventSectors(event.id);
+  const { data: eventSectors = [] } = useEventSectors(event.id_event || '');
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });

@@ -11,10 +11,10 @@ import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { EventImage } from '@/components/ui/event-image';
 import { useAuth } from '@/contexts/AuthContext';
-import { getSectorConfig } from '@/constants/sectors';
+
 import { cn } from '@/lib/utils';
 import FavoriteButton from './FavoriteButton';
-import { SectorBadge } from '@/components/ui/sector-badge';
+import { EventSectors } from '@/components/ui/event-sectors';
 import { formatAddress } from '@/utils/formatAddress';
 
 interface EventCardProps {
@@ -44,43 +44,6 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   // Use database-generated slug (tous les événements en ont un maintenant)
   const eventSlug = event.slug;
 
-  // Fonction utilitaire pour parser les secteurs depuis le champ secteur JSONB
-  const parseSectorsFromJson = (secteur: string | string[] | any) => {
-    if (!secteur) return [];
-    
-    let sectors = [];
-    
-    if (Array.isArray(secteur)) {
-      sectors = secteur;
-    } else if (typeof secteur === 'string') {
-      // Si c'est une string qui contient du JSON
-      if (secteur.startsWith('[') && secteur.endsWith(']')) {
-        try {
-          const parsed = JSON.parse(secteur);
-          sectors = Array.isArray(parsed) ? parsed : [secteur];
-        } catch {
-          sectors = [secteur];
-        }
-      } else {
-        sectors = [secteur];
-      }
-    }
-    
-    // Nettoyer les secteurs - gérer les structures [["secteur"]] et ["secteur1", "secteur2"]
-    const cleanedSectors = [];
-    for (const sector of sectors) {
-      if (Array.isArray(sector)) {
-        // Structure [["secteur"]] - prendre le premier élément de chaque sous-tableau
-        cleanedSectors.push(...sector);
-      } else if (typeof sector === 'string') {
-        // Structure ["secteur1", "secteur2"] - garder tel quel
-        const cleaned = sector.replace(/^\["|"\]$/g, '').replace(/"/g, '');
-        if (cleaned) cleanedSectors.push(cleaned);
-      }
-    }
-    
-    return cleanedSectors.filter(Boolean);
-  };
 
   const CardWrapper = ({ children }: { children: React.ReactNode }) => {
     if (adminPreview) {
@@ -150,7 +113,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             )}
             
             <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)] z-[2]">
-              <SectorBadge label={parseSectorsFromJson(event.secteur)} className="shadow-sm" />
+              <EventSectors event={event} sectorClassName="shadow-sm" />
             </div>
           </div>
         </CardWrapper>
