@@ -51,7 +51,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
               exposant_description
             )
           `)
-          .eq('id_event', event.id);
+          .eq('id_event', event.id_event);
 
         if (error) {
           console.error('Error fetching exhibitors:', error);
