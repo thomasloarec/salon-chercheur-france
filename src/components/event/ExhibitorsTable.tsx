@@ -16,6 +16,11 @@ interface ExhibitorsTableProps {
 }
 
 export const ExhibitorsTable = ({ exhibitors, crmTargets }: ExhibitorsTableProps) => {
+  // Tri alphabétique des exposants
+  const sortedExhibitors = [...exhibitors].sort((a, b) => 
+    a.nom_exposant.localeCompare(b.nom_exposant)
+  );
+
   const isTarget = (exhibitor: Exhibitor) => {
     return crmTargets.some(target => target.nom_exposant === exhibitor.nom_exposant);
   };
@@ -25,7 +30,7 @@ export const ExhibitorsTable = ({ exhibitors, crmTargets }: ExhibitorsTableProps
       <CardHeader>
         <CardTitle className="flex items-center">
           <Building className="h-5 w-5 mr-2 text-accent" />
-          Exposants ({exhibitors.length})
+          Exposants ({sortedExhibitors.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -39,7 +44,7 @@ export const ExhibitorsTable = ({ exhibitors, crmTargets }: ExhibitorsTableProps
             </TableRow>
           </TableHeader>
           <TableBody>
-            {exhibitors.map((exhibitor, index) => (
+            {sortedExhibitors.map((exhibitor, index) => (
               <TableRow 
                 key={index}
                 className={isTarget(exhibitor) ? 'target bg-accent/10' : ''}

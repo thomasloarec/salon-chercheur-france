@@ -78,8 +78,13 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
             };
           });
           
-          console.log('📋 Exposants finaux mappés:', mappedExhibitors);
-          setExhibitors(mappedExhibitors);
+          // Tri alphabétique par nom_exposant
+          const sortedExhibitors = mappedExhibitors.sort((a, b) => 
+            a.nom_exposant.localeCompare(b.nom_exposant)
+          );
+          
+          console.log('📋 Exposants finaux mappés et triés:', sortedExhibitors);
+          setExhibitors(sortedExhibitors);
         }
       } catch (error) {
         console.error('Unexpected error fetching exhibitors:', error);
@@ -193,22 +198,6 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
                 </div>
               )}
               
-              {selectedExhibitor.urlexpo_event && (
-                <div>
-                  <p className="font-semibold text-sm text-gray-600">Page événement</p>
-                  <a
-                    href={selectedExhibitor.urlexpo_event.startsWith('http') 
-                      ? selectedExhibitor.urlexpo_event 
-                      : `https://${selectedExhibitor.urlexpo_event}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline flex items-center gap-1"
-                  >
-                    Voir sur le site
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              )}
               
               {selectedExhibitor.exposant_description && (
                 <div>
@@ -220,7 +209,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
               )}
               
               {!selectedExhibitor.stand_exposant && !selectedExhibitor.website_exposant && 
-               !selectedExhibitor.urlexpo_event && !selectedExhibitor.exposant_description && (
+               !selectedExhibitor.exposant_description && (
                 <p className="text-gray-500 italic">
                   Aucune information supplémentaire disponible.
                 </p>
