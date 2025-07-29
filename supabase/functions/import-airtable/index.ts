@@ -138,6 +138,7 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
   console.log('[DEBUG] Nombre d\'événements récupérés depuis Airtable :', eventsData.records?.length || 0);
   console.log('[DEBUG] Exemple de 5 événements :', eventsData.records?.slice(0,5) || []);
   const eventsToInsert: any[] = [];
+  const eventErrors: Array<{ record_id: string; reason: string }> = [];
 
   // DEBUG ROOT-CAUSE: Inspection détaillée des mappings
   if (DEBUG_ROOT_CAUSE && eventsData.records?.length > 0) {
@@ -168,6 +169,18 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
     
     // Only process approved events
     if (fields['status_event']?.toLowerCase() !== 'approved') {
+      eventErrors.push({
+        record_id: record.id,
+        reason: `status_event ≠ approved (${fields['status_event'] || 'vide'})`
+      });
+      continue;
+    }
+
+    if (!fields['id_event']) {
+      eventErrors.push({
+        record_id: record.id,
+        reason: 'id_event manquant'
+      });
       continue;
     }
 
@@ -191,9 +204,7 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
       ville: fields['ville'] || 'Inconnue'
     };
 
-    if (eventData.id_event) {
-      eventsToInsert.push(eventData);
-    }
+    eventsToInsert.push(eventData);
   }
 
   // DEBUG ROOT-CAUSE: Comptage avant insertion
@@ -271,7 +282,7 @@ async function importEvents(supabaseClient: any, airtableConfig: { pat: string, 
     console.log('[DEBUG] Rows with NULL airtable_id after upsert:', count);
   }
 
-  return eventsImported;
+  return { eventsImported, eventErrors };
 }
 
 async function importExposants(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
@@ -283,6 +294,8 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
   const { records } = await resp.json();
   console.log('[DEBUG] exposants records:', records.length);
 
+  const exposantErrors: Array<{ record_id: string; reason: string }> = [];
+
   // Filtrer les imports tests
   const exposantsRaw = records
     .filter((r: any) =>
@@ -290,19 +303,38 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
       !/test-/.test((r.fields.website_exposant || '').toLowerCase())
     );
 
-  const exposantsToUpsert = exposantsRaw
-    .map((r: any) => {
-      const f = r.fields;
-      return {
-        id_exposant: f['id_exposant']?.trim(),
-        nom_exposant: f['nom_exposant']?.trim(),
-        website_exposant: f['website_exposant']?.trim() || null,
-        exposant_description: f['exposant_description']?.trim() || null
-      };
-    })
-    .filter((e: any) => e.id_exposant && e.nom_exposant);
+  const exposantsToUpsert = [];
+  
+  for (const r of exposantsRaw) {
+    const f = r.fields;
+    
+    if (!f['id_exposant']?.trim()) {
+      exposantErrors.push({
+        record_id: r.id,
+        reason: 'id_exposant manquant'
+      });
+      continue;
+    }
+    
+    if (!f['nom_exposant']?.trim()) {
+      exposantErrors.push({
+        record_id: r.id,
+        reason: 'nom_exposant manquant'
+      });
+      continue;
+    }
+    
+    exposantsToUpsert.push({
+      id_exposant: f['id_exposant'].trim(),
+      nom_exposant: f['nom_exposant'].trim(),
+      website_exposant: f['website_exposant']?.trim() || null,
+      exposant_description: f['exposant_description']?.trim() || null
+    });
+  }
 
   console.log('[DEBUG] exposantsToUpsert.length =', exposantsToUpsert.length);
+  let exposantsImported = 0;
+  
   if (exposantsToUpsert.length) {
     const { data, error } = await supabaseClient
       .from('exposants')
@@ -310,13 +342,14 @@ async function importExposants(supabaseClient: any, airtableConfig: { pat: strin
       .select();
     if (error) throw new Error(`Supabase exposants upsert error: ${error.message}`);
     console.log('[DEBUG] exposants upserted:', data.length);
-    return data.length;
+    exposantsImported = data.length;
   }
-  return 0;
+  
+  return { exposantsImported, exposantErrors };
 }
 
 async function importParticipation(supabaseClient: any, airtableConfig: { pat: string, baseId: string }) {
-  console.log('Importing participation en 2 phases...');
+  console.log('Importing participation simplifiée...');
   
   // ÉTAPE PRÉLIMINAIRE: Charger le mapping des événements id_event → Supabase
   console.log('[MAPPING] Chargement du mapping des événements...');
@@ -332,10 +365,22 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
   );
   console.log(`[MAPPING] ${eventMap.size} événements mappés (id_event → Supabase)`);
   
-  // PHASE 1: Import brut
-  console.log('[PHASE 1] Import brut des participations...');
+  // Mapping exposants en amont
+  const { data: exposants } = await supabaseClient
+    .from('exposants')
+    .select('id_exposant, website_exposant');
   
-  // 1.1. Charger toutes les participations d'Airtable
+  const normalizeUrl = (url: string) =>
+    url?.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+  
+  const exposantMap = new Map<string, string>();
+  exposants?.forEach((e: any) => {
+    if (e.website_exposant) {
+      exposantMap.set(normalizeUrl(e.website_exposant), e.id_exposant);
+    }
+  });
+  
+  // Charger toutes les participations d'Airtable
   const resp = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/Participation`, {
     headers: { 'Authorization': `Bearer ${airtableConfig.pat}` }
   });
@@ -348,9 +393,9 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     console.log('[DEBUG] Premier record participation brut:', records[0].fields);
   }
 
-  // 1.2. Préparer batch d'insertion brute
+  // Préparer batch d'insertion
   const toInsert = [];
-    const initialErrors = [];
+  const participationErrors: Array<{ record_id: string; reason: string }> = [];
 
   for (const r of records) {
     const f = r.fields;
@@ -361,15 +406,9 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     const rawUrlKey = Array.isArray(rawUrlField) ? rawUrlField[0] : rawUrlField;
     
     if (!rawUrlKey) {
-      initialErrors.push({ 
+      participationErrors.push({ 
         record_id: recordId, 
-        urlexpo_event: null, 
-        website_exposant: null,
-        stand_exposant: null,
-        nom_exposant: null,
-        id_event: null,
-        reason: 'urlexpo_event manquant',
-        created_at: new Date().toISOString()
+        reason: 'urlexpo_event manquant'
       });
       continue;
     }
@@ -381,174 +420,56 @@ async function importParticipation(supabaseClient: any, airtableConfig: { pat: s
     const supabaseEventId = eventMap.get(rawEventId);
 
     if (!supabaseEventId) {
-      initialErrors.push({
+      participationErrors.push({
         record_id: recordId,
-        urlexpo_event: urlKey,
-        website_exposant: f['website_exposant']?.trim() || null,
-        stand_exposant: f['stand_exposant']?.trim() || null,
-        nom_exposant: f['nom_exposant']?.trim() || null,
-        id_event: rawEventId,
-        reason: 'event non trouvé dans Supabase',
-        created_at: new Date().toISOString()
+        reason: `event non trouvé dans Supabase (${rawEventId})`
       });
       continue;
     }
 
-    // Extraire les autres champs
+    // mapping exposant
     const rawWeb = f['website_exposant'];
-    const stand = f['stand_exposant']?.trim() || null;
+    const normalizedWeb = normalizeUrl(rawWeb || '');
+    const exposantId = exposantMap.get(normalizedWeb);
+    
+    if (!exposantId) {
+      participationErrors.push({
+        record_id: recordId,
+        reason: `exposant introuvable (${normalizedWeb})`
+      });
+      continue;
+    }
 
-    // Préparer l'insertion (id_exposant reste NULL)
     toInsert.push({
       urlexpo_event: urlKey,
-      id_event: supabaseEventId, // Utiliser l'UUID Supabase, pas le record ID Airtable
-      id_exposant: null, // Sera peuplé en phase 2
-      stand_exposant: stand,
-      website_exposant: rawWeb?.trim() || null
+      id_event: supabaseEventId,
+      id_exposant: exposantId,
+      stand_exposant: f['stand_exposant']?.trim() || null,
+      website_exposant: normalizedWeb
     });
   }
 
-  // 1.3. Logs de debug Phase 1
-  console.log('[PHASE 1] eventMap.size =', eventMap.size);
-  console.log('[PHASE 1] raw records.length =', records.length);
-  console.log('[PHASE 1] toInsert.length =', toInsert.length);
-  console.log('[DEBUG] Sample key in eventMap:', Array.from(eventMap.keys()).slice(0,3));
-  
-  // 1.3. Upsert brut (sans validation d'exposant)
-  console.log(`[PHASE 1] Insertion de ${toInsert.length} participations brutes...`);
-  let insertedCount = 0;
+  // Upsert avec clé composite
+  console.log(`Insertion de ${toInsert.length} participations...`);
+  let participationsImported = 0;
   
   if (toInsert.length > 0) {
     const { data, error } = await supabaseClient
       .from('participation')
-      .upsert(toInsert, { onConflict: 'urlexpo_event' })
+      .upsert(toInsert, { onConflict: 'id_event,id_exposant' })
       .select();
     
-    console.log(`[PHASE 1] insertedCount = ${data?.length || 0}, error =`, error);
-    
     if (error) {
-      console.error('[PHASE 1] Upsert participation failed:', error);
-      throw new Error(`Phase 1 failed: ${error.message}`);
+      throw new Error(`Participation upsert error: ${error.message}`);
     }
     
-    insertedCount = data?.length || 0;
-    console.log(`[PHASE 1] ${insertedCount} participations insérées`);
+    participationsImported = data?.length || 0;
+    console.log(`${participationsImported} participations insérées`);
   }
-
-  // PHASE 2: Mapping des exposants
-  console.log('[PHASE 2] Mapping des exposants...');
-  
-  // 2.1. UPDATE avec JOIN pour peupler id_exposant
-  // Fonction de normalisation des URLs
-  const normalizeUrl = (url: string) => {
-    if (!url) return '';
-    return url.trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, '')  // Supprimer http(s)://
-      .replace(/^www\./, '')        // Supprimer www.
-      .replace(/\/$/, '');          // Supprimer slash final
-  };
-
-  // 2.1. Mapping via JavaScript (plus fiable que SQL brut)
-  console.log('[PHASE 2] Mapping via JavaScript...');
-    
-    const { data: participationsToMap } = await supabaseClient
-      .from('participation')
-      .select('urlexpo_event, website_exposant')
-      .is('id_exposant', null)
-      .not('website_exposant', 'is', null);
-    
-    const { data: exposants } = await supabaseClient
-      .from('exposants')
-      .select('id_exposant, website_exposant');
-    
-    // Créer une map normalisée
-    const exposantMap = new Map();
-    exposants?.forEach((e: any) => {
-      if (e.website_exposant) {
-        const normalized = normalizeUrl(e.website_exposant);
-        exposantMap.set(normalized, e.id_exposant);
-      }
-    });
-    
-    // Mettre à jour les participations une par une
-    let mappedCount = 0;
-    for (const p of participationsToMap || []) {
-      const normalized = normalizeUrl(p.website_exposant);
-      const exposantId = exposantMap.get(normalized);
-      
-      if (exposantId) {
-        const { error } = await supabaseClient
-          .from('participation')
-          .update({ id_exposant: exposantId })
-          .eq('urlexpo_event', p.urlexpo_event);
-        
-        if (!error) {
-          mappedCount++;
-        }
-      }
-    }
-    
-    console.log(`[PHASE 2] ${mappedCount} participations mappées avec succès`);
-
-  // 2.2. Identifier les participations sans exposant (erreurs)
-  const { data: unmappedParticipations } = await supabaseClient
-    .from('participation')
-    .select('urlexpo_event, website_exposant')
-    .is('id_exposant', null);
-
-  console.log(`[PHASE 2] ${unmappedParticipations?.length || 0} participations sans exposant trouvé`);
-
-  // 2.3. Insérer les erreurs dans participation_import_errors
-  const finalErrors = [...initialErrors];
-  
-  if (unmappedParticipations?.length > 0) {
-    for (const p of unmappedParticipations) {
-      // Récupérer les infos complètes de la participation pour l'erreur
-      const { data: participationDetails } = await supabaseClient
-        .from('participation')
-        .select('id_event, stand_exposant')
-        .eq('urlexpo_event', p.urlexpo_event)
-        .single();
-      
-      finalErrors.push({
-        record_id: `unmapped_${p.urlexpo_event}`,
-        urlexpo_event: p.urlexpo_event,
-        website_exposant: p.website_exposant,
-        stand_exposant: participationDetails?.stand_exposant || null,
-        nom_exposant: null, // Non disponible dans unmapped
-        id_event: participationDetails?.id_event || null,
-        reason: 'exposant introuvable',
-        created_at: new Date().toISOString()
-      });
-    }
-  }
-
-  // Insérer toutes les erreurs en batch
-  if (finalErrors.length > 0) {
-    const { error: errorInsertError } = await supabaseClient
-      .from('participation_import_errors')
-      .upsert(finalErrors, { onConflict: 'record_id' });
-    
-    if (errorInsertError) {
-      console.error('[PHASE 2] Failed to insert errors:', errorInsertError);
-    } else {
-      console.log(`[PHASE 2] ${finalErrors.length} erreurs insérées dans participation_import_errors`);
-    }
-  }
-
-  // 2.4. Statistiques finales
-  const { data: finalMappedParticipations } = await supabaseClient
-    .from('participation')
-    .select('urlexpo_event', { count: 'exact' })
-    .not('id_exposant', 'is', null);
-
-  console.log(`[PHASE 2] Résultat final: ${finalMappedParticipations?.length || 0} participations avec exposant mappé`);
 
   return { 
-    inserted: insertedCount, 
-    mapped: finalMappedParticipations?.length || 0,
-    errors: finalErrors 
+    participationsImported,
+    participationErrors
   };
 }
 
@@ -597,19 +518,18 @@ serve(async (req) => {
 
       // 1. Import des événements
       console.log('[DEBUG] Début import événements...');
-      const eventsImported = await importEvents(supabaseClient, airtableConfig);
+      const { eventsImported, eventErrors } = await importEvents(supabaseClient, airtableConfig);
       console.log('[DEBUG] eventsImported =', eventsImported);
 
       // 2. Import des exposants (toujours exécuté)
       console.log('[DEBUG] Début import exposants...');
-      const exposantsImported = await importExposants(supabaseClient, airtableConfig);
+      const { exposantsImported, exposantErrors } = await importExposants(supabaseClient, airtableConfig);
       console.log('[DEBUG] exposantsImported =', exposantsImported);
 
       // 3. Import des participations (toujours exécuté)
       console.log('[DEBUG] Début import participations...');
-      const { inserted: participationsImported, mapped: mappedParticipations, errors: participationErrors } = await importParticipation(supabaseClient, airtableConfig);
+      const { participationsImported, participationErrors } = await importParticipation(supabaseClient, airtableConfig);
       console.log('[DEBUG] participationsImported =', participationsImported);
-      console.log('[DEBUG] mappedParticipations =', mappedParticipations);
       console.log('[DEBUG] participationErrors =', participationErrors.length);
 
       // DEBUG ROOT-CAUSE: Génération du rapport JSON
@@ -656,9 +576,12 @@ serve(async (req) => {
         eventsImported,
         exposantsImported,
         participationsImported,
-        mappedParticipations,
-        participationErrors,
-        message: `Import completed: ${eventsImported} events, ${exposantsImported} exposants, ${mappedParticipations} participations imported`,
+        errors: {
+          events: eventErrors,
+          exposants: exposantErrors,
+          participation: participationErrors
+        },
+        message: `Import completed: ${eventsImported} events, ${exposantsImported} exposants, ${participationsImported} participations imported`,
         ...(DEBUG_ROOT_CAUSE && { debugMode: true, checkLogs: 'See function logs for detailed root cause analysis' })
       };
 
