@@ -44,9 +44,9 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
   // Use database-generated slug (tous les événements en ont un maintenant)
   const eventSlug = event.slug;
 
-  // Fonction utilitaire pour formater le secteur dans la vue grille
-  const formatSectorForGrid = (secteur: string | string[]) => {
-    if (!secteur) return null;
+  // Fonction utilitaire pour parser les secteurs depuis le champ secteur JSONB
+  const parseSectorsFromJson = (secteur: string | string[] | any) => {
+    if (!secteur) return [];
     
     let sectors = [];
     
@@ -66,11 +66,20 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
       }
     }
     
-    // Nettoyer les secteurs en retirant les crochets supplémentaires
-    return sectors
-      .map(s => typeof s === 'string' ? s.replace(/^\["|"\]$/g, '').replace(/"/g, '') : s)
-      .filter(Boolean)
-      .join(', ');
+    // Nettoyer les secteurs - gérer les structures [["secteur"]] et ["secteur1", "secteur2"]
+    const cleanedSectors = [];
+    for (const sector of sectors) {
+      if (Array.isArray(sector)) {
+        // Structure [["secteur"]] - prendre le premier élément de chaque sous-tableau
+        cleanedSectors.push(...sector);
+      } else if (typeof sector === 'string') {
+        // Structure ["secteur1", "secteur2"] - garder tel quel
+        const cleaned = sector.replace(/^\["|"\]$/g, '').replace(/"/g, '');
+        if (cleaned) cleanedSectors.push(cleaned);
+      }
+    }
+    
+    return cleanedSectors.filter(Boolean);
   };
 
   const CardWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -141,7 +150,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             )}
             
             <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)] z-[2]">
-              <SectorBadge label={formatSectorForGrid(event.secteur)} className="shadow-sm" />
+              <SectorBadge label={parseSectorsFromJson(event.secteur)} className="shadow-sm" />
             </div>
           </div>
         </CardWrapper>
