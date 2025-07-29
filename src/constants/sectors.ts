@@ -25,7 +25,7 @@ export const SECTOR_CONFIG: Record<string, {
     description: "Énergies renouvelables, environnement et développement durable"
   },
   'Finance, Assurance & Immobilier': {
-    color: "bg-blue-100 text-blue-800",
+    color: "bg-amber-100 text-amber-800",
     description: "Services financiers, assurance et marché immobilier"
   },
   'Industrie & Production': {
