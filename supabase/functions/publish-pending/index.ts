@@ -1,6 +1,6 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
-import { z } from 'https://esm.sh/zod@3.23.8'
+import { z } from 'https://esm.sh/zod@3.23.9'
 import { CORS_HEADERS } from '../_shared/cors.ts'
 
 interface EventImport {
@@ -30,7 +30,7 @@ interface EventImport {
 }
 
 const schema = z.object({ 
-  id_event: z.string().nonempty() 
+  id_event: z.string().nonempty() // Force redeploy v2
 });
 
 Deno.serve(async (req) => {
