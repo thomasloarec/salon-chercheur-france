@@ -1,6 +1,6 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
-import { z } from 'https://esm.sh/zod@3.23.9'
+import { z } from 'https://esm.sh/zod@3.24.1'
 import { CORS_HEADERS } from '../_shared/cors.ts'
 
 interface EventImport {
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('🔵 Début publication événement en attente');
+    console.log('🔵 Début publication événement en attente - v2');
 
     // Validation du payload avec Zod
     let id_event: string;
