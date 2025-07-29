@@ -32,7 +32,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   useEffect(() => {
     const fetchExhibitors = async () => {
-      if (!event.id) {
+      if (!event.id_event) {
         setLoading(false);
         return;
       }
@@ -82,7 +82,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     };
 
     fetchExhibitors();
-  }, [event.id]);
+  }, [event.id_event]); // Utilise la clé métier, pas l'UUID
 
   if (loading) {
     return (
