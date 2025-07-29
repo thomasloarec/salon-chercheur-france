@@ -125,23 +125,25 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
           if (type === 'city') {
             query = query.ilike('ville', `%${value}%`);
           } else if (type === 'region') {
-            // Utiliser events_geo pour le filtrage par région
+            // CORRIGÉ: Utiliser departements au lieu d'events_geo
             try {
-              const { data: geoEvents, error: geoError } = await supabase
-                .from('events_geo')
-                .select('id')
+              const { data: deptData, error: deptError } = await supabase
+                .from('departements')
+                .select('code')
                 .eq('region_code', value);
               
-              if (geoError) {
-                console.error('❌ Erreur events_geo:', geoError);
+              if (deptError) {
+                console.error('❌ Erreur departements fallback:', deptError);
                 return { events: [], total_count: 0 };
               }
               
-              const eventIds = geoEvents?.map(g => g.id) || [];
-              console.log('🗺️ Events IDs trouvés pour région', value, ':', eventIds.length);
+              const deptCodes = deptData?.map(d => d.code) || [];
+              console.log('🗺️ Codes départements trouvés pour région', value, ':', deptCodes);
               
-              if (eventIds.length > 0) {
-                query = query.in('id_event', eventIds);
+              if (deptCodes.length > 0) {
+                // Filtrer par les 2 premiers caractères du code postal
+                const postalFilters = deptCodes.map(code => `code_postal.like.${code}%`).join(',');
+                query = query.or(postalFilters);
               } else {
                 return { events: [], total_count: 0 };
               }
