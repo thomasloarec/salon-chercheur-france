@@ -41,7 +41,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
       onEventUpdated(refreshedEvent, slugChanged);
     }
     invalidateEvents();
-    queryClient.invalidateQueries({ queryKey: ['event-sectors', refreshedEvent.id] });
+    queryClient.invalidateQueries({ queryKey: ['event-sectors', refreshedEvent.id_event] });
   };
 
   const handleEventDeleted = () => {
