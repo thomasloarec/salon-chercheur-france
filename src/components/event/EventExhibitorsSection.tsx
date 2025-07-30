@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Link } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import type { Event } from '@/types/event';
+import { CrmConnectModal } from './CrmConnectModal';
 
 interface Exhibitor {
   nom_exposant: string;
@@ -30,7 +30,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
-  const navigate = useNavigate();
+  const [showCrmModal, setShowCrmModal] = useState(false);
 
   useEffect(() => {
     const fetchExhibitors = async () => {
@@ -123,7 +123,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           </h3>
           <Button 
             className="bg-accent hover:bg-accent/90"
-            onClick={() => navigate('/crm-integrations')}
+            onClick={() => setShowCrmModal(true)}
           >
             <Link className="h-4 w-4 mr-2" />
             Connecter mon CRM
@@ -154,7 +154,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         </h3>
         <Button 
           className="bg-accent hover:bg-accent/90"
-          onClick={() => navigate('/crm-integrations')}
+          onClick={() => setShowCrmModal(true)}
         >
           <Link className="h-4 w-4 mr-2" />
           Connecter mon CRM
@@ -251,6 +251,12 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de connexion CRM */}
+      <CrmConnectModal 
+        open={showCrmModal} 
+        onOpenChange={setShowCrmModal} 
+      />
     </div>
   );
 };
