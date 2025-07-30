@@ -181,61 +181,71 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
         } else {
           console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans staging_events_import`);
         }
+      } catch (error) {
+        console.error('[ERROR] Exception during staging insert:', error);
+        eventErrors.push({
+          record_id: 'STAGING_INSERT_ERROR',
+          reason: `Exception staging: ${error.message}`
+        });
+        return { eventsImported: 0, eventErrors };
+      }
+    }
 
-      // eventsImported sera mis à jour avec totalProcessed après INSERT/UPDATE
-      console.log(`Events prepared for processing: ${eventsToInsert.length}`);
+    // eventsImported sera mis à jour avec totalProcessed après INSERT/UPDATE
+    console.log(`Events prepared for processing: ${newEventsForStaging.length}`);
 
-      // Promote to production events table
-      const productionEvents = eventsToInsert.map(ev => ({
-        id_event: ev.id_event,
-        airtable_id: ev.airtable_id,
-        nom_event: ev.nom_event,
-        visible: false, // Default invisible
-        type_event: ev.type_event,
-        date_debut: ev.date_debut || '1970-01-01',
-        date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
-        secteur: Array.isArray(ev.secteur) ? ev.secteur : [ev.secteur || 'Autre'], // Support multi-secteurs
-        ville: ev.ville,
-        rue: ev.rue,
-        code_postal: ev.code_postal,
-        pays: 'France',
-        url_image: ev.url_image,
-        url_site_officiel: ev.url_site_officiel,
-        description_event: ev.description_event,
-        affluence: ev.affluence ? (isNaN(parseInt(ev.affluence)) ? ev.affluence : parseInt(ev.affluence)) : null,
-        tarif: ev.tarif,
-        nom_lieu: ev.nom_lieu,
-        location: ev.ville || 'Inconnue',
-        slug: null // Laisser NULL pour déclencher le trigger auto_generate_event_slug
-      }));
+    // Promote to production events table
+    const productionEvents = newEventsForStaging.map(ev => ({
+      id_event: ev.id_event,
+      airtable_id: ev.airtable_id,
+      nom_event: ev.nom_event,
+      visible: false, // Default invisible
+      type_event: ev.type_event,
+      date_debut: ev.date_debut || '1970-01-01',
+      date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
+      secteur: Array.isArray(ev.secteur) ? ev.secteur : [ev.secteur || 'Autre'], // Support multi-secteurs
+      ville: ev.ville,
+      rue: ev.rue,
+      code_postal: ev.code_postal,
+      pays: 'France',
+      url_image: ev.url_image,
+      url_site_officiel: ev.url_site_officiel,
+      description_event: ev.description_event,
+      affluence: ev.affluence ? (isNaN(parseInt(ev.affluence)) ? ev.affluence : parseInt(ev.affluence)) : null,
+      tarif: ev.tarif,
+      nom_lieu: ev.nom_lieu,
+      location: ev.ville || 'Inconnue',
+      slug: null // Laisser NULL pour déclencher le trigger auto_generate_event_slug
+    }));
 
-      // --- début modification stratégie 2 ---
-      console.log(`[DEBUG] Application de la stratégie 2 : préservation des événements publiés`);
+    // --- début modification stratégie 2 ---
+    console.log(`[DEBUG] Application de la stratégie 2 : préservation des événements publiés`);
 
-      // 1) Récupérer en base les id_event existants et leur statut "visible"
-      const allIds = productionEvents.map(e => e.id_event);
-      const { data: existingEvents, error: fetchErr } = await supabaseClient
+    // 1) Récupérer en base les id_event existants et leur statut "visible"
+    const allIds = productionEvents.map(e => e.id_event);
+    if (allIds.length > 0) {
+      const { data: existingEvents, error: fetchErr2 } = await supabaseClient
         .from('events')
         .select('id_event, visible')
         .in('id_event', allIds);
 
-      if (fetchErr) {
-        console.error('Erreur fetch existing events:', fetchErr);
+      if (fetchErr2) {
+        console.error('Erreur fetch existing events:', fetchErr2);
         eventErrors.push({
           record_id: 'FETCH_EXISTING_ERROR',
-          reason: `Erreur fetch existing: ${fetchErr.message}`
+          reason: `Erreur fetch existing: ${fetchErr2.message}`
         });
         return { eventsImported: 0, eventErrors };
       }
 
       // Extraire les listes d'ids
-      const existingIds = (existingEvents || []).map(e => e.id_event);
+      const existingIds2 = (existingEvents || []).map(e => e.id_event);
       const publishedIds = (existingEvents || []).filter(e => e.visible).map(e => e.id_event);
 
       // 2) Séparer les nouveaux et ceux à mettre à jour (non publiés)
-      const newEvents = productionEvents.filter(e => !existingIds.includes(e.id_event));
+      const newEvents = productionEvents.filter(e => !existingIds2.includes(e.id_event));
       const toUpdateEvents = productionEvents.filter(e =>
-        existingIds.includes(e.id_event) &&
+        existingIds2.includes(e.id_event) &&
         !publishedIds.includes(e.id_event)
       );
 
@@ -318,8 +328,9 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
         .select('id', { count: 'exact' })
         .is('airtable_id', null);
       console.log('[DEBUG] Rows with NULL airtable_id after upsert:', count);
-      
-    } catch (error) {
+    }
+    
+  } catch (error) {
       console.error('[ERROR] Exception during events import:', error);
       eventErrors.push({
         record_id: 'EXCEPTION_ERROR',
