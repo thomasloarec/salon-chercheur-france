@@ -41,7 +41,11 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
   console.log('[MAPPING] Chargement des événements publiés et en staging...');
   const [{ data: publishedEvents }, { data: stagingEvents }] = await Promise.all([
     supabaseClient.from('events').select('id, id_event'),
-    supabaseClient.from('staging_events_import').select('id, id_event')
+    supabaseClient.from('staging_events_import').select(`
+      id, id_event, nom_event, date_debut, date_fin, ville, secteur,
+      url_image, url_site_officiel, description_event, nom_lieu, 
+      rue, code_postal, type_event, tarif, affluence
+    `)
   ]);
   
   const allEventIds = new Set<string>([
@@ -50,11 +54,34 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
   ]);
   console.log(`[MAPPING] ${allEventIds.size} événements uniques trouvés (publiés + staging)`);
   
+  // Charger toutes les participations d'Airtable avec pagination pour analyser les besoins
+  const allParticipations = await fetchAllParticipations(airtableConfig);
+  console.log('[DEBUG] participations records =', allParticipations.length);
+
+  // Debug premier record
+  if (allParticipations.length > 0) {
+    console.log('[DEBUG] Premier record participation brut:', allParticipations[0].fields);
+  }
+
+  // Extraire les id_event utilisés par les participations
+  const usedEventIds = new Set<string>();
+  for (const r of allParticipations) {
+    const rawEventId = Array.isArray(r.fields['id_event_text']) 
+      ? r.fields['id_event_text'][0]?.trim() 
+      : r.fields['id_event_text']?.trim();
+    if (rawEventId) {
+      usedEventIds.add(rawEventId);
+    }
+  }
+  console.log(`[SYNC] ${usedEventIds.size} événements uniques utilisés par les participations`);
+  
   // ÉTAPE INTERMÉDIAIRE: Synchroniser les événements staging manquants vers events
   console.log('[SYNC] Synchronisation des événements staging vers events...');
   const publishedEventIds = new Set(publishedEvents?.map((e: any) => e.id_event).filter(Boolean) ?? []);
   const eventsOnlyInStaging = stagingEvents?.filter((se: any) => 
-    se.id_event && !publishedEventIds.has(se.id_event)
+    se.id_event && 
+    !publishedEventIds.has(se.id_event) &&
+    usedEventIds.has(se.id_event) // Uniquement les événements utilisés par les participations
   ) ?? [];
 
   if (eventsOnlyInStaging.length > 0) {
@@ -63,11 +90,14 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     const { error: syncError } = await supabaseClient
       .from('events')
       .upsert(
-        eventsOnlyInStaging.map((e: any) => ({
-          ...e,
-          visible: false, // Marquer comme invisible car non validé
-          updated_at: new Date().toISOString()
-        })),
+        eventsOnlyInStaging.map((e: any) => {
+          const { id, ...eventData } = e; // Exclure l'id interne de staging
+          return {
+            ...eventData,
+            visible: false, // Marquer comme invisible car non validé
+            updated_at: new Date().toISOString()
+          };
+        }),
         { onConflict: 'id_event' }
       );
       
@@ -82,7 +112,14 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       };
     }
     
-    console.log(`[SYNC] ${eventsOnlyInStaging.length} événements synchronisés avec visible=false`);
+    const syncedEventsCount = eventsOnlyInStaging.length;
+    console.log(`[SYNC] ${syncedEventsCount} événements synchronisés avec visible=false`);
+    console.log(`[METRICS] ${syncedEventsCount} événements staging→events synchronisés`);
+    
+    // Mettre à jour allEventIds avec les événements nouvellement synchronisés
+    const newlySyncedIds = eventsOnlyInStaging.map(e => e.id_event).filter(Boolean);
+    newlySyncedIds.forEach(id => allEventIds.add(id));
+    console.log(`[SYNC] allEventIds mis à jour, total: ${allEventIds.size} événements`);
   } else {
     console.log('[SYNC] Aucun événement staging à synchroniser');
   }
@@ -99,14 +136,7 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     }
   });
   
-  // Charger toutes les participations d'Airtable avec pagination
-  const allParticipations = await fetchAllParticipations(airtableConfig);
-  console.log('[DEBUG] participations records =', allParticipations.length);
-
-  // Debug premier record
-  if (allParticipations.length > 0) {
-    console.log('[DEBUG] Premier record participation brut:', allParticipations[0].fields);
-  }
+  // Les participations sont déjà chargées plus haut
 
   // Préparer batch d'insertion
   const toInsert = [];
@@ -164,6 +194,11 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     });
   }
 
+  // Métriques avant insertion
+  const rejectedCount = participationErrors.length;
+  const validCount = toInsert.length;
+  console.log(`[METRICS] Participations: ${validCount} valides, ${rejectedCount} rejetées`);
+
   // Upsert avec clé composite
   console.log(`Insertion de ${toInsert.length} participations...`);
   let participationsImported = 0;
@@ -194,6 +229,17 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       });
     }
   }
+
+  // Récapitulatif final
+  const syncedEventsCount = eventsOnlyInStaging?.length || 0;
+  console.log(`
+[RÉCAPITULATIF IMPORT PARTICIPATION]
+- Événements synchronisés staging→events: ${syncedEventsCount}
+- Participations valides à insérer: ${toInsert.length}
+- Participations rejetées: ${participationErrors.length}
+- Participations effectivement importées: ${participationsImported}
+- Taux de succès: ${toInsert.length > 0 ? Math.round(participationsImported/toInsert.length*100) : 0}%
+`);
 
   return { 
     participationsImported,
