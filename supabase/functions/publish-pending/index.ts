@@ -104,46 +104,46 @@ Deno.serve(async (req) => {
 
     console.log('✅ Événement import trouvé:', eventImport.nom_event);
 
-    // 2. Upsert direct depuis staging vers events avec publication
-    const { data: existingEvent, error: upsertError } = await supabase
-      .from('events')
-      .upsert({
-        id_event: eventImport.id_event,
-        nom_event: eventImport.nom_event,
-        type_event: eventImport.type_event,
-        description_event: eventImport.description_event,
-        date_debut: eventImport.date_debut,
-        date_fin: eventImport.date_fin,
-        secteur: eventImport.secteur,
-        url_image: eventImport.url_image,
-        url_site_officiel: eventImport.url_site_officiel,
-        affluence: eventImport.affluence,
-        tarif: eventImport.tarif,
-        nom_lieu: eventImport.nom_lieu,
-        rue: eventImport.rue,
-        code_postal: eventImport.code_postal,
-        ville: eventImport.ville,
-        pays: eventImport.pays || 'France',
-        location: eventImport.location,
-        is_b2b: eventImport.is_b2b || false,
-        visible: true,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id_event' })
-      .select('id, id_event, slug')
-      .single();
-
-    if (upsertError) {
-      console.error('❌ Erreur upsert événement:', upsertError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Erreur lors de la publication de l\'événement',
-          details: upsertError.message 
-        }),
-        { 
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-          status: 500 
+    // 2. Publication atomique via RPC
+    const { data: publishedEvent, error: rpcError } = await supabase
+      .rpc('publish_pending_event_atomic', {
+        p_id_event: eventImport.id_event,
+        p_event_data: {
+          nom_event: eventImport.nom_event,
+          type_event: eventImport.type_event,
+          description_event: eventImport.description_event,
+          date_debut: eventImport.date_debut,
+          date_fin: eventImport.date_fin,
+          secteur: eventImport.secteur,
+          url_image: eventImport.url_image,
+          url_site_officiel: eventImport.url_site_officiel,
+          affluence: eventImport.affluence,
+          tarif: eventImport.tarif,
+          nom_lieu: eventImport.nom_lieu,
+          rue: eventImport.rue,
+          code_postal: eventImport.code_postal,
+          ville: eventImport.ville,
+          pays: eventImport.pays || 'France',
+          location: eventImport.location,
+          is_b2b: eventImport.is_b2b || false
         }
-      );
+      });
+
+    if (rpcError) {
+      console.error('❌ Erreur RPC publication:', rpcError);
+      return new Response(JSON.stringify({
+        error: 'Erreur lors de la publication',
+        details: rpcError.message
+      }), { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, status: 500 });
+    }
+
+    // Vérifier si la RPC a retourné une erreur dans le JSON
+    if (publishedEvent?.error) {
+      console.error('❌ Erreur dans la fonction RPC:', publishedEvent.message);
+      return new Response(JSON.stringify({
+        error: 'Erreur lors de la publication',
+        details: publishedEvent.message
+      }), { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, status: 500 });
     }
 
     console.log('✅ Événement publié avec succès');
