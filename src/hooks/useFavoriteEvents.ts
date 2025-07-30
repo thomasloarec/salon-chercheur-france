@@ -16,7 +16,9 @@ export const useFavoriteEvents = () => {
         .from('favorites')
         .select(`
           id,
-          events (
+          event_id,
+          created_at,
+          events!favorites_event_id_fkey (
             *,
             event_sectors (
               sectors (
@@ -42,6 +44,7 @@ export const useFavoriteEvents = () => {
           const event = item.events as any;
           return {
             id: event.id,
+            id_event: event.id_event,
             nom_event: event.nom_event || '',
             description_event: event.description_event,
             date_debut: event.date_debut,
@@ -49,19 +52,15 @@ export const useFavoriteEvents = () => {
             secteur: event.secteur || '',
             nom_lieu: event.nom_lieu,
             ville: event.ville,
-            country: event.country,
+            pays: event.pays,
             url_image: event.url_image,
             url_site_officiel: event.url_site_officiel,
-            tags: event.tags,
             tarif: event.tarif,
             affluence: event.affluence,
-            estimated_exhibitors: event.estimated_exhibitors,
             is_b2b: event.is_b2b,
             type_event: event.type_event as Event['type_event'],
             created_at: event.created_at,
             updated_at: event.updated_at,
-            last_scraped_at: event.last_scraped_at,
-            scraped_from: event.scraped_from,
             rue: event.rue,
             code_postal: event.code_postal,
             visible: event.visible,
