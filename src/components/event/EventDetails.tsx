@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building, Users, Clock } from 'lucide-react';
 import type { Event } from '@/types/event';
 import { formatAddress } from '@/utils/formatAddress';
+import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 
 interface EventDetailsProps {
   event: Event;
@@ -45,7 +46,7 @@ export const EventDetails = ({ event }: EventDetailsProps) => {
             <h4 className="font-medium text-gray-900 mb-2 text-left">Affluence</h4>
             <div className="flex items-center text-gray-600">
               <Users className="h-4 w-4 text-accent mr-2" />
-              <span className="text-left">{event.affluence ? parseInt(event.affluence).toLocaleString('fr-FR') : '0'} visiteurs attendus</span>
+              <span className="text-left">{formatAffluenceWithSuffix(event.affluence)}</span>
             </div>
           </div>
         )}

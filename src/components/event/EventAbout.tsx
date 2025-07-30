@@ -4,6 +4,7 @@ import { FileText, Users, Euro, Calendar } from 'lucide-react';
 import { getEventTypeLabel } from '@/constants/eventTypes';
 import DOMPurify from 'dompurify';
 import type { Event } from '@/types/event';
+import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 
 interface EventAboutProps {
   event: Event;
@@ -59,12 +60,9 @@ export const EventAbout = ({ event }: EventAboutProps) => {
             <Users size={18} className="mt-0.5 text-orange-500" />
             <div>
               <p className="font-medium">Affluence</p>
-              <p className="text-gray-600">
-                {event.affluence 
-                  ? `${parseInt(event.affluence).toLocaleString('fr-FR')} visiteurs attendus` 
-                  : '—'
-                }
-              </p>
+               <p className="text-gray-600">
+                 {event.affluence ? formatAffluenceWithSuffix(event.affluence) : '—'}
+               </p>
             </div>
           </div>
 

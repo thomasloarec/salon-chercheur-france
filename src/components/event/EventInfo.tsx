@@ -7,6 +7,7 @@ import { fr } from 'date-fns/locale';
 import type { Event } from '@/types/event';
 import CalBtn from '../CalBtn';
 import { formatAddress } from '@/utils/formatAddress';
+import { formatAffluence } from '@/utils/affluenceUtils';
 
 interface EventInfoProps {
   event: Event;
@@ -62,9 +63,9 @@ export const EventInfo = ({ event }: EventInfoProps) => {
             <h4 className="font-medium text-gray-900 mb-1 text-left">Visiteurs attendus</h4>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-accent" />
-              <span className="text-gray-600 text-left">
-                {event.affluence ? parseInt(event.affluence).toLocaleString('fr-FR') : '0'} visiteurs
-              </span>
+               <span className="text-gray-600 text-left">
+                 {formatAffluence(event.affluence)} visiteurs
+               </span>
             </div>
           </div>
         )}
