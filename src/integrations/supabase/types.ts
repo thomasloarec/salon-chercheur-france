@@ -1151,6 +1151,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      publish_pending_event_atomic: {
+        Args: { p_id_event: string; p_event_data: Json }
+        Returns: Json
+      }
       search_events: {
         Args: {
           sector_ids?: string[]
