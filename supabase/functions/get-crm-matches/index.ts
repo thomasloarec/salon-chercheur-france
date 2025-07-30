@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching CRM matches for user: ${user.id}`);
 
-    // Get user's CRM companies with matching events
+    // Get user's CRM companies with matching events (already grouped by SQL function)
     const { data: matches, error } = await supabase.rpc('get_user_crm_matches', {
       p_user_id: user.id
     });
@@ -65,38 +65,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Group by company and aggregate events
-    const crmMatches: CrmMatch[] = [];
-    const companyMap = new Map();
-
-    for (const match of matches || []) {
-      const companyKey = `${match.company_id}_${match.provider}`;
-      
-      if (!companyMap.has(companyKey)) {
-        companyMap.set(companyKey, {
-          id: match.company_id,
-          name: match.company_name,
-          website: match.company_website,
-          provider: match.provider,
-          eventsCount: 0,
-          upcomingEvents: []
-        });
-      }
-
-      const company = companyMap.get(companyKey);
-      
-      if (match.event_id) {
-        company.eventsCount++;
-        company.upcomingEvents.push({
-          id: match.event_id,
-          nom_event: match.event_name,
-          date_debut: match.event_date_debut,
-          ville: match.event_ville
-        });
-      }
-    }
-
-    const result = Array.from(companyMap.values());
+    // Transform the SQL result to match our interface
+    const result: CrmMatch[] = (matches || []).map(match => ({
+      id: match.company_id,
+      name: match.company_name,
+      website: match.company_website,
+      provider: match.provider,
+      eventsCount: match.events_count,
+      upcomingEvents: match.upcoming_events
+    }));
 
     console.log(`Found ${result.length} CRM matches for user ${user.id}`);
 

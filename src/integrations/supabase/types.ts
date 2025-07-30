@@ -1107,6 +1107,17 @@ export type Database = {
           value: string
         }[]
       }
+      get_user_crm_matches: {
+        Args: { p_user_id: string }
+        Returns: {
+          company_id: string
+          company_name: string
+          company_website: string
+          provider: string
+          events_count: number
+          upcoming_events: Json
+        }[]
+      }
       gtrgm_compress: {
         Args: { "": unknown }
         Returns: unknown
