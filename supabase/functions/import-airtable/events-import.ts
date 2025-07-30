@@ -158,8 +158,8 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
         console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans staging_events_import`);
       }
 
-      eventsImported = eventsToInsert.length;
-      console.log(`Imported ${eventsImported} events`);
+      // eventsImported sera mis à jour avec totalProcessed après INSERT/UPDATE
+      console.log(`Events prepared for processing: ${eventsToInsert.length}`);
 
       // Promote to production events table
       const productionEvents = eventsToInsert.map(ev => ({
@@ -170,7 +170,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
         type_event: ev.type_event,
         date_debut: ev.date_debut || '1970-01-01',
         date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
-        secteur: [ev.secteur || 'Autre'], // Convert to jsonb array
+        secteur: Array.isArray(ev.secteur) ? ev.secteur : [ev.secteur || 'Autre'], // Support multi-secteurs
         ville: ev.ville,
         rue: ev.rue,
         code_postal: ev.code_postal,
@@ -218,6 +218,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
       console.log(`[DEBUG] Nouveaux événements: ${newEvents.length}, à mettre à jour: ${toUpdateEvents.length}, publiés préservés: ${publishedIds.length}`);
 
       let totalProcessed = 0;
+      let errorCount = 0;
 
       // 3) INSERT des nouveaux
       if (newEvents.length > 0) {
@@ -228,6 +229,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
 
         if (insertErr) {
           console.error('Erreur insert new events:', insertErr);
+          errorCount++;
           eventErrors.push({
             record_id: 'NEW_EVENTS_INSERT_ERROR',
             reason: `Erreur insert nouveaux: ${insertErr.message}`
@@ -249,7 +251,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
               type_event: evt.type_event,
               date_debut: evt.date_debut,
               date_fin: evt.date_fin,
-              secteur: evt.secteur,
+              secteur: Array.isArray(evt.secteur) ? evt.secteur : [evt.secteur || 'Autre'], // Support multi-secteurs
               ville: evt.ville,
               rue: evt.rue,
               code_postal: evt.code_postal,
@@ -268,6 +270,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
 
           if (updateErr) {
             console.error(`Erreur update event ${evt.id_event}:`, updateErr);
+            errorCount++;
             eventErrors.push({
               record_id: evt.id_event,
               reason: `Erreur update: ${updateErr.message}`
@@ -280,9 +283,10 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
         console.log(`[DEBUG] ${updatedCount} événements non-publiés mis à jour`);
       }
 
-      console.log(`[DEBUG] Total traité: ${totalProcessed} événements (${publishedIds.length} publiés préservés)`);
+      console.log(`[DEBUG] Total traité: ${totalProcessed} événements (${publishedIds.length} publiés préservés, ${errorCount} erreurs)`);
       
-      // --- fin modification stratégie 2 ---
+      // Mettre à jour le compteur avec le nombre réel d'événements traités
+      eventsImported = totalProcessed;
       
       // Log de vérification airtable_id
       const { count } = await supabaseClient
