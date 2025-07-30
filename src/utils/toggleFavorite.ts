@@ -38,6 +38,7 @@ export async function toggleFavorite(eventId: string) {
   const { error: insertError } = await supabase.from("favorites").insert({
     user_id: user.id,
     event_uuid: eventId,
+    event_id: eventId, // Aussi requis par le schéma de la table
   } as any);
   if (insertError) throw insertError;
   return { isFavorite: true };
