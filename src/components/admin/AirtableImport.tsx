@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { Download, Loader2, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
@@ -22,6 +23,7 @@ export function AirtableImport() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleImport = async () => {
     setLoading(true);
@@ -65,6 +67,13 @@ export function AirtableImport() {
         title: 'Import réussi',
         description: importResults.message,
       });
+
+      // Rafraîchir automatiquement les données après import réussi
+      console.log('[AirtableImport] 🔄 Rafraîchissement automatique des données...');
+      queryClient.invalidateQueries({ queryKey: ['events-import-pending'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-events'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events-rpc'] });
 
     } catch (err: any) {
       console.error('[AirtableImport] ❌ Exception:', err);
