@@ -88,14 +88,14 @@ export const useToggleFavorite = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ eventUuid, eventExternalId }: { eventUuid: string; eventExternalId: string }) => {
-      return await toggleFavorite(eventUuid, eventExternalId);
+    mutationFn: async (eventId: string) => {
+      return await toggleFavorite(eventId);
     },
-    onSuccess: (_, { eventUuid }) => {
+    onSuccess: (_, eventId) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['favorite-events', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['is-favorite', eventUuid, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['is-favorite', eventId, user?.id] });
     },
   });
 };

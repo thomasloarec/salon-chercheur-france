@@ -7,8 +7,7 @@ import AuthRequiredModal from './AuthRequiredModal';
 import { cn } from '@/lib/utils';
 
 interface FavoriteButtonProps {
-  eventId: string;           // UUID interne (event.id)
-  eventExternalId: string;   // ID externe (event.id_event)
+  eventId: string;       // UUID de l'événement (event.id)
   className?: string;
   size?: 'sm' | 'default' | 'lg' | 'xl';
   variant?: 'overlay' | 'inline';
@@ -16,7 +15,6 @@ interface FavoriteButtonProps {
 
 const FavoriteButton = ({ 
   eventId, 
-  eventExternalId,
   className, 
   size = 'default',
   variant = 'overlay'
@@ -36,7 +34,7 @@ const FavoriteButton = ({
     }
 
     try {
-      await toggleFavorite.mutateAsync({ eventUuid: eventId, eventExternalId });
+      await toggleFavorite.mutateAsync(eventId);
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }

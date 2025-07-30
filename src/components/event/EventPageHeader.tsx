@@ -58,7 +58,6 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
             </h1>
             <FavoriteButton
               eventId={event.id}
-              eventExternalId={event.id_event || ''}
               size="xl"
               variant="inline"
             />

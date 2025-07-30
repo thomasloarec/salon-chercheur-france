@@ -618,14 +618,7 @@ export type Database = {
             foreignKeyName: "favorites_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events_geo"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "favorites_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events_old"
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]

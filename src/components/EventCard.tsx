@@ -107,7 +107,6 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             {!adminPreview && (
               <FavoriteButton 
                 eventId={event.id} 
-                eventExternalId={event.id_event || ''} 
                 size="default"
                 variant="overlay"
               />

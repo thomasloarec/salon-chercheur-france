@@ -32,7 +32,7 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
     e.stopPropagation();
 
     try {
-      await toggleFavorite.mutateAsync({ eventUuid: event.id, eventExternalId: event.id_event || '' });
+      await toggleFavorite.mutateAsync(event.id);
       
       toast({
         title: "Événement retiré de votre agenda",
@@ -41,7 +41,7 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
             variant="outline"
             size="sm"
             onClick={async () => {
-              await toggleFavorite.mutateAsync({ eventUuid: event.id, eventExternalId: event.id_event || '' });
+              await toggleFavorite.mutateAsync(event.id);
             }}
           >
             Annuler
