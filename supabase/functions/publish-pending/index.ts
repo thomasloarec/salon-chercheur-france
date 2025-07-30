@@ -104,76 +104,40 @@ Deno.serve(async (req) => {
 
     console.log('✅ Événement import trouvé:', eventImport.nom_event);
 
-    // 2. Vérifier que l'événement existe dans la table events
-    const { data: existingEvent, error: existsError } = await supabase
+    // 2. Upsert direct depuis staging vers events avec publication
+    const { data: existingEvent, error: upsertError } = await supabase
       .from('events')
+      .upsert({
+        id_event: eventImport.id_event,
+        nom_event: eventImport.nom_event,
+        type_event: eventImport.type_event,
+        description_event: eventImport.description_event,
+        date_debut: eventImport.date_debut,
+        date_fin: eventImport.date_fin,
+        secteur: eventImport.secteur,
+        url_image: eventImport.url_image,
+        url_site_officiel: eventImport.url_site_officiel,
+        affluence: eventImport.affluence,
+        tarif: eventImport.tarif,
+        nom_lieu: eventImport.nom_lieu,
+        rue: eventImport.rue,
+        code_postal: eventImport.code_postal,
+        ville: eventImport.ville,
+        pays: eventImport.pays || 'France',
+        location: eventImport.location,
+        is_b2b: eventImport.is_b2b || false,
+        visible: true,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id_event' })
       .select('id, id_event, slug')
-      .eq('id_event', eventImport.id_event)
-      .maybeSingle();
+      .single();
 
-    if (existsError) {
-      console.error('❌ Erreur vérification événement existant:', existsError);
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors de la vérification de l\'événement' }),
-        { 
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      );
-    }
-
-    if (!existingEvent) {
-      console.error('❌ Événement non trouvé dans la table events');
-      return new Response(
-        JSON.stringify({ error: 'Événement non trouvé dans la table events' }),
-        { 
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-          status: 404 
-        }
-      );
-    }
-
-    console.log(`🔍 Événement existant trouvé: ${existingEvent.id_event}`);
-
-    // 3. Mettre à jour TOUS les champs depuis staging_events_import
-    const updateData = {
-      // Champs métier modifiables
-      nom_event: eventImport.nom_event,
-      type_event: eventImport.type_event,
-      description_event: eventImport.description_event,
-      date_debut: eventImport.date_debut,
-      date_fin: eventImport.date_fin,
-      secteur: eventImport.secteur, // Note: ARRAY → jsonb conversion automatique
-      url_image: eventImport.url_image,
-      url_site_officiel: eventImport.url_site_officiel,
-      affluence: eventImport.affluence,
-      tarif: eventImport.tarif,
-      nom_lieu: eventImport.nom_lieu,
-      rue: eventImport.rue,
-      code_postal: eventImport.code_postal,
-      ville: eventImport.ville,
-      pays: eventImport.pays,
-      location: eventImport.location,
-      is_b2b: eventImport.is_b2b,
-      
-      // Champs de publication
-      visible: true,
-      updated_at: new Date().toISOString()
-    };
-
-    console.log('🔄 Propagation des modifications:', updateData.nom_event, updateData.type_event);
-
-    const { error: updateError } = await supabase
-      .from('events')
-      .update(updateData)
-      .eq('id_event', eventImport.id_event);
-
-    if (updateError) {
-      console.error('❌ Erreur update événement:', updateError);
+    if (upsertError) {
+      console.error('❌ Erreur upsert événement:', upsertError);
       return new Response(
         JSON.stringify({ 
           error: 'Erreur lors de la publication de l\'événement',
-          details: updateError.message 
+          details: upsertError.message 
         }),
         { 
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
