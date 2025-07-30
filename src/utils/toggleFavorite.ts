@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Ajoute ou retire un favori.
+ * @param eventUuid - UUID interne de l'événement (event.id)
+ * @param eventExternalId - ID externe de l'événement (event.id_event, ex: "Event_6")
  * @returns {Promise<{ isFavorite: boolean }>} - état final
  */
-export async function toggleFavorite(eventId: string) {
+export async function toggleFavorite(eventUuid: string, eventExternalId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -16,7 +18,7 @@ export async function toggleFavorite(eventId: string) {
     .from("favorites")
     .select("id")
     .eq("user_id", user.id)
-    .eq("event_uuid", eventId)
+    .eq("event_uuid", eventUuid)
     .maybeSingle(); // ← évite le 406
 
   if (selectError && selectError.code !== "PGRST116") {
@@ -34,11 +36,11 @@ export async function toggleFavorite(eventId: string) {
     return { isFavorite: false };
   }
 
-  // 2b. Insère si absent (upsert évite doublons uniques)
+  // 2b. Insère si absent
   const { error: insertError } = await supabase.from("favorites").insert({
     user_id: user.id,
-    event_uuid: eventId,
-    event_id: eventId, // Aussi requis par le schéma de la table
+    event_uuid: eventUuid,     // UUID interne
+    event_id: eventExternalId, // ID externe (Event_6, etc.)
   } as any);
   if (insertError) throw insertError;
   return { isFavorite: true };

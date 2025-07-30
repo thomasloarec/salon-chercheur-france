@@ -71,6 +71,7 @@ export const CrmCompanyCard = ({ company }: CrmCompanyCardProps) => {
                   </div>
                   <FavoriteButton 
                     eventId={event.id} 
+                    eventExternalId={event.id || ''} // CRM events use id as external id
                     variant="inline" 
                     size="sm"
                     className="ml-2 flex-shrink-0"
