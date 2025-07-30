@@ -136,207 +136,207 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
 
   let eventsImported = 0;
 
-  // Insert events into Supabase events_import table
-  if (eventsToInsert.length > 0) {
-    // 1) Récupérer les id_event déjà en production
-    const candidateIds = eventsToInsert.map(e => e.id_event);
-    const { data: existingInProd, error: fetchErr } = await supabaseClient
-      .from('events')
-      .select('id_event')
-      .in('id_event', candidateIds);
-
-    if (fetchErr) {
-      console.error(`[ERROR] Échec récupération événements existants :`, fetchErr);
-      eventErrors.push({
-        record_id: 'FETCH_EXISTING_ERROR',
-        reason: `Erreur fetch existing: ${fetchErr.message}`
-      });
-      return { eventsImported: 0, eventErrors };
-    }
-
-    const existingIds = new Set((existingInProd || []).map(e => e.id_event));
-
-    // 2) Ne conserver que les événements **nouveaux** pour le staging
-    const newEventsForStaging = eventsToInsert.filter(e => 
-      !existingIds.has(e.id_event)
-    );
-
-    console.log(`[DEBUG] ${newEventsForStaging.length} événements uniques à importer en staging (${existingIds.size} déjà existants ignorés)`);
-
-    // 3) Upsert en staging uniquement des nouveaux
-    if (newEventsForStaging.length > 0) {
-      try {
-        const { data: eventsData, error: eventsError } = await supabaseClient
-          .from('staging_events_import')
-          .upsert(newEventsForStaging, { onConflict: 'id_event' })
-          .select();
-
-        if (eventsError) {
-          console.error(`[ERROR] Échec insertion dans staging_events_import :`, eventsError);
-          eventErrors.push({
-            record_id: 'UPSERT_ERROR',
-            reason: `Erreur upsert staging: ${eventsError.message}`
-          });
-          return { eventsImported: 0, eventErrors };
-        } else {
-          console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans staging_events_import`);
-        }
-      } catch (error) {
-        console.error('[ERROR] Exception during staging insert:', error);
-        eventErrors.push({
-          record_id: 'STAGING_INSERT_ERROR',
-          reason: `Exception staging: ${error.message}`
-        });
-        return { eventsImported: 0, eventErrors };
-      }
-    }
-
-    // eventsImported sera mis à jour avec totalProcessed après INSERT/UPDATE
-    console.log(`Events prepared for processing: ${newEventsForStaging.length}`);
-
-    // Promote to production events table
-    const productionEvents = newEventsForStaging.map(ev => ({
-      id_event: ev.id_event,
-      airtable_id: ev.airtable_id,
-      nom_event: ev.nom_event,
-      visible: false, // Default invisible
-      type_event: ev.type_event,
-      date_debut: ev.date_debut || '1970-01-01',
-      date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
-      secteur: Array.isArray(ev.secteur) ? ev.secteur : [ev.secteur || 'Autre'], // Support multi-secteurs
-      ville: ev.ville,
-      rue: ev.rue,
-      code_postal: ev.code_postal,
-      pays: 'France',
-      url_image: ev.url_image,
-      url_site_officiel: ev.url_site_officiel,
-      description_event: ev.description_event,
-      affluence: ev.affluence ? (isNaN(parseInt(ev.affluence)) ? ev.affluence : parseInt(ev.affluence)) : null,
-      tarif: ev.tarif,
-      nom_lieu: ev.nom_lieu,
-      location: ev.ville || 'Inconnue',
-      slug: null // Laisser NULL pour déclencher le trigger auto_generate_event_slug
-    }));
-
-    // --- début modification stratégie 2 ---
-    console.log(`[DEBUG] Application de la stratégie 2 : préservation des événements publiés`);
-
-    // 1) Récupérer en base les id_event existants et leur statut "visible"
-    const allIds = productionEvents.map(e => e.id_event);
-    if (allIds.length > 0) {
-      const { data: existingEvents, error: fetchErr2 } = await supabaseClient
+  try {
+    // Insert events into Supabase events_import table
+    if (eventsToInsert.length > 0) {
+      // 1) Récupérer les id_event déjà en production
+      const candidateIds = eventsToInsert.map(e => e.id_event);
+      const { data: existingInProd, error: fetchErr } = await supabaseClient
         .from('events')
-        .select('id_event, visible')
-        .in('id_event', allIds);
+        .select('id_event')
+        .in('id_event', candidateIds);
 
-      if (fetchErr2) {
-        console.error('Erreur fetch existing events:', fetchErr2);
+      if (fetchErr) {
+        console.error(`[ERROR] Échec récupération événements existants :`, fetchErr);
         eventErrors.push({
           record_id: 'FETCH_EXISTING_ERROR',
-          reason: `Erreur fetch existing: ${fetchErr2.message}`
+          reason: `Erreur fetch existing: ${fetchErr.message}`
         });
         return { eventsImported: 0, eventErrors };
       }
 
-      // Extraire les listes d'ids
-      const existingIds2 = (existingEvents || []).map(e => e.id_event);
-      const publishedIds = (existingEvents || []).filter(e => e.visible).map(e => e.id_event);
+      const existingIds = new Set((existingInProd || []).map(e => e.id_event));
 
-      // 2) Séparer les nouveaux et ceux à mettre à jour (non publiés)
-      const newEvents = productionEvents.filter(e => !existingIds2.includes(e.id_event));
-      const toUpdateEvents = productionEvents.filter(e =>
-        existingIds2.includes(e.id_event) &&
-        !publishedIds.includes(e.id_event)
+      // 2) Ne conserver que les événements **nouveaux** pour le staging
+      const newEventsForStaging = eventsToInsert.filter(e => 
+        !existingIds.has(e.id_event)
       );
 
-      console.log(`[DEBUG] Nouveaux événements: ${newEvents.length}, à mettre à jour: ${toUpdateEvents.length}, publiés préservés: ${publishedIds.length}`);
+      console.log(`[DEBUG] ${newEventsForStaging.length} événements uniques à importer en staging (${existingIds.size} déjà existants ignorés)`);
 
-      let totalProcessed = 0;
-      let errorCount = 0;
+      // 3) Upsert en staging uniquement des nouveaux
+      if (newEventsForStaging.length > 0) {
+        try {
+          const { data: eventsData, error: eventsError } = await supabaseClient
+            .from('staging_events_import')
+            .upsert(newEventsForStaging, { onConflict: 'id_event' })
+            .select();
 
-      // 3) INSERT des nouveaux
-      if (newEvents.length > 0) {
-        const { data: insertData, error: insertErr } = await supabaseClient
-          .from('events')
-          .insert(newEvents)
-          .select();
-
-        if (insertErr) {
-          console.error('Erreur insert new events:', insertErr);
-          errorCount++;
+          if (eventsError) {
+            console.error(`[ERROR] Échec insertion dans staging_events_import :`, eventsError);
+            eventErrors.push({
+              record_id: 'UPSERT_ERROR',
+              reason: `Erreur upsert staging: ${eventsError.message}`
+            });
+            return { eventsImported: 0, eventErrors };
+          } else {
+            console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans staging_events_import`);
+          }
+        } catch (error) {
+          console.error('[ERROR] Exception during staging insert:', error);
           eventErrors.push({
-            record_id: 'NEW_EVENTS_INSERT_ERROR',
-            reason: `Erreur insert nouveaux: ${insertErr.message}`
+            record_id: 'STAGING_INSERT_ERROR',
+            reason: `Exception staging: ${error.message}`
           });
-        } else {
-          totalProcessed += insertData?.length || 0;
-          console.log(`[DEBUG] ${insertData?.length || 0} nouveaux événements insérés`);
+          return { eventsImported: 0, eventErrors };
         }
       }
 
-      // 4) UPDATE uniquement des existants NON publiés
-      if (toUpdateEvents.length > 0) {
-        let updatedCount = 0;
-        for (const evt of toUpdateEvents) {
-          const { error: updateErr } = await supabaseClient
-            .from('events')
-            .update({
-              nom_event: evt.nom_event,
-              type_event: evt.type_event,
-              date_debut: evt.date_debut,
-              date_fin: evt.date_fin,
-              secteur: Array.isArray(evt.secteur) ? evt.secteur : [evt.secteur || 'Autre'], // Support multi-secteurs
-              ville: evt.ville,
-              rue: evt.rue,
-              code_postal: evt.code_postal,
-              pays: evt.pays,
-              url_image: evt.url_image,
-              url_site_officiel: evt.url_site_officiel,
-              description_event: evt.description_event,
-              affluence: evt.affluence,
-              tarif: evt.tarif,
-              nom_lieu: evt.nom_lieu,
-              location: evt.location,
-              airtable_id: evt.airtable_id
-            })
-            .eq('id_event', evt.id_event)
-            .eq('visible', false); // Double sécurité
+      // eventsImported sera mis à jour avec totalProcessed après INSERT/UPDATE
+      console.log(`Events prepared for processing: ${newEventsForStaging.length}`);
 
-          if (updateErr) {
-            console.error(`Erreur update event ${evt.id_event}:`, updateErr);
+      // Promote to production events table
+      const productionEvents = newEventsForStaging.map(ev => ({
+        id_event: ev.id_event,
+        airtable_id: ev.airtable_id,
+        nom_event: ev.nom_event,
+        visible: false, // Default invisible
+        type_event: ev.type_event,
+        date_debut: ev.date_debut || '1970-01-01',
+        date_fin: ev.date_fin || ev.date_debut || '1970-01-01',
+        secteur: Array.isArray(ev.secteur) ? ev.secteur : [ev.secteur || 'Autre'], // Support multi-secteurs
+        ville: ev.ville,
+        rue: ev.rue,
+        code_postal: ev.code_postal,
+        pays: 'France',
+        url_image: ev.url_image,
+        url_site_officiel: ev.url_site_officiel,
+        description_event: ev.description_event,
+        affluence: ev.affluence ? (isNaN(parseInt(ev.affluence)) ? ev.affluence : parseInt(ev.affluence)) : null,
+        tarif: ev.tarif,
+        nom_lieu: ev.nom_lieu,
+        location: ev.ville || 'Inconnue',
+        slug: null // Laisser NULL pour déclencher le trigger auto_generate_event_slug
+      }));
+
+      // --- début modification stratégie 2 ---
+      console.log(`[DEBUG] Application de la stratégie 2 : préservation des événements publiés`);
+
+      // 1) Récupérer en base les id_event existants et leur statut "visible"
+      const allIds = productionEvents.map(e => e.id_event);
+      if (allIds.length > 0) {
+        const { data: existingEvents, error: fetchErr2 } = await supabaseClient
+          .from('events')
+          .select('id_event, visible')
+          .in('id_event', allIds);
+
+        if (fetchErr2) {
+          console.error('Erreur fetch existing events:', fetchErr2);
+          eventErrors.push({
+            record_id: 'FETCH_EXISTING_ERROR',
+            reason: `Erreur fetch existing: ${fetchErr2.message}`
+          });
+          return { eventsImported: 0, eventErrors };
+        }
+
+        // Extraire les listes d'ids
+        const existingIds2 = (existingEvents || []).map(e => e.id_event);
+        const publishedIds = (existingEvents || []).filter(e => e.visible).map(e => e.id_event);
+
+        // 2) Séparer les nouveaux et ceux à mettre à jour (non publiés)
+        const newEvents = productionEvents.filter(e => !existingIds2.includes(e.id_event));
+        const toUpdateEvents = productionEvents.filter(e =>
+          existingIds2.includes(e.id_event) &&
+          !publishedIds.includes(e.id_event)
+        );
+
+        console.log(`[DEBUG] Nouveaux événements: ${newEvents.length}, à mettre à jour: ${toUpdateEvents.length}, publiés préservés: ${publishedIds.length}`);
+
+        let totalProcessed = 0;
+        let errorCount = 0;
+
+        // 3) INSERT des nouveaux
+        if (newEvents.length > 0) {
+          const { data: insertData, error: insertErr } = await supabaseClient
+            .from('events')
+            .insert(newEvents)
+            .select();
+
+          if (insertErr) {
+            console.error('Erreur insert new events:', insertErr);
             errorCount++;
             eventErrors.push({
-              record_id: evt.id_event,
-              reason: `Erreur update: ${updateErr.message}`
+              record_id: 'NEW_EVENTS_INSERT_ERROR',
+              reason: `Erreur insert nouveaux: ${insertErr.message}`
             });
           } else {
-            updatedCount++;
+            totalProcessed += insertData?.length || 0;
+            console.log(`[DEBUG] ${insertData?.length || 0} nouveaux événements insérés`);
           }
         }
-        totalProcessed += updatedCount;
-        console.log(`[DEBUG] ${updatedCount} événements non-publiés mis à jour`);
-      }
 
-      console.log(`[DEBUG] Total traité: ${totalProcessed} événements (${publishedIds.length} publiés préservés, ${errorCount} erreurs)`);
-      
-      // Mettre à jour le compteur avec le nombre réel d'événements traités
-      eventsImported = totalProcessed;
-      
-      // Log de vérification airtable_id
-      const { count } = await supabaseClient
-        .from('events')
-        .select('id', { count: 'exact' })
-        .is('airtable_id', null);
-      console.log('[DEBUG] Rows with NULL airtable_id after upsert:', count);
+        // 4) UPDATE uniquement des existants NON publiés
+        if (toUpdateEvents.length > 0) {
+          let updatedCount = 0;
+          for (const evt of toUpdateEvents) {
+            const { error: updateErr } = await supabaseClient
+              .from('events')
+              .update({
+                nom_event: evt.nom_event,
+                type_event: evt.type_event,
+                date_debut: evt.date_debut,
+                date_fin: evt.date_fin,
+                secteur: Array.isArray(evt.secteur) ? evt.secteur : [evt.secteur || 'Autre'], // Support multi-secteurs
+                ville: evt.ville,
+                rue: evt.rue,
+                code_postal: evt.code_postal,
+                pays: evt.pays,
+                url_image: evt.url_image,
+                url_site_officiel: evt.url_site_officiel,
+                description_event: evt.description_event,
+                affluence: evt.affluence,
+                tarif: evt.tarif,
+                nom_lieu: evt.nom_lieu,
+                location: evt.location,
+                airtable_id: evt.airtable_id
+              })
+              .eq('id_event', evt.id_event)
+              .eq('visible', false); // Double sécurité
+
+            if (updateErr) {
+              console.error(`Erreur update event ${evt.id_event}:`, updateErr);
+              errorCount++;
+              eventErrors.push({
+                record_id: evt.id_event,
+                reason: `Erreur update: ${updateErr.message}`
+              });
+            } else {
+              updatedCount++;
+            }
+          }
+          totalProcessed += updatedCount;
+          console.log(`[DEBUG] ${updatedCount} événements non-publiés mis à jour`);
+        }
+
+        console.log(`[DEBUG] Total traité: ${totalProcessed} événements (${publishedIds.length} publiés préservés, ${errorCount} erreurs)`);
+        
+        // Mettre à jour le compteur avec le nombre réel d'événements traités
+        eventsImported = totalProcessed;
+        
+        // Log de vérification airtable_id
+        const { count } = await supabaseClient
+          .from('events')
+          .select('id', { count: 'exact' })
+          .is('airtable_id', null);
+        console.log('[DEBUG] Rows with NULL airtable_id after upsert:', count);
+      }
     }
-    
   } catch (error) {
-      console.error('[ERROR] Exception during events import:', error);
-      eventErrors.push({
-        record_id: 'EXCEPTION_ERROR',
-        reason: `Exception: ${error.message}`
-      });
-    }
+    console.error('[ERROR] Exception during events import:', error);
+    eventErrors.push({
+      record_id: 'EXCEPTION_ERROR',
+      reason: `Exception: ${error.message}`
+    });
   }
 
   return { eventsImported, eventErrors };
