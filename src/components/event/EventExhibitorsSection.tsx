@@ -9,7 +9,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Link } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { Event } from '@/types/event';
 
 interface Exhibitor {
@@ -29,6 +30,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchExhibitors = async () => {
@@ -114,10 +116,26 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
   // Si aucun exposant trouvé, affichage du placeholder
   if (exhibitors.length === 0) {
     return (
-      <div className="bg-white rounded-lg border p-6">
-        <h3 className="text-xl font-semibold mb-4 flex items-center">
-          Exposants
-        </h3>
+      <div className="bg-white rounded-lg border p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-semibold">
+            Exposants
+          </h3>
+          <Button 
+            className="bg-accent hover:bg-accent/90"
+            onClick={() => navigate('/crm-integrations')}
+          >
+            <Link className="h-4 w-4 mr-2" />
+            Connecter mon CRM
+          </Button>
+        </div>
+        
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-blue-800 text-sm">
+            💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
+          </p>
+        </div>
+        
         <p className="text-gray-500 italic">
           Exposants inconnus pour cet événement
         </p>
@@ -130,9 +148,24 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   return (
     <div className="bg-white rounded-lg border p-6 space-y-4">
-      <h3 className="text-xl font-semibold">
-        Exposants ({exhibitors.length})
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">
+          Exposants ({exhibitors.length})
+        </h3>
+        <Button 
+          className="bg-accent hover:bg-accent/90"
+          onClick={() => navigate('/crm-integrations')}
+        >
+          <Link className="h-4 w-4 mr-2" />
+          Connecter mon CRM
+        </Button>
+      </div>
+      
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-blue-800 text-sm">
+          💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
+        </p>
+      </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {toDisplay.map((exhibitor, index) => (
