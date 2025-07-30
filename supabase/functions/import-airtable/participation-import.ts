@@ -37,19 +37,18 @@ async function fetchAllParticipations(airtableConfig: AirtableConfig): Promise<A
 export async function importParticipation(supabaseClient: any, airtableConfig: AirtableConfig): Promise<ParticipationImportResult> {
   console.log('Importing participation simplifiée...');
   
-  // ÉTAPE PRÉLIMINAIRE: Charger le mapping des événements pour validation
-  console.log('[MAPPING] Chargement du mapping des événements...');
-  const { data: events } = await supabaseClient
-    .from('events')
-    .select('id, id_event');
+  // ÉTAPE PRÉLIMINAIRE: Charger tous les événements (publiés + staging) pour validation
+  console.log('[MAPPING] Chargement des événements publiés et en staging...');
+  const [{ data: publishedEvents }, { data: stagingEvents }] = await Promise.all([
+    supabaseClient.from('events').select('id, id_event'),
+    supabaseClient.from('staging_events_import').select('id, id_event')
+  ]);
   
-  const eventMap = new Map(
-    events
-      ?.filter((e: any) => e.id_event)
-      .map((e: any) => [e.id_event, e.id])
-      || []
-  );
-  console.log(`[MAPPING] ${eventMap.size} événements mappés (id_event → Supabase)`);
+  const allEventIds = new Set<string>([
+    ...(publishedEvents?.map((e: any) => e.id_event).filter(Boolean) ?? []),
+    ...(stagingEvents?.map((e: any) => e.id_event).filter(Boolean) ?? [])
+  ]);
+  console.log(`[MAPPING] ${allEventIds.size} événements uniques trouvés (publiés + staging)`);
   
   // Mapping exposants en amont
   const { data: exposants } = await supabaseClient
@@ -96,8 +95,8 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     const rawEventField = f['id_event_text'];
     const rawEventId = Array.isArray(rawEventField) ? rawEventField[0]?.trim() : rawEventField?.trim();
 
-    // Validation existence de l'événement (mais on n'utilise plus l'UUID)
-    const exists = eventMap.has(rawEventId);
+    // Validation existence de l'événement (publiés + staging)
+    const exists = allEventIds.has(rawEventId);
     if (!exists) {
       participationErrors.push({
         record_id: recordId,
