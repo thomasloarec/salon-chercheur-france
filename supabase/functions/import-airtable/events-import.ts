@@ -138,25 +138,49 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
 
   // Insert events into Supabase events_import table
   if (eventsToInsert.length > 0) {
-    console.log(`[DEBUG] Insertion de ${eventsToInsert.length} enregistrements dans la table staging_events_import`);
-    
-    try {
-      const { data: eventsData, error: eventsError } = await supabaseClient
-        .from('staging_events_import')
-        .upsert(eventsToInsert, { onConflict: 'id_event' })
-        .select();
+    // 1) Récupérer les id_event déjà en production
+    const candidateIds = eventsToInsert.map(e => e.id_event);
+    const { data: existingInProd, error: fetchErr } = await supabaseClient
+      .from('events')
+      .select('id_event')
+      .in('id_event', candidateIds);
 
-      if (eventsError) {
-        console.error(`[ERROR] Échec insertion dans staging_events_import :`, eventsError);
-        // Ajouter les erreurs d'upsert aux eventErrors plutôt que de throw
-        eventErrors.push({
-          record_id: 'UPSERT_ERROR',
-          reason: `Erreur upsert staging: ${eventsError.message}`
-        });
-        return { eventsImported: 0, eventErrors };
-      } else {
-        console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans staging_events_import`);
-      }
+    if (fetchErr) {
+      console.error(`[ERROR] Échec récupération événements existants :`, fetchErr);
+      eventErrors.push({
+        record_id: 'FETCH_EXISTING_ERROR',
+        reason: `Erreur fetch existing: ${fetchErr.message}`
+      });
+      return { eventsImported: 0, eventErrors };
+    }
+
+    const existingIds = new Set((existingInProd || []).map(e => e.id_event));
+
+    // 2) Ne conserver que les événements **nouveaux** pour le staging
+    const newEventsForStaging = eventsToInsert.filter(e => 
+      !existingIds.has(e.id_event)
+    );
+
+    console.log(`[DEBUG] ${newEventsForStaging.length} événements uniques à importer en staging (${existingIds.size} déjà existants ignorés)`);
+
+    // 3) Upsert en staging uniquement des nouveaux
+    if (newEventsForStaging.length > 0) {
+      try {
+        const { data: eventsData, error: eventsError } = await supabaseClient
+          .from('staging_events_import')
+          .upsert(newEventsForStaging, { onConflict: 'id_event' })
+          .select();
+
+        if (eventsError) {
+          console.error(`[ERROR] Échec insertion dans staging_events_import :`, eventsError);
+          eventErrors.push({
+            record_id: 'UPSERT_ERROR',
+            reason: `Erreur upsert staging: ${eventsError.message}`
+          });
+          return { eventsImported: 0, eventErrors };
+        } else {
+          console.log(`[DEBUG] ${eventsData?.length || 0} enregistrements insérés avec succès dans staging_events_import`);
+        }
 
       // eventsImported sera mis à jour avec totalProcessed après INSERT/UPDATE
       console.log(`Events prepared for processing: ${eventsToInsert.length}`);
