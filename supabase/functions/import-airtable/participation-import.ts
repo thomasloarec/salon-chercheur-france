@@ -50,6 +50,43 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
   ]);
   console.log(`[MAPPING] ${allEventIds.size} événements uniques trouvés (publiés + staging)`);
   
+  // ÉTAPE INTERMÉDIAIRE: Synchroniser les événements staging manquants vers events
+  console.log('[SYNC] Synchronisation des événements staging vers events...');
+  const publishedEventIds = new Set(publishedEvents?.map((e: any) => e.id_event).filter(Boolean) ?? []);
+  const eventsOnlyInStaging = stagingEvents?.filter((se: any) => 
+    se.id_event && !publishedEventIds.has(se.id_event)
+  ) ?? [];
+
+  if (eventsOnlyInStaging.length > 0) {
+    console.log(`[SYNC] ${eventsOnlyInStaging.length} événements à synchroniser depuis staging...`);
+    
+    const { error: syncError } = await supabaseClient
+      .from('events')
+      .upsert(
+        eventsOnlyInStaging.map((e: any) => ({
+          ...e,
+          visible: false, // Marquer comme invisible car non validé
+          updated_at: new Date().toISOString()
+        })),
+        { onConflict: 'id_event' }
+      );
+      
+    if (syncError) {
+      console.error('[SYNC ERROR]', syncError);
+      return { 
+        participationsImported: 0, 
+        participationErrors: [{ 
+          record_id: 'SYNC_ERROR', 
+          reason: `Erreur sync staging→events: ${syncError.message}` 
+        }] 
+      };
+    }
+    
+    console.log(`[SYNC] ${eventsOnlyInStaging.length} événements synchronisés avec visible=false`);
+  } else {
+    console.log('[SYNC] Aucun événement staging à synchroniser');
+  }
+  
   // Mapping exposants en amont
   const { data: exposants } = await supabaseClient
     .from('exposants')
