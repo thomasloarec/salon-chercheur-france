@@ -99,7 +99,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       const { data, error } = await supabase
         .from(tableName)
         .update({ visible: newStatus })
-        .eq('id_event', event.id)
+        .eq('id_event', event.id_event)
         .select()
         .single();
 
@@ -164,7 +164,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       const { error } = await supabase
         .from(tableName)
         .delete()
-        .eq('id_event', event.id);
+        .eq('id_event', event.id_event);
 
       if (error) {
         console.error('Supabase delete error:', error);
