@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,10 +7,10 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, ExternalLink } from 'lucide-react';
-import { handleOAuthLogin } from '@/lib/oauthHandlers';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { ExternalLink, Loader2 } from 'lucide-react';
 import { CrmProvider } from '@/types/crm';
+import { useCrmConnections } from '@/hooks/useCrmConnections';
 
 interface CrmConnectModalProps {
   open: boolean;
@@ -50,23 +50,14 @@ const crmProviders: Array<{
 ];
 
 export const CrmConnectModal = ({ open, onOpenChange }: CrmConnectModalProps) => {
-  const [isConnecting, setIsConnecting] = useState<CrmProvider | null>(null);
-  const { toast } = useToast();
+  const { connections, loading, connectCrm, disconnectCrm } = useCrmConnections();
 
   const handleConnect = async (provider: CrmProvider) => {
-    setIsConnecting(provider);
-    try {
-      await handleOAuthLogin(provider);
-      // Le modal se ferme automatiquement lors de la redirection OAuth
-    } catch (error) {
-      console.error('Erreur lors de la connexion CRM:', error);
-      toast({
-        title: "Erreur de connexion",
-        description: "Impossible d'initier la connexion OAuth.",
-        variant: "destructive",
-      });
-      setIsConnecting(null);
-    }
+    await connectCrm(provider);
+  };
+
+  const handleDisconnect = async (provider: CrmProvider) => {
+    await disconnectCrm(provider);
   };
 
   return (
@@ -82,32 +73,54 @@ export const CrmConnectModal = ({ open, onOpenChange }: CrmConnectModalProps) =>
         </DialogHeader>
 
         <div className="space-y-3 py-4">
-          {crmProviders.map((crm) => (
-            <Button
-              key={crm.provider}
-              onClick={() => handleConnect(crm.provider)}
-              disabled={isConnecting !== null}
-              className={`w-full h-14 text-white ${crm.color} flex items-center justify-between p-4 rounded-lg transition-colors`}
-              variant="default"
-            >
-              <div className="flex flex-col items-start">
-                <span className="font-medium">{crm.name}</span>
-                <span className="text-xs opacity-90">{crm.description}</span>
+          {crmProviders.map((crm) => {
+            const isConnected = connections[crm.provider];
+            
+            return (
+              <div key={crm.provider} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex flex-col">
+                  <span className="font-medium">{crm.name}</span>
+                  <span className="text-xs text-muted-foreground">{crm.description}</span>
+                </div>
+                
+                {isConnected ? (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      Connecté
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDisconnect(crm.provider)}
+                      disabled={loading}
+                    >
+                      Déconnecter
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => handleConnect(crm.provider)}
+                    disabled={loading}
+                    className={`text-white ${crm.color}`}
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                      <>
+                        Connecter
+                        <ExternalLink className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
-              {isConnecting === crm.provider ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-              ) : (
-                <ExternalLink className="h-5 w-5" />
-              )}
-            </Button>
-          ))}
+            );
+          })}
         </div>
 
         <div className="flex justify-center pt-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isConnecting !== null}
+            disabled={loading}
             className="px-8"
           >
             Annuler
