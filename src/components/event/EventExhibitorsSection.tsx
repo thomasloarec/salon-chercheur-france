@@ -69,7 +69,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
             )
           `)
           .eq('id_event', event.id)
-          .order('nom_exposant', { foreignTable: 'exposants', ascending: true });
+          .order('nom_exposant', { referencedTable: 'exposants', ascending: true });
 
         if (error) {
           console.error('❌ Error fetching exhibitors:', error);

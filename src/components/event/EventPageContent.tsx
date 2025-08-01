@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
-import { EventExhibitorsDebug } from '@/components/event/EventExhibitorsDebug';
 import { EventSidebar } from '@/components/event/EventSidebar';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
@@ -29,35 +28,12 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 }) => {
   const { user } = useAuth();
   
-  // FORCE DEBUG DISPLAY - Pour diagnostiquer le problème
-  const [showDebug, setShowDebug] = useState(true); // Force à true pour test
-  
-  console.log('🔍 EventPageContent - rendered, user:', user ? 'connected' : 'anonymous', 'event:', event.nom_event);
-  console.log('🔍 EventPageContent - FORCE DEBUG MODE ACTIVE');
-  
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
   const [crmProspects] = useState<Array<{ name: string; stand?: string }>>([
     { name: 'Entreprise A', stand: 'A12' },
     { name: 'Entreprise B', stand: 'B15' },
   ]);
-  
-  useEffect(() => {
-    // Client-side only - check for debug flag and hostname
-    try {
-      const debug = new URLSearchParams(window.location.search).get('debug') === 'true';
-      const isLovableDev = window.location.hostname.includes('lovable.dev');
-      const shouldShowDebug = debug || isLovableDev || true; // Force true pour diagnostic
-      
-      console.log('🔍 EventPageContent - hostname:', window.location.hostname);
-      console.log('🔍 EventPageContent - debug flag:', debug, 'shouldShowDebug:', shouldShowDebug);
-      
-      setShowDebug(shouldShowDebug);
-    } catch (error) {
-      console.error('🔍 EventPageContent - Error in useEffect:', error);
-      setShowDebug(true); // Force true en cas d'erreur
-    }
-  }, []);
 
   const isAdmin = user?.email === 'admin@salonspro.com';
 
@@ -116,28 +92,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               {/* Colonne principale */}
               <div className="lg:col-span-2 space-y-8">
                 <EventAbout event={event} />
-                
-                {/* SUPER DEBUG VISIBLE - DOIT TOUJOURS APPARAITRE */}
-                <div style={{
-                  backgroundColor: 'red',
-                  color: 'white',
-                  padding: '20px',
-                  margin: '20px 0',
-                  border: '5px solid yellow',
-                  fontSize: '20px',
-                  textAlign: 'center'
-                }}>
-                  🚨 DEBUG ACTIF - SI TU VOIS CECI LE CODE EST DEPLOYE 🚨
-                  <br />
-                  showDebug: {showDebug ? 'TRUE' : 'FALSE'}
-                  <br />
-                  Event: {event.nom_event}
-                </div>
-                
-                {/* Debug temporaire - visible avec ?debug=true ou sur lovable.dev */}
-                {showDebug && <EventExhibitorsDebug event={event} />}
-                
-                {/* Section des exposants avec fallback pour le bouton CRM */}
                 <EventExhibitorsSection event={event} />
               </div>
 
