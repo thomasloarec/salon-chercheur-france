@@ -54,8 +54,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         console.log('📤 Requête participation pour id_event:', event.id);
         console.log('🔍 Type et valeur de event.id:', typeof event.id, JSON.stringify(event.id));
         
-        // Nouvelle requête utilisant la table participation avec jointure
-        // Utiliser le client anonyme pour éviter les restrictions RLS
+        // Requête avec tri alphabétique côté serveur
         const { data, error } = await supabase
           .from('participation')
           .select(`
@@ -68,7 +67,8 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
               exposant_description
             )
           `)
-          .eq('id_event', event.id);
+          .eq('id_event', event.id)
+          .order('nom_exposant', { foreignTable: 'exposants', ascending: true });
 
         if (error) {
           console.error('❌ Error fetching exhibitors:', error);
@@ -90,13 +90,8 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
             };
           });
           
-          // Tri alphabétique par nom_exposant
-          const sortedExhibitors = mappedExhibitors.sort((a, b) => 
-            a.nom_exposant.localeCompare(b.nom_exposant)
-          );
-          
-          console.log('📋 Exposants finaux mappés et triés:', sortedExhibitors);
-          setExhibitors(sortedExhibitors);
+          console.log('📋 Exposants finaux mappés (triés côté serveur):', mappedExhibitors);
+          setExhibitors(mappedExhibitors);
         }
       } catch (error) {
         console.error('Unexpected error fetching exhibitors:', error);
@@ -158,7 +153,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
       <div className="bg-white rounded-lg border p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold">
-            Exposants (Debug: mounted={mounted.toString()}, loading={loading.toString()})
+            Exposants
           </h3>
           <Button 
             className="bg-accent hover:bg-accent/90"
@@ -191,7 +186,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     <div className="bg-white rounded-lg border p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold">
-          Exposants ({exhibitors.length}) - Debug: {window.location.hostname}
+          Exposants ({exhibitors.length})
         </h3>
         <Button 
           className="bg-accent hover:bg-accent/90"
