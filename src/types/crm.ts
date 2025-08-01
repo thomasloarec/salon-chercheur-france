@@ -12,6 +12,17 @@ export interface CrmConnection {
   updated_at: string;
 }
 
+export interface CrmConnectionEncrypted {
+  id: string;
+  user_id: string;
+  provider: CrmProvider;
+  access_token_enc: Uint8Array;
+  refresh_token_enc?: Uint8Array;
+  expires_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CrmCompany {
   id: string;
   user_id: string;

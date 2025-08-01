@@ -79,20 +79,16 @@ export async function handleOAuthCallback(provider: CrmProvider, code: string, s
       ? new Date(Date.now() + token.expires_in * 1000).toISOString()
       : null;
 
-    // Upsert connection in database
-    const { error: dbError } = await supabase
-      .from('user_crm_connections')
-      .upsert({
+    // Store encrypted tokens using edge function
+    const { error: dbError } = await supabase.functions.invoke('update-crm-tokens', {
+      body: {
         user_id: user.id,
         provider,
         access_token: token.access_token,
         refresh_token: token.refresh_token || null,
-        expires_at: expiresAt,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,provider',
-        ignoreDuplicates: false,
-      });
+        expires_at: expiresAt
+      }
+    });
 
     if (dbError) {
       console.error('Database error saving CRM connection:', dbError);

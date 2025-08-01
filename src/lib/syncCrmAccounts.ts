@@ -2,28 +2,18 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getCrmConfig } from './crmConfig';
 import { CrmProvider, CrmAccount, CrmConnection } from '@/types/crm';
+import { getDecryptedCrmConnection, updateEncryptedCrmTokens } from './crmEncryption';
 import dayjs from 'dayjs';
 
 export async function syncCrmAccounts(userId: string, provider: CrmProvider): Promise<void> {
   console.log(`Starting CRM sync for user ${userId} with provider ${provider}`);
   
-  // Get user's CRM connection
-  const { data: connectionData, error: connectionError } = await supabase
-    .from('user_crm_connections')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('provider', provider)
-    .single();
+  // Get user's decrypted CRM connection
+  const connection = await getDecryptedCrmConnection(userId, provider);
 
-  if (connectionError || !connectionData) {
+  if (!connection) {
     throw new Error(`No CRM connection found for provider ${provider}`);
   }
-
-  // Cast the connection data to proper type
-  const connection: CrmConnection = {
-    ...connectionData,
-    provider: connectionData.provider as CrmProvider
-  };
 
   // Check if token needs refresh
   let accessToken = connection.access_token;
@@ -72,18 +62,14 @@ async function refreshToken(connection: CrmConnection): Promise<string> {
 
   const tokenData = await response.json();
   
-  // Update token in database
-  await supabase
-    .from('user_crm_connections')
-    .update({
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token || connection.refresh_token,
-      expires_at: tokenData.expires_in 
-        ? dayjs().add(tokenData.expires_in, 'seconds').toISOString()
-        : null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', connection.id);
+  // Update encrypted tokens in database
+  await updateEncryptedCrmTokens(connection.user_id, connection.provider, {
+    access_token: tokenData.access_token,
+    refresh_token: tokenData.refresh_token || connection.refresh_token,
+    expires_at: tokenData.expires_in 
+      ? dayjs().add(tokenData.expires_in, 'seconds').toISOString()
+      : null,
+  });
 
   return tokenData.access_token;
 }

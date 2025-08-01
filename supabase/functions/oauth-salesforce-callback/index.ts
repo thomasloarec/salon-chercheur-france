@@ -125,14 +125,53 @@ serve(async (req) => {
       ? new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
       : null;
 
-    // Store tokens in user_crm_connections table
+    // Store encrypted tokens in user_crm_connections table
+    const encryptionKey = Deno.env.get('CRM_ENCRYPTION_KEY') || 'dev-encryption-key-change-in-production';
+    
+    // Encrypt tokens using pgcrypto
+    const { data: encryptedAccessToken, error: encryptError1 } = await supabase.rpc('pgp_sym_encrypt', {
+      data: tokenData.access_token,
+      psw: encryptionKey
+    });
+    
+    if (encryptError1) {
+      console.error('❌ Error encrypting access token:', encryptError1);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Failed to encrypt access token' 
+      }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      });
+    }
+
+    let encryptedRefreshToken = null;
+    if (tokenData.refresh_token) {
+      const { data: encRefreshToken, error: encryptError2 } = await supabase.rpc('pgp_sym_encrypt', {
+        data: tokenData.refresh_token,
+        psw: encryptionKey
+      });
+      
+      if (encryptError2) {
+        console.error('❌ Error encrypting refresh token:', encryptError2);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Failed to encrypt refresh token' 
+        }), { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        });
+      }
+      encryptedRefreshToken = encRefreshToken;
+    }
+
     const { error: dbError } = await supabase
       .from('user_crm_connections')
       .upsert({
         user_id: user.id,
         provider: 'salesforce',
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
+        access_token_enc: encryptedAccessToken,
+        refresh_token_enc: encryptedRefreshToken,
         expires_at: expiresAt,
         updated_at: new Date().toISOString()
       }, {
