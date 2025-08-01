@@ -545,13 +545,6 @@ export type Database = {
             foreignKeyName: "exhibitor_matches_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "events_geo"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "exhibitor_matches_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
             referencedRelation: "events_old"
             referencedColumns: ["id"]
           },
@@ -578,6 +571,33 @@ export type Database = {
           created_at?: string | null
           exposant_description?: string | null
           id?: number
+          id_exposant?: string | null
+          nom_exposant?: string | null
+          website_exposant?: string | null
+        }
+        Relationships: []
+      }
+      exposants_backup_20250101: {
+        Row: {
+          created_at: string | null
+          exposant_description: string | null
+          id: number | null
+          id_exposant: string | null
+          nom_exposant: string | null
+          website_exposant: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          exposant_description?: string | null
+          id?: number | null
+          id_exposant?: string | null
+          nom_exposant?: string | null
+          website_exposant?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          exposant_description?: string | null
+          id?: number | null
           id_exposant?: string | null
           nom_exposant?: string | null
           website_exposant?: string | null
@@ -615,10 +635,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "favorites_event_fkey"
+            columns: ["event_uuid"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "favorites_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
         ]
@@ -647,7 +681,7 @@ export type Database = {
       participation: {
         Row: {
           created_at: string | null
-          id_event: string
+          id_event: string | null
           id_exposant: string
           id_participation: string
           stand_exposant: string | null
@@ -656,7 +690,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          id_event: string
+          id_event?: string | null
           id_exposant: string
           id_participation?: string
           stand_exposant?: string | null
@@ -665,7 +699,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          id_event?: string
+          id_event?: string | null
           id_exposant?: string
           id_participation?: string
           stand_exposant?: string | null
@@ -674,11 +708,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "participation_id_event_fkey"
+            foreignKeyName: "fk_participation_event"
             columns: ["id_event"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id_event"]
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "participation_id_exposant_fkey"
@@ -688,6 +729,36 @@ export type Database = {
             referencedColumns: ["id_exposant"]
           },
         ]
+      }
+      participation_backup_20250101: {
+        Row: {
+          created_at: string | null
+          id_event: string | null
+          id_exposant: string | null
+          id_participation: string | null
+          stand_exposant: string | null
+          urlexpo_event: string | null
+          website_exposant: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id_event?: string | null
+          id_exposant?: string | null
+          id_participation?: string | null
+          stand_exposant?: string | null
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id_event?: string | null
+          id_exposant?: string | null
+          id_participation?: string | null
+          stand_exposant?: string | null
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Relationships: []
       }
       participation_import_errors: {
         Row: {
@@ -1054,14 +1125,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "communes_dep_code_fkey"
-            columns: ["dep_code"]
-            isOneToOne: false
-            referencedRelation: "departements"
-            referencedColumns: ["code"]
-          },
-          {
-            foreignKeyName: "communes_region_code_fkey"
+            foreignKeyName: "departements_region_code_fkey"
             columns: ["region_code"]
             isOneToOne: false
             referencedRelation: "regions"
