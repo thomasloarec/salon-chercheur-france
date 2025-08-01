@@ -36,10 +36,10 @@ export const EventExhibitorsSectionFallback = ({ event }: EventExhibitorsSection
       }
     };
     
-    if (event.id_event) {
+    if (event.id) {
       getCount();
     }
-  }, [event.id_event]);
+  }, [event.id]);
 
   console.log('🔄 EventExhibitorsSectionFallback - Force rendu, visible:', isVisible, 'count:', exhibitorCount);
 
