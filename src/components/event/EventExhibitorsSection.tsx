@@ -110,16 +110,25 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   // Force l'affichage si le composant n'est pas monté (problème d'hydratation)
   if (!mounted) {
+    console.log('❌ EventExhibitorsSection - Composant pas encore monté, affichage fallback');
     return (
       <div className="bg-white rounded-lg border p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold">Exposants</h3>
+          <h3 className="text-xl font-semibold">Exposants (chargement...)</h3>
           <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
         </div>
         <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
       </div>
     );
   }
+
+  console.log('🔍 EventExhibitorsSection - État actuel:', { 
+    mounted, 
+    loading, 
+    exhibitorsCount: exhibitors.length,
+    eventId: event.id_event,
+    hostname: window.location.hostname 
+  });
 
   if (loading) {
     return (
@@ -138,11 +147,17 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
   // Si aucun exposant trouvé, affichage du placeholder
   if (exhibitors.length === 0) {
     console.log('📋 EventExhibitorsSection - Aucun exposant trouvé, affichage placeholder');
+    console.log('🔍 Debug état final:', { 
+      loading: false,
+      mounted: true,
+      exhibitors: exhibitors,
+      rawEvent: event 
+    });
     return (
       <div className="bg-white rounded-lg border p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold">
-            Exposants
+            Exposants (Debug: mounted={mounted.toString()}, loading={loading.toString()})
           </h3>
           <Button 
             className="bg-accent hover:bg-accent/90"
@@ -169,12 +184,13 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
   // Slice selon showAll - limité à 9 exposants par défaut
   const toDisplay = showAll ? exhibitors : exhibitors.slice(0, 9);
   console.log('📋 EventExhibitorsSection - Affichage liste exposants, total:', exhibitors.length, 'affichés:', toDisplay.length);
+  console.log('🔍 État final avant rendu liste:', { mounted, loading, exhibitorsLength: exhibitors.length });
 
   return (
     <div className="bg-white rounded-lg border p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold">
-          Exposants ({exhibitors.length})
+          Exposants ({exhibitors.length}) - Debug: {window.location.hostname}
         </h3>
         <Button 
           className="bg-accent hover:bg-accent/90"

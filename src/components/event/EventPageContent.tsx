@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
+import { EventExhibitorsSectionFallback } from '@/components/event/EventExhibitorsSectionFallback';
 import { EventSidebar } from '@/components/event/EventSidebar';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
@@ -29,6 +30,8 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   const { user } = useAuth();
   
   console.log('🔍 EventPageContent - rendered, user:', user ? 'connected' : 'anonymous', 'event:', event.nom_event);
+  console.log('🔍 EventPageContent - hostname:', window.location.hostname);
+  console.log('🔍 EventPageContent - isProduction:', window.location.hostname.includes('lotexpo.com'));
   
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
@@ -37,8 +40,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
     { name: 'Entreprise B', stand: 'B15' },
   ]);
   
+  // Detection environment de production
+  const isProduction = window.location.hostname.includes('lotexpo.com');
+  
   useEffect(() => {
-    console.log('🔍 EventPageContent - useEffect triggered, about to render EventExhibitorsSection');
+    console.log('🔍 EventPageContent - useEffect triggered, environment:', isProduction ? 'PRODUCTION' : 'DEV');
   }, []);
 
   const isAdmin = user?.email === 'admin@salonspro.com';
@@ -98,7 +104,21 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               {/* Colonne principale */}
               <div className="lg:col-span-2 space-y-8">
                 <EventAbout event={event} />
-                <EventExhibitorsSection event={event} />
+                
+                {/* Rendu conditionnel pour debug */}
+                {isProduction ? (
+                  <div className="space-y-4">
+                    <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-3">
+                      <p className="text-yellow-800 text-sm">
+                        🚧 <strong>Mode Debug Production</strong> - Affichage de debug activé
+                      </p>
+                    </div>
+                    <EventExhibitorsSectionFallback event={event} />
+                    <EventExhibitorsSection event={event} />
+                  </div>
+                ) : (
+                  <EventExhibitorsSection event={event} />
+                )}
               </div>
 
               {/* Sidebar */}
