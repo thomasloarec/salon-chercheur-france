@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CrmProvider } from '@/types/crm';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 type CrmConnectionStatus = {
   [K in CrmProvider]?: boolean;
@@ -11,9 +12,16 @@ export const useCrmConnections = () => {
   const [connections, setConnections] = useState<CrmConnectionStatus>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Récupérer les connexions existantes
   const fetchConnections = async () => {
+    // Si l'utilisateur n'est pas connecté, ne pas faire d'appel
+    if (!user) {
+      setConnections({});
+      return;
+    }
+
     const { data, error } = await supabase
       .from('user_crm_connections')
       .select('provider');
@@ -31,6 +39,16 @@ export const useCrmConnections = () => {
 
   // Connecter un CRM
   const connectCrm = async (provider: CrmProvider) => {
+    // Si l'utilisateur n'est pas connecté, rediriger vers la page de connexion
+    if (!user) {
+      toast({
+        title: "Authentification requise",
+        description: "Veuillez vous connecter pour accéder aux fonctionnalités CRM.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Récupérer l'URL d'installation
@@ -97,6 +115,8 @@ export const useCrmConnections = () => {
 
   // Déconnecter un CRM
   const disconnectCrm = async (provider: CrmProvider) => {
+    if (!user) return;
+
     const { error } = await supabase
       .from('user_crm_connections')
       .delete()
@@ -113,7 +133,7 @@ export const useCrmConnections = () => {
 
   useEffect(() => {
     fetchConnections();
-  }, []);
+  }, [user]);
 
   return {
     connections,

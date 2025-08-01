@@ -46,6 +46,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         console.log('📤 Requête participation pour id_event:', event.id_event);
         
         // Nouvelle requête utilisant la table participation avec jointure
+        // Utiliser le client anonyme pour éviter les restrictions RLS
         const { data, error } = await supabase
           .from('participation')
           .select(`
