@@ -29,9 +29,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 }) => {
   const { user } = useAuth();
   
+  // Debug flag from URL params
+  const debug = new URLSearchParams(window.location.search).get('debug') === 'true';
+  const isLovableDev = window.location.hostname.includes('lovable.dev');
+  const showDebug = debug || isLovableDev;
+  
   console.log('🔍 EventPageContent - rendered, user:', user ? 'connected' : 'anonymous', 'event:', event.nom_event);
   console.log('🔍 EventPageContent - hostname:', window.location.hostname);
-  console.log('🔍 EventPageContent - isProduction:', window.location.hostname.includes('lotexpo.com'));
+  console.log('🔍 EventPageContent - debug flag:', debug, 'showDebug:', showDebug);
   
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
@@ -40,12 +45,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
     { name: 'Entreprise B', stand: 'B15' },
   ]);
   
-  // Detection environment de production
-  const isProduction = window.location.hostname.includes('lotexpo.com');
-  
   useEffect(() => {
-    console.log('🔍 EventPageContent - useEffect triggered, environment:', isProduction ? 'PRODUCTION' : 'DEV');
-  }, []);
+    console.log('🔍 EventPageContent - useEffect triggered, showDebug:', showDebug);
+  }, [showDebug]);
 
   const isAdmin = user?.email === 'admin@salonspro.com';
 
@@ -105,8 +107,8 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               <div className="lg:col-span-2 space-y-8">
                 <EventAbout event={event} />
                 
-                {/* Debug temporaire */}
-                <EventExhibitorsDebug event={event} />
+                {/* Debug temporaire - visible avec ?debug=true ou sur lovable.dev */}
+                {showDebug && <EventExhibitorsDebug event={event} />}
                 
                 {/* Section des exposants avec fallback pour le bouton CRM */}
                 <EventExhibitorsSection event={event} />
