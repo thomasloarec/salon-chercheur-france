@@ -23,23 +23,30 @@ export const useCrmConnections = () => {
       return;
     }
 
-    console.log('🔍 useCrmConnections: Récupération des connexions pour user:', user.id);
-    const { data, error } = await supabase
-      .from('user_crm_connections')
-      .select('provider');
-    
-    if (error) {
-      console.error('❌ useCrmConnections: Erreur récupération connexions:', error);
-      return;
+    try {
+      console.log('🔍 useCrmConnections: Récupération des connexions pour user:', user.id);
+      const { data, error } = await supabase
+        .from('user_crm_connections')
+        .select('provider');
+      
+      if (error) {
+        console.error('❌ useCrmConnections: Erreur récupération connexions:', error);
+        // En cas d'erreur, définir un état vide plutôt que de laisser undefined
+        setConnections({});
+        return;
+      }
+      
+      const status: CrmConnectionStatus = {};
+      if (data) {
+        data.forEach(conn => {
+          status[conn.provider as CrmProvider] = true;
+        });
+      }
+      setConnections(status);
+    } catch (error) {
+      console.error('❌ useCrmConnections: Erreur inattendue lors de la récupération:', error);
+      setConnections({});
     }
-    
-    const status: CrmConnectionStatus = {};
-    if (data) {
-      data.forEach(conn => {
-        status[conn.provider as CrmProvider] = true;
-      });
-    }
-    setConnections(status);
   };
 
   // Connecter un CRM
