@@ -117,6 +117,23 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               <div className="lg:col-span-2 space-y-8">
                 <EventAbout event={event} />
                 
+                {/* SUPER DEBUG VISIBLE - DOIT TOUJOURS APPARAITRE */}
+                <div style={{
+                  backgroundColor: 'red',
+                  color: 'white',
+                  padding: '20px',
+                  margin: '20px 0',
+                  border: '5px solid yellow',
+                  fontSize: '20px',
+                  textAlign: 'center'
+                }}>
+                  🚨 DEBUG ACTIF - SI TU VOIS CECI LE CODE EST DEPLOYE 🚨
+                  <br />
+                  showDebug: {showDebug ? 'TRUE' : 'FALSE'}
+                  <br />
+                  Event: {event.nom_event}
+                </div>
+                
                 {/* Debug temporaire - visible avec ?debug=true ou sur lovable.dev */}
                 {showDebug && <EventExhibitorsDebug event={event} />}
                 
