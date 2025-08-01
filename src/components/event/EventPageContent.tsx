@@ -29,10 +29,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 }) => {
   const { user } = useAuth();
   
-  // Debug flag from URL params - handled client-side to avoid SSR issues
-  const [showDebug, setShowDebug] = useState(false);
+  // FORCE DEBUG DISPLAY - Pour diagnostiquer le problème
+  const [showDebug, setShowDebug] = useState(true); // Force à true pour test
   
   console.log('🔍 EventPageContent - rendered, user:', user ? 'connected' : 'anonymous', 'event:', event.nom_event);
+  console.log('🔍 EventPageContent - FORCE DEBUG MODE ACTIVE');
   
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
@@ -43,14 +44,19 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   
   useEffect(() => {
     // Client-side only - check for debug flag and hostname
-    const debug = new URLSearchParams(window.location.search).get('debug') === 'true';
-    const isLovableDev = window.location.hostname.includes('lovable.dev');
-    const shouldShowDebug = debug || isLovableDev;
-    
-    console.log('🔍 EventPageContent - hostname:', window.location.hostname);
-    console.log('🔍 EventPageContent - debug flag:', debug, 'shouldShowDebug:', shouldShowDebug);
-    
-    setShowDebug(shouldShowDebug);
+    try {
+      const debug = new URLSearchParams(window.location.search).get('debug') === 'true';
+      const isLovableDev = window.location.hostname.includes('lovable.dev');
+      const shouldShowDebug = debug || isLovableDev || true; // Force true pour diagnostic
+      
+      console.log('🔍 EventPageContent - hostname:', window.location.hostname);
+      console.log('🔍 EventPageContent - debug flag:', debug, 'shouldShowDebug:', shouldShowDebug);
+      
+      setShowDebug(shouldShowDebug);
+    } catch (error) {
+      console.error('🔍 EventPageContent - Error in useEffect:', error);
+      setShowDebug(true); // Force true en cas d'erreur
+    }
   }, []);
 
   const isAdmin = user?.email === 'admin@salonspro.com';
