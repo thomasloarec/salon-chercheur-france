@@ -52,6 +52,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
       try {
         console.log('📤 Requête participation pour id_event:', event.id_event);
+        console.log('🔍 Type et valeur de event.id_event:', typeof event.id_event, JSON.stringify(event.id_event));
         
         // Nouvelle requête utilisant la table participation avec jointure
         // Utiliser le client anonyme pour éviter les restrictions RLS
