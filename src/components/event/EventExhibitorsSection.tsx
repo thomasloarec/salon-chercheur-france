@@ -55,7 +55,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         console.log('📤 Requête participation pour event.id (UUID):', event.id);
         console.log('🔍 Type et valeur de event.id:', typeof event.id, JSON.stringify(event.id));
         
-        // Requête avec tri alphabétique côté serveur
+        // Requête participation avec exposants (sans tri côté serveur pour l'instant)
         const { data, error } = await supabase
           .from('participation')
           .select(`
@@ -68,8 +68,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
               exposant_description
             )
           `)
-          .eq('id_event', event.id)
-          .order('nom_exposant', { referencedTable: 'exposants', ascending: true });
+          .eq('id_event', event.id);
 
         if (error) {
           console.error('❌ Error fetching exhibitors:', error);
@@ -78,7 +77,17 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           console.log('✅ Données brutes de participation:', data);
           console.log('📤 Exposants chargés via participation:', data?.length || 0);
           
-          const mappedExhibitors: Exhibitor[] = (data || []).map((participation: any) => {
+          // Tri alphabétique côté client sur nom_exposant
+          const sortedData = (data || []).sort((a: any, b: any) => {
+            const nameA = a.exposants?.nom_exposant || '';
+            const nameB = b.exposants?.nom_exposant || '';
+            return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
+          });
+          
+          console.log('🔤 Premier exposant après tri:', sortedData[0]?.exposants?.nom_exposant);
+          console.log('🔤 Dernier exposant après tri:', sortedData[sortedData.length - 1]?.exposants?.nom_exposant);
+          
+          const mappedExhibitors: Exhibitor[] = sortedData.map((participation: any) => {
             console.log('🔄 Mapping participation:', participation);
             const exposant = participation.exposants;
             return {
@@ -91,7 +100,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
             };
           });
           
-          console.log('📋 Exposants finaux mappés (triés côté serveur):', mappedExhibitors);
+          console.log('📋 Exposants finaux mappés et triés:', mappedExhibitors);
           setExhibitors(mappedExhibitors);
         }
       } catch (error) {
