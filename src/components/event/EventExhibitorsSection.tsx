@@ -31,10 +31,18 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
   const [showAll, setShowAll] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
   const [showCrmModal, setShowCrmModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Force montage du composant pour éviter les problèmes de SSR/hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchExhibitors = async () => {
       console.log('🔍 EventExhibitorsSection - event.id_event:', event.id_event);
+      console.log('🔍 EventExhibitorsSection - Current environment:', window.location.hostname);
+      console.log('🔍 EventExhibitorsSection - Component mounted, loading:', loading);
       
       if (!event.id_event) {
         console.log('❌ Pas d\'id_event, arrêt du chargement');
@@ -100,6 +108,19 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     fetchExhibitors();
   }, [event.id_event]); // Utilise la clé métier, pas l'UUID
 
+  // Force l'affichage si le composant n'est pas monté (problème d'hydratation)
+  if (!mounted) {
+    return (
+      <div className="bg-white rounded-lg border p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-semibold">Exposants</h3>
+          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="bg-white rounded-lg p-6">
@@ -116,6 +137,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   // Si aucun exposant trouvé, affichage du placeholder
   if (exhibitors.length === 0) {
+    console.log('📋 EventExhibitorsSection - Aucun exposant trouvé, affichage placeholder');
     return (
       <div className="bg-white rounded-lg border p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -146,6 +168,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   // Slice selon showAll - limité à 9 exposants par défaut
   const toDisplay = showAll ? exhibitors : exhibitors.slice(0, 9);
+  console.log('📋 EventExhibitorsSection - Affichage liste exposants, total:', exhibitors.length, 'affichés:', toDisplay.length);
 
   return (
     <div className="bg-white rounded-lg border p-6 space-y-4">

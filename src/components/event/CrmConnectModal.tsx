@@ -51,6 +51,8 @@ const crmProviders: Array<{
 
 export const CrmConnectModal = ({ open, onOpenChange }: CrmConnectModalProps) => {
   const { connections, loading, connectCrm, disconnectCrm } = useCrmConnections();
+  
+  console.log('🔍 CrmConnectModal - rendered, open:', open, 'connections:', connections, 'loading:', loading);
 
   const handleConnect = async (provider: CrmProvider) => {
     await connectCrm(provider);

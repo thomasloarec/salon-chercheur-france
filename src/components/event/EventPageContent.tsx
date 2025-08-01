@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,12 +27,19 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   onEventDeleted
 }) => {
   const { user } = useAuth();
+  
+  console.log('🔍 EventPageContent - rendered, user:', user ? 'connected' : 'anonymous', 'event:', event.nom_event);
+  
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
   const [crmProspects] = useState<Array<{ name: string; stand?: string }>>([
     { name: 'Entreprise A', stand: 'A12' },
     { name: 'Entreprise B', stand: 'B15' },
   ]);
+  
+  useEffect(() => {
+    console.log('🔍 EventPageContent - useEffect triggered, about to render EventExhibitorsSection');
+  }, []);
 
   const isAdmin = user?.email === 'admin@salonspro.com';
 

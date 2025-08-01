@@ -18,15 +18,20 @@ export const useCrmConnections = () => {
   const fetchConnections = async () => {
     // Si l'utilisateur n'est pas connecté, ne pas faire d'appel
     if (!user) {
+      console.log('🔍 useCrmConnections: Pas d\'utilisateur connecté, définition état vide');
       setConnections({});
       return;
     }
 
+    console.log('🔍 useCrmConnections: Récupération des connexions pour user:', user.id);
     const { data, error } = await supabase
       .from('user_crm_connections')
       .select('provider');
     
-    if (error) return;
+    if (error) {
+      console.error('❌ useCrmConnections: Erreur récupération connexions:', error);
+      return;
+    }
     
     const status: CrmConnectionStatus = {};
     if (data) {
@@ -132,6 +137,8 @@ export const useCrmConnections = () => {
   };
 
   useEffect(() => {
+    // Forcer le fetch même sans utilisateur pour initialiser l'état
+    console.log('🔍 useCrmConnections - useEffect triggered, user:', user ? 'connected' : 'anonymous');
     fetchConnections();
   }, [user]);
 
