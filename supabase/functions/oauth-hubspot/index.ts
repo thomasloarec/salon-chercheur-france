@@ -49,7 +49,7 @@ serve(async (req) => {
 
     console.log('✅ JWT Auth successful for user:', user.id);
 
-    if (req.method !== 'GET') {
+    if (req.method !== 'POST') {
       return new Response(
         JSON.stringify({ success: false, error: 'Method not allowed' }),
         { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

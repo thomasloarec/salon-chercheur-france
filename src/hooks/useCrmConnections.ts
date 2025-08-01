@@ -21,9 +21,11 @@ export const useCrmConnections = () => {
     if (error) return;
     
     const status: CrmConnectionStatus = {};
-    data.forEach(conn => {
-      status[conn.provider as CrmProvider] = true;
-    });
+    if (data) {
+      data.forEach(conn => {
+        status[conn.provider as CrmProvider] = true;
+      });
+    }
     setConnections(status);
   };
 
