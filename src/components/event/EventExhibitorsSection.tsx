@@ -41,17 +41,18 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
   useEffect(() => {
     const fetchExhibitors = async () => {
       console.log('🔍 EventExhibitorsSection - event.id:', event.id);
+      console.log('🔍 EventExhibitorsSection - event.id_event:', event.id_event);
       console.log('🔍 EventExhibitorsSection - Current environment:', window.location.hostname);
       console.log('🔍 EventExhibitorsSection - Component mounted, loading:', loading);
       
       if (!event.id) {
-        console.log('❌ Pas d\'id, arrêt du chargement');
+        console.log('❌ Pas d\'UUID, arrêt du chargement');
         setLoading(false);
         return;
       }
 
       try {
-        console.log('📤 Requête participation pour id_event:', event.id);
+        console.log('📤 Requête participation pour event.id (UUID):', event.id);
         console.log('🔍 Type et valeur de event.id:', typeof event.id, JSON.stringify(event.id));
         
         // Requête avec tri alphabétique côté serveur

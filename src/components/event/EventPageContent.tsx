@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
-import { EventExhibitorsSectionFallback } from '@/components/event/EventExhibitorsSectionFallback';
+import { EventExhibitorsDebug } from '@/components/event/EventExhibitorsDebug';
 import { EventSidebar } from '@/components/event/EventSidebar';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
@@ -104,6 +104,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               {/* Colonne principale */}
               <div className="lg:col-span-2 space-y-8">
                 <EventAbout event={event} />
+                
+                {/* Debug temporaire */}
+                <EventExhibitorsDebug event={event} />
                 
                 {/* Section des exposants avec fallback pour le bouton CRM */}
                 <EventExhibitorsSection event={event} />
