@@ -105,20 +105,8 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               <div className="lg:col-span-2 space-y-8">
                 <EventAbout event={event} />
                 
-                {/* Rendu conditionnel pour debug */}
-                {isProduction ? (
-                  <div className="space-y-4">
-                    <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-3">
-                      <p className="text-yellow-800 text-sm">
-                        🚧 <strong>Mode Debug Production</strong> - Affichage de debug activé
-                      </p>
-                    </div>
-                    <EventExhibitorsSectionFallback event={event} />
-                    <EventExhibitorsSection event={event} />
-                  </div>
-                ) : (
-                  <EventExhibitorsSection event={event} />
-                )}
+                {/* Section des exposants avec fallback pour le bouton CRM */}
+                <EventExhibitorsSection event={event} />
               </div>
 
               {/* Sidebar */}
