@@ -40,19 +40,19 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   useEffect(() => {
     const fetchExhibitors = async () => {
-      console.log('🔍 EventExhibitorsSection - event.id_event:', event.id_event);
+      console.log('🔍 EventExhibitorsSection - event.id:', event.id);
       console.log('🔍 EventExhibitorsSection - Current environment:', window.location.hostname);
       console.log('🔍 EventExhibitorsSection - Component mounted, loading:', loading);
       
-      if (!event.id_event) {
-        console.log('❌ Pas d\'id_event, arrêt du chargement');
+      if (!event.id) {
+        console.log('❌ Pas d\'id, arrêt du chargement');
         setLoading(false);
         return;
       }
 
       try {
-        console.log('📤 Requête participation pour id_event:', event.id_event);
-        console.log('🔍 Type et valeur de event.id_event:', typeof event.id_event, JSON.stringify(event.id_event));
+        console.log('📤 Requête participation pour id_event:', event.id);
+        console.log('🔍 Type et valeur de event.id:', typeof event.id, JSON.stringify(event.id));
         
         // Nouvelle requête utilisant la table participation avec jointure
         // Utiliser le client anonyme pour éviter les restrictions RLS
@@ -68,7 +68,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
               exposant_description
             )
           `)
-          .eq('id_event', event.id_event);
+          .eq('id_event', event.id);
 
         if (error) {
           console.error('❌ Error fetching exhibitors:', error);
@@ -107,7 +107,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     };
 
     fetchExhibitors();
-  }, [event.id_event]); // Utilise la clé métier, pas l'UUID
+  }, [event.id]); // Utilise l'UUID comme clé unique
 
   // Force l'affichage si le composant n'est pas monté (problème d'hydratation)
   if (!mounted) {
@@ -127,7 +127,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     mounted, 
     loading, 
     exhibitorsCount: exhibitors.length,
-    eventId: event.id_event,
+    eventId: event.id,
     hostname: window.location.hostname 
   });
 

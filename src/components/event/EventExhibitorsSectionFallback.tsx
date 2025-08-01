@@ -28,7 +28,7 @@ export const EventExhibitorsSectionFallback = ({ event }: EventExhibitorsSection
         const { count } = await supabase
           .from('participation')
           .select('*', { count: 'exact', head: true })
-          .eq('id_event', event.id_event);
+          .eq('id_event', event.id);
         
         setExhibitorCount(count || 0);
       } catch (error) {

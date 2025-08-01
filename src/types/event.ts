@@ -1,7 +1,7 @@
 
 export interface Event {
-  id: string; // UUID primary key from database
-  id_event?: string; // Database logical event ID (ex: Event_6) - REQUIRED for exhibitors relations
+  id: string; // UUID primary key from database - USED for exhibitors relations
+  id_event?: string; // Legacy database logical event ID (ex: Event_6) - DEPRECATED
   nom_event: string;
   description_event?: string;
   date_debut: string;
