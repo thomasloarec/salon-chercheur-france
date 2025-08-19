@@ -45,10 +45,21 @@ export const OAuthCallback = () => {
           throw new Error(data?.error || 'Erreur lors de l\'échange de tokens');
         }
 
+        // Handle both authenticated and unauthenticated flows
+        let message = 'Connexion réussie';
+        if (data.was_created) {
+          message = 'Compte créé et CRM connecté avec succès';
+        } else if (data.email) {
+          message = `CRM connecté à votre compte ${data.email}`;
+        }
+
         window.opener?.postMessage({
           type: 'oauth-success',
           provider,
-          message: 'Connexion réussie'
+          message,
+          user_id: data.user_id,
+          email: data.email,
+          was_created: data.was_created
         }, '*');
 
       } catch (error) {

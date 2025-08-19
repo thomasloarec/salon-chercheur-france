@@ -40,3 +40,9 @@ verify_jwt = true
 
 [functions.publish-pending]
 verify_jwt = true
+
+[functions.oauth-hubspot]
+verify_jwt = false
+
+[functions.oauth-hubspot-callback]
+verify_jwt = false

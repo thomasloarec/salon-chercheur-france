@@ -51,15 +51,8 @@ export const useCrmConnections = () => {
 
   // Connecter un CRM
   const connectCrm = async (provider: CrmProvider) => {
-    // Si l'utilisateur n'est pas connecté, rediriger vers la page de connexion
-    if (!user) {
-      toast({
-        title: "Authentification requise",
-        description: "Veuillez vous connecter pour accéder aux fonctionnalités CRM.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Nouveau flux : permettre la connexion même pour les utilisateurs non connectés
+    console.log('🔄 useCrmConnections: Initiation connexion', provider, 'user:', user ? 'connecté' : 'non connecté');
 
     setLoading(true);
     try {

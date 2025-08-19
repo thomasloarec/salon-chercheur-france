@@ -19,35 +19,30 @@ serve(async (req) => {
   }
 
   try {
-    // Verify JWT by extracting and validating the authorization header
+    // Optional JWT verification - allow both authenticated and unauthenticated users
     const authHeader = req.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.error('❌ JWT Auth failed: No valid authorization header');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized: Missing or invalid authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const jwt = authHeader.replace('Bearer ', '');
+    let userId = null;
     
-    // Initialize Supabase client for JWT verification
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const jwt = authHeader.replace('Bearer ', '');
+      
+      // Initialize Supabase client for JWT verification
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify the JWT by getting user info
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
-    
-    if (authError || !user) {
-      console.error('❌ JWT Auth failed:', authError?.message || 'User not found');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized: Invalid JWT token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Try to verify the JWT
+      const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+      
+      if (!authError && user) {
+        userId = user.id;
+        console.log('✅ JWT Auth successful for user:', user.id);
+      } else {
+        console.log('⚠️ JWT Auth failed, proceeding without authentication:', authError?.message);
+      }
+    } else {
+      console.log('🔓 No JWT provided, proceeding with unauthenticated flow');
     }
-
-    console.log('✅ JWT Auth successful for user:', user.id);
 
     if (req.method !== 'POST') {
       return new Response(
@@ -84,12 +79,15 @@ serve(async (req) => {
     const scopes = ['crm.objects.companies.read', 'crm.objects.contacts.read'];
     
     // Construct OAuth install URL
+    // Use userId if available, otherwise generate a temporary state for unauthenticated users
+    const state = userId || `unauth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const installUrl = `https://app.hubspot.com/oauth/authorize?` +
       `client_id=${hubspotClientId}&` +
       `redirect_uri=${encodeURIComponent(hubspotRedirectUri!)}&` +
       `scope=${scopes.join('%20')}&` +
       `response_type=code&` +
-      `state=${user.id}`;
+      `state=${state}`;
 
     console.log('✅ HubSpot install URL generated successfully');
 
