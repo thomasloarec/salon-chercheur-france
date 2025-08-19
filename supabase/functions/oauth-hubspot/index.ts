@@ -6,6 +6,8 @@ const hubspotAppId = Deno.env.get('HUBSPOT_APP_ID');
 const hubspotClientId = Deno.env.get('HUBSPOT_CLIENT_ID');
 const hubspotClientSecret = Deno.env.get('HUBSPOT_CLIENT_SECRET');
 const hubspotRedirectUri = Deno.env.get('HUBSPOT_REDIRECT_URI');
+// Configuration du domaine HubSpot (US vs EU)
+const hubspotDomain = Deno.env.get('HUBSPOT_DOMAIN') || 'app.hubspot.com'; // par défaut US
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -55,7 +57,8 @@ serve(async (req) => {
       hubspotAppId: hubspotAppId ? 'set' : 'missing',
       hubspotClientId: hubspotClientId ? 'set' : 'missing',
       hubspotClientSecret: hubspotClientSecret ? 'set' : 'missing',
-      hubspotRedirectUri: hubspotRedirectUri ? 'set' : 'missing'
+      hubspotRedirectUri: hubspotRedirectUri ? 'set' : 'missing',
+      hubspotDomain: hubspotDomain
     });
 
     // Check if any secrets are missing or placeholder values (mock mode)
@@ -75,19 +78,33 @@ serve(async (req) => {
 
     console.log('🔐 Real HubSpot OAuth flow - generating install URL');
 
-    // Define HubSpot scopes
-    const scopes = ['crm.objects.companies.read', 'crm.objects.contacts.read'];
+    // Define HubSpot scopes (oauth est obligatoire selon HubSpot)
+    const requiredScopes = ['oauth', 'crm.objects.companies.read', 'crm.objects.contacts.read'];
+    const optionalScopes: string[] = []; // Ajoutez d'autres scopes ici si nécessaire
+    
+    // Combiner tous les scopes
+    const allScopes = [...requiredScopes, ...optionalScopes];
     
     // Construct OAuth install URL
     // Use userId if available, otherwise generate a temporary state for unauthenticated users
     const state = userId || `unauth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    const installUrl = `https://app.hubspot.com/oauth/authorize?` +
+    const installUrl = `https://${hubspotDomain}/oauth/authorize?` +
       `client_id=${hubspotClientId}&` +
       `redirect_uri=${encodeURIComponent(hubspotRedirectUri!)}&` +
-      `scope=${scopes.join('%20')}&` +
+      `scope=${allScopes.join('%20')}&` +
       `response_type=code&` +
       `state=${state}`;
+
+    // 🔍 LOGGING pour debug : afficher l'URL OAuth construite
+    console.log('🔍 HubSpot OAuth URL construite:', {
+      domain: hubspotDomain,
+      clientId: hubspotClientId,
+      redirectUri: hubspotRedirectUri,
+      requiredScopes,
+      optionalScopes,
+      fullUrl: installUrl
+    });
 
     console.log('✅ HubSpot install URL generated successfully');
 
@@ -98,8 +115,11 @@ serve(async (req) => {
         mock: false,
         provider: 'hubspot',
         installUrl,
-        scopes,
-        appId: hubspotAppId
+        scopes: allScopes,
+        requiredScopes,
+        optionalScopes,
+        appId: hubspotAppId,
+        domain: hubspotDomain
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
