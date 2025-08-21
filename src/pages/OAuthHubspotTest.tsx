@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, buildHubSpotAuthUrl, CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues, maskClientId } from '@/lib/hubspotConfig';
+import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues, maskClientId, getEffectiveHubspotConfig } from '@/lib/hubspotConfig';
 
 export default function OAuthHubspotTest() {
   const debug = new URLSearchParams(window.location.search).has('oauthDebug');
@@ -33,10 +33,11 @@ export default function OAuthHubspotTest() {
         return;
       }
 
-      // Check HubSpot configuration
-      if (!isHubspotConfigValid()) {
-        const issues = getHubspotConfigIssues();
-        alert('Configuration HubSpot invalide: ' + issues.join(', '));
+      // Get effective configuration
+      const { source, clientId, redirectUri } = getEffectiveHubspotConfig();
+      
+      if (source === 'none') {
+        alert('Configuration HubSpot invalide : renseignez client_id et redirect_uri (env publiques ou debug).');
         return;
       }
 
@@ -54,36 +55,25 @@ export default function OAuthHubspotTest() {
       const local = !!localStorage.getItem('oauth_state');
       setDiag(d => ({ ...d, cookie, local }));
       
-      // Use debug config if available, otherwise use env config
-      const debugClientId = sessionStorage.getItem('oauth_debug_client_id');
-      const debugRedirectUri = sessionStorage.getItem('oauth_debug_redirect_uri');
-      
-      // Build authorize URL using centralized config or debug values
-      const authResult = buildHubSpotAuthUrl(state, debugClientId || undefined, debugRedirectUri || undefined);
-      
-      if (authResult.error) {
-        alert('Erreur de configuration: ' + authResult.error);
-        setDiag(d => ({ ...d, error: authResult.error || "" }));
-        return;
-      }
-
-      if (!authResult.url) {
-        alert('Impossible de générer l\'URL d\'autorisation');
-        return;
-      }
+      // Build OAuth URL using effective config
+      const scope = 'oauth crm.objects.companies.read crm.objects.contacts.read';
+      const authorizeUrl =
+        `https://app-eu1.hubspot.com/oauth/authorize?client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${encodeURIComponent(scope)}&response_type=code&state=${encodeURIComponent(state)}`;
       
       // Store return URL for redirect after completion
       sessionStorage.setItem('oauth_return_to', window.location.href);
       
       if (debug) {
-        console.log('AuthorizeURL:', authResult.url);
-        setDiag(d => ({ ...d, authorizeUrl: authResult.url || "", error: "" }));
+        console.log('AuthorizeURL:', authorizeUrl);
+        setDiag(d => ({ ...d, authorizeUrl: authorizeUrl, error: "" }));
       }
       
       // Try to open popup, fallback to same window
-      const popup = window.open(authResult.url, 'hubspot_oauth', 'width=600,height=700,scrollbars=yes,resizable=yes');
+      const popup = window.open(authorizeUrl, 'hubspot_oauth', 'width=600,height=700,scrollbars=yes,resizable=yes');
       if (!popup) {
-        window.location.href = authResult.url;
+        window.location.href = authorizeUrl;
       }
     } catch (error) {
       console.error('Error initiating OAuth:', error);
@@ -109,13 +99,11 @@ export default function OAuthHubspotTest() {
     alert('Configuration debug effacée');
   };
 
-  const hasDebugConfig = sessionStorage.getItem('oauth_debug_client_id') && sessionStorage.getItem('oauth_debug_redirect_uri');
-  const effectiveConfig = hasDebugConfig ? {
-    clientId: sessionStorage.getItem('oauth_debug_client_id') || '',
-    redirectUri: sessionStorage.getItem('oauth_debug_redirect_uri') || ''
-  } : {
-    clientId: HUBSPOT_CLIENT_ID,
-    redirectUri: HUBSPOT_REDIRECT_URI
+  const effectiveConfigData = getEffectiveHubspotConfig();
+  const hasDebugConfig = effectiveConfigData.source === 'debug';
+  const effectiveConfig = {
+    clientId: effectiveConfigData.clientId,
+    redirectUri: effectiveConfigData.redirectUri
   };
 
   return (
@@ -206,7 +194,7 @@ export default function OAuthHubspotTest() {
 
           <button 
             onClick={handleConnect}
-            disabled={!CRM_OAUTH_ENABLED || (!isHubspotConfigValid() && !hasDebugConfig)}
+            disabled={!CRM_OAUTH_ENABLED || effectiveConfigData.source === 'none'}
             className="bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Connecter HubSpot (test)
@@ -220,17 +208,14 @@ export default function OAuthHubspotTest() {
             <div className="space-y-3">
               <div className="mb-4 text-sm space-y-2">
                 <h4 className="font-medium mb-2">Configuration utilisée</h4>
-                <div><span className="font-medium">Source:</span> <code className="bg-muted-foreground/10 px-1 rounded">{hasDebugConfig ? 'Debug (sessionStorage)' : 'Variables d\'environnement'}</code></div>
+                <div><span className="font-medium">Source:</span> <code className="bg-muted-foreground/10 px-1 rounded">{effectiveConfigData.source === 'debug' ? 'Debug (sessionStorage)' : effectiveConfigData.source === 'env' ? 'Variables d\'environnement' : 'Aucune'}</code></div>
                 <div><span className="font-medium">CRM OAuth Enabled:</span> <code className="bg-muted-foreground/10 px-1 rounded">{CRM_OAUTH_ENABLED ? 'Oui' : 'Non'}</code></div>
-                <div><span className="font-medium">Config Valid:</span> <code className="bg-muted-foreground/10 px-1 rounded">{isHubspotConfigValid(effectiveConfig.clientId, effectiveConfig.redirectUri) ? 'Oui' : 'Non'}</code></div>
+                <div><span className="font-medium">Config Valid:</span> <code className="bg-muted-foreground/10 px-1 rounded">{effectiveConfigData.source !== 'none' ? 'Oui' : 'Non'}</code></div>
                 <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-muted-foreground/10 px-1 rounded">{maskClientId(effectiveConfig.clientId)}</code></div>
                 <div><span className="font-medium">Redirect URI:</span> <code className="bg-muted-foreground/10 px-1 rounded">{effectiveConfig.redirectUri || 'manquant'}</code></div>
-                {!isHubspotConfigValid(effectiveConfig.clientId, effectiveConfig.redirectUri) && (
+                {effectiveConfigData.source === 'none' && (
                   <div><span className="font-medium">Issues:</span> <code className="bg-red-100 px-1 rounded">
-                    {!effectiveConfig.clientId ? 'CLIENT_ID manquant' : 
-                     !/^[0-9a-f-]{36}$/i.test(effectiveConfig.clientId) ? 'CLIENT_ID format invalide (UUID requis)' :
-                     !effectiveConfig.redirectUri ? 'REDIRECT_URI manquant' :
-                     !effectiveConfig.redirectUri.startsWith('https://lotexpo.com/oauth/hubspot/callback') ? 'REDIRECT_URI invalide' : 'Erreur inconnue'}
+                    Configuration manquante ou invalide
                   </code></div>
                 )}
               </div>

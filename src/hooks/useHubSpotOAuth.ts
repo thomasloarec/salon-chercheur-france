@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { generateOAuthNonce, setOAuthState, validateOAuthState, clearOAuthState } from '@/lib/oauthSecurity';
-import { buildHubSpotAuthUrl, HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues } from '@/lib/hubspotConfig';
+import { CRM_OAUTH_ENABLED, getEffectiveHubspotConfig } from '@/lib/hubspotConfig';
 
 export interface HubSpotOAuthResponse {
   success: boolean;
@@ -29,10 +29,11 @@ export const useHubSpotOAuth = () => {
         throw new Error('Intégrations CRM désactivées (flag CRM_OAUTH_ENABLED)');
       }
 
-      // Check HubSpot configuration
-      if (!isHubspotConfigValid()) {
-        const issues = getHubspotConfigIssues();
-        throw new Error(`Configuration HubSpot invalide: ${issues.join(', ')}`);
+      // Get effective configuration (debug overrides > env variables)
+      const { source, clientId, redirectUri } = getEffectiveHubspotConfig();
+      
+      if (source === 'none') {
+        throw new Error('Configuration HubSpot invalide: renseignez client_id et redirect_uri (env publiques ou debug)');
       }
 
       console.log('🔄 Initiating HubSpot OAuth flow...');
@@ -47,28 +48,21 @@ export const useHubSpotOAuth = () => {
       if (debug) {
         console.log("oauth_state set", { value: state });
         console.log("HubSpot config", { 
-          client_id: HUBSPOT_CLIENT_ID, 
-          redirect_uri: HUBSPOT_REDIRECT_URI 
+          source,
+          client_id: clientId, 
+          redirect_uri: redirectUri 
         });
       }
 
-      // Check for debug config in sessionStorage
-      const debugClientId = sessionStorage.getItem('oauth_debug_client_id');
-      const debugRedirectUri = sessionStorage.getItem('oauth_debug_redirect_uri');
-      
-      // Build OAuth URL using centralized config or debug values
-      const authResult = buildHubSpotAuthUrl(state, debugClientId || undefined, debugRedirectUri || undefined);
-      
-      if (authResult.error) {
-        throw new Error(authResult.error);
-      }
-
-      if (!authResult.url) {
-        throw new Error('Impossible de générer l\'URL d\'autorisation HubSpot');
-      }
+      // Build OAuth URL using effective config
+      const scope = 'oauth crm.objects.companies.read crm.objects.contacts.read';
+      const authorizeUrl =
+        `https://app-eu1.hubspot.com/oauth/authorize?client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${encodeURIComponent(scope)}&response_type=code&state=${encodeURIComponent(state)}`;
       
       if (debug) {
-        console.log('AuthorizeURL:', authResult.url);
+        console.log('AuthorizeURL:', authorizeUrl);
       }
 
       console.log('✅ Opening HubSpot OAuth popup...');
@@ -78,7 +72,7 @@ export const useHubSpotOAuth = () => {
       
       // Open OAuth popup
       const popup = window.open(
-        authResult.url,
+        authorizeUrl,
         'hubspot-oauth',
         'width=600,height=700,scrollbars=yes,resizable=yes'
       );

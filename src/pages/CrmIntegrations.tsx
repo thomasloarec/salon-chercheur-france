@@ -15,7 +15,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { CrmProvider } from '@/types/crm';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues } from '@/lib/hubspotConfig';
+import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, CRM_OAUTH_ENABLED, getEffectiveHubspotConfig, maskClientId } from '@/lib/hubspotConfig';
 
 const CrmIntegrations = () => {
   const { user } = useAuth();
@@ -25,6 +25,8 @@ const CrmIntegrations = () => {
   const syncMutation = useSyncCrmAccounts();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const effectiveConfig = getEffectiveHubspotConfig();
+  const canConnectHubspot = CRM_OAUTH_ENABLED && effectiveConfig.source !== 'none';
   const { initiateOAuth: initiateHubSpotOAuth, loading: hubspotLoading } = useHubSpotOAuth();
 
   // Handle OAuth callback and other URL parameters
@@ -206,18 +208,16 @@ const CrmIntegrations = () => {
               <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-4 text-sm">
                 <h3 className="font-semibold text-blue-900 mb-2">🔍 Configuration HubSpot (Debug)</h3>
                 <div className="text-blue-800 space-y-1">
+                  <div><span className="font-medium">Source:</span> <code className="bg-blue-100 px-1 rounded">{effectiveConfig.source === 'debug' ? 'Debug (sessionStorage)' : effectiveConfig.source === 'env' ? 'Variables d\'environnement' : 'Aucune'}</code></div>
                   <div><span className="font-medium">CRM OAuth Enabled:</span> <code className="bg-blue-100 px-1 rounded">{CRM_OAUTH_ENABLED ? 'Oui' : 'Non'}</code></div>
-                  <div><span className="font-medium">Config Valid:</span> <code className="bg-blue-100 px-1 rounded">{isHubspotConfigValid() ? 'Oui' : 'Non'}</code></div>
-                  <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-blue-100 px-1 rounded">{HUBSPOT_CLIENT_ID || 'manquant'}</code></div>
-                  <div><span className="font-medium">Redirect URI:</span> <code className="bg-blue-100 px-1 rounded">{HUBSPOT_REDIRECT_URI || 'manquant'}</code></div>
-                  {getHubspotConfigIssues().length > 0 && (
-                    <div><span className="font-medium">Issues:</span> <code className="bg-red-100 px-1 rounded">{getHubspotConfigIssues().join(', ')}</code></div>
-                  )}
+                  <div><span className="font-medium">Config Valid:</span> <code className="bg-blue-100 px-1 rounded">{effectiveConfig.source !== 'none' ? 'Oui' : 'Non'}</code></div>
+                  <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-blue-100 px-1 rounded">{maskClientId(effectiveConfig.clientId) || 'manquant'}</code></div>
+                  <div><span className="font-medium">Redirect URI:</span> <code className="bg-blue-100 px-1 rounded">{effectiveConfig.redirectUri || 'manquant'}</code></div>
                 </div>
               </div>
             )}
             
-            {(!CRM_OAUTH_ENABLED || !isHubspotConfigValid()) && (
+            {!canConnectHubspot && (
               <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mt-4 text-sm">
                 <div className="flex items-start gap-2">
                   <div className="text-yellow-600">⚠️</div>
@@ -228,12 +228,14 @@ const CrmIntegrations = () => {
                         <p>Intégrations CRM désactivées (flag CRM_OAUTH_ENABLED)</p>
                       ) : (
                         <div>
-                          <p>Configuration HubSpot incomplète :</p>
-                          <ul className="mt-1 ml-4 list-disc">
-                            {getHubspotConfigIssues().map((issue, index) => (
-                              <li key={index}>{issue}</li>
-                            ))}
-                          </ul>
+                          <p>Configuration HubSpot incomplète</p>
+                          {isDebug && (
+                            <p className="mt-1">
+                              <a href="/oauth/hubspot/test?oauthDebug=1" className="underline">
+                                → Mode debug disponible
+                              </a>
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -312,7 +314,7 @@ const CrmIntegrations = () => {
                         </Button>
                       </div>
                     ) : (
-                      (integration.provider === 'hubspot' && (!CRM_OAUTH_ENABLED || !isHubspotConfigValid())) ? (
+                      (integration.provider === 'hubspot' && !canConnectHubspot) ? (
                         <div className="space-y-2">
                           <Button disabled className="w-full">
                             <ExternalLink className="h-4 w-4 mr-2" />

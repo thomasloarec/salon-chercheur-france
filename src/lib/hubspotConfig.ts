@@ -7,6 +7,27 @@ export const HUBSPOT_REDIRECT_URI =
 export const CRM_OAUTH_ENABLED =
   (import.meta.env.VITE_CRM_OAUTH_ENABLED ?? (globalThis as any).NEXT_PUBLIC_CRM_OAUTH_ENABLED ?? "true") === "true";
 
+export function readDebugOverrides() {
+  const id = sessionStorage.getItem('oauth_debug_client_id') || '';
+  const uri = sessionStorage.getItem('oauth_debug_redirect_uri') || '';
+  return { id, uri };
+}
+
+export function isHubspotConfigValidRaw(id: string, uri: string) {
+  return !!id && /^[0-9a-f-]{36}$/i.test(id) && uri.startsWith('https://lotexpo.com/oauth/hubspot/callback');
+}
+
+export function getEffectiveHubspotConfig() {
+  const dbg = readDebugOverrides();
+  const envId = import.meta.env.VITE_HUBSPOT_CLIENT_ID ?? (globalThis as any).NEXT_PUBLIC_HUBSPOT_CLIENT_ID ?? '';
+  const envUri = import.meta.env.VITE_HUBSPOT_REDIRECT_URI ?? (globalThis as any).NEXT_PUBLIC_HUBSPOT_REDIRECT_URI ?? '';
+  const dbgValid = isHubspotConfigValidRaw(dbg.id, dbg.uri);
+  const envValid = isHubspotConfigValidRaw(envId, envUri);
+  if (dbgValid) return { source: 'debug', clientId: dbg.id, redirectUri: dbg.uri };
+  if (envValid) return { source: 'env', clientId: envId, redirectUri: envUri };
+  return { source: 'none', clientId: '', redirectUri: '' };
+}
+
 export function isHubspotConfigValid(id = HUBSPOT_CLIENT_ID, uri = HUBSPOT_REDIRECT_URI): boolean {
   return Boolean(
     id &&
