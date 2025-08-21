@@ -1,0 +1,2 @@
+# Netlify redirects for OAuth callbacks
+/api/oauth/hubspot/callback   https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback   307!

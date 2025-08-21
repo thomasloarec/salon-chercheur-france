@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/oauth/hubspot/callback",
+      "destination": "https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback"
+    }
+  ]
+}

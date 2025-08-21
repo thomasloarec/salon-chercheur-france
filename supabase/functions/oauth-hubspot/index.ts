@@ -21,6 +21,15 @@ serve(async (req) => {
   }
 
   try {
+    // Parse URL pour récupérer les query params (notamment oauthDebug)
+    const url = new URL(req.url);
+    const oauthDebug = url.searchParams.get('oauthDebug') === '1';
+    
+    console.log(`🔄 OAuth HubSpot request: ${req.method} ${req.url}`);
+    if (oauthDebug) {
+      console.log('🔍 [DEBUG MODE] Mode debug OAuth activé');
+    }
+    
     // Optional JWT verification - allow both authenticated and unauthenticated users
     const authHeader = req.headers.get('authorization');
     let userId = null;
@@ -97,14 +106,23 @@ serve(async (req) => {
       `state=${state}`;
 
     // 🔍 LOGGING pour debug : afficher l'URL OAuth construite
-    console.log('🔍 HubSpot OAuth URL construite:', {
+    const debugInfo = {
       domain: hubspotDomain,
       clientId: hubspotClientId,
       redirectUri: hubspotRedirectUri,
       requiredScopes,
       optionalScopes,
-      fullUrl: installUrl
-    });
+      fullUrl: oauthDebug ? installUrl : '[URL masquée - utilisez ?oauthDebug=1 pour afficher]'
+    };
+    
+    if (oauthDebug) {
+      console.log('🔍 [DEBUG MODE] HubSpot OAuth URL construite:', debugInfo);
+    } else {
+      console.log('🔍 HubSpot OAuth URL construite:', {
+        ...debugInfo,
+        fullUrl: '[URL masquée - utilisez ?oauthDebug=1 pour afficher]'
+      });
+    }
 
     console.log('✅ HubSpot install URL generated successfully');
 
@@ -119,7 +137,8 @@ serve(async (req) => {
         requiredScopes,
         optionalScopes,
         appId: hubspotAppId,
-        domain: hubspotDomain
+        domain: hubspotDomain,
+        debug: oauthDebug ? { fullUrl: installUrl } : undefined
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
