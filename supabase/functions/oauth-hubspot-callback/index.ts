@@ -59,7 +59,7 @@ const maskSensitiveData = (data: string, visibleChars: number = 4): string => {
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://lotexpo.com',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-OAuth-State',
 }
 
 serve(async (req) => {
@@ -187,42 +187,52 @@ serve(async (req) => {
     // Mark code as used immediately to prevent race conditions
     markCodeAsUsed(code);
 
-    // 🔄 STAGE 2.6: State verification via cookie
+    // 🔄 STAGE 2.6: State verification via header X-OAuth-State
+    const headerState = req.headers.get('X-OAuth-State');
+    
+    // Enhanced parameter logging with masking including header state
+    const enhancedParameterLog = { 
+      ...parameterLog,
+      header_state_present: !!headerState,
+      headerState: headerState ? maskSensitiveData(headerState, 4) : 'missing',
+    };
+    console.log(`📋 [${requestId}] Enhanced callback parameters:`, enhancedParameterLog);
+    
     if (state) {
-      const storedState = getCookieValue(req.headers, 'oauth_state_hubspot');
-      console.log(`🔒 [${requestId}] State validation:`, {
+      console.log(`🔒 [${requestId}] State validation via X-OAuth-State header:`, {
         receivedState: maskSensitiveData(state, 4),
-        storedState: storedState ? maskSensitiveData(storedState, 4) : 'not found',
-        cookiePresent: !!storedState
+        headerState: headerState ? maskSensitiveData(headerState, 4) : 'not found',
+        headerPresent: !!headerState
       });
 
-      if (!storedState) {
-        console.log(`❌ [${requestId}] No stored OAuth state found in cookies`);
+      // Compare state from URL with state from header
+      if (!headerState) {
+        console.log(`❌ [${requestId}] No OAuth state found in X-OAuth-State header`);
         return new Response(
           JSON.stringify({
             success: false,
-            stage: 'input_validation',
+            stage: 'csrf_state',
             error: 'Invalid state - no stored state found',
-            details: 'OAuth state cookie missing. This may indicate a CSRF attack or expired session.'
+            details: 'OAuth state header (X-OAuth-State) missing. This may indicate a CSRF attack or expired session.'
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      if (storedState !== state) {
-        console.log(`❌ [${requestId}] OAuth state mismatch - possible CSRF attack`);
+      if (headerState !== state) {
+        console.log(`❌ [${requestId}] OAuth state mismatch between header and URL - possible CSRF attack`);
         return new Response(
           JSON.stringify({
             success: false,
-            stage: 'input_validation',
+            stage: 'csrf_state',
             error: 'Invalid state - state mismatch',
-            details: 'OAuth state does not match stored value. This may indicate a CSRF attack.'
+            details: 'OAuth state from header does not match state from URL. This may indicate a CSRF attack.'
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      console.log(`✅ [${requestId}] OAuth state validation successful`);
+      console.log(`✅ [${requestId}] OAuth state validation successful via X-OAuth-State header`);
     } else {
       console.log(`⚠️ [${requestId}] Missing state parameter - proceeding with unauthenticated flow`);
     }

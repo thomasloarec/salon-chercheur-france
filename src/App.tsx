@@ -18,6 +18,7 @@ import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
 import CrmIntegrations from '@/pages/CrmIntegrations';
 import { OAuthCallback } from '@/pages/OAuthCallback';
+import LegacyHubspotApiCallback from '@/pages/LegacyHubspotApiCallback';
 import NotFound from '@/pages/NotFound';
 import ScrollToTop from '@/components/ScrollToTop';
 import './App.css';
@@ -47,6 +48,7 @@ function App() {
               <Route path="/crm-integrations" element={<CrmIntegrations />} />
               <Route path="/oauth/callback" element={<OAuthCallback />} />
               <Route path="/oauth/hubspot/callback" element={<OAuthCallback />} />
+              <Route path="/api/oauth/hubspot/callback" element={<LegacyHubspotApiCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

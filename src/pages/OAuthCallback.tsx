@@ -1,16 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { validateOAuthState, clearOAuthStateCookie } from '@/lib/oauthSecurity';
+import { getOAuthStateCookie } from '@/lib/oauthSecurity';
 
 export const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('Finalisation de la connexion...');
 
   useEffect(() => {
     const handleCallback = async () => {
       const code = searchParams.get('code');
       const state = searchParams.get('state');
       const error = searchParams.get('error');
+      
       // Detect provider from URL path or query param
       const pathname = window.location.pathname;
       let provider = searchParams.get('provider') || 'hubspot';
@@ -19,94 +21,109 @@ export const OAuthCallback = () => {
       }
 
       if (error) {
-        window.opener?.postMessage({
-          type: 'oauth-error',
-          provider,
-          message: `Erreur OAuth: ${error}`
-        }, '*');
-        window.close();
+        setStatus('error');
+        setMessage(`Erreur OAuth: ${error}`);
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'oauth-error',
+            provider,
+            message: `Erreur OAuth: ${error}`
+          }, '*');
+          window.close();
+        } else {
+          setTimeout(() => {
+            window.location.href = '/crm-integrations';
+          }, 2000);
+        }
         return;
       }
 
       if (!code) {
-        window.opener?.postMessage({
-          type: 'oauth-error',
-          provider,
-          message: 'Code d\'autorisation manquant'
-        }, '*');
-        window.close();
+        setStatus('error');
+        setMessage('Code d\'autorisation manquant');
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'oauth-error',
+            provider,
+            message: 'Code d\'autorisation manquant'
+          }, '*');
+          window.close();
+        } else {
+          setTimeout(() => {
+            window.location.href = '/crm-integrations';
+          }, 2000);
+        }
         return;
       }
 
-      // Validate OAuth state for security
-      if (state) {
-        const isStateValid = validateOAuthState(state, provider);
-        if (!isStateValid) {
-          window.opener?.postMessage({
-            type: 'oauth-error',
-            provider,
-            message: 'État OAuth invalide - possible attaque CSRF'
-          }, '*');
-          clearOAuthStateCookie(provider);
-          window.close();
-          return;
-        }
-      }
-
       try {
-        // Debug mode logging
-        const isDebugMode = searchParams.get('oauthDebug') === '1';
-        if (isDebugMode) {
-          console.log('🔍 OAuth Debug Mode - Provider:', provider);
-          console.log('🔍 OAuth Debug Mode - Code:', code ? 'Present' : 'Missing');
-          console.log('🔍 OAuth Debug Mode - State:', state ? 'Present' : 'Missing');
-          console.log('🔍 OAuth Debug Mode - Calling Edge Function:', `oauth-${provider}-callback`);
+        // Get OAuth state from cookie
+        const cookieState = getOAuthStateCookie(provider);
+        
+        // Call Edge Function directly with fetch
+        const response = await fetch(`https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-${provider}-callback`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-OAuth-State': cookieState || '',
+          },
+          body: JSON.stringify({
+            provider,
+            code,
+            state
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || `Erreur ${response.status}: ${response.statusText}`);
         }
 
-        // Échanger le code contre les tokens
-        const { data, error: callbackError } = await supabase.functions.invoke(
-          `oauth-${provider}-callback`,
-          {
-            body: { code, state, provider }
-          }
-        );
-
-        if (callbackError || !data.success) {
-          throw new Error(data?.error || 'Erreur lors de l\'échange de tokens');
-        }
-
-        // Handle both authenticated and unauthenticated flows
-        let message = 'Connexion réussie';
+        // Success
+        setStatus('success');
+        let successMessage = 'Connexion réussie';
         if (data.was_created) {
-          message = 'Compte créé et CRM connecté avec succès';
+          successMessage = 'Compte créé et CRM connecté avec succès';
         } else if (data.email) {
-          message = `CRM connecté à votre compte ${data.email}`;
+          successMessage = `CRM connecté à votre compte ${data.email}`;
         }
+        setMessage(successMessage);
 
-        window.opener?.postMessage({
-          type: 'oauth-success',
-          provider,
-          message,
-          user_id: data.user_id,
-          email: data.email,
-          was_created: data.was_created
-        }, '*');
-
-        // Clear OAuth state cookie after successful exchange
-        clearOAuthStateCookie(provider);
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'oauth-success',
+            provider,
+            message: successMessage,
+            user_id: data.user_id,
+            email: data.email,
+            was_created: data.was_created
+          }, '*');
+          window.close();
+        } else {
+          setTimeout(() => {
+            window.location.href = '/crm-integrations';
+          }, 2000);
+        }
 
       } catch (error) {
-        window.opener?.postMessage({
-          type: 'oauth-error',
-          provider,
-          message: error instanceof Error ? error.message : 'Erreur inconnue'
-        }, '*');
+        setStatus('error');
+        const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+        setMessage(errorMessage);
         
-        // Clear OAuth state cookie on error
-        clearOAuthStateCookie(provider);
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'oauth-error',
+            provider,
+            message: errorMessage
+          }, '*');
+          window.close();
+        } else {
+          setTimeout(() => {
+            window.location.href = '/crm-integrations';
+          }, 2000);
+        }
       }
-
-      window.close();
     };
 
     handleCallback();
@@ -115,8 +132,25 @@ export const OAuthCallback = () => {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p>Finalisation de la connexion...</p>
+        {status === 'loading' && (
+          <>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>{message}</p>
+          </>
+        )}
+        {status === 'success' && (
+          <>
+            <div className="text-green-500 text-4xl mb-4">✅</div>
+            <p className="text-green-600">{message}</p>
+          </>
+        )}
+        {status === 'error' && (
+          <>
+            <div className="text-red-500 text-4xl mb-4">❌</div>
+            <p className="text-red-600">{message}</p>
+            <p className="text-sm text-gray-500 mt-2">Redirection en cours...</p>
+          </>
+        )}
       </div>
     </div>
   );
