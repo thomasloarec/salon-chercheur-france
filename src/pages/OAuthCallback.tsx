@@ -10,7 +10,12 @@ export const OAuthCallback = () => {
       const code = searchParams.get('code');
       const state = searchParams.get('state');
       const error = searchParams.get('error');
-      const provider = searchParams.get('provider') || 'hubspot';
+      // Detect provider from URL path or query param
+      const pathname = window.location.pathname;
+      let provider = searchParams.get('provider') || 'hubspot';
+      if (pathname.includes('hubspot')) {
+        provider = 'hubspot';
+      }
 
       if (error) {
         window.opener?.postMessage({
@@ -33,6 +38,15 @@ export const OAuthCallback = () => {
       }
 
       try {
+        // Debug mode logging
+        const isDebugMode = searchParams.get('oauthDebug') === '1';
+        if (isDebugMode) {
+          console.log('🔍 OAuth Debug Mode - Provider:', provider);
+          console.log('🔍 OAuth Debug Mode - Code:', code ? 'Present' : 'Missing');
+          console.log('🔍 OAuth Debug Mode - State:', state ? 'Present' : 'Missing');
+          console.log('🔍 OAuth Debug Mode - Calling Edge Function:', `oauth-${provider}-callback`);
+        }
+
         // Échanger le code contre les tokens
         const { data, error: callbackError } = await supabase.functions.invoke(
           `oauth-${provider}-callback`,

@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const hubspotAppId = Deno.env.get('HUBSPOT_APP_ID');
 const hubspotClientId = Deno.env.get('HUBSPOT_CLIENT_ID');
 const hubspotClientSecret = Deno.env.get('HUBSPOT_CLIENT_SECRET');
-const hubspotRedirectUri = Deno.env.get('HUBSPOT_REDIRECT_URI');
+const hubspotRedirectUri = Deno.env.get('HUBSPOT_REDIRECT_URI') || 'https://lotexpo.com/oauth/hubspot/callback';
 // Configuration du domaine HubSpot (US vs EU)
 const hubspotDomain = Deno.env.get('HUBSPOT_DOMAIN') || 'app.hubspot.com'; // par défaut US
 

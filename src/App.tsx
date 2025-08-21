@@ -46,6 +46,7 @@ function App() {
               <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
               <Route path="/crm-integrations" element={<CrmIntegrations />} />
               <Route path="/oauth/callback" element={<OAuthCallback />} />
+              <Route path="/oauth/hubspot/callback" element={<OAuthCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

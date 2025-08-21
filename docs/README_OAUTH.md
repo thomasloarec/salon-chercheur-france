@@ -1,87 +1,42 @@
-# Configuration OAuth HubSpot - Redirection de Callback
+# Configuration OAuth HubSpot - Page de Callback
 
 ## Vue d'ensemble
 
-Ce document explique la configuration de redirection pour l'URL de callback OAuth HubSpot propre.
+Configuration OAuth HubSpot utilisant une page React front-end pour gérer le callback et transmettre les données à l'Edge Function Supabase.
 
-**URL publique** : `https://lotexpo.com/api/oauth/hubspot/callback`
-**URL de destination** : `https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback`
+## Configuration OAuth HubSpot
 
-## Configuration par environnement d'hébergement
+### URLs de callback
 
-### Vercel (Recommandé)
+- **URL de callback propre** : `https://lotexpo.com/oauth/hubspot/callback`
+- **Edge Function Supabase** : `https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback`
 
-Le fichier `vercel.json` à la racine du projet contient la configuration de rewrite :
+### Mécanisme
 
-```json
-{
-  "rewrites": [
-    {
-      "source": "/api/oauth/hubspot/callback",
-      "destination": "https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback"
-    }
-  ]
-}
-```
+1. HubSpot redirige vers `https://lotexpo.com/oauth/hubspot/callback?code=...&state=...`
+2. La page React récupère les paramètres et POST vers l'Edge Function
+3. L'Edge Function traite l'échange de tokens et la création/association de compte
 
-Les rewrites Vercel conservent automatiquement tous les query parameters.
-
-### Netlify (Alternative)
-
-Le fichier `public/_redirects` contient la configuration de redirection :
-
-```
-/api/oauth/hubspot/callback   https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback   307!
-```
-
-Le code `307!` force une redirection temporaire en préservant les query parameters.
-
-### Cloudflare Pages
-
-Créer un fichier `public/_redirects` :
-
-```
-/api/oauth/hubspot/callback https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback 307
-```
-
-### Nginx
-
-Configuration à ajouter dans le bloc server :
-
-```nginx
-location = /api/oauth/hubspot/callback {
-  return 307 https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback$is_args$args;
-}
-```
-
-## Variables d'environnement
-
-Dans la configuration Supabase Edge Functions :
-
-- `HUBSPOT_REDIRECT_URI` = `https://lotexpo.com/api/oauth/hubspot/callback`
-- `HUBSPOT_DOMAIN` = `app-eu1.hubspot.com` (EU) ou `app.hubspot.com` (US)
-
-## Configuration HubSpot App
-
-Dans la console développeur HubSpot :
-
-1. **Redirect URL** : `https://lotexpo.com/api/oauth/hubspot/callback`
-2. **Scopes requis** :
-   - `oauth` (obligatoire)
-   - `crm.objects.companies.read`
-   - `crm.objects.contacts.read`
-
-## Tests de validation
-
-### 1. Test de redirection
+### Variables d'environnement requises
 
 ```bash
-curl -I "https://lotexpo.com/api/oauth/hubspot/callback?code=TEST&state=TEST"
+HUBSPOT_REDIRECT_URI=https://lotexpo.com/oauth/hubspot/callback
+HUBSPOT_DOMAIN=app-eu1.hubspot.com  # ou app.hubspot.com pour US
+HUBSPOT_CLIENT_ID=votre_client_id
+HUBSPOT_CLIENT_SECRET=votre_client_secret
+HUBSPOT_APP_ID=votre_app_id
 ```
 
-Attendu : Redirection 307 vers l'Edge Function avec query params préservés.
+## Vérification du fonctionnement
 
-### 2. Test du flow OAuth complet
+### Test de la redirection
+
+```bash
+# Doit renvoyer le contenu de la page de callback React
+curl -i "https://lotexpo.com/oauth/hubspot/callback?code=TEST&state=TEST"
+```
+
+### Test du flow OAuth complet
 
 1. Cliquer sur "Connecter HubSpot" dans l'interface
 2. Vérifier l'URL d'autorisation générée dans les logs
@@ -89,32 +44,39 @@ Attendu : Redirection 307 vers l'Edge Function avec query params préservés.
 4. Vérifier la redirection sans erreur 404
 5. Vérifier la création/mise à jour des tokens en base
 
-### 3. Debug mode
+### Debug mode
 
-Ajouter `?oauthDebug=1` à l'URL pour afficher l'URL OAuth complète dans la console.
+Ajouter `?oauthDebug=1` à l'URL pour afficher les logs de debug dans la console de la page.
 
-## Changement de domaine
+## Configuration HubSpot App
 
-Pour changer de domaine :
+Dans la console développeur HubSpot :
+
+1. **Redirect URL** : `https://lotexpo.com/oauth/hubspot/callback`
+2. **Scopes requis** :
+   - `oauth` (obligatoire)
+   - `crm.objects.companies.read`
+   - `crm.objects.contacts.read`
+
+## En cas de changement de domaine
 
 1. Mettre à jour `HUBSPOT_REDIRECT_URI` dans les secrets Supabase
-2. Mettre à jour la Redirect URL dans la console HubSpot
-3. Mettre à jour l'URL de destination dans le fichier de redirection
-4. Redéployer l'application
+2. Mettre à jour l'URL de redirection dans l'app HubSpot
+3. Vérifier que la page de callback fonctionne sur le nouveau domaine
 
 ## Sécurité
 
-- Les secrets ne sont jamais exposés dans les logs
+- Les secrets ne sont jamais exposés dans les logs front-end
 - Les tokens sont chiffrés en base via pgcrypto
-- La redirection préserve l'intégrité des query parameters
-- Aucun impact sur le SEO ou le cache des autres pages
+- La page de callback utilise HTTPS uniquement
+- Les query parameters sont transmis via POST sécurisé
 
 ## Dépannage
 
 ### Erreur 404 sur le callback
 
-1. Vérifier que le fichier de redirection est déployé
-2. Vérifier la configuration dans la console de l'hébergeur
+1. Vérifier que la route `/oauth/hubspot/callback` est définie dans App.tsx
+2. Vérifier que la page `OAuthCallback.tsx` existe
 3. Vérifier que l'URL HubSpot correspond exactement
 
 ### Tokens non créés
