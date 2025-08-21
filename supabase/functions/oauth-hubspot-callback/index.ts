@@ -93,6 +93,7 @@ serve(async (req) => {
       hubspotClientSecret: hubspotClientSecret ? 'set' : 'missing', 
       hubspotRedirectUri: hubspotRedirectUri ? 'set' : 'missing',
       hubspotDomain: hubspotDomain,
+      client_id_used: hubspotClientId ? `${hubspotClientId.substring(0, 8)}...` : 'missing',
       redirect_uri_used: hubspotRedirectUri ? maskSensitiveData(hubspotRedirectUri, 8) : 'missing',
       header_state_present: !!req.headers.get('x-oauth-state')
     };

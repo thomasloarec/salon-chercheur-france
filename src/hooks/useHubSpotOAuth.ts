@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { generateOAuthNonce, setOAuthState, validateOAuthState, clearOAuthState } from '@/lib/oauthSecurity';
+import { buildHubSpotAuthUrl, HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI } from '@/lib/hubspotConfig';
 
 export interface HubSpotOAuthResponse {
   success: boolean;
@@ -35,34 +35,27 @@ export const useHubSpotOAuth = () => {
       
       if (debug) {
         console.log("oauth_state set", { value: state });
+        console.log("HubSpot config", { 
+          client_id: HUBSPOT_CLIENT_ID, 
+          redirect_uri: HUBSPOT_REDIRECT_URI 
+        });
       }
 
-      // Get OAuth install URL from Edge Function
-      const { data, error: functionError } = await supabase.functions.invoke('oauth-hubspot', {
-        body: { 
-          state,
-          oauthDebug: debug ? '1' : '0'
-        }
-      });
-
-      if (functionError) {
-        throw new Error(`OAuth initialization error: ${functionError.message}`);
-      }
-
-      if (data?.mock) {
-        console.log('🔧 HubSpot OAuth in mock mode');
-        throw new Error('HubSpot OAuth is in mock mode - please configure secrets');
-      }
-
-      if (!data?.installUrl) {
-        throw new Error('No OAuth URL received from server');
+      // Build OAuth URL using centralized config
+      const authorizeUrl = buildHubSpotAuthUrl(state);
+      
+      if (debug) {
+        console.log('AuthorizeURL:', authorizeUrl);
       }
 
       console.log('✅ Opening HubSpot OAuth popup...');
       
+      // Store return URL for redirect after completion
+      sessionStorage.setItem('oauth_return_to', window.location.href);
+      
       // Open OAuth popup
       const popup = window.open(
-        data.installUrl,
+        authorizeUrl,
         'hubspot-oauth',
         'width=600,height=700,scrollbars=yes,resizable=yes'
       );

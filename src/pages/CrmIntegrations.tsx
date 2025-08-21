@@ -15,10 +15,12 @@ import MainLayout from '@/components/layout/MainLayout';
 import { CrmProvider } from '@/types/crm';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI } from '@/lib/hubspotConfig';
 
 const CrmIntegrations = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isDebug = searchParams.has('oauthDebug');
   const { data: integrations = [], isLoading, refetch } = useCrmIntegrations();
   const syncMutation = useSyncCrmAccounts();
   const queryClient = useQueryClient();
@@ -199,6 +201,16 @@ const CrmIntegrations = () => {
             <p className="text-gray-600">
               Connectez vos CRM pour synchroniser automatiquement vos comptes clients
             </p>
+            
+            {isDebug && (
+              <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-4 text-sm">
+                <h3 className="font-semibold text-blue-900 mb-2">🔍 Configuration HubSpot (Debug)</h3>
+                <div className="text-blue-800 space-y-1">
+                  <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-blue-100 px-1 rounded">{HUBSPOT_CLIENT_ID}</code></div>
+                  <div><span className="font-medium">Redirect URI:</span> <code className="bg-blue-100 px-1 rounded">{HUBSPOT_REDIRECT_URI}</code></div>
+                </div>
+              </div>
+            )}
           </div>
 
           {isLoading ? (

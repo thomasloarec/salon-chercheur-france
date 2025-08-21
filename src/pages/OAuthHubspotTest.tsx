@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, buildHubSpotAuthUrl } from '@/lib/hubspotConfig';
 
 export default function OAuthHubspotTest() {
   const debug = new URLSearchParams(window.location.search).has('oauthDebug');
@@ -30,27 +31,8 @@ export default function OAuthHubspotTest() {
       const local = !!localStorage.getItem('oauth_state');
       setDiag(d => ({ ...d, cookie, local }));
       
-      // Get environment variables
-      const REDIRECT_URI = import.meta.env.VITE_HUBSPOT_REDIRECT_URI || 
-                          (window as any).NEXT_PUBLIC_HUBSPOT_REDIRECT_URI ||
-                          'https://lotexpo.com/oauth/hubspot/callback';
-      
-      if (!REDIRECT_URI) {
-        alert('HUBSPOT_REDIRECT_URI manquante');
-        return;
-      }
-      
-      const CLIENT_ID = import.meta.env.VITE_HUBSPOT_CLIENT_ID || 
-                       (window as any).NEXT_PUBLIC_HUBSPOT_CLIENT_ID ||
-                       '4b4ff106-7f78-46a3-bf87-bc7a2e000403'; // Default client ID
-      
-      if (!CLIENT_ID) {
-        alert('HUBSPOT_CLIENT_ID manquante');
-        return;
-      }
-      
-      const SCOPE = 'oauth crm.objects.companies.read crm.objects.contacts.read';
-      const authorizeUrl = `https://app-eu1.hubspot.com/oauth/authorize?client_id=${encodeURIComponent(CLIENT_ID)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPE)}&response_type=code&state=${encodeURIComponent(state)}`;
+      // Build authorize URL using centralized config
+      const authorizeUrl = buildHubSpotAuthUrl(state);
       
       // Store return URL for redirect after completion
       sessionStorage.setItem('oauth_return_to', window.location.href);
@@ -90,6 +72,11 @@ export default function OAuthHubspotTest() {
             <h3 className="font-semibold mb-4 text-foreground">🔍 Diagnostic OAuth (Debug Mode)</h3>
             
             <div className="space-y-3">
+              <div className="mb-4 text-sm">
+                <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-muted-foreground/10 px-1 rounded">{HUBSPOT_CLIENT_ID}</code></div>
+                <div><span className="font-medium">Redirect URI:</span> <code className="bg-muted-foreground/10 px-1 rounded">{HUBSPOT_REDIRECT_URI}</code></div>
+              </div>
+              
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Cookie State:</span>
