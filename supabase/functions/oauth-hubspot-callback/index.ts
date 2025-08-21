@@ -7,6 +7,55 @@ const hubspotClientSecret = Deno.env.get('HUBSPOT_CLIENT_SECRET');
 const hubspotRedirectUri = Deno.env.get('HUBSPOT_REDIRECT_URI');
 const hubspotDomain = Deno.env.get('HUBSPOT_DOMAIN') || 'app.hubspot.com';
 
+// In-memory cache for preventing code reuse (10 minutes TTL)
+const codeCache = new Map<string, { timestamp: number }>();
+const CODE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes in milliseconds
+
+// Clean expired codes from cache
+const cleanExpiredCodes = () => {
+  const now = Date.now();
+  for (const [code, entry] of codeCache.entries()) {
+    if (now - entry.timestamp > CODE_CACHE_TTL) {
+      codeCache.delete(code);
+    }
+  }
+};
+
+// Check if code has been used
+const isCodeUsed = (code: string): boolean => {
+  cleanExpiredCodes();
+  return codeCache.has(code);
+};
+
+// Mark code as used
+const markCodeAsUsed = (code: string): void => {
+  cleanExpiredCodes();
+  codeCache.set(code, { timestamp: Date.now() });
+};
+
+// Extract cookies from request headers
+const getCookieValue = (headers: Headers, cookieName: string): string | null => {
+  const cookieHeader = headers.get('cookie');
+  if (!cookieHeader) return null;
+  
+  const cookies = cookieHeader.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === cookieName) {
+      return value;
+    }
+  }
+  return null;
+};
+
+// Mask sensitive data for logging
+const maskSensitiveData = (data: string, visibleChars: number = 4): string => {
+  if (!data || data.length <= visibleChars * 2) {
+    return '***';
+  }
+  return data.substring(0, visibleChars) + '***' + data.substring(data.length - visibleChars);
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://lotexpo.com',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -23,22 +72,29 @@ serve(async (req) => {
   }
 
   try {
-    // 🔄 STAGE 1: Initialization
-    console.log('🔄 HubSpot callback initiated');
-    console.log('📊 Request details:', {
+    // 🔄 STAGE 1: Initialization and uniform logging
+    const requestId = Math.random().toString(36).substring(2, 15);
+    console.log(`🔄 [${requestId}] HubSpot callback initiated`);
+    
+    const logContext = {
+      requestId,
       method: req.method,
       origin: req.headers.get('origin'),
       referer: req.headers.get('referer'),
-      userAgent: req.headers.get('user-agent')?.substring(0, 50) + '...'
-    });
+      userAgent: req.headers.get('user-agent')?.substring(0, 50) + '...',
+      hasCookies: !!req.headers.get('cookie')
+    };
+    console.log(`📊 [${requestId}] Request details:`, logContext);
 
-    // Log environment variables presence (not values)
-    console.log('🔧 Environment check:', {
+    // Log environment variables presence (not values) with uniform logging
+    const envCheck = {
       hubspotClientId: hubspotClientId ? 'set' : 'missing',
       hubspotClientSecret: hubspotClientSecret ? 'set' : 'missing', 
       hubspotRedirectUri: hubspotRedirectUri ? 'set' : 'missing',
-      hubspotDomain: hubspotDomain
-    });
+      hubspotDomain: hubspotDomain,
+      redirect_uri_used: hubspotRedirectUri ? maskSensitiveData(hubspotRedirectUri, 8) : 'missing'
+    };
+    console.log(`🔧 [${requestId}] Environment check:`, envCheck);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -46,7 +102,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (req.method !== 'POST') {
-      console.log('❌ Invalid method:', req.method);
+      console.log(`❌ [${requestId}] Invalid method:`, req.method);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -58,12 +114,12 @@ serve(async (req) => {
       );
     }
 
-    // 🔄 STAGE 2: Input validation
+    // 🔄 STAGE 2: Input validation with enhanced logging
     let requestBody;
     try {
       requestBody = await req.json();
     } catch (parseError) {
-      console.log('❌ JSON parse error:', parseError.message);
+      console.log(`❌ [${requestId}] JSON parse error:`, parseError.message);
       return new Response(
         JSON.stringify({
           success: false,
@@ -77,16 +133,19 @@ serve(async (req) => {
 
     const { code, state, provider } = requestBody;
 
-    console.log('📋 Callback parameters:', { 
-      code: code ? '***' : 'missing', 
-      state: state ? '***' : 'missing', 
+    // Enhanced parameter logging with masking
+    const parameterLog = { 
+      code: code ? maskSensitiveData(code, 4) : 'missing', 
+      state: state ? maskSensitiveData(state, 4) : 'missing', 
       provider: provider || 'not specified',
-      hasState: !!state 
-    });
+      hasState: !!state,
+      hasCode: !!code
+    };
+    console.log(`📋 [${requestId}] Callback parameters:`, parameterLog);
 
     // Input validation
     if (!code || typeof code !== 'string' || code.trim() === '') {
-      console.log('❌ Invalid or missing code');
+      console.log(`❌ [${requestId}] Invalid or missing code`);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -99,7 +158,7 @@ serve(async (req) => {
     }
 
     if (code === 'TEST') {
-      console.log('🧪 Test code detected - returning validation success');
+      console.log(`🧪 [${requestId}] Test code detected - returning validation success`);
       return new Response(
         JSON.stringify({
           success: false,
@@ -111,14 +170,67 @@ serve(async (req) => {
       );
     }
 
-    if (!state) {
-      console.log('⚠️ Missing state parameter - proceeding with unauthenticated flow');
+    // 🔄 STAGE 2.5: Protection against double code exchange
+    if (isCodeUsed(code)) {
+      console.log(`❌ [${requestId}] Code already used - double exchange attempt detected`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          stage: 'token_exchange',
+          error: 'Code already used',
+          details: 'This authorization code has already been exchanged for tokens'
+        }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Mark code as used immediately to prevent race conditions
+    markCodeAsUsed(code);
+
+    // 🔄 STAGE 2.6: State verification via cookie
+    if (state) {
+      const storedState = getCookieValue(req.headers, 'oauth_state_hubspot');
+      console.log(`🔒 [${requestId}] State validation:`, {
+        receivedState: maskSensitiveData(state, 4),
+        storedState: storedState ? maskSensitiveData(storedState, 4) : 'not found',
+        cookiePresent: !!storedState
+      });
+
+      if (!storedState) {
+        console.log(`❌ [${requestId}] No stored OAuth state found in cookies`);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            stage: 'input_validation',
+            error: 'Invalid state - no stored state found',
+            details: 'OAuth state cookie missing. This may indicate a CSRF attack or expired session.'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (storedState !== state) {
+        console.log(`❌ [${requestId}] OAuth state mismatch - possible CSRF attack`);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            stage: 'input_validation',
+            error: 'Invalid state - state mismatch',
+            details: 'OAuth state does not match stored value. This may indicate a CSRF attack.'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`✅ [${requestId}] OAuth state validation successful`);
+    } else {
+      console.log(`⚠️ [${requestId}] Missing state parameter - proceeding with unauthenticated flow`);
     }
 
     // 🔄 STAGE 3: Environment validation
     if (!hubspotClientId || !hubspotClientSecret || !hubspotRedirectUri || 
         [hubspotClientId, hubspotClientSecret, hubspotRedirectUri].includes('placeholder')) {
-      console.log('🔧 Mock mode - secrets not configured');
+      console.log(`🔧 [${requestId}] Mock mode - secrets not configured`);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -131,11 +243,15 @@ serve(async (req) => {
       );
     }
 
-    console.log('🔐 Real HubSpot OAuth callback - exchanging code for tokens');
+    console.log(`🔐 [${requestId}] Real HubSpot OAuth callback - exchanging code for tokens`);
     
-    // 🔄 STAGE 4: Token exchange
+    // 🔄 STAGE 4: Token exchange with enhanced logging
     const tokenExchangeUrl = 'https://api.hubapi.com/oauth/v1/token';
-    console.log('🌐 Token exchange URL:', tokenExchangeUrl);
+    console.log(`🌐 [${requestId}] Token exchange:`, {
+      url: tokenExchangeUrl,
+      redirect_uri_used: maskSensitiveData(hubspotRedirectUri!, 8),
+      client_id_used: maskSensitiveData(hubspotClientId!, 8)
+    });
 
     let tokenResponse;
     let tokenData;
@@ -156,10 +272,11 @@ serve(async (req) => {
         }),
       });
 
-      console.log('📡 HubSpot API response:', {
+      console.log(`📡 [${requestId}] HubSpot API response:`, {
         status: tokenResponse.status,
         statusText: tokenResponse.statusText,
-        ok: tokenResponse.ok
+        ok: tokenResponse.ok,
+        hubspot_status: tokenResponse.status
       });
 
       if (!tokenResponse.ok) {
@@ -171,10 +288,12 @@ serve(async (req) => {
           errorDetails = { raw: errorText };
         }
         
-        console.error('❌ HubSpot token exchange failed:', {
+        console.error(`❌ [${requestId}] HubSpot token exchange failed:`, {
+          stage: 'token_exchange',
           status: tokenResponse.status,
           statusText: tokenResponse.statusText,
-          error: errorDetails
+          error: errorDetails,
+          hubspot_status: tokenResponse.status
         });
         
         return new Response(
@@ -191,7 +310,11 @@ serve(async (req) => {
       tokenData = await tokenResponse.json();
       
     } catch (fetchError) {
-      console.error('❌ Network error during token exchange:', fetchError.message);
+      console.error(`❌ [${requestId}] Network error during token exchange:`, {
+        stage: 'token_exchange',
+        error: fetchError.message,
+        token_url: tokenExchangeUrl
+      });
       return new Response(
         JSON.stringify({
           success: false,
@@ -203,7 +326,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ HubSpot token exchange successful');
+    console.log(`✅ [${requestId}] HubSpot token exchange successful`);
 
     // 🔄 STAGE 5: User info retrieval
     let userEmail = null;

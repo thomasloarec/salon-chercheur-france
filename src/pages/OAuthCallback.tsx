@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { validateOAuthState, clearOAuthStateCookie } from '@/lib/oauthSecurity';
 
 export const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -37,6 +38,21 @@ export const OAuthCallback = () => {
         return;
       }
 
+      // Validate OAuth state for security
+      if (state) {
+        const isStateValid = validateOAuthState(state, provider);
+        if (!isStateValid) {
+          window.opener?.postMessage({
+            type: 'oauth-error',
+            provider,
+            message: 'État OAuth invalide - possible attaque CSRF'
+          }, '*');
+          clearOAuthStateCookie(provider);
+          window.close();
+          return;
+        }
+      }
+
       try {
         // Debug mode logging
         const isDebugMode = searchParams.get('oauthDebug') === '1';
@@ -51,7 +67,7 @@ export const OAuthCallback = () => {
         const { data, error: callbackError } = await supabase.functions.invoke(
           `oauth-${provider}-callback`,
           {
-            body: { code, state }
+            body: { code, state, provider }
           }
         );
 
@@ -76,12 +92,18 @@ export const OAuthCallback = () => {
           was_created: data.was_created
         }, '*');
 
+        // Clear OAuth state cookie after successful exchange
+        clearOAuthStateCookie(provider);
+
       } catch (error) {
         window.opener?.postMessage({
           type: 'oauth-error',
           provider,
           message: error instanceof Error ? error.message : 'Erreur inconnue'
         }, '*');
+        
+        // Clear OAuth state cookie on error
+        clearOAuthStateCookie(provider);
       }
 
       window.close();

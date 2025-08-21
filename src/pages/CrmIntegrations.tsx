@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCrmIntegrations, useSyncCrmAccounts } from '@/hooks/useCrmIntegrations';
 import { handleOAuthLogin, handleOAuthCallback, handleDisconnectCrm } from '@/lib/oauthHandlers';
+import { useHubSpotOAuth } from '@/hooks/useHubSpotOAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ const CrmIntegrations = () => {
   const syncMutation = useSyncCrmAccounts();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { initiateOAuth: initiateHubSpotOAuth, loading: hubspotLoading } = useHubSpotOAuth();
 
   // Handle OAuth callback and other URL parameters
   useEffect(() => {
@@ -107,11 +109,23 @@ const CrmIntegrations = () => {
 
   const handleConnect = async (provider: CrmProvider) => {
     try {
-      await handleOAuthLogin(provider);
+      if (provider === 'hubspot') {
+        // Use new HubSpot OAuth flow with popup and state verification
+        await initiateHubSpotOAuth();
+        // Refresh integrations after successful connection
+        queryClient.invalidateQueries({ queryKey: ['crm-integrations', user?.id] });
+        toast({
+          title: "Connexion réussie",
+          description: "HubSpot a été connecté avec succès.",
+        });
+      } else {
+        // Use legacy flow for other providers
+        await handleOAuthLogin(provider);
+      }
     } catch (error) {
       toast({
         title: "Erreur de connexion",
-        description: "Impossible d'initier la connexion OAuth.",
+        description: error instanceof Error ? error.message : "Impossible d'initier la connexion OAuth.",
         variant: "destructive",
       });
     }

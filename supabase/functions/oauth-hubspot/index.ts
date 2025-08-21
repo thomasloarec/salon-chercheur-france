@@ -21,9 +21,20 @@ serve(async (req) => {
   }
 
   try {
-    // Parse URL pour récupérer les query params (notamment oauthDebug)
+    // Parse request body to get state from client
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      // If no body, proceed with legacy flow
+      requestBody = {};
+    }
+    
+    const clientState = requestBody.state;
+    
+    // Parse URL pour récupérer les query params (notamment oauthDebug) 
     const url = new URL(req.url);
-    const oauthDebug = url.searchParams.get('oauthDebug') === '1';
+    const oauthDebug = requestBody.oauthDebug === '1' || url.searchParams.get('oauthDebug') === '1';
     
     console.log(`🔄 OAuth HubSpot request: ${req.method} ${req.url}`);
     if (oauthDebug) {
@@ -95,8 +106,11 @@ serve(async (req) => {
     const allScopes = [...requiredScopes, ...optionalScopes];
     
     // Construct OAuth install URL
-    // Use userId if available, otherwise generate a temporary state for unauthenticated users
-    const state = userId || `unauth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Use client-provided state if available, otherwise fallback to userId or generate temporary state
+    const state = clientState || userId || `unauth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log('🔒 Using OAuth state:', clientState ? 'client-provided' : 'server-generated', 
+      '- masked:', state.substring(0, 8) + '...');
     
     const installUrl = `https://${hubspotDomain}/oauth/authorize?` +
       `client_id=${hubspotClientId}&` +
