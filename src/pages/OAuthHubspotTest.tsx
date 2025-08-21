@@ -13,6 +13,15 @@ export default function OAuthHubspotTest() {
     clientId: '',
     redirectUri: ''
   });
+  const [holdOpen, setHoldOpen] = useState(false);
+  const [result, setResult] = useState<{
+    success: boolean;
+    status: number;
+    stage: string;
+    body: any;
+    ts: number;
+    source: 'postMessage' | 'localStorage';
+  } | null>(null);
 
   useEffect(() => {
     const cookie = document.cookie.includes('oauth_state=');
@@ -23,6 +32,50 @@ export default function OAuthHubspotTest() {
     const debugClientId = sessionStorage.getItem('oauth_debug_client_id') || '';
     const debugRedirectUri = sessionStorage.getItem('oauth_debug_redirect_uri') || '';
     setDebugConfig({ clientId: debugClientId, redirectUri: debugRedirectUri });
+    
+    // Load hold open state
+    const holdOpenState = sessionStorage.getItem('oauth_hold_open') === '1';
+    setHoldOpen(holdOpenState);
+    
+    // Load last result from localStorage as fallback
+    try {
+      const lastResult = localStorage.getItem('hubspot_last_result');
+      if (lastResult) {
+        const parsed = JSON.parse(lastResult);
+        // Only show results from the last 5 minutes
+        if (Date.now() - parsed.ts < 5 * 60 * 1000) {
+          setResult({
+            success: parsed.success,
+            status: parsed.status,
+            stage: parsed.stage,
+            body: parsed.body,
+            ts: parsed.ts,
+            source: 'localStorage'
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load last result:', e);
+    }
+    
+    // Listen for postMessage from OAuth callback
+    function onMsg(ev: MessageEvent) {
+      if (ev.origin !== 'https://lotexpo.com') return;
+      const d = ev.data || {};
+      if (d?.type !== 'hubspot_oauth_result') return;
+      
+      setResult({ 
+        success: !!d.success, 
+        status: d.status ?? 0, 
+        stage: d.stage ?? '', 
+        body: d.body ?? null, 
+        ts: Date.now(), 
+        source: 'postMessage' 
+      });
+    }
+    window.addEventListener('message', onMsg);
+    
+    return () => window.removeEventListener('message', onMsg);
   }, []);
 
   const handleConnect = async () => {
@@ -97,6 +150,16 @@ export default function OAuthHubspotTest() {
     sessionStorage.removeItem('oauth_debug_redirect_uri');
     setDebugConfig({ clientId: '', redirectUri: '' });
     alert('Configuration debug effacée');
+  };
+
+  const handleHoldOpenChange = (checked: boolean) => {
+    setHoldOpen(checked);
+    sessionStorage.setItem('oauth_hold_open', checked ? '1' : '0');
+  };
+
+  const handleClearResult = () => {
+    setResult(null);
+    localStorage.removeItem('hubspot_last_result');
   };
 
   const effectiveConfigData = getEffectiveHubspotConfig();
@@ -200,6 +263,55 @@ export default function OAuthHubspotTest() {
             Connecter HubSpot (test)
           </button>
         </div>
+        
+        {debug && (
+          <div className="bg-muted p-4 rounded-lg border mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={holdOpen}
+                  onChange={(e) => handleHoldOpenChange(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-sm font-medium">Maintenir la fenêtre ouverte (debug)</span>
+              </label>
+            </div>
+          </div>
+        )}
+        
+        {result && (
+          <div className="bg-card p-6 rounded-lg border mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground">
+                {result.success ? '✅ Connecté à HubSpot' : '❌ Échec de connexion'}
+              </h3>
+              <button 
+                onClick={handleClearResult}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Effacer résultat
+              </button>
+            </div>
+            
+            <div className="space-y-2 text-sm">
+              <div><span className="font-medium">Status:</span> {result.status}</div>
+              <div><span className="font-medium">Stage:</span> {result.stage}</div>
+              <div><span className="font-medium">Source:</span> {result.source}</div>
+              <div><span className="font-medium">Timestamp:</span> {new Date(result.ts).toLocaleTimeString()}</div>
+              {result.body && (
+                <div>
+                  <div className="font-medium mb-1">Response:</div>
+                  <pre className="bg-muted p-2 rounded text-xs overflow-auto max-h-32">
+                    {typeof result.body === 'string' 
+                      ? result.body 
+                      : JSON.stringify(result.body, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {debug && (
           <div className="bg-muted p-4 rounded-lg border">

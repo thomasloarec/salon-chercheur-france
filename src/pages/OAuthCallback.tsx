@@ -69,6 +69,29 @@ export const OAuthCallback = () => {
       if (error) {
         setStatus('error');
         setMessage(`Erreur OAuth: ${error}`);
+        // Send error result to parent
+        const result = { 
+          type: 'hubspot_oauth_result', 
+          provider: provider, 
+          success: false,
+          status: 0,
+          stage: 'oauth_error',
+          body: { error: `Erreur OAuth: ${error}` }
+        };
+        try { 
+          window.opener?.postMessage(result, 'https://lotexpo.com'); 
+        } catch {}
+        try { 
+          localStorage.setItem('hubspot_last_result', JSON.stringify({ ...result, ts: Date.now() })); 
+        } catch {}
+
+        const debug = new URLSearchParams(window.location.search).has('oauthDebug');
+        const hold = sessionStorage.getItem('oauth_hold_open') === '1';
+        
+        if (debug || hold) {
+          return; // Don't close or redirect in debug mode
+        }
+
         if (window.opener) {
           window.opener.postMessage({
             type: 'oauth-error',
@@ -76,7 +99,7 @@ export const OAuthCallback = () => {
             message: `Erreur OAuth: ${error}`
           }, '*');
           window.close();
-        } else if (!isDebug) {
+        } else {
           setTimeout(() => {
             window.location.href = '/crm-integrations';
           }, 2000);
@@ -87,6 +110,29 @@ export const OAuthCallback = () => {
       if (!code) {
         setStatus('error');
         setMessage('Code d\'autorisation manquant');
+        // Send error result to parent
+        const result = { 
+          type: 'hubspot_oauth_result', 
+          provider: provider, 
+          success: false,
+          status: 0,
+          stage: 'missing_code',
+          body: { error: 'Code d\'autorisation manquant' }
+        };
+        try { 
+          window.opener?.postMessage(result, 'https://lotexpo.com'); 
+        } catch {}
+        try { 
+          localStorage.setItem('hubspot_last_result', JSON.stringify({ ...result, ts: Date.now() })); 
+        } catch {}
+
+        const debug = new URLSearchParams(window.location.search).has('oauthDebug');
+        const hold = sessionStorage.getItem('oauth_hold_open') === '1';
+        
+        if (debug || hold) {
+          return; // Don't close or redirect in debug mode
+        }
+
         if (window.opener) {
           window.opener.postMessage({
             type: 'oauth-error',
@@ -94,7 +140,7 @@ export const OAuthCallback = () => {
             message: 'Code d\'autorisation manquant'
           }, '*');
           window.close();
-        } else if (!isDebug) {
+        } else {
           setTimeout(() => {
             window.location.href = '/crm-integrations';
           }, 2000);
@@ -123,6 +169,34 @@ export const OAuthCallback = () => {
         });
 
         const data = await response.json();
+        
+        // Prepare result for parent window communication
+        const result = { 
+          type: 'hubspot_oauth_result', 
+          provider: provider, 
+          success: response.ok && data.success,
+          status: response.status,
+          stage: data.stage || 'completed',
+          body: data
+        };
+
+        // Send result to parent window
+        try { 
+          window.opener?.postMessage(result, 'https://lotexpo.com'); 
+        } catch (e) {
+          console.warn('Failed to send message to parent:', e);
+        }
+        
+        // Store result in localStorage as fallback
+        try { 
+          localStorage.setItem('hubspot_last_result', JSON.stringify({ ...result, ts: Date.now() })); 
+        } catch (e) {
+          console.warn('Failed to store result in localStorage:', e);
+        }
+
+        // Check debug and hold open modes
+        const debug = new URLSearchParams(window.location.search).has('oauthDebug');
+        const hold = sessionStorage.getItem('oauth_hold_open') === '1';
 
         if (!response.ok || !data.success) {
           throw new Error(data.error || `Erreur ${response.status}: ${response.statusText}`);
@@ -144,6 +218,22 @@ export const OAuthCallback = () => {
         const returnTo = sessionStorage.getItem('oauth_return_to');
         sessionStorage.removeItem('oauth_return_to');
 
+        // Don't close window if debug or hold mode
+        if (debug || hold) {
+          if (isDebug) {
+            setDebugInfo({
+              ...debugData,
+              result_data: {
+                success: true,
+                status: response.status,
+                stage: data.stage || 'completed',
+                body: JSON.stringify(data, null, 2).substring(0, 500) + (JSON.stringify(data).length > 500 ? '...' : '')
+              }
+            });
+          }
+          return; // Don't close or redirect
+        }
+
         if (window.opener) {
           window.opener.postMessage({
             type: 'oauth-success',
@@ -159,7 +249,7 @@ export const OAuthCallback = () => {
             window.opener.location.href = returnTo;
           }
           window.close();
-        } else if (!isDebug) {
+        } else {
           setTimeout(() => {
             window.location.href = returnTo || '/crm-integrations';
           }, 2000);
@@ -170,9 +260,53 @@ export const OAuthCallback = () => {
         const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
         setMessage(errorMessage);
         
+        // Prepare error result for parent window communication
+        const result = { 
+          type: 'hubspot_oauth_result', 
+          provider: provider, 
+          success: false,
+          status: 0,
+          stage: 'error',
+          body: { error: errorMessage }
+        };
+
+        // Send error result to parent window
+        try { 
+          window.opener?.postMessage(result, 'https://lotexpo.com'); 
+        } catch (e) {
+          console.warn('Failed to send error message to parent:', e);
+        }
+        
+        // Store error result in localStorage as fallback
+        try { 
+          localStorage.setItem('hubspot_last_result', JSON.stringify({ ...result, ts: Date.now() })); 
+        } catch (e) {
+          console.warn('Failed to store error result in localStorage:', e);
+        }
+
+        // Check debug and hold open modes
+        const debug = new URLSearchParams(window.location.search).has('oauthDebug');
+        const hold = sessionStorage.getItem('oauth_hold_open') === '1';
+
         // Handle return URL from sessionStorage on error too
         const returnTo = sessionStorage.getItem('oauth_return_to');
         sessionStorage.removeItem('oauth_return_to');
+        
+        // Don't close window if debug or hold mode
+        if (debug || hold) {
+          if (isDebug) {
+            setDebugInfo({
+              ...debugData,
+              result_data: {
+                success: false,
+                status: 0,
+                stage: 'error',
+                body: errorMessage
+              }
+            });
+          }
+          return; // Don't close or redirect
+        }
         
         if (window.opener) {
           window.opener.postMessage({
@@ -181,7 +315,7 @@ export const OAuthCallback = () => {
             message: errorMessage
           }, '*');
           window.close();
-        } else if (!isDebug) {
+        } else {
           setTimeout(() => {
             window.location.href = returnTo || '/crm-integrations';
           }, 2000);
@@ -229,8 +363,40 @@ export const OAuthCallback = () => {
           <>
             <div className="text-red-500 text-4xl mb-4">❌</div>
             <p className="text-red-600">{message}</p>
-            <p className="text-sm text-gray-500 mt-2">Redirection en cours...</p>
+            {!searchParams.get('oauthDebug') && !sessionStorage.getItem('oauth_hold_open') && (
+              <p className="text-sm text-gray-500 mt-2">Redirection en cours...</p>
+            )}
           </>
+        )}
+        
+        {(searchParams.get('oauthDebug') || sessionStorage.getItem('oauth_hold_open')) && 
+         (debugInfo?.result_data || status === 'success' || status === 'error') && (
+          <div className="mt-6 p-4 bg-gray-50 border rounded-lg text-left max-w-lg mx-auto">
+            <h4 className="font-semibold mb-2">🔍 Résultat OAuth</h4>
+            <div className="space-y-2 text-sm">
+              <div>Success: {debugInfo?.result_data?.success !== undefined ? 
+                (debugInfo.result_data.success ? '✅' : '❌') : 
+                (status === 'success' ? '✅' : '❌')}</div>
+              <div>Status: {debugInfo?.result_data?.status || 'unknown'}</div>
+              <div>Stage: {debugInfo?.result_data?.stage || status}</div>
+              {debugInfo?.result_data?.body && (
+                <div>
+                  <div className="font-medium">Response:</div>
+                  <pre className="bg-white p-2 border rounded text-xs overflow-auto max-h-32">
+                    {typeof debugInfo.result_data.body === 'string' 
+                      ? debugInfo.result_data.body 
+                      : JSON.stringify(debugInfo.result_data.body, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+            <button 
+              onClick={() => window.close()} 
+              className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
         )}
       </div>
     </div>
