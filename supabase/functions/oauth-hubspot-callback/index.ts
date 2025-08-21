@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { encryptJson, hasValidEncryptionKey } from '../_shared/crypto.ts'
 
 // Récupération des variables d'environnement HubSpot
 const hubspotClientId = Deno.env.get('HUBSPOT_CLIENT_ID');
@@ -68,6 +69,30 @@ serve(async (req) => {
     return new Response(null, { 
       status: 204, 
       headers: corsHeaders 
+    });
+  }
+
+  // Handle diagnostic request
+  if (req.method === 'GET' && new URL(req.url).searchParams.has('diag')) {
+    console.log(`🔍 [diagnostic] HubSpot OAuth diagnostic request`);
+    
+    const hasEncKey = await hasValidEncryptionKey();
+    
+    const diagnostics = {
+      success: true,
+      stage: 'diagnostic',
+      hubspot_client_id: hubspotClientId ? 'configured' : 'missing',
+      hubspot_client_secret: hubspotClientSecret ? 'configured' : 'missing',
+      hubspot_redirect_uri: hubspotRedirectUri ? 'configured' : 'missing',
+      has_encryption_key: hasEncKey,
+      encryption_status: hasEncKey ? 'ready' : 'missing_or_invalid'
+    };
+    
+    console.log(`📊 [diagnostic] Configuration status:`, diagnostics);
+    
+    return new Response(JSON.stringify(diagnostics), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 
@@ -431,63 +456,56 @@ serve(async (req) => {
       }
     }
 
-    // 🔄 STAGE 7: Token encryption and storage
+    // 🔄 STAGE 7: Token encryption and storage with AES-256-GCM
     // Calculate expiry date (HubSpot returns expires_in in seconds)
     const expiresAt = tokenData.expires_in 
       ? new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
       : null;
 
-    // Store encrypted tokens in user_crm_connections table
-    const encryptionKey = Deno.env.get('CRM_ENCRYPTION_KEY') || 'dev-encryption-key-change-in-production';
-    
-    // Encrypt tokens using pgcrypto
-    const { data: encryptedAccessToken, error: encryptError1 } = await supabase.rpc('pgp_sym_encrypt', {
-      data: tokenData.access_token,
-      psw: encryptionKey
-    });
-    
-    if (encryptError1) {
-      console.error('❌ Error encrypting access token:', encryptError1);
+    // Prepare token data for encryption
+    const hubspotTokens = {
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token || null,
+      expires_at: expiresAt,
+      token_type: tokenData.token_type || 'Bearer'
+    };
+
+    // Encrypt tokens using AES-256-GCM
+    let encryptedTokenData: string;
+    try {
+      encryptedTokenData = await encryptJson(hubspotTokens);
+      console.log(`🔐 [${requestId}] Tokens encrypted successfully with AES-256-GCM`);
+    } catch (e) {
+      const errorMsg = String(e?.message || e);
+      console.error(`❌ [${requestId}] Encryption failed:`, errorMsg);
+      
+      if (errorMsg.includes("ENCRYPTION_KEY_INVALID")) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          stage: 'config_encryption',
+          message: 'encryption_key_missing_or_invalid'
+        }), { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        });
+      }
+      
       return new Response(JSON.stringify({ 
         success: false, 
-        stage: 'token_encryption',
-        error: 'Failed to encrypt access token',
-        details: encryptError1.message
+        stage: 'encryption',
+        message: 'failed_to_encrypt'
       }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
       });
     }
-
-    let encryptedRefreshToken = null;
-    if (tokenData.refresh_token) {
-      const { data: encRefreshToken, error: encryptError2 } = await supabase.rpc('pgp_sym_encrypt', {
-        data: tokenData.refresh_token,
-        psw: encryptionKey
-      });
-      
-      if (encryptError2) {
-        console.error('❌ Error encrypting refresh token:', encryptError2);
-        return new Response(JSON.stringify({ 
-          success: false, 
-          stage: 'token_encryption',
-          error: 'Failed to encrypt refresh token',
-          details: encryptError2.message
-        }), { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        });
-      }
-      encryptedRefreshToken = encRefreshToken;
-    }
-
+    // Store encrypted tokens in user_crm_connections table
     const { error: dbError } = await supabase
       .from('user_crm_connections')
       .upsert({
         user_id: finalUserId,
         provider: 'hubspot',
-        access_token_enc: encryptedAccessToken,
-        refresh_token_enc: encryptedRefreshToken,
+        encrypted_data: encryptedTokenData,
         expires_at: expiresAt,
         updated_at: new Date().toISOString()
       }, {
@@ -495,7 +513,7 @@ serve(async (req) => {
       });
 
     if (dbError) {
-      console.error('❌ Database error storing HubSpot tokens:', dbError);
+      console.error(`❌ [${requestId}] Database error storing HubSpot tokens:`, dbError);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -507,7 +525,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ HubSpot tokens stored successfully for user:', finalUserId);
+    console.log(`✅ [${requestId}] HubSpot tokens stored successfully for user:`, finalUserId);
 
     // Return success response with user information
     return new Response(
