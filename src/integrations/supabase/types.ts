@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1148,7 +1148,7 @@ export type Database = {
         Returns: Json
       }
       generate_event_slug: {
-        Args: { event_name: string; event_city: string; event_year: number }
+        Args: { event_city: string; event_name: string; event_year: number }
         Returns: string
       }
       get_current_user_role: {
@@ -1158,9 +1158,9 @@ export type Database = {
       get_location_suggestions: {
         Args: { q: string }
         Returns: {
+          label: string
           rank: number
           type: string
-          label: string
           value: string
         }[]
       }
@@ -1170,15 +1170,15 @@ export type Database = {
           company_id: string
           company_name: string
           company_website: string
-          provider: string
           events_count: number
+          provider: string
           upcoming_events: Json
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -1188,58 +1188,58 @@ export type Database = {
       }
       log_application_event: {
         Args: {
+          p_details?: Json
+          p_function_name?: string
+          p_ip_address?: string
           p_level: string
           p_message: string
-          p_details?: Json
           p_source?: string
-          p_function_name?: string
-          p_user_id?: string
-          p_ip_address?: string
           p_user_agent?: string
+          p_user_id?: string
         }
         Returns: undefined
       }
       publish_pending_event_atomic: {
-        Args: { p_id_event: string; p_event_data: Json }
+        Args: { p_event_data: Json; p_id_event: string }
         Returns: Json
       }
       search_events: {
         Args: {
-          sector_ids?: string[]
           event_types?: string[]
           months?: number[]
-          region_codes?: string[]
           page_num?: number
           page_size?: number
+          region_codes?: string[]
+          sector_ids?: string[]
         }
         Returns: {
-          id: string
-          id_event: string
-          nom_event: string
+          code_postal: string
           date_debut: string
           date_fin: string
-          ville: string
-          secteur: Json
-          url_image: string
-          slug: string
-          rue: string
-          code_postal: string
-          nom_lieu: string
-          url_site_officiel: string
-          type_event: string
+          id: string
+          id_event: string
           is_b2b: boolean
-          visible: boolean
+          nom_event: string
+          nom_lieu: string
+          rue: string
+          secteur: Json
+          slug: string
           total_count: number
+          type_event: string
+          url_image: string
+          url_site_officiel: string
+          ville: string
+          visible: boolean
         }[]
       }
       search_events_test: {
         Args: {
-          sector_ids?: string[]
           event_types?: string[]
           months?: number[]
-          region_codes?: string[]
           page_num?: number
           page_size?: number
+          region_codes?: string[]
+          sector_ids?: string[]
         }
         Returns: string[]
       }
