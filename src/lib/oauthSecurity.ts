@@ -14,47 +14,69 @@ export const generateOAuthNonce = (): string => {
 };
 
 /**
- * Set OAuth state cookie with security flags
+ * Set OAuth state with secure cookie and localStorage fallback
  */
-export const setOAuthStateCookie = (state: string, provider: string = 'hubspot'): void => {
-  const cookieName = `oauth_state_${provider}`;
-  const cookieValue = `${cookieName}=${state}; Path=/; SameSite=Lax; Secure; Max-Age=600`; // 10 minutes
+export const setOAuthState = (value: string): void => {
+  // Set secure cookie with domain for lotexpo.com
+  document.cookie = `oauth_state=${encodeURIComponent(value)}; Max-Age=600; Path=/; Domain=.lotexpo.com; SameSite=Lax; Secure`;
   
-  document.cookie = cookieValue;
-  console.log(`🔒 OAuth state cookie set for ${provider}:`, state.substring(0, 8) + '...');
+  // Set localStorage fallback
+  localStorage.setItem("oauth_state", value);
+  
+  console.log('🔒 OAuth state set:', value.substring(0, 8) + '...');
 };
 
 /**
- * Get OAuth state cookie value
+ * Read OAuth state from cookie and localStorage
  */
-export const getOAuthStateCookie = (provider: string = 'hubspot'): string | null => {
-  const cookieName = `oauth_state_${provider}`;
+export const readOAuthState = (): { cookie: string | null; local: string | null } => {
+  // Read from cookie
+  let cookie: string | null = null;
   const cookies = document.cookie.split(';');
-  
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === cookieName) {
-      return value;
+  for (const c of cookies) {
+    const [name, value] = c.trim().split('=');
+    if (name === 'oauth_state') {
+      cookie = decodeURIComponent(value);
+      break;
     }
   }
   
-  return null;
+  // Read from localStorage
+  const local = localStorage.getItem("oauth_state");
+  
+  return { cookie, local };
 };
 
 /**
- * Clear OAuth state cookie after use
+ * Clear OAuth state from both cookie and localStorage
  */
+export const clearOAuthState = (): void => {
+  // Clear cookie
+  document.cookie = "oauth_state=; Max-Age=0; Path=/; Domain=.lotexpo.com; SameSite=Lax; Secure";
+  
+  // Clear localStorage
+  localStorage.removeItem("oauth_state");
+  
+  console.log('🗑️ OAuth state cleared');
+};
+
+// Legacy functions for backward compatibility
+export const setOAuthStateCookie = (state: string, provider: string = 'hubspot'): void => {
+  setOAuthState(state);
+};
+
+export const getOAuthStateCookie = (provider: string = 'hubspot'): string | null => {
+  const { cookie, local } = readOAuthState();
+  return cookie ?? local;
+};
+
 export const clearOAuthStateCookie = (provider: string = 'hubspot'): void => {
-  const cookieName = `oauth_state_${provider}`;
-  document.cookie = `${cookieName}=; Path=/; SameSite=Lax; Secure; Max-Age=0`;
-  console.log(`🗑️ OAuth state cookie cleared for ${provider}`);
+  clearOAuthState();
 };
 
-/**
- * Validate OAuth state against stored cookie
- */
 export const validateOAuthState = (receivedState: string, provider: string = 'hubspot'): boolean => {
-  const storedState = getOAuthStateCookie(provider);
+  const { cookie, local } = readOAuthState();
+  const storedState = cookie ?? local;
   
   if (!storedState) {
     console.warn(`⚠️ No stored OAuth state found for ${provider}`);

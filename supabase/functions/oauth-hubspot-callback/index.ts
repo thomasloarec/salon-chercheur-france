@@ -82,7 +82,8 @@ serve(async (req) => {
       origin: req.headers.get('origin'),
       referer: req.headers.get('referer'),
       userAgent: req.headers.get('user-agent')?.substring(0, 50) + '...',
-      hasCookies: !!req.headers.get('cookie')
+      hasCookies: !!req.headers.get('cookie'),
+      hasOAuthStateHeader: !!req.headers.get('x-oauth-state')
     };
     console.log(`📊 [${requestId}] Request details:`, logContext);
 
@@ -92,7 +93,8 @@ serve(async (req) => {
       hubspotClientSecret: hubspotClientSecret ? 'set' : 'missing', 
       hubspotRedirectUri: hubspotRedirectUri ? 'set' : 'missing',
       hubspotDomain: hubspotDomain,
-      redirect_uri_used: hubspotRedirectUri ? maskSensitiveData(hubspotRedirectUri, 8) : 'missing'
+      redirect_uri_used: hubspotRedirectUri ? maskSensitiveData(hubspotRedirectUri, 8) : 'missing',
+      header_state_present: !!req.headers.get('x-oauth-state')
     };
     console.log(`🔧 [${requestId}] Environment check:`, envCheck);
 

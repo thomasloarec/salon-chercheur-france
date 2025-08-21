@@ -1,187 +1,102 @@
-# Debug Guide: HubSpot OAuth Callback
+# HubSpot OAuth Debug Guide
 
-## Vue d'ensemble
+## State Storage Matrix
 
-Guide de diagnostic pour résoudre les erreurs 500/400 du callback HubSpot OAuth.
+| Cookie State | LocalStorage State | Debug Mode | Result |
+|--------------|-------------------|------------|--------|
+| ✅ Present | ✅ Present | Any | Use cookie (priority) |
+| ✅ Present | ❌ Missing | Any | Use cookie |
+| ❌ Missing | ✅ Present | Any | Use localStorage (fallback) |
+| ❌ Missing | ❌ Missing | Normal | 400 csrf_state error |
+| ❌ Missing | ❌ Missing | Debug (`?oauthDebug=1`) | Use URL state + warning |
 
-## Activation du mode debug
+## State Storage Implementation
 
-### Front-end
-Ajouter `?oauthDebug=1` à l'URL de callback pour activer les logs détaillés :
-```
-https://lotexpo.com/oauth/hubspot/callback?code=...&state=...&oauthDebug=1
-```
+### Setting State (before HubSpot redirect)
 
-### Edge Function
-Les logs structurés incluent un champ `stage` pour identifier précisément où l'erreur se produit.
+```javascript
+// Set secure cookie with proper domain
+document.cookie = "oauth_state=" + encodeURIComponent(value) + 
+  "; Max-Age=600; Path=/; Domain=.lotexpo.com; SameSite=Lax; Secure";
 
-## Contrat d'API
-
-### Requête attendue (POST)
-```json
-{
-  "provider": "hubspot",
-  "code": "authorization_code_from_hubspot", 
-  "state": "user_id_or_unauth_session"
-}
+// Set localStorage fallback
+localStorage.setItem("oauth_state", value);
 ```
 
-### Réponse de succès
-```json
-{
-  "success": true,
-  "provider": "hubspot",
-  "message": "HubSpot OAuth connection established successfully",
-  "user_id": "uuid",
-  "email": "user@example.com",
-  "was_created": false
-}
+### Reading State (on callback page)
+
+```javascript
+const { cookie, local } = readOAuthState();
+
+// Priority: cookie > localStorage > URL state (debug only)
+const headerState = cookie ?? local ?? (isDebug ? urlState : null);
 ```
 
-### Réponse d'erreur
-```json
-{
-  "success": false,
-  "stage": "token_exchange",
-  "error": "Token exchange failed: 400 Bad Request", 
-  "details": {
-    "status": "BAD_AUTH_CODE",
-    "message": "missing or unknown auth code"
-  }
-}
+### Cleanup (after success)
+
+```javascript
+// Clear cookie
+document.cookie = "oauth_state=; Max-Age=0; Path=/; Domain=.lotexpo.com; SameSite=Lax; Secure";
+
+// Clear localStorage
+localStorage.removeItem("oauth_state");
 ```
 
-## Stages de diagnostic
+## Debug Mode
 
-### 1. `method_validation`
-- **Erreur** : Méthode HTTP incorrecte
-- **Solution** : Vérifier que le front envoie bien un POST
+Enable debug mode by adding `?oauthDebug=1` to any OAuth URL:
 
-### 2. `input_validation`
-- **Erreur** : JSON invalide, code manquant, ou code de test
-- **Solution** : Vérifier le payload envoyé par le front
+- `/crm-integrations?oauthDebug=1` - Shows debug info when initiating OAuth
+- `/oauth/hubspot/callback?oauthDebug=1` - Shows diagnostic card on callback page
 
-### 3. `environment_validation`
-- **Erreur** : Secrets manquants (CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
-- **Solution** : Vérifier les secrets Supabase
+### Debug Features
 
-### 4. `token_exchange`
-- **Erreur** : Échange de code échoué avec HubSpot
-- **Solutions** :
-  - Vérifier que `HUBSPOT_REDIRECT_URI` correspond exactement à l'URL déclarée dans HubSpot
-  - Vérifier que le code n'est pas expiré (10 minutes max)
-  - Vérifier le domaine HubSpot (EU vs US)
+1. **Console logging**: Detailed state management logs
+2. **Diagnostic card**: Shows state presence flags
+3. **No auto-redirect**: Stays on callback page for inspection
+4. **Fallback to URL state**: Uses URL state if cookie/localStorage missing
 
-### 5. `user_handling`
-- **Erreur** : Impossible de récupérer l'email ou de chercher l'utilisateur
-- **Solution** : Vérifier les permissions de l'API HubSpot et la base Supabase
+## Testing Scenarios
 
-### 6. `user_creation`
-- **Erreur** : Échec de création d'un nouvel utilisateur
-- **Solution** : Vérifier les permissions Supabase auth
+### Normal Flow (Production)
+1. Navigate to `/crm-integrations`
+2. Click "Connecter HubSpot"
+3. Complete HubSpot OAuth
+4. Should redirect back with success
 
-### 7. `token_encryption`
-- **Erreur** : Échec de chiffrement des tokens
-- **Solution** : Vérifier que pgcrypto est activé et que la clé de chiffrement est définie
+### Debug Flow
+1. Navigate to `/crm-integrations?oauthDebug=1`
+2. Open DevTools → Application → Storage
+3. Click "Connecter HubSpot"
+4. Verify cookie `oauth_state` and localStorage entry
+5. Complete HubSpot OAuth
+6. Check diagnostic card on `/oauth/hubspot/callback?oauthDebug=1`
 
-### 8. `database_storage`
-- **Erreur** : Échec de sauvegarde en base
-- **Solution** : Vérifier la table `user_crm_connections` et les permissions RLS
+### Error Testing
+1. Clear all cookies and localStorage
+2. Navigate directly to `/oauth/hubspot/callback?code=test&state=test`
+3. Should get 400 csrf_state error (normal mode)
+4. Add `?oauthDebug=1` - should use URL state with warning
 
-## Test manuel avec curl
+## Expected Headers
 
-### Test de validation d'input
-```bash
-curl -i -X POST https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback \
-  -H "Content-Type: application/json" \
-  -d '{"provider":"hubspot","code":"TEST","state":"TEST"}'
+POST request to Edge Function should include:
+
+```
+Content-Type: application/json
+X-OAuth-State: [base64url_state_value]
 ```
 
-**Attendu** : 400 avec `stage: "input_validation"` et message sur code de test.
+## Common Issues
 
-### Test avec code invalide
-```bash
-curl -i -X POST https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback \
-  -H "Content-Type: application/json" \
-  -d '{"provider":"hubspot","code":"invalid_code","state":"test_user"}'
-```
+- **"No stored state found"**: Check cookie domain (should be `.lotexpo.com`)
+- **CORS errors**: Verify `X-OAuth-State` in allowed headers
+- **State mismatch**: Check URL encoding/decoding consistency
+- **Cookie not set**: Verify Secure flag compatibility with HTTPS
 
-**Attendu** : 400 avec `stage: "token_exchange"` et erreur HubSpot BAD_AUTH_CODE.
+## Monitoring
 
-### Test CORS
-```bash
-curl -i -X OPTIONS https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback
-```
-
-**Attendu** : 204 avec headers CORS appropriés.
-
-## Variables d'environnement requises
-
-```bash
-HUBSPOT_CLIENT_ID=your_client_id
-HUBSPOT_CLIENT_SECRET=your_client_secret  
-HUBSPOT_REDIRECT_URI=https://lotexpo.com/oauth/hubspot/callback
-HUBSPOT_DOMAIN=app-eu1.hubspot.com  # ou app.hubspot.com pour US
-```
-
-## Checklist de résolution
-
-### ✅ Erreurs fréquentes
-
-1. **400 "BAD_AUTH_CODE"**
-   - [ ] Vérifier que `HUBSPOT_REDIRECT_URI` correspond exactement à l'URL HubSpot
-   - [ ] Vérifier que le code n'est pas expiré (max 10 min après autorisation)
-   - [ ] Tester avec un nouveau code d'autorisation
-
-2. **CORS errors**
-   - [ ] Vérifier que l'origine est `https://lotexpo.com`
-   - [ ] Vérifier les headers CORS dans la réponse OPTIONS
-
-3. **500 "token_encryption"**
-   - [ ] Vérifier que pgcrypto est activé : `SELECT pgp_sym_encrypt('test', 'key');`
-   - [ ] Vérifier la variable `CRM_ENCRYPTION_KEY`
-
-4. **500 "database_storage"**
-   - [ ] Vérifier que la table `user_crm_connections` existe
-   - [ ] Vérifier les politiques RLS sur cette table
-
-### 🔍 Debug pas à pas
-
-1. **Reproduire l'erreur** avec `?oauthDebug=1`
-2. **Identifier le stage** dans la réponse JSON d'erreur  
-3. **Consulter les logs** Edge Function correspondants
-4. **Appliquer la solution** selon le stage identifié
-5. **Tester à nouveau** le flow complet
-
-## Logs utiles
-
-### Logs de succès type
-```
-🔄 HubSpot callback initiated
-📊 Request details: { method: "POST", origin: "https://lotexpo.com" }
-🔧 Environment check: { hubspotClientId: "set", ... }
-📋 Callback parameters: { code: "***", state: "***", provider: "hubspot" }
-🔐 Real HubSpot OAuth callback - exchanging code for tokens
-📡 HubSpot API response: { status: 200, statusText: "OK", ok: true }
-✅ HubSpot token exchange successful
-📧 HubSpot user email: ***@***.com
-👤 Authenticated user flow, user ID: uuid
-✅ HubSpot tokens stored successfully for user: uuid
-```
-
-### Logs d'erreur type
-```
-❌ HubSpot token exchange failed: {
-  status: 400,
-  statusText: "Bad Request", 
-  error: { status: "BAD_AUTH_CODE", message: "missing or unknown auth code" }
-}
-```
-
-## Support
-
-En cas de problème persistant, fournir :
-- URL complète de test avec `?oauthDebug=1`
-- Réponse JSON d'erreur avec le champ `stage`
-- Logs Edge Function correspondants (masquer les données sensibles)
-- Configuration HubSpot (scopes, redirect URI)
+Edge Function logs include:
+- `header_state_present`: Boolean flag
+- `redirect_uri_used`: Masked redirect URI
+- `cookie_state_present`/`local_state_present`: Debug flags

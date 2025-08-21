@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { generateOAuthNonce, setOAuthStateCookie, validateOAuthState, clearOAuthStateCookie } from '@/lib/oauthSecurity';
+import { generateOAuthNonce, setOAuthState, validateOAuthState, clearOAuthState } from '@/lib/oauthSecurity';
 
 export interface HubSpotOAuthResponse {
   success: boolean;
@@ -30,8 +30,12 @@ export const useHubSpotOAuth = () => {
       const state = generateOAuthNonce();
       console.log('🔒 Generated OAuth state:', state.substring(0, 8) + '...');
       
-      // Store state in secure cookie
-      setOAuthStateCookie(state, 'hubspot');
+      // Store state in secure cookie and localStorage
+      setOAuthState(state);
+      
+      if (debug) {
+        console.log("oauth_state set", { value: state });
+      }
 
       // Get OAuth install URL from Edge Function
       const { data, error: functionError } = await supabase.functions.invoke('oauth-hubspot', {
@@ -80,13 +84,13 @@ export const useHubSpotOAuth = () => {
           
           if (type === 'oauth-success') {
             console.log('✅ HubSpot OAuth completed successfully:', message);
-            // Clear the state cookie after successful OAuth
-            clearOAuthStateCookie('hubspot');
+            // Clear the state after successful OAuth
+            clearOAuthState();
             resolve();
           } else if (type === 'oauth-error') {
             console.error('❌ HubSpot OAuth error:', oauthError || message);
-            // Clear the state cookie on error too
-            clearOAuthStateCookie('hubspot');
+            // Clear the state on error too
+            clearOAuthState();
             reject(new Error(oauthError || message || 'OAuth failed'));
           }
         };
@@ -98,7 +102,7 @@ export const useHubSpotOAuth = () => {
           if (popup.closed) {
             clearInterval(checkClosed);
             window.removeEventListener('message', messageHandler);
-            clearOAuthStateCookie('hubspot');
+            clearOAuthState();
             reject(new Error('OAuth cancelled by user'));
           }
         }, 1000);
@@ -108,7 +112,7 @@ export const useHubSpotOAuth = () => {
       const errorMessage = err instanceof Error ? err.message : 'Unknown OAuth error';
       console.error('HubSpot OAuth error:', err);
       setError(errorMessage);
-      clearOAuthStateCookie('hubspot');
+      clearOAuthState();
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
