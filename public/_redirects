@@ -1,2 +1,6 @@
-# Netlify redirects for OAuth callbacks
-/oauth/hubspot/callback   https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback   307!
+# Netlify redirects
+# Fallback redirect for legacy OAuth URL
+/api/oauth/hubspot/callback /oauth/hubspot/callback 302
+
+# SPA fallback - must be last
+/* /index.html 200

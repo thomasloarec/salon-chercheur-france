@@ -33,6 +33,7 @@ export const OAuthCallback = () => {
         cookie_state_present: !!cookie,
         local_state_present: !!local,
         header_state_present: !!headerState,
+        state_from_url: state ? state.substring(0, 8) + '...' : 'missing',
         is_debug_mode: isDebug
       };
       
@@ -119,6 +120,10 @@ export const OAuthCallback = () => {
         }
         setMessage(successMessage);
 
+        // Handle return URL from sessionStorage
+        const returnTo = sessionStorage.getItem('oauth_return_to');
+        sessionStorage.removeItem('oauth_return_to');
+
         if (window.opener) {
           window.opener.postMessage({
             type: 'oauth-success',
@@ -128,10 +133,15 @@ export const OAuthCallback = () => {
             email: data.email,
             was_created: data.was_created
           }, '*');
+          
+          // Redirect opener to return URL if available
+          if (returnTo && window.opener.location) {
+            window.opener.location.href = returnTo;
+          }
           window.close();
         } else if (!isDebug) {
           setTimeout(() => {
-            window.location.href = '/crm-integrations';
+            window.location.href = returnTo || '/crm-integrations';
           }, 2000);
         }
 
@@ -139,6 +149,10 @@ export const OAuthCallback = () => {
         setStatus('error');
         const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
         setMessage(errorMessage);
+        
+        // Handle return URL from sessionStorage on error too
+        const returnTo = sessionStorage.getItem('oauth_return_to');
+        sessionStorage.removeItem('oauth_return_to');
         
         if (window.opener) {
           window.opener.postMessage({
@@ -149,7 +163,7 @@ export const OAuthCallback = () => {
           window.close();
         } else if (!isDebug) {
           setTimeout(() => {
-            window.location.href = '/crm-integrations';
+            window.location.href = returnTo || '/crm-integrations';
           }, 2000);
         }
       }
@@ -168,6 +182,7 @@ export const OAuthCallback = () => {
               <div>Cookie State: {debugInfo.cookie_state_present ? '✅' : '❌'}</div>
               <div>Local State: {debugInfo.local_state_present ? '✅' : '❌'}</div>
               <div>Header State: {debugInfo.header_state_present ? '✅' : '❌'}</div>
+              <div>State from URL: {debugInfo.state_from_url}</div>
               <div>Debug Mode: {debugInfo.is_debug_mode ? '✅' : '❌'}</div>
             </div>
           </div>
