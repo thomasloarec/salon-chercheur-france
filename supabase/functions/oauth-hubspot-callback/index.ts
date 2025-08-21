@@ -5,101 +5,207 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const hubspotClientId = Deno.env.get('HUBSPOT_CLIENT_ID');
 const hubspotClientSecret = Deno.env.get('HUBSPOT_CLIENT_SECRET');
 const hubspotRedirectUri = Deno.env.get('HUBSPOT_REDIRECT_URI');
+const hubspotDomain = Deno.env.get('HUBSPOT_DOMAIN') || 'app.hubspot.com';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': 'https://lotexpo.com',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    });
   }
 
   try {
+    // 🔄 STAGE 1: Initialization
+    console.log('🔄 HubSpot callback initiated');
+    console.log('📊 Request details:', {
+      method: req.method,
+      origin: req.headers.get('origin'),
+      referer: req.headers.get('referer'),
+      userAgent: req.headers.get('user-agent')?.substring(0, 50) + '...'
+    });
+
+    // Log environment variables presence (not values)
+    console.log('🔧 Environment check:', {
+      hubspotClientId: hubspotClientId ? 'set' : 'missing',
+      hubspotClientSecret: hubspotClientSecret ? 'set' : 'missing', 
+      hubspotRedirectUri: hubspotRedirectUri ? 'set' : 'missing',
+      hubspotDomain: hubspotDomain
+    });
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('🔄 HubSpot callback initiated');
-
     if (req.method !== 'POST') {
+      console.log('❌ Invalid method:', req.method);
       return new Response(
-        JSON.stringify({ success: false, error: 'Method not allowed' }),
+        JSON.stringify({ 
+          success: false, 
+          stage: 'method_validation',
+          error: 'Method not allowed. Only POST is accepted.',
+          details: `Received ${req.method}, expected POST`
+        }),
         { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Parse request body to get the authorization code and state
-    const { code, state } = await req.json();
-
-    if (!code) {
+    // 🔄 STAGE 2: Input validation
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.log('❌ JSON parse error:', parseError.message);
       return new Response(
-        JSON.stringify({ success: false, error: 'Authorization code is required' }),
+        JSON.stringify({
+          success: false,
+          stage: 'input_validation', 
+          error: 'Invalid JSON payload',
+          details: parseError.message
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('📋 Callback parameters:', { code: '***', state, hasState: !!state });
+    const { code, state, provider } = requestBody;
 
-    console.log('🔧 HubSpot Callback - Environment check:', { 
-      hubspotClientId: hubspotClientId ? 'set' : 'missing',
-      hubspotClientSecret: hubspotClientSecret ? 'set' : 'missing',
-      hubspotRedirectUri: hubspotRedirectUri ? 'set' : 'missing'
+    console.log('📋 Callback parameters:', { 
+      code: code ? '***' : 'missing', 
+      state: state ? '***' : 'missing', 
+      provider: provider || 'not specified',
+      hasState: !!state 
     });
 
-    // Check if any secrets are missing or placeholder values (mock mode)
-    if (!hubspotClientId || !hubspotClientSecret || !hubspotRedirectUri || 
-        [hubspotClientId, hubspotClientSecret, hubspotRedirectUri].includes('placeholder')) {
-      console.log('🔧 Mode mock HubSpot OAuth callback – pas de secrets configurés');
+    // Input validation
+    if (!code || typeof code !== 'string' || code.trim() === '') {
+      console.log('❌ Invalid or missing code');
       return new Response(
         JSON.stringify({ 
-          success: true, 
+          success: false, 
+          stage: 'input_validation',
+          error: 'Authorization code is required',
+          details: 'Code parameter is missing, empty, or not a string'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (code === 'TEST') {
+      console.log('🧪 Test code detected - returning validation success');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          stage: 'input_validation',
+          error: 'Test code detected',
+          details: 'Code "TEST" is for testing purposes only and will not work with HubSpot API'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!state) {
+      console.log('⚠️ Missing state parameter - proceeding with unauthenticated flow');
+    }
+
+    // 🔄 STAGE 3: Environment validation
+    if (!hubspotClientId || !hubspotClientSecret || !hubspotRedirectUri || 
+        [hubspotClientId, hubspotClientSecret, hubspotRedirectUri].includes('placeholder')) {
+      console.log('🔧 Mock mode - secrets not configured');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          stage: 'environment_validation',
           mock: true, 
-          message: 'Mock OK - HubSpot OAuth callback is in mock mode',
-          provider: 'hubspot'
+          error: 'HubSpot OAuth is in mock mode',
+          details: 'Required secrets (CLIENT_ID, CLIENT_SECRET, REDIRECT_URI) are missing or placeholder'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('🔐 Real HubSpot OAuth callback - exchanging code for tokens');
+    
+    // 🔄 STAGE 4: Token exchange
+    const tokenExchangeUrl = 'https://api.hubapi.com/oauth/v1/token';
+    console.log('🌐 Token exchange URL:', tokenExchangeUrl);
 
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch('https://api.hubapi.com/oauth/v1/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: hubspotRedirectUri,
-        client_id: hubspotClientId,
-        client_secret: hubspotClientSecret,
-      }),
-    });
+    let tokenResponse;
+    let tokenData;
+    
+    try {
+      // Exchange authorization code for access token
+      tokenResponse = await fetch(tokenExchangeUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: hubspotRedirectUri!,
+          client_id: hubspotClientId!,
+          client_secret: hubspotClientSecret!,
+        }),
+      });
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('HubSpot token exchange failed:', errorText);
+      console.log('📡 HubSpot API response:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        ok: tokenResponse.ok
+      });
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        let errorDetails;
+        try {
+          errorDetails = JSON.parse(errorText);
+        } catch {
+          errorDetails = { raw: errorText };
+        }
+        
+        console.error('❌ HubSpot token exchange failed:', {
+          status: tokenResponse.status,
+          statusText: tokenResponse.statusText,
+          error: errorDetails
+        });
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            stage: 'token_exchange',
+            error: `Token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText}`,
+            details: errorDetails
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      tokenData = await tokenResponse.json();
+      
+    } catch (fetchError) {
+      console.error('❌ Network error during token exchange:', fetchError.message);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText}`,
-          details: errorText
+        JSON.stringify({
+          success: false,
+          stage: 'token_exchange', 
+          error: 'Network error during token exchange',
+          details: fetchError.message
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const tokenData = await tokenResponse.json();
-    
     console.log('✅ HubSpot token exchange successful');
 
-    // Get user info from HubSpot to extract email
+    // 🔄 STAGE 5: User info retrieval
     let userEmail = null;
     try {
       const userInfoResponse = await fetch('https://api.hubapi.com/oauth/v1/access-tokens/' + tokenData.access_token);
@@ -107,12 +213,14 @@ serve(async (req) => {
         const userInfoData = await userInfoResponse.json();
         userEmail = userInfoData.user_email || userInfoData.user;
         console.log('📧 HubSpot user email:', userEmail ? '***@***.com' : 'not found');
+      } else {
+        console.warn('⚠️ HubSpot user info request failed:', userInfoResponse.status);
       }
     } catch (error) {
       console.warn('⚠️ Could not fetch HubSpot user info:', error.message);
     }
 
-    // Determine user account handling strategy
+    // 🔄 STAGE 6: User account handling
     let finalUserId = null;
     
     // Check if state contains a valid user ID (existing authenticated user)
@@ -128,7 +236,9 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Could not retrieve email from HubSpot. Email is required for account creation.' 
+            stage: 'user_handling',
+            error: 'Could not retrieve email from HubSpot. Email is required for account creation.',
+            details: 'HubSpot user info API did not return a valid email address'
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -140,7 +250,12 @@ serve(async (req) => {
       if (userSearchError) {
         console.error('❌ Error searching for existing users:', userSearchError);
         return new Response(
-          JSON.stringify({ success: false, error: 'Failed to check existing users' }),
+          JSON.stringify({ 
+            success: false, 
+            stage: 'user_handling',
+            error: 'Failed to check existing users',
+            details: userSearchError.message
+          }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -167,6 +282,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               success: false, 
+              stage: 'user_creation',
               error: 'Failed to create user account',
               details: createUserError?.message 
             }),
@@ -179,6 +295,7 @@ serve(async (req) => {
       }
     }
 
+    // 🔄 STAGE 7: Token encryption and storage
     // Calculate expiry date (HubSpot returns expires_in in seconds)
     const expiresAt = tokenData.expires_in 
       ? new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
@@ -197,7 +314,9 @@ serve(async (req) => {
       console.error('❌ Error encrypting access token:', encryptError1);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Failed to encrypt access token' 
+        stage: 'token_encryption',
+        error: 'Failed to encrypt access token',
+        details: encryptError1.message
       }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
@@ -215,7 +334,9 @@ serve(async (req) => {
         console.error('❌ Error encrypting refresh token:', encryptError2);
         return new Response(JSON.stringify({ 
           success: false, 
-          error: 'Failed to encrypt refresh token' 
+          stage: 'token_encryption',
+          error: 'Failed to encrypt refresh token',
+          details: encryptError2.message
         }), { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500 
@@ -238,10 +359,11 @@ serve(async (req) => {
       });
 
     if (dbError) {
-      console.error('Database error storing HubSpot tokens:', dbError);
+      console.error('❌ Database error storing HubSpot tokens:', dbError);
       return new Response(
         JSON.stringify({ 
           success: false, 
+          stage: 'database_storage',
           error: 'Failed to store tokens',
           details: dbError.message
         }),
@@ -265,12 +387,16 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    // Global error handler with stage information
+    console.error('❌ Unexpected error in HubSpot OAuth callback:', error);
+    
     // Check if this is a JWT-related error
     if (error.message?.includes('JWT') || error.message?.includes('unauthorized') || error.message?.includes('token')) {
       console.error('❌ JWT Authentication error:', error.message);
       return new Response(
         JSON.stringify({ 
           success: false, 
+          stage: 'authentication',
           error: 'Unauthorized: JWT authentication failed',
           details: error.message
         }),
@@ -278,12 +404,13 @@ serve(async (req) => {
       );
     }
 
-    console.error('HubSpot OAuth callback error:', error);
+    // Generic server error
     return new Response(
       JSON.stringify({ 
         success: false, 
+        stage: 'unknown',
         error: 'Internal server error',
-        details: error.message
+        details: error.message || 'Unknown error occurred'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

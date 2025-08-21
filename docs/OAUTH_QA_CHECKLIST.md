@@ -130,24 +130,84 @@ LIMIT 5;
 - [ ] ✅ Logs d'appel POST vers l'Edge Function
 - [ ] ✅ Logs de réponse de succès
 
-## ❌ Problèmes courants et solutions
+## ❌ Diagnostic avancé des erreurs
 
-### 404 sur le callback
+### Tests curl de diagnostic
+```bash
+# Test validation d'input (attendu: 400 avec stage "input_validation")
+curl -i -X POST https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"hubspot","code":"TEST","state":"TEST"}'
+
+# Test code invalide (attendu: 400 avec stage "token_exchange") 
+curl -i -X POST https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"hubspot","code":"invalid_code","state":"test_user"}'
+
+# Test CORS (attendu: 204 avec headers CORS)
+curl -i -X OPTIONS https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-hubspot-callback
+```
+
+### Diagnostic par stages d'erreur
+
+Chaque erreur inclut maintenant un champ `stage` pour identifier précisément le problème :
+
+#### `method_validation`
+- **Erreur** : Méthode HTTP incorrecte  
+- **Solution** : Vérifier que le front envoie bien un POST
+
+#### `input_validation`
+- **Erreur** : JSON invalide, code manquant, ou code de test
+- **Solution** : Vérifier le payload envoyé par le front  
+
+#### `environment_validation`
+- **Erreur** : Secrets manquants (CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
+- **Solution** : Vérifier les secrets Supabase
+
+#### `token_exchange`
+- **Erreur** : Échange de code échoué avec HubSpot API
+- **Solutions** :
+  - Vérifier que `HUBSPOT_REDIRECT_URI` correspond exactement à l'URL déclarée dans HubSpot
+  - Vérifier que le code n'est pas expiré (10 minutes max)
+  - Vérifier le domaine HubSpot (EU vs US)
+
+#### `user_handling`
+- **Erreur** : Impossible de récupérer l'email ou de chercher l'utilisateur
+- **Solution** : Vérifier les permissions de l'API HubSpot et la base Supabase
+
+#### `user_creation`
+- **Erreur** : Échec de création d'un nouvel utilisateur
+- **Solution** : Vérifier les permissions Supabase auth
+
+#### `token_encryption`
+- **Erreur** : Échec de chiffrement des tokens  
+- **Solution** : Vérifier que pgcrypto est activé et que la clé de chiffrement est définie
+
+#### `database_storage`
+- **Erreur** : Échec de sauvegarde en base
+- **Solution** : Vérifier la table `user_crm_connections` et les permissions RLS
+
+### Debug mode front-end
+Utiliser `?oauthDebug=1` dans l'URL de callback pour activer les logs détaillés côté front.
+
+### Problèmes courants (legacy)
+
+#### 404 sur le callback
 - Vérifier que la route `/oauth/hubspot/callback` est dans App.tsx
 - Vérifier que le composant `OAuthCallback` est correctement importé
 - Vérifier que l'URL HubSpot correspond exactement
 
-### Tokens non créés
+#### Tokens non créés
 - Vérifier les logs de l'Edge Function `oauth-hubspot-callback`
 - Vérifier la configuration des secrets Supabase
 - Vérifier la configuration des scopes HubSpot
 
-### URL OAuth invalide
+#### URL OAuth invalide
 - Activer le mode debug avec `?oauthDebug=1`
 - Comparer l'URL générée avec celle de la console HubSpot
 - Vérifier `HUBSPOT_DOMAIN` et `HUBSPOT_REDIRECT_URI`
 
-### Page de callback ne fonctionne pas
+#### Page de callback ne fonctionne pas
 - Vérifier la console du navigateur pour les erreurs JavaScript
 - Vérifier que les CORS sont configurés dans l'Edge Function
 - Vérifier que les paramètres sont correctement transmis
