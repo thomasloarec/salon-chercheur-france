@@ -7,8 +7,13 @@ export const HUBSPOT_REDIRECT_URI =
 export const CRM_OAUTH_ENABLED =
   (import.meta.env.VITE_CRM_OAUTH_ENABLED ?? (globalThis as any).NEXT_PUBLIC_CRM_OAUTH_ENABLED ?? "true") === "true";
 
-export function isHubspotConfigValid(): boolean {
-  return Boolean(HUBSPOT_CLIENT_ID && HUBSPOT_REDIRECT_URI?.startsWith("https://lotexpo.com/oauth/hubspot/callback"));
+export function isHubspotConfigValid(id = HUBSPOT_CLIENT_ID, uri = HUBSPOT_REDIRECT_URI): boolean {
+  return Boolean(
+    id &&
+    /^[0-9a-f-]{36}$/i.test(id) && // UUID format
+    typeof uri === "string" &&
+    uri.startsWith("https://lotexpo.com/oauth/hubspot/callback")
+  );
 }
 
 export function getHubspotConfigIssues(): string[] {
@@ -29,18 +34,27 @@ export const validateHubSpotConfig = (): { valid: boolean; errors: string[] } =>
 export const HUBSPOT_SCOPE = 'oauth crm.objects.companies.read crm.objects.contacts.read';
 export const HUBSPOT_AUTHORIZE_URL = 'https://app-eu1.hubspot.com/oauth/authorize';
 
-export const buildHubSpotAuthUrl = (state: string): { url?: string; error?: string } => {
+export const buildHubSpotAuthUrl = (state: string, debugClientId?: string, debugRedirectUri?: string): { url?: string; error?: string } => {
+  // Use debug values if provided, otherwise use config values
+  const clientId = debugClientId || HUBSPOT_CLIENT_ID;
+  const redirectUri = debugRedirectUri || HUBSPOT_REDIRECT_URI;
+  
   const validation = validateHubSpotConfig();
   
-  if (!validation.valid) {
+  // For debug mode, validate the provided values instead
+  if (debugClientId && debugRedirectUri) {
+    if (!isHubspotConfigValid(debugClientId, debugRedirectUri)) {
+      return { error: 'Configuration debug invalide: vérifiez le format UUID du client_id et que redirect_uri commence par https://lotexpo.com/oauth/hubspot/callback' };
+    }
+  } else if (!validation.valid) {
     console.warn('HubSpot config validation failed:', validation.errors);
     return { error: validation.errors.join(', ') };
   }
   
   try {
     const url = new URL(HUBSPOT_AUTHORIZE_URL);
-    url.searchParams.set('client_id', HUBSPOT_CLIENT_ID);
-    url.searchParams.set('redirect_uri', HUBSPOT_REDIRECT_URI);
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('redirect_uri', redirectUri);
     url.searchParams.set('scope', HUBSPOT_SCOPE);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('state', state);
@@ -50,4 +64,11 @@ export const buildHubSpotAuthUrl = (state: string): { url?: string; error?: stri
     console.error('Error building HubSpot auth URL:', error);
     return { error: `Erreur lors de la construction de l'URL d'autorisation: ${error instanceof Error ? error.message : 'erreur inconnue'}` };
   }
+};
+
+// Helper to mask sensitive values for display
+export const maskClientId = (clientId: string): string => {
+  if (!clientId) return 'manquant';
+  if (clientId.length < 8) return clientId;
+  return `${clientId.substring(0, 4)}...${clientId.substring(clientId.length - 4)}`;
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, buildHubSpotAuthUrl, CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues } from '@/lib/hubspotConfig';
+import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, buildHubSpotAuthUrl, CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues, maskClientId } from '@/lib/hubspotConfig';
 
 export default function OAuthHubspotTest() {
   const debug = new URLSearchParams(window.location.search).has('oauthDebug');
@@ -9,11 +9,20 @@ export default function OAuthHubspotTest() {
     authorizeUrl: "",
     error: ""
   });
+  const [debugConfig, setDebugConfig] = useState({
+    clientId: '',
+    redirectUri: ''
+  });
 
   useEffect(() => {
     const cookie = document.cookie.includes('oauth_state=');
     const local = !!localStorage.getItem('oauth_state');
     setDiag(d => ({ ...d, cookie, local }));
+    
+    // Load debug config from sessionStorage if available
+    const debugClientId = sessionStorage.getItem('oauth_debug_client_id') || '';
+    const debugRedirectUri = sessionStorage.getItem('oauth_debug_redirect_uri') || '';
+    setDebugConfig({ clientId: debugClientId, redirectUri: debugRedirectUri });
   }, []);
 
   const handleConnect = async () => {
@@ -45,8 +54,12 @@ export default function OAuthHubspotTest() {
       const local = !!localStorage.getItem('oauth_state');
       setDiag(d => ({ ...d, cookie, local }));
       
-      // Build authorize URL using centralized config
-      const authResult = buildHubSpotAuthUrl(state);
+      // Use debug config if available, otherwise use env config
+      const debugClientId = sessionStorage.getItem('oauth_debug_client_id');
+      const debugRedirectUri = sessionStorage.getItem('oauth_debug_redirect_uri');
+      
+      // Build authorize URL using centralized config or debug values
+      const authResult = buildHubSpotAuthUrl(state, debugClientId || undefined, debugRedirectUri || undefined);
       
       if (authResult.error) {
         alert('Erreur de configuration: ' + authResult.error);
@@ -76,6 +89,33 @@ export default function OAuthHubspotTest() {
       console.error('Error initiating OAuth:', error);
       alert('Erreur lors de l\'initiation OAuth: ' + (error instanceof Error ? error.message : 'erreur inconnue'));
     }
+  };
+
+  const handleSaveDebugConfig = () => {
+    if (!debugConfig.clientId || !debugConfig.redirectUri) {
+      alert('Veuillez renseigner le Client ID et le Redirect URI');
+      return;
+    }
+    
+    sessionStorage.setItem('oauth_debug_client_id', debugConfig.clientId);
+    sessionStorage.setItem('oauth_debug_redirect_uri', debugConfig.redirectUri);
+    alert('Configuration debug sauvegardée temporairement');
+  };
+
+  const handleClearDebugConfig = () => {
+    sessionStorage.removeItem('oauth_debug_client_id');
+    sessionStorage.removeItem('oauth_debug_redirect_uri');
+    setDebugConfig({ clientId: '', redirectUri: '' });
+    alert('Configuration debug effacée');
+  };
+
+  const hasDebugConfig = sessionStorage.getItem('oauth_debug_client_id') && sessionStorage.getItem('oauth_debug_redirect_uri');
+  const effectiveConfig = hasDebugConfig ? {
+    clientId: sessionStorage.getItem('oauth_debug_client_id') || '',
+    redirectUri: sessionStorage.getItem('oauth_debug_redirect_uri') || ''
+  } : {
+    clientId: HUBSPOT_CLIENT_ID,
+    redirectUri: HUBSPOT_REDIRECT_URI
   };
 
   return (
@@ -109,9 +149,64 @@ export default function OAuthHubspotTest() {
         )}
         
         <div className="bg-card p-6 rounded-lg border mb-6">
+          <h3 className="font-semibold mb-4 text-foreground">Configuration OAuth</h3>
+          
+          <div className="space-y-3 mb-6 text-sm">
+            <div><span className="font-medium">CRM OAuth Enabled:</span> <code className="bg-muted px-1 rounded">{CRM_OAUTH_ENABLED ? 'Oui' : 'Non'}</code></div>
+            <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-muted px-1 rounded">{maskClientId(effectiveConfig.clientId)} {hasDebugConfig && <span className="text-orange-600">(debug)</span>}</code></div>
+            <div><span className="font-medium">Redirect URI:</span> <code className="bg-muted px-1 rounded">{effectiveConfig.redirectUri || 'manquant'} {hasDebugConfig && <span className="text-orange-600">(debug)</span>}</code></div>
+            <div><span className="font-medium">Config Valid:</span> <code className={`px-1 rounded ${isHubspotConfigValid(effectiveConfig.clientId, effectiveConfig.redirectUri) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              {isHubspotConfigValid(effectiveConfig.clientId, effectiveConfig.redirectUri) ? 'Oui' : 'Non'}
+            </code></div>
+          </div>
+
+          {debug && (!CRM_OAUTH_ENABLED || !isHubspotConfigValid()) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-6">
+              <h4 className="font-medium text-yellow-800 mb-3">Mode Debug - Configuration manuelle</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-yellow-700 mb-1">Client ID (UUID format)</label>
+                  <input
+                    type="text"
+                    placeholder="ex: d5e83145-1234-5678-9abc-def123456789"
+                    value={debugConfig.clientId}
+                    onChange={(e) => setDebugConfig(prev => ({ ...prev, clientId: e.target.value }))}
+                    className="w-full px-3 py-2 border border-yellow-300 rounded-md text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-yellow-700 mb-1">Redirect URI</label>
+                  <input
+                    type="text"
+                    placeholder="https://lotexpo.com/oauth/hubspot/callback"
+                    value={debugConfig.redirectUri}
+                    onChange={(e) => setDebugConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
+                    className="w-full px-3 py-2 border border-yellow-300 rounded-md text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleSaveDebugConfig}
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors text-sm font-medium"
+                  >
+                    Utiliser ces valeurs (debug)
+                  </button>
+                  {hasDebugConfig && (
+                    <button 
+                      onClick={handleClearDebugConfig}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm font-medium"
+                    >
+                      Effacer debug
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <button 
             onClick={handleConnect}
-            disabled={!CRM_OAUTH_ENABLED || !isHubspotConfigValid()}
+            disabled={!CRM_OAUTH_ENABLED || (!isHubspotConfigValid() && !hasDebugConfig)}
             className="bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Connecter HubSpot (test)
@@ -124,12 +219,19 @@ export default function OAuthHubspotTest() {
             
             <div className="space-y-3">
               <div className="mb-4 text-sm space-y-2">
+                <h4 className="font-medium mb-2">Configuration utilisée</h4>
+                <div><span className="font-medium">Source:</span> <code className="bg-muted-foreground/10 px-1 rounded">{hasDebugConfig ? 'Debug (sessionStorage)' : 'Variables d\'environnement'}</code></div>
                 <div><span className="font-medium">CRM OAuth Enabled:</span> <code className="bg-muted-foreground/10 px-1 rounded">{CRM_OAUTH_ENABLED ? 'Oui' : 'Non'}</code></div>
-                <div><span className="font-medium">Config Valid:</span> <code className="bg-muted-foreground/10 px-1 rounded">{isHubspotConfigValid() ? 'Oui' : 'Non'}</code></div>
-                <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-muted-foreground/10 px-1 rounded">{HUBSPOT_CLIENT_ID || 'manquant'}</code></div>
-                <div><span className="font-medium">Redirect URI:</span> <code className="bg-muted-foreground/10 px-1 rounded">{HUBSPOT_REDIRECT_URI || 'manquant'}</code></div>
-                {getHubspotConfigIssues().length > 0 && (
-                  <div><span className="font-medium">Issues:</span> <code className="bg-red-100 px-1 rounded">{getHubspotConfigIssues().join(', ')}</code></div>
+                <div><span className="font-medium">Config Valid:</span> <code className="bg-muted-foreground/10 px-1 rounded">{isHubspotConfigValid(effectiveConfig.clientId, effectiveConfig.redirectUri) ? 'Oui' : 'Non'}</code></div>
+                <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-muted-foreground/10 px-1 rounded">{maskClientId(effectiveConfig.clientId)}</code></div>
+                <div><span className="font-medium">Redirect URI:</span> <code className="bg-muted-foreground/10 px-1 rounded">{effectiveConfig.redirectUri || 'manquant'}</code></div>
+                {!isHubspotConfigValid(effectiveConfig.clientId, effectiveConfig.redirectUri) && (
+                  <div><span className="font-medium">Issues:</span> <code className="bg-red-100 px-1 rounded">
+                    {!effectiveConfig.clientId ? 'CLIENT_ID manquant' : 
+                     !/^[0-9a-f-]{36}$/i.test(effectiveConfig.clientId) ? 'CLIENT_ID format invalide (UUID requis)' :
+                     !effectiveConfig.redirectUri ? 'REDIRECT_URI manquant' :
+                     !effectiveConfig.redirectUri.startsWith('https://lotexpo.com/oauth/hubspot/callback') ? 'REDIRECT_URI invalide' : 'Erreur inconnue'}
+                  </code></div>
                 )}
               </div>
               

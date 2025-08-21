@@ -52,8 +52,12 @@ export const useHubSpotOAuth = () => {
         });
       }
 
-      // Build OAuth URL using centralized config
-      const authResult = buildHubSpotAuthUrl(state);
+      // Check for debug config in sessionStorage
+      const debugClientId = sessionStorage.getItem('oauth_debug_client_id');
+      const debugRedirectUri = sessionStorage.getItem('oauth_debug_redirect_uri');
+      
+      // Build OAuth URL using centralized config or debug values
+      const authResult = buildHubSpotAuthUrl(state, debugClientId || undefined, debugRedirectUri || undefined);
       
       if (authResult.error) {
         throw new Error(authResult.error);

@@ -312,14 +312,30 @@ const CrmIntegrations = () => {
                         </Button>
                       </div>
                     ) : (
-                      <Button
-                        onClick={() => handleConnect(integration.provider)}
-                        className="w-full"
-                        disabled={integration.provider === 'hubspot' && (!CRM_OAUTH_ENABLED || !isHubspotConfigValid())}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Connecter {getProviderName(integration.provider)}
-                      </Button>
+                      (integration.provider === 'hubspot' && (!CRM_OAUTH_ENABLED || !isHubspotConfigValid())) ? (
+                        <div className="space-y-2">
+                          <Button disabled className="w-full">
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Connecter {getProviderName(integration.provider)} (indisponible)
+                          </Button>
+                          {isDebug && (
+                            <p className="text-xs text-muted-foreground text-center">
+                              <a href="/oauth/hubspot/test?oauthDebug=1" className="text-primary hover:underline">
+                                → Mode diagnostic OAuth
+                              </a>
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={() => handleConnect(integration.provider)}
+                          className="w-full"
+                          disabled={integration.provider === 'hubspot' && hubspotLoading}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          {integration.provider === 'hubspot' && hubspotLoading ? 'Connexion...' : `Connecter ${getProviderName(integration.provider)}`}
+                        </Button>
+                      )
                     )}
                   </CardContent>
                 </Card>
