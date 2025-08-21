@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { readOAuthState, clearOAuthState } from '@/lib/oauthSecurity';
+import { CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues } from '@/lib/hubspotConfig';
 
 export const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -14,6 +15,22 @@ export const OAuthCallback = () => {
       const state = searchParams.get('state');
       const error = searchParams.get('error');
       const isDebug = searchParams.get('oauthDebug') === '1';
+      
+      // Check if CRM OAuth is disabled
+      if (!CRM_OAUTH_ENABLED) {
+        setStatus('error');
+        setMessage('Intégrations CRM désactivées');
+        if (isDebug) {
+          setDebugInfo({
+            crm_oauth_enabled: false,
+            config_valid: false,
+            issues: ['CRM_OAUTH_ENABLED est désactivé'],
+            cookie_state_present: false,
+            local_state_present: false
+          });
+        }
+        return;
+      }
       
       // Detect provider from URL path or query param
       const pathname = window.location.pathname;
@@ -30,6 +47,9 @@ export const OAuthCallback = () => {
       
       // Debug info
       const debugData = {
+        crm_oauth_enabled: CRM_OAUTH_ENABLED,
+        config_valid: isHubspotConfigValid(),
+        issues: getHubspotConfigIssues(),
         cookie_state_present: !!cookie,
         local_state_present: !!local,
         header_state_present: !!headerState,
@@ -179,11 +199,16 @@ export const OAuthCallback = () => {
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-left max-w-md mx-auto">
             <h4 className="font-semibold text-blue-900 mb-2">🔍 OAuth Debug Info</h4>
             <div className="space-y-1 text-blue-800">
+              <div>CRM OAuth Enabled: {debugInfo.crm_oauth_enabled ? '✅' : '❌'}</div>
+              <div>Config Valid: {debugInfo.config_valid ? '✅' : '❌'}</div>
               <div>Cookie State: {debugInfo.cookie_state_present ? '✅' : '❌'}</div>
               <div>Local State: {debugInfo.local_state_present ? '✅' : '❌'}</div>
               <div>Header State: {debugInfo.header_state_present ? '✅' : '❌'}</div>
               <div>State from URL: {debugInfo.state_from_url}</div>
               <div>Debug Mode: {debugInfo.is_debug_mode ? '✅' : '❌'}</div>
+              {debugInfo.issues && debugInfo.issues.length > 0 && (
+                <div>Issues: <code className="bg-red-100 px-1 rounded text-red-700">{debugInfo.issues.join(', ')}</code></div>
+              )}
             </div>
           </div>
         )}

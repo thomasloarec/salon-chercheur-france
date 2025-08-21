@@ -5,6 +5,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { Buffer } from 'buffer';
 import App from "./App.tsx";
 import "./index.css";
+import { AppErrorBoundary } from './components/AppErrorBoundary.tsx';
 
 // Make Buffer available globally BEFORE any other imports
 globalThis.Buffer = Buffer;
@@ -16,8 +17,10 @@ if (typeof window !== 'undefined') {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <HelmetProvider>
-      <App />
-    </HelmetProvider>
+    <AppErrorBoundary>
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>
+    </AppErrorBoundary>
   </StrictMode>
 );

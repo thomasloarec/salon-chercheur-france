@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { generateOAuthNonce, setOAuthState, validateOAuthState, clearOAuthState } from '@/lib/oauthSecurity';
-import { buildHubSpotAuthUrl, HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI } from '@/lib/hubspotConfig';
+import { buildHubSpotAuthUrl, HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues } from '@/lib/hubspotConfig';
 
 export interface HubSpotOAuthResponse {
   success: boolean;
@@ -24,6 +24,17 @@ export const useHubSpotOAuth = () => {
     setError(null);
 
     try {
+      // Check if CRM OAuth is enabled
+      if (!CRM_OAUTH_ENABLED) {
+        throw new Error('Intégrations CRM désactivées (flag CRM_OAUTH_ENABLED)');
+      }
+
+      // Check HubSpot configuration
+      if (!isHubspotConfigValid()) {
+        const issues = getHubspotConfigIssues();
+        throw new Error(`Configuration HubSpot invalide: ${issues.join(', ')}`);
+      }
+
       console.log('🔄 Initiating HubSpot OAuth flow...');
       
       // Generate secure state nonce
@@ -42,10 +53,18 @@ export const useHubSpotOAuth = () => {
       }
 
       // Build OAuth URL using centralized config
-      const authorizeUrl = buildHubSpotAuthUrl(state);
+      const authResult = buildHubSpotAuthUrl(state);
+      
+      if (authResult.error) {
+        throw new Error(authResult.error);
+      }
+
+      if (!authResult.url) {
+        throw new Error('Impossible de générer l\'URL d\'autorisation HubSpot');
+      }
       
       if (debug) {
-        console.log('AuthorizeURL:', authorizeUrl);
+        console.log('AuthorizeURL:', authResult.url);
       }
 
       console.log('✅ Opening HubSpot OAuth popup...');
@@ -55,7 +74,7 @@ export const useHubSpotOAuth = () => {
       
       // Open OAuth popup
       const popup = window.open(
-        authorizeUrl,
+        authResult.url,
         'hubspot-oauth',
         'width=600,height=700,scrollbars=yes,resizable=yes'
       );
