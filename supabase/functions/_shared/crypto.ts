@@ -6,6 +6,9 @@
 const b64ToBytes = (b64: string): Uint8Array =>
   Uint8Array.from(atob(b64), c => c.charCodeAt(0));
 
+const bytesToB64 = (u8: Uint8Array): string => 
+  btoa(String.fromCharCode(...u8));
+
 /**
  * Get encryption key from environment variables
  * Supports OAUTH_ENC_KEY (primary) or ENCRYPTION_KEY (fallback)
@@ -42,11 +45,7 @@ export async function encryptJson(obj: unknown): Promise<string> {
   
   const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
   
-  const ivB64 = btoa(String.fromCharCode(...iv));
-  const ctBytes = new Uint8Array(ciphertext);
-  const ctB64 = btoa(String.fromCharCode(...ctBytes));
-  
-  return `${ivB64}.${ctB64}`;
+  return `${bytesToB64(iv)}.${bytesToB64(new Uint8Array(ciphertext))}`;
 }
 
 /**
