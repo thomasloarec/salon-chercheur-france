@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { readOAuthState, clearOAuthState } from '@/lib/oauthSecurity';
 import { CRM_OAUTH_ENABLED, isHubspotConfigValid, getHubspotConfigIssues } from '@/lib/hubspotConfig';
+import { debugFetch } from '@/lib/debugFetch';
+import { OAUTH_ENDPOINTS } from '@/lib/supabaseConfig';
 
 export const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -149,7 +151,7 @@ export const OAuthCallback = () => {
       }
 
       try {
-        // Call Edge Function directly with fetch
+        // Call Edge Function with debugFetch
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
         };
@@ -158,14 +160,14 @@ export const OAuthCallback = () => {
           headers['X-OAuth-State'] = headerState;
         }
         
-        const response = await fetch(`https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/oauth-${provider}-callback`, {
+        const response = await debugFetch(OAUTH_ENDPOINTS.hubspotCallback, {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            provider,
             code,
             state
-          })
+          }),
+          debugLabel: `HubSpot OAuth Callback (${provider})`
         });
 
         const data = await response.json();
