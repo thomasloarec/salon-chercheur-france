@@ -59,7 +59,7 @@ const maskSensitiveData = (data: string, visibleChars: number = 4): string => {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://lotexpo.com',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-OAuth-State',
 }
 
@@ -79,13 +79,15 @@ serve(async (req) => {
     const hasEncKey = await hasValidEncryptionKey();
     
     const diagnostics = {
-      success: true,
-      stage: 'diagnostic',
-      hubspot_client_id: hubspotClientId ? 'configured' : 'missing',
-      hubspot_client_secret: hubspotClientSecret ? 'configured' : 'missing',
-      hubspot_redirect_uri: hubspotRedirectUri ? 'configured' : 'missing',
-      has_encryption_key: hasEncKey,
-      encryption_status: hasEncKey ? 'ready' : 'missing_or_invalid'
+      ok: true,
+      env: {
+        client_id_masked: hubspotClientId ? 
+          hubspotClientId.substring(0, 4) + '...' + hubspotClientId.substring(hubspotClientId.length - 4) : 
+          'missing',
+        redirect_uri: hubspotRedirectUri || 'missing',
+        has_client_secret: !!hubspotClientSecret,
+        has_encryption_key: hasEncKey
+      }
     };
     
     console.log(`📊 [diagnostic] Configuration status:`, diagnostics);
@@ -319,27 +321,37 @@ serve(async (req) => {
 
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
-        let errorDetails;
+        let hubspotError;
+        let errorDescription = '';
+        
         try {
-          errorDetails = JSON.parse(errorText);
+          const errorDetails = JSON.parse(errorText);
+          hubspotError = errorDetails.status || errorDetails.error || 'unknown_error';
+          errorDescription = errorDetails.message || errorDetails.error_description || errorText.substring(0, 100);
         } catch {
-          errorDetails = { raw: errorText };
+          hubspotError = 'parse_error';
+          errorDescription = errorText.substring(0, 100);
         }
         
+        // Structured logging with all relevant details
         console.error(`❌ [${requestId}] HubSpot token exchange failed:`, {
-          stage: 'token_exchange',
-          status: tokenResponse.status,
-          statusText: tokenResponse.statusText,
-          error: errorDetails,
-          hubspot_status: tokenResponse.status
+          hubspot_status: tokenResponse.status,
+          hubspot_error: hubspotError,
+          redirect_uri_used: hubspotRedirectUri,
+          client_id_masked: hubspotClientId ? 
+            hubspotClientId.substring(0, 4) + '...' + hubspotClientId.substring(hubspotClientId.length - 4) : 
+            'missing',
+          requestId,
+          stage: 'token_exchange'
         });
         
         return new Response(
           JSON.stringify({ 
             success: false, 
             stage: 'token_exchange',
-            error: `Token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText}`,
-            details: errorDetails
+            hubspot_status: tokenResponse.status,
+            message: 'hubspot_400',
+            hubspot_error: hubspotError
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
