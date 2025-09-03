@@ -46,3 +46,6 @@ verify_jwt = false
 
 [functions.oauth-hubspot-callback]
 verify_jwt = false
+
+[functions.oauth-hubspot-diagnostics]
+verify_jwt = false

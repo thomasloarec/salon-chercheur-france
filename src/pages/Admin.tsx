@@ -11,6 +11,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import AirtableStatusWidget from '@/components/admin/AirtableStatusWidget';
 import AirtableDiagnostic from '@/components/admin/AirtableDiagnostic';
 import { AirtableImport } from '@/components/admin/AirtableImport';
+import { OAuthHubSpotDiagnostic } from '@/components/admin/OAuthHubSpotDiagnostic';
 import {
   Accordion,
   AccordionItem,
@@ -61,6 +62,9 @@ const Admin = () => {
             <AccordionContent className="space-y-6 pt-4">
               {/* Nouveau composant de diagnostic */}
               <AirtableDiagnostic />
+
+              {/* Diagnostic OAuth HubSpot */}
+              <OAuthHubSpotDiagnostic />
 
               {/* Widget de vérification finale */}
               <AirtableStatusWidget 

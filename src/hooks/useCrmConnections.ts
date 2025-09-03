@@ -31,7 +31,23 @@ export const useCrmConnections = () => {
       
       if (error) {
         console.error('❌ useCrmConnections: Erreur récupération connexions:', error);
-        // En cas d'erreur, définir un état vide plutôt que de laisser undefined
+        
+        // Gestion spécifique de l'erreur 403 AWS API Gateway
+        if (error.message?.includes('403') || error.code === 'PGRST301') {
+          console.error('🔴 AWS API Gateway 403 Error:', {
+            error: error,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent.slice(0, 100),
+            origin: window.location.origin
+          });
+          
+          toast({
+            title: "Erreur d'accès",
+            description: "Lecture des connexions refusée (403). Vérifier CORS/API key/Authorization sur l'API Gateway.",
+            variant: "destructive"
+          });
+        }
+        
         setConnections({});
         return;
       }
@@ -45,23 +61,48 @@ export const useCrmConnections = () => {
       setConnections(status);
     } catch (error) {
       console.error('❌ useCrmConnections: Erreur inattendue lors de la récupération:', error);
+      
+      // Détection d'erreur 403 dans les exceptions génériques
+      if (String(error).includes('403')) {
+        toast({
+          title: "Erreur d'accès",
+          description: "Lecture des connexions refusée (403). Vérifier CORS/API key/Authorization sur l'API Gateway.",
+          variant: "destructive"
+        });
+      }
+      
       setConnections({});
     }
   };
 
   // Connecter un CRM
   const connectCrm = async (provider: CrmProvider) => {
-    // Nouveau flux : permettre la connexion même pour les utilisateurs non connectés
     console.log('🔄 useCrmConnections: Initiation connexion', provider, 'user:', user ? 'connecté' : 'non connecté');
 
     setLoading(true);
     try {
+      // TODO: Configuration CORS attendue côté API Gateway AWS:
+      // - Origin: https://lotexpo.com
+      // - Methods: POST, OPTIONS  
+      // - Headers: Authorization, Content-Type
+      // - Response Headers: Access-Control-Allow-Origin, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Vary: Origin
+
+      // Log des détails de la requête pour diagnostic
+      const requestOrigin = window.location.origin;
+      console.info('🔍 OAuth Request Details:', {
+        provider,
+        origin: requestOrigin,
+        userAgent: navigator.userAgent.slice(0, 100),
+        timestamp: new Date().toISOString()
+      });
+
       // 1. Récupérer l'URL d'installation
       const { data, error } = await supabase.functions.invoke(`oauth-${provider}`, {
         body: {}
       });
 
       if (error || !data.installUrl) {
+        console.error('❌ OAuth init failed:', { error, data });
         throw new Error(data?.error || 'Erreur lors de la récupération de l\'URL');
       }
 
@@ -74,7 +115,7 @@ export const useCrmConnections = () => {
         (window.screen.height / 2 - 300)
       );
 
-      // 3. Écouter le message de retour
+      // 3. Écouter le message de retour avec gestion d'erreurs améliorée
       const handleMessage = async (event: MessageEvent) => {
         if (event.data.type === 'oauth-success' && event.data.provider === provider) {
           window.removeEventListener('message', handleMessage);
@@ -89,9 +130,28 @@ export const useCrmConnections = () => {
           window.removeEventListener('message', handleMessage);
           popup?.close();
           
+          const errorData = event.data;
+          let userMessage = "Erreur lors de la connexion.";
+          
+          // Messages d'erreur contextuels basés sur les codes d'erreur
+          if (errorData.code === "HUBSPOT_TOKEN_EXCHANGE_FAILED") {
+            userMessage = "La connexion à HubSpot a échoué (400). Vérifiez l'URL de redirection et les scopes dans HubSpot. Code technique: HUBSPOT_TOKEN_EXCHANGE_FAILED.";
+          } else if (errorData.code === "STATE_MISMATCH") {
+            userMessage = "Session expirée. Merci de relancer la connexion.";
+          } else if (errorData.code === "CONFIG_MISSING") {
+            userMessage = "Configuration serveur incomplète. Contactez l'admin (variables manquantes).";
+          }
+          
+          console.error('🔴 OAuth Error Details:', {
+            code: errorData.code,
+            message: errorData.message,
+            originalError: errorData,
+            timestamp: new Date().toISOString()
+          });
+          
           toast({
             title: "Erreur de connexion",
-            description: event.data.message || "Erreur lors de la connexion.",
+            description: userMessage,
             variant: "destructive",
           });
         }
@@ -108,6 +168,12 @@ export const useCrmConnections = () => {
       }, 1000);
 
     } catch (error) {
+      console.error('🔴 Connect CRM Error:', {
+        provider,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      });
+      
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Erreur inconnue",

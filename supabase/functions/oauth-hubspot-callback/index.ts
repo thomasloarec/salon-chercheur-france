@@ -89,41 +89,92 @@ serve(async (req: Request) => {
     if (state !== headerState)
       return json(req,{ success:false, stage:"csrf_state", message:"state_header_mismatch" },400);
 
-    // Secrets
-    const client_id = Deno.env.get("HUBSPOT_CLIENT_ID") ?? "";
-    const client_secret = Deno.env.get("HUBSPOT_CLIENT_SECRET") ?? "";
-    const redirect_uri = Deno.env.get("HUBSPOT_REDIRECT_URI") ?? "";
-    const svcRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    if (!client_id || !client_secret || !redirect_uri || !svcRole || !supabaseUrl)
-      return json(req,{ success:false, stage:"config_validation", message:"missing_env" },500);
+    // Configuration obligatoire - supprimer tous fallbacks pour fail-closed
+    const client_id = Deno.env.get("HUBSPOT_CLIENT_ID");
+    const client_secret = Deno.env.get("HUBSPOT_CLIENT_SECRET");
+    const redirect_uri = Deno.env.get("HUBSPOT_REDIRECT_URI");
+    const encryptionKey = Deno.env.get("CRM_ENCRYPTION_KEY");
+    const svcRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    
+    const missing = [];
+    if (!client_id) missing.push("HUBSPOT_CLIENT_ID");
+    if (!client_secret) missing.push("HUBSPOT_CLIENT_SECRET");
+    if (!redirect_uri) missing.push("HUBSPOT_REDIRECT_URI");
+    if (!encryptionKey) missing.push("CRM_ENCRYPTION_KEY");
+    if (!svcRole) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl) missing.push("SUPABASE_URL");
+    
+    if (missing.length > 0) {
+      log(req, "config_missing", { missing });
+      return json(req, { 
+        code: "CONFIG_MISSING", 
+        missing, 
+        message: "Configuration OAuth incomplète" 
+      }, 500);
+    }
     if (redirect_uri.includes("/api/oauth/"))
       return json(req,{ success:false, stage:"config_validation", message:"redirect_uri_contains_api_path", expected:"https://lotexpo.com/oauth/hubspot/callback", got:redirect_uri },400);
 
-    // State signé → userId
+    // Validation state anti-CSRF obligatoire
     let userId = "";
     try {
-      const data = await verifySignedState(state); // attend OAUTH_STATE_SIGNING_KEY
+      const data = await verifySignedState(state);
       userId = data.userId;
+      log(req, "state_verified", { userId: userId.slice(0,8) + "..." });
     } catch (e) {
-      return json(req,{ success:false, stage:"state_verification", message:String((e as any)?.message || e) },400);
+      const errorMsg = String((e as any)?.message || e);
+      log(req, "state_verification_failed", { error: errorMsg });
+      
+      if (errorMsg.includes("MISMATCH") || errorMsg.includes("EXPIRED")) {
+        return json(req, { 
+          code: "STATE_MISMATCH", 
+          message: "Session expirée ou état invalide" 
+        }, 400);
+      }
+      return json(req, { 
+        code: "STATE_VALIDATION_ERROR", 
+        message: errorMsg 
+      }, 400);
     }
 
-    // Échange code → tokens
+    // Échange code → tokens avec logging détaillé
+    const scopes = "oauth crm.objects.companies.read crm.objects.contacts.read";
     const params = new URLSearchParams({
-      grant_type:"authorization_code",
+      grant_type: "authorization_code",
       client_id, client_secret, redirect_uri, code
     });
+    
+    log(req, "hubspot_token_exchange_start", { 
+      usedRedirectUri: redirect_uri,
+      scopesUsed: scopes,
+      codeLength: code.length
+    });
+    
     const r = await fetch("https://api.hubapi.com/oauth/v1/token", {
-      method:"POST",
-      headers:{ "Content-Type":"application/x-www-form-urlencoded" },
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params
     });
+    
     if (!r.ok) {
-      const t = await r.text();
-      log(req,"token_exchange_failed",{ status:r.status, err:t.slice(0,300) });
-      return json(req,{ success:false, stage:"token_exchange", hubspot_status:r.status, hubspot_error:t.slice(0,300) },400);
+      const errorBody = await r.text();
+      log(req, "hubspot_token_exchange_failed", { 
+        status: r.status, 
+        error: errorBody.slice(0, 500),
+        usedRedirectUri: redirect_uri,
+        scopesUsed: scopes
+      });
+      
+      return json(req, { 
+        code: "HUBSPOT_TOKEN_EXCHANGE_FAILED",
+        hubspotError: errorBody,
+        usedRedirectUri: redirect_uri,
+        scopesUsed: scopes,
+        message: `Échec d'échange de tokens HubSpot (${r.status})`
+      }, 400);
     }
+    
     const tokens = await r.json() as { access_token:string; refresh_token?:string; expires_in:number; token_type:string; };
 
     // Portal id (best effort)
@@ -133,13 +184,32 @@ serve(async (req: Request) => {
       if (info.ok) { const j = await info.json(); if (j?.hub_id) portal_id = Number(j.hub_id); }
     } catch {}
 
-    // Chiffrement
+    // Chiffrement AES-GCM 256 avec validation de clé
     let access_token_enc = "", refresh_token_enc: string | undefined;
     try {
+      // Validation clé de chiffrement (32 bytes après décodage base64)
+      const keyBuffer = new Uint8Array(atob(encryptionKey!).split('').map(c => c.charCodeAt(0)));
+      if (keyBuffer.length !== 32) {
+        log(req, "encryption_key_invalid", { keyLength: keyBuffer.length });
+        return json(req, { 
+          code: "ENCRYPTION_KEY_INVALID", 
+          message: "Clé de chiffrement invalide (doit faire 32 bytes)" 
+        }, 500);
+      }
+      
       access_token_enc = await encryptJson(tokens.access_token);
       if (tokens.refresh_token) refresh_token_enc = await encryptJson(tokens.refresh_token);
-    } catch {
-      return json(req,{ success:false, stage:"encryption", message:"failed_to_encrypt" },500);
+      
+      log(req, "tokens_encrypted", { 
+        accessTokenHash: btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(tokens.access_token))))).slice(0,8),
+        hasRefreshToken: !!tokens.refresh_token
+      });
+    } catch (encError) {
+      log(req, "encryption_failed", { error: String(encError) });
+      return json(req, { 
+        code: "ENCRYPTION_FAILED", 
+        message: "Échec du chiffrement des tokens" 
+      }, 500);
     }
     const expires_at = new Date(Date.now() + (tokens.expires_in*1000)).toISOString();
 
@@ -162,7 +232,14 @@ serve(async (req: Request) => {
       return json(req,{ success:false, stage:"store_tokens", db_error:{ code:error.code, details:error.details, hint:error.hint } },500);
     }
 
-    return json(req,{ success:true, connected:true, portal_id, version:FUNCTION_VERSION },200);
+    return json(req, { 
+      ok: true, 
+      success: true, 
+      connected: true, 
+      provider: "hubspot", 
+      portal_id, 
+      version: FUNCTION_VERSION 
+    }, 200);
   } catch (e) {
     return json(req,{ success:false, stage:"general", message:String((e as any)?.message || e) },500);
   }

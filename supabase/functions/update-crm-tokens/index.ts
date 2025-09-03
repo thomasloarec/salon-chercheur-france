@@ -66,12 +66,49 @@ serve(async (req) => {
       );
     }
 
+    // Configuration stricte - supprimer tous fallbacks
     const encryptionKey = Deno.env.get('CRM_ENCRYPTION_KEY');
     if (!encryptionKey) {
-      console.error('❌ Critical security error: CRM_ENCRYPTION_KEY not configured');
+      console.log(JSON.stringify({ 
+        stage: "config_check", 
+        detail: "CRM_ENCRYPTION_KEY missing" 
+      }));
       return new Response(JSON.stringify({ 
+        code: "ENCRYPTION_KEY_MISSING",
         success: false, 
-        error: 'Server configuration error: encryption key not configured' 
+        error: 'Configuration de chiffrement manquante' 
+      }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      });
+    }
+    
+    // Validation taille clé (32 bytes après décodage base64)
+    try {
+      const keyBuffer = new Uint8Array(atob(encryptionKey).split('').map(c => c.charCodeAt(0)));
+      if (keyBuffer.length < 32) {
+        console.log(JSON.stringify({ 
+          stage: "key_validation", 
+          detail: `Key too short: ${keyBuffer.length} bytes, needs 32` 
+        }));
+        return new Response(JSON.stringify({ 
+          code: "ENCRYPTION_KEY_TOO_SHORT",
+          success: false, 
+          error: 'Clé de chiffrement trop courte' 
+        }), { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        });
+      }
+    } catch (keyDecodeError) {
+      console.log(JSON.stringify({ 
+        stage: "key_decode", 
+        detail: `Key decode failed: ${keyDecodeError}` 
+      }));
+      return new Response(JSON.stringify({ 
+        code: "ENCRYPTION_KEY_INVALID_FORMAT",
+        success: false, 
+        error: 'Format de clé de chiffrement invalide' 
       }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
