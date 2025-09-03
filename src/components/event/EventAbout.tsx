@@ -10,11 +10,11 @@ interface EventAboutProps {
   event: Event;
 }
 
-// Configuration du sanitizer pour autoriser la balise <mark>
+// Configuration du sanitizer pour autoriser la balise <mark> sans styles dangereux
 const sanitize = (dirtyHtml: string) => {
   return DOMPurify.sanitize(dirtyHtml, { 
     ADD_TAGS: ['mark'],
-    ADD_ATTR: ['style'] // Pour les couleurs de fond et de texte
+    FORBID_ATTR: ['style'] // Bloquer les attributs style pour éviter l'injection CSS
   });
 };
 

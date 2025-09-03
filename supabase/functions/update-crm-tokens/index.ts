@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://lotexpo.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -66,7 +66,17 @@ serve(async (req) => {
       );
     }
 
-    const encryptionKey = Deno.env.get('CRM_ENCRYPTION_KEY') || 'dev-encryption-key-change-in-production';
+    const encryptionKey = Deno.env.get('CRM_ENCRYPTION_KEY');
+    if (!encryptionKey) {
+      console.error('❌ Critical security error: CRM_ENCRYPTION_KEY not configured');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Server configuration error: encryption key not configured' 
+      }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      });
+    }
 
     // Encrypt access token
     const { data: encryptedAccessToken, error: encryptError1 } = await supabase.rpc('pgp_sym_encrypt', {
