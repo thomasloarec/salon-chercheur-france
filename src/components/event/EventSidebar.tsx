@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Building } from 'lucide-react';
 import { SimilarEvents } from './SimilarEvents';
+import EventMapEmbed from '@/components/maps/EventMapEmbed';
 import type { Event } from '@/types/event';
 
 interface EventSidebarProps {
@@ -78,12 +79,20 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
               <MapPin className="h-4 w-4 text-accent mr-2" />
               Localisation
             </h3>
-            <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center border">
-              <div className="text-center text-gray-500">
-                <MapPin className="h-8 w-8 mx-auto mb-2" />
-                <p className="text-sm">Carte temporairement indisponible</p>
+            <EventMapEmbed
+              address={addressResult !== 'Adresse non précisée' ? addressResult : null}
+              zoom={14}
+              height={192}
+            />
+            {/* Ancien bloc map désactivé temporairement (remplacé par Google Maps Embed) */}
+            {false && (
+              <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center border">
+                <div className="text-center text-gray-500">
+                  <MapPin className="h-8 w-8 mx-auto mb-2" />
+                  <p className="text-sm">Carte temporairement indisponible</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
