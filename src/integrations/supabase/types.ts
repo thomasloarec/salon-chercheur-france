@@ -155,6 +155,45 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_connections: {
+        Row: {
+          access_token_enc: string
+          created_at: string
+          expires_at: string
+          id: string
+          portal_id: number | null
+          provider: string
+          refresh_token_enc: string | null
+          scope: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_enc: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          portal_id?: number | null
+          provider: string
+          refresh_token_enc?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_enc?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          portal_id?: number | null
+          provider?: string
+          refresh_token_enc?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       csrf_tokens: {
         Row: {
           created_at: string
