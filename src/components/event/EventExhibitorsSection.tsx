@@ -177,11 +177,14 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           )}
         </div>
         
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800 text-sm">
-            💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
-          </p>
-        </div>
+        {/* Message conseil CRM désactivé temporairement - à réactiver plus tard */}
+        {false && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-800 text-sm">
+              💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
+            </p>
+          </div>
+        )}
         
         <p className="text-gray-500 italic">
           Exposants inconnus pour cet événement
@@ -213,11 +216,14 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         )}
       </div>
       
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-blue-800 text-sm">
-          💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
-        </p>
-      </div>
+      {/* Message conseil CRM désactivé temporairement - à réactiver plus tard */}
+      {false && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-blue-800 text-sm">
+            💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
+          </p>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {toDisplay.map((exhibitor, index) => (

@@ -35,11 +35,14 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
               )}
             </h2>
           </CardTitle>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-            <p className="text-blue-800 text-sm">
-              💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
-            </p>
-          </div>
+          {/* Message conseil CRM désactivé temporairement - à réactiver plus tard */}
+          {false && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+              <p className="text-blue-800 text-sm">
+                💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="text-center py-12">
@@ -71,11 +74,14 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
             )}
           </h2>
         </CardTitle>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-          <p className="text-blue-800 text-sm">
-            💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
-          </p>
-        </div>
+        {/* Message conseil CRM désactivé temporairement - à réactiver plus tard */}
+        {false && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+            <p className="text-blue-800 text-sm">
+              💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
+            </p>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Table>

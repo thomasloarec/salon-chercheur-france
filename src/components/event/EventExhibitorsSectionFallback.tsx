@@ -66,11 +66,14 @@ export const EventExhibitorsSectionFallback = ({ event }: EventExhibitorsSection
         )}
       </div>
       
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-blue-800 text-sm">
-          💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
-        </p>
-      </div>
+      {/* Message conseil CRM désactivé temporairement - à réactiver plus tard */}
+      {false && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-blue-800 text-sm">
+            💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
+          </p>
+        </div>
+      )}
       
       {exhibitorCount === 0 ? (
         <p className="text-gray-500 italic">
