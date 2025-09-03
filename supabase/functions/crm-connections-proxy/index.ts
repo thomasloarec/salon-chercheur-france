@@ -1,28 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
-const FUNCTION_VERSION = "2025-09-03-v1";
-const ALLOWED_ORIGINS = ["https://lotexpo.com", "https://www.lotexpo.com"];
-
-const json = (req: Request, body: unknown, status = 200, extra: Record<string, string> = {}) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json", ...createCorsHeaders(req, extra) }
-  });
-
-function createCorsHeaders(req: Request, additional: Record<string, string> = {}) {
-  const origin = req.headers.get("Origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Credentials": "false",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin",
-    ...additional
-  };
-}
+const FUNCTION_VERSION = "2025-09-03-v2";
 
 function log(req: Request, stage: string, data: Record<string, unknown> = {}) {
   const entry = {
@@ -37,12 +17,14 @@ function log(req: Request, stage: string, data: Record<string, unknown> = {}) {
 serve(async (req: Request) => {
   // Preflight CORS
   if (req.method === "OPTIONS") {
-    log(req, "preflight");
-    return new Response(null, { status: 204, headers: createCorsHeaders(req) });
+    return handleOptions(req);
   }
 
   if (req.method !== "POST") {
-    return json(req, { error: "Method not allowed" }, 405);
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
   }
 
   try {
@@ -50,10 +32,13 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       log(req, "auth_missing");
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "AUTH_REQUIRED", 
         message: "Authentification requise" 
-      }, 401);
+      }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Vérifier la session utilisateur
@@ -61,10 +46,13 @@ serve(async (req: Request) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     
     if (!supabaseUrl || !anonKey) {
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "CONFIG_MISSING", 
         message: "Configuration Supabase manquante" 
-      }, 500);
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     const supabase = createClient(supabaseUrl, anonKey, {
@@ -74,10 +62,13 @@ serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       log(req, "auth_invalid", { error: authError?.message });
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "SESSION_INVALID", 
         message: "Session utilisateur invalide" 
-      }, 401);
+      }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Configuration AWS
@@ -86,10 +77,13 @@ serve(async (req: Request) => {
     
     if (!awsCrmApiUrl) {
       log(req, "aws_config_missing");
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "AWS_CONFIG_MISSING", 
         message: "Configuration AWS API manquante" 
-      }, 500);
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Parser et forwarder la requête
@@ -97,10 +91,21 @@ serve(async (req: Request) => {
     try {
       body = await req.json();
     } catch {
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "INVALID_JSON", 
         message: "Corps de requête JSON invalide" 
-      }, 400);
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
+    }
+
+    // Gérer le ping local pour tests
+    if (body?.ping === "ok") {
+      return new Response(JSON.stringify({ pong: true, version: FUNCTION_VERSION }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     log(req, "proxy_request_start", { 
@@ -155,22 +160,31 @@ serve(async (req: Request) => {
         bodyExcerpt: awsResponseText.slice(0, 500)
       });
       
-      return json(req, {
+      return new Response(JSON.stringify({
         code: "AWS_PROXY_ERROR",
         status: awsResponse.status,
         message: "Erreur depuis l'API backend",
         bodyExcerpt: awsResponseText.slice(0, 500)
-      }, awsResponse.status);
+      }), {
+        status: awsResponse.status,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Succès - retourner la réponse AWS
-    return json(req, awsResponseJson, awsResponse.status);
+    return new Response(JSON.stringify(awsResponseJson), {
+      status: awsResponse.status,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
 
   } catch (error) {
     log(req, "proxy_error", { error: String(error) });
-    return json(req, { 
+    return new Response(JSON.stringify({ 
       code: "PROXY_ERROR", 
       message: String(error) 
-    }, 500);
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
   }
 });

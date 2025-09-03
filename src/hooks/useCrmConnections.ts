@@ -33,7 +33,7 @@ export const useCrmConnections = () => {
     try {
       console.log('🔍 useCrmConnections: Récupération des connexions via proxy pour user:', user.id);
       
-      // Utiliser le proxy pour contourner les problèmes CORS
+      // Utiliser le proxy pour contourner les problèmes CORS avec credentials
       const { data, error } = await supabase.functions.invoke('crm-connections-proxy', {
         body: { action: 'list_connections' }
       });
@@ -41,16 +41,18 @@ export const useCrmConnections = () => {
       if (error) {
         console.error('❌ useCrmConnections: Erreur proxy:', error);
         
-        if (error.message?.includes('401') || error.message?.includes('SESSION_INVALID')) {
+        // Gestion des erreurs avec codes spécifiques
+        if (error.message?.includes('401') || 
+            (error.context && error.context.code === 'SESSION_INVALID')) {
           toast({
             title: "Session expirée",
             description: "Ta session a expiré. Reconnecte-toi.",
             variant: "destructive"
           });
-        } else if (error.message?.includes('AWS_PROXY_ERROR')) {
+        } else if (error.context && error.context.code === 'AWS_PROXY_ERROR') {
           toast({
-            title: "Erreur backend",
-            description: "Lecture des connexions impossible (backend). Réessaie plus tard.",
+            title: "Erreur backend", 
+            description: "Lecture des connexions refusée (403). Vérifier CORS/API key/Authorization sur l'API Gateway.",
             variant: "destructive"
           });
         } else {
@@ -81,6 +83,12 @@ export const useCrmConnections = () => {
           description: "Lecture des connexions refusée (403). Vérifier CORS/API key/Authorization sur l'API Gateway.",
           variant: "destructive"
         });
+      } else {
+        toast({
+          title: "Erreur réseau",
+          description: "Impossible de contacter le serveur.",
+          variant: "destructive"
+        });
       }
       
       setConnections({});
@@ -93,12 +101,21 @@ export const useCrmConnections = () => {
 
     setLoading(true);
     try {
+      // Log des informations de contexte pour debug CORS
+      console.log('🌐 CORS Debug Info:', {
+        origin: window.location.origin,
+        userAgent: navigator.userAgent.slice(0, 50),
+        hasUser: !!user,
+        provider
+      });
+
       // 1. Récupérer l'URL d'installation avec token optionnel
       const headers: Record<string, string> = {};
       if (user) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
           headers.Authorization = `Bearer ${session.access_token}`;
+          console.log('🔑 Authorization header ajouté');
         }
       }
 
@@ -107,10 +124,24 @@ export const useCrmConnections = () => {
         headers
       });
 
-      if (error || !data.installUrl) {
-        console.error('❌ OAuth init failed:', { error, data });
-        throw new Error(data?.error || 'Erreur lors de la récupération de l\'URL');
+      if (error) {
+        console.error('❌ OAuth init failed:', { error, data, provider });
+        
+        // Gestion spécifique des erreurs OAuth
+        let userMessage = "Erreur lors de la récupération de l'URL";
+        if (error.message?.includes('CONFIG_MISSING')) {
+          userMessage = "Configuration serveur incomplète. Contactez l'admin (variables manquantes).";
+        }
+        
+        throw new Error(userMessage);
       }
+
+      if (!data.installUrl) {
+        console.error('❌ OAuth init failed: No installUrl in response', data);
+        throw new Error('URL d\'autorisation manquante');
+      }
+
+      console.log('✅ OAuth URL récupérée:', data.installUrl.slice(0, 50) + '...');
 
       // 2. Ouvrir popup centrée
       const popup = window.open(
@@ -120,6 +151,10 @@ export const useCrmConnections = () => {
         (window.screen.width / 2 - 250) + ',top=' + 
         (window.screen.height / 2 - 300)
       );
+
+      if (!popup) {
+        throw new Error('Popup bloquée par le navigateur');
+      }
 
       // 3. Écouter le message de retour
       const handleMessage = async (event: MessageEvent) => {
@@ -254,6 +289,27 @@ export const useCrmConnections = () => {
   const clearClaimData = () => {
     setClaimData(null);
   };
+
+  // Ajouter une méthode pour tester le proxy ping
+  const testProxyPing = async () => {
+    try {
+      console.log('🏓 Test ping proxy...');
+      const { data, error } = await supabase.functions.invoke('crm-connections-proxy', {
+        body: { ping: 'ok' }
+      });
+      
+      if (error) {
+        console.error('❌ Ping proxy failed:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('✅ Ping proxy success:', data);
+      return { success: true, data };
+    } catch (error) {
+      console.error('❌ Ping proxy unexpected error:', error);
+      return { success: false, error: String(error) };
+    }
+  };
   // Déconnecter un CRM
   const disconnectCrm = async (provider: CrmProvider) => {
     if (!user) return;
@@ -287,6 +343,7 @@ export const useCrmConnections = () => {
     disconnectCrm,
     claimConnection,
     clearClaimData,
+    testProxyPing,
     refreshConnections: fetchConnections
   };
 };

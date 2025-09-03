@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encryptJson } from "../_shared/crypto.ts";
 import { verifySignedState } from "../_shared/oauth-state.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 // Generate secure random claim token
 function generateClaimToken(): string {
@@ -12,36 +13,7 @@ function generateClaimToken(): string {
     .replace(/=/g, '');
 }
 
-const FUNCTION_VERSION = "2025-08-23-v1";
-const ALLOWED_ORIGINS = ["https://lotexpo.com","https://www.lotexpo.com"];
-
-const json = (req: Request, body: unknown, status = 200, extra: Record<string,string> = {}) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type":"application/json", ...createCorsHeaders(req, extra) }
-  });
-
-function createCorsHeaders(req: Request, additional: Record<string,string> = {}) {
-  const origin = req.headers.get("Origin") || "";
-  const requestedHeaders = req.headers.get("Access-Control-Request-Headers") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  const headers: Record<string,string> = {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Credentials": "false",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin, Access-Control-Request-Headers, Access-Control-Request-Method",
-    ...additional
-  };
-  if (req.method === "OPTIONS" && requestedHeaders) {
-    const essentials = ["Content-Type","Authorization","X-OAuth-State"];
-    const requested = requestedHeaders.split(",").map(h => h.trim()).filter(Boolean);
-    headers["Access-Control-Allow-Headers"] = Array.from(new Set([...essentials, ...requested])).join(", ");
-  } else {
-    headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-OAuth-State";
-  }
-  return headers;
-}
+const FUNCTION_VERSION = "2025-09-03-v2";
 
 function log(req: Request, stage: string, data: Record<string,unknown> = {}) {
   const entry = {
@@ -61,7 +33,7 @@ serve(async (req: Request) => {
       acrh: req.headers.get("Access-Control-Request-Headers"),
       acrm: req.headers.get("Access-Control-Request-Method")
     });
-    return new Response(null,{ status:204, headers:createCorsHeaders(req) });
+    return handleOptions(req);
   }
 
   // Diag
@@ -69,7 +41,7 @@ serve(async (req: Request) => {
     const url = new URL(req.url);
     if (url.searchParams.get("diag") === "1") {
       const cid = Deno.env.get("HUBSPOT_CLIENT_ID") ?? "";
-      return json(req, {
+      return new Response(JSON.stringify({
         ok:true, version:FUNCTION_VERSION, now:new Date().toISOString(),
         env:{
           client_id_masked: cid ? cid.replace(/(.{4}).*(.{4})/, "$1...$2") : "",
@@ -79,24 +51,48 @@ serve(async (req: Request) => {
           has_state_signing_key: !!Deno.env.get("OAUTH_STATE_SIGNING_KEY"),
           has_service_role_key: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
         }
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
       });
     }
-    return json(req, { error:"Method not allowed" }, 405);
+    return new Response(JSON.stringify({ error:"Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
   }
 
-  if (req.method !== "POST") return json(req,{ error:"Method not allowed", stage:"method_validation" },405);
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error:"Method not allowed", stage:"method_validation" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
+  }
 
   try {
     // Parse
     let body: any;
     try { body = await req.json(); }
-    catch { return json(req,{ success:false, stage:"body_parsing", message:"invalid_json" },400); }
+    catch { 
+      return new Response(JSON.stringify({ success:false, stage:"body_parsing", message:"invalid_json" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
+    }
     const { code, state } = body || {};
     const headerState = req.headers.get("X-OAuth-State") || "";
-    if (!code || !state || !headerState)
-      return json(req,{ success:false, stage:"validation", message:"missing_params", details:{ hasCode:!!code, hasState:!!state, hasHeader:!!headerState }},400);
-    if (state !== headerState)
-      return json(req,{ success:false, stage:"csrf_state", message:"state_header_mismatch" },400);
+    if (!code || !state || !headerState) {
+      return new Response(JSON.stringify({ success:false, stage:"validation", message:"missing_params", details:{ hasCode:!!code, hasState:!!state, hasHeader:!!headerState }}), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
+    }
+    if (state !== headerState) {
+      return new Response(JSON.stringify({ success:false, stage:"csrf_state", message:"state_header_mismatch" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
+    }
 
     // Configuration obligatoire - supprimer tous fallbacks pour fail-closed
     const client_id = Deno.env.get("HUBSPOT_CLIENT_ID");
@@ -116,14 +112,21 @@ serve(async (req: Request) => {
     
     if (missing.length > 0) {
       log(req, "config_missing", { missing });
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "CONFIG_MISSING", 
         missing, 
         message: "Configuration OAuth incomplète" 
-      }, 500);
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
-    if (redirect_uri.includes("/api/oauth/"))
-      return json(req,{ success:false, stage:"config_validation", message:"redirect_uri_contains_api_path", expected:"https://lotexpo.com/oauth/hubspot/callback", got:redirect_uri },400);
+    if (redirect_uri.includes("/api/oauth/")) {
+      return new Response(JSON.stringify({ success:false, stage:"config_validation", message:"redirect_uri_contains_api_path", expected:"https://lotexpo.com/oauth/hubspot/callback", got:redirect_uri }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
+    }
 
     // Validation state anti-CSRF obligatoire
     let stateData: any;
@@ -137,15 +140,21 @@ serve(async (req: Request) => {
       log(req, "state_verification_failed", { error: errorMsg });
       
       if (errorMsg.includes("MISMATCH") || errorMsg.includes("EXPIRED")) {
-        return json(req, { 
+        return new Response(JSON.stringify({ 
           code: "STATE_MISMATCH", 
           message: "Session expirée ou état invalide" 
-        }, 400);
+        }), {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+        });
       }
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "STATE_VALIDATION_ERROR", 
         message: errorMsg 
-      }, 400);
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Échange code → tokens avec logging détaillé
@@ -176,13 +185,16 @@ serve(async (req: Request) => {
         scopesUsed: scopes
       });
       
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "HUBSPOT_TOKEN_EXCHANGE_FAILED",
         hubspotError: errorBody,
         usedRedirectUri: redirect_uri,
         scopesUsed: scopes,
         message: `Échec d'échange de tokens HubSpot (${r.status})`
-      }, 400);
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
     
     const tokens = await r.json() as { access_token:string; refresh_token?:string; expires_in:number; token_type:string; };
@@ -206,10 +218,13 @@ serve(async (req: Request) => {
       const keyBuffer = new Uint8Array(atob(encryptionKey!).split('').map(c => c.charCodeAt(0)));
       if (keyBuffer.length !== 32) {
         log(req, "encryption_key_invalid", { keyLength: keyBuffer.length });
-        return json(req, { 
+        return new Response(JSON.stringify({ 
           code: "ENCRYPTION_KEY_INVALID", 
           message: "Clé de chiffrement invalide (doit faire 32 bytes)" 
-        }, 500);
+        }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+        });
       }
       
       access_token_enc = await encryptJson(tokens.access_token);
@@ -221,10 +236,13 @@ serve(async (req: Request) => {
       });
     } catch (encError) {
       log(req, "encryption_failed", { error: String(encError) });
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "ENCRYPTION_FAILED", 
         message: "Échec du chiffrement des tokens" 
-      }, 500);
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
     const expires_at = new Date(Date.now() + (tokens.expires_in*1000)).toISOString();
 
@@ -297,7 +315,10 @@ serve(async (req: Request) => {
       
     if (error) {
       log(req,"store_tokens_failed",{ code:error.code, details:error.details, hint:error.hint });
-      return json(req,{ success:false, stage:"store_tokens", db_error:{ code:error.code, details:error.details, hint:error.hint } },500);
+      return new Response(JSON.stringify({ success:false, stage:"store_tokens", db_error:{ code:error.code, details:error.details, hint:error.hint } }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     log(req, "oauth_success", { 
@@ -306,8 +327,14 @@ serve(async (req: Request) => {
       portal_id 
     });
 
-    return json(req, responseData, 200);
+    return new Response(JSON.stringify(responseData), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
   } catch (e) {
-    return json(req,{ success:false, stage:"general", message:String((e as any)?.message || e) },500);
+    return new Response(JSON.stringify({ success:false, stage:"general", message:String((e as any)?.message || e) }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
   }
 });

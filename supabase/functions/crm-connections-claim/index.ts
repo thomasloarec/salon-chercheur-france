@@ -1,28 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
-const FUNCTION_VERSION = "2025-09-03-v1";
-const ALLOWED_ORIGINS = ["https://lotexpo.com", "https://www.lotexpo.com"];
-
-const json = (req: Request, body: unknown, status = 200, extra: Record<string, string> = {}) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json", ...createCorsHeaders(req, extra) }
-  });
-
-function createCorsHeaders(req: Request, additional: Record<string, string> = {}) {
-  const origin = req.headers.get("Origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Credentials": "false",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin",
-    ...additional
-  };
-}
+const FUNCTION_VERSION = "2025-09-03-v2";
 
 function log(req: Request, stage: string, data: Record<string, unknown> = {}) {
   const entry = {
@@ -37,12 +17,14 @@ function log(req: Request, stage: string, data: Record<string, unknown> = {}) {
 serve(async (req: Request) => {
   // Preflight CORS
   if (req.method === "OPTIONS") {
-    log(req, "preflight");
-    return new Response(null, { status: 204, headers: createCorsHeaders(req) });
+    return handleOptions(req);
   }
 
   if (req.method !== "POST") {
-    return json(req, { error: "Method not allowed" }, 405);
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
   }
 
   try {
@@ -50,10 +32,13 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       log(req, "auth_missing");
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "USER_SESSION_MISSING", 
         message: "Authentification requise pour réclamer une connexion" 
-      }, 401);
+      }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Initialiser Supabase avec le token utilisateur
@@ -62,10 +47,13 @@ serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!supabaseUrl || !anonKey || !serviceKey) {
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "CONFIG_MISSING", 
         message: "Configuration Supabase manquante" 
-      }, 500);
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     const supabaseUser = createClient(supabaseUrl, anonKey, {
@@ -75,10 +63,13 @@ serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
     if (authError || !user) {
       log(req, "auth_invalid", { error: authError?.message });
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "USER_SESSION_INVALID", 
         message: "Session utilisateur invalide" 
-      }, 401);
+      }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Parser le body
@@ -86,18 +77,24 @@ serve(async (req: Request) => {
     try {
       body = await req.json();
     } catch {
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "INVALID_JSON", 
         message: "Corps de requête JSON invalide" 
-      }, 400);
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     const { claim_token } = body;
     if (!claim_token || typeof claim_token !== 'string') {
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "CLAIM_TOKEN_MISSING", 
         message: "Token de réclamation manquant" 
-      }, 400);
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Utiliser le service role pour accéder à la connexion unclaimed
@@ -118,10 +115,13 @@ serve(async (req: Request) => {
         claim_token: claim_token.slice(0, 8) + "...",
         error: fetchError?.message 
       });
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "CLAIM_TOKEN_INVALID", 
         message: "Token de réclamation invalide ou déjà utilisé" 
-      }, 400);
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Vérifier l'expiration
@@ -130,10 +130,13 @@ serve(async (req: Request) => {
         claim_token: claim_token.slice(0, 8) + "...",
         expired_at: connection.claim_token_expires_at 
       });
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "CLAIM_TOKEN_EXPIRED", 
         message: "Token de réclamation expiré" 
-      }, 400);
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     // Attacher la connexion à l'utilisateur
@@ -153,10 +156,13 @@ serve(async (req: Request) => {
         connectionId: connection.id,
         error: updateError.message 
       });
-      return json(req, { 
+      return new Response(JSON.stringify({ 
         code: "CLAIM_UPDATE_FAILED", 
         message: "Échec de la réclamation de la connexion" 
-      }, 500);
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
     }
 
     log(req, "claim_success", { 
@@ -165,18 +171,24 @@ serve(async (req: Request) => {
       provider: connection.provider 
     });
 
-    return json(req, {
+    return new Response(JSON.stringify({
       ok: true,
       status: "active",
       provider: connection.provider,
       version: FUNCTION_VERSION
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
     });
 
   } catch (error) {
     log(req, "general_error", { error: String(error) });
-    return json(req, { 
+    return new Response(JSON.stringify({ 
       code: "INTERNAL_ERROR", 
       message: String(error) 
-    }, 500);
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+    });
   }
 });
