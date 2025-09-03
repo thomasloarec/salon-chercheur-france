@@ -23,7 +23,6 @@ export type Database = {
           last_sent_at: string | null
           location_filter: string | null
           sector_filter: string | null
-          user_email: string
           user_id: string | null
         }
         Insert: {
@@ -34,7 +33,6 @@ export type Database = {
           last_sent_at?: string | null
           location_filter?: string | null
           sector_filter?: string | null
-          user_email: string
           user_id?: string | null
         }
         Update: {
@@ -45,7 +43,6 @@ export type Database = {
           last_sent_at?: string | null
           location_filter?: string | null
           sector_filter?: string | null
-          user_email?: string
           user_id?: string | null
         }
         Relationships: []
@@ -701,19 +698,28 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          ip_address: unknown | null
           sectors: string[]
+          subscription_count: number | null
+          verified: boolean | null
         }
         Insert: {
           created_at?: string
           email: string
           id?: string
+          ip_address?: unknown | null
           sectors: string[]
+          subscription_count?: number | null
+          verified?: boolean | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          ip_address?: unknown | null
           sectors?: string[]
+          subscription_count?: number | null
+          verified?: boolean | null
         }
         Relationships: []
       }
@@ -948,6 +954,39 @@ export type Database = {
           id?: string
           keywords?: string[] | null
           name?: string
+        }
+        Relationships: []
+      }
+      security_events: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
