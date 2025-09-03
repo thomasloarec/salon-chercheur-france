@@ -26,10 +26,13 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
                 <Building className="h-6 w-6 mr-3 text-accent" />
                 Exposants
               </div>
-              <Button className="bg-accent hover:bg-accent/90">
-                <Link className="h-4 w-4 mr-2" />
-                Connecter mon CRM
-              </Button>
+              {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
+              {false && (
+                <Button className="bg-accent hover:bg-accent/90">
+                  <Link className="h-4 w-4 mr-2" />
+                  Connecter mon CRM
+                </Button>
+              )}
             </h2>
           </CardTitle>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
@@ -59,10 +62,13 @@ export const EventExhibitors = ({ exhibitors }: EventExhibitorsProps) => {
               <Building className="h-6 w-6 mr-3 text-accent" />
               Exposants ({exhibitors.length})
             </div>
-            <Button className="bg-accent hover:bg-accent/90">
-              <Link className="h-4 w-4 mr-2" />
-              Connecter mon CRM
-            </Button>
+            {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
+            {false && (
+              <Button className="bg-accent hover:bg-accent/90">
+                <Link className="h-4 w-4 mr-2" />
+                Connecter mon CRM
+              </Button>
+            )}
           </h2>
         </CardTitle>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">

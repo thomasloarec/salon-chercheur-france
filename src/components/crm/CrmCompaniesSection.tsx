@@ -48,10 +48,13 @@ export const CrmCompaniesSection = () => {
             <p className="text-muted-foreground">
               Connectez votre CRM pour voir automatiquement les salons auxquels vos prospects participent.
             </p>
-            <Button onClick={() => setShowConnectModal(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Connecter mon CRM
-            </Button>
+            {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
+            {false && (
+              <Button onClick={() => setShowConnectModal(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Connecter mon CRM
+              </Button>
+            )}
           </CardContent>
         </Card>
         

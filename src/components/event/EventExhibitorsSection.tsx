@@ -165,13 +165,16 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           <h3 className="text-xl font-semibold">
             Exposants
           </h3>
-          <Button 
-            className="bg-accent hover:bg-accent/90"
-            onClick={() => setShowCrmModal(true)}
-          >
-            <Link className="h-4 w-4 mr-2" />
-            Connecter mon CRM
-          </Button>
+          {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
+          {false && (
+            <Button 
+              className="bg-accent hover:bg-accent/90"
+              onClick={() => setShowCrmModal(true)}
+            >
+              <Link className="h-4 w-4 mr-2" />
+              Connecter mon CRM
+            </Button>
+          )}
         </div>
         
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -198,13 +201,16 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         <h3 className="text-xl font-semibold">
           Exposants ({exhibitors.length})
         </h3>
-        <Button 
-          className="bg-accent hover:bg-accent/90"
-          onClick={() => setShowCrmModal(true)}
-        >
-          <Link className="h-4 w-4 mr-2" />
-          Connecter mon CRM
-        </Button>
+        {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
+        {false && (
+          <Button 
+            className="bg-accent hover:bg-accent/90"
+            onClick={() => setShowCrmModal(true)}
+          >
+            <Link className="h-4 w-4 mr-2" />
+            Connecter mon CRM
+          </Button>
+        )}
       </div>
       
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

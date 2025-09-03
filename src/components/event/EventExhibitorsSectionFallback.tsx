@@ -54,13 +54,16 @@ export const EventExhibitorsSectionFallback = ({ event }: EventExhibitorsSection
           Exposants {exhibitorCount > 0 ? `(${exhibitorCount})` : ''}
           <span className="text-xs text-gray-500 ml-2">- Fallback Mode</span>
         </h3>
-        <Button 
-          className="bg-accent hover:bg-accent/90"
-          onClick={() => setShowCrmModal(true)}
-        >
-          <Link className="h-4 w-4 mr-2" />
-          Connecter mon CRM
-        </Button>
+        {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
+        {false && (
+          <Button 
+            className="bg-accent hover:bg-accent/90"
+            onClick={() => setShowCrmModal(true)}
+          >
+            <Link className="h-4 w-4 mr-2" />
+            Connecter mon CRM
+          </Button>
+        )}
       </div>
       
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

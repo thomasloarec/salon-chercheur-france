@@ -128,14 +128,19 @@ const CrmIntegrations = () => {
                         </Button>
                       </>
                     ) : (
-                      <Button 
-                        onClick={() => connectCrm(provider)}
-                        className="gap-2"
-                        disabled={isCurrentlyLoading}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        {isCurrentlyLoading ? 'Connexion...' : `Connecter ${getProviderName(provider)}`}
-                      </Button>
+                      <div>
+                        {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
+                        {false && (
+                          <Button 
+                            onClick={() => connectCrm(provider)}
+                            className="gap-2"
+                            disabled={isCurrentlyLoading}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            {isCurrentlyLoading ? 'Connexion...' : `Connecter ${getProviderName(provider)}`}
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
                   
