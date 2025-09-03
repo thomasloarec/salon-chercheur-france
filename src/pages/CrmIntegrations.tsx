@@ -1,350 +1,185 @@
-
 import React, { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCrmIntegrations, useSyncCrmAccounts } from '@/hooks/useCrmIntegrations';
-import { handleOAuthLogin, handleOAuthCallback, handleDisconnectCrm } from '@/lib/oauthHandlers';
-import { useHubSpotOAuth } from '@/hooks/useHubSpotOAuth';
+import { useCrmConnections } from '@/hooks/useCrmConnections';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Unplug, ExternalLink } from 'lucide-react';
+import { ExternalLink, Unplug, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { CrmProvider } from '@/types/crm';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { HUBSPOT_CLIENT_ID, HUBSPOT_REDIRECT_URI, CRM_OAUTH_ENABLED, getEffectiveHubspotConfig, maskClientId } from '@/lib/hubspotConfig';
+import { CrmClaimModal } from '@/components/crm/CrmClaimModal';
 
 const CrmIntegrations = () => {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const isDebug = searchParams.has('oauthDebug');
-  const { data: integrations = [], isLoading, refetch } = useCrmIntegrations();
-  const syncMutation = useSyncCrmAccounts();
-  const queryClient = useQueryClient();
+  const { 
+    connections, 
+    loading, 
+    claimData, 
+    connectCrm, 
+    disconnectCrm,
+    claimConnection,
+    clearClaimData,
+    refreshConnections 
+  } = useCrmConnections();
   const { toast } = useToast();
-  const effectiveConfig = getEffectiveHubspotConfig();
-  const canConnectHubspot = CRM_OAUTH_ENABLED && effectiveConfig.source !== 'none';
-  const { initiateOAuth: initiateHubSpotOAuth, loading: hubspotLoading } = useHubSpotOAuth();
 
-  // Handle OAuth callback and other URL parameters
+  // Si l'utilisateur est connecté et qu'il y a des données de claim, déclencher automatiquement le claim
   useEffect(() => {
-    const callback = searchParams.get('callback');
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
-    const error = searchParams.get('error');
-    const connected = searchParams.get('connected');
-    const disconnected = searchParams.get('disconnected');
-
-    // Handle OAuth callback
-    if (callback && code && state) {
-      handleOAuthCallback(callback as CrmProvider, code, state)
-        .then(() => {
-          toast({
-            title: "Connexion réussie",
-            description: `${getProviderName(callback as CrmProvider)} a été connecté avec succès.`,
-          });
-          queryClient.invalidateQueries({ queryKey: ['crm-integrations', user?.id] });
-          // Clean up URL parameters
-          const newParams = new URLSearchParams(searchParams);
-          newParams.delete('callback');
-          newParams.delete('code');
-          newParams.delete('state');
-          newParams.set('connected', callback);
-          setSearchParams(newParams);
-        })
-        .catch((error) => {
-          console.error('OAuth callback error:', error);
-          toast({
-            title: "Erreur de connexion",
-            description: `Impossible de connecter ${getProviderName(callback as CrmProvider)}.`,
-            variant: "destructive",
-          });
-          // Clean up URL parameters
-          const newParams = new URLSearchParams(searchParams);
-          newParams.delete('callback');
-          newParams.delete('code');
-          newParams.delete('state');
-          newParams.set('error', callback);
-          setSearchParams(newParams);
-        });
+    if (user && claimData) {
+      claimConnection();
     }
-    // Handle other feedback parameters
-    else if (connected) {
-      toast({
-        title: "Connexion réussie",
-        description: `${getProviderName(connected as CrmProvider)} a été connecté avec succès.`,
-      });
-      // Clean up the parameter after showing toast
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete('connected');
-      setSearchParams(newParams, { replace: true });
-    } else if (error) {
-      if (error === 'unauthorized') {
-        toast({
-          title: "Erreur d'authentification",
-          description: "Vous devez être connecté pour gérer les intégrations CRM.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Erreur de connexion",
-          description: `Impossible de connecter ${getProviderName(error as CrmProvider)}.`,
-          variant: "destructive",
-        });
-      }
-      // Clean up the parameter after showing toast
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete('error');
-      setSearchParams(newParams, { replace: true });
-    } else if (disconnected) {
-      toast({
-        title: "Déconnexion réussie",
-        description: `${getProviderName(disconnected as CrmProvider)} a été déconnecté.`,
-      });
-      // Clean up the parameter after showing toast
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete('disconnected');
-      setSearchParams(newParams, { replace: true });
-    }
-  }, [searchParams, setSearchParams, toast, user?.id, queryClient]);
-
-  const handleConnect = async (provider: CrmProvider) => {
-    try {
-      if (provider === 'hubspot') {
-        // Use new HubSpot OAuth flow with popup and state verification
-        await initiateHubSpotOAuth();
-        // Refresh integrations after successful connection
-        queryClient.invalidateQueries({ queryKey: ['crm-integrations', user?.id] });
-        toast({
-          title: "Connexion réussie",
-          description: "HubSpot a été connecté avec succès.",
-        });
-      } else {
-        // Use legacy flow for other providers
-        await handleOAuthLogin(provider);
-      }
-    } catch (error) {
-      toast({
-        title: "Erreur de connexion",
-        description: error instanceof Error ? error.message : "Impossible d'initier la connexion OAuth.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSync = async (provider: CrmProvider) => {
-    try {
-      await syncMutation.mutateAsync(provider);
-      toast({
-        title: "Synchronisation réussie",
-        description: `Les comptes ${getProviderName(provider)} ont été synchronisés.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur de synchronisation",
-        description: "Impossible de synchroniser les comptes.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDisconnect = async (provider: CrmProvider) => {
-    try {
-      await handleDisconnectCrm(provider);
-      queryClient.invalidateQueries({ queryKey: ['crm-integrations', user?.id] });
-      toast({
-        title: "Déconnexion réussie",
-        description: `${getProviderName(provider)} a été déconnecté.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur de déconnexion",
-        description: "Impossible de déconnecter le CRM.",
-        variant: "destructive",
-      });
-    }
-  };
+  }, [user, claimData]);
 
   const getProviderName = (provider: CrmProvider): string => {
+    const names = {
+      hubspot: 'HubSpot',
+      salesforce: 'Salesforce',
+      pipedrive: 'Pipedrive',
+      zoho: 'Zoho CRM'
+    };
+    return names[provider] || provider;
+  };
+
+  const getProviderIcon = (provider: CrmProvider) => {
     switch (provider) {
-      case 'salesforce': return 'Salesforce';
-      case 'hubspot': return 'HubSpot';
-      case 'pipedrive': return 'Pipedrive';
-      case 'zoho': return 'Zoho CRM';
-      default: return provider;
+      case 'hubspot': return '🧡';
+      case 'salesforce': return '⚡';
+      case 'pipedrive': return '💼';
+      case 'zoho': return '📊';
+      default: return '🔗';
     }
   };
 
-  if (!user) {
-    return (
-      <MainLayout title="Intégrations CRM">
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-600 mb-2">
-              Connectez-vous pour gérer vos intégrations CRM
-            </h2>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
+  const supportedProviders: CrmProvider[] = ['hubspot', 'salesforce', 'pipedrive', 'zoho'];
 
   return (
-    <MainLayout title="Intégrations CRM">
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-primary mb-2">
-              Intégrations CRM
-            </h1>
-            <p className="text-gray-600">
-              Connectez vos CRM pour synchroniser automatiquement vos comptes clients
-            </p>
-            
-            {isDebug && (
-              <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-4 text-sm">
-                <h3 className="font-semibold text-blue-900 mb-2">🔍 Configuration HubSpot (Debug)</h3>
-                <div className="text-blue-800 space-y-1">
-                  <div><span className="font-medium">Source:</span> <code className="bg-blue-100 px-1 rounded">{effectiveConfig.source === 'debug' ? 'Debug (sessionStorage)' : effectiveConfig.source === 'env' ? 'Variables d\'environnement' : 'Aucune'}</code></div>
-                  <div><span className="font-medium">CRM OAuth Enabled:</span> <code className="bg-blue-100 px-1 rounded">{CRM_OAUTH_ENABLED ? 'Oui' : 'Non'}</code></div>
-                  <div><span className="font-medium">Config Valid:</span> <code className="bg-blue-100 px-1 rounded">{effectiveConfig.source !== 'none' ? 'Oui' : 'Non'}</code></div>
-                  <div><span className="font-medium">HubSpot CLIENT_ID:</span> <code className="bg-blue-100 px-1 rounded">{maskClientId(effectiveConfig.clientId) || 'manquant'}</code></div>
-                  <div><span className="font-medium">Redirect URI:</span> <code className="bg-blue-100 px-1 rounded">{effectiveConfig.redirectUri || 'manquant'}</code></div>
-                </div>
-              </div>
+    <MainLayout>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Intégrations CRM</h1>
+          <p className="text-muted-foreground">
+            Connecte tes outils CRM pour synchroniser tes données d'entreprise et événements.
+            {!user && (
+              <span className="block mt-2 text-blue-600 font-medium">
+                Tu peux commencer la connexion même sans compte - nous te guiderons ensuite !
+              </span>
             )}
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {supportedProviders.map((provider) => {
+            const isConnected = connections[provider];
+            const isCurrentlyLoading = loading;
             
-            {!canConnectHubspot && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mt-4 text-sm">
-                <div className="flex items-start gap-2">
-                  <div className="text-yellow-600">⚠️</div>
-                  <div>
-                    <h4 className="font-medium text-yellow-800 mb-1">Intégrations CRM indisponibles</h4>
-                    <div className="text-yellow-700">
-                      {!CRM_OAUTH_ENABLED ? (
-                        <p>Intégrations CRM désactivées (flag CRM_OAUTH_ENABLED)</p>
+            return (
+              <Card key={provider} className="relative">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{getProviderIcon(provider)}</span>
+                      <div>
+                        <CardTitle className="text-xl">{getProviderName(provider)}</CardTitle>
+                        <CardDescription>
+                          {provider === 'hubspot' && 'Synchronise tes entreprises et contacts'}
+                          {provider === 'salesforce' && 'Accède à tes comptes Salesforce'}
+                          {provider === 'pipedrive' && 'Importe tes organisations'}
+                          {provider === 'zoho' && 'Connecte tes comptes Zoho CRM'}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isConnected ? (
+                        <Badge variant="default" className="gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Connecté
+                        </Badge>
                       ) : (
-                        <div>
-                          <p>Configuration HubSpot incomplète</p>
-                          {isDebug && (
-                            <p className="mt-1">
-                              <a href="/oauth/hubspot/test?oauthDebug=1" className="underline">
-                                → Mode debug disponible
-                              </a>
-                            </p>
-                          )}
-                        </div>
+                        <Badge variant="secondary" className="gap-1">
+                          <XCircle className="h-3 w-3" />
+                          Non connecté
+                        </Badge>
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-10 bg-gray-200 rounded"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {integrations.map((integration) => (
-                <Card key={integration.provider}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        {getProviderName(integration.provider)}
-                        {integration.connected && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            Connecté
-                          </Badge>
-                        )}
-                      </CardTitle>
-                    </div>
-                    <CardDescription>
-                      {integration.connected ? (
-                        <div className="space-y-1">
-                          <p>{integration.accountsCount} comptes synchronisés</p>
-                          {integration.lastSync && (
-                            <p className="text-xs">
-                              Dernière sync : {formatDistanceToNow(new Date(integration.lastSync), { 
-                                addSuffix: true, 
-                                locale: fr 
-                              })}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p>Connectez votre {getProviderName(integration.provider)} pour synchroniser vos comptes</p>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {integration.connected ? (
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleSync(integration.provider)}
-                          disabled={syncMutation.isPending}
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <div className="flex gap-2">
+                    {isConnected ? (
+                      <>
+                        <Button 
+                          onClick={() => refreshConnections()}
+                          variant="outline" 
                           size="sm"
-                          variant="outline"
+                          disabled={isCurrentlyLoading}
                         >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Synchroniser
+                          Actualiser
                         </Button>
-                        <Button
-                          onClick={() => handleDisconnect(integration.provider)}
+                        <Button 
+                          onClick={() => disconnectCrm(provider)}
+                          variant="destructive" 
                           size="sm"
-                          variant="outline"
+                          disabled={isCurrentlyLoading}
                         >
-                          <Unplug className="h-4 w-4 mr-2" />
+                          <Unplug className="h-4 w-4 mr-1" />
                           Déconnecter
                         </Button>
-                      </div>
+                      </>
                     ) : (
-                      (integration.provider === 'hubspot' && !canConnectHubspot) ? (
-                        <div className="space-y-2">
-                          <Button disabled className="w-full">
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Connecter {getProviderName(integration.provider)} (indisponible)
-                          </Button>
-                          {isDebug && (
-                            <p className="text-xs text-muted-foreground text-center">
-                              <a href="/oauth/hubspot/test?oauthDebug=1" className="text-primary hover:underline">
-                                → Mode diagnostic OAuth
-                              </a>
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <Button
-                          onClick={() => handleConnect(integration.provider)}
-                          className="w-full"
-                          disabled={integration.provider === 'hubspot' && hubspotLoading}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          {integration.provider === 'hubspot' && hubspotLoading ? 'Connexion...' : `Connecter ${getProviderName(integration.provider)}`}
-                        </Button>
-                      )
+                      <Button 
+                        onClick={() => connectCrm(provider)}
+                        className="gap-2"
+                        disabled={isCurrentlyLoading}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        {isCurrentlyLoading ? 'Connexion...' : `Connecter ${getProviderName(provider)}`}
+                      </Button>
                     )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                  </div>
+                  
+                  {provider === 'hubspot' && !isConnected && (
+                    <p className="text-sm text-muted-foreground mt-3">
+                      Première fois ? Pas de souci ! Tu pourras créer ton compte après avoir autorisé la connexion.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
+
+        {/* Section d'aide */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Aide et Support</CardTitle>
+            <CardDescription>
+              Des questions sur les intégrations CRM ?
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              • Les connexions sont sécurisées et chiffrées
+            </p>
+            <p className="text-sm text-muted-foreground">
+              • Tu peux te déconnecter à tout moment
+            </p>
+            <p className="text-sm text-muted-foreground">
+              • Les données ne sont jamais partagées avec des tiers
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Modal de réclamation de connexion */}
+        {claimData && (
+          <CrmClaimModal
+            isOpen={!!claimData}
+            onClose={clearClaimData}
+            claimData={claimData}
+            onClaimSuccess={claimConnection}
+          />
+        )}
       </div>
     </MainLayout>
   );

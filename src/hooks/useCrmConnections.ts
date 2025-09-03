@@ -8,13 +8,20 @@ type CrmConnectionStatus = {
   [K in CrmProvider]?: boolean;
 };
 
+interface ClaimData {
+  claim_token: string;
+  expires_at: string;
+  email_from_crm?: string;
+}
+
 export const useCrmConnections = () => {
   const [connections, setConnections] = useState<CrmConnectionStatus>({});
   const [loading, setLoading] = useState(false);
+  const [claimData, setClaimData] = useState<ClaimData | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Récupérer les connexions existantes
+  // Récupérer les connexions existantes via le proxy
   const fetchConnections = async () => {
     // Si l'utilisateur n'est pas connecté, ne pas faire d'appel
     if (!user) {
@@ -24,26 +31,32 @@ export const useCrmConnections = () => {
     }
 
     try {
-      console.log('🔍 useCrmConnections: Récupération des connexions pour user:', user.id);
-      const { data, error } = await supabase
-        .from('user_crm_connections')
-        .select('provider');
+      console.log('🔍 useCrmConnections: Récupération des connexions via proxy pour user:', user.id);
+      
+      // Utiliser le proxy pour contourner les problèmes CORS
+      const { data, error } = await supabase.functions.invoke('crm-connections-proxy', {
+        body: { action: 'list_connections' }
+      });
       
       if (error) {
-        console.error('❌ useCrmConnections: Erreur récupération connexions:', error);
+        console.error('❌ useCrmConnections: Erreur proxy:', error);
         
-        // Gestion spécifique de l'erreur 403 AWS API Gateway
-        if (error.message?.includes('403') || error.code === 'PGRST301') {
-          console.error('🔴 AWS API Gateway 403 Error:', {
-            error: error,
-            timestamp: new Date().toISOString(),
-            userAgent: navigator.userAgent.slice(0, 100),
-            origin: window.location.origin
-          });
-          
+        if (error.message?.includes('401') || error.message?.includes('SESSION_INVALID')) {
           toast({
-            title: "Erreur d'accès",
-            description: "Lecture des connexions refusée (403). Vérifier CORS/API key/Authorization sur l'API Gateway.",
+            title: "Session expirée",
+            description: "Ta session a expiré. Reconnecte-toi.",
+            variant: "destructive"
+          });
+        } else if (error.message?.includes('AWS_PROXY_ERROR')) {
+          toast({
+            title: "Erreur backend",
+            description: "Lecture des connexions impossible (backend). Réessaie plus tard.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Erreur de lecture",
+            description: "Impossible de récupérer tes connexions CRM.",
             variant: "destructive"
           });
         }
@@ -53,16 +66,15 @@ export const useCrmConnections = () => {
       }
       
       const status: CrmConnectionStatus = {};
-      if (data) {
-        data.forEach(conn => {
+      if (data && Array.isArray(data)) {
+        data.forEach((conn: any) => {
           status[conn.provider as CrmProvider] = true;
         });
       }
       setConnections(status);
     } catch (error) {
-      console.error('❌ useCrmConnections: Erreur inattendue lors de la récupération:', error);
+      console.error('❌ useCrmConnections: Erreur inattendue:', error);
       
-      // Détection d'erreur 403 dans les exceptions génériques
       if (String(error).includes('403')) {
         toast({
           title: "Erreur d'accès",
@@ -75,30 +87,24 @@ export const useCrmConnections = () => {
     }
   };
 
-  // Connecter un CRM
+  // Connecter un CRM (autorisé même sans être connecté)
   const connectCrm = async (provider: CrmProvider) => {
-    console.log('🔄 useCrmConnections: Initiation connexion', provider, 'user:', user ? 'connecté' : 'non connecté');
+    console.log('🔄 useCrmConnections: Initiation connexion', provider, 'user:', user ? 'connecté' : 'anonyme');
 
     setLoading(true);
     try {
-      // TODO: Configuration CORS attendue côté API Gateway AWS:
-      // - Origin: https://lotexpo.com
-      // - Methods: POST, OPTIONS  
-      // - Headers: Authorization, Content-Type
-      // - Response Headers: Access-Control-Allow-Origin, Access-Control-Allow-Headers, Access-Control-Allow-Methods, Vary: Origin
+      // 1. Récupérer l'URL d'installation avec token optionnel
+      const headers: Record<string, string> = {};
+      if (user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
+      }
 
-      // Log des détails de la requête pour diagnostic
-      const requestOrigin = window.location.origin;
-      console.info('🔍 OAuth Request Details:', {
-        provider,
-        origin: requestOrigin,
-        userAgent: navigator.userAgent.slice(0, 100),
-        timestamp: new Date().toISOString()
-      });
-
-      // 1. Récupérer l'URL d'installation
       const { data, error } = await supabase.functions.invoke(`oauth-${provider}`, {
-        body: {}
+        body: {},
+        headers
       });
 
       if (error || !data.installUrl) {
@@ -115,17 +121,30 @@ export const useCrmConnections = () => {
         (window.screen.height / 2 - 300)
       );
 
-      // 3. Écouter le message de retour avec gestion d'erreurs améliorée
+      // 3. Écouter le message de retour
       const handleMessage = async (event: MessageEvent) => {
         if (event.data.type === 'oauth-success' && event.data.provider === provider) {
           window.removeEventListener('message', handleMessage);
           popup?.close();
           
-          await fetchConnections();
-          toast({
-            title: "Connexion réussie",
-            description: `${provider} a été connecté avec succès.`,
-          });
+          const { mode, claim_token, expires_at, email_from_crm } = event.data;
+          
+          if (mode === 'attached') {
+            // Utilisateur connecté - connexion directe
+            await fetchConnections();
+            toast({
+              title: "Connexion réussie",
+              description: `${provider} a été connecté avec succès.`,
+            });
+          } else if (mode === 'unclaimed') {
+            // Utilisateur anonyme - afficher le claim flow
+            setClaimData({
+              claim_token,
+              expires_at,
+              email_from_crm
+            });
+          }
+          
         } else if (event.data.type === 'oauth-error') {
           window.removeEventListener('message', handleMessage);
           popup?.close();
@@ -184,14 +203,66 @@ export const useCrmConnections = () => {
     }
   };
 
+  // Réclamer une connexion après login/signup
+  const claimConnection = async () => {
+    if (!claimData || !user) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('crm-connections-claim', {
+        body: { claim_token: claimData.claim_token }
+      });
+
+      if (error) {
+        console.error('❌ Claim connection error:', error);
+        
+        if (error.message?.includes('CLAIM_TOKEN_EXPIRED')) {
+          toast({
+            title: "Token expiré",
+            description: "La connexion a expiré. Merci de relancer la connexion HubSpot.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Erreur de réclamation",
+            description: "Impossible de réclamer la connexion. Réessayez.",
+            variant: "destructive"
+          });
+        }
+        return false;
+      }
+
+      // Succès
+      setClaimData(null); // Clear claim data
+      await fetchConnections();
+      toast({
+        title: "Connexion récupérée",
+        description: "Ta connexion HubSpot est maintenant active !",
+      });
+      return true;
+    } catch (error) {
+      console.error('❌ Claim connection unexpected error:', error);
+      toast({
+        title: "Erreur",
+        description: "Erreur inattendue lors de la réclamation.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  // Supprimer les données de claim (si l'utilisateur annule)
+  const clearClaimData = () => {
+    setClaimData(null);
+  };
   // Déconnecter un CRM
   const disconnectCrm = async (provider: CrmProvider) => {
     if (!user) return;
 
     const { error } = await supabase
-      .from('user_crm_connections')
-      .delete()
-      .eq('provider', provider);
+      .from('crm_connections')
+      .update({ status: 'revoked' })
+      .eq('provider', provider)
+      .eq('user_id', user.id);
 
     if (!error) {
       setConnections(prev => ({ ...prev, [provider]: false }));
@@ -211,8 +282,11 @@ export const useCrmConnections = () => {
   return {
     connections,
     loading,
+    claimData,
     connectCrm,
     disconnectCrm,
+    claimConnection,
+    clearClaimData,
     refreshConnections: fetchConnections
   };
 };

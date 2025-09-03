@@ -155,39 +155,54 @@ export type Database = {
       crm_connections: {
         Row: {
           access_token_enc: string
+          claim_token: string | null
+          claim_token_expires_at: string | null
           created_at: string
+          email_from_crm: string | null
           expires_at: string
           id: string
           portal_id: number | null
           provider: string
+          provider_user_id: string | null
           refresh_token_enc: string | null
           scope: string | null
+          status: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           access_token_enc: string
+          claim_token?: string | null
+          claim_token_expires_at?: string | null
           created_at?: string
+          email_from_crm?: string | null
           expires_at: string
           id?: string
           portal_id?: number | null
           provider: string
+          provider_user_id?: string | null
           refresh_token_enc?: string | null
           scope?: string | null
+          status?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           access_token_enc?: string
+          claim_token?: string | null
+          claim_token_expires_at?: string | null
           created_at?: string
+          email_from_crm?: string | null
           expires_at?: string
           id?: string
           portal_id?: number | null
           provider?: string
+          provider_user_id?: string | null
           refresh_token_enc?: string | null
           scope?: string | null
+          status?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1213,6 +1228,10 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_claim_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_expired_csrf_tokens: {
         Args: Record<PropertyKey, never>
         Returns: undefined

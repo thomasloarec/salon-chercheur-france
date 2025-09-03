@@ -1,184 +1,127 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { generateSignedState } from "../_shared/oauth-state.ts";
 
-// Récupération des variables d'environnement HubSpot
-const hubspotAppId = Deno.env.get('HUBSPOT_APP_ID');
-const hubspotClientId = Deno.env.get('HUBSPOT_CLIENT_ID');
-const hubspotClientSecret = Deno.env.get('HUBSPOT_CLIENT_SECRET');
-const hubspotRedirectUri = Deno.env.get('HUBSPOT_REDIRECT_URI') || 'https://lotexpo.com/oauth/hubspot/callback';
-// Configuration du domaine HubSpot (US vs EU)
-const hubspotDomain = Deno.env.get('HUBSPOT_DOMAIN') || 'app.hubspot.com'; // par défaut US
+const FUNCTION_VERSION = "2025-09-03-v1";
+const ALLOWED_ORIGINS = ["https://lotexpo.com", "https://www.lotexpo.com"];
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const json = (req: Request, body: unknown, status = 200, extra: Record<string, string> = {}) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...createCorsHeaders(req, extra) }
+  });
+
+function createCorsHeaders(req: Request, additional: Record<string, string> = {}) {
+  const origin = req.headers.get("Origin") || "";
+  const requestedHeaders = req.headers.get("Access-Control-Request-Headers") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Credentials": "false",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin, Access-Control-Request-Headers, Access-Control-Request-Method",
+    ...additional
+  };
+  if (req.method === "OPTIONS" && requestedHeaders) {
+    const essentials = ["Content-Type", "Authorization", "X-OAuth-State"];
+    const requested = requestedHeaders.split(",").map(h => h.trim()).filter(Boolean);
+    headers["Access-Control-Allow-Headers"] = Array.from(new Set([...essentials, ...requested])).join(", ");
+  } else {
+    headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-OAuth-State";
+  }
+  return headers;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+function log(req: Request, stage: string, data: Record<string, unknown> = {}) {
+  const entry = {
+    ts: new Date().toISOString(),
+    stage, method: req.method, url: req.url,
+    origin: req.headers.get("Origin") || "no-origin",
+    ua: (req.headers.get("User-Agent") || "").slice(0, 120),
+    ...data
+  };
+  console.log(JSON.stringify(entry));
+}
+
+serve(async (req: Request) => {
+  // Preflight CORS
+  if (req.method === "OPTIONS") {
+    log(req, "preflight");
+    return new Response(null, { status: 204, headers: createCorsHeaders(req) });
+  }
+
+  if (req.method !== "POST") {
+    return json(req, { error: "Method not allowed", stage: "method_validation" }, 405);
   }
 
   try {
-    // Parse request body to get state from client
-    let requestBody;
-    try {
-      requestBody = await req.json();
-    } catch (parseError) {
-      // If no body, proceed with legacy flow
-      requestBody = {};
+    // Vérification des variables d'environnement obligatoires
+    const clientId = Deno.env.get("HUBSPOT_CLIENT_ID");
+    const redirectUri = Deno.env.get("HUBSPOT_REDIRECT_URI");
+    
+    const missing = [];
+    if (!clientId) missing.push("HUBSPOT_CLIENT_ID");
+    if (!redirectUri) missing.push("HUBSPOT_REDIRECT_URI");
+    
+    if (missing.length > 0) {
+      log(req, "config_missing", { missing });
+      return json(req, { 
+        code: "CONFIG_MISSING", 
+        missing, 
+        message: "Configuration OAuth incomplète" 
+      }, 500);
     }
-    
-    const clientState = requestBody.state;
-    
-    // Parse URL pour récupérer les query params (notamment oauthDebug) 
-    const url = new URL(req.url);
-    const oauthDebug = requestBody.oauthDebug === '1' || url.searchParams.get('oauthDebug') === '1';
-    
-    console.log(`🔄 OAuth HubSpot request: ${req.method} ${req.url}`);
-    if (oauthDebug) {
-      console.log('🔍 [DEBUG MODE] Mode debug OAuth activé');
-    }
-    
-    // Optional JWT verification - allow both authenticated and unauthenticated users
-    const authHeader = req.headers.get('authorization');
-    let userId = null;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const jwt = authHeader.replace('Bearer ', '');
-      
-      // Initialize Supabase client for JWT verification
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Try to verify the JWT
-      const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
-      
-      if (!authError && user) {
-        userId = user.id;
-        console.log('✅ JWT Auth successful for user:', user.id);
-      } else {
-        console.log('⚠️ JWT Auth failed, proceeding without authentication:', authError?.message);
+    // Récupérer l'utilisateur si connecté (optionnel)
+    let userId: string | null = null;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+        if (supabaseUrl && anonKey) {
+          const supabase = createClient(supabaseUrl, anonKey, {
+            global: { headers: { Authorization: authHeader } }
+          });
+          const { data: { user } } = await supabase.auth.getUser();
+          userId = user?.id || null;
+        }
+      } catch (e) {
+        // Utilisateur non connecté ou token invalide - c'est OK
+        log(req, "auth_optional_failed", { error: String(e) });
       }
-    } else {
-      console.log('🔓 No JWT provided, proceeding with unauthenticated flow');
     }
 
-    if (req.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Method not allowed' }),
-        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Générer state pour anti-CSRF
+    const state = await generateSignedState({ userId: userId || "anonymous", timestamp: Date.now() });
 
-    console.log('🔧 HubSpot OAuth - Environment check:', { 
-      hubspotAppId: hubspotAppId ? 'set' : 'missing',
-      hubspotClientId: hubspotClientId ? 'set' : 'missing',
-      hubspotClientSecret: hubspotClientSecret ? 'set' : 'missing',
-      hubspotRedirectUri: hubspotRedirectUri ? 'set' : 'missing',
-      hubspotDomain: hubspotDomain
+    // Construire l'URL d'autorisation HubSpot
+    const scopes = "oauth crm.objects.companies.read crm.objects.contacts.read";
+    const authUrl = new URL("https://app.hubspot.com/oauth/authorize");
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("scope", scopes);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("state", state);
+
+    log(req, "oauth_init_success", { 
+      hasUserId: !!userId,
+      redirectUri,
+      scopes
     });
 
-    // Check if any secrets are missing or placeholder values (mock mode)
-    if (!hubspotAppId || !hubspotClientId || !hubspotClientSecret || !hubspotRedirectUri || 
-        [hubspotAppId, hubspotClientId, hubspotClientSecret, hubspotRedirectUri].includes('placeholder')) {
-      console.log('🔧 Mode mock HubSpot OAuth – pas de secrets configurés');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          mock: true, 
-          message: 'Mock OK - HubSpot OAuth is in mock mode',
-          provider: 'hubspot'
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('🔐 Real HubSpot OAuth flow - generating install URL');
-
-    // Define HubSpot scopes (oauth est obligatoire selon HubSpot)
-    const requiredScopes = ['oauth', 'crm.objects.companies.read', 'crm.objects.contacts.read'];
-    const optionalScopes: string[] = []; // Ajoutez d'autres scopes ici si nécessaire
-    
-    // Combiner tous les scopes
-    const allScopes = [...requiredScopes, ...optionalScopes];
-    
-    // Construct OAuth install URL
-    // Use client-provided state if available, otherwise fallback to userId or generate temporary state
-    const state = clientState || userId || `unauth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    console.log('🔒 Using OAuth state:', clientState ? 'client-provided' : 'server-generated', 
-      '- masked:', state.substring(0, 8) + '...');
-    
-    const installUrl = `https://${hubspotDomain}/oauth/authorize?` +
-      `client_id=${hubspotClientId}&` +
-      `redirect_uri=${encodeURIComponent(hubspotRedirectUri!)}&` +
-      `scope=${allScopes.join('%20')}&` +
-      `response_type=code&` +
-      `state=${state}`;
-
-    // 🔍 LOGGING pour debug : afficher l'URL OAuth construite
-    const debugInfo = {
-      domain: hubspotDomain,
-      clientId: hubspotClientId,
-      redirectUri: hubspotRedirectUri,
-      requiredScopes,
-      optionalScopes,
-      fullUrl: oauthDebug ? installUrl : '[URL masquée - utilisez ?oauthDebug=1 pour afficher]'
-    };
-    
-    if (oauthDebug) {
-      console.log('🔍 [DEBUG MODE] HubSpot OAuth URL construite:', debugInfo);
-    } else {
-      console.log('🔍 HubSpot OAuth URL construite:', {
-        ...debugInfo,
-        fullUrl: '[URL masquée - utilisez ?oauthDebug=1 pour afficher]'
-      });
-    }
-
-    console.log('✅ HubSpot install URL generated successfully');
-
-    // Return the install URL
-    return new Response(
-      JSON.stringify({
-        success: true,
-        mock: false,
-        provider: 'hubspot',
-        installUrl,
-        scopes: allScopes,
-        requiredScopes,
-        optionalScopes,
-        appId: hubspotAppId,
-        domain: hubspotDomain,
-        debug: oauthDebug ? { fullUrl: installUrl } : undefined
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return json(req, {
+      installUrl: authUrl.toString(),
+      state,
+      version: FUNCTION_VERSION
+    });
 
   } catch (error) {
-    // Check if this is a JWT-related error
-    if (error.message?.includes('JWT') || error.message?.includes('unauthorized') || error.message?.includes('token')) {
-      console.error('❌ JWT Authentication error:', error.message);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Unauthorized: JWT authentication failed',
-          details: error.message
-        }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.error('HubSpot OAuth error:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Internal server error',
-        details: error.message
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    log(req, "oauth_init_error", { error: String(error) });
+    return json(req, { 
+      code: "OAUTH_INIT_ERROR", 
+      message: String(error) 
+    }, 500);
   }
 });

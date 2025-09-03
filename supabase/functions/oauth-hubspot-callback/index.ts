@@ -3,6 +3,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encryptJson } from "../_shared/crypto.ts";
 import { verifySignedState } from "../_shared/oauth-state.ts";
 
+// Generate secure random claim token
+function generateClaimToken(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/[+/]/g, c => c === '+' ? '-' : '_')
+    .replace(/=/g, '');
+}
+
 const FUNCTION_VERSION = "2025-08-23-v1";
 const ALLOWED_ORIGINS = ["https://lotexpo.com","https://www.lotexpo.com"];
 
@@ -117,11 +126,12 @@ serve(async (req: Request) => {
       return json(req,{ success:false, stage:"config_validation", message:"redirect_uri_contains_api_path", expected:"https://lotexpo.com/oauth/hubspot/callback", got:redirect_uri },400);
 
     // Validation state anti-CSRF obligatoire
-    let userId = "";
+    let stateData: any;
     try {
-      const data = await verifySignedState(state);
-      userId = data.userId;
-      log(req, "state_verified", { userId: userId.slice(0,8) + "..." });
+      stateData = await verifySignedState(state);
+      log(req, "state_verified", { 
+        userId: stateData.userId?.slice(0,8) + "..." || "anonymous" 
+      });
     } catch (e) {
       const errorMsg = String((e as any)?.message || e);
       log(req, "state_verification_failed", { error: errorMsg });
@@ -177,11 +187,16 @@ serve(async (req: Request) => {
     
     const tokens = await r.json() as { access_token:string; refresh_token?:string; expires_in:number; token_type:string; };
 
-    // Portal id (best effort)
+    // Portal id et email (best effort)
     let portal_id: number | null = null;
+    let email_from_crm: string | null = null;
     try {
       const info = await fetch("https://api.hubapi.com/oauth/v1/access-tokens/"+tokens.access_token);
-      if (info.ok) { const j = await info.json(); if (j?.hub_id) portal_id = Number(j.hub_id); }
+      if (info.ok) { 
+        const j = await info.json(); 
+        if (j?.hub_id) portal_id = Number(j.hub_id); 
+        if (j?.user) email_from_crm = j.user;
+      }
     } catch {}
 
     // Chiffrement AES-GCM 256 avec validation de clé
@@ -215,31 +230,83 @@ serve(async (req: Request) => {
 
     // DB upsert (service role → bypass RLS)
     const sb = createClient(supabaseUrl, svcRole, { auth: { persistSession:false }});
-    const payload = {
-      user_id: userId,
-      provider: "hubspot",
-      access_token_enc,
-      refresh_token_enc,
-      expires_at,
-      scope: "oauth crm.objects.companies.read crm.objects.contacts.read",
-      portal_id
-    };
+    
+    // Déterminer le mode en fonction de l'utilisateur
+    const isAuthenticated = stateData.userId && stateData.userId !== "anonymous";
+    let payload: any;
+    let responseData: any;
+
+    if (isAuthenticated) {
+      // Utilisateur connecté - attacher directement
+      payload = {
+        user_id: stateData.userId,
+        provider: "hubspot",
+        provider_user_id: portal_id?.toString() || null,
+        access_token_enc,
+        refresh_token_enc,
+        expires_at,
+        scope: "oauth crm.objects.companies.read crm.objects.contacts.read",
+        portal_id,
+        email_from_crm,
+        status: 'active'
+      };
+      
+      responseData = {
+        ok: true,
+        success: true,
+        mode: "attached",
+        provider: "hubspot",
+        portal_id,
+        version: FUNCTION_VERSION
+      };
+    } else {
+      // Utilisateur anonyme - créer connexion unclaimed
+      const claim_token = generateClaimToken();
+      const claim_expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // 48h
+      
+      payload = {
+        user_id: null,
+        provider: "hubspot",
+        provider_user_id: portal_id?.toString() || null,
+        access_token_enc,
+        refresh_token_enc,
+        expires_at,
+        scope: "oauth crm.objects.companies.read crm.objects.contacts.read",
+        portal_id,
+        email_from_crm,
+        status: 'unclaimed',
+        claim_token,
+        claim_token_expires_at: claim_expires_at
+      };
+      
+      responseData = {
+        ok: true,
+        success: true,
+        mode: "unclaimed",
+        provider: "hubspot",
+        claim_token,
+        expires_at: claim_expires_at,
+        email_from_crm,
+        version: FUNCTION_VERSION
+      };
+    }
+
     const { data, error } = await sb.from("crm_connections")
-      .upsert(payload, { onConflict:"user_id,provider", ignoreDuplicates:false })
+      .insert(payload)
       .select();
+      
     if (error) {
       log(req,"store_tokens_failed",{ code:error.code, details:error.details, hint:error.hint });
       return json(req,{ success:false, stage:"store_tokens", db_error:{ code:error.code, details:error.details, hint:error.hint } },500);
     }
 
-    return json(req, { 
-      ok: true, 
-      success: true, 
-      connected: true, 
-      provider: "hubspot", 
-      portal_id, 
-      version: FUNCTION_VERSION 
-    }, 200);
+    log(req, "oauth_success", { 
+      mode: responseData.mode, 
+      hasClaimToken: !!responseData.claim_token,
+      portal_id 
+    });
+
+    return json(req, responseData, 200);
   } catch (e) {
     return json(req,{ success:false, stage:"general", message:String((e as any)?.message || e) },500);
   }

@@ -49,3 +49,9 @@ verify_jwt = false
 
 [functions.oauth-hubspot-diagnostics]
 verify_jwt = false
+
+[functions.crm-connections-claim]
+verify_jwt = true
+
+[functions.crm-connections-proxy]
+verify_jwt = true
