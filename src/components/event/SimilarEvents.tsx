@@ -13,6 +13,7 @@ interface SimilarEventsProps {
 }
 
 export const SimilarEvents = ({ eventId }: SimilarEventsProps) => {
+  console.debug('[SimilarEvents] eventId=', eventId);
   const { data: similarEvents, isLoading, error } = useRelatedEvents(eventId, 3);
 
   if (isLoading) {

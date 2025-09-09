@@ -30,6 +30,7 @@ export function useRelatedEvents(eventId: string | null, limit = 6) {
         return;
       }
 
+      console.debug('[useRelatedEvents] call related_events', { eventId, limit });
       setIsLoading(true);
       setError(null);
 
@@ -37,6 +38,13 @@ export function useRelatedEvents(eventId: string | null, limit = 6) {
         const { data: relatedEvents, error: rpcError } = await supabase.rpc('related_events', {
           p_event_id: eventId,
           p_limit: limit
+        });
+
+        console.debug('[useRelatedEvents] result', { 
+          error: rpcError, 
+          count: relatedEvents?.length || 0, 
+          sample: relatedEvents?.[0],
+          allData: relatedEvents
         });
 
         if (!mounted) return;
