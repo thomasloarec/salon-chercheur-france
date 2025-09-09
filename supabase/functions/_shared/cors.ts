@@ -1,37 +1,25 @@
-const ALLOWED_ORIGINS = new Set([
-  "https://lotexpo.com",
-  "https://www.lotexpo.com"
-]);
-
-function resolveOrigin(req: Request): string | null {
-  const origin = req.headers.get("Origin") || req.headers.get("origin");
-  if (!origin) return null;
-  
-  // Autoriser les domaines exacts
-  if (ALLOWED_ORIGINS.has(origin)) return origin;
-  
-  // Autoriser les sandbox Lovable si nécessaire (en dev)
-  if (origin.includes(".sandbox.lovable.dev")) return origin;
-  
-  return null;
-}
-
 export function corsHeaders(req: Request) {
-  const origin = resolveOrigin(req);
-  const headers: HeadersInit = {
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info, x-requested-with, x-oauth-state",
-    "Vary": "Origin",
+  const origin = req.headers.get('origin') ?? '*';
+
+  // Whitelist stricte en prod (ajuste les domaines réels) :
+  const allowed = [
+    'https://lotexpo.com',
+    'https://www.lotexpo.com',
+    'https://id-preview--372be6a2-b585-4c8b-8fb0-060089ac0520.lovable.app', // preview Lovable actuel
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
+  const allowOrigin = allowed.includes(origin) ? origin : 'https://lotexpo.com';
+
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin'
   };
-  
-  if (origin) {
-    headers["Access-Control-Allow-Origin"] = origin;
-    headers["Access-Control-Allow-Credentials"] = "true";
-  }
-  
-  return headers;
 }
 
-export function handleOptions(req: Request): Response {
-  return new Response(null, { status: 204, headers: corsHeaders(req) });
+export function handleOptions(req: Request) {
+  return new Response('ok', { status: 200, headers: corsHeaders(req) });
 }

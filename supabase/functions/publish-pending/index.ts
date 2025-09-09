@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
           url_image: eventImport.url_image,
           url_site_officiel: eventImport.url_site_officiel,
           affluence: eventImport.affluence,
-          tarif: eventImport.tarif,
+          tarif: eventImport.tarifs,
           nom_lieu: eventImport.nom_lieu,
           rue: eventImport.rue,
           code_postal: eventImport.code_postal,
