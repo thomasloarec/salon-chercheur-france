@@ -28,8 +28,7 @@ import {
 import { 
   useProfile, 
   useUpdateProfile, 
-  useUserNewsletterSubscriptions,
-  useUpdateNewsletterSubscriptions
+  useControlledNewsletterPrefs
 } from '@/hooks/useProfile';
 import { useSectors } from '@/hooks/useSectors';
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal';
@@ -42,9 +41,15 @@ const Profile = () => {
   const { user, loading } = useAuth();
   const { data: profile, isLoading: profileLoading, error: profileError } = useProfile();
   const { data: sectors = [], isLoading: sectorsLoading } = useSectors();
-  const { data: subscribedSectors = [] } = useUserNewsletterSubscriptions();
   const updateProfile = useUpdateProfile();
-  const updateNewsletterSubscriptions = useUpdateNewsletterSubscriptions();
+  const {
+    selectedIds: selectedSectors,
+    toggle: toggleSector,
+    save: saveNewsletterPrefs,
+    isSaving: isNewsletterSaving,
+    isFetching: isNewsletterFetching,
+    countLabel
+  } = useControlledNewsletterPrefs();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -54,7 +59,7 @@ const Profile = () => {
     primary_sector: '',
   });
 
-  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -72,9 +77,6 @@ const Profile = () => {
     }
   }, [profile]);
 
-  useEffect(() => {
-    setSelectedSectors(subscribedSectors);
-  }, [subscribedSectors]);
 
   if (loading || profileLoading) {
     return (
@@ -131,12 +133,11 @@ const Profile = () => {
   };
 
   const handleSectorToggle = (sectorId: string) => {
-    const newSelectedSectors = selectedSectors.includes(sectorId)
-      ? selectedSectors.filter(id => id !== sectorId)
-      : [...selectedSectors, sectorId];
-    
-    setSelectedSectors(newSelectedSectors);
-    updateNewsletterSubscriptions.mutate(newSelectedSectors);
+    toggleSector(sectorId);
+    // Auto-save after toggle with debounce
+    setTimeout(() => {
+      saveNewsletterPrefs().catch(() => {});
+    }, 300);
   };
 
   const profileProgress = calculateProfileProgress();
@@ -309,12 +310,12 @@ const Profile = () => {
                 <div>
                   <h2 className="text-xl font-semibold">Newsletters sectorielles</h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    Recevez 1 email par mois sur les événements de vos secteurs
+                    Recevez {countLabel} sur les événements de vos secteurs
                   </p>
                 </div>
                 <Badge variant="outline" className="text-green-600 border-green-200">
                   <CheckCircle className="h-3 w-3 mr-1" />
-                  1 email/mois
+                  {countLabel}
                 </Badge>
               </div>
 
@@ -344,6 +345,7 @@ const Profile = () => {
                       <Switch
                         checked={selectedSectors.includes(sector.id)}
                         onCheckedChange={() => handleSectorToggle(sector.id)}
+                        disabled={isNewsletterSaving || isNewsletterFetching}
                       />
                     </div>
                   ))

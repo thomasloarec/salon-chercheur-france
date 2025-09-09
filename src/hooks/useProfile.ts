@@ -1,4 +1,5 @@
 
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -89,7 +90,7 @@ export const useUserNewsletterSubscriptions = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['newsletter-subscriptions', user?.email],
+    queryKey: ['newsletter-subscriptions', user?.email], // <-- conserver cette clé
     queryFn: async () => {
       if (!user) throw new Error('Not authenticated');
 
@@ -102,9 +103,72 @@ export const useUserNewsletterSubscriptions = () => {
       return data?.map((item: any) => item.sector_id) || [];
     },
     enabled: !!user?.email,
-    staleTime: 60_000, // 1 minute
+    staleTime: 30_000,
     retry: false,
   });
+};
+
+// --- NOUVEAU : hook contrôlé pour la page profil ---
+export const useControlledNewsletterPrefs = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: serverIds = [], isFetching } = useUserNewsletterSubscriptions();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Sync initiale (et quand le serveur change)
+  useEffect(() => {
+    setSelectedIds(serverIds);
+  }, [serverIds.join('|')]); // join pour éviter re-render excessifs
+
+  // Toggle local immédiat (optimiste au niveau UI)
+  const toggle = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const has = prev.includes(id);
+      if (has) return prev.filter(x => x !== id);
+      return [...prev, id];
+    });
+  }, []);
+
+  // Mutation d'écriture (UPSERT + delete ciblé)
+  const saveMutation = useUpdateNewsletterSubscriptions();
+
+  // Sauvegarde avec update optimiste du cache React-Query
+  const save = useCallback(async () => {
+    if (!user?.email) return;
+    const cacheKey = ['newsletter-subscriptions', user.email];
+
+    // Snapshot pour rollback si erreur
+    const previous = queryClient.getQueryData<string[]>(cacheKey);
+
+    // Optimistic update: on reflète ce que l'UI affiche déjà
+    queryClient.setQueryData(cacheKey, selectedIds);
+
+    try {
+      await saveMutation.mutateAsync(selectedIds);
+    } catch (e) {
+      // rollback si échec
+      queryClient.setQueryData(cacheKey, previous ?? []);
+      throw e;
+    } finally {
+      // Revalidation serveur pour être 100% synchro
+      queryClient.invalidateQueries({ queryKey: cacheKey });
+    }
+  }, [selectedIds, saveMutation, user?.email, queryClient]);
+
+  const countLabel = useMemo(() => {
+    const n = selectedIds.length;
+    return n <= 1 ? `${n} email/mois` : `${n} emails/mois`;
+  }, [selectedIds.length]);
+
+  return {
+    selectedIds,
+    setSelectedIds,
+    toggle,
+    save,
+    isSaving: saveMutation.isPending,
+    isFetching,
+    countLabel,
+  };
 };
 
 export const useUpdateNewsletterSubscriptions = () => {
@@ -116,20 +180,15 @@ export const useUpdateNewsletterSubscriptions = () => {
     mutationFn: async (sectorIds: string[]) => {
       if (!user?.email) throw new Error('Not authenticated');
 
-      // 1) UPSERT pour ajouter/maintenir les abonnements cochés
+      // 1) UPSERT pour les secteurs cochés
       if (sectorIds.length > 0) {
-        const upsertRows = sectorIds.map((sectorId) => ({
-          email: user.email!,
-          sector_id: sectorId,
-        }));
-
+        const rows = sectorIds.map((sectorId) => ({ email: user.email!, sector_id: sectorId }));
         const { error: upsertError } = await supabase
           .from('newsletter_subscriptions')
-          .upsert(upsertRows as any, {
+          .upsert(rows as any, {
             onConflict: 'email,sector_id',
             ignoreDuplicates: true,
           });
-
         if (upsertError) throw upsertError;
       }
 
@@ -141,7 +200,7 @@ export const useUpdateNewsletterSubscriptions = () => {
 
       if (selectError) throw selectError;
 
-      const existingIds = (existing ?? []).map((r) => r.sector_id as string);
+      const existingIds = (existing ?? []).map((r: any) => r.sector_id as string);
       const toDelete = existingIds.filter((id) => !sectorIds.includes(id));
 
       if (toDelete.length > 0) {
@@ -150,12 +209,13 @@ export const useUpdateNewsletterSubscriptions = () => {
           .delete()
           .eq('email', user.email!)
           .in('sector_id', toDelete);
-
         if (deleteError) throw deleteError;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['newsletter-subscriptions'] });
+      if (user?.email) {
+        queryClient.invalidateQueries({ queryKey: ['newsletter-subscriptions', user.email] }); // <-- clé correcte
+      }
       toast({
         title: "Abonnements mis à jour",
         description: "Vos préférences de newsletter ont été sauvegardées.",
