@@ -62,40 +62,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Newsletter subscription request:', { email, sectorIds });
 
-    // Vérifier quels secteurs existent déjà
-    const { data: existingSectors, error: existingError } = await supabase
+    // Utiliser UPSERT pour éviter les conflits de contrainte unique
+    const subscriptions = sectorIds.map(sectorId => ({
+      email,
+      sector_id: sectorId,
+    }));
+
+    const { data, error: upsertError } = await supabase
       .from('newsletter_subscriptions')
-      .select('sector_id')
-      .eq('email', email);
+      .upsert(subscriptions, {
+        onConflict: 'email,sector_id',
+        ignoreDuplicates: true,
+      })
+      .select();
 
-    if (existingError) {
-      console.error('Error checking existing subscriptions:', existingError);
-      throw existingError;
-    }
-
-    const currentSectorIds = existingSectors?.map(s => s.sector_id) || [];
-    const newSectorIds = sectorIds.filter(id => !currentSectorIds.includes(id));
-
-    let result;
-    if (newSectorIds.length > 0) {
-      // Insérer les nouveaux abonnements
-      const subscriptions = newSectorIds.map(sectorId => ({
-        email,
-        sector_id: sectorId,
-      }));
-
-      const { data, error } = await supabase
-        .from('newsletter_subscriptions')
-        .insert(subscriptions)
-        .select();
-
-      if (error) throw error;
-      result = data;
-      console.log(`Added ${newSectorIds.length} new sector subscriptions`);
-    } else {
-      console.log('All sectors already subscribed');
-      result = [];
-    }
+    if (upsertError) throw upsertError;
+    
+    console.log(`Upserted ${sectorIds.length} sector subscriptions for ${email}`);
+    const result = data;
 
     // Récupérer tous les abonnements de l'utilisateur
     const { data: allSubscriptions } = await supabase

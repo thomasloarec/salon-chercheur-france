@@ -114,26 +114,44 @@ export const useUpdateNewsletterSubscriptions = () => {
 
   return useMutation({
     mutationFn: async (sectorIds: string[]) => {
-      if (!user) throw new Error('Not authenticated');
+      if (!user?.email) throw new Error('Not authenticated');
 
-      // Supprimer tous les abonnements existants pour cet email
-      await supabase
-        .from('newsletter_subscriptions')
-        .delete()
-        .eq('email', user.email!);
-
-      // Insérer les nouveaux abonnements
+      // 1) UPSERT pour ajouter/maintenir les abonnements cochés
       if (sectorIds.length > 0) {
-        const subscriptions = sectorIds.map(sectorId => ({
+        const upsertRows = sectorIds.map((sectorId) => ({
           email: user.email!,
           sector_id: sectorId,
         }));
 
-        const { error } = await supabase
+        const { error: upsertError } = await supabase
           .from('newsletter_subscriptions')
-          .insert(subscriptions as any);
+          .upsert(upsertRows as any, {
+            onConflict: 'email,sector_id',
+            ignoreDuplicates: true,
+          });
 
-        if (error) throw error;
+        if (upsertError) throw upsertError;
+      }
+
+      // 2) Supprimer uniquement les secteurs décochés
+      const { data: existing, error: selectError } = await supabase
+        .from('newsletter_subscriptions')
+        .select('sector_id')
+        .eq('email', user.email!);
+
+      if (selectError) throw selectError;
+
+      const existingIds = (existing ?? []).map((r) => r.sector_id as string);
+      const toDelete = existingIds.filter((id) => !sectorIds.includes(id));
+
+      if (toDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('newsletter_subscriptions')
+          .delete()
+          .eq('email', user.email!)
+          .in('sector_id', toDelete);
+
+        if (deleteError) throw deleteError;
       }
     },
     onSuccess: () => {

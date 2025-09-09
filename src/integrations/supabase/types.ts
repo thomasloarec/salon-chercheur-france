@@ -714,6 +714,7 @@ export type Database = {
           email: string
           id: string
           ip_address: unknown | null
+          sector_id: string | null
           sectors: string[]
           subscription_count: number | null
           verified: boolean | null
@@ -723,6 +724,7 @@ export type Database = {
           email: string
           id?: string
           ip_address?: unknown | null
+          sector_id?: string | null
           sectors: string[]
           subscription_count?: number | null
           verified?: boolean | null
@@ -732,11 +734,20 @@ export type Database = {
           email?: string
           id?: string
           ip_address?: unknown | null
+          sector_id?: string | null
           sectors?: string[]
           subscription_count?: number | null
           verified?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "newsletter_subscriptions_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       participation: {
         Row: {
