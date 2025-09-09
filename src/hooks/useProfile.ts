@@ -14,6 +14,11 @@ const arrEqualAsSets = (a: string[], b: string[]) => {
   return true;
 };
 
+export const formatMonthlyEmailCount = (n: number) => {
+  const safe = Number.isFinite(n) && n >= 0 ? Math.min(n, 15) : 0;
+  return safe <= 1 ? `${safe} email/mois` : `${safe} emails/mois`;
+};
+
 export interface Profile {
   id: string;
   user_id: string;
@@ -184,7 +189,7 @@ export const useNewsletterPrefsControlled = () => {
   }, [selectedSet, saveMutation, user?.email, queryClient]);
 
   const count = React.useMemo(() => Math.min(selectedSet.size, 15), [selectedSet.size]);
-  const countLabel = React.useMemo(() => (count <= 1 ? `${count} email/mois` : `${count} emails/mois`), [count]);
+  const countLabel = React.useMemo(() => formatMonthlyEmailCount(count), [count]);
 
   return {
     selectedIds: Array.from(selectedSet),

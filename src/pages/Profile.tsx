@@ -310,10 +310,6 @@ const Profile = () => {
                     Recevez {countLabel} sur les événements de vos secteurs
                   </p>
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-200">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  {countLabel}
-                </Badge>
               </div>
 
               <div className="space-y-3">
