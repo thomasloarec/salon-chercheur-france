@@ -98,11 +98,7 @@ export const EventSidebar = ({ event }: EventSidebarProps) => {
       </Card>
 
       {/* Événements similaires */}
-      <SimilarEvents 
-        currentEvent={event} 
-        sector={event.secteur} 
-        city={event.ville} 
-      />
+        <SimilarEvents eventId={event.id_event} />
     </aside>
   );
 };

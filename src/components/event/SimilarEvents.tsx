@@ -1,84 +1,21 @@
-import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { convertSecteurToString } from '@/utils/sectorUtils';
-import type { Event } from '@/types/event';
+import { Badge } from '@/components/ui/badge';
+import { useRelatedEvents } from '@/hooks/useRelatedEvents';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SimilarEventsProps {
-  currentEvent: Event;
-  sector: string;
-  city: string;
+  eventId: string;
 }
 
-export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps) => {
-  const [similarEvents, setSimilarEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+export const SimilarEvents = ({ eventId }: SimilarEventsProps) => {
+  const { data: similarEvents, isLoading, error } = useRelatedEvents(eventId, 3);
 
-  useEffect(() => {
-    const fetchSimilarEvents = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('events')
-          .select('*')
-          .neq('id', currentEvent.id)
-          .eq('ville', city)
-          .gte('date_debut', new Date().toISOString().split('T')[0])
-          .order('date_debut', { ascending: true })
-          .limit(3);
-
-        if (error) {
-          console.error('Error fetching similar events:', error);
-          return;
-        }
-
-        // Transform data to match our Event interface
-        // Using actual database column names
-        const transformedEvents: Event[] = (data || []).map(event => ({
-          id: event.id_event,
-          nom_event: event.nom_event || '',
-          description_event: event.description_event,
-          date_debut: event.date_debut,
-          date_fin: event.date_fin,
-          secteur: convertSecteurToString(event.secteur),
-          nom_lieu: event.nom_lieu,
-          ville: event.ville,
-          country: event.pays,
-          url_image: event.url_image,
-          url_site_officiel: event.url_site_officiel,
-          tags: [],
-          tarif: event.tarif,
-          affluence: event.affluence,
-          estimated_exhibitors: undefined,
-          is_b2b: event.is_b2b,
-          type_event: event.type_event as Event['type_event'],
-          created_at: event.created_at,
-          updated_at: event.updated_at,
-          last_scraped_at: undefined,
-          scraped_from: undefined,
-          rue: event.rue,
-          code_postal: event.code_postal,
-          visible: event.visible,
-          slug: event.slug,
-          sectors: []
-        }));
-
-        setSimilarEvents(transformedEvents);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSimilarEvents();
-  }, [currentEvent.id, sector, city]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -98,8 +35,30 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
     );
   }
 
-  if (similarEvents.length === 0) {
-    return null;
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Événements similaires</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-destructive">Impossible de charger les événements similaires.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!similarEvents || similarEvents.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Événements similaires</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Aucun événement similaire à venir.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -146,6 +105,13 @@ export const SimilarEvents = ({ currentEvent, sector, city }: SimilarEventsProps
                         <MapPin className="h-3 w-3 mr-2 flex-shrink-0" />
                         <span className="truncate">{event.ville}</span>
                       </div>
+                      {event.shared_sectors_count > 0 && (
+                        <div className="mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {event.shared_sectors_count} secteur{event.shared_sectors_count > 1 ? 's' : ''} en commun
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
