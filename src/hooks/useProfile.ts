@@ -5,6 +5,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+/** === Utilitaire === */
+const arrEqualAsSets = (a: string[], b: string[]) => {
+  if (a.length !== b.length) return false;
+  const sa = new Set(a), sb = new Set(b);
+  if (sa.size !== sb.size) return false;
+  for (const x of sa) if (!sb.has(x)) return false;
+  return true;
+};
+
 export interface Profile {
   id: string;
   user_id: string;
@@ -90,17 +99,20 @@ export const useUserNewsletterSubscriptions = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['newsletter-subscriptions', user?.email], // <-- conserver cette clé
+    queryKey: ['newsletter-subscriptions', user?.email],
     queryFn: async () => {
-      if (!user) throw new Error('Not authenticated');
+      if (!user?.email) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('newsletter_subscriptions')
         .select('sector_id')
-        .eq('email', user.email) as any;
+        .eq('email', user.email);
 
       if (error) throw error;
-      return data?.map((item: any) => item.sector_id) || [];
+
+      // Dédupliquer par sécurité
+      const ids = (data ?? []).map((r: any) => String(r.sector_id));
+      return Array.from(new Set(ids));
     },
     enabled: !!user?.email,
     staleTime: 30_000,
@@ -108,66 +120,82 @@ export const useUserNewsletterSubscriptions = () => {
   });
 };
 
-// --- NOUVEAU : hook contrôlé pour la page profil ---
-export const useControlledNewsletterPrefs = () => {
+/** === NOUVEAU : Hook contrôlé pour l'UI (sans doublons, sans auto-save) === */
+export const useNewsletterPrefsControlled = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: serverIds = [], isFetching } = useUserNewsletterSubscriptions();
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  // Sync initiale (et quand le serveur change)
-  useEffect(() => {
-    setSelectedIds(serverIds);
-  }, [serverIds.join('|')]); // join pour éviter re-render excessifs
-
-  // Toggle local immédiat (optimiste au niveau UI)
-  const toggle = useCallback((id: string) => {
-    setSelectedIds(prev => {
-      const has = prev.includes(id);
-      if (has) return prev.filter(x => x !== id);
-      return [...prev, id];
-    });
-  }, []);
-
-  // Mutation d'écriture (UPSERT + delete ciblé)
   const saveMutation = useUpdateNewsletterSubscriptions();
 
-  // Sauvegarde avec update optimiste du cache React-Query
-  const save = useCallback(async () => {
-    if (!user?.email) return;
-    const cacheKey = ['newsletter-subscriptions', user.email];
+  // État local: Set pour interdire les doublons
+  const [selectedSet, setSelectedSet] = React.useState<Set<string>>(new Set());
+  const [dirty, setDirty] = React.useState(false);
 
-    // Snapshot pour rollback si erreur
+  // Sync depuis serveur uniquement si pas de modification locale en cours
+  React.useEffect(() => {
+    const localIds = Array.from(selectedSet);
+    if (!dirty || localIds.length === 0) {
+      const next = new Set(serverIds);
+      // Évite une boucle si identique
+      if (!arrEqualAsSets(Array.from(next), localIds)) {
+        setSelectedSet(next);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(serverIds)]);
+
+  const toggle = React.useCallback((id: string) => {
+    setSelectedSet(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+    setDirty(true);
+  }, []);
+
+  const setAll = React.useCallback((ids: string[]) => {
+    setSelectedSet(new Set(ids));
+    setDirty(true);
+  }, []);
+
+  const save = React.useCallback(async () => {
+    const email = user?.email;
+    if (!email) return;
+
+    const cacheKey = ['newsletter-subscriptions', email];
+    const nextIds = Array.from(selectedSet);
+    // Cap logique côté UI : max 15
+    const cappedIds = nextIds.slice(0, 15);
+
+    // Optimistic update
     const previous = queryClient.getQueryData<string[]>(cacheKey);
-
-    // Optimistic update: on reflète ce que l'UI affiche déjà
-    queryClient.setQueryData(cacheKey, selectedIds);
+    queryClient.setQueryData(cacheKey, cappedIds);
 
     try {
-      await saveMutation.mutateAsync(selectedIds);
+      await saveMutation.mutateAsync(cappedIds);
+      setDirty(false);
     } catch (e) {
-      // rollback si échec
+      // rollback si erreur
       queryClient.setQueryData(cacheKey, previous ?? []);
       throw e;
     } finally {
-      // Revalidation serveur pour être 100% synchro
       queryClient.invalidateQueries({ queryKey: cacheKey });
     }
-  }, [selectedIds, saveMutation, user?.email, queryClient]);
+  }, [selectedSet, saveMutation, user?.email, queryClient]);
 
-  const countLabel = useMemo(() => {
-    const n = selectedIds.length;
-    return n <= 1 ? `${n} email/mois` : `${n} emails/mois`;
-  }, [selectedIds.length]);
+  const count = React.useMemo(() => Math.min(selectedSet.size, 15), [selectedSet.size]);
+  const countLabel = React.useMemo(() => (count <= 1 ? `${count} email/mois` : `${count} emails/mois`), [count]);
 
   return {
-    selectedIds,
-    setSelectedIds,
+    selectedIds: Array.from(selectedSet),
     toggle,
+    setAll,
     save,
     isSaving: saveMutation.isPending,
     isFetching,
+    count,
     countLabel,
+    dirty,
   };
 };
 
@@ -180,9 +208,12 @@ export const useUpdateNewsletterSubscriptions = () => {
     mutationFn: async (sectorIds: string[]) => {
       if (!user?.email) throw new Error('Not authenticated');
 
-      // 1) UPSERT pour les secteurs cochés
+      // 1) UPSERT des cochés (évite les 409)
       if (sectorIds.length > 0) {
-        const rows = sectorIds.map((sectorId) => ({ email: user.email!, sector_id: sectorId }));
+        const rows = sectorIds.map((sectorId) => ({
+          email: user.email!,
+          sector_id: sectorId,
+        }));
         const { error: upsertError } = await supabase
           .from('newsletter_subscriptions')
           .upsert(rows as any, {
@@ -192,7 +223,7 @@ export const useUpdateNewsletterSubscriptions = () => {
         if (upsertError) throw upsertError;
       }
 
-      // 2) Supprimer uniquement les secteurs décochés
+      // 2) DELETE ciblé des décochés
       const { data: existing, error: selectError } = await supabase
         .from('newsletter_subscriptions')
         .select('sector_id')
@@ -200,7 +231,7 @@ export const useUpdateNewsletterSubscriptions = () => {
 
       if (selectError) throw selectError;
 
-      const existingIds = (existing ?? []).map((r: any) => r.sector_id as string);
+      const existingIds = Array.from(new Set((existing ?? []).map((r: any) => String(r.sector_id))));
       const toDelete = existingIds.filter((id) => !sectorIds.includes(id));
 
       if (toDelete.length > 0) {
@@ -214,7 +245,7 @@ export const useUpdateNewsletterSubscriptions = () => {
     },
     onSuccess: () => {
       if (user?.email) {
-        queryClient.invalidateQueries({ queryKey: ['newsletter-subscriptions', user.email] }); // <-- clé correcte
+        queryClient.invalidateQueries({ queryKey: ['newsletter-subscriptions', user.email] });
       }
       toast({
         title: "Abonnements mis à jour",
@@ -224,7 +255,7 @@ export const useUpdateNewsletterSubscriptions = () => {
     onError: (error: any) => {
       toast({
         title: "Erreur",
-        description: error.message || "Une erreur est survenue.",
+        description: error?.message || "Impossible de sauvegarder vos préférences.",
         variant: "destructive",
       });
     },

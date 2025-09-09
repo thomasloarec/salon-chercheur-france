@@ -28,7 +28,7 @@ import {
 import { 
   useProfile, 
   useUpdateProfile, 
-  useControlledNewsletterPrefs
+  useNewsletterPrefsControlled
 } from '@/hooks/useProfile';
 import { useSectors } from '@/hooks/useSectors';
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal';
@@ -48,8 +48,9 @@ const Profile = () => {
     save: saveNewsletterPrefs,
     isSaving: isNewsletterSaving,
     isFetching: isNewsletterFetching,
-    countLabel
-  } = useControlledNewsletterPrefs();
+    countLabel,
+    dirty: hasNewsletterChanges
+  } = useNewsletterPrefsControlled();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -134,10 +135,6 @@ const Profile = () => {
 
   const handleSectorToggle = (sectorId: string) => {
     toggleSector(sectorId);
-    // Auto-save after toggle with debounce
-    setTimeout(() => {
-      saveNewsletterPrefs().catch(() => {});
-    }, 300);
   };
 
   const profileProgress = calculateProfileProgress();
@@ -350,6 +347,16 @@ const Profile = () => {
                     </div>
                   ))
                 )}
+              </div>
+
+              <div className="flex justify-end mt-4">
+                <Button 
+                  onClick={saveNewsletterPrefs} 
+                  disabled={isNewsletterSaving || isNewsletterFetching || !hasNewsletterChanges}
+                  className="w-full"
+                >
+                  {isNewsletterSaving ? 'Sauvegarde...' : 'Enregistrer mes préférences'}
+                </Button>
               </div>
             </Card>
 
