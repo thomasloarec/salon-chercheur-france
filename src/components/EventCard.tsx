@@ -39,7 +39,7 @@ function formatDateRange(start: string, end: string) {
 
 const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: EventCardProps) => {
   const { user } = useAuth();
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const isAdmin = user?.email === 'admin@lotexpo.com';
 
   // Use database-generated slug (tous les événements en ont un maintenant)
   const eventSlug = event.slug;

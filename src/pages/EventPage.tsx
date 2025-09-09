@@ -24,7 +24,7 @@ const EventPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const isAdmin = user?.email === 'admin@lotexpo.com';
 
   const fetchEvent = async () => {
     if (!slug) {

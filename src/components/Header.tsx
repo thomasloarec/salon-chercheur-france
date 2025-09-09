@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Menu, X, Calendar, Search, Users, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import UserMenu from './UserMenu';
+import ConstructionBanner from './ConstructionBanner';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,7 +15,7 @@ const Header = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   // Check if current user is admin
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const isAdmin = user?.email === 'admin@lotexpo.com';
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -24,7 +25,7 @@ const Header = () => {
           <Link to="/" className="flex items-center space-x-2">
             <Calendar className="h-8 w-8 text-primary" />
             <div className="text-xl font-bold">
-              Salons<span className="text-accent">Pro</span>
+              <span className="text-black">Lot</span><span className="text-orange-500">Expo</span>
             </div>
           </Link>
 
@@ -147,6 +148,9 @@ const Header = () => {
           </div>
         )}
       </div>
+      
+      {/* Construction Banner */}
+      <ConstructionBanner />
     </header>
   );
 };

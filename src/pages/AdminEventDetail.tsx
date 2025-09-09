@@ -55,7 +55,7 @@ const AdminEventDetail = () => {
   const queryClient = useQueryClient();
 
   // Move all hooks to the top, before any conditional logic
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const isAdmin = user?.email === 'admin@lotexpo.com';
   
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['admin-event-detail', id],

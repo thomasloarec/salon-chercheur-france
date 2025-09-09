@@ -19,7 +19,7 @@ interface EventPageHeaderProps {
 
 export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderProps) => {
   const { user } = useAuth();
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const isAdmin = user?.email === 'admin@lotexpo.com';
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });

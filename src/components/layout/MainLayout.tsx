@@ -14,7 +14,7 @@ const MainLayout = ({ title, children }: MainLayoutProps) => {
     <>
       {title && (
         <Helmet>
-          <title>{title} - SalonsPro</title>
+          <title>{title} - LotExpo</title>
         </Helmet>
       )}
       <div className="min-h-screen flex flex-col w-full px-6 mx-auto">

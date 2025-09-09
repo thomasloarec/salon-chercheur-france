@@ -35,7 +35,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
     { name: 'Entreprise B', stand: 'B15' },
   ]);
 
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const isAdmin = user?.email === 'admin@lotexpo.com';
 
   const handleEventUpdated = (refreshedEvent: Event, slugChanged?: boolean) => {
     if (onEventUpdated) {

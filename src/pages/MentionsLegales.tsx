@@ -6,7 +6,7 @@ const MentionsLegales = () => {
   return (
     <MainLayout title="Mentions Légales">
       <Helmet>
-        <meta name="description" content="Mentions légales de SalonsPro - Informations légales obligatoires conformes à la législation française" />
+        <meta name="description" content="Mentions légales de LotExpo - Informations légales obligatoires conformes à la législation française" />
       </Helmet>
       
       <div className="container mx-auto px-4 py-8 prose prose-lg max-w-4xl">

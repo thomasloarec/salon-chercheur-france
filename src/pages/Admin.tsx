@@ -33,7 +33,7 @@ const Admin = () => {
     );
   }
 
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const isAdmin = user?.email === 'admin@lotexpo.com';
 
   if (!user || !isAdmin) {
     return <Navigate to="/" replace />;

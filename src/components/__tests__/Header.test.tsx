@@ -48,7 +48,7 @@ describe('Header', () => {
   });
 
   test('should show Admin link when user is admin', () => {
-    mockUseAuth.user = { id: '1', email: 'admin@salonspro.com' };
+    mockUseAuth.user = { id: '1', email: 'admin@lotexpo.com' };
     mockUseAuth.session = { user: mockUseAuth.user };
     
     const { getByText } = renderWithProviders(<Header />);

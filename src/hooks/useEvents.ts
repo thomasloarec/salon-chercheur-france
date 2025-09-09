@@ -7,7 +7,7 @@ import { getMonthRange } from '@/utils/dateUtils';
 
 export const useEvents = (filters?: SearchFilters) => {
   const { user } = useAuth();
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const isAdmin = user?.email === 'admin@lotexpo.com';
 
   return useQuery({
     queryKey: ['events', filters, isAdmin],

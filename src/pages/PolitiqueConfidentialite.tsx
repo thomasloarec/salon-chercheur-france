@@ -6,7 +6,7 @@ const PolitiqueConfidentialite = () => {
   return (
     <MainLayout title="Politique de confidentialité">
       <Helmet>
-        <meta name="description" content="Comment SalonsPro collecte, utilise et protège vos données personnelles conformément au RGPD" />
+        <meta name="description" content="Comment LotExpo collecte, utilise et protège vos données personnelles conformément au RGPD" />
       </Helmet>
       
       <div className="container mx-auto px-4 py-8 prose prose-lg max-w-4xl">

@@ -9,7 +9,7 @@ const Footer = () => {
           {/* Company Info */}
           <div className="md:col-span-1">
             <div className="text-2xl font-bold mb-4">
-              Salons<span className="text-accent">Pro</span>
+              <span className="text-white">Lot</span><span className="text-orange-500">Expo</span>
             </div>
             <p className="text-gray-300 mb-4">
               La plateforme de référence pour découvrir tous les salons professionnels en France.
@@ -35,15 +35,15 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">contact@salonspro.fr</span>
+                <a href="mailto:admin@lotexpo.com" className="text-gray-300 hover:text-accent transition-colors">admin@lotexpo.com</a>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">01 23 45 67 89</span>
+                <a href="tel:+33623765293" className="text-gray-300 hover:text-accent transition-colors">06.23.76.52.93</a>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">Paris, France</span>
+                <span className="text-gray-300">Caen, France</span>
               </div>
             </div>
           </div>
@@ -53,7 +53,7 @@ const Footer = () => {
         <div className="border-t border-gray-700 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-300 text-sm">
-              © 2024 SalonsPro. Tous droits réservés.
+              © 2024 LotExpo. Tous droits réservés.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="/mentions-legales" className="text-gray-300 hover:text-accent text-sm transition-colors">

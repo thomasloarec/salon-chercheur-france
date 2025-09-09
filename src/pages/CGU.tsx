@@ -6,7 +6,7 @@ const CGU = () => {
   return (
     <MainLayout title="Conditions Générales d'Utilisation">
       <Helmet>
-        <meta name="description" content="Règles d'utilisation du site SalonsPro édité par SalonsPro" />
+        <meta name="description" content="Règles d'utilisation du site LotExpo édité par LotExpo" />
       </Helmet>
       
       <div className="container mx-auto px-4 py-8 prose prose-lg max-w-4xl">
