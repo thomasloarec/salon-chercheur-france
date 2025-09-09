@@ -32,14 +32,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         params.region_codes = [filters.locationSuggestion.value];
       }
 
-      // Log détaillé des paramètres envoyés
-      console.debug('[useEventsWithRPC] RPC search_events params:', params);
-      console.debug('[useEventsWithRPC] Sector IDs (UUIDs):', params.sector_ids);
-      console.debug('[useEventsWithRPC] Event types:', params.event_types);
-      console.debug('[useEventsWithRPC] Months filtered:', params.months);
-      console.debug('[useEventsWithRPC] Region codes:', params.region_codes);
-      console.debug('[useEventsWithRPC] Page:', params.page_num, '| Size:', params.page_size);
-
       try {
         // Appel à la RPC avec la nouvelle signature
         const { data, error } = await supabase.rpc('search_events', params);
@@ -47,20 +39,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         if (error) {
           console.error('❌ Erreur RPC search_events:', error);
           throw error;
-        }
-
-        // Log détaillé des résultats reçus
-        console.log('✅ RPC search_events - Données reçues:', data?.length || 0, 'événements');
-        
-        if (data && data.length > 0) {
-          console.log('🔢 Total count du premier élément:', data[0]?.total_count);
-          console.log('🎯 Premier événement reçu:', {
-            id: data[0]?.id,  // ✅ Afficher l'UUID maintenant
-            nom: data[0]?.nom_event,
-            ville: data[0]?.ville
-          });
-        } else {
-          console.log('⚠️ Aucun événement retourné par la RPC');
         }
 
         // Transformer les données pour correspondre au format attendu
@@ -97,11 +75,6 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
         }) || [];
 
         const totalCount = (data as any)?.[0]?.total_count || 0;
-
-        console.log('📋 Résultat final:', {
-          events_count: events.length,
-          total_count: totalCount
-        });
 
         return {
           events,
