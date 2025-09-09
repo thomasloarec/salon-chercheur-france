@@ -95,12 +95,11 @@ export const useUserNewsletterSubscriptions = () => {
 
       const { data, error } = await supabase
         .from('newsletter_subscriptions')
-        .select('sectors')
-        .eq('email', user.email)
-        .maybeSingle();
+        .select('sector_id')
+        .eq('email', user.email) as any;
 
       if (error) throw error;
-      return data?.sectors || [];
+      return data?.map((item: any) => item.sector_id) || [];
     },
     enabled: !!user?.email,
     staleTime: 60_000, // 1 minute
@@ -114,19 +113,28 @@ export const useUpdateNewsletterSubscriptions = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (sectors: string[]) => {
+    mutationFn: async (sectorIds: string[]) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
+      // Supprimer tous les abonnements existants pour cet email
+      await supabase
         .from('newsletter_subscriptions')
-        .upsert({
-          email: user.email!,
-          sectors: sectors,
-        })
-        .select();
+        .delete()
+        .eq('email', user.email!);
 
-      if (error) throw error;
-      return data;
+      // Insérer les nouveaux abonnements
+      if (sectorIds.length > 0) {
+        const subscriptions = sectorIds.map(sectorId => ({
+          email: user.email!,
+          sector_id: sectorId,
+        }));
+
+        const { error } = await supabase
+          .from('newsletter_subscriptions')
+          .insert(subscriptions as any);
+
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['newsletter-subscriptions'] });

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://deno.land/x/supabase@1.0.0/mod.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -63,50 +62,53 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Newsletter subscription request:', { email, sectorIds });
 
-    // Vérifier si l'email existe déjà
-    const { data: existingSubscription, error: selectError } = await supabase
+    // Vérifier quels secteurs existent déjà
+    const { data: existingSectors, error: existingError } = await supabase
       .from('newsletter_subscriptions')
-      .select('*')
-      .eq('email', email)
-      .single();
+      .select('sector_id')
+      .eq('email', email);
 
-    if (selectError && selectError.code !== 'PGRST116') {
-      console.error('Error checking existing subscription:', selectError);
-      throw selectError;
+    if (existingError) {
+      console.error('Error checking existing subscriptions:', existingError);
+      throw existingError;
     }
+
+    const currentSectorIds = existingSectors?.map(s => s.sector_id) || [];
+    const newSectorIds = sectorIds.filter(id => !currentSectorIds.includes(id));
 
     let result;
-    if (existingSubscription) {
-      // Fusionner les secteurs existants avec les nouveaux
-      const currentSectors = existingSubscription.sectors || [];
-      const allSectors = [...new Set([...currentSectors, ...sectorIds])];
+    if (newSectorIds.length > 0) {
+      // Insérer les nouveaux abonnements
+      const subscriptions = newSectorIds.map(sectorId => ({
+        email,
+        sector_id: sectorId,
+      }));
 
       const { data, error } = await supabase
         .from('newsletter_subscriptions')
-        .update({ sectors: allSectors })
-        .eq('email', email)
+        .insert(subscriptions)
         .select();
 
       if (error) throw error;
       result = data;
-      console.log('Updated existing subscription with new sectors');
+      console.log(`Added ${newSectorIds.length} new sector subscriptions`);
     } else {
-      // Créer un nouvel abonnement
-      const { data, error } = await supabase
-        .from('newsletter_subscriptions')
-        .insert({ email, sectors: sectorIds })
-        .select();
-
-      if (error) throw error;
-      result = data;
-      console.log('Created new newsletter subscription');
+      console.log('All sectors already subscribed');
+      result = [];
     }
+
+    // Récupérer tous les abonnements de l'utilisateur
+    const { data: allSubscriptions } = await supabase
+      .from('newsletter_subscriptions')
+      .select('sector_id')
+      .eq('email', email);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Abonnement confirmé ! Vous recevrez votre première newsletter début du mois prochain.',
-        data: result 
+        data: result,
+        totalSubscriptions: allSubscriptions?.length || 0
       }),
       { 
         status: 200, 
@@ -119,7 +121,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     let errorMessage = 'Une erreur est survenue lors de l\'abonnement';
     if (error.code === '23505') {
-      errorMessage = 'Cette adresse email est déjà abonnée';
+      errorMessage = 'Vous êtes déjà abonné à ce secteur';
     }
 
     return new Response(
