@@ -91,14 +91,14 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
   };
 
   const handleSectorChange = (newSectorIds: string[]) => {
-    console.log('🎯 Sidebar - Secteurs sélectionnés (IDs):', newSectorIds);
+    console.debug('[FiltersSidebar] Sectors selected (IDs):', newSectorIds);
     
     // Log des noms des secteurs pour debug
     const selectedSectorNames = newSectorIds.map(id => {
       const sector = sectorsData.find(s => s.id === id);
       return sector ? sector.name : id;
     });
-    console.log('🏷️ Sidebar - Secteurs sélectionnés (noms):', selectedSectorNames);
+    console.debug('[FiltersSidebar] Sectors selected (names):', selectedSectorNames);
     
     setSectorIds(newSectorIds);
   };
@@ -134,7 +134,7 @@ export const FiltersSidebar = ({ onClose, onFiltersChange, initialFilters = {} }
       console.log('🔍 Sidebar - Applying region filter:', regionCode);
     }
     
-    console.log('🎯 FiltersSidebar - Filtres finaux appliqués:', filters);
+    console.debug('[FiltersSidebar] Final filters applied:', filters);
     onFiltersChange(filters);
   }, [sectorIds, types, months, selectedRegion, isInitialized, onFiltersChange, regions, sectorsData]);
 

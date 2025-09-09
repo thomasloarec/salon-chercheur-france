@@ -33,12 +33,12 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
       }
 
       // Log détaillé des paramètres envoyés
-      console.log('🚀 RPC search_events - Paramètres:', params);
-      console.log('📊 Secteurs sélectionnés (UUIDs):', params.sector_ids);
-      console.log('🎯 Types d\'événements:', params.event_types);
-      console.log('📅 Mois filtrés:', params.months);
-      console.log('🌍 Codes région:', params.region_codes);
-      console.log('📄 Page:', params.page_num, '| Taille:', params.page_size);
+      console.debug('[useEventsWithRPC] RPC search_events params:', params);
+      console.debug('[useEventsWithRPC] Sector IDs (UUIDs):', params.sector_ids);
+      console.debug('[useEventsWithRPC] Event types:', params.event_types);
+      console.debug('[useEventsWithRPC] Months filtered:', params.months);
+      console.debug('[useEventsWithRPC] Region codes:', params.region_codes);
+      console.debug('[useEventsWithRPC] Page:', params.page_num, '| Size:', params.page_size);
 
       try {
         // Appel à la RPC avec la nouvelle signature
