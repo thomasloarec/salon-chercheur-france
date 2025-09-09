@@ -1300,6 +1300,22 @@ export type Database = {
         Args: { p_event_data: Json; p_id_event: string }
         Returns: Json
       }
+      related_events: {
+        Args: { p_event_id: string; p_limit?: number }
+        Returns: {
+          date_debut: string
+          date_fin: string
+          id: string
+          id_event: string
+          nom_event: string
+          nom_lieu: string
+          sectors: string[]
+          shared_sectors_count: number
+          slug: string
+          url_image: string
+          ville: string
+        }[]
+      }
       search_events: {
         Args: {
           event_types?: string[]
