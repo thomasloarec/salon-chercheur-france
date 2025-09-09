@@ -11,7 +11,7 @@ import { CalendarRange, Calendar, Grid3X3, List } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CrmCompaniesSection } from '@/components/crm/CrmCompaniesSection';
+// import { CrmCompaniesSection } from '@/components/crm/CrmCompaniesSection';
 
 const Agenda = () => {
   const { user } = useAuth();
@@ -169,10 +169,10 @@ const Agenda = () => {
             </div>
           )}
           
-          {/* Section Entreprises CRM */}
-          <div className="mt-8">
+          {/* Bloc CRM agenda désactivé temporairement - à réactiver plus tard */}
+          {/* <div className="mt-8">
             <CrmCompaniesSection />
-          </div>
+          </div> */}
         </div>
       </div>
     </MainLayout>
