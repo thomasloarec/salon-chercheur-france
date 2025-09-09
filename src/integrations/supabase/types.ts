@@ -715,7 +715,7 @@ export type Database = {
           id: string
           ip_address: unknown | null
           sector_id: string | null
-          sectors: string[]
+          sectors: string[] | null
           subscription_count: number | null
           verified: boolean | null
         }
@@ -725,7 +725,7 @@ export type Database = {
           id?: string
           ip_address?: unknown | null
           sector_id?: string | null
-          sectors: string[]
+          sectors?: string[] | null
           subscription_count?: number | null
           verified?: boolean | null
         }
@@ -735,7 +735,7 @@ export type Database = {
           id?: string
           ip_address?: unknown | null
           sector_id?: string | null
-          sectors?: string[]
+          sectors?: string[] | null
           subscription_count?: number | null
           verified?: boolean | null
         }
