@@ -28,7 +28,7 @@ import {
 import { 
   useProfile, 
   useUpdateProfile, 
-  useNewsletterPrefsControlled
+  useNewsletterPrefsAutoSave
 } from '@/hooks/useProfile';
 import { useSectors } from '@/hooks/useSectors';
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal';
@@ -45,12 +45,11 @@ const Profile = () => {
   const {
     selectedIds: selectedSectors,
     toggle: toggleSector,
-    save: saveNewsletterPrefs,
     isSaving: isNewsletterSaving,
     isFetching: isNewsletterFetching,
-    countLabel,
-    dirty: hasNewsletterChanges
-  } = useNewsletterPrefsControlled();
+    headerText,
+    badgeText,
+  } = useNewsletterPrefsAutoSave();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -307,9 +306,13 @@ const Profile = () => {
                 <div>
                   <h2 className="text-xl font-semibold">Newsletters sectorielles</h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    Recevez {countLabel} sur les événements de vos secteurs
+                    {headerText}
                   </p>
                 </div>
+                <Badge variant="outline" className="text-green-600 border-green-200">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  {badgeText}
+                </Badge>
               </div>
 
               <div className="space-y-3">
@@ -343,16 +346,6 @@ const Profile = () => {
                     </div>
                   ))
                 )}
-              </div>
-
-              <div className="flex justify-end mt-4">
-                <Button 
-                  onClick={saveNewsletterPrefs} 
-                  disabled={isNewsletterSaving || isNewsletterFetching || !hasNewsletterChanges}
-                  className="w-full"
-                >
-                  {isNewsletterSaving ? 'Sauvegarde...' : 'Enregistrer mes préférences'}
-                </Button>
               </div>
             </Card>
 
