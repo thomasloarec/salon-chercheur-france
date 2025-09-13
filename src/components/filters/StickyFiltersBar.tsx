@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,56 +6,43 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SENTINEL_ALL, normalizeParam, isAll, updateUrlParam } from '@/lib/urlFilters';
 import { SafeSelect } from '@/components/ui/SafeSelect';
+import { fetchAllSectors, fetchAllEventTypes, fetchAllRegions, ALL_MONTHS, type Option } from '@/lib/filtersData';
 
 interface StickyFiltersBarProps {
   className?: string;
   defaultCollapsed?: boolean; // For novelties page
 }
 
-const SECTORS = [
-  { id: 'agriculture', name: 'Agriculture' },
-  { id: 'automobile', name: 'Automobile' },
-  { id: 'construction', name: 'Construction' },
-  { id: 'textile', name: 'Textile' },
-  { id: 'alimentaire', name: 'Alimentaire' },
-  { id: 'technologie', name: 'Technologie' },
-];
-
-const EVENT_TYPES = [
-  { id: 'salon', name: 'Salon' },
-  { id: 'conference', name: 'Conférence' },
-  { id: 'exposition', name: 'Exposition' },
-  { id: 'congres', name: 'Congrès' },
-  { id: 'forum', name: 'Forum' },
-];
-
-const MONTHS = [
-  { id: '01', name: 'Janvier' },
-  { id: '02', name: 'Février' },
-  { id: '03', name: 'Mars' },
-  { id: '04', name: 'Avril' },
-  { id: '05', name: 'Mai' },
-  { id: '06', name: 'Juin' },
-  { id: '07', name: 'Juillet' },
-  { id: '08', name: 'Août' },
-  { id: '09', name: 'Septembre' },
-  { id: '10', name: 'Octobre' },
-  { id: '11', name: 'Novembre' },
-  { id: '12', name: 'Décembre' },
-];
-
-const REGIONS = [
-  { id: '11', name: 'Île-de-France' },
-  { id: '32', name: 'Hauts-de-France' },
-  { id: '84', name: 'Auvergne-Rhône-Alpes' },
-  { id: '76', name: 'Occitanie' },
-  { id: '93', name: 'Provence-Alpes-Côte d\'Azur' },
-  { id: '75', name: 'Nouvelle-Aquitaine' },
-];
 
 export default function StickyFiltersBar({ className, defaultCollapsed = false }: StickyFiltersBarProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  
+  // State for filter options
+  const [sectors, setSectors] = useState<Option[]>([]);
+  const [eventTypes, setEventTypes] = useState<Option[]>([]);
+  const [regions, setRegions] = useState<Option[]>([]);
+  
+  // Load filter options on component mount
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [sectorsData, eventTypesData, regionsData] = await Promise.all([
+          fetchAllSectors(),
+          fetchAllEventTypes(),
+          fetchAllRegions(),
+        ]);
+        
+        setSectors(sectorsData);
+        setEventTypes(eventTypesData);
+        setRegions(regionsData);
+      } catch (error) {
+        console.warn('[StickyFiltersBar] Error loading filter options:', error);
+      }
+    };
+    
+    loadOptions();
+  }, []);
 
   const currentSector = normalizeParam(searchParams.get('sector'));
   const currentType = normalizeParam(searchParams.get('type'));
@@ -75,10 +62,10 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
     setSearchParams(newParams);
   };
 
-  const getSectorName = (id: string) => SECTORS.find(s => s.id === id)?.name || id;
-  const getTypeName = (id: string) => EVENT_TYPES.find(t => t.id === id)?.name || id;
-  const getMonthName = (id: string) => MONTHS.find(m => m.id === id)?.name || id;
-  const getRegionName = (id: string) => REGIONS.find(r => r.id === id)?.name || id;
+  const getSectorName = (id: string) => sectors.find(s => s.value === id)?.label || id;
+  const getTypeName = (id: string) => eventTypes.find(t => t.value === id)?.label || id;
+  const getMonthName = (id: string) => ALL_MONTHS.find(m => m.value === id)?.label || id;
+  const getRegionName = (id: string) => regions.find(r => r.value === id)?.label || id;
 
   return (
     <div className={cn(
@@ -130,7 +117,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
               placeholder="Secteur d'activité"
               value={isAll(currentSector) ? null : currentSector}
               onChange={(v) => updateFilter('sector', v)}
-              options={SECTORS.map(sector => ({ value: String(sector.id), label: sector.name }))}
+              options={sectors}
               allLabel="Tous les secteurs"
             />
           </div>
@@ -146,7 +133,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
               placeholder="Type d'événement"
               value={isAll(currentType) ? null : currentType}
               onChange={(v) => updateFilter('type', v)}
-              options={EVENT_TYPES.map(type => ({ value: String(type.id), label: type.name }))}
+              options={eventTypes}
               allLabel="Tous les types"
             />
           </div>
@@ -162,7 +149,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
               placeholder="Mois"
               value={isAll(currentMonth) ? null : currentMonth}
               onChange={(v) => updateFilter('month', v)}
-              options={MONTHS.map(month => ({ value: String(month.id), label: month.name }))}
+              options={ALL_MONTHS}
               allLabel="Tous les mois"
             />
           </div>
@@ -178,7 +165,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
               placeholder="Région"
               value={isAll(currentRegion) ? null : currentRegion}
               onChange={(v) => updateFilter('region', v)}
-              options={REGIONS.map(region => ({ value: String(region.id), label: region.name }))}
+              options={regions}
               allLabel="Toutes les régions"
             />
           </div>
