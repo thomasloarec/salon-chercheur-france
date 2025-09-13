@@ -64,7 +64,7 @@ const Events = () => {
         };
       }
       
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env?.DEV) {
         console.log('Events: Initial filters from URL:', initialFilters);
       }
       

@@ -3,6 +3,7 @@ import { Calendar, MapPin, ExternalLink, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDateRange } from '@/utils/dateUtils';
+import { getEnv } from '@/lib/env';
 import type { Event } from '@/types/event';
 
 interface EventInfoSidebarProps {
@@ -11,9 +12,8 @@ interface EventInfoSidebarProps {
 
 export default function EventInfoSidebar({ event }: EventInfoSidebarProps) {
   const hasLocation = event.nom_lieu || event.rue || event.ville;
-  // Note: No coordinates available in current Event type
-  const hasCoordinates = false;
-  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = getEnv('VITE_GOOGLE_MAPS_API_KEY') || getEnv('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY');
+  const hasCoordinates = typeof (event as any).latitude === 'number' && typeof (event as any).longitude === 'number';
 
   const formatAddress = () => {
     const parts = [
@@ -131,20 +131,30 @@ export default function EventInfoSidebar({ event }: EventInfoSidebarProps) {
         </CardContent>
       </Card>
 
-      {/* Map - Currently not available as coordinates are not in Event type */}
+      {/* Map */}
       {hasLocation && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Localisation</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="aspect-video rounded-lg overflow-hidden border bg-gray-100 flex items-center justify-center">
-              <div className="text-center">
-                <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Carte indisponible</p>
-                <p className="text-xs text-gray-400">Coordonnées GPS manquantes</p>
+            {apiKey && hasCoordinates ? (
+              <iframe
+                title="Localisation"
+                width="100%"
+                height="260"
+                style={{ border: 0 }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${(event as any).latitude},${(event as any).longitude}`}
+              />
+            ) : (
+              <div className="rounded-lg border bg-muted/30 text-muted-foreground p-4 text-sm text-center">
+                <MapPin className="w-8 h-8 mx-auto mb-2" />
+                <p>Carte indisponible</p>
+                {!hasCoordinates && <p className="text-xs mt-1">Coordonnées GPS manquantes</p>}
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}

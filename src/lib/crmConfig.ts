@@ -1,4 +1,5 @@
 
+import { getEnv } from './env';
 import { CrmProvider } from '@/types/crm';
 
 export interface CrmProviderConfig {
@@ -11,7 +12,7 @@ export interface CrmProviderConfig {
 }
 
 export const getCrmConfig = (provider: CrmProvider): CrmProviderConfig => {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getEnv('NEXT_PUBLIC_APP_URL') || getEnv('VITE_APP_URL') || 'http://localhost:3000';
   
   switch (provider) {
     case 'salesforce':
@@ -20,8 +21,8 @@ export const getCrmConfig = (provider: CrmProvider): CrmProviderConfig => {
         tokenUrl: 'https://login.salesforce.com/services/oauth2/token',
         apiBaseUrl: 'https://api.salesforce.com',
         scopes: ['api', 'refresh_token'],
-        clientId: process.env.SF_CLIENT_ID!,
-        clientSecret: process.env.SF_CLIENT_SECRET!,
+        clientId: getEnv('SF_CLIENT_ID')!,
+        clientSecret: getEnv('SF_CLIENT_SECRET')!,
       };
     case 'hubspot':
       return {
@@ -29,8 +30,8 @@ export const getCrmConfig = (provider: CrmProvider): CrmProviderConfig => {
         tokenUrl: 'https://api.hubapi.com/oauth/v1/token',
         apiBaseUrl: 'https://api.hubapi.com',
         scopes: ['crm.objects.companies.read'],
-        clientId: process.env.HUB_CLIENT_ID!,
-        clientSecret: process.env.HUB_CLIENT_SECRET!,
+        clientId: getEnv('HUB_CLIENT_ID')!,
+        clientSecret: getEnv('HUB_CLIENT_SECRET')!,
       };
     case 'pipedrive':
       return {
@@ -38,8 +39,8 @@ export const getCrmConfig = (provider: CrmProvider): CrmProviderConfig => {
         tokenUrl: 'https://oauth.pipedrive.com/oauth/token',
         apiBaseUrl: 'https://api.pipedrive.com',
         scopes: ['organizations:read'],
-        clientId: process.env.PIPE_CLIENT_ID!,
-        clientSecret: process.env.PIPE_CLIENT_SECRET!,
+        clientId: getEnv('PIPE_CLIENT_ID')!,
+        clientSecret: getEnv('PIPE_CLIENT_SECRET')!,
       };
     case 'zoho':
       return {
@@ -47,8 +48,8 @@ export const getCrmConfig = (provider: CrmProvider): CrmProviderConfig => {
         tokenUrl: 'https://accounts.zoho.com/oauth/v2/token',
         apiBaseUrl: 'https://www.zohoapis.com',
         scopes: ['ZohoCRM.modules.accounts.READ'],
-        clientId: process.env.ZOHO_CLIENT_ID!,
-        clientSecret: process.env.ZOHO_CLIENT_SECRET!,
+        clientId: getEnv('ZOHO_CLIENT_ID')!,
+        clientSecret: getEnv('ZOHO_CLIENT_SECRET')!,
       };
     default:
       throw new Error(`Unsupported CRM provider: ${provider}`);
