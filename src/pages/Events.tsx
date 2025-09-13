@@ -1,18 +1,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useEventsWithRPC } from '@/hooks/useEventsWithRPC';
-import { FiltersSidebar } from '@/components/FiltersSidebar';
-
 import { EventsResults } from '@/components/EventsResults';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
 import { useSearchParams } from 'react-router-dom';
 import type { SearchFilters } from '@/types/event';
 
 const Events = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -133,54 +129,12 @@ const Events = () => {
   }
 
   return (
-    <div className="min-h-screen w-full px-6 mx-auto">
+    <div className="min-h-screen bg-gray-50">
       <Header />
+      <StickyFiltersBar />
       
-      <div className="lg:flex lg:gap-8 min-h-[calc(100vh-200px)]">
-        {/* Mobile sidebar overlay */}
-        {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-        
-        {/* Mobile sidebar */}
-        <aside className={`
-          fixed inset-y-0 left-0 w-80 z-30 lg:hidden
-          bg-white shadow-lg border-r transition-transform duration-300 ease-in-out
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}>
-          <FiltersSidebar 
-            onClose={() => setIsSidebarOpen(false)}
-            onFiltersChange={handleFiltersChange}
-            initialFilters={isInitialized ? filters : {}}
-          />
-        </aside>
-
-        {/* Desktop sidebar */}
-        <aside className="hidden lg:block lg:sticky lg:top-[80px] lg:self-start lg:w-80 lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto lg:flex-shrink-0">
-          <FiltersSidebar 
-            onClose={() => setIsSidebarOpen(false)}
-            onFiltersChange={handleFiltersChange}
-            initialFilters={isInitialized ? filters : {}}
-          />
-        </aside>
-
-        {/* Content */}
-        <main className="p-4 lg:p-8 bg-gray-50 lg:flex-1">
-          {/* Mobile menu button */}
-          <div className="lg:hidden mb-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <Menu className="h-4 w-4 mr-2" />
-              Filtres
-            </Button>
-          </div>
-
+      <main className="py-8">
+        <div className="w-full px-6 mx-auto">
           {/* Header with results count */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
@@ -210,8 +164,8 @@ const Events = () => {
 
           {/* Results with month grouping */}
           <EventsResults events={displayEvents} isLoading={isLoading} />
-        </main>
-      </div>
+        </div>
+      </main>
       
       <Footer />
     </div>

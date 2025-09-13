@@ -12,13 +12,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Event } from '@/types/event';
-
-interface Exhibitor {
-  id: string;
-  name: string;
-  plan: string;
-  stand_info: string;
-}
+import type { 
+  Exhibitor, 
+  AddNoveltyFormData, 
+  NoveltyType 
+} from '@/types/lotexpo';
+import { NOVELTY_TYPES, MAX_NOVELTY_IMAGES } from '@/types/lotexpo';
 
 interface AddNoveltyModalProps {
   event: Event;
@@ -26,15 +25,23 @@ interface AddNoveltyModalProps {
   onClose: () => void;
 }
 
-const NOVELTY_TYPES = [
-  { value: 'Launch', label: 'Lancement' },
-  { value: 'Prototype', label: 'Prototype' },
-  { value: 'MajorUpdate', label: 'Mise à jour majeure' },
-  { value: 'LiveDemo', label: 'Démo live' },
-  { value: 'Partnership', label: 'Partenariat' },
-  { value: 'Offer', label: 'Offre spéciale' },
-  { value: 'Talk', label: 'Conférence' },
-];
+interface DbExhibitor {
+  id: string;
+  name: string;
+  plan: string;
+  slug?: string | null;
+  logo_url?: string | null;
+  owner_user_id?: string | null;
+  description?: string | null;
+  website?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface DbParticipation {
+  id_exposant: string;
+  stand_exposant?: string | null;
+}
 
 export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyModalProps) {
   const { user } = useAuth();
@@ -42,20 +49,21 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
   const createNovelty = useCreateNovelty();
 
   const [userExhibitors, setUserExhibitors] = useState<Exhibitor[]>([]);
+  const [participationData, setParticipationData] = useState<DbParticipation[]>([]);
   const [loadingExhibitors, setLoadingExhibitors] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AddNoveltyFormData>({
     exhibitor_id: '',
     title: '',
-    type: '',
+    type: 'Launch',
     reason_1: '',
     reason_2: '',
     reason_3: '',
-    audience_tags: [] as string[],
-    media_urls: [] as string[],
+    audience_tags: [],
+    media_urls: [],
     doc_url: '',
     availability: '',
     stand_info: '',
-    demo_slots: null as any
+    demo_slots: null
   });
   const [newTag, setNewTag] = useState('');
   const [newMediaUrl, setNewMediaUrl] = useState('');
@@ -73,7 +81,7 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
       setFormData({
         exhibitor_id: '',
         title: '',
-        type: '',
+        type: 'Launch',
         reason_1: '',
         reason_2: '',
         reason_3: '',
@@ -106,7 +114,7 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
       // Get exhibitors owned by the user (or all if admin)
       let exhibitorsQuery = supabase
         .from('exhibitors')
-        .select('id, name, plan');
+        .select('id, name, plan, slug, logo_url, owner_user_id, description, website, created_at, updated_at');
 
       if (!isAdmin) {
         exhibitorsQuery = exhibitorsQuery.eq('owner_user_id', user.id);
@@ -131,34 +139,49 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
 
       // Get participations for these exhibitors at this event
       const exhibitorIds = exhibitorsData.map(e => e.id);
-      const { data: participationData } = await supabase
+      const { data: participationData, error: participationError } = await supabase
         .from('participation')
         .select('id_exposant, stand_exposant')
         .eq('id_event', event.id)
         .in('id_exposant', exhibitorIds);
 
-      // Filter exhibitors to only those participating and add stand info
+      if (participationError) {
+        console.error('Error fetching participation:', participationError);
+      }
+
+      setParticipationData(participationData || []);
+
+      // Filter exhibitors to only those participating and convert to Exhibitor type
       const participatingExhibitors: Exhibitor[] = exhibitorsData
-        .map(exhibitor => {
+        .filter(exhibitor => {
           const participation = participationData?.find(p => p.id_exposant === exhibitor.id);
-          if (!participation) return null;
-          
-          return {
-            ...exhibitor,
-            stand_info: participation.stand_exposant || ''
-          };
+          return !!participation;
         })
-        .filter((exhibitor): exhibitor is Exhibitor => exhibitor !== null);
+        .map(exhibitor => ({
+          id: exhibitor.id,
+          name: exhibitor.name,
+          plan: (exhibitor.plan === 'paid' ? 'paid' : 'free') as 'free' | 'paid',
+          slug: exhibitor.slug,
+          logo_url: exhibitor.logo_url,
+          owner_user_id: exhibitor.owner_user_id,
+          description: exhibitor.description,
+          website: exhibitor.website,
+          created_at: exhibitor.created_at,
+          updated_at: exhibitor.updated_at
+        }));
 
       setUserExhibitors(participatingExhibitors);
 
       // Pre-fill if only one exhibitor
       if (participatingExhibitors.length === 1) {
         const exhibitor = participatingExhibitors[0];
+        const participation = participationData?.find(p => p.id_exposant === exhibitor.id);
+        const standInfo = participation?.stand_exposant || '';
+        
         setFormData(prev => ({
           ...prev,
           exhibitor_id: exhibitor.id,
-          stand_info: exhibitor.stand_info || ''
+          stand_info: standInfo
         }));
       }
 
@@ -210,7 +233,7 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
         event_id: event.id,
         exhibitor_id: formData.exhibitor_id,
         title: formData.title,
-        type: formData.type as any,
+        type: formData.type,
         reason_1: formData.reason_1 || undefined,
         reason_2: formData.reason_2 || undefined,
         reason_3: formData.reason_3 || undefined,
@@ -246,7 +269,7 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
   };
 
   const addMediaUrl = () => {
-    if (newMediaUrl.trim() && formData.media_urls.length < 5) {
+    if (newMediaUrl.trim() && formData.media_urls.length < MAX_NOVELTY_IMAGES) {
       try {
         new URL(newMediaUrl.trim()); // Validate URL
         setFormData(prev => ({
@@ -300,11 +323,13 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
               <Select
                 value={formData.exhibitor_id}
                 onValueChange={(value) => {
-                  const exhibitor = userExhibitors.find(e => e.id === value);
+                  const participation = participationData.find(p => p.id_exposant === value);
+                  const standInfo = participation?.stand_exposant || '';
+                  
                   setFormData(prev => ({
                     ...prev,
                     exhibitor_id: value,
-                    stand_info: exhibitor?.stand_info || prev.stand_info
+                    stand_info: standInfo
                   }));
                 }}
               >
@@ -350,7 +375,7 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
             <Label htmlFor="type">Type de nouveauté *</Label>
             <Select
               value={formData.type}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+              onValueChange={(value: NoveltyType) => setFormData(prev => ({ ...prev, type: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionnez un type" />
@@ -437,20 +462,20 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
 
           {/* Media URLs */}
           <div className="space-y-2">
-            <Label>Images (max 5)</Label>
+            <Label>Images (max {MAX_NOVELTY_IMAGES})</Label>
             <div className="flex gap-2">
               <Input
                 value={newMediaUrl}
                 onChange={(e) => setNewMediaUrl(e.target.value)}
                 placeholder="https://example.com/image.jpg"
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMediaUrl())}
-                disabled={formData.media_urls.length >= 5}
+                disabled={formData.media_urls.length >= MAX_NOVELTY_IMAGES}
               />
               <Button 
                 type="button" 
                 onClick={addMediaUrl} 
                 size="sm"
-                disabled={formData.media_urls.length >= 5}
+                disabled={formData.media_urls.length >= MAX_NOVELTY_IMAGES}
               >
                 <Plus className="h-4 w-4" />
               </Button>

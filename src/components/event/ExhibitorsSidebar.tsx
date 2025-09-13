@@ -1,193 +1,113 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Search, Building2, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Users, ExternalLink } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDebounce } from '@/hooks/useDebounce';
-import { supabase } from '@/integrations/supabase/client';
+import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import type { Event } from '@/types/event';
-
-interface Exhibitor {
-  id: string;
-  name: string;
-  slug: string;
-  logo_url?: string;
-  participation: Array<{
-    stand_exposant?: string;
-    urlexpo_event?: string;
-  }>;
-}
 
 interface ExhibitorsSidebarProps {
   event: Event;
-  className?: string;
 }
 
-export default function ExhibitorsSidebar({ event, className }: ExhibitorsSidebarProps) {
-  const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
   
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-
-  // Fetch exhibitors
-  useEffect(() => {
-    const fetchExhibitors = async () => {
-      if (!event.id) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const { data, error } = await supabase.functions.invoke('exhibitors-manage', {
-          body: {
-            event_id: event.id,
-            q: debouncedSearchQuery || undefined
-          }
-        });
-
-        if (error) throw error;
-
-        setExhibitors(data || []);
-      } catch (err) {
-        console.error('Error fetching exhibitors:', err);
-        setError('Erreur lors du chargement des exposants');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchExhibitors();
-  }, [event.id, debouncedSearchQuery]);
-
-  // Filter exhibitors based on search
-  const filteredExhibitors = useMemo(() => {
-    if (!debouncedSearchQuery) return exhibitors;
-    
-    return exhibitors.filter(exhibitor =>
-      exhibitor.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-    );
-  }, [exhibitors, debouncedSearchQuery]);
+  const { data: exhibitorsData, isLoading, error } = useExhibitorsByEvent(
+    event.slug || '', 
+    debouncedSearch
+  );
+  
+  const exhibitors = exhibitorsData?.exhibitors || [];
 
   return (
-    <aside className={`sticky top-24 max-h-[75vh] overflow-hidden ${className}`}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Exposants ({filteredExhibitors.length})
-          </CardTitle>
+    <div className="lg:col-span-1">
+      <div className="sticky top-24 max-h-[75vh] overflow-y-auto bg-white rounded-lg shadow-sm border p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-lg">
+            Exposants ({isLoading ? '...' : exhibitors.length})
+          </h3>
+        </div>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un exposant..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardHeader>
+        {/* Search */}
+        <div className="relative mt-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Rechercher un exposant..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
-        <CardContent className="p-0">
-          {/* Loading State */}
-          {loading && (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-              <p className="text-sm text-muted-foreground mt-2">Chargement...</p>
+        {/* Content */}
+        <div className="mt-4 space-y-2">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-3">
+                <Skeleton className="w-6 h-6 rounded" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </div>
+            ))
+          ) : error ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-red-600">Erreur lors du chargement</p>
             </div>
-          )}
-
-          {/* Error State */}
-          {error && (
-            <div className="p-4 text-center">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!loading && !error && filteredExhibitors.length === 0 && (
-            <div className="p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                {searchQuery ? 'Aucun exposant trouvé' : 'Aucun exposant enregistré'}
+          ) : exhibitors.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-500">
+                {debouncedSearch ? 'Aucun exposant trouvé' : 'Aucun exposant inscrit'}
               </p>
             </div>
-          )}
-
-          {/* Exhibitors List */}
-          {!loading && !error && filteredExhibitors.length > 0 && (
-            <div className="max-h-[400px] overflow-y-auto">
-              <div className="divide-y">
-                {filteredExhibitors.map((exhibitor) => (
-                  <div key={exhibitor.id} className="p-3 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      {/* Logo */}
-                      {exhibitor.logo_url ? (
-                        <img
-                          src={exhibitor.logo_url}
-                          alt={exhibitor.name}
-                          className="w-6 h-6 rounded object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {exhibitor.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <Link
-                          to={`/exposants/${exhibitor.slug}`}
-                          className="block font-medium text-sm hover:text-primary transition-colors truncate"
-                          title={exhibitor.name}
-                        >
-                          {exhibitor.name}
-                        </Link>
-                        
-                        {/* Stand Info */}
-                        {exhibitor.participation?.[0]?.stand_exposant && (
-                          <p className="text-xs text-muted-foreground">
-                            Stand {exhibitor.participation[0].stand_exposant}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* External Link */}
-                      {exhibitor.participation?.[0]?.urlexpo_event && (
-                        <a
-                          href={exhibitor.participation[0].urlexpo_event}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary transition-colors"
-                          title="Voir la page exposant sur le site officiel"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
+          ) : (
+            exhibitors.map((exhibitor) => (
+              <div key={exhibitor.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
+                  {exhibitor.logo_url ? (
+                    <img 
+                      src={exhibitor.logo_url} 
+                      alt={`${exhibitor.name} logo`}
+                      className="w-full h-full object-contain rounded"
+                    />
+                  ) : (
+                    <Building2 className="w-4 h-4 text-gray-400" />
+                  )}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <a 
+                    href={`/exhibitors/${exhibitor.slug || exhibitor.id}`}
+                    className="font-medium text-sm text-gray-900 hover:text-primary transition-colors block truncate"
+                  >
+                    {exhibitor.name}
+                  </a>
+                  {(exhibitor.stand || exhibitor.hall) && (
+                    <p className="text-xs text-gray-500 truncate">
+                      {[exhibitor.hall, exhibitor.stand].filter(Boolean).join(' • ')}
+                    </p>
+                  )}
+                </div>
+                
+                <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
               </div>
-            </div>
+            ))
           )}
+        </div>
 
-          {/* Footer CTA */}
-          {!loading && !error && filteredExhibitors.length > 0 && (
-            <div className="p-4 border-t">
-              <Button variant="outline" size="sm" className="w-full" asChild>
-                <Link to={`#exposants`}>
-                  Voir tous les exposants
-                </Link>
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </aside>
+        {/* Footer CTA */}
+        {exhibitors.length > 0 && (
+          <div className="mt-6 pt-4 border-t">
+            <Button variant="outline" size="sm" className="w-full">
+              Voir tous les exposants
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
