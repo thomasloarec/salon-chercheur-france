@@ -8,7 +8,7 @@ import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
-import EventInfoSidebar from '@/components/event/EventInfoSidebar';
+import EventPracticalInfoCard from '@/components/event/EventPracticalInfoCard';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import Header from '@/components/Header';
@@ -102,7 +102,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
               {/* Colonne droite */}
               <aside className="col-span-12 lg:col-span-4 space-y-6">
-                <EventInfoSidebar event={event} />
+                <EventPracticalInfoCard event={event} />
                 <ExhibitorsSidebar event={event} />
               </aside>
             </div>
