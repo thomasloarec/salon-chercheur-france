@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { SENTINEL_ALL, normalizeParam, isAll, updateUrlParam } from '@/lib/urlFilters';
 
 interface StickyFiltersBarProps {
   className?: string;
@@ -29,15 +30,15 @@ const EVENT_TYPES = [
 ];
 
 const MONTHS = [
-  { id: '1', name: 'Janvier' },
-  { id: '2', name: 'Février' },
-  { id: '3', name: 'Mars' },
-  { id: '4', name: 'Avril' },
-  { id: '5', name: 'Mai' },
-  { id: '6', name: 'Juin' },
-  { id: '7', name: 'Juillet' },
-  { id: '8', name: 'Août' },
-  { id: '9', name: 'Septembre' },
+  { id: '01', name: 'Janvier' },
+  { id: '02', name: 'Février' },
+  { id: '03', name: 'Mars' },
+  { id: '04', name: 'Avril' },
+  { id: '05', name: 'Mai' },
+  { id: '06', name: 'Juin' },
+  { id: '07', name: 'Juillet' },
+  { id: '08', name: 'Août' },
+  { id: '09', name: 'Septembre' },
   { id: '10', name: 'Octobre' },
   { id: '11', name: 'Novembre' },
   { id: '12', name: 'Décembre' },
@@ -56,21 +57,16 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
-  const currentSector = searchParams.get('sector');
-  const currentType = searchParams.get('type');
-  const currentMonth = searchParams.get('month');
-  const currentRegion = searchParams.get('region');
+  const currentSector = normalizeParam(searchParams.get('sector'));
+  const currentType = normalizeParam(searchParams.get('type'));
+  const currentMonth = normalizeParam(searchParams.get('month'));
+  const currentRegion = normalizeParam(searchParams.get('region'));
 
-  const hasActiveFilters = !!(currentSector || currentType || currentMonth || currentRegion);
-  const activeFilterCount = [currentSector, currentType, currentMonth, currentRegion].filter(Boolean).length;
+  const hasActiveFilters = !isAll(currentSector) || !isAll(currentType) || !isAll(currentMonth) || !isAll(currentRegion);
+  const activeFilterCount = [currentSector, currentType, currentMonth, currentRegion].filter(v => !isAll(v)).length;
 
   const updateFilter = (key: string, value: string | null) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value) {
-      newParams.set(key, value);
-    } else {
-      newParams.delete(key);
-    }
+    const newParams = updateUrlParam(searchParams, key, value);
     setSearchParams(newParams);
   };
 
@@ -128,17 +124,18 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Secteur
             </label>
-            <Select value={currentSector || ''} onValueChange={(value) => updateFilter('sector', value || null)}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Tous" />
+            <Select value={currentSector} onValueChange={(value) => updateFilter('sector', value)}>
+              <SelectTrigger className="w-40" aria-label="Filtre secteur">
+                <SelectValue placeholder="Secteur d'activité" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les secteurs</SelectItem>
-                {SECTORS.map((sector) => (
-                  <SelectItem key={sector.id} value={sector.id}>
-                    {sector.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value={SENTINEL_ALL}>Tous les secteurs</SelectItem>
+                {SECTORS.filter(sector => sector && sector.id && String(sector.id).trim() !== '')
+                  .map((sector) => (
+                    <SelectItem key={sector.id} value={String(sector.id)}>
+                      {sector.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -148,17 +145,18 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Type
             </label>
-            <Select value={currentType || ''} onValueChange={(value) => updateFilter('type', value || null)}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Tous" />
+            <Select value={currentType} onValueChange={(value) => updateFilter('type', value)}>
+              <SelectTrigger className="w-40" aria-label="Filtre type d'événement">
+                <SelectValue placeholder="Type d'événement" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les types</SelectItem>
-                {EVENT_TYPES.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value={SENTINEL_ALL}>Tous les types</SelectItem>
+                {EVENT_TYPES.filter(type => type && type.id && String(type.id).trim() !== '')
+                  .map((type) => (
+                    <SelectItem key={type.id} value={String(type.id)}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -168,17 +166,18 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Mois
             </label>
-            <Select value={currentMonth || ''} onValueChange={(value) => updateFilter('month', value || null)}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Tous" />
+            <Select value={currentMonth} onValueChange={(value) => updateFilter('month', value)}>
+              <SelectTrigger className="w-40" aria-label="Filtre mois">
+                <SelectValue placeholder="Mois" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les mois</SelectItem>
-                {MONTHS.map((month) => (
-                  <SelectItem key={month.id} value={month.id}>
-                    {month.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value={SENTINEL_ALL}>Tous les mois</SelectItem>
+                {MONTHS.filter(month => month && month.id && String(month.id).trim() !== '')
+                  .map((month) => (
+                    <SelectItem key={month.id} value={String(month.id)}>
+                      {month.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -188,17 +187,18 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Région
             </label>
-            <Select value={currentRegion || ''} onValueChange={(value) => updateFilter('region', value || null)}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Toutes" />
+            <Select value={currentRegion} onValueChange={(value) => updateFilter('region', value)}>
+              <SelectTrigger className="w-40" aria-label="Filtre région">
+                <SelectValue placeholder="Région" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Toutes les régions</SelectItem>
-                {REGIONS.map((region) => (
-                  <SelectItem key={region.id} value={region.id}>
-                    {region.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value={SENTINEL_ALL}>Toutes les régions</SelectItem>
+                {REGIONS.filter(region => region && region.id && String(region.id).trim() !== '')
+                  .map((region) => (
+                    <SelectItem key={region.id} value={String(region.id)}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -207,44 +207,44 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
           {hasActiveFilters && (
             <div className="flex items-center gap-2 ml-auto">
               <div className="flex flex-wrap gap-1">
-                {currentSector && (
+                {!isAll(currentSector) && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     {getSectorName(currentSector)}
                     <button
-                      onClick={() => updateFilter('sector', null)}
+                      onClick={() => updateFilter('sector', SENTINEL_ALL)}
                       className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
                     >
                       ×
                     </button>
                   </Badge>
                 )}
-                {currentType && (
+                {!isAll(currentType) && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     {getTypeName(currentType)}
                     <button
-                      onClick={() => updateFilter('type', null)}
+                      onClick={() => updateFilter('type', SENTINEL_ALL)}
                       className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
                     >
                       ×
                     </button>
                   </Badge>
                 )}
-                {currentMonth && (
+                {!isAll(currentMonth) && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     {getMonthName(currentMonth)}
                     <button
-                      onClick={() => updateFilter('month', null)}
+                      onClick={() => updateFilter('month', SENTINEL_ALL)}
                       className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
                     >
                       ×
                     </button>
                   </Badge>
                 )}
-                {currentRegion && (
+                {!isAll(currentRegion) && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     {getRegionName(currentRegion)}
                     <button
-                      onClick={() => updateFilter('region', null)}
+                      onClick={() => updateFilter('region', SENTINEL_ALL)}
                       className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
                     >
                       ×
