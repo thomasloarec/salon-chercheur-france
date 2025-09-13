@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SENTINEL_ALL, normalizeParam, isAll, updateUrlParam } from '@/lib/urlFilters';
+import { normalizeSectorSlug } from '@/lib/taxonomy';
 import { SafeSelect } from '@/components/ui/SafeSelect';
 import { fetchAllSectorsPreferCanonical, fetchAllEventTypes, fetchAllRegions, ALL_MONTHS, type Option } from '@/lib/filtersData';
 
@@ -44,10 +45,18 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
     loadOptions();
   }, []);
 
-  const currentSector = normalizeParam(searchParams.get('sector'));
+  const currentSectorRaw = normalizeParam(searchParams.get('sector'));
+  const currentSector = normalizeSectorSlug(currentSectorRaw) || SENTINEL_ALL;
   const currentType = normalizeParam(searchParams.get('type'));
   const currentMonth = normalizeParam(searchParams.get('month'));
   const currentRegion = normalizeParam(searchParams.get('region'));
+
+  // Clean URL if old sector alias detected
+  React.useEffect(() => {
+    if (currentSectorRaw !== SENTINEL_ALL && currentSectorRaw !== currentSector) {
+      updateFilter('sector', currentSector === SENTINEL_ALL ? null : currentSector);
+    }
+  }, [currentSectorRaw, currentSector]);
 
   const hasActiveFilters = !isAll(currentSector) || !isAll(currentType) || !isAll(currentMonth) || !isAll(currentRegion);
   const activeFilterCount = [currentSector, currentType, currentMonth, currentRegion].filter(v => !isAll(v)).length;
