@@ -1,22 +1,39 @@
 import { supabase } from '@/integrations/supabase/client';
+import { CANONICAL_SECTORS, TaxoOption } from '@/lib/taxonomy';
 
 export type Option = { value: string; label: string };
 
-// 1) Secteurs – lire TOUT depuis la table de référence
-export async function fetchAllSectors(): Promise<Option[]> {
-  const { data, error } = await supabase
-    .from('sectors')
-    .select('id, name')
-    .order('name', { ascending: true });
-    
-  if (error) {
-    console.warn('[filters] sectors fallback:', error.message);
-    return [];
+// 1) Secteurs – préférer la taxonomie canonique, merger avec DB
+export async function fetchAllSectorsPreferCanonical(): Promise<Option[]> {
+  // Base = canonique
+  const map = new Map<string, string>();
+  for (const s of CANONICAL_SECTORS) map.set(s.value, s.label);
+
+  // DB (facultatif) : on merge sans jamais retirer un canonique
+  try {
+    const { data, error } = await supabase
+      .from('sectors')
+      .select('id, name')
+      .order('name', { ascending: true });
+      
+    if (!error && Array.isArray(data)) {
+      for (const row of data) {
+        const slug = String(row?.id ?? '').trim();
+        const name = String(row?.name ?? '').trim();
+        if (!slug || !name) continue;
+        if (!map.has(slug)) map.set(slug, name); // ajoute les "non canoniques" éventuels
+        // si slug canonique déjà présent, on garde le label canonique (source de vérité UX)
+      }
+    }
+  } catch (e) {
+    console.warn('[filters] sectors db read skipped:', e);
   }
-  
-  return (data ?? [])
-    .filter(s => s?.id?.trim() && s?.name?.trim())
-    .map(s => ({ value: s.id, label: s.name }));
+
+  const merged: Option[] = Array.from(map.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+
+  return merged;
 }
 
 // 2) Types d'événement – liste basée sur les valeurs existantes

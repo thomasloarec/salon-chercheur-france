@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SENTINEL_ALL, normalizeParam, isAll, updateUrlParam } from '@/lib/urlFilters';
 import { SafeSelect } from '@/components/ui/SafeSelect';
-import { fetchAllSectors, fetchAllEventTypes, fetchAllRegions, ALL_MONTHS, type Option } from '@/lib/filtersData';
+import { fetchAllSectorsPreferCanonical, fetchAllEventTypes, fetchAllRegions, ALL_MONTHS, type Option } from '@/lib/filtersData';
 
 interface StickyFiltersBarProps {
   className?: string;
@@ -28,7 +28,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
     const loadOptions = async () => {
       try {
         const [sectorsData, eventTypesData, regionsData] = await Promise.all([
-          fetchAllSectors(),
+          fetchAllSectorsPreferCanonical(),
           fetchAllEventTypes(),
           fetchAllRegions(),
         ]);
