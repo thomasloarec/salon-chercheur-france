@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
 import NoveltyTile from '@/components/novelty/NoveltyTile';
+import NoveltiesEmptyState from '@/components/novelty/NoveltiesEmptyState';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -122,28 +123,28 @@ export default function Nouveautes() {
       </Helmet>
 
       <Header />
-      <StickyFiltersBar defaultCollapsed />
+      <StickyFiltersBar />
       
       <main className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-          {/* Hero Section */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              Nouveautés des salons
-            </h1>
-            <p className="text-lg text-muted-foreground mb-6">
-              {hasActiveFilters
-                ? `Découvrez les nouveautés filtrées des salons professionnels`
-                : `Découvrez les nouveautés les plus attendues des salons professionnels`
-              }
-            </p>
-            
-            {!loading && (
+          {/* Hero Section - Only show when there are results */}
+          {!loading && !error && novelties.length > 0 && (
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                Nouveautés des salons
+              </h1>
+              <p className="text-lg text-muted-foreground mb-6">
+                {hasActiveFilters
+                  ? `Découvrez les nouveautés filtrées des salons professionnels`
+                  : `Découvrez les nouveautés les plus attendues des salons professionnels`
+                }
+              </p>
+              
               <p className="text-sm text-muted-foreground">
                 {novelties.length} nouveauté{novelties.length !== 1 ? 's' : ''} trouvée{novelties.length !== 1 ? 's' : ''}
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Loading State */}
           {loading && (
@@ -164,15 +165,7 @@ export default function Nouveautes() {
 
           {/* Empty State */}
           {!loading && !error && novelties.length === 0 && (
-            <div className="text-center py-12">
-              <h2 className="text-xl font-semibold mb-2">Aucune nouveauté trouvée</h2>
-              <p className="text-muted-foreground">
-                {hasActiveFilters
-                  ? 'Essayez de modifier vos filtres pour voir plus de résultats.'
-                  : 'Les nouveautés seront bientôt disponibles.'
-                }
-              </p>
-            </div>
+            <NoveltiesEmptyState hasActiveFilters={hasActiveFilters} />
           )}
 
           {/* Novelties Grid */}

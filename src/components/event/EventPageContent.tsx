@@ -8,7 +8,7 @@ import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
-import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
+import EventInfoSidebar from '@/components/event/EventInfoSidebar';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import Header from '@/components/Header';
@@ -59,10 +59,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
       <SEOHead event={event} noIndex={isPreview} />
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <StickyFiltersBar />
         
         <main className="py-8">
-          <div className="w-full px-6 mx-auto space-y-8">
+          <div className="container mx-auto px-4 space-y-8">
             {/* Preview notice */}
             {isPreview && (
               <div className="bg-orange-100 border-l-4 border-orange-500 p-4 rounded">
@@ -91,17 +90,21 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             
             <EventPageHeader event={event} crmProspects={crmProspects} />
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Colonne principale */}
-// Update the event page content to include novelties section
-            <div className="lg:col-span-2 space-y-8">
-              <EventAbout event={event} />
-              <NoveltiesSection event={event} />
-              <EventExhibitorsSection event={event} />
-            </div>
+            <div className="grid grid-cols-12 gap-6">
+              {/* Colonne gauche */}
+              <div className="col-span-12 lg:col-span-8 space-y-6">
+                <EventAbout event={event} />
+                <section>
+                  <h2 id="nouveautes" className="text-2xl font-bold mb-6">Nouveautés</h2>
+                  <NoveltiesSection event={event} />
+                </section>
+              </div>
 
-            {/* Sidebar with Exhibitors instead of Similar Events */}
-            <ExhibitorsSidebar event={event} />
+              {/* Colonne droite */}
+              <aside className="col-span-12 lg:col-span-4 space-y-6">
+                <EventInfoSidebar event={event} />
+                <ExhibitorsSidebar event={event} />
+              </aside>
             </div>
           </div>
         </main>

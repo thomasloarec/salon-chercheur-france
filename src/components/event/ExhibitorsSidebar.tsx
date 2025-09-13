@@ -23,8 +23,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
   const exhibitors = exhibitorsData?.exhibitors || [];
 
   return (
-    <div className="lg:col-span-1">
-      <div className="sticky top-24 max-h-[75vh] overflow-y-auto bg-white rounded-lg shadow-sm border p-6">
+    <div className="sticky top-24 max-h-[75vh] overflow-y-auto bg-white rounded-lg shadow-sm border p-6">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-lg">
             Exposants ({isLoading ? '...' : exhibitors.length})
@@ -108,6 +107,5 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           </div>
         )}
       </div>
-    </div>
   );
 }
