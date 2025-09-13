@@ -1563,6 +1563,31 @@ export type Database = {
           value: string
         }[]
       }
+      get_top_novelties_per_event: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          audience_tags: string[]
+          availability: string
+          created_at: string
+          demo_slots: Json
+          doc_url: string
+          event_id: string
+          events: Json
+          exhibitor_id: string
+          exhibitors: Json
+          id: string
+          media_urls: string[]
+          novelty_stats: Json
+          reason_1: string
+          reason_2: string
+          reason_3: string
+          stand_info: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }[]
+      }
       get_user_crm_matches: {
         Args: { p_user_id: string }
         Returns: {

@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Index from '@/pages/Index';
 import Events from '@/pages/Events';
 import EventPage from '@/pages/EventPage';
+import Nouveautes from '@/pages/Nouveautes';
 import Auth from '@/pages/Auth';
 import Admin from '@/pages/Admin';
 import AdminEventDetail from '@/pages/AdminEventDetail';
@@ -37,6 +38,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/events" element={<Events />} />
               <Route path="/events/:slug" element={<EventPage />} />
+              <Route path="/nouveautes" element={<Nouveautes />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/events/:id" element={<AdminEventDetail />} />
