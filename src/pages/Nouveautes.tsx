@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,7 +7,8 @@ import NoveltyTile from '@/components/novelty/NoveltyTile';
 import NoveltiesEmptyState from '@/components/novelty/NoveltiesEmptyState';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useUrlFilters } from '@/lib/useUrlFilters'; 
+import { useNoveltiesList } from '@/hooks/useNoveltiesList';
 
 interface Novelty {
   id: string;
@@ -38,79 +38,29 @@ interface Novelty {
 const HOVER_CYCLE_MS = 3000;
 
 export default function Nouveautes() {
-  const [searchParams] = useSearchParams();
-  const [novelties, setNovelties] = useState<Novelty[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const filters = useUrlFilters(); // ← source de vérité
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const pageSize = 12;
-
-  const fetchNovelties = async (pageNum: number, reset = false) => {
-    try {
-      if (pageNum === 1) setLoading(true);
-      else setLoadingMore(true);
-
-      const params = new URLSearchParams();
-      params.set('page', pageNum.toString());
-      params.set('pageSize', pageSize.toString());
-      
-      // Add filters from search params
-      const sector = searchParams.get('sector');
-      const type = searchParams.get('type');
-      const month = searchParams.get('month');
-      const region = searchParams.get('region');
-
-      if (sector) params.set('sector', sector);
-      if (type) params.set('type', type);
-      if (month) params.set('month', month);
-      if (region) params.set('region', region);
-
-      const { data, error } = await supabase.functions.invoke('novelties-list', {
-        body: Object.fromEntries(params.entries())
-      });
-
-      if (error) throw error;
-
-      const result = data;
-      
-      if (reset || pageNum === 1) {
-        setNovelties(result.data || []);
-      } else {
-        setNovelties(prev => [...prev, ...(result.data || [])]);
-      }
-
-      setHasMore((result.data?.length || 0) === pageSize);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching novelties:', err);
-      setError('Erreur lors du chargement des nouveautés');
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  // Fetch on mount and when filters change
-  useEffect(() => {
+  
+  // Reset page when filters change
+  React.useEffect(() => {
     setPage(1);
-    fetchNovelties(1, true);
-  }, [searchParams]);
+  }, [filters]);
+  
+  const { data: noveltiesResponse, isLoading, error, refetch } = useNoveltiesList(filters, {
+    page,
+    pageSize: 12
+  });
+
+  const novelties = noveltiesResponse?.data || [];
+  const hasMore = (noveltiesResponse?.data?.length || 0) >= 12;
+  const loading = isLoading && page === 1;
+  const loadingMore = isLoading && page > 1;
 
   const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchNovelties(nextPage);
+    setPage(prev => prev + 1);
   };
 
-  const hasActiveFilters = !!(
-    searchParams.get('sector') ||
-    searchParams.get('type') ||
-    searchParams.get('month') ||
-    searchParams.get('region')
-  );
+  const hasActiveFilters = !!(filters.sector || filters.type || filters.month || filters.region);
 
   return (
     <>
@@ -156,8 +106,8 @@ export default function Nouveautes() {
           {/* Error State */}
           {error && (
             <div className="text-center py-12">
-              <p className="text-destructive mb-4">{error}</p>
-              <Button onClick={() => fetchNovelties(1, true)} variant="outline">
+              <p className="text-destructive mb-4">Erreur lors du chargement des nouveautés</p>
+              <Button onClick={() => refetch()} variant="outline">
                 Réessayer
               </Button>
             </div>
@@ -175,7 +125,19 @@ export default function Nouveautes() {
                 {novelties.map((novelty) => (
                   <NoveltyTile
                     key={novelty.id}
-                    novelty={novelty}
+                    novelty={{
+                      ...novelty,
+                      events: novelty.events || {
+                        id: '',
+                        nom_event: '',
+                        slug: '',
+                        ville: ''
+                      },
+                      novelty_stats: novelty.novelty_stats || {
+                        route_users_count: 0,
+                        popularity_score: 0
+                      }
+                    }}
                     hoverCycleMs={HOVER_CYCLE_MS}
                   />
                 ))}
