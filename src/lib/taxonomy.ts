@@ -4,7 +4,7 @@ export type TaxoOption = { value: string; label: string };
 // ⚠️ Slugs figés (kebab-case, sans accents)
 export const CANONICAL_SECTORS: TaxoOption[] = [
   { value: "agroalimentaire-boissons", label: "Agroalimentaire & Boissons" },
-  { value: "automobile-mobilites", label: "Automobile & Mobilités" },
+  { value: "automobile-mobilite", label: "Automobile & Mobilité" }, // ← canonique
   { value: "commerce-distribution", label: "Commerce & Distribution" },
   { value: "cosmetique-bien-etre", label: "Cosmétique & Bien-être" },
   { value: "education-formation", label: "Éducation & Formation" },
@@ -18,3 +18,15 @@ export const CANONICAL_SECTORS: TaxoOption[] = [
   { value: "services-entreprises-rh", label: "Services aux Entreprises & RH" },
   { value: "secteur-public-collectivites", label: "Secteur Public & Collectivités" },
 ];
+
+// Alias pour absorber d'anciens slugs et éviter les doublons dans l'UI & les URLs
+export const SECTOR_ALIASES: Record<string, string> = {
+  "automobile-mobilites": "automobile-mobilite", // ← ancien → nouveau
+};
+
+// Normalisation universelle d'un slug secteur
+export function normalizeSectorSlug(slug?: string | null) {
+  if (!slug) return slug;
+  const trimmed = String(slug).trim();
+  return SECTOR_ALIASES[trimmed] ?? trimmed;
+}

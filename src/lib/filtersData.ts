@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { CANONICAL_SECTORS, TaxoOption } from '@/lib/taxonomy';
+import { CANONICAL_SECTORS, normalizeSectorSlug } from '@/lib/taxonomy';
 
 export type Option = { value: string; label: string };
 
@@ -33,7 +33,8 @@ export async function fetchAllSectorsPreferCanonical(): Promise<Option[]> {
         // Si ce secteur correspond à un canonique par nom, utiliser le slug canonique
         const canonicalSlug = canonicalMap.get(name);
         if (canonicalSlug) {
-          resultMap.set(canonicalSlug, name);
+          const normalizedSlug = normalizeSectorSlug(canonicalSlug);
+          resultMap.set(normalizedSlug, name);
         } else {
           // Sinon utiliser l'ID comme valeur (pour les secteurs non-canoniques)
           resultMap.set(id, name);
