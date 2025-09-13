@@ -17,7 +17,7 @@ interface Exhibitor {
   id: string;
   name: string;
   plan: string;
-  stand_info?: string;
+  stand_info: string;
 }
 
 interface AddNoveltyModalProps {
