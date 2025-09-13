@@ -6,7 +6,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
-import { EventSidebar } from '@/components/event/EventSidebar';
+import NoveltiesSection from '@/components/event/NoveltiesSection';
+import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
+import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import Header from '@/components/Header';
@@ -57,6 +59,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
       <SEOHead event={event} noIndex={isPreview} />
       <div className="min-h-screen bg-gray-50">
         <Header />
+        <StickyFiltersBar />
         
         <main className="py-8">
           <div className="w-full px-6 mx-auto space-y-8">
@@ -90,13 +93,15 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Colonne principale */}
-              <div className="lg:col-span-2 space-y-8">
-                <EventAbout event={event} />
-                <EventExhibitorsSection event={event} />
-              </div>
+// Update the event page content to include novelties section
+            <div className="lg:col-span-2 space-y-8">
+              <EventAbout event={event} />
+              <NoveltiesSection event={event} />
+              <EventExhibitorsSection event={event} />
+            </div>
 
-              {/* Sidebar */}
-              <EventSidebar event={event} />
+            {/* Sidebar with Exhibitors instead of Similar Events */}
+            <ExhibitorsSidebar event={event} />
             </div>
           </div>
         </main>
