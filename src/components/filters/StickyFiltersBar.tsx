@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SENTINEL_ALL, normalizeParam, isAll, updateUrlParam } from '@/lib/urlFilters';
+import { SafeSelect } from '@/components/ui/SafeSelect';
 
 interface StickyFiltersBarProps {
   className?: string;
@@ -124,20 +124,15 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Secteur
             </label>
-            <Select value={currentSector} onValueChange={(value) => updateFilter('sector', value)}>
-              <SelectTrigger className="w-40" aria-label="Filtre secteur">
-                <SelectValue placeholder="Secteur d'activité" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SENTINEL_ALL}>Tous les secteurs</SelectItem>
-                {SECTORS.filter(sector => sector && sector.id && String(sector.id).trim() !== '')
-                  .map((sector) => (
-                    <SelectItem key={sector.id} value={String(sector.id)}>
-                      {sector.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <SafeSelect
+              ariaLabel="Filtre secteur"
+              className="w-40"
+              placeholder="Secteur d'activité"
+              value={isAll(currentSector) ? null : currentSector}
+              onChange={(v) => updateFilter('sector', v)}
+              options={SECTORS.map(sector => ({ value: String(sector.id), label: sector.name }))}
+              allLabel="Tous les secteurs"
+            />
           </div>
 
           {/* Type Filter */}
@@ -145,20 +140,15 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Type
             </label>
-            <Select value={currentType} onValueChange={(value) => updateFilter('type', value)}>
-              <SelectTrigger className="w-40" aria-label="Filtre type d'événement">
-                <SelectValue placeholder="Type d'événement" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SENTINEL_ALL}>Tous les types</SelectItem>
-                {EVENT_TYPES.filter(type => type && type.id && String(type.id).trim() !== '')
-                  .map((type) => (
-                    <SelectItem key={type.id} value={String(type.id)}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <SafeSelect
+              ariaLabel="Filtre type d'événement"
+              className="w-40"
+              placeholder="Type d'événement"
+              value={isAll(currentType) ? null : currentType}
+              onChange={(v) => updateFilter('type', v)}
+              options={EVENT_TYPES.map(type => ({ value: String(type.id), label: type.name }))}
+              allLabel="Tous les types"
+            />
           </div>
 
           {/* Month Filter */}
@@ -166,20 +156,15 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Mois
             </label>
-            <Select value={currentMonth} onValueChange={(value) => updateFilter('month', value)}>
-              <SelectTrigger className="w-40" aria-label="Filtre mois">
-                <SelectValue placeholder="Mois" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SENTINEL_ALL}>Tous les mois</SelectItem>
-                {MONTHS.filter(month => month && month.id && String(month.id).trim() !== '')
-                  .map((month) => (
-                    <SelectItem key={month.id} value={String(month.id)}>
-                      {month.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <SafeSelect
+              ariaLabel="Filtre mois"
+              className="w-40"
+              placeholder="Mois"
+              value={isAll(currentMonth) ? null : currentMonth}
+              onChange={(v) => updateFilter('month', v)}
+              options={MONTHS.map(month => ({ value: String(month.id), label: month.name }))}
+              allLabel="Tous les mois"
+            />
           </div>
 
           {/* Region Filter */}
@@ -187,20 +172,15 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Région
             </label>
-            <Select value={currentRegion} onValueChange={(value) => updateFilter('region', value)}>
-              <SelectTrigger className="w-40" aria-label="Filtre région">
-                <SelectValue placeholder="Région" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SENTINEL_ALL}>Toutes les régions</SelectItem>
-                {REGIONS.filter(region => region && region.id && String(region.id).trim() !== '')
-                  .map((region) => (
-                    <SelectItem key={region.id} value={String(region.id)}>
-                      {region.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <SafeSelect
+              ariaLabel="Filtre région"
+              className="w-40"
+              placeholder="Région"
+              value={isAll(currentRegion) ? null : currentRegion}
+              onChange={(v) => updateFilter('region', v)}
+              options={REGIONS.map(region => ({ value: String(region.id), label: region.name }))}
+              allLabel="Toutes les régions"
+            />
           </div>
 
           {/* Active Filters Display */}

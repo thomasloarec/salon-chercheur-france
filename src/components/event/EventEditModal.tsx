@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SafeSelect } from '@/components/ui/SafeSelect';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -371,21 +371,18 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
             <div>
               <Label htmlFor="type_event">Type d'événement</Label>
-              <Select 
-                value={formData.type_event} 
-                onValueChange={(value) => setFormData({ ...formData, type_event: value as Event['type_event'] })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EVENT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SafeSelect
+                ariaLabel="Type d'événement"
+                placeholder="Sélectionnez un type"
+                value={formData.type_event}
+                onChange={(value) => {
+                  if (value) {
+                    setFormData({ ...formData, type_event: value as Event['type_event'] });
+                  }
+                }}
+                options={EVENT_TYPES.map(type => ({ value: type.value, label: type.label }))}
+                includeAllOption={false}
+              />
             </div>
 
             <div>

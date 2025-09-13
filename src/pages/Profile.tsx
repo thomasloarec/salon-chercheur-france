@@ -9,13 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SafeSelect } from '@/components/ui/SafeSelect';
 import { Badge } from '@/components/ui/badge';
 import { 
   User, 
@@ -232,21 +226,14 @@ const Profile = () => {
                   {isLoading ? (
                     <div className="h-10 bg-gray-200 rounded animate-pulse" />
                   ) : (
-                    <Select
+                     <SafeSelect
+                      ariaLabel="Secteur principal"
+                      placeholder="Sélectionnez votre secteur principal"
                       value={formData.primary_sector}
-                      onValueChange={(value) => handleInputChange('primary_sector', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez votre secteur principal" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sectors.map((sector) => (
-                          <SelectItem key={sector.id} value={sector.id}>
-                            {sector.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(value) => handleInputChange('primary_sector', value || '')}
+                      options={sectors.map(sector => ({ value: sector.id, label: sector.name }))}
+                      includeAllOption={false}
+                    />
                   )}
                 </div>
               </div>

@@ -1,13 +1,5 @@
-
 import * as React from "react";
-import { ChevronsUpDown } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SafeSelect } from "@/components/ui/SafeSelect";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -38,22 +30,18 @@ export const RegionSelect = ({
       <Label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </Label>
-      <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50 [&>svg]:hidden",
+      <SafeSelect
+        ariaLabel="Sélection région"
+        placeholder={placeholder}
+        className={cn(
+          "w-full justify-between",
           className
-        )}>
-          <SelectValue placeholder={placeholder} className="text-gray-400" />
-          <ChevronsUpDown className="h-4 w-4 text-white" />
-        </SelectTrigger>
-        <SelectContent>
-          {regions.map((region) => (
-            <SelectItem key={region.code} value={region.code}>
-              {region.nom}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        )}
+        value={value}
+        onChange={(v) => onValueChange(v || '')}
+        options={regions.map(region => ({ value: region.code, label: region.nom }))}
+        includeAllOption={false}
+      />
     </div>
   );
 };

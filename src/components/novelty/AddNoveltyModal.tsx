@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { SafeSelect } from '@/components/ui/SafeSelect';
 import { X, Plus, Loader2 } from 'lucide-react';
 import { useCreateNovelty } from '@/hooks/useNovelties';
 import { useAuth } from '@/contexts/AuthContext';
@@ -320,9 +320,12 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
                 </p>
               </div>
             ) : (
-              <Select
+              <SafeSelect
+                ariaLabel="Sélection exposant"
+                placeholder="Sélectionnez un exposant"
                 value={formData.exhibitor_id}
-                onValueChange={(value) => {
+                onChange={(value) => {
+                  if (!value) return;
                   const participation = participationData.find(p => p.id_exposant === value);
                   const standInfo = participation?.stand_exposant || '';
                   
@@ -332,23 +335,12 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
                     stand_info: standInfo
                   }));
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez un exposant" />
-                </SelectTrigger>
-                <SelectContent>
-                  {userExhibitors.map((exhibitor) => (
-                    <SelectItem key={exhibitor.id} value={exhibitor.id}>
-                      {exhibitor.name}
-                      {exhibitor.plan === 'free' && (
-                        <Badge variant="secondary" className="ml-2 text-xs">
-                          Gratuit
-                        </Badge>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={userExhibitors.map(exhibitor => ({
+                  value: exhibitor.id,
+                  label: `${exhibitor.name}${exhibitor.plan === 'free' ? ' (Gratuit)' : ''}`
+                }))}
+                includeAllOption={false}
+              />
             )}
             
             {isFreePlan && (
@@ -373,21 +365,18 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
           {/* Type */}
           <div className="space-y-2">
             <Label htmlFor="type">Type de nouveauté *</Label>
-            <Select
+            <SafeSelect
+              ariaLabel="Type de nouveauté"
+              placeholder="Sélectionnez un type"
               value={formData.type}
-              onValueChange={(value: NoveltyType) => setFormData(prev => ({ ...prev, type: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez un type" />
-              </SelectTrigger>
-              <SelectContent>
-                {NOVELTY_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(value: string | null) => {
+                if (value) {
+                  setFormData(prev => ({ ...prev, type: value as NoveltyType }));
+                }
+              }}
+              options={NOVELTY_TYPES.map(type => ({ value: type.value, label: type.label }))}
+              includeAllOption={false}
+            />
           </div>
 
           {/* Reasons */}
