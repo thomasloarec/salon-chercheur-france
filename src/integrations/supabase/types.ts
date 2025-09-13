@@ -556,6 +556,65 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_claim_requests: {
+        Row: {
+          created_at: string | null
+          exhibitor_id: string
+          id: string
+          requester_user_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          exhibitor_id: string
+          id?: string
+          requester_user_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          exhibitor_id?: string
+          id?: string
+          requester_user_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_claim_requests_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exhibitor_create_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          proposed_name: string
+          requester_user_id: string
+          status: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          proposed_name: string
+          requester_user_id: string
+          status?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          proposed_name?: string
+          requester_user_id?: string
+          status?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       exhibitor_matches: {
         Row: {
           company_id: string | null
@@ -600,6 +659,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exhibitors: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          owner_user_id: string | null
+          plan: string | null
+          slug: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_user_id?: string | null
+          plan?: string | null
+          slug?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_user_id?: string | null
+          plan?: string | null
+          slug?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
       }
       exposants: {
         Row: {
@@ -745,6 +843,123 @@ export type Database = {
             columns: ["sector_id"]
             isOneToOne: false
             referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      novelties: {
+        Row: {
+          audience_tags: string[] | null
+          availability: string | null
+          created_at: string | null
+          demo_slots: Json | null
+          doc_url: string | null
+          event_id: string
+          exhibitor_id: string
+          id: string
+          media_urls: string[] | null
+          reason_1: string | null
+          reason_2: string | null
+          reason_3: string | null
+          stand_info: string | null
+          status: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          audience_tags?: string[] | null
+          availability?: string | null
+          created_at?: string | null
+          demo_slots?: Json | null
+          doc_url?: string | null
+          event_id: string
+          exhibitor_id: string
+          id?: string
+          media_urls?: string[] | null
+          reason_1?: string | null
+          reason_2?: string | null
+          reason_3?: string | null
+          stand_info?: string | null
+          status?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          audience_tags?: string[] | null
+          availability?: string | null
+          created_at?: string | null
+          demo_slots?: Json | null
+          doc_url?: string | null
+          event_id?: string
+          exhibitor_id?: string
+          id?: string
+          media_urls?: string[] | null
+          reason_1?: string | null
+          reason_2?: string | null
+          reason_3?: string | null
+          stand_info?: string | null
+          status?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      novelty_stats: {
+        Row: {
+          novelty_id: string
+          popularity_score: number | null
+          reminders_count: number | null
+          route_users_count: number | null
+          saves_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          novelty_id: string
+          popularity_score?: number | null
+          reminders_count?: number | null
+          route_users_count?: number | null
+          saves_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          novelty_id?: string
+          popularity_score?: number | null
+          reminders_count?: number | null
+          route_users_count?: number | null
+          saves_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_stats_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: true
+            referencedRelation: "novelties"
             referencedColumns: ["id"]
           },
         ]
@@ -928,6 +1143,42 @@ export type Database = {
           nom?: string
         }
         Relationships: []
+      }
+      route_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          novelty_id: string
+          route_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          novelty_id: string
+          route_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          novelty_id?: string
+          route_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_items_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_items_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "user_routes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scraping_sources: {
         Row: {
@@ -1218,6 +1469,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_routes: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       events_geo: {
@@ -1239,6 +1526,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_publish_novelty: {
+        Args: { event_id: string; exhibitor_id: string }
+        Returns: boolean
+      }
       cleanup_expired_claim_tokens: {
         Args: Record<PropertyKey, never>
         Returns: undefined
