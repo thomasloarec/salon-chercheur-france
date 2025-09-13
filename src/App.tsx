@@ -2,27 +2,30 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/AuthContext';
+import ScrollToTop from '@/components/ScrollToTop';
 import Index from '@/pages/Index';
 import Events from '@/pages/Events';
 import EventPage from '@/pages/EventPage';
-import Nouveautes from '@/pages/Nouveautes';
+import Favorites from '@/pages/Favorites';
+import Profile from '@/pages/Profile';
 import Auth from '@/pages/Auth';
 import Admin from '@/pages/Admin';
 import AdminEventDetail from '@/pages/AdminEventDetail';
-import Profile from '@/pages/Profile';
-import Favorites from '@/pages/Favorites';
+import CrmIntegrations from '@/pages/CrmIntegrations';
+import { OAuthCallback } from '@/pages/OAuthCallback';
+import OAuthHubspotTest from '@/pages/OAuthHubspotTest';
+import LegacyHubspotApiCallback from '@/pages/LegacyHubspotApiCallback';
+import ScrapingTest from '@/pages/ScrapingTest';
 import Agenda from '@/pages/Agenda';
+import Nouveautes from '@/pages/Nouveautes';
+import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
+import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
-import CrmIntegrations from '@/pages/CrmIntegrations';
-import { OAuthCallback } from '@/pages/OAuthCallback';
-import LegacyHubspotApiCallback from '@/pages/LegacyHubspotApiCallback';
-import OAuthHubspotTest from '@/pages/OAuthHubspotTest';
 import NotFound from '@/pages/NotFound';
-import ScrollToTop from '@/components/ScrollToTop';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -38,7 +41,9 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/events" element={<Events />} />
               <Route path="/events/:slug" element={<EventPage />} />
-              <Route path="/nouveautes" element={<Nouveautes />} />
+            <Route path="/nouveautes" element={<Nouveautes />} />
+            <Route path="/admin/exhibitors/claims" element={<AdminExhibitorClaims />} />
+            <Route path="/admin/exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/events/:id" element={<AdminEventDetail />} />

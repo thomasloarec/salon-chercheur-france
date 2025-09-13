@@ -18,6 +18,15 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const [page, setPage] = useState(1);
   const [allNovelties, setAllNovelties] = useState<any[]>([]);
   const [currentNoveltyIndex, setCurrentNoveltyIndex] = useState(0);
+  // Initialize from URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sortParam = params.get('sort');
+    if (sortParam === 'recent') {
+      setSortBy('recent');
+    }
+  }, []);
+
   const [loadingMore, setLoadingMore] = useState(false);
 
   const pageSize = 10;
@@ -42,10 +51,17 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     }
   }, [noveltiesData, page]);
 
-  // Reset when sort changes
+  // Update URL with sort param
   useEffect(() => {
-    setPage(1);
-    setCurrentNoveltyIndex(0);
+    const params = new URLSearchParams(window.location.search);
+    if (sortBy === 'awaited') {
+      params.delete('sort');
+    } else {
+      params.set('sort', sortBy);
+    }
+    
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.replaceState({}, '', newUrl);
   }, [sortBy]);
 
   const handleLoadMore = () => {
