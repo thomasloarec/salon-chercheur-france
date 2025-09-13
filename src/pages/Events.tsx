@@ -43,11 +43,7 @@ const Events = () => {
     code_postal: event.code_postal,
     visible: event.visible,
     slug: event.slug,
-    sectors: event.event_sectors?.map(es => ({
-      id: es.sectors.id,
-      name: es.sectors.name,
-      created_at: '',
-    })) || []
+    sectors: [] // No sectors info available in simplified query
   })) || [];
 
   const hasActiveFilters = !!(filters.sector || filters.type || filters.month || filters.region);

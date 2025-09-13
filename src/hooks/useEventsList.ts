@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { UrlFilters } from "@/lib/useUrlFilters";
 import { useAuth } from '@/contexts/AuthContext';
+import { getEventIdsForSector } from "@/lib/eventsFilters";
 
 export type EventRow = {
   id: string;
@@ -20,29 +21,27 @@ export type EventRow = {
   type_event: string | null;
   is_b2b: boolean;
   visible: boolean;
-  event_sectors?: {
-    sectors: {
-      id: string;
-      name: string;
-    };
-  }[];
 };
 
 async function fetchEvents(filters: UrlFilters, isAdmin: boolean): Promise<EventRow[]> {
   const { sector, type, month, region } = filters;
 
-  // 1) SELECT de base avec jointure sectors si secteur spécifié
+  // 0) Résolution des IDs par secteur si demandé
+  let sectorEventIds: string[] | null = null;
+  if (sector) {
+    sectorEventIds = await getEventIdsForSector(sector);
+    if (Array.isArray(sectorEventIds) && sectorEventIds.length === 0) {
+      return []; // secteur connu mais pas d'event -> aucun résultat
+    }
+  }
+
+  // 1) Requête de base (sélection minimale, colonnes garanties)
   let query = supabase
     .from("events")
     .select(`
       id, id_event, nom_event, slug, date_debut, date_fin, ville, secteur,
       url_image, nom_lieu, rue, code_postal, url_site_officiel,
-      type_event, is_b2b, visible,
-      event_sectors (
-        sectors (
-          id, name
-        )
-      )
+      type_event, is_b2b, visible
     `);
 
   // Filtre visibilité pour les non-admins
@@ -58,7 +57,7 @@ async function fetchEvents(filters: UrlFilters, isAdmin: boolean): Promise<Event
     query = query.gte('date_debut', new Date().toISOString().slice(0, 10));
   }
 
-  // 2) Filtres
+  // 2) Appliquer les filtres simples
   if (type) {
     query = query.eq("type_event", type);
   }
@@ -92,22 +91,15 @@ async function fetchEvents(filters: UrlFilters, isAdmin: boolean): Promise<Event
     }
   }
 
-  // Secteur : utiliser la jointure avec event_sectors si secteur spécifié
-  if (sector) {
-    // Récupérer l'ID du secteur depuis le nom canonique
-    const { data: sectors } = await supabase
-      .from('sectors')
-      .select('id, name')
-      .ilike('name', `%${sector.replace('-', ' ')}%`);
-    
-    if (sectors && sectors.length > 0) {
-      const sectorIds = sectors.map(s => s.id);
-      query = query.in('event_sectors.sector_id', sectorIds);
+  // 3) Appliquer le filtre secteur si on a des IDs résolus
+  if (Array.isArray(sectorEventIds)) {
+    // On a une liste (pot. grande) d'IDs pour ce secteur
+    if (sectorEventIds.length > 0) {
+      query = query.in("id", sectorEventIds);
     } else {
-      // Fallback: chercher dans le champ secteur jsonb
-      query = query.or(`secteur.cs.{${sector}}`);
+      return [];
     }
-  }
+  } // sinon (null) => impossible de filtrer côté SQL, on ne filtre pas (fallback)
 
   query = query.order("date_debut", { ascending: true });
 
