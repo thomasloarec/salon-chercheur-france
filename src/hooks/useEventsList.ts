@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { UrlFilters } from "@/lib/useUrlFilters";
-import { useAuth } from '@/contexts/AuthContext';
 import {
   CanonicalEvent,
   normalizeEventRow,
@@ -18,8 +17,8 @@ import { sectorSlugToDbLabels, typeSlugToDbValue } from "@/lib/taxonomy";
  * En cas d'erreur (colonne manquante) -> fallback: on refait un fetch sans filtres SQL et on filtre en mémoire.
  */
 
-async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean, isAdmin: boolean): Promise<CanonicalEvent[]> {
-  const { sector, type, month /* region */ } = filters;
+async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean): Promise<CanonicalEvent[]> {
+  const { sector, type /* month, region */ } = filters;
 
   let q = supabase
     .from("events")
@@ -32,9 +31,6 @@ async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean,
     const dbType = typeSlugToDbValue(type);
     if (dbType) q = q.eq("type_event", dbType);
 
-    // MOIS via date_debut (text cast pour LIKE)
-    if (month) q = q.like("date_debut", `%-${month}-%`);
-
     // SECTEUR via jsonb contains
     if (sector) {
       const labels = sectorSlugToDbLabels(sector);
@@ -46,6 +42,7 @@ async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean,
       }
     }
 
+    // MOIS -> filtré côté client (pas de LIKE sur date)
     // REGION → pas de colonne en base pour le moment → pas de filtre serveur
   }
 
@@ -54,16 +51,18 @@ async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean,
   return (Array.isArray(data) ? data : []).map(normalizeEventRow);
 }
 
-async function fetchEvents(filters: UrlFilters, isAdmin: boolean): Promise<CanonicalEvent[]> {
+async function fetchEvents(filters: UrlFilters): Promise<CanonicalEvent[]> {
   try {
-    // Tentative full serveur
-    const rows = await fetchEventsServer(filters, true, isAdmin);
-    console.log("[events] rows:", rows.length, "filters:", filters);
-    return rows;
+    // Tentative serveur (Secteur + Type seulement)
+    const rows = await fetchEventsServer(filters, true);
+    // Appliquer MOIS côté client (évite LIKE sur date)
+    const byMonth = rows.filter(ev => matchesMonth(ev, filters.month));
+    console.log("[events] rows:", byMonth.length, "filters:", filters);
+    return byMonth;
   } catch (e) {
     console.warn("[events] server filters failed, fallback client:", (e as any)?.message ?? e);
     // Fallback: récupérer tout (visible) puis filtrer en mémoire
-    const all = await fetchEventsServer({ sector: null, type: null, month: null, region: null }, false, isAdmin);
+    const all = await fetchEventsServer({ sector: null, type: null, month: null, region: null }, false);
 
     const byType = all.filter(ev => matchesType(ev, typeSlugToDbValue(filters.type)));
     const byMonth = byType.filter(ev => matchesMonth(ev, filters.month));
@@ -75,12 +74,9 @@ async function fetchEvents(filters: UrlFilters, isAdmin: boolean): Promise<Canon
 }
 
 export function useEventsList(filters: UrlFilters) {
-  const { user } = useAuth();
-  const isAdmin = user?.email === 'admin@lotexpo.com';
-
   return useQuery({
-    queryKey: ["events:list", filters, isAdmin],
-    queryFn: () => fetchEvents(filters, isAdmin),
+    queryKey: ["events:list", filters],
+    queryFn: () => fetchEvents(filters),
     staleTime: 60_000,
   });
 }

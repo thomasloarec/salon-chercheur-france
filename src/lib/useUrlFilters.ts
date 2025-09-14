@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { normalizeSectorSlug } from "@/lib/taxonomy";
-import { SENTINEL_ALL } from "@/components/ui/SafeSelect";
+import { SENTINEL_ALL } from "@/lib/urlFilters";
 
 export type UrlFilters = {
   sector: string | null;  // slug canonique (ou null)

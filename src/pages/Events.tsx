@@ -19,28 +19,28 @@ const Events = () => {
   // Transform events to match EventsResults expected format
   const displayEvents = events?.map(event => ({
     id: event.id,
-    nom_event: event.nom_event,
+    nom_event: event.title, // Use normalized title
     description_event: '', // Not available in new format
-    date_debut: event.date_debut,
-    date_fin: event.date_fin,
-    secteur: event.secteur,
-    nom_lieu: event.nom_lieu,
+    date_debut: event.start_date,
+    date_fin: event.end_date,
+    secteur: event.secteur_labels.join(', '), // Convert array to string
+    nom_lieu: '', // Not available in simplified query
     ville: event.ville,
     country: 'France', // Default
-    url_image: event.url_image,
-    url_site_officiel: event.url_site_officiel,
+    url_image: '', // Not available in simplified query
+    url_site_officiel: '', // Not available in simplified query
     tags: [], // Not available
     tarif: '', // Not available in this query
     affluence: '', // Not available in this query
     estimated_exhibitors: undefined,
-    is_b2b: event.is_b2b,
-    type_event: (event.type_event as any) || 'salon', // Type assertion for compatibility
+    is_b2b: false, // Not available in simplified query
+    type_event: (event.type_code || 'salon') as "salon" | "convention" | "congres" | "conference" | "exposition" | "forum" | "autre",
     created_at: '', // Not selected
     updated_at: '', // Not selected
     last_scraped_at: undefined,
     scraped_from: undefined,
-    rue: event.rue,
-    code_postal: event.code_postal,
+    rue: '', // Not available in simplified query
+    code_postal: '', // Not available in simplified query
     visible: event.visible,
     slug: event.slug,
     sectors: [] // No sectors info available in simplified query
@@ -74,6 +74,12 @@ const Events = () => {
             <h1 className="text-3xl font-bold text-gray-900">
               {isLoading ? 'Chargement...' : `${displayEvents.length || 0} salon(s) trouvé(s)`}
             </h1>
+            {events && (
+              <div className="sr-only" aria-hidden="true">
+                {/* compteur accessible pour debug */}
+                Chargement terminé — {events.length} événements
+              </div>
+            )}
             {hasActiveFilters && (
               <p className="text-gray-600 mt-2">
                 Résultats filtrés

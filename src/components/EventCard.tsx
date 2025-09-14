@@ -99,7 +99,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             
             <img
               src={event.url_image || '/placeholder.svg'}
-              alt={`Affiche de ${event.nom_event}`}
+              alt={`Affiche de ${event.nom_event || 'Événement'}`}
               loading="lazy"
               className="event-card__image"
             />
