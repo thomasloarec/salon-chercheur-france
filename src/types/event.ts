@@ -10,7 +10,7 @@ export interface Event {
   nom_lieu?: string;
   ville?: string;
   country?: string;
-  url_image?: string;
+  url_image?: string; // Keep existing field name for compatibility
   url_site_officiel?: string;
   tags?: string[];
   tarif?: string;

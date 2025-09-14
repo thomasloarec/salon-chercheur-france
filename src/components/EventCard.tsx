@@ -17,15 +17,9 @@ import FavoriteButton from './FavoriteButton';
 import { EventSectors } from '@/components/ui/event-sectors';
 import { formatAddress } from '@/utils/formatAddress';
 import { EVENT_PLACEHOLDER } from '@/lib/images';
-import { imgDebug } from '@/lib/imgDebug';
 
 interface EventCardProps {
-  event: Event & { 
-    estimated_visitors?: number; 
-    price?: string; 
-    image_url?: string; 
-    slug?: string;
-  };
+  event: Event;
   view?: 'grid';
   adminPreview?: boolean;
   onPublish?: (eventId: string) => void;
@@ -100,26 +94,12 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             )}
             
             <img
-              src={(() => {
-                const srcCandidate = event.image_url?.trim();
-                const finalSrc = srcCandidate && srcCandidate.length > 0 ? srcCandidate : EVENT_PLACEHOLDER;
-                
-                // Debug: log what's happening with the image
-                imgDebug("card src", { 
-                  slug: event.slug || event.nom_event, 
-                  srcCandidate, 
-                  finalSrc,
-                  event_image_url: event.image_url,
-                  event_url_image: (event as any).url_image
-                });
-                
-                return finalSrc;
-              })()}
+              src={(event.url_image ?? "").trim() || EVENT_PLACEHOLDER}
               alt={`Visuel — ${event.nom_event || 'Événement'}`}
               loading="lazy"
               decoding="async"
               referrerPolicy="no-referrer"
-              className="event-card__image"
+              className="event-card__image w-full h-44 rounded-lg object-cover"
               onError={(e) => { 
                 (e.currentTarget as HTMLImageElement).src = EVENT_PLACEHOLDER; 
               }}

@@ -24,6 +24,14 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Enforce consistent image field naming (use url_image in UI)
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[property.name='image_url']",
+          message: "Utiliser url_image dans l'UI pour la cohérence avec le type Event."
+        }
+      ]
     },
   }
 );

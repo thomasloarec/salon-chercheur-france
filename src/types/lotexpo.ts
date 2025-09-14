@@ -181,6 +181,33 @@ export interface NoveltyFilters {
   offset?: number;
 }
 
+// Canonical Event type for UI consistency
+export type CanonicalEvent = {
+  id: string;
+  title: string;
+  slug: string;
+  start_date: string | null;
+  end_date: string | null;
+  type_code: string | null;
+  secteur_labels: string[];
+  ville: string | null;
+  pays: string | null;
+  visible: boolean | null;
+  image_url: string | null; // UNIQUE source image pour tous les composants UI
+  postal_code: string | null;
+  // Champs additionnels pour compatibilité
+  nom_event: string;
+  date_debut: string | null;
+  date_fin: string | null;
+  secteur: any;
+  nom_lieu: string | null;
+  url_site_officiel: string | null;
+  is_b2b: boolean;
+  type_event: string | null;
+  rue: string | null;
+  code_postal: string | null;
+};
+
 // Constants
 export const NOVELTY_TYPES: { value: NoveltyType; label: string }[] = [
   { value: 'Launch', label: 'Lancement' },

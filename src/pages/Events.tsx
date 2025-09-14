@@ -6,7 +6,6 @@ import { EventsResults } from '@/components/EventsResults';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
-import { imgDebug } from '@/lib/imgDebug';
 
 const Events = () => {
   const filters = useUrlFilters(); // ← source de vérité
@@ -17,44 +16,35 @@ const Events = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Transform events to match EventsResults expected format
-  const displayEvents = events?.map(event => {
-    // Debug: log what we're transforming
-    imgDebug("transforming event", { 
-      slug: event.slug, 
-      title: event.title, 
-      image_url: event.image_url 
-    });
-    
-    return {
-      id: event.id,
-      nom_event: event.title, // Use normalized title
-      description_event: '', // Not available in new format
-      date_debut: event.start_date,
-      date_fin: event.end_date,
-      secteur: event.secteur_labels.join(', '), // Convert array to string
-      nom_lieu: '', // Not available in simplified query
-      ville: event.ville,
-      country: 'France', // Default
-      image_url: event.image_url || '', // Use normalized image_url
-    url_site_officiel: '', // Not available in simplified query
-    tags: [], // Not available
-    tarif: '', // Not available in this query
-    affluence: '', // Not available in this query
+  // Convert CanonicalEvents to Event format for compatibility
+  const displayEvents = events?.map(event => ({
+    id: event.id,
+    nom_event: event.title,
+    description_event: '',
+    date_debut: event.start_date || '',
+    date_fin: event.end_date || '',
+    secteur: event.secteur_labels.join(', '),
+    nom_lieu: event.nom_lieu || '',
+    ville: event.ville || '',
+    country: 'France',
+    url_image: event.image_url || '', // Map from canonical to legacy field
+    url_site_officiel: event.url_site_officiel || '',
+    tags: [],
+    tarif: '',
+    affluence: '',
     estimated_exhibitors: undefined,
-    is_b2b: false, // Not available in simplified query
+    is_b2b: event.is_b2b,
     type_event: (event.type_code || 'salon') as "salon" | "convention" | "congres" | "conference" | "exposition" | "forum" | "autre",
-    created_at: '', // Not selected
-    updated_at: '', // Not selected
+    created_at: '',
+    updated_at: '',
     last_scraped_at: undefined,
     scraped_from: undefined,
-    rue: '', // Not available in simplified query
-    code_postal: '', // Not available in simplified query
-    visible: event.visible,
+    rue: event.rue || '',
+    code_postal: event.code_postal || '',
+    visible: event.visible || true,
     slug: event.slug,
-    sectors: [] // No sectors info available in simplified query
-    };
-  }) || [];
+    sectors: []
+  })) || [];
 
   const hasActiveFilters = !!(filters.sector || filters.type || filters.month || filters.region);
 

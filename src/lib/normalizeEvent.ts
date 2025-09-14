@@ -1,32 +1,5 @@
 import { coalesceImageUrl } from "@/lib/images";
-import { imgDebug } from "@/lib/imgDebug";
-
-export type CanonicalEvent = {
-  id: string;
-  title: string;
-  slug: string;
-  start_date: string | null;
-  end_date: string | null;
-  type_code: string | null;
-  secteur_labels: string[];
-  ville: string | null;
-  pays: string | null;
-  visible: boolean | null;
-  image_url: string | null;
-  postal_code: string | null;
-  // Champs additionnels pour compatibilité
-  nom_event: string;
-  date_debut: string | null;
-  date_fin: string | null;
-  secteur: any;
-  nom_lieu: string | null;
-  url_image: string | null;
-  url_site_officiel: string | null;
-  is_b2b: boolean;
-  type_event: string | null;
-  rue: string | null;
-  code_postal: string | null;
-};
+import type { CanonicalEvent } from "@/types/lotexpo";
 
 function first<T>(...vals: T[]): T | null {
   for (const v of vals) if (v !== undefined && v !== null && String(v).trim?.() !== "") return v as T;
@@ -53,14 +26,6 @@ export function normalizeEventRow(row: any): CanonicalEvent {
   const image_url = coalesceImageUrl(row);
   const postal_code = first(row.code_postal, row.postal_code, row.zip) ?? null;
 
-  // Debug: check if we have url_image but no image_url
-  if (row?.url_image && !image_url) {
-    imgDebug("fixup: url_image present but image_url empty", { 
-      slug: row.slug, 
-      url_image: row.url_image 
-    });
-  }
-
   return {
     id: String(id),
     title: String(title),
@@ -80,7 +45,6 @@ export function normalizeEventRow(row: any): CanonicalEvent {
     date_fin: end_date,
     secteur: row.secteur ?? [],
     nom_lieu: first(row.nom_lieu, row.venue_name, row.location_name, row.venue) ?? null,
-    url_image: image_url ? String(image_url) : null,
     url_site_officiel: first(row.url_site_officiel, row.website, row.official_url, row.url) ?? null,
     is_b2b: Boolean(first(row.is_b2b, row.b2b, row.business) ?? false),
     type_event: type_code,
