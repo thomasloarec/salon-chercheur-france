@@ -98,9 +98,11 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             )}
             
             <img
-              src={event.image_url || '/placeholder.svg'}
+              src={event.image_url && event.image_url.trim().length > 0 ? event.image_url : '/placeholder.svg'}
               alt={`Visuel — ${event.nom_event || 'Événement'}`}
               loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
               className="event-card__image"
               onError={(e) => { 
                 (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; 

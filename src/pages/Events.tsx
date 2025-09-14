@@ -27,7 +27,7 @@ const Events = () => {
     nom_lieu: '', // Not available in simplified query
     ville: event.ville,
     country: 'France', // Default
-    url_image: '', // Not available in simplified query
+    url_image: event.image_url || '', // Use normalized image_url
     url_site_officiel: '', // Not available in simplified query
     tags: [], // Not available
     tarif: '', // Not available in this query

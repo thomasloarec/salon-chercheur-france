@@ -1,4 +1,4 @@
-// src/lib/normalizeEvent.ts
+import { coalesceImageUrl } from "@/lib/images";
 
 export type CanonicalEvent = {
   id: string;
@@ -49,7 +49,7 @@ export function normalizeEventRow(row: any): CanonicalEvent {
   const pays  = first(row.pays, row.country) ?? null;
 
   const visible = row.visible ?? null;
-  const image_url = first(row.url_image, row.image_url, row.cover_url, row.image) ?? null;
+  const image_url = coalesceImageUrl(row);
   const postal_code = first(row.code_postal, row.postal_code, row.zip) ?? null;
 
   return {
