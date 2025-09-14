@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { UrlFilters } from "@/lib/useUrlFilters";
 import { sectorSlugToDbLabels, typeSlugToDbValue } from "@/lib/taxonomy";
+import { regionSlugFromPostal } from "@/lib/postalToRegion";
 import { isOngoingOrUpcoming } from "@/lib/normalizeEvent";
 
 export interface NoveltyRow {
@@ -47,7 +48,7 @@ async function fetchNovelties(
   page: number = 1,
   pageSize: number = 12
 ): Promise<NoveltiesListResponse> {
-  const { sector, type, month } = filters;
+  const { sector, type, month, region } = filters;
 
   let q = supabase
     .from("novelties")
@@ -63,7 +64,6 @@ async function fetchNovelties(
 
   const dbType = typeSlugToDbValue(type);
   if (dbType) q = q.eq("events.type_event", dbType);
-  if (month)  q = q.like("events.date_debut", `%-${month}-%`);
 
   if (sector) {
     const labels = sectorSlugToDbLabels(sector);
@@ -102,14 +102,31 @@ async function fetchNovelties(
     } : undefined
   }));
 
-  // Filter to only show novelties from ongoing or upcoming events
+  // Filter to only show novelties from ongoing or upcoming events with client-side filters
   const filteredResults = results.filter(novelty => {
     if (!novelty.events) return false;
+    
+    // Check if event is ongoing/upcoming
     const event = {
       start_date: novelty.events.date_debut,
       end_date: null, // Not available in this query
     };
-    return isOngoingOrUpcoming(event as any);
+    if (!isOngoingOrUpcoming(event as any)) return false;
+    
+    // Month filter
+    if (month) {
+      const startDate = novelty.events.date_debut;
+      if (!startDate || !startDate.includes(`-${month}-`)) return false;
+    }
+    
+    // Region filter
+    if (region) {
+      const postalCode = novelty.events.code_postal;
+      const eventRegion = regionSlugFromPostal(postalCode);
+      if (eventRegion !== region) return false;
+    }
+    
+    return true;
   });
   
   return {

@@ -76,39 +76,13 @@ export const ALL_MONTHS: Option[] = [
   { value: '11', label: 'Novembre' },{ value: '12', label: 'Décembre' },
 ];
 
-// 4) Régions – table de référence
+// 4) Régions – standardisées avec slugs canoniques
 export async function fetchAllRegions(): Promise<Option[]> {
-  const { data, error } = await supabase
-    .from('regions')
-    .select('code, nom')
-    .order('nom', { ascending: true });
-
-  if (!error && data) {
-    return data
-      .filter(r => r?.code?.trim() && r?.nom?.trim())
-      .map(r => ({ value: r.code, label: r.nom }));
-  }
-
-  console.warn('[filters] regions table missing or error, using fallback');
-  // Fallback: principales régions métropole + DROM
-  return [
-    { value: '11', label: 'Île-de-France' },
-    { value: '84', label: 'Auvergne-Rhône-Alpes' },
-    { value: '27', label: 'Bourgogne-Franche-Comté' },
-    { value: '53', label: 'Bretagne' },
-    { value: '24', label: 'Centre-Val de Loire' },
-    { value: '94', label: 'Corse' },
-    { value: '44', label: 'Grand Est' },
-    { value: '32', label: 'Hauts-de-France' },
-    { value: '28', label: 'Normandie' },
-    { value: '75', label: 'Nouvelle-Aquitaine' },
-    { value: '76', label: 'Occitanie' },
-    { value: '52', label: 'Pays de la Loire' },
-    { value: '93', label: 'Provence-Alpes-Côte d\'Azur' },
-    { value: '01', label: 'Guadeloupe' },
-    { value: '03', label: 'Guyane' },
-    { value: '02', label: 'Martinique' },
-    { value: '06', label: 'Mayotte' },
-    { value: '04', label: 'La Réunion' },
-  ];
+  // Import dynamique pour éviter les cycles
+  const { REGIONS } = await import('@/lib/regions');
+  
+  // Utiliser la taxonomie standardisée des régions
+  return Object.values(REGIONS)
+    .map(r => ({ value: r.slug, label: r.name }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr'));
 }
