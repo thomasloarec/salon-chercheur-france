@@ -11,6 +11,8 @@ export type CanonicalEvent = {
   ville: string | null;
   pays: string | null;
   visible: boolean | null;
+  image_url: string | null;
+  postal_code: string | null;
   // Champs additionnels pour compatibilité
   nom_event: string;
   date_debut: string | null;
@@ -47,6 +49,8 @@ export function normalizeEventRow(row: any): CanonicalEvent {
   const pays  = first(row.pays, row.country) ?? null;
 
   const visible = row.visible ?? null;
+  const image_url = first(row.url_image, row.image_url, row.cover_url, row.image) ?? null;
+  const postal_code = first(row.code_postal, row.postal_code, row.zip) ?? null;
 
   return {
     id: String(id),
@@ -59,19 +63,46 @@ export function normalizeEventRow(row: any): CanonicalEvent {
     ville: ville ? String(ville) : null,
     pays: pays ? String(pays) : null,
     visible: typeof visible === "boolean" ? visible : null,
+    image_url: image_url ? String(image_url) : null,
+    postal_code: postal_code ? String(postal_code) : null,
     // Champs de compatibilité
     nom_event: String(title),
     date_debut: start_date,
     date_fin: end_date,
     secteur: row.secteur ?? [],
     nom_lieu: first(row.nom_lieu, row.venue_name, row.location_name, row.venue) ?? null,
-    url_image: first(row.url_image, row.image_url, row.image, row.photo) ?? null,
+    url_image: image_url ? String(image_url) : null,
     url_site_officiel: first(row.url_site_officiel, row.website, row.official_url, row.url) ?? null,
     is_b2b: Boolean(first(row.is_b2b, row.b2b, row.business) ?? false),
     type_event: type_code,
     rue: first(row.rue, row.street, row.address_street) ?? null,
-    code_postal: first(row.code_postal, row.postal_code, row.zip) ?? null,
+    code_postal: postal_code ? String(postal_code) : null,
   };
+}
+
+// YYYY-MM-DD local (pas UTC)
+export function todayYmdLocal(): string {
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+export function isOngoingOrUpcoming(ev: CanonicalEvent, today = todayYmdLocal()): boolean {
+  const sd = ev.start_date ?? null;
+  const ed = ev.end_date ?? null;
+
+  if (sd && ed) {
+    // en cours si sd <= today <= ed, à venir si sd >= today
+    return (sd <= today && today <= ed) || (sd >= today);
+  }
+  if (sd && !ed) {
+    return sd >= today; // à venir uniquement
+  }
+  if (!sd && ed) {
+    return ed >= today; // on garde si fin ≥ aujourd'hui
+  }
+  return false;
 }
 
 // Helpers de filtre client (fallback)

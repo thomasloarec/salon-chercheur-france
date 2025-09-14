@@ -7,8 +7,10 @@ import {
   matchesMonth,
   matchesSectorLabels,
   matchesType,
+  isOngoingOrUpcoming,
 } from "@/lib/normalizeEvent";
 import { sectorSlugToDbLabels, typeSlugToDbValue } from "@/lib/taxonomy";
+import { regionSlugFromPostal } from "@/lib/franceRegions";
 
 /**
  * On tente:
@@ -51,25 +53,34 @@ async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean)
   return (Array.isArray(data) ? data : []).map(normalizeEventRow);
 }
 
+function matchesRegionClient(ev: CanonicalEvent, wantedSlug: string | null): boolean {
+  if (!wantedSlug) return true;
+  const slug = regionSlugFromPostal(ev.postal_code);
+  return slug === wantedSlug;
+}
+
 async function fetchEvents(filters: UrlFilters): Promise<CanonicalEvent[]> {
   try {
     // Tentative serveur (Secteur + Type seulement)
     const rows = await fetchEventsServer(filters, true);
-    // Appliquer MOIS côté client (évite LIKE sur date)
+    // Appliquer filtres côté client
     const byMonth = rows.filter(ev => matchesMonth(ev, filters.month));
-    console.log("[events] rows:", byMonth.length, "filters:", filters);
-    return byMonth;
+    const byDate = byMonth.filter(ev => isOngoingOrUpcoming(ev));
+    const byRegion = byDate.filter(ev => matchesRegionClient(ev, filters.region));
+    console.log("[events] rows:", byRegion.length, "filters:", filters);
+    return byRegion;
   } catch (e) {
     console.warn("[events] server filters failed, fallback client:", (e as any)?.message ?? e);
     // Fallback: récupérer tout (visible) puis filtrer en mémoire
     const all = await fetchEventsServer({ sector: null, type: null, month: null, region: null }, false);
 
     const byType = all.filter(ev => matchesType(ev, typeSlugToDbValue(filters.type)));
-    const byMonth = byType.filter(ev => matchesMonth(ev, filters.month));
     const wantedLabels = filters.sector ? sectorSlugToDbLabels(filters.sector) : null;
-    const bySector = byMonth.filter(ev => matchesSectorLabels(ev, wantedLabels));
-    // Région : noop pour le moment (pas de champ)
-    return bySector;
+    const bySector = byType.filter(ev => matchesSectorLabels(ev, wantedLabels));
+    const byMonth = bySector.filter(ev => matchesMonth(ev, filters.month));
+    const byDate = byMonth.filter(ev => isOngoingOrUpcoming(ev));
+    const byRegion = byDate.filter(ev => matchesRegionClient(ev, filters.region));
+    return byRegion;
   }
 }
 

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { UrlFilters } from "@/lib/useUrlFilters";
 import { sectorSlugToDbLabels, typeSlugToDbValue } from "@/lib/taxonomy";
+import { isOngoingOrUpcoming } from "@/lib/normalizeEvent";
 
 export interface NoveltyRow {
   id: string;
@@ -100,10 +101,20 @@ async function fetchNovelties(
       code_postal: row.events.code_postal
     } : undefined
   }));
+
+  // Filter to only show novelties from ongoing or upcoming events
+  const filteredResults = results.filter(novelty => {
+    if (!novelty.events) return false;
+    const event = {
+      start_date: novelty.events.date_debut,
+      end_date: null, // Not available in this query
+    };
+    return isOngoingOrUpcoming(event as any);
+  });
   
   return {
-    data: results,
-    total: results.length,
+    data: filteredResults,
+    total: filteredResults.length,
     page,
     pageSize
   };

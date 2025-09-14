@@ -5,6 +5,7 @@ export type TaxoOption = { value: string; label: string };
 export const CANONICAL_SECTORS: TaxoOption[] = [
   { value: "agroalimentaire-boissons", label: "Agroalimentaire & Boissons" },
   { value: "automobile-mobilite", label: "Automobile & Mobilité" }, // ← canonique
+  { value: "btp-construction", label: "BTP & Construction" },
   { value: "commerce-distribution", label: "Commerce & Distribution" },
   { value: "cosmetique-bien-etre", label: "Cosmétique & Bien-être" },
   { value: "education-formation", label: "Éducation & Formation" },
@@ -22,6 +23,7 @@ export const CANONICAL_SECTORS: TaxoOption[] = [
 // Alias pour absorber d'anciens slugs et éviter les doublons dans l'UI & les URLs
 export const SECTOR_ALIASES: Record<string, string> = {
   "automobile-mobilites": "automobile-mobilite", // ← ancien → nouveau
+  "550e8400-e29b-41d4-a716-446655440003": "btp-construction", // ← UUID → slug canonique
 };
 
 // Normalisation universelle d'un slug secteur
@@ -34,6 +36,7 @@ export function normalizeSectorSlug(slug?: string | null) {
 export const SECTOR_DB_LABELS: Record<string, string[]> = {
   "agroalimentaire-boissons": ["Agroalimentaire & Boissons"],
   "automobile-mobilite": ["Automobile & Mobilité"], // NB: BdD = singulier confirmé
+  "btp-construction": ["BTP & Construction"],
   "commerce-distribution": ["Commerce & Distribution"],
   "cosmetique-bien-etre": ["Cosmétique & Bien-être"],
   "education-formation": ["Éducation & Formation"],
