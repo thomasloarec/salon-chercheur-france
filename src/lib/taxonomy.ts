@@ -30,3 +30,24 @@ export function normalizeSectorSlug(slug?: string | null) {
   const trimmed = String(slug).trim();
   return SECTOR_ALIASES[trimmed] ?? trimmed;
 }
+
+// Mapping slug → libellés DB pour filtrage secteur
+export function sectorSlugToDbLabels(slug: string): string[] {
+  const normalized = normalizeSectorSlug(slug);
+  const sector = CANONICAL_SECTORS.find(s => s.value === normalized);
+  if (!sector) return [];
+  
+  // Retourner le label officiel + variantes communes
+  const baseLabel = sector.label;
+  const variations = [baseLabel];
+  
+  // Ajouter des variations communes pour améliorer la compatibilité
+  if (baseLabel.includes("&")) {
+    variations.push(baseLabel.replace("&", "et"));
+  }
+  if (baseLabel.includes(" & ")) {
+    variations.push(baseLabel.replace(" & ", " et "));
+  }
+  
+  return [...new Set(variations)]; // dédupe
+}
