@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { UrlFilters } from "@/lib/useUrlFilters";
+import { sectorSlugToDbLabels, typeSlugToDbValue } from "@/lib/taxonomy";
 
 export interface NoveltyRow {
   id: string;
@@ -39,35 +40,73 @@ export interface NoveltiesListResponse {
   pageSize: number;
 }
 
+
 async function fetchNovelties(
   filters: UrlFilters,
   page: number = 1,
   pageSize: number = 12
 ): Promise<NoveltiesListResponse> {
-  const { sector, type, month, region } = filters;
+  const { sector, type, month } = filters;
 
-  // Utiliser l'edge function existante avec les nouveaux filtres
-  const params: Record<string, string> = {
-    page: page.toString(),
-    pageSize: pageSize.toString(),
-    sort: 'awaited' // tri par popularité
-  };
+  let q = supabase
+    .from("novelties")
+    .select(`
+      id, title, type, media_urls, created_at, event_id, exhibitor_id,
+      events!inner (
+        id, slug, nom_event, date_debut, type_event, secteur, visible, ville, code_postal
+      ),
+      exhibitors ( id, name, slug, logo_url )
+    `)
+    .eq("events.visible", true)
+    .order("created_at", { ascending: false });
 
-  if (sector) params.sector = sector;
-  if (type) params.type = type;
-  if (month) params.month = month;
-  if (region) params.region = region;
+  const dbType = typeSlugToDbValue(type);
+  if (dbType) q = q.eq("events.type_event", dbType);
+  if (month)  q = q.like("events.date_debut", `%-${month}-%`);
 
-  const { data, error } = await supabase.functions.invoke('novelties-list', {
-    body: params
-  });
-
-  if (error) {
-    console.warn("[novelties] edge function error:", error);
-    throw error;
+  if (sector) {
+    const labels = sectorSlugToDbLabels(sector);
+    if (labels.length === 1) {
+      q = q.contains("events.secteur", [labels[0]]);
+    } else if (labels.length > 1) {
+      const parts = labels.map(l => `events.secteur.cs.${JSON.stringify([l])}`);
+      q = q.or(parts.join(","));
+    }
   }
 
-  return data || { data: [], total: 0, page, pageSize };
+  const { data, error } = await q;
+  if (error) {
+    console.warn("[novelties] query error:", error.message);
+    return { data: [], total: 0, page, pageSize };
+  }
+
+  // Map database results to NoveltyRow interface
+  const results: NoveltyRow[] = (data ?? []).map((row: any) => ({
+    id: row.id,
+    title: row.title,
+    type: row.type || '',
+    media_urls: row.media_urls || [],
+    created_at: row.created_at,
+    exhibitor_id: row.exhibitor_id,
+    event_id: row.event_id,
+    exhibitors: row.exhibitors,
+    events: row.events ? {
+      id: row.events.id,
+      nom_event: row.events.nom_event,
+      slug: row.events.slug,
+      ville: row.events.ville || '',
+      date_debut: row.events.date_debut,
+      type_event: row.events.type_event,
+      code_postal: row.events.code_postal
+    } : undefined
+  }));
+  
+  return {
+    data: results,
+    total: results.length,
+    page,
+    pageSize
+  };
 }
 
 interface UseNoveltiesListOptions {

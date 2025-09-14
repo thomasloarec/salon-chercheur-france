@@ -31,23 +31,42 @@ export function normalizeSectorSlug(slug?: string | null) {
   return SECTOR_ALIASES[trimmed] ?? trimmed;
 }
 
+export const SECTOR_DB_LABELS: Record<string, string[]> = {
+  "agroalimentaire-boissons": ["Agroalimentaire & Boissons"],
+  "automobile-mobilite": ["Automobile & Mobilité"], // NB: BdD = singulier confirmé
+  "commerce-distribution": ["Commerce & Distribution"],
+  "cosmetique-bien-etre": ["Cosmétique & Bien-être"],
+  "education-formation": ["Éducation & Formation"],
+  "energie-environnement": ["Énergie & Environnement"],
+  "industrie-production": ["Industrie & Production"],
+  "mode-textile": ["Mode & Textile"],
+  "sante-medical": ["Santé & Médical"],
+  "technologie-innovation": ["Technologie & Innovation"],
+  "tourisme-evenementiel": ["Tourisme & Événementiel"],
+  "finance-assurance-immobilier": ["Finance, Assurance & Immobilier"],
+  "services-entreprises-rh": ["Services aux Entreprises & RH"],
+  "secteur-public-collectivites": ["Secteur Public & Collectivités"],
+};
+
 // Mapping slug → libellés DB pour filtrage secteur
 export function sectorSlugToDbLabels(slug: string): string[] {
-  const normalized = normalizeSectorSlug(slug);
-  const sector = CANONICAL_SECTORS.find(s => s.value === normalized);
-  if (!sector) return [];
-  
-  // Retourner le label officiel + variantes communes
-  const baseLabel = sector.label;
-  const variations = [baseLabel];
-  
-  // Ajouter des variations communes pour améliorer la compatibilité
-  if (baseLabel.includes("&")) {
-    variations.push(baseLabel.replace("&", "et"));
-  }
-  if (baseLabel.includes(" & ")) {
-    variations.push(baseLabel.replace(" & ", " et "));
-  }
-  
-  return [...new Set(variations)]; // dédupe
+  const s = normalizeSectorSlug(slug);
+  const labels = (s && SECTOR_DB_LABELS[s]) || [];
+  const fallback = CANONICAL_SECTORS.find(o => o.value === s)?.label;
+  return labels.length ? labels : (fallback ? [fallback] : []);
+}
+
+/** Types: valeur DB = `type_event` (ex: "salon", "conference", "forum", etc.) */
+export const CANONICAL_EVENT_TYPES = [
+  { value: "salon", label: "Salon" },
+  { value: "conference", label: "Conférence" },
+  { value: "forum", label: "Forum" },
+  { value: "webinar", label: "Webinar" },
+  // Ajoutez si besoin d'autres valeurs EXACTEMENT comme en DB
+];
+
+export function typeSlugToDbValue(slug: string | null): string | null {
+  if (!slug) return null;
+  // Ici, la value UI = la valeur DB (ex.: "salon") → renvoyer tel quel
+  return slug;
 }
