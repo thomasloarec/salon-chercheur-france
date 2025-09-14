@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import FavoriteButton from './FavoriteButton';
 import { EventSectors } from '@/components/ui/event-sectors';
 import { formatAddress } from '@/utils/formatAddress';
+import { EVENT_PLACEHOLDER } from '@/lib/images';
+import { imgDebug } from '@/lib/imgDebug';
 
 interface EventCardProps {
   event: Event & { 
@@ -98,14 +100,28 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             )}
             
             <img
-              src={event.image_url && event.image_url.trim().length > 0 ? event.image_url : '/placeholder.svg'}
+              src={(() => {
+                const srcCandidate = event.image_url?.trim();
+                const finalSrc = srcCandidate && srcCandidate.length > 0 ? srcCandidate : EVENT_PLACEHOLDER;
+                
+                // Debug: log what's happening with the image
+                imgDebug("card src", { 
+                  slug: event.slug || event.nom_event, 
+                  srcCandidate, 
+                  finalSrc,
+                  event_image_url: event.image_url,
+                  event_url_image: (event as any).url_image
+                });
+                
+                return finalSrc;
+              })()}
               alt={`Visuel — ${event.nom_event || 'Événement'}`}
               loading="lazy"
               decoding="async"
               referrerPolicy="no-referrer"
               className="event-card__image"
               onError={(e) => { 
-                (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; 
+                (e.currentTarget as HTMLImageElement).src = EVENT_PLACEHOLDER; 
               }}
             />
             

@@ -1,4 +1,5 @@
 import { coalesceImageUrl } from "@/lib/images";
+import { imgDebug } from "@/lib/imgDebug";
 
 export type CanonicalEvent = {
   id: string;
@@ -51,6 +52,14 @@ export function normalizeEventRow(row: any): CanonicalEvent {
   const visible = row.visible ?? null;
   const image_url = coalesceImageUrl(row);
   const postal_code = first(row.code_postal, row.postal_code, row.zip) ?? null;
+
+  // Debug: check if we have url_image but no image_url
+  if (row?.url_image && !image_url) {
+    imgDebug("fixup: url_image present but image_url empty", { 
+      slug: row.slug, 
+      url_image: row.url_image 
+    });
+  }
 
   return {
     id: String(id),

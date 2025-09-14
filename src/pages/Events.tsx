@@ -6,6 +6,7 @@ import { EventsResults } from '@/components/EventsResults';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
+import { imgDebug } from '@/lib/imgDebug';
 
 const Events = () => {
   const filters = useUrlFilters(); // ← source de vérité
@@ -17,17 +18,25 @@ const Events = () => {
   }, []);
 
   // Transform events to match EventsResults expected format
-  const displayEvents = events?.map(event => ({
-    id: event.id,
-    nom_event: event.title, // Use normalized title
-    description_event: '', // Not available in new format
-    date_debut: event.start_date,
-    date_fin: event.end_date,
-    secteur: event.secteur_labels.join(', '), // Convert array to string
-    nom_lieu: '', // Not available in simplified query
-    ville: event.ville,
-    country: 'France', // Default
-    url_image: event.image_url || '', // Use normalized image_url
+  const displayEvents = events?.map(event => {
+    // Debug: log what we're transforming
+    imgDebug("transforming event", { 
+      slug: event.slug, 
+      title: event.title, 
+      image_url: event.image_url 
+    });
+    
+    return {
+      id: event.id,
+      nom_event: event.title, // Use normalized title
+      description_event: '', // Not available in new format
+      date_debut: event.start_date,
+      date_fin: event.end_date,
+      secteur: event.secteur_labels.join(', '), // Convert array to string
+      nom_lieu: '', // Not available in simplified query
+      ville: event.ville,
+      country: 'France', // Default
+      url_image: event.image_url || '', // Use normalized image_url
     url_site_officiel: '', // Not available in simplified query
     tags: [], // Not available
     tarif: '', // Not available in this query
@@ -44,7 +53,8 @@ const Events = () => {
     visible: event.visible,
     slug: event.slug,
     sectors: [] // No sectors info available in simplified query
-  })) || [];
+    };
+  }) || [];
 
   const hasActiveFilters = !!(filters.sector || filters.type || filters.month || filters.region);
 

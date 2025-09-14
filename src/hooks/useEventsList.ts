@@ -11,6 +11,7 @@ import {
 } from "@/lib/normalizeEvent";
 import { sectorSlugToDbLabels, typeSlugToDbValue } from "@/lib/taxonomy";
 import { regionSlugFromPostal } from "@/lib/postalToRegion";
+import { imgDebug } from "@/lib/imgDebug";
 
 /**
  * On tente:
@@ -50,7 +51,24 @@ async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean)
 
   const { data, error } = await q;
   if (error) throw error;
-  return (Array.isArray(data) ? data : []).map(normalizeEventRow);
+  
+  // Debug: log raw data from Supabase
+  imgDebug("rows: first 3 raw", data?.slice(0,3)?.map(r => ({
+    slug: r.slug, 
+    url_image: r.url_image, 
+    nom_event: r.nom_event
+  })));
+  
+  const normalized = (Array.isArray(data) ? data : []).map(normalizeEventRow);
+  
+  // Debug: log normalized data
+  imgDebug("normalized: first 3", normalized.slice(0,3).map(e => ({
+    slug: e.slug, 
+    title: e.title, 
+    image_url: e.image_url
+  })));
+  
+  return normalized;
 }
 
 function matchesRegion(ev: CanonicalEvent, wantedSlug: string | null): boolean {
