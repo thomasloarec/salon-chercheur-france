@@ -51,9 +51,141 @@ Deno.serve(async (req) => {
     const url = new URL(req.url)
     const pathSegments = url.pathname.split('/').filter(segment => segment)
 
+    const requestData = await req.json()
+    const { action } = requestData
+
     // Handle different endpoints
     if (req.method === 'POST') {
-      if (pathSegments.includes('claim')) {
+      if (action === 'list') {
+        // GET exhibitors list (via POST for consistency)
+        const { event_id, search } = requestData
+
+        if (!event_id) {
+          return new Response(
+            JSON.stringify({ error: 'event_id is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Get exhibitors participating in this event
+        let query = supabase
+          .from('participation')
+          .select(`
+            exhibitors!inner(
+              id,
+              name,
+              website,
+              logo_url,
+              approved,
+              stand_info
+            )
+          `)
+          .eq('id_event', event_id)
+
+        const { data: participations, error } = await query
+
+        if (error) {
+          return new Response(
+            JSON.stringify({ error: 'Failed to fetch exhibitors' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Extract and filter exhibitors
+        let exhibitors = (participations || [])
+          .map(p => p.exhibitors)
+          .filter(Boolean)
+
+        // Apply search filter if provided
+        if (search && search.trim()) {
+          const searchLower = search.toLowerCase()
+          exhibitors = exhibitors.filter(exhibitor => 
+            exhibitor.name.toLowerCase().includes(searchLower) ||
+            (exhibitor.website && exhibitor.website.toLowerCase().includes(searchLower))
+          )
+        }
+
+        // Sort alphabetically
+        exhibitors.sort((a, b) => a.name.localeCompare(b.name))
+
+        return new Response(
+          JSON.stringify(exhibitors),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+
+      } else if (action === 'create') {
+        // Create new exhibitor
+        const { name, website, stand_info, event_id } = requestData
+
+        if (!name || !event_id) {
+          return new Response(
+            JSON.stringify({ error: 'name and event_id are required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Create exhibitor
+        const { data: newExhibitor, error: createError } = await supabase
+          .from('exhibitors')
+          .insert({
+            name,
+            website: website || null,
+            stand_info: stand_info || null,
+            approved: false, // New exhibitors need approval
+            owner_user_id: user.id
+          })
+          .select()
+          .single()
+
+        if (createError) {
+          return new Response(
+            JSON.stringify({ error: 'Failed to create exhibitor' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Create participation record
+        await supabase
+          .from('participation')
+          .insert({
+            id_event: event_id,
+            id_exposant: newExhibitor.id
+          })
+
+        // Auto-approve claim if email domain matches website domain
+        let claimStatus = 'pending'
+        if (website && user.email) {
+          const userDomain = user.email.split('@')[1]?.toLowerCase()
+          const websiteDomain = website.replace(/^https?:\/\/(www\.)?/, '').split('/')[0].toLowerCase()
+          
+          if (userDomain && websiteDomain && websiteDomain.includes(userDomain)) {
+            claimStatus = 'approved'
+            // Update exhibitor as approved
+            await supabase
+              .from('exhibitors')
+              .update({ approved: true })
+              .eq('id', newExhibitor.id)
+          }
+        }
+
+        // Create claim request
+        await supabase
+          .from('exhibitor_claim_requests')
+          .insert({
+            exhibitor_id: newExhibitor.id,
+            requester_user_id: user.id,
+            status: claimStatus
+          })
+
+        return new Response(
+          JSON.stringify({ 
+            ...newExhibitor,
+            approved: claimStatus === 'approved'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+
+      } else if (pathSegments.includes('claim')) {
         // POST /exhibitors/claim
         const { exhibitor_id }: ClaimExhibitorRequest = await req.json()
 

@@ -109,45 +109,84 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
     }
   };
 
-  // Handle authentication flow
+  // Handle authentication flow - inline signup
   const handleAuthenticationFlow = async () => {
     const userData = state.step1Data.user;
     if (!userData?.email) return;
 
-    // Validate professional email
-    const domain = userData.email.split('@')[1]?.toLowerCase();
-    if (domain && CONSUMER_EMAIL_DOMAINS.includes(domain)) {
-      toast({
-        title: 'Email non professionnel',
-        description: 'Veuillez utiliser votre email professionnel d\'entreprise.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     try {
       setLoading(true);
       
-      const { error } = await signIn(userData.email, '');
+      // Sign up with temporary password and user metadata
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: Math.random().toString(36).slice(-12), // Random password
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+            phone: userData.phone,
+            role: userData.role,
+          }
+        }
+      });
       
       if (error) {
         toast({
-          title: 'Erreur d\'authentification',
+          title: 'Erreur d\'inscription',
           description: error.message,
           variant: 'destructive'
         });
-      } else {
-        toast({
-          title: 'Email envoyé',
-          description: 'Consultez votre boîte mail pour vous connecter. Vous pourrez ensuite continuer l\'ajout de votre nouveauté.',
-        });
-        
-        saveState(); // Save before user navigates away
+        return;
       }
+
+      // Send password reset link for the user to set their password
+      await supabase.auth.resetPasswordForEmail(userData.email, {
+        redirectTo: `${window.location.origin}/`
+      });
+
+      // Create exhibitor if needed
+      if (state.step1Data.exhibitor && 'name' in state.step1Data.exhibitor) {
+        const { data: newExhibitor, error: exhibitorError } = await supabase.functions.invoke('exhibitors-manage', {
+          body: {
+            action: 'create',
+            name: state.step1Data.exhibitor.name,
+            website: state.step1Data.exhibitor.website,
+            stand_info: 'stand_info' in state.step1Data.exhibitor ? state.step1Data.exhibitor.stand_info : undefined,
+            event_id: event.id
+          }
+        });
+
+        if (!exhibitorError && newExhibitor) {
+          // Update state with created exhibitor
+          setState(prev => ({
+            ...prev,
+            step1Data: {
+              ...prev.step1Data,
+              exhibitor: { 
+                id: newExhibitor.id, 
+                name: newExhibitor.name, 
+                website: newExhibitor.website,
+                approved: newExhibitor.approved
+              }
+            }
+          }));
+        }
+      }
+
+      toast({
+        title: 'Compte créé',
+        description: 'Un email de vérification et de définition de mot de passe a été envoyé. Vous pouvez continuer l\'ajout de votre nouveauté.',
+      });
+      
+      saveState();
+      setCurrentStep(2);
+      
     } catch (error) {
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'envoyer l\'email de connexion.',
+        description: 'Impossible de créer le compte.',
         variant: 'destructive'
       });
     } finally {
@@ -197,15 +236,16 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         // Create new exhibitor
         const { data: newExhibitor, error: exhibitorError } = await supabase.functions.invoke('exhibitors-manage', {
           body: {
+            action: 'create',
             name: step1.exhibitor.name,
             website: step1.exhibitor.website || null,
-            stand_info: step1.exhibitor.stand_info || null,
-            // TODO: Handle logo upload
+            stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info || null : null,
+            event_id: event.id
           }
         });
 
         if (exhibitorError || !newExhibitor) {
-          throw new Error('Impossible de créer l\'exposant');
+          throw new Error(exhibitorError?.message || 'Impossible de créer l\'exposant');
         }
 
         exhibitorId = newExhibitor.id;
@@ -227,21 +267,18 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         return;
       }
 
-      // Create novelty record
-      const { data: novelty, error: noveltyError } = await supabase
-        .from('novelties')
-        .insert({
+      // Create novelty via edge function
+      const { data: novelty, error: noveltyError } = await supabase.functions.invoke('novelties-create', {
+        body: {
           event_id: event.id,
           exhibitor_id: exhibitorId,
           title: step2.title,
           type: step2.type,
-          reason_1: step2.reason, // Map to reason_1 for now
-          images_count: step2.images.length,
-          status: exhibitorApproved ? 'Published' : 'pending',
-          created_by: user!.id
-        })
-        .select()
-        .single();
+          reason_1: step2.reason,
+          images: step2.images.map((_, i) => ({ position: i })), // Placeholder for images
+          brochure: step2.brochure ? { filename: 'resource.pdf' } : null
+        }
+      });
 
       if (noveltyError || !novelty) {
         throw new Error('Impossible de créer la nouveauté');
@@ -322,7 +359,6 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       }
 
     } catch (error) {
-      console.error('Error submitting novelty:', error);
       toast({
         title: 'Erreur',
         description: error instanceof Error ? error.message : 'Impossible de soumettre la nouveauté',
@@ -381,10 +417,13 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Ajouter une nouveauté</DialogTitle>
-        </DialogHeader>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="novelty-stepper-description">
+          <DialogHeader>
+            <DialogTitle>Ajouter une nouveauté</DialogTitle>
+          </DialogHeader>
+          <div id="novelty-stepper-description" className="sr-only">
+            Formulaire en 2 étapes pour ajouter une nouveauté à un événement
+          </div>
 
         {/* Progress indicator */}
         <div className="space-y-4">

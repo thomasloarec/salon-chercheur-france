@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Step1Data } from '@/lib/validation/noveltySchemas';
+import { step1Schema, CONSUMER_EMAIL_DOMAINS } from '@/lib/validation/noveltySchemas';
 import type { Event } from '@/types/event';
 
 interface DbExhibitor {
@@ -69,11 +70,14 @@ export default function Step1ExhibitorAndUser({
     const hasExhibitor = selectedExhibitor || (newExhibitorData.name && newExhibitorData.website);
     const hasUserData = !!user || (!!(userData.first_name && userData.last_name && userData.email && userData.phone && userData.role));
     
-    const isValid = hasExhibitor && hasUserData;
+    // Validate professional email if provided
+    const emailValid = !userData.email || isProfessionalEmail(userData.email);
+    
+    const isValid = hasExhibitor && hasUserData && emailValid;
     onValidationChange(isValid);
 
     // Update parent data
-    if (hasExhibitor && hasUserData) {
+    if (hasExhibitor && hasUserData && emailValid) {
       const exhibitorData = selectedExhibitor 
         ? { id: selectedExhibitor.id, name: selectedExhibitor.name, website: selectedExhibitor.website, approved: selectedExhibitor.approved }
         : { name: newExhibitorData.name, website: newExhibitorData.website, stand_info: newExhibitorData.stand_info, logo: newExhibitorData.logo };
@@ -85,17 +89,22 @@ export default function Step1ExhibitorAndUser({
     }
   }, [selectedExhibitor, newExhibitorData, userData, user, onChange, onValidationChange]);
 
+  // Check if email is professional
+  const isProfessionalEmail = (email: string) => {
+    const domain = email.split('@')[1]?.toLowerCase();
+    return domain && !CONSUMER_EMAIL_DOMAINS.includes(domain);
+  };
+
   const loadExhibitors = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke('exhibitors-manage', {
+      const { data, error } = await supabase.functions.invoke('exhibitors-by-event', {
         body: { event_id: event.id, search: searchQuery }
       });
 
       if (error) throw error;
-      setExhibitors(data || []);
+      setExhibitors(data?.exhibitors || []);
     } catch (error) {
-      console.error('Error loading exhibitors:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les exposants',
@@ -183,9 +192,11 @@ export default function Step1ExhibitorAndUser({
                     )}
                   </div>
                 </div>
-                <Badge variant={selectedExhibitor.approved ? "default" : "secondary"}>
-                  {selectedExhibitor.approved ? 'Approuvé' : 'En validation'}
-                </Badge>
+                <div>
+                  <Badge variant={selectedExhibitor.approved ? "default" : "secondary"}>
+                    {selectedExhibitor.approved ? 'Approuvé' : 'En validation'}
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -351,7 +362,13 @@ export default function Step1ExhibitorAndUser({
                 value={userData.email}
                 onChange={(e) => setUserData(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="votre.email@entreprise.com"
+                className={userData.email && !isProfessionalEmail(userData.email) ? 'border-destructive' : ''}
               />
+              {userData.email && !isProfessionalEmail(userData.email) && (
+                <p className="text-xs text-destructive mt-1">
+                  Utilisez votre email professionnel d'entreprise
+                </p>
+              )}
             </div>
 
             <div>
