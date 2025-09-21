@@ -93,9 +93,27 @@ export const useCrmConnections = () => {
 
   // Connecter un CRM (autorisé même sans être connecté)
   const connectCrm = async (provider: CrmProvider) => {
-    console.log('🔄 useCrmConnections: Initiation connexion', provider, 'user:', user ? 'connecté' : 'anonyme');
-
     setLoading(true);
+    
+    let checkClosedInterval: NodeJS.Timeout | null = null;
+    let autoCleanup: NodeJS.Timeout | null = null;
+    let handleMessage: ((event: MessageEvent) => Promise<void>) | null = null;
+    
+    const cleanup = () => {
+      if (checkClosedInterval) {
+        clearInterval(checkClosedInterval);
+        checkClosedInterval = null;
+      }
+      if (autoCleanup) {
+        clearTimeout(autoCleanup);
+        autoCleanup = null;
+      }
+      if (handleMessage) {
+        window.removeEventListener('message', handleMessage);
+        handleMessage = null;
+      }
+    };
+    
     try {
       // Log des informations de contexte pour debug CORS
       console.log('🌐 CORS Debug Info:', {
@@ -111,7 +129,6 @@ export const useCrmConnections = () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
           headers.Authorization = `Bearer ${session.access_token}`;
-          console.log('🔑 Authorization header ajouté');
         }
       }
 
@@ -121,8 +138,6 @@ export const useCrmConnections = () => {
       });
 
       if (error) {
-        console.error('❌ OAuth init failed:', { error, data, provider });
-        
         // Gestion spécifique des erreurs OAuth
         let userMessage = "Erreur lors de la récupération de l'URL";
         if (error.message?.includes('CONFIG_MISSING')) {
@@ -133,11 +148,8 @@ export const useCrmConnections = () => {
       }
 
       if (!data.installUrl) {
-        console.error('❌ OAuth init failed: No installUrl in response', data);
         throw new Error('URL d\'autorisation manquante');
       }
-
-      console.log('✅ OAuth URL récupérée:', data.installUrl.slice(0, 50) + '...');
 
       // 2. Ouvrir popup centrée
       const popup = window.open(
@@ -209,20 +221,28 @@ export const useCrmConnections = () => {
 
       window.addEventListener('message', handleMessage);
 
-      // Vérifier si le popup a été fermé manuellement
-      const checkClosed = setInterval(() => {
+      // Cleanup intervals and listeners
+      let checkClosedInterval: NodeJS.Timeout;
+      checkClosedInterval = setInterval(() => {
         if (popup?.closed) {
-          clearInterval(checkClosed);
+          clearInterval(checkClosedInterval);
           window.removeEventListener('message', handleMessage);
         }
       }, 1000);
 
+      // Auto-cleanup after 5 minutes
+      const autoCleanup = setTimeout(() => {
+        clearInterval(checkClosedInterval);
+        window.removeEventListener('message', handleMessage);
+        if (popup && !popup.closed) {
+          popup.close();
+        }
+      }, 5 * 60 * 1000);
+
     } catch (error) {
-      console.error('🔴 Connect CRM Error:', {
-        provider,
-        error: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
-      });
+      if (checkClosedInterval) clearInterval(checkClosedInterval);
+      if (autoCleanup) clearTimeout(autoCleanup);
+      if (handleMessage) window.removeEventListener('message', handleMessage);
       
       toast({
         title: "Erreur",

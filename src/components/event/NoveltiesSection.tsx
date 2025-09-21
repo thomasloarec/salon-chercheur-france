@@ -39,29 +39,40 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     enabled: !!event.id
   });
 
-  // Update novelties when data changes
+  // Update novelties when data changes - with stable comparison
   useEffect(() => {
-    if (noveltiesData?.data) {
+    if (noveltiesData?.data && noveltiesData.data.length > 0) {
       if (page === 1) {
-        setAllNovelties(noveltiesData.data);
-        setCurrentNoveltyIndex(0);
+        // Only update if data actually changed 
+        setAllNovelties(prev => {
+          const newData = noveltiesData.data;
+          if (JSON.stringify(prev) === JSON.stringify(newData)) return prev;
+          setCurrentNoveltyIndex(0);
+          return newData;
+        });
       } else {
         setAllNovelties(prev => [...prev, ...noveltiesData.data]);
       }
     }
-  }, [noveltiesData, page]);
+  }, [noveltiesData?.data, page]);
 
-  // Update URL with sort param
+  // Update URL with sort param - prevent loops
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (sortBy === 'awaited') {
-      params.delete('sort');
-    } else {
-      params.set('sort', sortBy);
-    }
+    const currentSort = params.get('sort');
+    const shouldUpdateUrl = (sortBy === 'recent' && currentSort !== 'recent') || 
+                           (sortBy === 'awaited' && currentSort !== null);
     
-    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-    window.history.replaceState({}, '', newUrl);
+    if (shouldUpdateUrl) {
+      if (sortBy === 'awaited') {
+        params.delete('sort');
+      } else {
+        params.set('sort', sortBy);
+      }
+      
+      const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+      window.history.replaceState({}, '', newUrl);
+    }
   }, [sortBy]);
 
   const handleLoadMore = () => {
@@ -70,10 +81,10 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   };
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && loadingMore) {
       setLoadingMore(false);
     }
-  }, [isLoading]);
+  }, [isLoading, loadingMore]);
 
   const hasMore = noveltiesData ? allNovelties.length < noveltiesData.total : false;
   const currentNovelty = allNovelties[currentNoveltyIndex];

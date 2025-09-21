@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ScrollToTop from '@/components/ScrollToTop';
@@ -27,19 +28,6 @@ import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
 import NotFound from '@/pages/NotFound';
 import './App.css';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      retry: 1,
-      staleTime: 60_000,
-      gcTime: 5 * 60_000,
-      refetchInterval: false,
-    },
-  },
-});
 
 function App() {
   return (

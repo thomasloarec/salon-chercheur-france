@@ -38,13 +38,13 @@ interface Novelty {
 const HOVER_CYCLE_MS = 3000;
 
 export default function Nouveautes() {
-  const filters = useUrlFilters(); // ← source de vérité
+  const { filters, filtersKey } = useUrlFilters(); // ← source de vérité
   const [page, setPage] = useState(1);
   
   // Reset page when filters change
   React.useEffect(() => {
     setPage(1);
-  }, [filters]);
+  }, [filtersKey]);
   
   const { data: noveltiesResponse, isLoading, error, refetch } = useNoveltiesList(filters, {
     page,

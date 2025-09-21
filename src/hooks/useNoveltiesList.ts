@@ -77,7 +77,6 @@ async function fetchNovelties(
 
   const { data, error } = await q;
   if (error) {
-    console.warn("[novelties] query error:", error.message);
     return { data: [], total: 0, page, pageSize };
   }
 
@@ -150,7 +149,7 @@ export function useNoveltiesList(
   const { page = 1, pageSize = 12, enabled = true } = options;
 
   return useQuery({
-    queryKey: ["novelties:list", filters, page, pageSize], // ← clé sensible aux filtres
+    queryKey: ["novelties:list", filters.sector ?? 'all', filters.type ?? 'all', filters.month ?? 'all', filters.region ?? 'all', page, pageSize], // ← clé primitive stable
     queryFn: () => fetchNovelties(filters, page, pageSize),
     staleTime: 30_000,
     enabled,

@@ -17,7 +17,7 @@ function norm(v: string | null): string | null {
   return trimmed === "" || trimmed === SENTINEL_ALL ? null : trimmed;
 }
 
-export function useUrlFilters(): UrlFilters {
+export function useUrlFilters() {
   const [sp] = useSearchParams();
 
   // lecture + normalisation
@@ -29,5 +29,14 @@ export function useUrlFilters(): UrlFilters {
   const rawRegion = norm(sp.get("region"));
   const region = rawRegion ? normalizeRegion(rawRegion) : null;
 
-  return useMemo(() => ({ sector, type, month, region }), [sector, type, month, region]);
+  const filtersKey = useMemo(() => [
+    sector ?? 'all',
+    type ?? 'all', 
+    month ?? 'all',
+    region ?? 'all'
+  ], [sector, type, month, region]);
+
+  const filters = useMemo(() => ({ sector, type, month, region }), [sector, type, month, region]);
+
+  return { filters, filtersKey };
 }

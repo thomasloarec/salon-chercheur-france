@@ -72,7 +72,7 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
   } = params;
 
   return useQuery({
-    queryKey: ['novelties', { event_id, sort, page, pageSize, sector, type, month, region }],
+    queryKey: ['novelties', event_id ?? 'all', sort, page, pageSize, sector ?? 'all', type ?? 'all', month ?? 'all', region ?? 'all'],
     queryFn: async (): Promise<NoveltiesResponse> => {
       const { data, error } = await supabase.functions.invoke('novelties-list', {
         body: {
@@ -88,7 +88,6 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
       });
 
       if (error) {
-        console.error('Error fetching novelties:', error);
         throw error;
       }
 
@@ -122,8 +121,6 @@ export const useCreateNovelty = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Error creating novelty:', error);
-      
       if (error.code === 'LIMIT_REACHED') {
         toast({
           title: 'Limite atteinte',
@@ -187,7 +184,6 @@ export const useToggleRoute = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Error toggling route:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible de modifier votre parcours.',

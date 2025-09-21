@@ -108,14 +108,26 @@ export const useHubSpotOAuth = () => {
         window.addEventListener('message', messageHandler);
 
         // Clean up if popup is closed manually
-        const checkClosed = setInterval(() => {
+        let checkClosedInterval: NodeJS.Timeout;
+        checkClosedInterval = setInterval(() => {
           if (popup.closed) {
-            clearInterval(checkClosed);
+            clearInterval(checkClosedInterval);
             window.removeEventListener('message', messageHandler);
             clearOAuthState();
             reject(new Error('OAuth cancelled by user'));
           }
         }, 1000);
+        
+        // Auto-cleanup after 5 minutes
+        const autoCleanup = setTimeout(() => {
+          clearInterval(checkClosedInterval);
+          window.removeEventListener('message', messageHandler);
+          if (!popup.closed) {
+            popup.close();
+          }
+          clearOAuthState();
+          reject(new Error('OAuth timeout'));
+        }, 5 * 60 * 1000);
       });
 
     } catch (err) {

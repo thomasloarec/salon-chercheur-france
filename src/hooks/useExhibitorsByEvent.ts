@@ -12,14 +12,11 @@ export const useExhibitorsByEvent = (eventSlug: string, searchQuery?: string) =>
         });
 
         if (error) {
-          console.error('Error fetching exhibitors by event:', error);
           throw new Error(`Failed to fetch exhibitors: ${error.message}`);
         }
 
         return data;
       } catch (error: any) {
-        console.warn('Edge function failed, trying fallback:', error);
-        
         // Fallback: direct table query
         try {
           // First get event ID from slug
@@ -61,7 +58,6 @@ export const useExhibitorsByEvent = (eventSlug: string, searchQuery?: string) =>
             total: exhibitors.length
           };
         } catch (fallbackError) {
-          console.warn('Fallback failed too, returning empty:', fallbackError);
           return { exhibitors: [], total: 0 };
         }
       }

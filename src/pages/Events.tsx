@@ -8,7 +8,7 @@ import Footer from '@/components/Footer';
 import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
 
 const Events = () => {
-  const filters = useUrlFilters(); // ← source de vérité
+  const { filters, filtersKey } = useUrlFilters(); // ← source de vérité
   const { data: events, isLoading, error } = useEventsList(filters);
 
   // Scroll to top when component mounts
