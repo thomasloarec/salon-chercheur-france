@@ -10,9 +10,11 @@ interface CreateNoveltyRequest {
   exhibitor_id: string
   title: string
   type: 'Launch' | 'Update' | 'Demo' | 'Special_Offer' | 'Partnership' | 'Innovation'
-  reason_1: string
-  images?: { position: number }[]
-  brochure?: { filename: string }
+  reason: string
+  images: string[]
+  brochure_pdf_url?: string
+  stand_info?: string
+  created_by: string
 }
 
 // Validation function matching client-side schema
@@ -28,12 +30,16 @@ function validateNoveltyData(data: any): { valid: boolean; errors: Record<string
     errors.type = 'Type de nouveauté requis'
   }
   
-  if (!data.reason_1 || data.reason_1.length < 10 || data.reason_1.length > 500) {
-    errors.reason_1 = 'Raison requise (10-500 caractères)'
+  if (!data.reason || data.reason.length < 10 || data.reason.length > 500) {
+    errors.reason = 'Raison requise (10-500 caractères)'
   }
   
   if (data.images && data.images.length > 3) {
     errors.images = 'Maximum 3 images autorisées'
+  }
+  
+  if (!data.event_id || !data.exhibitor_id) {
+    errors.general = 'Informations manquantes'
   }
   
   return { valid: Object.keys(errors).length === 0, errors }
@@ -74,12 +80,12 @@ Deno.serve(async (req) => {
     const validation = validateNoveltyData(requestData)
     if (!validation.valid) {
       return new Response(
-        JSON.stringify({ error: 'Validation failed', field_errors: validation.errors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'validation_failed', fields: validation.errors }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const { event_id, exhibitor_id, title, type, reason_1 } = requestData
+    const { event_id, exhibitor_id, title, type, reason, images, brochure_pdf_url, stand_info } = requestData
 
     // Check if user is admin
     const { data: profile } = await supabase
@@ -165,10 +171,12 @@ Deno.serve(async (req) => {
         exhibitor_id,
         title,
         type,
-        reason_1,
-        images_count: requestData.images?.length || 0,
+        reason_1: reason,
+        images_count: images?.length || 0,
         status,
-        created_by: user.id
+        created_by: user.id,
+        stand_info,
+        brochure_pdf_url
       })
       .select(`
         *,

@@ -62,7 +62,7 @@ export const step1Schema = z.object({
 // Step 2: Novelty Details
 export const step2Schema = z.object({
   title: z.string()
-    .min(1, 'Titre requis')
+    .min(3, 'Titre requis (min 3 caractères)')
     .max(120, 'Titre trop long (max 120 caractères)'),
   
   type: z.enum(NOVELTY_TYPES).refine(
@@ -71,7 +71,7 @@ export const step2Schema = z.object({
   ),
   
   reason: z.string()
-    .min(1, 'Expliquez pourquoi c\'est intéressant')
+    .min(10, 'Expliquez pourquoi c\'est intéressant (min 10 caractères)')
     .max(500, 'Description trop longue (max 500 caractères)'),
   
   images: z.array(z.union([z.instanceof(File), z.string()]))

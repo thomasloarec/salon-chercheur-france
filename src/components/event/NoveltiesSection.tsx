@@ -117,14 +117,14 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2">Nouveautés</h2>
-            <p className="text-muted-foreground">
+            <div className="text-muted-foreground">
               Découvrez les innovations présentées lors de cet événement
               {noveltiesData && (
                 <Badge variant="secondary" className="ml-2">
                   {noveltiesData.total} nouveauté{noveltiesData.total !== 1 ? 's' : ''}
                 </Badge>
               )}
-            </p>
+            </div>
           </div>
           
           <AddNoveltyButton event={event} />

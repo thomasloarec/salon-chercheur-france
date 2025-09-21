@@ -21,12 +21,14 @@ interface Step2NoveltyDetailsProps {
   data: Partial<Step2Data>;
   onChange: (data: Partial<Step2Data>) => void;
   onValidationChange: (isValid: boolean) => void;
+  fieldErrors?: Record<string, string>;
 }
 
 export default function Step2NoveltyDetails({
   data,
   onChange,
-  onValidationChange
+  onValidationChange,
+  fieldErrors
 }: Step2NoveltyDetailsProps) {
   const [formData, setFormData] = useState({
     title: data.title || '',
@@ -39,10 +41,10 @@ export default function Step2NoveltyDetails({
   // Validate form and update parent
   useEffect(() => {
     const isValid = 
-      formData.title.trim().length > 0 &&
+      formData.title.trim().length >= 3 &&
       formData.title.length <= 120 &&
       formData.type.length > 0 &&
-      formData.reason.trim().length > 0 &&
+      formData.reason.trim().length >= 10 &&
       formData.reason.length <= 500 &&
       formData.images.length <= 3;
 
@@ -83,10 +85,14 @@ export default function Step2NoveltyDetails({
             onChange={(e) => updateField('title', e.target.value)}
             placeholder="Nom de votre nouveauté"
             maxLength={120}
+            className={fieldErrors?.title ? "border-destructive" : ""}
           />
+          {fieldErrors?.title && (
+            <p className="text-xs text-destructive mt-1">{fieldErrors.title}</p>
+          )}
           <div className="flex justify-between mt-1">
             <p className="text-xs text-muted-foreground">
-              Un titre accrocheur et descriptif
+              Un titre accrocheur et descriptif (min 3 caractères)
             </p>
             <p className="text-xs text-muted-foreground">
               {formData.title.length}/120
@@ -98,7 +104,7 @@ export default function Step2NoveltyDetails({
         <div>
           <Label htmlFor="type">Type de nouveauté *</Label>
           <Select value={formData.type} onValueChange={(value) => updateField('type', value)}>
-            <SelectTrigger>
+            <SelectTrigger className={fieldErrors?.type ? "border-destructive" : ""}>
               <SelectValue placeholder="Sélectionnez le type" />
             </SelectTrigger>
             <SelectContent>
@@ -109,6 +115,9 @@ export default function Step2NoveltyDetails({
               ))}
             </SelectContent>
           </Select>
+          {fieldErrors?.type && (
+            <p className="text-xs text-destructive mt-1">{fieldErrors.type}</p>
+          )}
         </div>
 
         {/* Reason */}
@@ -121,10 +130,14 @@ export default function Step2NoveltyDetails({
             placeholder="Expliquez en quoi votre nouveauté est remarquable et pourquoi elle intéressera les visiteurs..."
             rows={4}
             maxLength={500}
+            className={fieldErrors?.reason ? "border-destructive" : ""}
           />
+          {fieldErrors?.reason && (
+            <p className="text-xs text-destructive mt-1">{fieldErrors.reason}</p>
+          )}
           <div className="flex justify-between mt-1">
             <p className="text-xs text-muted-foreground">
-              Mettez en avant les avantages, innovations ou bénéfices clés
+              Mettez en avant les avantages, innovations ou bénéfices clés (min 10 caractères)
             </p>
             <p className="text-xs text-muted-foreground">
               {formData.reason.length}/500

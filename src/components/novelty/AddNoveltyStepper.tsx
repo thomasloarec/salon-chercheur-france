@@ -34,6 +34,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
   
   const [currentStep, setCurrentStep] = useState<CurrentStep>(1);
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
     message: string;
@@ -99,6 +100,9 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
   // Navigate to next step
   const handleNext = async () => {
     if (currentStep === 1) {
+      // Clear any previous errors
+      setFieldErrors({});
+      
       // Handle authentication if needed
       if (!user && state.step1Data.user) {
         await handleAuthenticationFlow();
@@ -267,20 +271,42 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         return;
       }
 
-      // Create novelty via edge function
       const { data: novelty, error: noveltyError } = await supabase.functions.invoke('novelties-create', {
         body: {
           event_id: event.id,
           exhibitor_id: exhibitorId,
           title: step2.title,
           type: step2.type,
-          reason_1: step2.reason,
-          images: step2.images.map((_, i) => ({ position: i })), // Placeholder for images
-          brochure: step2.brochure ? { filename: 'resource.pdf' } : null
+          reason: step2.reason, // Updated from reason_1
+          images: [], // Will be filled after upload
+          brochure_pdf_url: null, // Will be filled after upload
+          stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info || null : null,
+          created_by: user!.id
         }
       });
 
-      if (noveltyError || !novelty) {
+      if (noveltyError) {
+        // Check for validation errors (422)
+        if (noveltyError.message && typeof noveltyError.message === 'string') {
+          try {
+            const errorData = JSON.parse(noveltyError.message);
+            if (errorData.error === 'validation_failed' && errorData.fields) {
+              setFieldErrors(errorData.fields);
+              toast({
+                title: 'Formulaire incomplet',
+                description: 'Veuillez corriger les erreurs indiquées dans le formulaire.',
+                variant: 'destructive'
+              });
+              return;
+            }
+          } catch (parseError) {
+            // Not a JSON error, continue with generic error handling
+          }
+        }
+        throw new Error('Impossible de créer la nouveauté');
+      }
+
+      if (!novelty) {
         throw new Error('Impossible de créer la nouveauté');
       }
 
@@ -390,6 +416,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       step2Valid: false,
     });
     setSubmissionResult(null);
+    setFieldErrors({});
     onClose();
   };
 
@@ -479,6 +506,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
               data={state.step2Data}
               onChange={handleStep2Change}
               onValidationChange={handleStep2ValidationChange}
+              fieldErrors={fieldErrors}
             />
           )}
         </div>
