@@ -2,6 +2,11 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0'
 import { z } from 'https://deno.land/x/zod@v3.20.2/mod.ts'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 // Schéma de validation avec messages détaillés
 const noveltyCreateSchema = z.object({
   event_id: z.string().min(1, "ID événement requis"),
@@ -24,7 +29,8 @@ const noveltyCreateSchema = z.object({
     .max(3, "Maximum 3 images autorisées"),
   brochure_pdf: z.string().url("URL du PDF invalide").optional().nullable(),
   
-  stand_info: z.string().optional().nullable()
+  stand_info: z.string().optional().nullable(),
+  created_by: z.string().min(1, "Utilisateur requis")
 });
 
 serve(async (req) => {
@@ -33,11 +39,7 @@ serve(async (req) => {
   // CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      },
+      headers: corsHeaders
     })
   }
 
@@ -49,7 +51,7 @@ serve(async (req) => {
       console.log('❌ Méthode non autorisée:', req.method);
       return new Response(
         JSON.stringify({ message: 'Méthode non autorisée' }),
-        { status: 405, headers: { 'Content-Type': 'application/json' } }
+        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -61,7 +63,7 @@ serve(async (req) => {
     if (!authHeader) {
       return new Response(
         JSON.stringify({ message: 'Token d\'authentification manquant' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -84,7 +86,8 @@ serve(async (req) => {
         images: Array.isArray(body.images) ? `array[${body.images.length}]` : typeof body.images,
         brochure_pdf: typeof body.brochure_pdf,
         user: typeof body.user,
-        stand_info: typeof body.stand_info
+        stand_info: typeof body.stand_info,
+        created_by: typeof body.created_by
       });
       
     } catch (e) {
@@ -96,7 +99,7 @@ serve(async (req) => {
           error: e.message,
           received: bodyText?.substring(0, 200)
         }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -149,9 +152,15 @@ serve(async (req) => {
     });
     
     console.log('- brochure_pdf:', {
-      value: body.brochure_pdf?.substring(0, 50) + '...',
+      value: body.brochure_pdf ? body.brochure_pdf.substring(0, 50) + '...' : null,
       type: typeof body.brochure_pdf,
       isUrl: typeof body.brochure_pdf === 'string' && body.brochure_pdf.startsWith('http')
+    });
+
+    console.log('- created_by:', {
+      value: body.created_by,
+      type: typeof body.created_by,
+      valid: typeof body.created_by === 'string' && body.created_by.length > 0
     });
 
     // 5. Validation Zod avec capture d'erreurs détaillée
@@ -191,8 +200,8 @@ serve(async (req) => {
           { 
             status: 422, 
             headers: { 
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*'
+              ...corsHeaders,
+              'Content-Type': 'application/json'
             } 
           }
         );
@@ -201,7 +210,7 @@ serve(async (req) => {
       throw error;
     }
 
-    // 6. Connexion Supabase et vérifications
+    // 6. Connexion Supabase avec service role key
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -210,8 +219,8 @@ serve(async (req) => {
     console.log('🔍 [DB] Vérification événement...');
     const { data: event, error: eventError } = await supabaseClient
       .from('events')
-      .select('id_event, nom_event, visible')
-      .eq('id_event', validatedData.event_id)
+      .select('id, nom_event, visible')
+      .eq('id', validatedData.event_id)
       .single();
 
     if (eventError) {
@@ -221,7 +230,7 @@ serve(async (req) => {
           message: 'Erreur lors de la vérification de l\'événement',
           error: eventError.message 
         }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -229,17 +238,17 @@ serve(async (req) => {
       console.error('❌ [DB] Événement introuvable:', validatedData.event_id);
       return new Response(
         JSON.stringify({ message: 'Événement introuvable' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('✅ [DB] Événement trouvé:', event.nom_event);
 
     if (!event.visible) {
-      console.error('❌ [DB] Événement non visible:', event.id_event);
+      console.error('❌ [DB] Événement non visible:', event.id);
       return new Response(
         JSON.stringify({ message: 'Événement non accessible' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -247,7 +256,7 @@ serve(async (req) => {
     console.log('🔍 [DB] Vérification exposant...');
     const { data: exhibitor, error: exhibitorError } = await supabaseClient
       .from('exhibitors')
-      .select('id, name, email')
+      .select('id, name, approved')
       .eq('id', validatedData.exhibitor_id)
       .single();
 
@@ -255,35 +264,45 @@ serve(async (req) => {
       console.error('❌ [DB] Exposant introuvable:', validatedData.exhibitor_id, exhibitorError);
       return new Response(
         JSON.stringify({ message: 'Exposant introuvable' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('✅ [DB] Exposant trouvé:', exhibitor.name);
 
-    // 8. Création de la nouveauté
+    // 8. Déterminer le statut basé sur l'approbation de l'exposant
+    const status = exhibitor.approved ? 'published' : 'pending';
+    console.log('📊 [STATUS] Statut de la nouveauté:', status);
+
+    // 9. Création de la nouveauté
     const noveltyData = {
       event_id: validatedData.event_id,
       exhibitor_id: validatedData.exhibitor_id,
       title: validatedData.title,
-      novelty_type: validatedData.novelty_type,
-      reason: validatedData.reason,
+      type: validatedData.novelty_type,
+      reason_1: validatedData.reason,
       images: validatedData.images,
-      brochure_pdf: validatedData.brochure_pdf,
+      brochure_pdf_url: validatedData.brochure_pdf,
       stand_info: validatedData.stand_info,
+      status: status,
+      created_by: validatedData.created_by,
       created_at: new Date().toISOString(),
-      status: 'active'
+      images_count: validatedData.images?.length || 0
     };
 
     console.log('💾 [DB] Création nouveauté avec data:', {
       ...noveltyData,
-      reason: noveltyData.reason.substring(0, 50) + '...'
+      reason_1: noveltyData.reason_1.substring(0, 50) + '...',
+      images: `${noveltyData.images.length} images`
     });
 
     const { data: novelty, error: createError } = await supabaseClient
       .from('novelties')
-      .insert([noveltyData])
-      .select()
+      .insert(noveltyData)
+      .select(`
+        *,
+        exhibitors!inner(id, name, slug, logo_url, approved)
+      `)
       .single();
 
     if (createError) {
@@ -294,11 +313,22 @@ serve(async (req) => {
           error: createError.message,
           details: createError
         }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('✅ [DB] Nouveauté créée avec ID:', novelty.id);
+
+    // 10. Initialiser les statistiques
+    await supabaseClient
+      .from('novelty_stats')
+      .insert({
+        novelty_id: novelty.id,
+        likes: 0,
+        saves: 0,
+        resource_downloads: 0,
+        meeting_requests: 0
+      });
 
     const duration = Date.now() - startTime;
     console.log(`🏁 [FIN] novelties-create réussie en ${duration}ms`);
@@ -306,18 +336,13 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         message: 'Nouveauté créée avec succès',
-        novelty: {
-          id: novelty.id,
-          title: novelty.title,
-          event_id: novelty.event_id,
-          exhibitor_id: novelty.exhibitor_id
-        }
+        novelty: novelty
       }),
       { 
         status: 201, 
         headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          ...corsHeaders,
+          'Content-Type': 'application/json'
         } 
       }
     );
@@ -335,195 +360,10 @@ serve(async (req) => {
       { 
         status: 500, 
         headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          ...corsHeaders,
+          'Content-Type': 'application/json'
         } 
       }
     );
   }
 });
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        },
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! }
-        }
-      }
-    )
-
-    // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    let requestData: CreateNoveltyRequest
-    try {
-      requestData = await req.json()
-      console.log('📥 Request body received:', requestData)
-    } catch (error) {
-      console.error('❌ Invalid JSON body:', error)
-      return new Response(
-        JSON.stringify({ error: 'Corps de requête JSON invalide', message: error.message }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Validate request data
-    const validation = validateNoveltyData(requestData)
-    if (!validation.valid) {
-      console.error('❌ Validation failed:', validation.errors)
-      return new Response(
-        JSON.stringify({ 
-          error: 'validation_failed', 
-          message: 'Données de validation invalides',
-          fields: validation.errors 
-        }),
-        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const { event_id, exhibitor_id, title, type, reason, images, brochure_pdf_url, stand_info } = requestData
-
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    const isAdmin = profile?.role === 'admin'
-
-    // Check authorization (admin or exhibitor owner/approved claim)
-    if (!isAdmin) {
-      const { data: exhibitor } = await supabase
-        .from('exhibitors')
-        .select('owner_user_id, approved')
-        .eq('id', exhibitor_id)
-        .single()
-
-      if (!exhibitor) {
-        return new Response(
-          JSON.stringify({ error: 'Exhibitor not found' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Check if user is owner or has approved claim
-      const isOwner = exhibitor.owner_user_id === user.id
-      if (!isOwner) {
-        const { data: claim } = await supabase
-          .from('exhibitor_claim_requests')
-          .select('status')
-          .eq('exhibitor_id', exhibitor_id)
-          .eq('requester_user_id', user.id)
-          .eq('status', 'approved')
-          .single()
-
-        if (!claim) {
-          return new Response(
-            JSON.stringify({ error: 'Not authorized for this exhibitor' }),
-            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-      }
-    }
-
-    // Check plan limits
-    const { data: canAdd, error: limitError } = await supabase.rpc('can_add_novelty', {
-      p_exhibitor_id: exhibitor_id,
-      p_user_id: user.id
-    })
-
-    if (limitError) {
-      return new Response(
-        JSON.stringify({ error: 'Failed to check limits' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!canAdd) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Plan limit reached. Upgrade to add more novelties.',
-          code: 'LIMIT_REACHED'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Determine status based on exhibitor approval
-    const { data: exhibitor } = await supabase
-      .from('exhibitors')
-      .select('approved')
-      .eq('id', exhibitor_id)
-      .single()
-
-    const status = exhibitor?.approved ? 'published' : 'pending'
-
-    // Create novelty
-    const { data: novelty, error: createError } = await supabase
-      .from('novelties')
-      .insert({
-        event_id,
-        exhibitor_id,
-        title,
-        type,
-        reason_1: reason,
-        images_count: images?.length || 0,
-        status,
-        created_by: user.id,
-        stand_info,
-        brochure_pdf_url
-      })
-      .select(`
-        *,
-        exhibitors!inner(id, name, slug, logo_url, approved)
-      `)
-      .single()
-
-    if (createError) {
-      console.error('❌ Database error creating novelty:', createError)
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to create novelty',
-          message: createError.message,
-          details: createError
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log('✅ Novelty created successfully:', novelty)
-
-    // Initialize stats
-    await supabase
-      .from('novelty_stats')
-      .insert({
-        novelty_id: novelty.id,
-        likes: 0,
-        saves: 0,
-        resource_downloads: 0,
-        meeting_requests: 0
-      })
-
-    return new Response(
-      JSON.stringify(novelty),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-})
