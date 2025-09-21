@@ -237,11 +237,29 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
     setLoading(true);
 
     try {
+      console.group('🐛 DEBUG DÉTAILLÉ - Création nouveauté');
+      
+      // 1. Debug des données Step 1 et Step 2
+      console.log('📋 Step 1 Data:', state.step1Data);
+      console.log('📋 Step 2 Data RAW:', state.step2Data);
+      console.log('📋 Current Event:', event ? {
+        id: event.id,
+        nom_event: event.nom_event,
+        slug: event.slug
+      } : null);
+      console.log('📋 Current User:', user ? {
+        id: user.id,
+        email: user.email
+      } : null);
+      
       // Validate schemas
       const step1Result = step1Schema.safeParse(state.step1Data);
       const step2Result = step2Schema.safeParse(state.step2Data);
 
       if (!step1Result.success || !step2Result.success) {
+        console.error('❌ Schema validation failed:');
+        console.error('Step1 errors:', step1Result.success ? 'OK' : step1Result.error.issues);
+        console.error('Step2 errors:', step2Result.success ? 'OK' : step2Result.error.issues);
         toast({
           title: 'Données invalides',
           description: 'Veuillez vérifier vos informations.',
@@ -253,6 +271,21 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       const step1 = step1Result.data;
       const step2 = step2Result.data;
 
+      // 2. Vérifications pré-upload
+      console.log('🔍 Vérifications pre-upload:');
+      console.log('- Images:', step2.images?.map(img => ({
+        name: img instanceof File ? img.name : 'string',
+        type: typeof img,
+        size: img instanceof File ? img.size : 'N/A',
+        isFile: img instanceof File
+      })));
+      console.log('- PDF:', step2.brochure ? {
+        name: step2.brochure instanceof File ? step2.brochure.name : 'string',
+        type: typeof step2.brochure,
+        size: step2.brochure instanceof File ? step2.brochure.size : 'N/A',
+        isFile: step2.brochure instanceof File
+      } : 'Aucun PDF');
+
       // Get or create exhibitor
       let exhibitorId: string;
       let exhibitorApproved = false;
@@ -261,8 +294,10 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         // Existing exhibitor
         exhibitorId = step1.exhibitor.id;
         exhibitorApproved = step1.exhibitor.approved;
+        console.log('📋 Exposant existant:', { id: exhibitorId, approved: exhibitorApproved });
       } else {
         // Create new exhibitor
+        console.log('🆕 Création nouvel exposant:', step1.exhibitor.name);
         const { data: newExhibitor, error: exhibitorError } = await supabase.functions.invoke('exhibitors-manage', {
           body: {
             action: 'create',
@@ -274,20 +309,24 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         });
 
         if (exhibitorError || !newExhibitor) {
+          console.error('❌ Erreur création exposant:', exhibitorError);
           throw new Error(exhibitorError?.message || 'Impossible de créer l\'exposant');
         }
 
         exhibitorId = newExhibitor.id;
         exhibitorApproved = false; // New exhibitors need approval
+        console.log('✅ Nouvel exposant créé:', { id: exhibitorId });
       }
 
       // Check plan limits
+      console.log('🔍 Vérification limites plan...');
       const { data: canAdd, error: limitError } = await supabase.rpc('can_add_novelty', {
         p_exhibitor_id: exhibitorId,
         p_user_id: user!.id
       });
 
       if (limitError || !canAdd) {
+        console.error('❌ Limite plan atteinte:', { limitError, canAdd });
         toast({
           title: 'Limite atteinte',
           description: 'Plan gratuit: 1 nouveauté maximum par exposant. Passez au plan payant pour plus.',
@@ -295,87 +334,148 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         });
         return;
       }
+      console.log('✅ Limites plan OK');
 
-      // 1. FIRST upload all files
+      // 3. Upload des fichiers
       let imageUrls: string[] = [];
       let brochureUrl: string | null = null;
+      
+      console.log('📤 Début upload des fichiers...');
       
       // Upload images
       if (step2.images && step2.images.length > 0) {
         const imageFiles = step2.images.filter(img => img instanceof File) as File[];
-        if (imageFiles.length > 0) {
-          imageUrls = await uploadFiles(imageFiles, 'images');
-          console.log('✅ Images uploadées:', imageUrls);
+        console.log(`📸 Uploading ${imageFiles.length} images...`);
+        
+        for (const [index, file] of imageFiles.entries()) {
+          try {
+            const fileName = `${Date.now()}-${index}-${file.name}`;
+            const filePath = `images/${fileName}`;
+            
+            console.log(`⬆️ Upload image ${index + 1}/${imageFiles.length}: ${file.name}`);
+            
+            const { data, error } = await supabase.storage
+              .from('novelties')
+              .upload(filePath, file);
+              
+            if (error) {
+              console.error(`❌ Erreur upload image ${file.name}:`, error);
+              throw error;
+            }
+            
+            console.log(`✅ Image ${index + 1} uploadée:`, data.path);
+            
+            // Récupérer l'URL publique
+            const { data: publicUrl } = supabase.storage
+              .from('novelties')
+              .getPublicUrl(filePath);
+              
+            imageUrls.push(publicUrl.publicUrl);
+            console.log(`🔗 URL publique image ${index + 1}:`, publicUrl.publicUrl);
+            
+          } catch (error) {
+            console.error(`🚨 Erreur lors de l'upload de l'image ${file.name}:`, error);
+            throw error;
+          }
         }
       }
       
       // Upload PDF
       if (step2.brochure && step2.brochure instanceof File) {
-        const [pdfUrl] = await uploadFiles([step2.brochure], 'brochures');
-        brochureUrl = pdfUrl;
-        console.log('✅ PDF uploadé:', brochureUrl);
+        try {
+          const fileName = `${Date.now()}-${step2.brochure.name}`;
+          const filePath = `brochures/${fileName}`;
+          
+          console.log(`📄 Upload PDF: ${step2.brochure.name}`);
+          
+          const { data, error } = await supabase.storage
+            .from('novelties')
+            .upload(filePath, step2.brochure);
+            
+          if (error) {
+            console.error('❌ Erreur upload PDF:', error);
+            throw error;
+          }
+          
+          console.log('✅ PDF uploadé:', data.path);
+          
+          const { data: publicUrl } = supabase.storage
+            .from('novelties')
+            .getPublicUrl(filePath);
+            
+          brochureUrl = publicUrl.publicUrl;
+          console.log('🔗 URL publique PDF:', brochureUrl);
+          
+        } catch (error) {
+          console.error('🚨 Erreur lors de l\'upload du PDF:', error);
+          throw error;
+        }
       }
 
-      // 2. THEN build payload with URLs (not Files)
+      // 4. Construction du payload final
       const payload = {
         event_id: event.id,
         exhibitor_id: exhibitorId,
         title: step2.title.trim(),
-        type: step2.type,
+        novelty_type: step2.type,
         reason: step2.reason.trim(),
         images: imageUrls,
-        brochure_pdf_url: brochureUrl,
+        brochure_pdf: brochureUrl,
         stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info?.trim() || null : null,
         created_by: user!.id
       };
 
-      // DEBUG - À retirer après résolution
-      console.group('🐛 DEBUG - Payload novelties-create');
-      console.log('📤 Payload à envoyer:', payload);
-      console.log('📋 Types des champs:');
-      console.log('- event_id:', typeof payload.event_id, payload.event_id);
-      console.log('- exhibitor_id:', typeof payload.exhibitor_id, payload.exhibitor_id);
-      console.log('- images type:', Array.isArray(payload.images) ? 'array' : typeof payload.images);
-      console.log('- images content:', payload.images?.map(img => ({
-        type: typeof img,
-        url: img
-      })));
-      console.log('- brochure_pdf_url type:', typeof payload.brochure_pdf_url);
-      console.log('- brochure_pdf_url value:', payload.brochure_pdf_url);
-      console.groupEnd();
+      console.log('🚀 PAYLOAD FINAL:');
+      console.log(JSON.stringify(payload, null, 2));
+      
+      // 5. Validation côté client avant envoi
+      const validationErrors: string[] = [];
+      
+      if (!payload.event_id) validationErrors.push('event_id manquant');
+      if (!payload.exhibitor_id) validationErrors.push('exhibitor_id manquant');
+      if (!payload.title || payload.title.length < 3) validationErrors.push('title invalide');
+      if (!payload.novelty_type) validationErrors.push('novelty_type manquant');
+      if (!payload.reason || payload.reason.length < 10) validationErrors.push('reason invalide');
+      if (!payload.images || payload.images.length === 0) validationErrors.push('images manquantes');
+      
+      if (validationErrors.length > 0) {
+        console.error('❌ Erreurs de validation côté client:', validationErrors);
+        throw new Error(`Validation client échouée: ${validationErrors.join(', ')}`);
+      }
+      
+      console.log('✅ Validation côté client OK');
 
-      // 3. Call Edge function with URLs
+      // 6. Call Edge function
+      console.log('📡 Appel Edge Function...');
       const { data: novelty, error: noveltyError } = await supabase.functions.invoke('novelties-create', {
         body: payload
       });
 
-      // DEBUG Response
-      console.group('🐛 DEBUG - Response novelties-create');
-      console.log('Response:', noveltyError || novelty);
-      if (noveltyError) {
-        console.error('❌ Erreur détaillée:', noveltyError);
-      }
-      console.groupEnd();
+      console.log('📡 Response status:', noveltyError ? 'ERROR' : 'SUCCESS');
+      console.log('📡 Response data:', noveltyError || novelty);
 
       if (noveltyError) {
+        console.group('🚨 ERREUR SERVEUR DÉTAILLÉE');
+        console.log('Error object:', noveltyError);
+        console.log('Error message:', noveltyError.message);
+        console.log('Error details:', noveltyError.details);
+        
         // Check for validation errors (422)
         if (noveltyError.message && typeof noveltyError.message === 'string') {
           try {
             const errorData = JSON.parse(noveltyError.message);
-            if (errorData.error === 'validation_failed' && errorData.fields) {
-              console.error('❌ Erreurs de validation:', errorData.fields);
-              setFieldErrors(errorData.fields);
-              toast({
-                title: 'Formulaire incomplet',
-                description: 'Veuillez corriger les erreurs indiquées dans le formulaire.',
-                variant: 'destructive'
+            if (errorData.errors) {
+              console.log('🔍 Erreurs de validation détaillées:');
+              Object.entries(errorData.errors).forEach(([field, messages]) => {
+                console.error(`  - ${field}:`, messages);
               });
-              return;
             }
           } catch (parseError) {
-            // Not a JSON error, continue with generic error handling
+            console.log('Cannot parse error message as JSON');
           }
         }
+        console.groupEnd();
+        
         throw new Error(noveltyError.message || 'Impossible de créer la nouveauté');
       }
 
@@ -383,7 +483,8 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         throw new Error('Impossible de créer la nouveauté');
       }
 
-      console.log('✅ Nouveauté créée:', novelty);
+      console.log('✅ Nouveauté créée avec succès:', novelty);
+      console.groupEnd();
 
       toast({
         title: 'Succès',
@@ -400,15 +501,33 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         noveltyId: novelty.id
       });
 
-      // Clear saved state
-      localStorage.removeItem('addNoveltyStepperState');
+    } catch (error: any) {
+      console.groupEnd();
+      console.error('🚨 ERREUR GLOBALE:', error);
+      
+      if (error.message.includes('validation')) {
+        toast({
+          title: 'Données invalides',
+          description: 'Veuillez vérifier vos informations.',
+          variant: 'destructive'
+        });
+      } else if (error.message.includes('upload')) {
+        toast({
+          title: 'Erreur d\'upload',
+          description: 'Erreur lors de l\'upload des fichiers.',
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: error.message || 'Erreur lors de la création de la nouveauté.',
+          variant: 'destructive'
+        });
+      }
 
-    } catch (error) {
-      console.error('🚨 Erreur création nouveauté:', error);
-      toast({
-        title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Impossible de soumettre la nouveauté',
-        variant: 'destructive'
+      setSubmissionResult({
+        success: false,
+        message: error.message || 'Une erreur est survenue lors de la création de votre nouveauté.'
       });
     } finally {
       setLoading(false);
