@@ -105,7 +105,7 @@ serve(async (req) => {
       stand_info: data.stand_info ?? null,
       created_at: new Date().toISOString(),
       created_by: data.created_by,          // si colonne existante
-      status: "Published",
+      status: "pending_admin_review",       // Force moderation workflow
     };
 
     const { data: inserted, error: insErr } = await admin

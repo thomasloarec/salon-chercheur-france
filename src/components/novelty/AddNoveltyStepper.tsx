@@ -508,8 +508,8 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       console.groupEnd();
 
       toast({
-        title: 'Succès',
-        description: 'Votre nouveauté a été créée avec succès !',
+        title: 'Nouveauté envoyée à la validation Lotexpo',
+        description: 'Parfait ! Votre nouveauté a été transmise à l\'équipe Lotexpo pour vérification éditoriale. Comptez en général 24–48 h. Nous vous notifierons par e-mail dès sa mise en ligne.',
         variant: 'default'
       });
 

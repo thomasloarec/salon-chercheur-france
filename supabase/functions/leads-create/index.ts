@@ -1,0 +1,105 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.1";
+
+const schema = z.object({
+  novelty_id: z.string().uuid(),
+  lead_type: z.enum(['brochure_download', 'meeting_request']),
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+  email: z.string().email(),
+  company: z.string().optional(),
+  role: z.string().optional(),
+  phone: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !serviceKey) {
+      return new Response(
+        JSON.stringify({ error: "Missing environment variables" }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    const body = await req.json();
+    const parsed = schema.safeParse(body);
+    
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: "Validation failed", details: parsed.error.flatten() }),
+        { status: 422, headers: corsHeaders }
+      );
+    }
+
+    const data = parsed.data;
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    // Verify novelty exists
+    const { data: novelty, error: noveltyError } = await admin
+      .from('novelties')
+      .select('id, title')
+      .eq('id', data.novelty_id)
+      .single();
+
+    if (noveltyError || !novelty) {
+      return new Response(
+        JSON.stringify({ error: "Novelty not found" }),
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    // Create lead
+    const { data: lead, error: leadError } = await admin
+      .from('leads')
+      .insert([{
+        novelty_id: data.novelty_id,
+        lead_type: data.lead_type,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        company: data.company || null,
+        role: data.role || null,
+        phone: data.phone || null,
+        notes: data.notes || null,
+      }])
+      .select()
+      .single();
+
+    if (leadError) {
+      return new Response(
+        JSON.stringify({ error: "Failed to create lead", details: leadError.message }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        lead_id: lead.id,
+        message: `Lead created for ${data.lead_type}`
+      }),
+      { headers: corsHeaders }
+    );
+
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: corsHeaders }
+    );
+  }
+});

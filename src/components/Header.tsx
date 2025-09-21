@@ -15,7 +15,7 @@ const Header = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   // Check if current user is admin
-  const isAdmin = user?.email === 'admin@lotexpo.com';
+  const isAdmin = user?.email === 'admin@salonspro.com';
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">

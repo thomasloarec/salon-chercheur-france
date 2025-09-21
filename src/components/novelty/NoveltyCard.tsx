@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Check, Plus, ExternalLink, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Plus, ExternalLink, MapPin, Heart, Download, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToggleRoute } from '@/hooks/useNovelties';
+import { useToggleLike, useLikeStatus } from '@/hooks/useNoveltyInteractions';
+import LeadForm from './LeadForm';
 import type { Novelty } from '@/hooks/useNovelties';
 
 interface NoveltyCardProps {
@@ -26,7 +28,11 @@ const NOVELTY_TYPE_LABELS = {
 export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const { user } = useAuth();
   const toggleRoute = useToggleRoute();
+  const toggleLike = useToggleLike();
+  const likeStatus = useLikeStatus(novelty.id);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadFormType, setLeadFormType] = useState<'brochure_download' | 'meeting_request'>('brochure_download');
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const images = novelty.media_urls?.filter(url => {
@@ -43,6 +49,23 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
       event_id: novelty.event_id,
       novelty_id: novelty.id
     });
+  };
+
+  const handleLikeToggle = async () => {
+    if (!user) return;
+    await toggleLike.mutateAsync({ noveltyId: novelty.id });
+  };
+
+  const handleBrochureDownload = () => {
+    if (!user) return;
+    setLeadFormType('brochure_download');
+    setShowLeadForm(true);
+  };
+
+  const handleMeetingRequest = () => {
+    if (!user) return;
+    setLeadFormType('meeting_request');
+    setShowLeadForm(true);
   };
 
   const nextImage = () => {
@@ -246,6 +269,55 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
           </div>
         )}
       </div>
+
+      {/* CTA Buttons */}
+      {user && (
+        <div className="flex items-center justify-between gap-3 pt-4 border-t">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleLikeToggle}
+              variant={likeStatus.data?.userHasLiked ? "default" : "outline"}
+              size="sm"
+              disabled={toggleLike.isPending}
+              className="flex items-center gap-2"
+            >
+              <Heart className={cn("h-4 w-4", likeStatus.data?.userHasLiked && "fill-current")} />
+              <span>{likeStatus.data?.count || 0}</span>
+            </Button>
+
+            {novelty.doc_url && (
+              <Button
+                onClick={handleBrochureDownload}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Brochure
+              </Button>
+            )}
+
+            <Button
+              onClick={handleMeetingRequest}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              RDV
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Lead Form Modal */}
+      <LeadForm
+        isOpen={showLeadForm}
+        onClose={() => setShowLeadForm(false)}
+        noveltyId={novelty.id}
+        leadType={leadFormType}
+        brochureUrl={novelty.doc_url}
+      />
     </div>
   );
 }

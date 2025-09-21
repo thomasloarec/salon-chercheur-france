@@ -60,6 +60,7 @@ async function fetchNovelties(
       exhibitors ( id, name, slug, logo_url )
     `)
     .eq("events.visible", true)
+    .eq("status", "published")  // Only show published novelties
     .order("created_at", { ascending: false });
 
   const dbType = typeSlugToDbValue(type);
