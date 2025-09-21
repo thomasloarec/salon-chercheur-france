@@ -198,10 +198,31 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
     }
   };
 
+  // Helper function to sanitize file names
+  const sanitizeFileName = (fileName: string): string => {
+    return fileName
+      // Remplacer les accents
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      // Remplacer les espaces par des underscores
+      .replace(/\s+/g, '_')
+      // Supprimer les caractères spéciaux sauf . _ -
+      .replace(/[^a-zA-Z0-9._-]/g, '')
+      // Éviter les points multiples
+      .replace(/\.+/g, '.')
+      // Éviter les underscores multiples
+      .replace(/_+/g, '_')
+      // Supprimer les caractères en début/fin
+      .replace(/^[._-]+|[._-]+$/g, '')
+      // Limiter la longueur
+      .substring(0, 100);
+  };
+
   // Upload files utility
   const uploadFiles = async (files: File[], folder: 'images' | 'brochures'): Promise<string[]> => {
     const uploadPromises = files.map(async (file) => {
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name}`;
+      const cleanFileName = sanitizeFileName(file.name);
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${cleanFileName}`;
       const filePath = `${folder}/${fileName}`;
       
       const { data, error } = await supabase.storage
@@ -349,10 +370,17 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         
         for (const [index, file] of imageFiles.entries()) {
           try {
-            const fileName = `${Date.now()}-${index}-${file.name}`;
+            // ✅ CORRECTION : Nettoyer le nom de fichier
+            const cleanFileName = sanitizeFileName(file.name);
+            const fileName = `${Date.now()}-${index}-${cleanFileName}`;
             const filePath = `images/${fileName}`;
             
-            console.log(`⬆️ Upload image ${index + 1}/${imageFiles.length}: ${file.name}`);
+            console.log(`⬆️ Upload image ${index + 1}/${imageFiles.length}:`, {
+              originalName: file.name,
+              cleanName: cleanFileName,
+              finalFileName: fileName,
+              filePath: filePath
+            });
             
             const { data, error } = await supabase.storage
               .from('novelties')
@@ -383,10 +411,17 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       // Upload PDF
       if (step2.brochure && step2.brochure instanceof File) {
         try {
-          const fileName = `${Date.now()}-${step2.brochure.name}`;
+          // ✅ CORRECTION : Nettoyer le nom de fichier PDF
+          const cleanFileName = sanitizeFileName(step2.brochure.name);
+          const fileName = `${Date.now()}-${cleanFileName}`;
           const filePath = `brochures/${fileName}`;
           
-          console.log(`📄 Upload PDF: ${step2.brochure.name}`);
+          console.log(`📄 Upload PDF:`, {
+            originalName: step2.brochure.name,
+            cleanName: cleanFileName,
+            finalFileName: fileName,
+            filePath: filePath
+          });
           
           const { data, error } = await supabase.storage
             .from('novelties')
