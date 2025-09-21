@@ -76,15 +76,31 @@ export default function Step1ExhibitorAndUser({
     const isValid = hasExhibitor && hasUserData && emailValid;
     onValidationChange(isValid);
 
-    // Update parent data
+    // Update parent data - Always send valid structure
     if (hasExhibitor && hasUserData && emailValid) {
       const exhibitorData = selectedExhibitor 
-        ? { id: selectedExhibitor.id, name: selectedExhibitor.name, website: selectedExhibitor.website, approved: selectedExhibitor.approved }
-        : { name: newExhibitorData.name, website: newExhibitorData.website, stand_info: newExhibitorData.stand_info, logo: newExhibitorData.logo };
+        ? { 
+            id: selectedExhibitor.id, 
+            name: selectedExhibitor.name, 
+            website: selectedExhibitor.website || '',
+            approved: selectedExhibitor.approved 
+          }
+        : { 
+            name: newExhibitorData.name, 
+            website: newExhibitorData.website || '',
+            stand_info: newExhibitorData.stand_info || '',
+            logo: newExhibitorData.logo 
+          };
 
       onChange({
         exhibitor: exhibitorData,
-        user: user ? undefined : userData
+        user: user ? undefined : {
+          first_name: userData.first_name || '',
+          last_name: userData.last_name || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          role: userData.role || ''
+        }
       });
     }
   }, [selectedExhibitor, newExhibitorData, userData, user, onChange, onValidationChange]);

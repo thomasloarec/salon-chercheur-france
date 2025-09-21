@@ -27,6 +27,23 @@ const isProfessionalEmail = (email: string) => {
   return domain && !CONSUMER_EMAIL_DOMAINS.includes(domain);
 };
 
+// Helper to normalize website URLs
+const normalizeWebsiteUrl = (website: string): string => {
+  if (!website) return '';
+  
+  // If already has protocol, return as is
+  if (website.startsWith('http://') || website.startsWith('https://')) {
+    return website;
+  }
+  
+  // Add https:// if it looks like a domain
+  if (website.includes('.')) {
+    return `https://${website}`;
+  }
+  
+  return website;
+};
+
 // Step 1: Exhibitor and User Info
 export const step1Schema = z.object({
   // Exhibitor selection (either existing or new)
@@ -41,7 +58,10 @@ export const step1Schema = z.object({
     // New exhibitor
     z.object({
       name: z.string().min(1, 'Nom de l\'entreprise requis'),
-      website: z.string().url('URL invalide').optional().or(z.literal('')),
+      website: z.string()
+        .optional()
+        .transform((val) => val ? normalizeWebsiteUrl(val) : '')
+        .refine((val) => !val || z.string().url().safeParse(val).success, 'URL invalide'),
       stand_info: z.string().optional(),
       logo: z.instanceof(File).optional(),
     }),

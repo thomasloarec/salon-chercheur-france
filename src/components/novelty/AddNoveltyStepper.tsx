@@ -81,7 +81,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
 
   // Update step 1 data
   const handleStep1Change = (data: Partial<Step1Data>) => {
-    setState(prev => ({ ...prev, step1Data: data }));
+    setState(prev => ({ ...prev, step1Data: { ...prev.step1Data, ...data } }));
   };
 
   const handleStep1ValidationChange = (isValid: boolean) => {
@@ -90,7 +90,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
 
   // Update step 2 data
   const handleStep2Change = (data: Partial<Step2Data>) => {
-    setState(prev => ({ ...prev, step2Data: data }));
+    setState(prev => ({ ...prev, step2Data: { ...prev.step2Data, ...data } }));
   };
 
   const handleStep2ValidationChange = (isValid: boolean) => {
