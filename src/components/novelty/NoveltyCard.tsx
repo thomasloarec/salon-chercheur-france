@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Check, Plus, ExternalLink, MapPin, Heart, Download, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Heart, Download, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToggleRoute } from '@/hooks/useNovelties';
 import { useToggleLike, useLikeStatus } from '@/hooks/useNoveltyInteractions';
 import LeadForm from './LeadForm';
+import ExhibitorModal from '@/components/exhibitors/ExhibitorModal';
 import type { Novelty } from '@/hooks/useNovelties';
 
 interface NoveltyCardProps {
@@ -27,11 +26,11 @@ const NOVELTY_TYPE_LABELS = {
 
 export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const { user } = useAuth();
-  const toggleRoute = useToggleRoute();
   const toggleLike = useToggleLike();
   const likeStatus = useLikeStatus(novelty.id);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLeadForm, setShowLeadForm] = useState(false);
+  const [showExhibitorModal, setShowExhibitorModal] = useState(false);
   const [leadFormType, setLeadFormType] = useState<'brochure_download' | 'meeting_request'>('brochure_download');
   const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -40,16 +39,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   }) || [];
 
   const hasMultipleImages = images.length > 1;
-  const reasons = [novelty.reason_1, novelty.reason_2, novelty.reason_3].filter(Boolean);
-
-  const handleRouteToggle = async () => {
-    if (!user) return;
-    
-    await toggleRoute.mutateAsync({
-      event_id: novelty.event_id,
-      novelty_id: novelty.id
-    });
-  };
+  const description = [novelty.reason_1, novelty.reason_2, novelty.reason_3].filter(Boolean).join(' ');
 
   const handleLikeToggle = async () => {
     if (!user) return;
@@ -112,58 +102,53 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            {novelty.exhibitors.logo_url && (
-              <img
-                src={novelty.exhibitors.logo_url}
-                alt={novelty.exhibitors.name}
-                className="w-8 h-8 rounded object-cover"
-              />
-            )}
-            <div>
-              <Link
-                to={`/exposants/${novelty.exhibitors.slug}`}
-                className="font-medium hover:underline"
-              >
-                {novelty.exhibitors.name}
-              </Link>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs">
-                  {NOVELTY_TYPE_LABELS[novelty.type] || novelty.type}
-                </Badge>
-                {novelty.stand_info && (
-                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {novelty.stand_info}
-                  </Badge>
-                )}
-              </div>
-            </div>
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-lg font-semibold leading-tight">{novelty.title}</h3>
+            <Badge variant="outline" className="text-xs">
+              {NOVELTY_TYPE_LABELS[novelty.type] || novelty.type}
+            </Badge>
           </div>
-          <h3 className="text-lg font-semibold leading-tight">{novelty.title}</h3>
+          
+          {/* Exhibitor info */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowExhibitorModal(true)}
+              className="flex items-center gap-3 hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
+            >
+              {novelty.exhibitors.logo_url ? (
+                <img
+                  src={novelty.exhibitors.logo_url}
+                  alt={novelty.exhibitors.name}
+                  className="w-8 h-8 rounded object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                  <span className="text-xs font-medium">
+                    {novelty.exhibitors.name.charAt(0)}
+                  </span>
+                </div>
+              )}
+              <span className="font-medium text-sm hover:underline">
+                {novelty.exhibitors.name}
+              </span>
+            </button>
+            
+            {novelty.stand_info && (
+              <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {novelty.stand_info}
+              </Badge>
+            )}
+          </div>
         </div>
-
-        {/* Route Toggle Button */}
-        <Button
-          onClick={handleRouteToggle}
-          disabled={!user || toggleRoute.isPending}
-          variant={novelty.in_user_route ? "default" : "outline"}
-          size="sm"
-          className="flex items-center gap-2 min-w-0"
-        >
-          {novelty.in_user_route ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Plus className="h-4 w-4" />
-          )}
-          <span className="hidden sm:inline">
-            {novelty.in_user_route ? 'Dans le parcours' : 'Ajouter au parcours'}
-          </span>
-          <Badge variant="secondary" className="ml-1">
-            {novelty.novelty_stats?.route_users_count || 0}
-          </Badge>
-        </Button>
       </div>
+
+      {/* Description */}
+      {description && (
+        <div className="text-sm text-muted-foreground leading-relaxed">
+          {description}
+        </div>
+      )}
 
       {/* Media Carousel */}
       {images.length > 0 && (
@@ -218,57 +203,30 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
         </div>
       )}
 
-      {/* Reasons */}
-      {reasons.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm text-muted-foreground">Pourquoi c'est intéressant :</h4>
-          <ul className="space-y-1">
-            {reasons.map((reason, index) => (
-              <li key={index} className="text-sm flex items-start gap-2">
-                <span className="text-primary font-medium">{index + 1}.</span>
-                <span>{reason}</span>
-              </li>
-            ))}
-          </ul>
+      {/* Additional Info */}
+      {(novelty.availability || (novelty.audience_tags && novelty.audience_tags.length > 0)) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
+          {novelty.availability && (
+            <div>
+              <h5 className="font-medium text-sm text-muted-foreground mb-1">Disponibilité</h5>
+              <p className="text-sm">{novelty.availability}</p>
+            </div>
+          )}
+          
+          {novelty.audience_tags && novelty.audience_tags.length > 0 && (
+            <div>
+              <h5 className="font-medium text-sm text-muted-foreground mb-1">Public cible</h5>
+              <div className="flex flex-wrap gap-1">
+                {novelty.audience_tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
-
-      {/* Additional Info */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
-        {novelty.availability && (
-          <div>
-            <h5 className="font-medium text-sm text-muted-foreground mb-1">Disponibilité</h5>
-            <p className="text-sm">{novelty.availability}</p>
-          </div>
-        )}
-        
-        {novelty.audience_tags && novelty.audience_tags.length > 0 && (
-          <div>
-            <h5 className="font-medium text-sm text-muted-foreground mb-1">Public cible</h5>
-            <div className="flex flex-wrap gap-1">
-              {novelty.audience_tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {novelty.doc_url && (
-          <div className="sm:col-span-2">
-            <a
-              href={novelty.doc_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-            >
-              <ExternalLink className="h-3 w-3" />
-              Documentation complémentaire
-            </a>
-          </div>
-        )}
-      </div>
 
       {/* CTA Buttons */}
       {user && (
@@ -317,6 +275,20 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
         noveltyId={novelty.id}
         leadType={leadFormType}
         brochureUrl={novelty.doc_url}
+      />
+
+      {/* Exhibitor Modal */}
+      <ExhibitorModal
+        exhibitor={{
+          id: novelty.exhibitors.id,
+          name: novelty.exhibitors.name,
+          logo_url: novelty.exhibitors.logo_url,
+          website: undefined,
+          description: undefined,
+          stand_info: novelty.stand_info,
+        }}
+        isOpen={showExhibitorModal}
+        onClose={() => setShowExhibitorModal(false)}
       />
     </div>
   );

@@ -13,17 +13,33 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !serviceKey) {
+      return new Response(
+        JSON.stringify({ error: 'Missing environment variables' }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const supabaseClient = createClient(supabaseUrl, serviceKey);
+    
+    // Get auth token from request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
+    // Create client with user auth for RLS
+    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user } } = await userClient.auth.getUser();
     
     if (!user) {
       return new Response(
@@ -41,15 +57,30 @@ serve(async (req) => {
       );
     }
 
+    // Get novelty with event info
+    const { data: novelty, error: noveltyError } = await supabaseClient
+      .from('novelties')
+      .select('id, event_id')
+      .eq('id', novelty_id)
+      .single();
+
+    if (noveltyError || !novelty) {
+      return new Response(
+        JSON.stringify({ error: 'Novelty not found' }),
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
     // Check if user has already liked this novelty
     const { data: existingLike } = await supabaseClient
       .from('novelty_likes')
       .select('novelty_id')
       .eq('novelty_id', novelty_id)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     let liked = false;
+    let eventFavorited = false;
 
     if (existingLike) {
       // Remove like
@@ -62,16 +93,37 @@ serve(async (req) => {
       // Add like
       await supabaseClient
         .from('novelty_likes')
-        .insert([
-          {
-            novelty_id,
-            user_id: user.id,
-          },
-        ]);
+        .insert([{
+          novelty_id,
+          user_id: user.id,
+        }]);
       liked = true;
+
+      // Check if event is already favorited
+      const { data: existingFavorite } = await supabaseClient
+        .from('favorites')
+        .select('id')
+        .eq('event_id', novelty.event_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Add event to favorites if not already there
+      if (!existingFavorite) {
+        const { error: favoriteError } = await supabaseClient
+          .from('favorites')
+          .insert([{
+            event_id: novelty.event_id,
+            event_uuid: novelty.event_id, // Compatibility
+            user_id: user.id,
+          }]);
+        
+        if (!favoriteError) {
+          eventFavorited = true;
+        }
+      }
     }
 
-    // Get updated count
+    // Get updated like count
     const { count } = await supabaseClient
       .from('novelty_likes')
       .select('*', { count: 'exact', head: true })
@@ -81,12 +133,14 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         liked, 
-        count: count || 0 
+        likesCount: count || 0,
+        eventFavorited
       }),
       { headers: corsHeaders }
     );
 
   } catch (error) {
+    console.error('Error in novelty-like-toggle:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: corsHeaders }

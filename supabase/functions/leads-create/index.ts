@@ -49,10 +49,10 @@ serve(async (req) => {
     const data = parsed.data;
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Verify novelty exists
+    // Verify novelty exists and get brochure URL
     const { data: novelty, error: noveltyError } = await admin
       .from('novelties')
-      .select('id, title')
+      .select('id, title, doc_url')
       .eq('id', data.novelty_id)
       .single();
 
@@ -60,6 +60,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Novelty not found" }),
         { status: 404, headers: corsHeaders }
+      );
+    }
+
+    // For brochure downloads, verify doc_url exists
+    if (data.lead_type === 'brochure_download' && !novelty.doc_url) {
+      return new Response(
+        JSON.stringify({ error: "No brochure available for this novelty" }),
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -81,18 +89,26 @@ serve(async (req) => {
       .single();
 
     if (leadError) {
+      console.error('Lead creation error:', leadError);
       return new Response(
         JSON.stringify({ error: "Failed to create lead", details: leadError.message }),
         { status: 500, headers: corsHeaders }
       );
     }
 
+    const response = { 
+      success: true, 
+      lead_id: lead.id,
+      message: data.lead_type === 'brochure_download' ? 'Brochure download recorded' : 'Meeting request created'
+    };
+
+    // Include download URL for brochure requests
+    if (data.lead_type === 'brochure_download' && novelty.doc_url) {
+      response.download_url = novelty.doc_url;
+    }
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        lead_id: lead.id,
-        message: `Lead created for ${data.lead_type}`
-      }),
+      JSON.stringify(response),
       { headers: corsHeaders }
     );
 
