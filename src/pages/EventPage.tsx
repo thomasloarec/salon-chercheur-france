@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 import { convertSecteurToString } from '@/utils/sectorUtils';
 import type { Event } from '@/types/event';
 import { EventPageContent } from '@/components/event/EventPageContent';
-import { EdgeFunctionDebugger } from '@/components/debug/EdgeFunctionDebugger';
 
 const EventPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -229,21 +228,12 @@ const EventPage = () => {
   }
 
   return (
-    <>
-      {/* Composant de debug temporaire pour diagnostiquer l'erreur 500 */}
-      {slug === 'iftm' && (
-        <div className="p-4">
-          <EdgeFunctionDebugger />
-        </div>
-      )}
-      
-      <EventPageContent
-        event={event}
-        isPreview={isPreview}
-        onEventUpdated={handleEventUpdated}
-        onEventDeleted={handleEventDeleted}
-      />
-    </>
+    <EventPageContent
+      event={event}
+      isPreview={isPreview}
+      onEventUpdated={handleEventUpdated}
+      onEventDeleted={handleEventDeleted}
+    />
   );
 };
 
