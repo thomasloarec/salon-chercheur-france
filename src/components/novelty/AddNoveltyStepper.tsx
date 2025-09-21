@@ -1,744 +1,481 @@
-import React, { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/integrations/supabase/client'
-import { useAuth } from '@/contexts/AuthContext'
-import { Search, Plus, Upload, X, GripVertical } from 'lucide-react'
-import type { Event } from '@/types/event'
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle, Circle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import type { Event } from '@/types/event';
+import type { Step1Data, Step2Data } from '@/lib/validation/noveltySchemas';
+import { step1Schema, step2Schema, CONSUMER_EMAIL_DOMAINS } from '@/lib/validation/noveltySchemas';
+import { uploadNoveltyImages, uploadNoveltyResource, cleanupFailedUploads } from '@/lib/novelty/uploads';
+import Step1ExhibitorAndUser from './steps/Step1ExhibitorAndUser';
+import Step2NoveltyDetails from './steps/Step2NoveltyDetails';
 
 interface AddNoveltyStepperProps {
-  isOpen: boolean
-  onClose: () => void
-  event: Event
+  isOpen: boolean;
+  onClose: () => void;
+  event: Event;
 }
 
-interface DbExhibitor {
-  id: string
-  name: string
-  website?: string
-  logo_url?: string
-  approved: boolean
-  stand_info?: string
-}
+type CurrentStep = 1 | 2;
 
-const CONSUMER_EMAIL_DOMAINS = [
-  'gmail.com', 'yahoo.com', 'yahoo.fr', 'yahoo.co.uk', 'hotmail.com', 'hotmail.fr',
-  'outlook.com', 'outlook.fr', 'live.com', 'live.fr', 'icloud.com', 'me.com',
-  'gmx.com', 'gmx.fr', 'proton.me', 'protonmail.com', 'aol.com', 'free.fr',
-  'orange.fr', 'laposte.net', 'msn.com', 'ymail.com'
-]
-
-type StepperStep = 'exhibitor' | 'auth' | 'novelty' | 'confirmation'
-
-interface NoveltyFormData {
-  title: string
-  summary: string
-  details: string
-  images: File[]
-  resource_file?: File
-}
-
-interface NewExhibitorData {
-  name: string
-  website: string
-  stand_info: string
-  logo?: File
+interface StepperState {
+  step1Data: Partial<Step1Data>;
+  step2Data: Partial<Step2Data>;
+  step1Valid: boolean;
+  step2Valid: boolean;
 }
 
 export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNoveltyStepperProps) {
-  const { user, signIn } = useAuth()
-  const { toast } = useToast()
+  const { user, signIn } = useAuth();
+  const { toast } = useToast();
   
-  const [currentStep, setCurrentStep] = useState<StepperStep>('exhibitor')
-  const [loading, setLoading] = useState(false)
-  
-  // Step 1: Exhibitor selection
-  const [exhibitors, setExhibitors] = useState<DbExhibitor[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedExhibitor, setSelectedExhibitor] = useState<DbExhibitor | null>(null)
-  const [showNewExhibitorForm, setShowNewExhibitorForm] = useState(false)
-  const [newExhibitorData, setNewExhibitorData] = useState<NewExhibitorData>({
-    name: '', website: '', stand_info: ''
-  })
-  
-  // Step 2: Auth
-  const [authEmail, setAuthEmail] = useState('')
-  const [authError, setAuthError] = useState('')
-  
-  // Step 3: Novelty form
-  const [noveltyData, setNoveltyData] = useState<NoveltyFormData>({
-    title: '', summary: '', details: '', images: []
-  })
-  
-  // Step 4: Confirmation
+  const [currentStep, setCurrentStep] = useState<CurrentStep>(1);
+  const [loading, setLoading] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<{
-    success: boolean
-    message: string
-    noveltyId?: string
-  } | null>(null)
+    success: boolean;
+    message: string;
+    noveltyId?: string;
+  } | null>(null);
 
-  // Load exhibitors when dialog opens
-  useEffect(() => {
-    if (isOpen && currentStep === 'exhibitor') {
-      loadExhibitors()
-    }
-  }, [isOpen, currentStep])
+  // Form state
+  const [state, setState] = useState<StepperState>({
+    step1Data: {},
+    step2Data: {},
+    step1Valid: false,
+    step2Valid: false,
+  });
 
-  // Restore state from localStorage
+  // Load saved state from localStorage on open
   useEffect(() => {
-    if (isOpen && user) {
-      const savedState = localStorage.getItem('addNoveltyState')
+    if (isOpen) {
+      const savedState = localStorage.getItem('addNoveltyStepperState');
       if (savedState) {
         try {
-          const state = JSON.parse(savedState)
-          if (state.selectedExhibitor) {
-            setSelectedExhibitor(state.selectedExhibitor)
-            setCurrentStep('novelty')
+          const parsed = JSON.parse(savedState);
+          setState(prev => ({ ...prev, ...parsed }));
+          
+          // If user is now logged in and step 1 was completed, go to step 2
+          if (user && parsed.step1Valid) {
+            setCurrentStep(2);
           }
         } catch (error) {
-          console.error('Error restoring state:', error)
+          console.error('Error loading saved state:', error);
         }
       }
     }
-  }, [isOpen, user])
+  }, [isOpen, user]);
 
   // Save state to localStorage
   const saveState = () => {
-    const state = {
-      selectedExhibitor,
-      newExhibitorData: showNewExhibitorForm ? newExhibitorData : null
-    }
-    localStorage.setItem('addNoveltyState', JSON.stringify(state))
-  }
+    localStorage.setItem('addNoveltyStepperState', JSON.stringify({
+      step1Data: state.step1Data,
+      step2Data: state.step2Data,
+      step1Valid: state.step1Valid,
+      step2Valid: state.step2Valid,
+    }));
+  };
 
-  const loadExhibitors = async () => {
-    try {
-      setLoading(true)
-      const { data, error } = await supabase.functions.invoke('exhibitors-manage', {
-        body: { event_id: event.id, search: searchQuery }
-      })
+  // Update step 1 data
+  const handleStep1Change = (data: Partial<Step1Data>) => {
+    setState(prev => ({ ...prev, step1Data: data }));
+  };
 
-      if (error) throw error
-      setExhibitors(data || [])
-    } catch (error) {
-      console.error('Error loading exhibitors:', error)
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les exposants',
-        variant: 'destructive'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  const handleStep1ValidationChange = (isValid: boolean) => {
+    setState(prev => ({ ...prev, step1Valid: isValid }));
+  };
 
-  const validateProfessionalEmail = (email: string): boolean => {
-    const domain = email.split('@')[1]?.toLowerCase()
-    return domain && !CONSUMER_EMAIL_DOMAINS.includes(domain)
-  }
+  // Update step 2 data
+  const handleStep2Change = (data: Partial<Step2Data>) => {
+    setState(prev => ({ ...prev, step2Data: data }));
+  };
 
-  const handleExhibitorSelect = (exhibitor: DbExhibitor) => {
-    setSelectedExhibitor(exhibitor)
-    saveState()
-    if (user) {
-      setCurrentStep('novelty')
-    } else {
-      setCurrentStep('auth')
-    }
-  }
+  const handleStep2ValidationChange = (isValid: boolean) => {
+    setState(prev => ({ ...prev, step2Valid: isValid }));
+  };
 
-  const handleCreateNewExhibitor = async () => {
-    if (!newExhibitorData.name.trim()) {
-      toast({
-        title: 'Erreur',
-        description: 'Le nom de l\'entreprise est requis',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    try {
-      setLoading(true)
-      const { data, error } = await supabase.functions.invoke('exhibitors-manage', {
-        body: {
-          name: newExhibitorData.name,
-          website: newExhibitorData.website,
-          stand_info: newExhibitorData.stand_info
-        }
-      })
-
-      if (error) throw error
-
-      const newExhibitor: DbExhibitor = {
-        ...data,
-        approved: false
-      }
-      
-      setSelectedExhibitor(newExhibitor)
-      setShowNewExhibitorForm(false)
-      saveState()
-      
-      if (user) {
-        setCurrentStep('novelty')
+  // Navigate to next step
+  const handleNext = async () => {
+    if (currentStep === 1) {
+      // Handle authentication if needed
+      if (!user && state.step1Data.user) {
+        await handleAuthenticationFlow();
       } else {
-        setCurrentStep('auth')
+        saveState();
+        setCurrentStep(2);
       }
-      
+    }
+  };
+
+  // Handle authentication flow
+  const handleAuthenticationFlow = async () => {
+    const userData = state.step1Data.user;
+    if (!userData?.email) return;
+
+    // Validate professional email
+    const domain = userData.email.split('@')[1]?.toLowerCase();
+    if (domain && CONSUMER_EMAIL_DOMAINS.includes(domain)) {
       toast({
-        title: 'Entreprise créée',
-        description: 'Votre entreprise a été créée et est en attente d\'approbation'
-      })
-    } catch (error) {
-      console.error('Error creating exhibitor:', error)
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de créer l\'entreprise',
+        title: 'Email non professionnel',
+        description: 'Veuillez utiliser votre email professionnel d\'entreprise.',
         variant: 'destructive'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleAuth = async () => {
-    if (!authEmail.trim()) {
-      setAuthError('Email requis')
-      return
-    }
-
-    if (!validateProfessionalEmail(authEmail)) {
-      setAuthError('Veuillez utiliser votre email professionnel d\'entreprise')
-      return
+      });
+      return;
     }
 
     try {
-      setLoading(true)
-      const { error } = await signIn(authEmail, '')
+      setLoading(true);
+      
+      const { error } = await signIn(userData.email, '');
       
       if (error) {
-        setAuthError(error.message)
+        toast({
+          title: 'Erreur d\'authentification',
+          description: error.message,
+          variant: 'destructive'
+        });
       } else {
         toast({
           title: 'Email envoyé',
-          description: 'Consultez votre boîte mail pour vous connecter'
-        })
-        // The auth state change will automatically move to the next step
+          description: 'Consultez votre boîte mail pour vous connecter. Vous pourrez ensuite continuer l\'ajout de votre nouveauté.',
+        });
+        
+        saveState(); // Save before user navigates away
       }
     } catch (error) {
-      setAuthError('Erreur lors de l\'envoi de l\'email')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    if (noveltyData.images.length + files.length > 3) {
-      toast({
-        title: 'Limite atteinte',
-        description: 'Maximum 3 images autorisées',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    // Validate file types and sizes
-    const validFiles = files.filter(file => {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: 'Type de fichier invalide',
-          description: 'Seules les images sont autorisées',
-          variant: 'destructive'
-        })
-        return false
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        toast({
-          title: 'Fichier trop volumineux',
-          description: 'Taille maximum: 5MB',
-          variant: 'destructive'
-        })
-        return false
-      }
-      return true
-    })
-
-    setNoveltyData(prev => ({
-      ...prev,
-      images: [...prev.images, ...validFiles]
-    }))
-  }
-
-  const handleResourceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (file.type !== 'application/pdf') {
-      toast({
-        title: 'Type de fichier invalide',
-        description: 'Seuls les fichiers PDF sont autorisés',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    if (file.size > 20 * 1024 * 1024) { // 20MB
-      toast({
-        title: 'Fichier trop volumineux',
-        description: 'Taille maximum: 20MB',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    setNoveltyData(prev => ({ ...prev, resource_file: file }))
-  }
-
-  const removeImage = (index: number) => {
-    setNoveltyData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }))
-  }
-
-  const handleSubmitNovelty = async () => {
-    if (!selectedExhibitor || !noveltyData.title.trim()) {
       toast({
         title: 'Erreur',
-        description: 'Exposant et titre requis',
+        description: 'Impossible d\'envoyer l\'email de connexion.',
         variant: 'destructive'
-      })
-      return
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit the complete form
+  const handleSubmit = async () => {
+    if (!state.step1Valid || !state.step2Valid) {
+      toast({
+        title: 'Formulaire incomplet',
+        description: 'Veuillez remplir tous les champs requis.',
+        variant: 'destructive'
+      });
+      return;
     }
 
-    try {
-      setLoading(true)
+    setLoading(true);
 
-      // Check if user can add novelty (plan limits)
+    try {
+      // Validate schemas
+      const step1Result = step1Schema.safeParse(state.step1Data);
+      const step2Result = step2Schema.safeParse(state.step2Data);
+
+      if (!step1Result.success || !step2Result.success) {
+        toast({
+          title: 'Données invalides',
+          description: 'Veuillez vérifier vos informations.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const step1 = step1Result.data;
+      const step2 = step2Result.data;
+
+      // Get or create exhibitor
+      let exhibitorId: string;
+      let exhibitorApproved = false;
+
+      if ('id' in step1.exhibitor) {
+        // Existing exhibitor
+        exhibitorId = step1.exhibitor.id;
+        exhibitorApproved = step1.exhibitor.approved;
+      } else {
+        // Create new exhibitor
+        const { data: newExhibitor, error: exhibitorError } = await supabase.functions.invoke('exhibitors-manage', {
+          body: {
+            name: step1.exhibitor.name,
+            website: step1.exhibitor.website || null,
+            stand_info: step1.exhibitor.stand_info || null,
+            // TODO: Handle logo upload
+          }
+        });
+
+        if (exhibitorError || !newExhibitor) {
+          throw new Error('Impossible de créer l\'exposant');
+        }
+
+        exhibitorId = newExhibitor.id;
+        exhibitorApproved = false; // New exhibitors need approval
+      }
+
+      // Check plan limits
       const { data: canAdd, error: limitError } = await supabase.rpc('can_add_novelty', {
-        p_exhibitor_id: selectedExhibitor.id,
+        p_exhibitor_id: exhibitorId,
         p_user_id: user!.id
-      })
+      });
 
       if (limitError || !canAdd) {
         toast({
           title: 'Limite atteinte',
           description: 'Plan gratuit: 1 nouveauté maximum par exposant. Passez au plan payant pour plus.',
           variant: 'destructive'
-        })
-        return
+        });
+        return;
       }
 
-      // Create novelty
+      // Create novelty record
       const { data: novelty, error: noveltyError } = await supabase
         .from('novelties')
         .insert({
           event_id: event.id,
-          exhibitor_id: selectedExhibitor.id,
-          title: noveltyData.title.trim(),
-          type: 'Launch', // Default type
-          summary: noveltyData.summary.trim() || null,
-          details: noveltyData.details.trim() || null,
-          images_count: noveltyData.images.length,
-          status: selectedExhibitor.approved ? 'Published' : 'pending',
+          exhibitor_id: exhibitorId,
+          title: step2.title,
+          type: step2.type,
+          reason_1: step2.reason, // Map to reason_1 for now
+          images_count: step2.images.length,
+          status: exhibitorApproved ? 'Published' : 'pending',
           created_by: user!.id
         })
         .select()
-        .single()
+        .single();
 
-      if (noveltyError) throw noveltyError
+      if (noveltyError || !novelty) {
+        throw new Error('Impossible de créer la nouveauté');
+      }
 
-      // Upload images
-      for (let i = 0; i < noveltyData.images.length; i++) {
-        const image = noveltyData.images[i]
-        const filename = `${novelty.id}/image-${i}.${image.name.split('.').pop()}`
-        
-        const { error: uploadError } = await supabase.storage
-          .from('novelty-images')
-          .upload(filename, image)
+      const uploadedFiles: string[] = [];
 
-        if (uploadError) {
-          console.error('Error uploading image:', uploadError)
-          continue
+      try {
+        // Upload images
+        if (step2.images.length > 0) {
+          const { successes, failures } = await uploadNoveltyImages(novelty.id, step2.images);
+          
+          if (failures.length > 0) {
+            console.warn('Some image uploads failed:', failures);
+          }
+
+          // Record successful uploads
+          for (const success of successes) {
+            if (success.url) {
+              await supabase
+                .from('novelty_images')
+                .insert({
+                  novelty_id: novelty.id,
+                  url: success.url,
+                  position: successes.indexOf(success)
+                });
+              
+              uploadedFiles.push(success.url);
+            }
+          }
         }
 
-        // Save image record
+        // Upload brochure
+        if (step2.brochure) {
+          const brochureResult = await uploadNoveltyResource(novelty.id, step2.brochure);
+          
+          if (brochureResult.success && brochureResult.url) {
+            await supabase
+              .from('novelties')
+              .update({ resource_url: brochureResult.url })
+              .eq('id', novelty.id);
+            
+            uploadedFiles.push(brochureResult.url);
+          }
+        }
+
+        // Initialize stats
         await supabase
-          .from('novelty_images')
+          .from('novelty_stats')
           .insert({
             novelty_id: novelty.id,
-            url: filename,
-            position: i
-          })
+            likes: 0,
+            saves: 0,
+            resource_downloads: 0,
+            meeting_requests: 0
+          });
+
+        // Success!
+        setSubmissionResult({
+          success: true,
+          message: exhibitorApproved 
+            ? 'Votre nouveauté est publiée ! 🎉'
+            : 'Votre nouveauté a été soumise et sera publiée après validation de l\'exposant.',
+          noveltyId: novelty.id
+        });
+
+        // Clear saved state
+        localStorage.removeItem('addNoveltyStepperState');
+
+      } catch (uploadError) {
+        // Cleanup failed uploads
+        await cleanupFailedUploads(uploadedFiles);
+        
+        // Delete the novelty record since uploads failed
+        await supabase.from('novelties').delete().eq('id', novelty.id);
+        
+        throw uploadError;
       }
-
-      // Upload resource file
-      if (noveltyData.resource_file) {
-        const filename = `${novelty.id}/presentation.pdf`
-        const { error: uploadError } = await supabase.storage
-          .from('novelty-resources')
-          .upload(filename, noveltyData.resource_file)
-
-        if (!uploadError) {
-          await supabase
-            .from('novelties')
-            .update({ resource_url: filename })
-            .eq('id', novelty.id)
-        }
-      }
-
-      // Initialize stats
-      await supabase
-        .from('novelty_stats')
-        .insert({
-          novelty_id: novelty.id,
-          likes: 0,
-          saves: 0,
-          resource_downloads: 0,
-          meeting_requests: 0
-        })
-
-      setSubmissionResult({
-        success: true,
-        message: selectedExhibitor.approved 
-          ? 'Votre nouveauté est publiée 🎉'
-          : 'Votre nouveauté a été soumise et sera publiée après validation.',
-        noveltyId: novelty.id
-      })
-
-      setCurrentStep('confirmation')
-      localStorage.removeItem('addNoveltyState')
 
     } catch (error) {
-      console.error('Error submitting novelty:', error)
+      console.error('Error submitting novelty:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de soumettre la nouveauté',
+        description: error instanceof Error ? error.message : 'Impossible de soumettre la nouveauté',
         variant: 'destructive'
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    if (currentStep !== 'confirmation') {
-      localStorage.removeItem('addNoveltyState')
+    if (!submissionResult) {
+      // Save state before closing (unless submission was successful)
+      saveState();
+    } else {
+      // Clear state after successful submission
+      localStorage.removeItem('addNoveltyStepperState');
     }
-    setCurrentStep('exhibitor')
-    setSelectedExhibitor(null)
-    setShowNewExhibitorForm(false)
-    setNoveltyData({ title: '', summary: '', details: '', images: [] })
-    setAuthEmail('')
-    setAuthError('')
-    setSubmissionResult(null)
-    onClose()
+    
+    // Reset form
+    setCurrentStep(1);
+    setState({
+      step1Data: {},
+      step2Data: {},
+      step1Valid: false,
+      step2Valid: false,
+    });
+    setSubmissionResult(null);
+    onClose();
+  };
+
+  // Don't render if submission was successful (show simple success message)
+  if (submissionResult) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              {submissionResult.success ? '🎉 Nouveauté ajoutée !' : '❌ Erreur'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              {submissionResult.message}
+            </p>
+            
+            <Button onClick={handleClose} className="w-full">
+              Terminer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   }
-
-  const renderExhibitorStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-4">
-          Pour quelle société souhaitez-vous ajouter une nouveauté ?
-        </h3>
-        
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher une entreprise..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              loadExhibitors()
-            }}
-            className="pl-10"
-          />
-        </div>
-
-        {loading ? (
-          <div className="text-center py-8">Chargement...</div>
-        ) : (
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {exhibitors.map((exhibitor) => (
-              <Card 
-                key={exhibitor.id} 
-                className="cursor-pointer hover:bg-accent transition-colors"
-                onClick={() => handleExhibitorSelect(exhibitor)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{exhibitor.name}</h4>
-                      {exhibitor.website && (
-                        <p className="text-sm text-muted-foreground">{exhibitor.website}</p>
-                      )}
-                      {exhibitor.stand_info && (
-                        <p className="text-sm text-muted-foreground">Stand: {exhibitor.stand_info}</p>
-                      )}
-                    </div>
-          <Button onClick={() => handleExhibitorSelect(exhibitor)}>
-            Sélectionner
-          </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        <div className="pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={() => setShowNewExhibitorForm(true)}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Mon entreprise n'est pas dans la liste
-          </Button>
-        </div>
-
-        {showNewExhibitorForm && (
-          <Card className="mt-4">
-            <CardContent className="p-4 space-y-4">
-              <h4 className="font-medium">Créer une nouvelle entreprise</h4>
-              
-              <div>
-                <Label htmlFor="company-name">Nom de l'entreprise *</Label>
-                <Input
-                  id="company-name"
-                  value={newExhibitorData.name}
-                  onChange={(e) => setNewExhibitorData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Nom de votre entreprise"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="company-website">Site web</Label>
-                <Input
-                  id="company-website"
-                  value={newExhibitorData.website}
-                  onChange={(e) => setNewExhibitorData(prev => ({ ...prev, website: e.target.value }))}
-                  placeholder="https://votresite.com"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="stand-info">Informations stand</Label>
-                <Input
-                  id="stand-info"
-                  value={newExhibitorData.stand_info}
-                  onChange={(e) => setNewExhibitorData(prev => ({ ...prev, stand_info: e.target.value }))}
-                  placeholder="Numéro de stand, emplacement..."
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button onClick={handleCreateNewExhibitor} disabled={loading}>
-                  {loading ? 'Création...' : 'Créer l\'entreprise'}
-                </Button>
-                <Button variant="outline" onClick={() => setShowNewExhibitorForm(false)}>
-                  Annuler
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
-  )
-
-  const renderAuthStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Connexion requise</h3>
-        <p className="text-muted-foreground mb-6">
-          Veuillez vous connecter avec votre email professionnel pour continuer.
-        </p>
-
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="auth-email">Email professionnel</Label>
-            <Input
-              id="auth-email"
-              type="email"
-              value={authEmail}
-              onChange={(e) => setAuthEmail(e.target.value)}
-              placeholder="votre.email@entreprise.com"
-            />
-            {authError && (
-              <p className="text-sm text-destructive mt-1">{authError}</p>
-            )}
-          </div>
-
-          <Button onClick={handleAuth} disabled={loading} className="w-full">
-            {loading ? 'Envoi...' : 'Envoyer le lien de connexion'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderNoveltyStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Ajouter une nouveauté</h3>
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-sm text-muted-foreground">Pour:</span>
-          <Badge variant="outline">{selectedExhibitor?.name}</Badge>
-          {!selectedExhibitor?.approved && (
-            <Badge variant="secondary">En validation</Badge>
-          )}
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="novelty-title">Titre *</Label>
-            <Input
-              id="novelty-title"
-              value={noveltyData.title}
-              onChange={(e) => setNoveltyData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Nom de votre nouveauté"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="novelty-summary">Résumé</Label>
-            <Textarea
-              id="novelty-summary"
-              value={noveltyData.summary}
-              onChange={(e) => setNoveltyData(prev => ({ ...prev, summary: e.target.value }))}
-              placeholder="Pitch court de votre nouveauté"
-              rows={2}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="novelty-details">Description détaillée</Label>
-            <Textarea
-              id="novelty-details"
-              value={noveltyData.details}
-              onChange={(e) => setNoveltyData(prev => ({ ...prev, details: e.target.value }))}
-              placeholder="Description complète de votre nouveauté"
-              rows={4}
-            />
-          </div>
-
-          <div>
-            <Label>Images (maximum 3)</Label>
-            <div className="mt-2">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-                id="image-upload"
-              />
-              <label
-                htmlFor="image-upload"
-                className="flex items-center justify-center w-full h-32 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-accent transition-colors"
-              >
-                <div className="text-center">
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Cliquez pour ajouter des images
-                  </p>
-                </div>
-              </label>
-            </div>
-
-            {noveltyData.images.length > 0 && (
-              <div className="mt-4 grid grid-cols-3 gap-4">
-                {noveltyData.images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={URL.createObjectURL(image)}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg"
-                    />
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="absolute -top-2 -right-2 h-6 w-6 p-0"
-                      onClick={() => removeImage(index)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <Label>Dossier de présentation (PDF, max 20MB)</Label>
-            <div className="mt-2">
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={handleResourceUpload}
-                className="hidden"
-                id="resource-upload"
-              />
-              <label
-                htmlFor="resource-upload"
-                className="flex items-center justify-center w-full h-20 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-accent transition-colors"
-              >
-                <div className="text-center">
-                  <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {noveltyData.resource_file ? noveltyData.resource_file.name : 'Ajouter un PDF'}
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <Button onClick={handleSubmitNovelty} disabled={loading} className="w-full">
-            {loading ? 'Soumission...' : 'Soumettre la nouveauté'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderConfirmationStep = () => (
-    <div className="space-y-6 text-center">
-      <div>
-        <h3 className="text-lg font-semibold mb-4">
-          {submissionResult?.success ? '🎉 Nouveauté soumise !' : '❌ Erreur'}
-        </h3>
-        <p className="text-muted-foreground mb-6">
-          {submissionResult?.message}
-        </p>
-
-        <Button onClick={handleClose} className="w-full">
-          Terminer
-        </Button>
-      </div>
-    </div>
-  )
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ajouter une nouveauté</DialogTitle>
         </DialogHeader>
 
-        <div className="mt-4">
-          {currentStep === 'exhibitor' && renderExhibitorStep()}
-          {currentStep === 'auth' && renderAuthStep()}
-          {currentStep === 'novelty' && renderNoveltyStep()}
-          {currentStep === 'confirmation' && renderConfirmationStep()}
+        {/* Progress indicator */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-center space-x-4">
+            <div className="flex items-center space-x-2">
+              {currentStep >= 1 ? (
+                <CheckCircle className="h-5 w-5 text-primary" />
+              ) : (
+                <Circle className="h-5 w-5 text-muted-foreground" />
+              )}
+              <span className={`text-sm ${currentStep >= 1 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                1. Société & vous
+              </span>
+            </div>
+            
+            <div className="w-16 h-0.5 bg-muted">
+              <div 
+                className={`h-full bg-primary transition-all duration-300 ${currentStep >= 2 ? 'w-full' : 'w-0'}`} 
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              {currentStep >= 2 ? (
+                <CheckCircle className="h-5 w-5 text-primary" />
+              ) : (
+                <Circle className="h-5 w-5 text-muted-foreground" />
+              )}
+              <span className={`text-sm ${currentStep >= 2 ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                2. Nouveauté
+              </span>
+            </div>
+          </div>
+          
+          <Progress value={(currentStep / 2) * 100} className="w-full" />
+        </div>
+
+        {/* Step content */}
+        <div className="mt-6">
+          {currentStep === 1 && (
+            <Step1ExhibitorAndUser
+              event={event}
+              data={state.step1Data}
+              onChange={handleStep1Change}
+              onValidationChange={handleStep1ValidationChange}
+            />
+          )}
+          
+          {currentStep === 2 && (
+            <Step2NoveltyDetails
+              data={state.step2Data}
+              onChange={handleStep2Change}
+              onValidationChange={handleStep2ValidationChange}
+            />
+          )}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex justify-between pt-6 border-t">
+          <Button variant="outline" onClick={handleClose}>
+            Annuler
+          </Button>
+          
+          <div className="space-x-2">
+            {currentStep === 2 && (
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentStep(1)}
+                disabled={loading}
+              >
+                Précédent
+              </Button>
+            )}
+            
+            {currentStep === 1 ? (
+              <Button 
+                onClick={handleNext}
+                disabled={!state.step1Valid || loading}
+              >
+                {loading ? 'Vérification...' : 'Suivant'}
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleSubmit}
+                disabled={!state.step2Valid || loading}
+              >
+                {loading ? 'Publication...' : 'Publier la nouveauté'}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

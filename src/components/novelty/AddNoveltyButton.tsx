@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import AddNoveltyModal from './AddNoveltyModal';
+import AddNoveltyStepper from './AddNoveltyStepper';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event } from '@/types/event';
@@ -115,7 +115,7 @@ export default function AddNoveltyButton({
         {isChecking ? 'Vérification...' : 'Ajouter ma nouveauté'}
       </Button>
 
-      <AddNoveltyModal
+      <AddNoveltyStepper
         event={event}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
