@@ -32,10 +32,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
-  const [crmProspects] = useState<Array<{ name: string; stand?: string }>>([
-    { name: 'Entreprise A', stand: 'A12' },
-    { name: 'Entreprise B', stand: 'B15' },
-  ]);
 
   const isAdmin = user?.email === 'admin@lotexpo.com';
 
@@ -88,7 +84,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             </section>
             
-            <EventPageHeader event={event} crmProspects={crmProspects} />
+            <EventPageHeader event={event} />
             
             <div className="grid grid-cols-12 gap-6">
               {/* Colonne gauche */}

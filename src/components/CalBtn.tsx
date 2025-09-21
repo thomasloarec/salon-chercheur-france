@@ -7,25 +7,15 @@ import type { Event } from '@/types/event';
 interface CalBtnProps {
   type: 'gcal' | 'outlook';
   event: Event;
-  crmProspects?: Array<{ name: string; stand?: string }>;
 }
 
-const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
+const CalBtn = ({ type, event }: CalBtnProps) => {
   const handleAddToCalendar = () => {
     // Prepare dates for all-day events
     const start = new Date(event.date_debut);
     const endExclusive = addDays(new Date(event.date_fin), 1);
     
-    // Build dynamic description
-    let details = event.description_event || '';
-    
-    // Add CRM prospects if available
-    if (crmProspects.length > 0) {
-      const prospects = crmProspects
-        .map(p => `- ${p.name}${p.stand ? ` – Stand ${p.stand}` : ''}`)
-        .join('\n');
-      details += `\n\n🎯 Vos prospects exposants :\n${prospects}`;
-    }
+    const details = event.description_event || '';
     
     const encodedTitle = encodeURIComponent(event.nom_event);
     const encodedLocation = encodeURIComponent(`${event.nom_lieu || ''} ${event.rue || ''} ${event.ville}`.trim());
@@ -47,22 +37,11 @@ const CalBtn = ({ type, event, crmProspects = [] }: CalBtnProps) => {
       
       window.open(googleUrl, '_blank');
     } else {
-      // Outlook Web compose event URL with compact description
+      // Outlook Web compose event URL
       const isoStart = format(start, 'yyyy-MM-dd');
       const isoEnd = format(endExclusive, 'yyyy-MM-dd');
       
-      // Build compact description for Outlook
-      let outlookDescription = event.description_event || '';
-      
-      if (crmProspects.length > 0) {
-        const compactProspectsList = crmProspects
-          .map(p => `- ${p.name}${p.stand ? ` – Stand ${p.stand}` : ''}`)
-          .join(' // ');
-        
-        outlookDescription += ` 🎯 Vos prospects exposants : ${compactProspectsList}`;
-      }
-      
-      const outlookBody = encodeURIComponent(outlookDescription);
+      const outlookBody = encodeURIComponent(details);
       
       // Using outlook.office.com for Office 365 accounts
       // For personal accounts, could use outlook.live.com but office.com works for both

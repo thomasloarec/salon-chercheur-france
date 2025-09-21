@@ -14,10 +14,9 @@ import { EventSectors } from '@/components/ui/event-sectors';
 
 interface EventPageHeaderProps {
   event: Event;
-  crmProspects?: Array<{ name: string; stand?: string }>;
 }
 
-export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderProps) => {
+export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@lotexpo.com';
 
@@ -81,8 +80,8 @@ export const EventPageHeader = ({ event, crmProspects = [] }: EventPageHeaderPro
               {/* Boutons calendrier avec texte explicatif */}
               <div className="flex flex-col">
                 <div className="flex flex-wrap items-center gap-2">
-                  <CalBtn type="gcal" event={event} crmProspects={crmProspects} />
-                  <CalBtn type="outlook" event={event} crmProspects={crmProspects} />
+                  <CalBtn type="gcal" event={event} />
+                  <CalBtn type="outlook" event={event} />
                   {official && (
                     <Button 
                       variant="outline"
