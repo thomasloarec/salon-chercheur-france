@@ -28,7 +28,6 @@ const AirtableAntiDuplicateCheck = () => {
   // Listen for secrets configuration event
   useEffect(() => {
     const handleSecretsConfigured = () => {
-      console.log('🔄 AirtableAntiDuplicateCheck: Auto-refreshing due to secrets configuration');
       setTimeout(() => {
         runAntiDuplicateCheck();
       }, 1500);

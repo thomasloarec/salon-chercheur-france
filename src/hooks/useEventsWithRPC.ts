@@ -15,7 +15,15 @@ export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, page
   const isAdmin = user?.email === 'admin@lotexpo.com';
 
   return useQuery({
-    queryKey: ['events-rpc', filters, page, pageSize, isAdmin],
+    queryKey: ['events-rpc', 
+      filters?.sectorIds?.join(',') ?? 'all',
+      filters?.types?.join(',') ?? 'all', 
+      filters?.months?.join(',') ?? 'all',
+      filters?.locationSuggestion?.value ?? 'all',
+      page, 
+      pageSize, 
+      isAdmin
+    ],
     queryFn: async (): Promise<SearchEventsResult> => {
       // Construire les paramètres pour la RPC avec region_codes
       const params = {

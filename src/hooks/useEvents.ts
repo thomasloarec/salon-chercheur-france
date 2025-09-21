@@ -10,7 +10,16 @@ export const useEvents = (filters?: SearchFilters) => {
   const isAdmin = user?.email === 'admin@lotexpo.com';
 
   return useQuery({
-    queryKey: ['events', filters, isAdmin],
+    queryKey: ['events', 
+      filters?.sectorIds?.join(',') ?? 'all',
+      filters?.types?.join(',') ?? 'all', 
+      filters?.months?.join(',') ?? 'all',
+      filters?.city ?? 'all',
+      filters?.locationSuggestion?.value ?? 'all',
+      filters?.query ?? 'all',
+      filters?.minVisitors?.toString() ?? 'all',
+      isAdmin
+    ],
     queryFn: async () => {
       let query = supabase
         .from('events')
@@ -111,12 +120,10 @@ export const useEvents = (filters?: SearchFilters) => {
             .eq('region_code', filters.locationSuggestion.value);
           
           if (geoError) {
-            console.error('❌ Erreur events_geo dans useEvents:', geoError);
             throw geoError;
           }
           
           const eventIds = geoEvents?.map(g => g.id) || [];
-          console.log('🗺️ Events IDs trouvés pour région', filters.locationSuggestion.value, ':', eventIds.length);
           
           if (eventIds.length > 0) {
             query = query.in('id_event', eventIds);
@@ -125,7 +132,6 @@ export const useEvents = (filters?: SearchFilters) => {
             return [];
           }
         } catch (geoError) {
-          console.error('❌ Erreur fallback geo dans useEvents:', geoError);
           return [];
         }
       }
@@ -149,7 +155,6 @@ export const useEvents = (filters?: SearchFilters) => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching events:', error);
         throw error;
       }
 

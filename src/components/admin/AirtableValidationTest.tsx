@@ -28,7 +28,6 @@ const AirtableValidationTest = () => {
   // Listen for secrets configuration event
   useEffect(() => {
     const handleSecretsConfigured = () => {
-      console.log('🔄 AirtableValidationTest: Auto-refreshing due to secrets configuration');
       setTimeout(() => {
         runValidationTests();
       }, 1000);

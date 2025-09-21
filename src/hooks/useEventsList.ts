@@ -70,7 +70,6 @@ async function fetchEvents(filters: UrlFilters): Promise<CanonicalEvent[]> {
     const byMonth = rows.filter(ev => matchesMonth(ev, filters.month));
     const byDate = byMonth.filter(ev => isOngoingOrUpcoming(ev));
     const byRegion = byDate.filter(ev => matchesRegion(ev, filters.region));
-    console.log("[events] rows:", byRegion.length, "filters:", filters);
     return byRegion;
   } catch (e) {
     console.warn("[events] server filters failed, fallback client:", (e as any)?.message ?? e);
@@ -89,7 +88,7 @@ async function fetchEvents(filters: UrlFilters): Promise<CanonicalEvent[]> {
 
 export function useEventsList(filters: UrlFilters) {
   return useQuery({
-    queryKey: ["events:list", filters],
+    queryKey: ["events:list", filters.sector ?? 'all', filters.type ?? 'all', filters.month ?? 'all', filters.region ?? 'all'],
     queryFn: () => fetchEvents(filters),
     staleTime: 60_000,
   });

@@ -28,7 +28,18 @@ import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
 import NotFound from '@/pages/NotFound';
 import './App.css';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchInterval: false,
+    },
+  },
+});
 
 function App() {
   return (
