@@ -198,6 +198,31 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
     }
   };
 
+  // Upload files utility
+  const uploadFiles = async (files: File[], folder: 'images' | 'brochures'): Promise<string[]> => {
+    const uploadPromises = files.map(async (file) => {
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name}`;
+      const filePath = `${folder}/${fileName}`;
+      
+      const { data, error } = await supabase.storage
+        .from('novelties')
+        .upload(filePath, file);
+      
+      if (error) {
+        console.error(`Erreur upload ${file.name}:`, error);
+        throw error;
+      }
+      
+      const { data: publicUrl } = supabase.storage
+        .from('novelties')
+        .getPublicUrl(filePath);
+        
+      return publicUrl.publicUrl;
+    });
+    
+    return Promise.all(uploadPromises);
+  };
+
   // Submit the complete form
   const handleSubmit = async () => {
     if (!state.step1Valid || !state.step2Valid) {
@@ -271,19 +296,66 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         return;
       }
 
-      const { data: novelty, error: noveltyError } = await supabase.functions.invoke('novelties-create', {
-        body: {
-          event_id: event.id,
-          exhibitor_id: exhibitorId,
-          title: step2.title,
-          type: step2.type,
-          reason: step2.reason, // Updated from reason_1
-          images: [], // Will be filled after upload
-          brochure_pdf_url: null, // Will be filled after upload
-          stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info || null : null,
-          created_by: user!.id
+      // 1. FIRST upload all files
+      let imageUrls: string[] = [];
+      let brochureUrl: string | null = null;
+      
+      // Upload images
+      if (step2.images && step2.images.length > 0) {
+        const imageFiles = step2.images.filter(img => img instanceof File) as File[];
+        if (imageFiles.length > 0) {
+          imageUrls = await uploadFiles(imageFiles, 'images');
+          console.log('✅ Images uploadées:', imageUrls);
         }
+      }
+      
+      // Upload PDF
+      if (step2.brochure && step2.brochure instanceof File) {
+        const [pdfUrl] = await uploadFiles([step2.brochure], 'brochures');
+        brochureUrl = pdfUrl;
+        console.log('✅ PDF uploadé:', brochureUrl);
+      }
+
+      // 2. THEN build payload with URLs (not Files)
+      const payload = {
+        event_id: event.id,
+        exhibitor_id: exhibitorId,
+        title: step2.title.trim(),
+        type: step2.type,
+        reason: step2.reason.trim(),
+        images: imageUrls,
+        brochure_pdf_url: brochureUrl,
+        stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info?.trim() || null : null,
+        created_by: user!.id
+      };
+
+      // DEBUG - À retirer après résolution
+      console.group('🐛 DEBUG - Payload novelties-create');
+      console.log('📤 Payload à envoyer:', payload);
+      console.log('📋 Types des champs:');
+      console.log('- event_id:', typeof payload.event_id, payload.event_id);
+      console.log('- exhibitor_id:', typeof payload.exhibitor_id, payload.exhibitor_id);
+      console.log('- images type:', Array.isArray(payload.images) ? 'array' : typeof payload.images);
+      console.log('- images content:', payload.images?.map(img => ({
+        type: typeof img,
+        url: img
+      })));
+      console.log('- brochure_pdf_url type:', typeof payload.brochure_pdf_url);
+      console.log('- brochure_pdf_url value:', payload.brochure_pdf_url);
+      console.groupEnd();
+
+      // 3. Call Edge function with URLs
+      const { data: novelty, error: noveltyError } = await supabase.functions.invoke('novelties-create', {
+        body: payload
       });
+
+      // DEBUG Response
+      console.group('🐛 DEBUG - Response novelties-create');
+      console.log('Response:', noveltyError || novelty);
+      if (noveltyError) {
+        console.error('❌ Erreur détaillée:', noveltyError);
+      }
+      console.groupEnd();
 
       if (noveltyError) {
         // Check for validation errors (422)
@@ -291,6 +363,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
           try {
             const errorData = JSON.parse(noveltyError.message);
             if (errorData.error === 'validation_failed' && errorData.fields) {
+              console.error('❌ Erreurs de validation:', errorData.fields);
               setFieldErrors(errorData.fields);
               toast({
                 title: 'Formulaire incomplet',
@@ -303,91 +376,35 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             // Not a JSON error, continue with generic error handling
           }
         }
-        throw new Error('Impossible de créer la nouveauté');
+        throw new Error(noveltyError.message || 'Impossible de créer la nouveauté');
       }
 
       if (!novelty) {
         throw new Error('Impossible de créer la nouveauté');
       }
 
-      const uploadedFiles: string[] = [];
+      console.log('✅ Nouveauté créée:', novelty);
 
-      try {
-      // Upload images
-      if (step2.images.length > 0) {
-        const imageFiles = step2.images.filter((img): img is File => img instanceof File);
-        if (imageFiles.length > 0) {
-          const { successes, failures } = await uploadNoveltyImages(novelty.id, imageFiles);
-          
-          if (failures.length > 0) {
-            console.warn('Some image uploads failed:', failures);
-          }
+      toast({
+        title: 'Succès',
+        description: 'Votre nouveauté a été créée avec succès !',
+        variant: 'default'
+      });
 
-          // Record successful uploads
-          for (const success of successes) {
-            if (success.url) {
-              await supabase
-                .from('novelty_images')
-                .insert({
-                  novelty_id: novelty.id,
-                  url: success.url,
-                  position: successes.indexOf(success)
-                });
-              
-              uploadedFiles.push(success.url);
-            }
-          }
-        }
-      }
+      // Success!
+      setSubmissionResult({
+        success: true,
+        message: exhibitorApproved 
+          ? 'Votre nouveauté est publiée ! 🎉'
+          : 'Votre nouveauté a été soumise et sera publiée après validation de l\'exposant.',
+        noveltyId: novelty.id
+      });
 
-        // Upload brochure
-        if (step2.brochure) {
-          const brochureResult = await uploadNoveltyResource(novelty.id, step2.brochure);
-          
-          if (brochureResult.success && brochureResult.url) {
-            await supabase
-              .from('novelties')
-              .update({ resource_url: brochureResult.url })
-              .eq('id', novelty.id);
-            
-            uploadedFiles.push(brochureResult.url);
-          }
-        }
-
-        // Initialize stats
-        await supabase
-          .from('novelty_stats')
-          .insert({
-            novelty_id: novelty.id,
-            likes: 0,
-            saves: 0,
-            resource_downloads: 0,
-            meeting_requests: 0
-          });
-
-        // Success!
-        setSubmissionResult({
-          success: true,
-          message: exhibitorApproved 
-            ? 'Votre nouveauté est publiée ! 🎉'
-            : 'Votre nouveauté a été soumise et sera publiée après validation de l\'exposant.',
-          noveltyId: novelty.id
-        });
-
-        // Clear saved state
-        localStorage.removeItem('addNoveltyStepperState');
-
-      } catch (uploadError) {
-        // Cleanup failed uploads
-        await cleanupFailedUploads(uploadedFiles);
-        
-        // Delete the novelty record since uploads failed
-        await supabase.from('novelties').delete().eq('id', novelty.id);
-        
-        throw uploadError;
-      }
+      // Clear saved state
+      localStorage.removeItem('addNoveltyStepperState');
 
     } catch (error) {
+      console.error('🚨 Erreur création nouveauté:', error);
       toast({
         title: 'Erreur',
         description: error instanceof Error ? error.message : 'Impossible de soumettre la nouveauté',

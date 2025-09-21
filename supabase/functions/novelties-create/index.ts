@@ -21,6 +21,8 @@ interface CreateNoveltyRequest {
 function validateNoveltyData(data: any): { valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {}
   
+  console.log('🔍 Validating novelty data:', data)
+  
   if (!data.title || data.title.length < 3 || data.title.length > 120) {
     errors.title = 'Titre requis (3-120 caractères)'
   }
@@ -34,13 +36,29 @@ function validateNoveltyData(data: any): { valid: boolean; errors: Record<string
     errors.reason = 'Raison requise (10-500 caractères)'
   }
   
-  if (data.images && data.images.length > 3) {
+  if (!data.images || !Array.isArray(data.images) || data.images.length === 0) {
+    errors.images = 'Au moins une image est requise'
+  } else if (data.images.length > 3) {
     errors.images = 'Maximum 3 images autorisées'
+  } else {
+    // Validate that images are URLs
+    for (let i = 0; i < data.images.length; i++) {
+      if (typeof data.images[i] !== 'string' || !data.images[i].startsWith('http')) {
+        errors.images = 'Les images doivent être des URLs valides'
+        break
+      }
+    }
   }
   
   if (!data.event_id || !data.exhibitor_id) {
-    errors.general = 'Informations manquantes'
+    errors.general = 'Informations manquantes (event_id ou exhibitor_id)'
   }
+  
+  if (!data.created_by) {
+    errors.general = 'Utilisateur manquant (created_by)'
+  }
+  
+  console.log('🔍 Validation errors:', errors)
   
   return { valid: Object.keys(errors).length === 0, errors }
 }
@@ -74,13 +92,28 @@ Deno.serve(async (req) => {
       )
     }
 
-    const requestData: CreateNoveltyRequest = await req.json()
+    let requestData: CreateNoveltyRequest
+    try {
+      requestData = await req.json()
+      console.log('📥 Request body received:', requestData)
+    } catch (error) {
+      console.error('❌ Invalid JSON body:', error)
+      return new Response(
+        JSON.stringify({ error: 'Corps de requête JSON invalide', message: error.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Validate request data
     const validation = validateNoveltyData(requestData)
     if (!validation.valid) {
+      console.error('❌ Validation failed:', validation.errors)
       return new Response(
-        JSON.stringify({ error: 'validation_failed', fields: validation.errors }),
+        JSON.stringify({ 
+          error: 'validation_failed', 
+          message: 'Données de validation invalides',
+          fields: validation.errors 
+        }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -185,11 +218,18 @@ Deno.serve(async (req) => {
       .single()
 
     if (createError) {
+      console.error('❌ Database error creating novelty:', createError)
       return new Response(
-        JSON.stringify({ error: 'Failed to create novelty' }),
+        JSON.stringify({ 
+          error: 'Failed to create novelty',
+          message: createError.message,
+          details: createError
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log('✅ Novelty created successfully:', novelty)
 
     // Initialize stats
     await supabase
