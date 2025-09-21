@@ -494,21 +494,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         console.log('Error object:', noveltyError);
         console.log('Error message:', noveltyError.message);
         console.log('Error details:', noveltyError.details);
-        
-        // Check for validation errors (422)
-        if (noveltyError.message && typeof noveltyError.message === 'string') {
-          try {
-            const errorData = JSON.parse(noveltyError.message);
-            if (errorData.errors) {
-              console.log('🔍 Erreurs de validation détaillées:');
-              Object.entries(errorData.errors).forEach(([field, messages]) => {
-                console.error(`  - ${field}:`, messages);
-              });
-            }
-          } catch (parseError) {
-            console.log('Cannot parse error message as JSON');
-          }
-        }
+        console.log('Error code:', noveltyError.code);
         console.groupEnd();
         
         throw new Error(noveltyError.message || 'Impossible de créer la nouveauté');

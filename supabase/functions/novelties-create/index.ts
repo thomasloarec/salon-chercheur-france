@@ -219,8 +219,8 @@ serve(async (req) => {
     console.log('🔍 [DB] Vérification événement...');
     const { data: event, error: eventError } = await supabaseClient
       .from('events')
-      .select('id, nom_event, visible')
-      .eq('id', validatedData.event_id)
+      .select('id_event, nom_event, visible')
+      .eq('id_event', validatedData.event_id)
       .single();
 
     if (eventError) {
@@ -245,7 +245,7 @@ serve(async (req) => {
     console.log('✅ [DB] Événement trouvé:', event.nom_event);
 
     if (!event.visible) {
-      console.error('❌ [DB] Événement non visible:', event.id);
+      console.error('❌ [DB] Événement non visible:', event.id_event);
       return new Response(
         JSON.stringify({ message: 'Événement non accessible' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -281,19 +281,18 @@ serve(async (req) => {
       title: validatedData.title,
       type: validatedData.novelty_type,
       reason_1: validatedData.reason,
-      images: validatedData.images,
-      brochure_pdf_url: validatedData.brochure_pdf,
+      media_urls: validatedData.images,
+      doc_url: validatedData.brochure_pdf,
       stand_info: validatedData.stand_info,
       status: status,
       created_by: validatedData.created_by,
-      created_at: new Date().toISOString(),
-      images_count: validatedData.images?.length || 0
+      created_at: new Date().toISOString()
     };
 
     console.log('💾 [DB] Création nouveauté avec data:', {
       ...noveltyData,
       reason_1: noveltyData.reason_1.substring(0, 50) + '...',
-      images: `${noveltyData.images.length} images`
+      media_urls: `${noveltyData.media_urls?.length || 0} images`
     });
 
     const { data: novelty, error: createError } = await supabaseClient
