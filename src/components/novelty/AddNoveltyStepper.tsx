@@ -158,7 +158,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             name: state.step1Data.exhibitor.name,
             website: state.step1Data.exhibitor.website,
             stand_info: 'stand_info' in state.step1Data.exhibitor ? state.step1Data.exhibitor.stand_info : undefined,
-            event_id: event.id_event
+            event_id: event.id
           }
         });
 
@@ -325,7 +325,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             name: step1.exhibitor.name,
             website: step1.exhibitor.website || null,
             stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info || null : null,
-            event_id: event.id_event
+            event_id: event.id
           }
         });
 
@@ -449,7 +449,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
 
       // 4. Construction du payload final
       const payload = {
-        event_id: event.id_event,
+        event_id: event.id, // ✅ CORRECTION: Utiliser l'UUID de l'événement
         exhibitor_id: exhibitorId,
         title: step2.title.trim(),
         novelty_type: step2.type,
