@@ -32,7 +32,7 @@ export default function Step2NoveltyDetails({
     title: data.title || '',
     type: data.type || '',
     reason: data.reason || '',
-    images: data.images || [],
+    images: (data.images || []) as (File | string)[],
     brochure: data.brochure || null
   });
 

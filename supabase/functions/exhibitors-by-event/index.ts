@@ -34,12 +34,16 @@ Deno.serve(async (req) => {
       }
     )
 
-    const { event_id, search } = await req.json()
+    const { event_id, slug, search } = await req.json()
 
-    if (!event_id) {
+    if (!event_id && !slug) {
       return new Response(
-        JSON.stringify({ error: 'event_id is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          items: [], 
+          meta: { error: "missing_params", message: "event_id or slug required" },
+          total: 0 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -56,14 +60,22 @@ Deno.serve(async (req) => {
           stand_info
         )
       `)
-      .eq('id_event', event_id)
+
+    if (event_id) {
+      query = query.eq('id_event', event_id);
+    }
 
     const { data: participations, error } = await query
 
     if (error) {
+      console.error('Database error:', error);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch exhibitors' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          items: [], 
+          meta: { error: "database_error", message: "Failed to fetch exhibitors" },
+          total: 0 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -86,16 +98,22 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        exhibitors,
+        items: exhibitors,
+        meta: { error: null },
         total: exhibitors.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
+    console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        items: [], 
+        meta: { error: "internal_error", message: "Internal server error" },
+        total: 0 
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

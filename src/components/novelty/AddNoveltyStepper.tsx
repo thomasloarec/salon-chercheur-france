@@ -287,9 +287,11 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       const uploadedFiles: string[] = [];
 
       try {
-        // Upload images
-        if (step2.images.length > 0) {
-          const { successes, failures } = await uploadNoveltyImages(novelty.id, step2.images);
+      // Upload images
+      if (step2.images.length > 0) {
+        const imageFiles = step2.images.filter((img): img is File => img instanceof File);
+        if (imageFiles.length > 0) {
+          const { successes, failures } = await uploadNoveltyImages(novelty.id, imageFiles);
           
           if (failures.length > 0) {
             console.warn('Some image uploads failed:', failures);
@@ -310,6 +312,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             }
           }
         }
+      }
 
         // Upload brochure
         if (step2.brochure) {
@@ -421,9 +424,9 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
           <DialogHeader>
             <DialogTitle>Ajouter une nouveauté</DialogTitle>
           </DialogHeader>
-          <div id="novelty-stepper-description" className="sr-only">
+          <p id="novelty-stepper-description" className="sr-only">
             Formulaire en 2 étapes pour ajouter une nouveauté à un événement
-          </div>
+          </p>
 
         {/* Progress indicator */}
         <div className="space-y-4">

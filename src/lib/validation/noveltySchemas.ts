@@ -74,10 +74,10 @@ export const step2Schema = z.object({
     .min(1, 'Expliquez pourquoi c\'est intéressant')
     .max(500, 'Description trop longue (max 500 caractères)'),
   
-  images: z.array(z.instanceof(File))
+  images: z.array(z.union([z.instanceof(File), z.string()]))
     .max(3, 'Maximum 3 images autorisées')
     .refine(
-      (files) => files.every(isValidImageFile),
+      (files) => files.filter(f => f instanceof File).every(isValidImageFile),
       'Images invalides (JPG/PNG/WEBP, max 5MB chacune)'
     ),
   

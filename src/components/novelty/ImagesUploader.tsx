@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImagesUploaderProps {
-  files: File[];
-  onChange: (files: File[]) => void;
+  files: (File | string)[];
+  onChange: (files: (File | string)[]) => void;
   maxFiles?: number;
   maxSize?: number; // in bytes
   acceptedTypes?: string[];
@@ -22,6 +22,16 @@ export default function ImagesUploader({
 }: ImagesUploaderProps) {
   const { toast } = useToast();
   const [dragOver, setDragOver] = useState(false);
+
+  // Normalize files prop to always be an array
+  const items = Array.isArray(files) ? files.filter(Boolean) : [];
+
+  // Helper to get image source
+  const getSrc = (item: File | string): string => {
+    if (item instanceof File) return URL.createObjectURL(item);
+    if (typeof item === 'string') return item;
+    return '';
+  };
 
   const validateFile = (file: File): boolean => {
     if (!acceptedTypes.includes(file.type)) {
@@ -48,9 +58,9 @@ export default function ImagesUploader({
   const handleFileSelect = useCallback((newFiles: FileList | null) => {
     if (!newFiles) return;
 
-    const validFiles = Array.from(newFiles).filter(validateFile);
+    const validFiles = Array.from(newFiles).filter(f => f && f.type && /^image\//.test(f.type) && validateFile(f));
     
-    if (files.length + validFiles.length > maxFiles) {
+    if (items.length + validFiles.length > maxFiles) {
       toast({
         title: 'Limite atteinte',
         description: `Maximum ${maxFiles} images autorisées`,
@@ -59,8 +69,9 @@ export default function ImagesUploader({
       return;
     }
 
-    onChange([...files, ...validFiles]);
-  }, [files, onChange, maxFiles, maxSize, toast]);
+    const nextFiles = [...items, ...validFiles].slice(0, maxFiles);
+    onChange(nextFiles);
+  }, [items, onChange, maxFiles, validateFile, toast]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -78,12 +89,12 @@ export default function ImagesUploader({
   }, []);
 
   const removeFile = (index: number) => {
-    const newFiles = files.filter((_, i) => i !== index);
+    const newFiles = items.filter((_, i) => i !== index);
     onChange(newFiles);
   };
 
   const moveFile = (fromIndex: number, toIndex: number) => {
-    const newFiles = [...files];
+    const newFiles = [...items];
     const [moved] = newFiles.splice(fromIndex, 1);
     newFiles.splice(toIndex, 0, moved);
     onChange(newFiles);
@@ -124,79 +135,89 @@ export default function ImagesUploader({
       </div>
 
       {/* Preview grid */}
-      {files.length > 0 && (
+      {items.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {files.map((file, index) => (
-            <div
-              key={`${file.name}-${index}`}
-              className="relative group aspect-square rounded-lg overflow-hidden border bg-muted"
-            >
-              {file.type.startsWith('image/') ? (
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={`Preview ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  onLoad={() => URL.revokeObjectURL(URL.createObjectURL(file))}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                </div>
-              )}
-              
-              {/* Controls overlay */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                {/* Move buttons */}
-                {index > 0 && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="h-6 w-6 p-0"
-                    onClick={() => moveFile(index, index - 1)}
-                    title="Déplacer vers la gauche"
-                  >
-                    <Move className="h-3 w-3 rotate-180" />
-                  </Button>
+          {items.map((item, index) => {
+            const src = getSrc(item);
+            const itemKey = item instanceof File ? `${item.name}-${index}` : `${item}-${index}`;
+            
+            return (
+              <div
+                key={itemKey}
+                className="relative group aspect-square rounded-lg overflow-hidden border bg-muted"
+              >
+                {src ? (
+                  <img
+                    src={src}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onLoad={() => {
+                      // Only revoke object URLs created for Files
+                      if (item instanceof File) {
+                        URL.revokeObjectURL(src);
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
                 )}
                 
-                {index < files.length - 1 && (
+                {/* Controls overlay */}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  {/* Move buttons */}
+                  {index > 0 && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-6 w-6 p-0"
+                      onClick={() => moveFile(index, index - 1)}
+                      title="Déplacer vers la gauche"
+                    >
+                      <Move className="h-3 w-3 rotate-180" />
+                    </Button>
+                  )}
+                  
+                  {index < items.length - 1 && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-6 w-6 p-0"
+                      onClick={() => moveFile(index, index + 1)}
+                      title="Déplacer vers la droite"
+                    >
+                      <Move className="h-3 w-3" />
+                    </Button>
+                  )}
+
+                  {/* Remove button */}
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant="destructive"
                     className="h-6 w-6 p-0"
-                    onClick={() => moveFile(index, index + 1)}
-                    title="Déplacer vers la droite"
+                    onClick={() => removeFile(index)}
+                    title="Supprimer"
                   >
-                    <Move className="h-3 w-3" />
+                    <X className="h-3 w-3" />
                   </Button>
-                )}
+                </div>
 
-                {/* Remove button */}
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="h-6 w-6 p-0"
-                  onClick={() => removeFile(index)}
-                  title="Supprimer"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                {/* Position indicator */}
+                <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                  {index + 1}
+                </div>
               </div>
-
-              {/* Position indicator */}
-              <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                {index + 1}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* File info */}
-      {files.length > 0 && (
+      {items.length > 0 && (
         <div className="text-sm text-muted-foreground">
-          {files.length} image{files.length > 1 ? 's' : ''} sélectionnée{files.length > 1 ? 's' : ''}
-          {maxFiles > files.length && ` • ${maxFiles - files.length} restante${maxFiles - files.length > 1 ? 's' : ''}`}
+          {items.length} image{items.length > 1 ? 's' : ''} sélectionnée{items.length > 1 ? 's' : ''}
+          {maxFiles > items.length && ` • ${maxFiles - items.length} restante${maxFiles - items.length > 1 ? 's' : ''}`}
         </div>
       )}
     </div>
