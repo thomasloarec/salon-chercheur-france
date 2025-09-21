@@ -78,7 +78,7 @@ const Agenda = () => {
             </h1>
             <div className="flex items-center gap-4 mt-2">
               <p className="text-gray-600">
-                {isLoading ? 'Chargement...' : `${agendaEvents.length} salon(s) dans votre agenda`}
+                {isLoading ? 'Chargement...' : `${events.length} salon(s) dans votre agenda`}
               </p>
               {nextEvent && (
                 <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
@@ -123,9 +123,9 @@ const Agenda = () => {
                     </div>
                   ))}
                 </div>
-              ) : agendaEvents.length > 0 ? (
+              ) : events.length > 0 ? (
                 <div className="space-y-6">
-                  {agendaEvents.map((event) => (
+                  {events.map((event) => (
                     <div key={event.id} className="bg-white rounded-lg shadow-sm border p-6">
                       {/* Event Header */}
                       <div className="flex items-start gap-4 mb-4">
@@ -141,7 +141,7 @@ const Agenda = () => {
                             <h3 className="text-xl font-semibold">{event.nom_event}</h3>
                             {event.secteur && event.secteur.length > 0 && (
                               <Badge variant="secondary" className="text-xs">
-                                {event.secteur[0]}
+                                {Array.isArray(event.secteur) ? event.secteur[0] : event.secteur}
                               </Badge>
                             )}
                           </div>
@@ -160,74 +160,24 @@ const Agenda = () => {
                         </Link>
                       </div>
 
-                      {/* Liked Novelties */}
-                      {event.likedNovelties.length > 0 && (
-                        <div>
-                          <h4 className="font-medium mb-3 flex items-center gap-2">
-                            <Heart className="h-4 w-4 text-red-500 fill-current" />
-                            Vos nouveautés à voir ({event.likedNovelties.length})
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {event.likedNovelties.map((novelty) => (
-                              <div key={novelty.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                                <div className="flex items-start gap-3">
-                                  {novelty.exhibitor_logo ? (
-                                    <img
-                                      src={novelty.exhibitor_logo}
-                                      alt={novelty.exhibitor_name}
-                                      className="w-8 h-8 rounded object-cover flex-shrink-0"
-                                    />
-                                  ) : (
-                                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                                      <span className="text-xs font-medium">
-                                        {novelty.exhibitor_name.charAt(0)}
-                                      </span>
-                                    </div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Badge variant="outline" className="text-xs">
-                                        {NOVELTY_TYPE_LABELS[novelty.type] || novelty.type}
-                                      </Badge>
-                                      {novelty.stand_info && (
-                                        <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                                          <MapPin className="h-3 w-3" />
-                                          {novelty.stand_info}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <h5 className="font-medium text-sm mb-1 leading-tight">
-                                      {novelty.title}
-                                    </h5>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                      {novelty.exhibitor_name}
-                                    </p>
-                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                      <span className="flex items-center gap-1">
-                                        <Heart className="h-3 w-3 text-red-500 fill-current" />
-                                        {novelty.likes_count}
-                                      </span>
-                                      {novelty.doc_url && (
-                                        <span className="flex items-center gap-1">
-                                          <Download className="h-3 w-3" />
-                                          Brochure
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mt-4">
-                            <Link to={`/events/${event.slug}#nouveautes`}>
-                              <Button variant="outline" size="sm" className="w-full">
-                                Voir toutes les nouveautés de ce salon
-                              </Button>
-                            </Link>
-                          </div>
+                      {/* Event Description */}
+                      {event.description_event && (
+                        <div className="mt-4">
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {event.description_event}
+                          </p>
                         </div>
                       )}
+
+                      {/* Action to view novelties */}
+                      <div className="mt-4 pt-4 border-t">
+                        <Link to={`/events/${event.slug}#nouveautes`}>
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Heart className="h-4 w-4 mr-2 text-red-500" />
+                            Découvrir les nouveautés de ce salon
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   ))}
                 </div>
