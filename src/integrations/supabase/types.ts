@@ -556,6 +556,44 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_admin_claims: {
+        Row: {
+          created_at: string
+          exhibitor_id: string
+          id: string
+          reason: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exhibitor_id: string
+          id?: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exhibitor_id?: string
+          id?: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_admin_claims_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exhibitor_claim_requests: {
         Row: {
           created_at: string | null
@@ -662,6 +700,7 @@ export type Database = {
       }
       exhibitors: {
         Row: {
+          approved: boolean | null
           created_at: string | null
           description: string | null
           id: string
@@ -670,10 +709,12 @@ export type Database = {
           owner_user_id: string | null
           plan: string | null
           slug: string | null
+          stand_info: string | null
           updated_at: string | null
           website: string | null
         }
         Insert: {
+          approved?: boolean | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -682,10 +723,12 @@ export type Database = {
           owner_user_id?: string | null
           plan?: string | null
           slug?: string | null
+          stand_info?: string | null
           updated_at?: string | null
           website?: string | null
         }
         Update: {
+          approved?: boolean | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -694,6 +737,7 @@ export type Database = {
           owner_user_id?: string | null
           plan?: string | null
           slug?: string | null
+          stand_info?: string | null
           updated_at?: string | null
           website?: string | null
         }
@@ -806,6 +850,56 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          lead_type: string
+          notes: string | null
+          novelty_id: string
+          phone: string | null
+          role: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          lead_type: string
+          notes?: string | null
+          novelty_id: string
+          phone?: string | null
+          role?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          lead_type?: string
+          notes?: string | null
+          novelty_id?: string
+          phone?: string | null
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscriptions: {
         Row: {
           created_at: string
@@ -852,17 +946,22 @@ export type Database = {
           audience_tags: string[] | null
           availability: string | null
           created_at: string | null
+          created_by: string | null
           demo_slots: Json | null
+          details: string | null
           doc_url: string | null
           event_id: string
           exhibitor_id: string
           id: string
+          images_count: number | null
           media_urls: string[] | null
           reason_1: string | null
           reason_2: string | null
           reason_3: string | null
+          resource_url: string | null
           stand_info: string | null
           status: string | null
+          summary: string | null
           title: string
           type: string
           updated_at: string | null
@@ -871,17 +970,22 @@ export type Database = {
           audience_tags?: string[] | null
           availability?: string | null
           created_at?: string | null
+          created_by?: string | null
           demo_slots?: Json | null
+          details?: string | null
           doc_url?: string | null
           event_id: string
           exhibitor_id: string
           id?: string
+          images_count?: number | null
           media_urls?: string[] | null
           reason_1?: string | null
           reason_2?: string | null
           reason_3?: string | null
+          resource_url?: string | null
           stand_info?: string | null
           status?: string | null
+          summary?: string | null
           title: string
           type: string
           updated_at?: string | null
@@ -890,17 +994,22 @@ export type Database = {
           audience_tags?: string[] | null
           availability?: string | null
           created_at?: string | null
+          created_by?: string | null
           demo_slots?: Json | null
+          details?: string | null
           doc_url?: string | null
           event_id?: string
           exhibitor_id?: string
           id?: string
+          images_count?: number | null
           media_urls?: string[] | null
           reason_1?: string | null
           reason_2?: string | null
           reason_3?: string | null
+          resource_url?: string | null
           stand_info?: string | null
           status?: string | null
+          summary?: string | null
           title?: string
           type?: string
           updated_at?: string | null
@@ -925,6 +1034,38 @@ export type Database = {
             columns: ["exhibitor_id"]
             isOneToOne: false
             referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      novelty_images: {
+        Row: {
+          created_at: string
+          id: string
+          novelty_id: string
+          position: number
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          novelty_id: string
+          position: number
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          novelty_id?: string
+          position?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_images_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
             referencedColumns: ["id"]
           },
         ]
@@ -1076,6 +1217,27 @@ export type Database = {
           stand_exposant?: string | null
           urlexpo_event?: string | null
           website_exposant?: string | null
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          created_at: string
+          plan: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          plan?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          plan?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1526,6 +1688,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_add_novelty: {
+        Args: { p_exhibitor_id: string; p_user_id: string }
+        Returns: boolean
+      }
       can_publish_novelty: {
         Args: { event_id: string; exhibitor_id: string }
         Returns: boolean
@@ -1605,6 +1771,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_novelty_stat: {
+        Args: { p_field: string; p_novelty_id: string }
+        Returns: undefined
       }
       is_admin: {
         Args: Record<PropertyKey, never>
