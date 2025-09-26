@@ -34,56 +34,63 @@ Deno.serve(async (req) => {
       }
     )
 
-    const { event_id, slug, search } = await req.json()
+    const { event_slug, search } = await req.json()
 
-    if (!event_id && !slug) {
+    if (!event_slug) {
       return new Response(
         JSON.stringify({ 
-          items: [], 
-          meta: { error: "missing_params", message: "event_id or slug required" },
+          exhibitors: [], 
           total: 0 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Get exhibitors participating in this event
-    let query = supabase
-      .from('participation')
-      .select(`
-        exhibitors!inner(
-          id,
-          name,
-          website,
-          logo_url,
-          approved,
-          stand_info
-        )
-      `)
+    // First, get the event's id_event (Event_XX) from slug
+    const { data: eventData, error: eventError } = await supabase
+      .from('events')
+      .select('id_event')
+      .eq('slug', event_slug)
+      .single()
 
-    if (event_id) {
-      query = query.eq('id_event', event_id);
+    if (eventError || !eventData?.id_event) {
+      return new Response(
+        JSON.stringify({ 
+          exhibitors: [], 
+          total: 0 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const { data: participations, error } = await query
+    // Get exhibitors from participations_with_exhibitors view using id_event_text
+    const { data: participations, error } = await supabase
+      .from('participations_with_exhibitors')
+      .select('*')
+      .eq('id_event_text', eventData.id_event)
 
     if (error) {
       console.error('Database error:', error);
       return new Response(
         JSON.stringify({ 
-          items: [], 
-          meta: { error: "database_error", message: "Failed to fetch exhibitors" },
+          exhibitors: [], 
           total: 0 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Extract and flatten exhibitors
-    let exhibitors: DbExhibitor[] = (participations || [])
-      .map(p => p.exhibitors)
-      .filter(Boolean)
-      .flat()
+    // Map to expected format
+    let exhibitors = (participations || []).map(p => ({
+      id: p.id_exposant || String(p.exhibitor_uuid || ''),
+      name: p.exhibitor_name || p.id_exposant || '',
+      slug: p.id_exposant || String(p.exhibitor_uuid || ''),
+      logo_url: null,
+      stand: p.stand_exposant || null,
+      hall: null,
+      plan: 'free' as const,
+      website: p.exhibitor_website || p.website_exposant || null
+    })).filter(e => e.name)
 
     // Apply search filter if provided
     if (search && search.trim()) {
@@ -99,8 +106,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        items: exhibitors,
-        meta: { error: null },
+        exhibitors,
         total: exhibitors.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -110,8 +116,7 @@ Deno.serve(async (req) => {
     console.error('Unexpected error:', error);
     return new Response(
       JSON.stringify({ 
-        items: [], 
-        meta: { error: "internal_error", message: "Internal server error" },
+        exhibitors: [], 
         total: 0 
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
