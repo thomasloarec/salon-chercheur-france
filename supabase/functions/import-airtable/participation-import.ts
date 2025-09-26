@@ -1,4 +1,3 @@
-import { normalizeUrl } from '../_shared/normalization-utils.ts';
 import type { 
   AirtableParticipationRecord, 
   ParticipationImportResult, 
@@ -47,6 +46,14 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       rue, code_postal, type_event, tarif, affluence
     `)
   ]);
+  
+  // Créer un mapping id_event_text -> UUID pour la résolution
+  const eventIdToUuidMap = new Map<string, string>();
+  publishedEvents?.forEach((e: any) => {
+    if (e.id_event && e.id) {
+      eventIdToUuidMap.set(e.id_event, e.id);
+    }
+  });
   
   const allEventIds = new Set<string>([
     ...(publishedEvents?.map((e: any) => e.id_event).filter(Boolean) ?? []),
@@ -116,12 +123,35 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     console.log(`[SYNC] ${syncedEventsCount} événements synchronisés avec visible=false`);
     console.log(`[METRICS] ${syncedEventsCount} événements staging→events synchronisés`);
     
-    // Mettre à jour allEventIds avec les événements nouvellement synchronisés
+    // Mettre à jour allEventIds avec les événements nouvellement synchronisés  
     const newlySyncedIds = eventsOnlyInStaging.map(e => e.id_event).filter(Boolean);
     newlySyncedIds.forEach(id => allEventIds.add(id));
     console.log(`[SYNC] allEventIds mis à jour, total: ${allEventIds.size} événements`);
+    
+    // Mettre à jour le mapping avec les événements synchronisés (récupérer leurs nouveaux UUID)
+    const { data: newlyCreatedEvents } = await supabaseClient
+      .from('events')
+      .select('id, id_event')
+      .in('id_event', newlySyncedIds);
+    
+    newlyCreatedEvents?.forEach((e: any) => {
+      if (e.id_event && e.id) {
+        eventIdToUuidMap.set(e.id_event, e.id);
+      }
+    });
   } else {
     console.log('[SYNC] Aucun événement staging à synchroniser');
+  }
+  
+  // Fonction de normalisation locale pour la cohérence
+  function normalizeDomain(input?: string|null): string|null {
+    if (!input) return null;
+    let s = input.trim().toLowerCase();
+    s = s.replace(/^https?:\/\//, '');
+    s = s.replace(/^www\./, '');
+    s = s.split('/')[0].split('#')[0].split('?')[0];
+    s = s.replace(/\.$/, '');
+    return s || null;
   }
   
   // Mapping exposants en amont
@@ -132,7 +162,10 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
   const exposantMap = new Map<string, string>();
   exposants?.forEach((e: any) => {
     if (e.website_exposant) {
-      exposantMap.set(normalizeUrl(e.website_exposant), e.id_exposant);
+      const normalized = normalizeDomain(e.website_exposant);
+      if (normalized) {
+        exposantMap.set(normalized, e.id_exposant);
+      }
     }
   });
   
@@ -146,51 +179,51 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     const f = r.fields;
     const recordId = r.id;
 
-    // Extraire urlexpo_event
-    const rawUrlField = f['urlexpo_event'];
-    const rawUrlKey = Array.isArray(rawUrlField) ? rawUrlField[0] : rawUrlField;
-    
-    if (!rawUrlKey) {
-      participationErrors.push({ 
-        record_id: recordId, 
-        reason: 'urlexpo_event manquant'
-      });
-      continue;
-    }
-    const urlKey = rawUrlKey.trim();
-
     const rawEventField = f['id_event_text'];
     const rawEventId = Array.isArray(rawEventField) ? rawEventField[0]?.trim() : rawEventField?.trim();
 
-    // Validation existence de l'événement (publiés + staging)
-    const exists = allEventIds.has(rawEventId);
-    if (!exists) {
+    // Résoudre l'UUID de l'événement depuis Event_XX
+    const eventUuid = eventIdToUuidMap.get(rawEventId);
+    if (!eventUuid) {
       participationErrors.push({
         record_id: recordId,
-        reason: `event non trouvé dans Supabase (${rawEventId})`
+        reason: `event UUID non résolu pour ${rawEventId}`
       });
       continue;
     }
 
     // mapping exposant
     const rawWeb = f['website_exposant'];
-    const normalizedWeb = normalizeUrl(rawWeb || '');
-    const exposantId = exposantMap.get(normalizedWeb);
+    const domain = normalizeDomain(rawWeb);
     
+    if (!domain) {
+      participationErrors.push({
+        record_id: recordId,
+        reason: `website_exposant invalide: ${rawWeb}`
+      });
+      continue;
+    }
+    
+    const exposantId = exposantMap.get(domain);
     if (!exposantId) {
       participationErrors.push({
         record_id: recordId,
-        reason: `exposant introuvable (${normalizedWeb})`
+        reason: `exposant introuvable (${domain})`
       });
       continue;
     }
 
+    // Construire urlexpo_event pour déduplication
+    const standInfo = f['stand_exposant']?.trim() || '';
+    const urlExpoKey = `${domain}_${standInfo}`;
+
     toInsert.push({
-      urlexpo_event: urlKey,
-      id_event: rawEventId, // Utiliser la valeur texte directement
-      id_exposant: exposantId,
-      stand_exposant: f['stand_exposant']?.trim() || null,
-      website_exposant: normalizedWeb
+      urlexpo_event: urlExpoKey,
+      id_event: eventUuid,        // UUID résolu
+      id_exposant: exposantId,    // Texte exposant ID  
+      stand_exposant: standInfo || null,  
+      website_exposant: rawWeb || null,
+      created_at: new Date().toISOString()
     });
   }
 
@@ -207,7 +240,7 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     try {
       const { data, error } = await supabaseClient
         .from('participation')
-        .upsert(toInsert, { onConflict: 'id_event,id_exposant' })
+        .upsert(toInsert, { onConflict: 'urlexpo_event' })
         .select();
       
       if (error) {
