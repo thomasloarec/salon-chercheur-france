@@ -96,7 +96,7 @@ serve(async (req) => {
       );
     }
 
-    const response = { 
+    const response: { success: boolean; lead_id: any; message: string; download_url?: string } = { 
       success: true, 
       lead_id: lead.id,
       message: data.lead_type === 'brochure_download' ? 'Brochure download recorded' : 'Meeting request created'
@@ -114,7 +114,7 @@ serve(async (req) => {
 
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: corsHeaders }
     );
   }

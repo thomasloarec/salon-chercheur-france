@@ -79,10 +79,11 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Extract and filter exhibitors
+    // Extract and flatten exhibitors
     let exhibitors: DbExhibitor[] = (participations || [])
       .map(p => p.exhibitors)
       .filter(Boolean)
+      .flat()
 
     // Apply search filter if provided
     if (search && search.trim()) {

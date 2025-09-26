@@ -121,7 +121,7 @@ serve(async (req: Request) => {
         headers: { "Content-Type": "application/json", ...corsHeaders(req) }
       });
     }
-    if (redirect_uri.includes("/api/oauth/")) {
+    if (redirect_uri && redirect_uri.includes("/api/oauth/")) {
       return new Response(JSON.stringify({ success:false, stage:"config_validation", message:"redirect_uri_contains_api_path", expected:"https://lotexpo.com/oauth/hubspot/callback", got:redirect_uri }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders(req) }
@@ -159,6 +159,17 @@ serve(async (req: Request) => {
 
     // Échange code → tokens avec logging détaillé
     const scopes = "oauth crm.objects.companies.read crm.objects.contacts.read";
+    if (!client_id || !client_secret || !redirect_uri || !code) {
+      return new Response(JSON.stringify({
+        success: false,
+        stage: "param_validation", 
+        message: "Missing required OAuth parameters"
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
+    }
+    
     const params = new URLSearchParams({
       grant_type: "authorization_code",
       client_id, client_secret, redirect_uri, code
@@ -247,6 +258,17 @@ serve(async (req: Request) => {
     const expires_at = new Date(Date.now() + (tokens.expires_in*1000)).toISOString();
 
     // DB upsert (service role → bypass RLS)
+    if (!supabaseUrl || !svcRole) {
+      return new Response(JSON.stringify({
+        success: false,
+        stage: "db_config_validation",
+        message: "Missing database configuration"
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
+    }
+    
     const sb = createClient(supabaseUrl, svcRole, { auth: { persistSession:false }});
     
     // Déterminer le mode en fonction de l'utilisateur

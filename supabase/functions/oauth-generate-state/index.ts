@@ -3,19 +3,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { createSignedState } from '../_shared/oauth-state.ts';
 
-const json = (body: unknown, init: ResponseInit = {}) => 
+const json = (body: unknown, init: ResponseInit = {}, req?: Request) => 
   new Response(JSON.stringify(body), { 
     ...init, 
-    headers: { 'Content-Type': 'application/json', ...corsHeaders, ...init.headers }
+    headers: { 'Content-Type': 'application/json', ...(req ? corsHeaders(req) : {}), ...init.headers }
   });
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { status: 204, headers: corsHeaders });
+    return new Response('ok', { status: 204, headers: corsHeaders(req) });
   }
 
   if (req.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, { status: 405 });
+    return json({ error: 'Method not allowed' }, { status: 405 }, req);
   }
 
   try {
@@ -25,7 +25,7 @@ serve(async (req) => {
     
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return json({ error: 'Authorization header required' }, { status: 401 });
+      return json({ error: 'Authorization header required' }, { status: 401 }, req);
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -37,7 +37,7 @@ serve(async (req) => {
     );
     
     if (error || !user) {
-      return json({ error: 'Invalid token' }, { status: 401 });
+      return json({ error: 'Invalid token' }, { status: 401 }, req);
     }
 
     // Generate signed state with user ID
@@ -47,13 +47,13 @@ serve(async (req) => {
       success: true, 
       state: signedState,
       expires_in: 600 // 10 minutes
-    });
+    }, {}, req);
 
   } catch (error) {
     console.error('OAuth state generation error:', error);
     return json({ 
       error: 'Failed to generate state',
       details: error instanceof Error ? error.message : String(error)
-    }, { status: 500 });
+    }, { status: 500 }, req);
   }
 });

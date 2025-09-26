@@ -90,7 +90,7 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           error: 'fetch_failed',
-          message: fetchError.message,
+          message: fetchError instanceof Error ? fetchError.message : String(fetchError),
           payload_sent: testPayload
         }),
         {

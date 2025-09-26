@@ -155,7 +155,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
         return { eventsImported: 0, eventErrors };
       }
 
-      const existingIds = new Set((existingInProd || []).map(e => e.id_event));
+      const existingIds = new Set((existingInProd || []).map((e: any) => e.id_event));
 
       // 2) Ne conserver que les événements **nouveaux** pour le staging
       const newEventsForStaging = eventsToInsert.filter(e => 
@@ -186,7 +186,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
           console.error('[ERROR] Exception during staging insert:', error);
           eventErrors.push({
             record_id: 'STAGING_INSERT_ERROR',
-            reason: `Exception staging: ${error.message}`
+            reason: `Exception staging: ${error instanceof Error ? error.message : String(error)}`
           });
           return { eventsImported: 0, eventErrors };
         }
@@ -201,7 +201,7 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
     console.error('[ERROR] Exception during events import:', error);
     eventErrors.push({
       record_id: 'EXCEPTION_ERROR',
-      reason: `Exception: ${error.message}`
+      reason: `Exception: ${error instanceof Error ? error.message : String(error)}`
     });
   }
 

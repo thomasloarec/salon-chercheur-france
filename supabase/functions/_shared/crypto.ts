@@ -59,14 +59,17 @@ export async function decryptJson(encryptedData: string): Promise<unknown> {
   const [ivB64, ctB64] = encryptedData.split('.');
   if (!ivB64 || !ctB64) throw new Error("INVALID_ENCRYPTED_FORMAT");
   
-  const iv = b64ToBytes(ivB64);
+  const ivBytes = b64ToBytes(ivB64);
   const ciphertext = b64ToBytes(ctB64);
   
-  // Convert ciphertext to proper ArrayBuffer for crypto API
-  const ctArrayBuffer = new ArrayBuffer(ciphertext.length);
-  new Uint8Array(ctArrayBuffer).set(ciphertext);
+  // Create proper ArrayBuffers for crypto API
+  const iv = new ArrayBuffer(ivBytes.length);
+  new Uint8Array(iv).set(ivBytes);
   
-  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ctArrayBuffer);
+  const ciphertextBuffer = new ArrayBuffer(ciphertext.length);
+  new Uint8Array(ciphertextBuffer).set(ciphertext);
+  
+  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertextBuffer);
   const decryptedText = new TextDecoder().decode(plaintext);
   
   return JSON.parse(decryptedText);

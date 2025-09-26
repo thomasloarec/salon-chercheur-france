@@ -102,7 +102,7 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
       console.error('[ERROR] Exception during exposants import:', error);
       exposantErrors.push({
         record_id: 'EXCEPTION_ERROR',
-        reason: `Exception: ${error.message}`
+        reason: `Exception: ${error instanceof Error ? error.message : String(error)}`
       });
     }
   }

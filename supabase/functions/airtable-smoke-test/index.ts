@@ -322,8 +322,8 @@ serve(async (req) => {
         return {
           name: 'Participation Duplicate Prevention Test',
           status: 'error',
-          message: `Test failed with error: ${error.message}`,
-          details: { error: error.message },
+          message: `Test failed with error: ${error instanceof Error ? error.message : String(error)}`,
+          details: { error: error instanceof Error ? error.message : String(error) },
         };
       } finally {
         // Clean up the test record
@@ -379,8 +379,8 @@ serve(async (req) => {
           results.push({
             name: testFunction.name,
             status: 'error',
-            message: `Test crashed: ${error.message}`,
-            details: { error: error.message },
+            message: `Test crashed: ${error instanceof Error ? error.message : String(error)}`,
+            details: { error: error instanceof Error ? error.message : String(error) },
           });
         }
       }

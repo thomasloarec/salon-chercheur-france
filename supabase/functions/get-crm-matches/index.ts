@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     }
 
     // Transform the SQL result to match our interface
-    const result: CrmMatch[] = (matches || []).map(match => ({
+    const result: CrmMatch[] = (matches || []).map((match: any) => ({
       id: match.company_id,
       name: match.company_name,
       website: match.company_website,

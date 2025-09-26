@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { generateSignedState } from "../_shared/oauth-state.ts";
+import { createSignedState } from "../_shared/oauth-state.ts";
 import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const FUNCTION_VERSION = "2025-09-03-v1";
@@ -71,11 +71,22 @@ serve(async (req: Request) => {
     }
 
     // Générer state pour anti-CSRF
-    const state = await generateSignedState({ userId: userId || "anonymous", timestamp: Date.now() });
+    const state = await createSignedState(userId || "anonymous");
 
     // Construire l'URL d'autorisation HubSpot
     const scopes = "oauth crm.objects.companies.read crm.objects.contacts.read";
     const authUrl = new URL("https://app.hubspot.com/oauth/authorize");
+    if (!clientId || !redirectUri) {
+      return new Response(JSON.stringify({
+        success: false,
+        stage: "config_validation",
+        message: "Missing required OAuth configuration"
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
+      });
+    }
+    
     authUrl.searchParams.set("client_id", clientId);
     authUrl.searchParams.set("redirect_uri", redirectUri);
     authUrl.searchParams.set("scope", scopes);

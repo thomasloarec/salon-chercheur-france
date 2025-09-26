@@ -124,8 +124,8 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     console.log(`[METRICS] ${syncedEventsCount} événements staging→events synchronisés`);
     
     // Mettre à jour allEventIds avec les événements nouvellement synchronisés  
-    const newlySyncedIds = eventsOnlyInStaging.map(e => e.id_event).filter(Boolean);
-    newlySyncedIds.forEach(id => allEventIds.add(id));
+    const newlySyncedIds = eventsOnlyInStaging.map((e: any) => e.id_event).filter(Boolean);
+    newlySyncedIds.forEach((id: any) => allEventIds.add(id));
     console.log(`[SYNC] allEventIds mis à jour, total: ${allEventIds.size} événements`);
     
     // Mettre à jour le mapping avec les événements synchronisés (récupérer leurs nouveaux UUID)
@@ -258,7 +258,7 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       console.error('[ERROR] Exception during participation import:', error);
       participationErrors.push({
         record_id: 'EXCEPTION_ERROR',
-        reason: `Exception: ${error.message}`
+        reason: `Exception: ${error instanceof Error ? error.message : String(error)}`
       });
     }
   }

@@ -95,6 +95,7 @@ Deno.serve(async (req) => {
         let exhibitors = (participations || [])
           .map(p => p.exhibitors)
           .filter(Boolean)
+          .flat()
 
         // Apply search filter if provided
         if (search && search.trim()) {
