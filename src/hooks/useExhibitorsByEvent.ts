@@ -17,12 +17,12 @@ export const useExhibitorsByEvent = (eventSlug: string, searchQuery?: string) =>
 
         return data;
       } catch (error: any) {
-        // Fallback: direct table query
+        // Fallback: direct table query using the new VIEW
         try {
-          // First get event ID from slug
+          // First get event id_event from slug
           const { data: eventData } = await supabase
             .from('events')
-            .select('id')
+            .select('id_event')
             .eq('slug', eventSlug)
             .single();
             
@@ -30,23 +30,16 @@ export const useExhibitorsByEvent = (eventSlug: string, searchQuery?: string) =>
             return { exhibitors: [], total: 0 };
           }
 
+          // Use the participations_with_exhibitors view with id_event_text
           const { data: participationData } = await supabase
-            .from('participation')
-            .select(`
-              stand_exposant,
-              exposants!inner(
-                id_exposant,
-                nom_exposant,
-                website_exposant
-              )
-            `)
-            .eq('id_event', eventData.id)
-            .order('nom_exposant', { referencedTable: 'exposants', ascending: true });
+            .from('participations_with_exhibitors')
+            .select('*')
+            .eq('id_event_text', eventData.id_event);
 
           const exhibitors = (participationData || []).map(p => ({
-            id: p.exposants?.id_exposant || '',
-            name: p.exposants?.nom_exposant || '',
-            slug: p.exposants?.id_exposant || '',
+            id: p.id_exposant || String(p.exhibitor_uuid || ''),
+            name: p.exhibitor_name || p.id_exposant || '',
+            slug: p.id_exposant || String(p.exhibitor_uuid || ''),
             logo_url: null,
             stand: p.stand_exposant || null,
             hall: null,

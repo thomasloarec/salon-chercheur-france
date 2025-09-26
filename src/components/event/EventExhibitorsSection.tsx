@@ -47,30 +47,53 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         console.log('🔍 EventExhibitorsSection - Current environment:', window.location.hostname);
         console.log('🔍 EventExhibitorsSection - Component mounted, loading:', loading);
         
-        if (!event.id) {
-          console.log('❌ Pas d\'UUID, arrêt du chargement');
+        if (!event.id_event) {
+          console.log('❌ Pas d\'id_event_text, arrêt du chargement');
           setLoading(false);
           return;
         }
 
-        console.log('📤 Requête participations_with_exhibitors pour event.id (UUID):', event.id);
-        console.log('🔍 Type et valeur de event.id:', typeof event.id, JSON.stringify(event.id));
+        console.log('📤 Requête participations_with_exhibitors pour event.id_event (text):', event.id_event);
         
-        // Utiliser la nouvelle VIEW participations_with_exhibitors avec id_event_text
+        // Requête principale avec id_event_text
         const { data, error } = await supabase
           .from('participations_with_exhibitors')
           .select('*')
           .eq('id_event_text', event.id_event);
 
+        let exhibitorsData = data;
+
+        // Fallback avec UUID pour compatibilité
+        if (!exhibitorsData?.length && event.id) {
+          console.log('🔄 Fallback: tentative avec id_event (UUID):', event.id);
+          const { data: fallbackData } = await supabase
+            .from('participations_with_exhibitors')
+            .select('*')
+            .eq('id_event', event.id);
+          exhibitorsData = fallbackData ?? [];
+        }
+
+        // Console warn pour admin si mismatch détecté
+        if (typeof window !== 'undefined' && window.location.hostname.includes('admin')) {
+          const { data: checkData } = await supabase
+            .from('participations_with_exhibitors')  
+            .select('*')
+            .eq('id_event_text', event.id_event);
+          
+          if ((checkData?.length || 0) > 0 && (!exhibitorsData?.length)) {
+            console.warn('⚠️ ADMIN WARNING: id_event_text renvoie', checkData?.length, 'exposants mais UI affiche 0. Mismatch détecté!');
+          }
+        }
+
         if (error) {
           console.error('❌ Error fetching exhibitors:', error);
           setExhibitors([]);
         } else {
-          console.log('✅ Données brutes de participations_with_exhibitors:', data);
-          console.log('📤 Exposants chargés via VIEW:', data?.length || 0);
+          console.log('✅ Données brutes de participations_with_exhibitors:', exhibitorsData);
+          console.log('📤 Exposants chargés via VIEW:', exhibitorsData?.length || 0);
           
           // Tri alphabétique côté client sur exhibitor_name  
-          const sortedData = (data || []).sort((a: any, b: any) => {
+          const sortedData = (exhibitorsData || []).sort((a: any, b: any) => {
             const nameA = a.exhibitor_name || '';
             const nameB = b.exhibitor_name || '';
             return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
@@ -104,7 +127,7 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     };
 
     fetchExhibitors();
-  }, [event.id]); // Utilise l'UUID comme clé unique
+  }, [event.id_event, event.id]); // Utilise id_event_text comme clé principale
 
   // Force l'affichage si le composant n'est pas monté (problème d'hydratation)
   if (!mounted) {
