@@ -1686,6 +1686,43 @@ export type Database = {
           },
         ]
       }
+      participations_with_exhibitors: {
+        Row: {
+          exhibitor_name: string | null
+          exhibitor_uuid: number | null
+          exhibitor_website: string | null
+          exposant_description: string | null
+          id_event: string | null
+          id_exposant: string | null
+          id_participation: string | null
+          stand_exposant: string | null
+          urlexpo_event: string | null
+          website_exposant: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_id_exposant_fkey"
+            columns: ["id_exposant"]
+            isOneToOne: false
+            referencedRelation: "exposants"
+            referencedColumns: ["id_exposant"]
+          },
+        ]
+      }
     }
     Functions: {
       can_add_novelty: {

@@ -40,62 +40,52 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   useEffect(() => {
     const fetchExhibitors = async () => {
-      console.log('🔍 EventExhibitorsSection - event.id:', event.id);
-      console.log('🔍 EventExhibitorsSection - event.id_event:', event.id_event);
-      console.log('🔍 EventExhibitorsSection - Current environment:', window.location.hostname);
-      console.log('🔍 EventExhibitorsSection - Component mounted, loading:', loading);
-      
-      if (!event.id) {
-        console.log('❌ Pas d\'UUID, arrêt du chargement');
-        setLoading(false);
-        return;
-      }
-
       try {
-        console.log('📤 Requête participation pour event.id (UUID):', event.id);
+        console.log('🔍 EventExhibitorsSection - event.id:', event.id);
+        console.log('🔍 EventExhibitorsSection - event.id_event:', event.id_event);
+        console.log('🔍 EventExhibitorsSection - Current environment:', window.location.hostname);
+        console.log('🔍 EventExhibitorsSection - Component mounted, loading:', loading);
+        
+        if (!event.id) {
+          console.log('❌ Pas d\'UUID, arrêt du chargement');
+          setLoading(false);
+          return;
+        }
+
+        console.log('📤 Requête participations_with_exhibitors pour event.id (UUID):', event.id);
         console.log('🔍 Type et valeur de event.id:', typeof event.id, JSON.stringify(event.id));
         
-        // Requête participation avec exposants (sans tri côté serveur pour l'instant)
+        // Utiliser la nouvelle VIEW participations_with_exhibitors
         const { data, error } = await supabase
-          .from('participation')
-          .select(`
-            stand_exposant,
-            website_exposant,
-            urlexpo_event,
-            exposants!inner (
-              nom_exposant,
-              website_exposant,
-              exposant_description
-            )
-          `)
+          .from('participations_with_exhibitors')
+          .select('*')
           .eq('id_event', event.id);
 
         if (error) {
           console.error('❌ Error fetching exhibitors:', error);
           setExhibitors([]);
         } else {
-          console.log('✅ Données brutes de participation:', data);
-          console.log('📤 Exposants chargés via participation:', data?.length || 0);
+          console.log('✅ Données brutes de participations_with_exhibitors:', data);
+          console.log('📤 Exposants chargés via VIEW:', data?.length || 0);
           
-          // Tri alphabétique côté client sur nom_exposant
+          // Tri alphabétique côté client sur exhibitor_name  
           const sortedData = (data || []).sort((a: any, b: any) => {
-            const nameA = a.exposants?.nom_exposant || '';
-            const nameB = b.exposants?.nom_exposant || '';
+            const nameA = a.exhibitor_name || '';
+            const nameB = b.exhibitor_name || '';
             return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
           });
           
-          console.log('🔤 Premier exposant après tri:', sortedData[0]?.exposants?.nom_exposant);
-          console.log('🔤 Dernier exposant après tri:', sortedData[sortedData.length - 1]?.exposants?.nom_exposant);
+          console.log('🔤 Premier exposant après tri:', sortedData[0]?.exhibitor_name);
+          console.log('🔤 Dernier exposant après tri:', sortedData[sortedData.length - 1]?.exhibitor_name);
           
           const mappedExhibitors: Exhibitor[] = sortedData.map((participation: any) => {
             console.log('🔄 Mapping participation:', participation);
-            const exposant = participation.exposants;
             return {
-              nom_exposant: exposant.nom_exposant || 'Nom non disponible',
+              nom_exposant: participation.exhibitor_name || 'Nom non disponible',
               stand_exposant: participation.stand_exposant,
               // Priorité au website de participation, fallback vers exposant
-              website_exposant: participation.website_exposant || exposant.website_exposant,
-              exposant_description: exposant.exposant_description,
+              website_exposant: participation.website_exposant || participation.exhibitor_website,
+              exposant_description: participation.exposant_description,
               urlexpo_event: participation.urlexpo_event
             };
           });

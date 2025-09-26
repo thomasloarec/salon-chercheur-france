@@ -1,7 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from "https://deno.land/x/supabase@1.0.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,7 +50,7 @@ serve(async (req) => {
           userId: connection.user_id, 
           provider: connection.provider, 
           status: 'error',
-          error: syncError.message 
+          error: syncError instanceof Error ? syncError.message : String(syncError) 
         });
       }
     }
@@ -70,7 +70,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('CRM sync job failed:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

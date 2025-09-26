@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
@@ -13,6 +14,8 @@ import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 import type { Event } from '@/types/event';
 
 interface EventPageContentProps {
@@ -29,6 +32,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   onEventDeleted
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
@@ -55,6 +59,30 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
       <SEOHead event={event} noIndex={isPreview} />
       <div className="min-h-screen bg-gray-50">
         <Header />
+        
+        {/* Admin toolbar - shown if user is admin */}
+        {isAdmin && (
+          <div className="bg-orange-100 border-l-4 border-orange-500 p-4 rounded-none">
+            <div className="container mx-auto px-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-700">
+                  <strong>Admin:</strong> Outils d'administration pour cet événement
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/admin/events/${event.id}`)}
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Éditer
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         
         <main className="py-8">
           <div className="container mx-auto px-4 space-y-8">

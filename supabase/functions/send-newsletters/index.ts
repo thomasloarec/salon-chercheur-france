@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://deno.land/x/supabase@1.0.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
@@ -94,7 +94,7 @@ const handler = async (req: Request): Promise<Response> => {
           .select('*')
           .gte('date_debut', nextMonth.toISOString().split('T')[0])
           .lt('date_debut', monthAfterNext.toISOString().split('T')[0])
-          .in('sector', subscription.sectors.map(id => sectorMap.get(id)).filter(Boolean));
+          .in('sector', subscription.sectors.map((id: any) => sectorMap.get(id)).filter(Boolean));
 
         if (nextMonthError) {
           console.error('Error fetching next month events:', nextMonthError);
@@ -108,7 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
           .gte('created_at', lastMonthCronDate.toISOString())
           .lt('created_at', now.toISOString())
           .gte('date_debut', monthAfterNext.toISOString().split('T')[0])
-          .in('sector', subscription.sectors.map(id => sectorMap.get(id)).filter(Boolean));
+          .in('sector', subscription.sectors.map((id: any) => sectorMap.get(id)).filter(Boolean));
 
         if (newFutureError) {
           console.error('Error fetching new future events:', newFutureError);
@@ -128,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Construire l'email HTML
         const sectorNames = subscription.sectors
-          .map(id => sectorMap.get(id))
+          .map((id: any) => sectorMap.get(id))
           .filter(Boolean)
           .join(', ');
 

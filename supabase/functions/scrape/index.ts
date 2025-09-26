@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://deno.land/x/supabase@1.0.0/mod.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -550,7 +550,7 @@ serve(async (req: Request): Promise<Response> => {
           saveErrors.push(error.message);
         } else {
           savedCount = data?.length || unique.length;
-          console.log(`✅ UPSERT COUNT: ${savedCount} - ERROR: ${error ? error.message : 'null'}`);
+          console.log(`✅ UPSERT COUNT: ${savedCount} - ERROR: ${error ? (error as any)?.message || String(error) : 'null'}`);
         }
       } catch (error) {
         console.error('❌ Save error:', error);

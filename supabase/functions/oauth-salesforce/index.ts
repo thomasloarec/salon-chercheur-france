@@ -93,13 +93,14 @@ serve(async (req) => {
 
   } catch (error) {
     // Check if this is a JWT-related error
-    if (error.message?.includes('JWT') || error.message?.includes('unauthorized') || error.message?.includes('token')) {
-      console.error('❌ JWT Authentication error:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage?.includes('JWT') || errorMessage?.includes('unauthorized') || errorMessage?.includes('token')) {
+      console.error('❌ JWT Authentication error:', errorMessage);
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Unauthorized: JWT authentication failed',
-          details: error.message
+          details: errorMessage
         }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -110,7 +111,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: 'Internal server error',
-        details: error.message
+        details: errorMessage
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

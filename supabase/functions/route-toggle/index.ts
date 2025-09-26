@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     const { data: existingItem } = await supabase
       .from('route_items')
       .select('id')
-      .eq('route_id', userRoute.id)
+      .eq('route_id', userRoute?.id)
       .eq('novelty_id', novelty_id)
       .single()
 
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
       // Add to route
       const { error: insertError } = await supabase
         .from('route_items')
-        .insert({ route_id: userRoute.id, novelty_id })
+        .insert({ route_id: userRoute?.id, novelty_id })
 
       if (insertError) {
         console.error('Error adding to route:', insertError)
