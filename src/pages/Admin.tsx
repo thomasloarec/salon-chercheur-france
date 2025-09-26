@@ -14,6 +14,9 @@ import AirtableDiagnostic from '@/components/admin/AirtableDiagnostic';
 import { AirtableImport } from '@/components/admin/AirtableImport';
 import { OAuthHubSpotDiagnostic } from '@/components/admin/OAuthHubSpotDiagnostic';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import {
   Accordion,
   AccordionItem,
@@ -70,6 +73,24 @@ const Admin = () => {
           <TabsContent value="events" className="space-y-6">
             {/* Import Airtable simplifié */}
             <AirtableImport />
+            
+            {/* Lien vers diagnostic détaillé */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Diagnostic Import Détaillé</h3>
+                    <p className="text-sm text-muted-foreground">Analyser les échecs d'import (dry-run)</p>
+                  </div>
+                  <Button asChild variant="outline">
+                    <a href="/admin/import-diagnostics">
+                      <Search className="h-4 w-4 mr-2" />
+                      Diagnostic
+                    </a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Événements importés en attente de publication */}
             <PendingEventsImport />

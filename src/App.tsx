@@ -14,6 +14,9 @@ import Profile from '@/pages/Profile';
 import Auth from '@/pages/Auth';
 import Admin from '@/pages/Admin';
 import AdminEventDetail from '@/pages/AdminEventDetail';
+import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
+import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
+import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
 import CrmIntegrations from '@/pages/CrmIntegrations';
 import { OAuthCallback } from '@/pages/OAuthCallback';
 import OAuthHubspotTest from '@/pages/OAuthHubspotTest';
@@ -21,8 +24,6 @@ import LegacyHubspotApiCallback from '@/pages/LegacyHubspotApiCallback';
 import ScrapingTest from '@/pages/ScrapingTest';
 import Agenda from '@/pages/Agenda';
 import Nouveautes from '@/pages/Nouveautes';
-import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
-import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
@@ -46,6 +47,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/events/:id" element={<AdminEventDetail />} />
+              <Route path="/admin/import-diagnostics" element={<AdminImportDiagnostics />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/agenda" element={<Agenda />} />
