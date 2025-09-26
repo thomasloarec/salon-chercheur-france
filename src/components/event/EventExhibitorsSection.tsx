@@ -19,6 +19,7 @@ interface Exhibitor {
   website_exposant?: string;
   exposant_description?: string;
   urlexpo_event?: string;
+  has_exhibitor_profile?: boolean;
 }
 
 interface EventExhibitorsSectionProps {
@@ -81,12 +82,13 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           const mappedExhibitors: Exhibitor[] = sortedData.map((participation: any) => {
             console.log('🔄 Mapping participation:', participation);
             return {
-              nom_exposant: participation.exhibitor_name || 'Nom non disponible',
+              nom_exposant: participation.exhibitor_name || participation.id_exposant || 'Exposant',
               stand_exposant: participation.stand_exposant,
               // Priorité au website de participation, fallback vers exposant
               website_exposant: participation.website_exposant || participation.exhibitor_website,
               exposant_description: participation.exposant_description,
-              urlexpo_event: participation.urlexpo_event
+              urlexpo_event: participation.urlexpo_event,
+              has_exhibitor_profile: !!participation.exhibitor_uuid
             };
           });
           
@@ -155,29 +157,10 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
           <h3 className="text-xl font-semibold">
             Exposants
           </h3>
-          {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
-          {false && (
-            <Button 
-              className="bg-accent hover:bg-accent/90"
-              onClick={() => setShowCrmModal(true)}
-            >
-              <Link className="h-4 w-4 mr-2" />
-              Connecter mon CRM
-            </Button>
-          )}
         </div>
         
-        {/* Message conseil CRM désactivé temporairement - à réactiver plus tard */}
-        {false && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-blue-800 text-sm">
-              💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
-            </p>
-          </div>
-        )}
-        
         <p className="text-gray-500 italic">
-          Exposants inconnus pour cet événement
+          Aucun exposant trouvé pour cet événement
         </p>
       </div>
     );
@@ -190,30 +173,11 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
 
   return (
     <div className="bg-white rounded-lg border p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">
-          Exposants ({exhibitors.length})
-        </h3>
-        {/* Bouton Connecter CRM désactivé temporairement - à réactiver plus tard */}
-        {false && (
-          <Button 
-            className="bg-accent hover:bg-accent/90"
-            onClick={() => setShowCrmModal(true)}
-          >
-            <Link className="h-4 w-4 mr-2" />
-            Connecter mon CRM
-          </Button>
-        )}
-      </div>
-      
-      {/* Message conseil CRM désactivé temporairement - à réactiver plus tard */}
-      {false && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800 text-sm">
-            💡 <strong>Conseil :</strong> Connectez votre CRM pour découvrir facilement vos prospects parmi les exposants.
-          </p>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-semibold">
+            Exposants ({exhibitors.length})
+          </h3>
         </div>
-      )}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {toDisplay.map((exhibitor, index) => (
@@ -222,12 +186,19 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
             onClick={() => setSelectedExhibitor(exhibitor)}
             className="w-full text-left border rounded-lg p-4 hover:shadow-md hover:bg-gray-50 transition-all"
           >
-            <p className="font-medium text-gray-900">{exhibitor.nom_exposant}</p>
-            {exhibitor.stand_exposant && (
-              <p className="text-sm text-gray-600 mt-1">
-                Stand : {exhibitor.stand_exposant}
-              </p>
-            )}
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">{exhibitor.nom_exposant}</p>
+                {exhibitor.stand_exposant && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Stand : {exhibitor.stand_exposant}
+                  </p>
+                )}
+                {!exhibitor.has_exhibitor_profile && (
+                  <p className="text-xs text-gray-500 mt-1 italic">Sans fiche exposant</p>
+                )}
+              </div>
+            </div>
           </button>
         ))}
       </div>
