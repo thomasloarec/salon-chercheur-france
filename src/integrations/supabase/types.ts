@@ -1151,13 +1151,6 @@ export type Database = {
             referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "participation_id_exposant_fkey"
-            columns: ["id_exposant"]
-            isOneToOne: false
-            referencedRelation: "exposants"
-            referencedColumns: ["id_exposant"]
-          },
         ]
       }
       participation_backup_20250101: {
@@ -1717,13 +1710,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events_geo"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "participation_id_exposant_fkey"
-            columns: ["id_exposant"]
-            isOneToOne: false
-            referencedRelation: "exposants"
-            referencedColumns: ["id_exposant"]
           },
         ]
       }
