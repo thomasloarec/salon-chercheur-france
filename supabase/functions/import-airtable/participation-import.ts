@@ -180,19 +180,26 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     const recordId = r.id;
 
     const rawEventField = f['id_event_text'];
-    const rawEventId = Array.isArray(rawEventField) ? rawEventField[0]?.trim() : rawEventField?.trim();
-
-    // Résoudre l'UUID de l'événement depuis Event_XX
-    const eventUuid = eventIdToUuidMap.get(rawEventId);
-    if (!eventUuid) {
+    const eventIdText = Array.isArray(rawEventField) ? rawEventField[0]?.trim() : rawEventField?.trim();
+    
+    if (!eventIdText) {
       participationErrors.push({
         record_id: recordId,
-        reason: `event UUID non résolu pour ${rawEventId}`
+        reason: 'id_event_text manquant ou vide'
       });
       continue;
     }
 
-    // mapping exposant
+    // Vérifier que l'événement existe (dans published ou staging)
+    if (!allEventIds.has(eventIdText)) {
+      participationErrors.push({
+        record_id: recordId,
+        reason: `événement ${eventIdText} introuvable`
+      });
+      continue;
+    }
+
+    // Mapping exposant
     const rawWeb = f['website_exposant'];
     const domain = normalizeDomain(rawWeb);
     
@@ -216,11 +223,15 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     // Construire urlexpo_event pour déduplication
     const standInfo = f['stand_exposant']?.trim() || '';
     const urlExpoKey = `${domain}_${standInfo}`;
+    
+    // Récupérer l'UUID pour référence (optionnel)
+    const eventUuid = eventIdToUuidMap.get(eventIdText);
 
     toInsert.push({
       urlexpo_event: urlExpoKey,
-      id_event: eventUuid,        // UUID résolu
-      id_exposant: exposantId,    // Texte exposant ID  
+      id_event_text: eventIdText,    // <— Clé principale Event_XX
+      id_event: eventUuid || null,   // UUID en référence (nullable)
+      id_exposant: exposantId,       // Texte exposant ID  
       stand_exposant: standInfo || null,  
       website_exposant: rawWeb || null,
       created_at: new Date().toISOString()

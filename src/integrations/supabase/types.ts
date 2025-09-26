@@ -1109,6 +1109,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id_event: string | null
+          id_event_text: string | null
           id_exposant: string
           id_participation: string
           stand_exposant: string | null
@@ -1118,6 +1119,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id_event?: string | null
+          id_event_text?: string | null
           id_exposant: string
           id_participation?: string
           stand_exposant?: string | null
@@ -1127,6 +1129,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id_event?: string | null
+          id_event_text?: string | null
           id_exposant?: string
           id_participation?: string
           stand_exposant?: string | null
@@ -1693,6 +1696,7 @@ export type Database = {
           exhibitor_website: string | null
           exposant_description: string | null
           id_event: string | null
+          id_event_text: string | null
           id_exposant: string | null
           id_participation: string | null
           stand_exposant: string | null

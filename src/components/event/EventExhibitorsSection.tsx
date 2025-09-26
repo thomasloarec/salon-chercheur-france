@@ -55,11 +55,11 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
         console.log('📤 Requête participations_with_exhibitors pour event.id (UUID):', event.id);
         console.log('🔍 Type et valeur de event.id:', typeof event.id, JSON.stringify(event.id));
         
-        // Utiliser la nouvelle VIEW participations_with_exhibitors
+        // Utiliser la nouvelle VIEW participations_with_exhibitors avec id_event_text
         const { data, error } = await supabase
           .from('participations_with_exhibitors')
           .select('*')
-          .eq('id_event', event.id);
+          .eq('id_event_text', event.id_event);
 
         if (error) {
           console.error('❌ Error fetching exhibitors:', error);

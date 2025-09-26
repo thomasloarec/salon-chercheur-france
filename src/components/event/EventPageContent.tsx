@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventAbout } from '@/components/event/EventAbout';
 import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
@@ -33,11 +34,34 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [participationsCount, setParticipationsCount] = useState<number>(0);
   
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
 
-  const isAdmin = user?.email === 'admin@lotexpo.com';
+  const isAdmin = user?.email === 'admin@salonspro.com';
+
+  // Mini debug pour admin : compter les participations
+  useEffect(() => {
+    if (isAdmin && event.id_event) {
+      const fetchParticipationsCount = async () => {
+        try {
+          const { count, error } = await supabase
+            .from('participation')
+            .select('*', { count: 'exact', head: true })
+            .eq('id_event_text', event.id_event);
+          
+          if (!error && count !== null) {
+            setParticipationsCount(count);
+          }
+        } catch (error) {
+          console.error('Error fetching participations count:', error);
+        }
+      };
+      
+      fetchParticipationsCount();
+    }
+  }, [isAdmin, event.id_event]);
 
   const handleEventUpdated = (refreshedEvent: Event, slugChanged?: boolean) => {
     if (onEventUpdated) {
@@ -67,6 +91,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               <div>
                 <p className="text-sm text-orange-700">
                   <strong>Admin:</strong> Outils d'administration pour cet événement
+                  {participationsCount > 0 && (
+                    <span className="ml-4 text-xs bg-orange-200 px-2 py-1 rounded">
+                      Participations en DB : {participationsCount}
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-2">

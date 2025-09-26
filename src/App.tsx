@@ -27,6 +27,7 @@ import Nouveautes from '@/pages/Nouveautes';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
+import AdminEventByText from '@/pages/AdminEventByText';
 import NotFound from '@/pages/NotFound';
 import './App.css';
 
@@ -47,6 +48,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/events/:id" element={<AdminEventDetail />} />
+              <Route path="/admin/events/by-text/:id_event_text" element={<AdminEventByText />} />
               <Route path="/admin/import-diagnostics" element={<AdminImportDiagnostics />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/favorites" element={<Favorites />} />
