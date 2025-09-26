@@ -227,8 +227,8 @@ serve(async (req) => {
 
     } catch (fetchError) {
       addStep('network_error', 'error', 'Erreur réseau lors de la requête', { 
-        error: fetchError.message,
-        stack: fetchError.stack 
+        error: fetchError instanceof Error ? fetchError.message : String(fetchError),
+        stack: fetchError instanceof Error ? fetchError.stack : 'No stack trace'
       });
 
       return new Response(
@@ -237,7 +237,7 @@ serve(async (req) => {
           created: false,
           error: {
             type: 'network_error',
-            message: fetchError.message
+            message: fetchError instanceof Error ? fetchError.message : String(fetchError)
           },
           diagnosticSteps
         }),
@@ -251,7 +251,7 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: 'internal_error',
-        message: error.message
+        message: error instanceof Error ? error.message : String(error)
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

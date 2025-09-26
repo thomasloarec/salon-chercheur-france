@@ -28,7 +28,7 @@ export async function getEncryptionKey(): Promise<CryptoKey | null> {
   // Validate key size: 16 (AES-128), 24 (AES-192), 32 (AES-256)
   if (![16, 24, 32].includes(bytes.length)) return null;
   
-  return crypto.subtle.importKey("raw", bytes, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  return crypto.subtle.importKey("raw", bytes.slice(), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
 
 /**
@@ -62,7 +62,11 @@ export async function decryptJson(encryptedData: string): Promise<unknown> {
   const iv = b64ToBytes(ivB64);
   const ciphertext = b64ToBytes(ctB64);
   
-  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  // Convert ciphertext to proper ArrayBuffer for crypto API
+  const ctArrayBuffer = new ArrayBuffer(ciphertext.length);
+  new Uint8Array(ctArrayBuffer).set(ciphertext);
+  
+  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ctArrayBuffer);
   const decryptedText = new TextDecoder().decode(plaintext);
   
   return JSON.parse(decryptedText);

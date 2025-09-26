@@ -1,6 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import mapping from '../_shared/airtable-mapping.json' assert { type: 'json' };
+import mapping from '../_shared/airtable-mapping.json' with { type: 'json' };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -237,7 +237,7 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           error: 'network_error',
-          message: fetchError.message
+          message: fetchError instanceof Error ? fetchError.message : String(fetchError)
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -249,7 +249,7 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: 'internal_error',
-        message: error.message
+        message: error instanceof Error ? error.message : String(error)
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

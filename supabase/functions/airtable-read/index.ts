@@ -1,11 +1,11 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { CORS_HEADERS, preflight } from '../_shared/cors.ts'
+import { corsHeaders, handleOptions } from '../_shared/cors.ts'
 
 const ALLOWED_TABLES = ['All_Events', 'All_Exposants', 'Participation'];
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return preflight();
+  if (req.method === 'OPTIONS') return handleOptions(req);
 
   try {
     console.log('[airtable-read] 🔍 Début de la requête de lecture');
@@ -34,15 +34,15 @@ serve(async (req) => {
 
     if (!table) {
       console.error('[airtable-read] ❌ Table parameter missing');
-      return json({ success: false, message: "Missing 'table' query/body param" }, 400);
+      return json({ success: false, message: "Missing 'table' query/body param" }, 400, req);
     }
 
     // Tolérance casse + espaces
     table = table.trim();
-    const matched = ALLOWED_TABLES.find(t => t.toLowerCase() === table.toLowerCase());
+    const matched = ALLOWED_TABLES.find(t => t.toLowerCase() === table?.toLowerCase());
     if (!matched) {
       console.error(`[airtable-read] ❌ Table '${table}' not allowed`);
-      return json({ success: false, message: `Table '${table}' not allowed` }, 400);
+      return json({ success: false, message: `Table '${table}' not allowed` }, 400, req);
     }
     table = matched;
 
@@ -56,7 +56,7 @@ serve(async (req) => {
         success: false,
         error: 'missing_env',
         missing: ['AIRTABLE_PAT', 'AIRTABLE_BASE_ID']
-      }, 500);
+      }, 500, req);
     }
 
     console.log(`[airtable-read] 📋 Lecture table: ${table}`);
@@ -100,14 +100,15 @@ serve(async (req) => {
     return json({
       success: false,
       error: 'internal_error',
-      message: error.message
+      message: error instanceof Error ? error.message : String(error)
     }, 500);
   }
 });
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, request?: Request) {
+  const headers = request ? corsHeaders(request) : { 'Access-Control-Allow-Origin': '*' };
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS }
+    headers: { "Content-Type": "application/json", ...headers }
   });
 }

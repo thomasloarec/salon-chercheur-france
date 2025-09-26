@@ -34,9 +34,10 @@ serve(async (req) => {
     const debug = {
       baseId: AIRTABLE_BASE_ID,
       pat: AIRTABLE_PAT ? `***${AIRTABLE_PAT.slice(-4)}` : 'NON',
-      bases: null,
-      tables: null,
-      errors: []
+      bases: null as any[] | null,
+      tables: null as any[] | null,
+      errors: [] as string[],
+      tablesCheck: null as any
     };
 
     try {
@@ -57,14 +58,14 @@ serve(async (req) => {
           permissionLevel: base.permissionLevel
         })) || [];
         
-        console.log('[airtable-debug] ✅ Bases récupérées:', debug.bases.length);
+        console.log('[airtable-debug] ✅ Bases récupérées:', debug.bases?.length || 0);
       } else {
         const errorText = await basesResponse.text();
         debug.errors.push(`Erreur récupération bases (${basesResponse.status}): ${errorText}`);
         console.error('[airtable-debug] ❌ Erreur bases:', basesResponse.status, errorText);
       }
     } catch (error) {
-      debug.errors.push(`Exception lors de la récupération des bases: ${error.message}`);
+      debug.errors.push(`Exception lors de la récupération des bases: ${error instanceof Error ? error.message : String(error)}`);
       console.error('[airtable-debug] ❌ Exception bases:', error);
     }
 
@@ -87,7 +88,7 @@ serve(async (req) => {
             primaryFieldId: table.primaryFieldId
           })) || [];
           
-          console.log('[airtable-debug] ✅ Tables récupérées:', debug.tables.length);
+          console.log('[airtable-debug] ✅ Tables récupérées:', debug.tables?.length || 0);
         } else {
           const errorText = await tablesResponse.text();
           debug.errors.push(`Erreur récupération tables (${tablesResponse.status}): ${errorText}`);
@@ -95,7 +96,7 @@ serve(async (req) => {
         }
       }
     } catch (error) {
-      debug.errors.push(`Exception lors de la récupération des tables: ${error.message}`);
+      debug.errors.push(`Exception lors de la récupération des tables: ${error instanceof Error ? error.message : String(error)}`);
       console.error('[airtable-debug] ❌ Exception tables:', error);
     }
 

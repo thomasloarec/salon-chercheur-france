@@ -559,7 +559,7 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           error: 'network_error',
-          message: `Network/Fetch error: ${fetchError.message}`,
+          message: `Network/Fetch error: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
           context: 'FETCH_FAILED'
         }),
         {

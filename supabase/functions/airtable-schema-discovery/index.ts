@@ -1,6 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { CORS_HEADERS, preflight } from '../_shared/cors.ts'
+import { corsHeaders, handleOptions } from '../_shared/cors.ts'
 
 interface ColumnInfo {
   name: string;
@@ -25,7 +25,7 @@ serve(async (req) => {
   console.log('🔥 CRITICAL DEBUG - Function called at all:', new Date().toISOString());
   console.log('🔥 Method:', req.method);
   console.log('🔥 URL:', req.url);
-  console.log('🔥 Headers count:', req.headers.size);
+  console.log('🔥 Headers count:', Array.from(req.headers).length);
   console.log('🔥 Full headers object:', Object.fromEntries(req.headers.entries()));
   
   // Log pour vérifier qu'on entre dans la fonction
@@ -33,7 +33,7 @@ serve(async (req) => {
   console.log('🔍 FUNCTION ENTRY - URL:', req.url);
   console.log('🔍 FUNCTION ENTRY - Headers preview:', req.headers.get('authorization') ? 'AUTH present' : 'NO AUTH');
 
-  if (req.method === 'OPTIONS') return preflight();
+  if (req.method === 'OPTIONS') return handleOptions(req);
 
   // 🔍 DEBUG: Logger tous les détails de la requête
   console.log('=== DEBUG SCHEMA DISCOVERY ===');
@@ -55,7 +55,7 @@ serve(async (req) => {
   
   if (adminHeader !== 'true' && adminHeaderLower !== 'true') {
     console.log('❌ REJECTING: Admin header not found or not "true"');
-    return json({ success: false, error: 'access_denied', message: 'Accès non autorisé - header admin manquant' }, 403);
+    return json({ success: false, error: 'access_denied', message: 'Accès non autorisé - header admin manquant' }, 403, req);
   }
   
   console.log('✅ Admin header OK, proceeding...');
@@ -67,7 +67,7 @@ serve(async (req) => {
     const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID');
 
     if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
-      return json({ success: false, error: 'missing_env' }, 500);
+      return json({ success: false, error: 'missing_env' }, 500, req);
     }
 
     const TABLES_TO_SCAN = ['All_Events', 'All_Exposants', 'Participation'];
@@ -90,7 +90,7 @@ serve(async (req) => {
         success: false, 
         error: 'metadata_error',
         status: metaResponse.status 
-      }, metaResponse.status);
+      }, metaResponse.status, req);
     }
 
     const metaData = await metaResponse.json();
@@ -191,21 +191,22 @@ serve(async (req) => {
     console.log('[schema-discovery] 🎉 Diagnostic terminé avec succès');
     console.log(`[schema-discovery] 📊 Résumé: ${diagnosticReport.summary.totalTables} tables, ${diagnosticReport.summary.totalColumns} colonnes au total`);
 
-    return json(diagnosticReport, 200);
+    return json(diagnosticReport, 200, req);
 
   } catch (error) {
     console.error('[schema-discovery] ❌ Erreur générale:', error);
     return json({
       success: false,
       error: 'internal_error',
-      message: error.message
-    }, 500);
+      message: error instanceof Error ? error.message : String(error)
+    }, 500, req);
   }
 });
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, request?: Request) {
+  const headers = request ? corsHeaders(request) : { 'Access-Control-Allow-Origin': '*' };
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS }
+    headers: { "Content-Type": "application/json", ...headers }
   });
 }

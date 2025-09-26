@@ -263,8 +263,8 @@ serve(async (req) => {
         return {
           name: 'Exposant Duplicate Prevention Test',
           status: 'error',
-          message: `Test failed with error: ${error.message}`,
-          details: { error: error.message },
+          message: `Test failed with error: ${error instanceof Error ? error.message : String(error)}`,
+          details: { error: error instanceof Error ? error.message : String(error) },
         };
       } finally {
         // Clean up the test record
