@@ -1,125 +1,80 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Building2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Link } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ExhibitorsModal } from './ExhibitorsModal';
+import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
 import type { Event } from '@/types/event';
-import { CrmConnectModal } from './CrmConnectModal';
 
 interface Exhibitor {
-  nom_exposant: string;
+  id_exposant: string;
+  exhibitor_name: string;
   stand_exposant?: string;
   website_exposant?: string;
   exposant_description?: string;
   urlexpo_event?: string;
-  has_exhibitor_profile?: boolean;
 }
 
 interface EventExhibitorsSectionProps {
   event: Event;
 }
 
-export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) => {
+const MAX_SIDEBAR_EXHIBITORS = 7;
+
+export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ event }) => {
   const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(false);
+  const [showAllModal, setShowAllModal] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
-  const [showCrmModal, setShowCrmModal] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Force montage du composant pour éviter les problèmes de SSR/hydration
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const fetchExhibitors = async () => {
+      setLoading(true);
       try {
-        console.log('🔍 EventExhibitorsSection - event.id:', event.id);
-        console.log('🔍 EventExhibitorsSection - event.id_event:', event.id_event);
-        console.log('🔍 EventExhibitorsSection - Current environment:', window.location.hostname);
-        console.log('🔍 EventExhibitorsSection - Component mounted, loading:', loading);
+        const eventIdText = event.id_event;
         
-        if (!event.id_event) {
-          console.log('❌ Pas d\'id_event_text, arrêt du chargement');
-          setLoading(false);
-          return;
-        }
-
-        console.log('📤 Requête participations_with_exhibitors pour event.id_event (text):', event.id_event);
+        console.log('🔍 EventExhibitorsSection - Fetching exhibitors for', eventIdText);
         
         // Requête principale avec id_event_text
-        const { data, error } = await supabase
+        const { data: exhibitorsData, error } = await supabase
           .from('participations_with_exhibitors')
           .select('*')
-          .eq('id_event_text', event.id_event);
+          .eq('id_event_text', eventIdText);
 
-        let exhibitorsData = data;
+        if (error) {
+          console.warn('[EventExhibitorsSection] Query error', error, { eventIdText });
+        }
 
-        // Fallback avec UUID pour compatibilité
-        if (!exhibitorsData?.length && event.id) {
-          console.log('🔄 Fallback: tentative avec id_event (UUID):', event.id);
+        let finalExhibitors = exhibitorsData ?? [];
+
+        // Fallback vers id_event (UUID) si aucun résultat
+        if (finalExhibitors.length === 0 && event.id) {
+          console.log('🔄 Fallback to UUID for event', event.slug);
           const { data: fallbackData } = await supabase
             .from('participations_with_exhibitors')
             .select('*')
             .eq('id_event', event.id);
-          exhibitorsData = fallbackData ?? [];
-        }
 
-        // Console warn pour admin si mismatch détecté
-        if (typeof window !== 'undefined' && window.location.hostname.includes('admin')) {
-          const { data: checkData } = await supabase
-            .from('participations_with_exhibitors')  
-            .select('*')
-            .eq('id_event_text', event.id_event);
+          finalExhibitors = fallbackData ?? [];
           
-          if ((checkData?.length || 0) > 0 && (!exhibitorsData?.length)) {
-            console.warn('⚠️ ADMIN WARNING: id_event_text renvoie', checkData?.length, 'exposants mais UI affiche 0. Mismatch détecté!');
+          if (fallbackData && fallbackData.length > 0) {
+            console.warn('[ADMIN] Fallback to UUID worked for event', event.slug, 'but id_event_text should be preferred');
           }
         }
 
-        if (error) {
-          console.error('❌ Error fetching exhibitors:', error);
-          setExhibitors([]);
-        } else {
-          console.log('✅ Données brutes de participations_with_exhibitors:', exhibitorsData);
-          console.log('📤 Exposants chargés via VIEW:', exhibitorsData?.length || 0);
-          
-          // Tri alphabétique côté client sur exhibitor_name  
-          const sortedData = (exhibitorsData || []).sort((a: any, b: any) => {
-            const nameA = a.exhibitor_name || '';
-            const nameB = b.exhibitor_name || '';
-            return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
-          });
-          
-          console.log('🔤 Premier exposant après tri:', sortedData[0]?.exhibitor_name);
-          console.log('🔤 Dernier exposant après tri:', sortedData[sortedData.length - 1]?.exhibitor_name);
-          
-          const mappedExhibitors: Exhibitor[] = sortedData.map((participation: any) => {
-            console.log('🔄 Mapping participation:', participation);
-            return {
-              nom_exposant: participation.exhibitor_name || participation.id_exposant || 'Exposant',
-              stand_exposant: participation.stand_exposant,
-              // Priorité au website de participation, fallback vers exposant
-              website_exposant: participation.website_exposant || participation.exhibitor_website,
-              exposant_description: participation.exposant_description,
-              urlexpo_event: participation.urlexpo_event,
-              has_exhibitor_profile: !!participation.exhibitor_uuid
-            };
-          });
-          
-          console.log('📋 Exposants finaux mappés et triés:', mappedExhibitors);
-          setExhibitors(mappedExhibitors);
-        }
-      } catch (error) {
-        console.error('Unexpected error fetching exhibitors:', error);
+        // Tri alphabétique
+        const sorted = finalExhibitors.sort((a, b) => {
+          const nameA = a.exhibitor_name || '';
+          const nameB = b.exhibitor_name || '';
+          return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
+        });
+
+        console.log('✅ Loaded', sorted.length, 'exhibitors');
+        setExhibitors(sorted);
+      } catch (err) {
+        console.error('[EventExhibitorsSection] Fetch error', err);
         setExhibitors([]);
       } finally {
         setLoading(false);
@@ -127,178 +82,111 @@ export const EventExhibitorsSection = ({ event }: EventExhibitorsSectionProps) =
     };
 
     fetchExhibitors();
-  }, [event.id_event, event.id]); // Utilise id_event_text comme clé principale
+  }, [event.id_event, event.id, event.slug]);
 
-  // Force l'affichage si le composant n'est pas monté (problème d'hydratation)
-  if (!mounted) {
-    console.log('❌ EventExhibitorsSection - Composant pas encore monté, affichage fallback');
-    return (
-      <div className="bg-white rounded-lg border p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold">Exposants (chargement...)</h3>
-          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-        <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
-      </div>
-    );
-  }
+  const previewExhibitors = useMemo(
+    () => exhibitors.slice(0, MAX_SIDEBAR_EXHIBITORS),
+    [exhibitors]
+  );
 
-  console.log('🔍 EventExhibitorsSection - État actuel:', { 
-    mounted, 
-    loading, 
-    exhibitorsCount: exhibitors.length,
-    eventId: event.id,
-    hostname: window.location.hostname 
-  });
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg p-6">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="space-y-3">
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Si aucun exposant trouvé, affichage du placeholder
-  if (exhibitors.length === 0) {
-    console.log('📋 EventExhibitorsSection - Aucun exposant trouvé, affichage placeholder');
-    console.log('🔍 Debug état final:', { 
-      loading: false,
-      mounted: true,
-      exhibitors: exhibitors,
-      rawEvent: event 
-    });
-    return (
-      <div className="bg-white rounded-lg border p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold">
-            Exposants
-          </h3>
-        </div>
-        
-        <p className="text-gray-500 italic">
-          Aucun exposant trouvé pour cet événement
-        </p>
-      </div>
-    );
-  }
-
-  // Slice selon showAll - limité à 9 exposants par défaut
-  const toDisplay = showAll ? exhibitors : exhibitors.slice(0, 9);
-  console.log('📋 EventExhibitorsSection - Affichage liste exposants, total:', exhibitors.length, 'affichés:', toDisplay.length);
-  console.log('🔍 État final avant rendu liste:', { mounted, loading, exhibitorsLength: exhibitors.length });
+  const hasMore = exhibitors.length > MAX_SIDEBAR_EXHIBITORS;
 
   return (
-    <div className="bg-white rounded-lg border p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold">
-            Exposants ({exhibitors.length})
-          </h3>
-        </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {toDisplay.map((exhibitor, index) => (
-          <button
-            key={index}
-            onClick={() => setSelectedExhibitor(exhibitor)}
-            className="w-full text-left border rounded-lg p-4 hover:shadow-md hover:bg-gray-50 transition-all"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">{exhibitor.nom_exposant}</p>
-                {exhibitor.stand_exposant && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    Stand : {exhibitor.stand_exposant}
-                  </p>
-                )}
-                {!exhibitor.has_exhibitor_profile && (
-                  <p className="text-xs text-gray-500 mt-1 italic">Sans fiche exposant</p>
-                )}
-              </div>
+    <>
+      <Card className="mt-6">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">
+              Exposants ({exhibitors.length})
+            </h2>
+            {hasMore && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowAllModal(true)}
+              >
+                Voir tous les exposants
+              </Button>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                </div>
+              ))}
             </div>
-          </button>
-        ))}
-      </div>
-
-      {exhibitors.length > 9 && (
-        <div className="text-center">
-          <Button
-            variant="outline"
-            onClick={() => setShowAll(prev => !prev)}
-          >
-            {showAll ? 'Voir moins' : 'Afficher tout'}
-          </Button>
-        </div>
-      )}
-
-      {/* Modal avec Dialog */}
-      <Dialog open={!!selectedExhibitor} onOpenChange={() => setSelectedExhibitor(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{selectedExhibitor?.nom_exposant}</DialogTitle>
-            <DialogDescription>
-              Informations détaillées sur cet exposant
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedExhibitor && (
-            <div className="space-y-4">
-              {selectedExhibitor.stand_exposant && (
-                <div>
-                  <p className="font-semibold text-sm text-gray-600">Stand</p>
-                  <p className="text-gray-900">{selectedExhibitor.stand_exposant}</p>
-                </div>
-              )}
-              
-              {selectedExhibitor.website_exposant && (
-                <div>
-                  <p className="font-semibold text-sm text-gray-600">Site web</p>
-                  <a
-                    href={selectedExhibitor.website_exposant.startsWith('http') 
-                      ? selectedExhibitor.website_exposant 
-                      : `https://${selectedExhibitor.website_exposant}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline flex items-center gap-1"
-                  >
-                    {selectedExhibitor.website_exposant}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              )}
-              
-              
-              {selectedExhibitor.exposant_description && (
-                <div>
-                  <p className="font-semibold text-sm text-gray-600">Description</p>
-                  <p className="text-sm text-gray-700 mt-1 leading-relaxed">
-                    {selectedExhibitor.exposant_description}
-                  </p>
-                </div>
-              )}
-              
-              {!selectedExhibitor.stand_exposant && !selectedExhibitor.website_exposant && 
-               !selectedExhibitor.exposant_description && (
-                <p className="text-gray-500 italic">
-                  Aucune information supplémentaire disponible.
-                </p>
-              )}
+          ) : exhibitors.length === 0 ? (
+            <div className="text-center py-8">
+              <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">Aucun exposant inscrit pour le moment</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {previewExhibitors.map((exhibitor) => (
+                <button
+                  key={exhibitor.id_exposant}
+                  className="w-full text-left rounded-lg border p-3 hover:bg-accent transition-colors"
+                  onClick={() => setSelectedExhibitor(exhibitor)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{exhibitor.exhibitor_name}</div>
+                      {exhibitor.stand_exposant && (
+                        <div className="text-xs text-muted-foreground">
+                          Stand {exhibitor.stand_exposant}
+                        </div>
+                      )}
+                    </div>
+                    {exhibitor.website_exposant && (
+                      <a
+                        href={exhibitor.website_exposant}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-auto flex-shrink-0 opacity-70 hover:opacity-100"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Site exposant"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
 
-      {/* Modal de connexion CRM */}
-      <CrmConnectModal 
-        open={showCrmModal} 
-        onOpenChange={setShowCrmModal} 
+      {/* Modale liste complète */}
+      <ExhibitorsModal
+        open={showAllModal}
+        onOpenChange={setShowAllModal}
+        exhibitors={exhibitors}
+        onSelect={(ex) => {
+          setShowAllModal(false);
+          setSelectedExhibitor(ex);
+        }}
       />
-    </div>
+
+      {/* Fiche exposant */}
+      <ExhibitorDetailDialog
+        open={!!selectedExhibitor}
+        onOpenChange={(open) => !open && setSelectedExhibitor(null)}
+        exhibitor={selectedExhibitor}
+        event={event}
+      />
+    </>
   );
 };
+
+export default EventExhibitorsSection;
