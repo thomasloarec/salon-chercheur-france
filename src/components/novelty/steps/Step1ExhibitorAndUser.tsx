@@ -114,18 +114,74 @@ export default function Step1ExhibitorAndUser({
   const loadExhibitors = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke('exhibitors-by-event', {
-        body: { event_id: event.id, search: searchQuery }
+      
+      // Identifier l'événement courant via son id_event
+      const eventId = event?.id_event ?? null;
+      if (!eventId) {
+        console.warn('[Step1ExhibitorAndUser] Aucun id_event défini');
+        setExhibitors([]);
+        return;
+      }
+
+      // Charger tous les exposants liés à cet événement depuis participations_with_exhibitors
+      let query = supabase
+        .from('participations_with_exhibitors')
+        .select('id_exposant, exhibitor_name, exhibitor_website, stand_exposant')
+        .eq('id_event_text', eventId)
+        .order('exhibitor_name', { ascending: true });
+
+      // Appliquer le filtre de recherche si présent
+      if (searchQuery && searchQuery.trim()) {
+        query = query.ilike('exhibitor_name', `%${searchQuery.trim()}%`);
+      }
+
+      const { data: participations, error } = await query;
+
+      if (error) {
+        console.error('[Step1ExhibitorAndUser] Erreur de chargement des exposants', error);
+        throw error;
+      }
+
+      // Récupérer les détails complets des exposants depuis la table exhibitors
+      const exhibitorIds = participations?.map(p => p.id_exposant).filter(Boolean) || [];
+      
+      if (exhibitorIds.length === 0) {
+        setExhibitors([]);
+        return;
+      }
+
+      const { data: exhibitorsData, error: exhibitorsError } = await supabase
+        .from('exhibitors')
+        .select('id, name, website, logo_url, approved')
+        .in('id', exhibitorIds);
+
+      if (exhibitorsError) {
+        console.error('[Step1ExhibitorAndUser] Erreur chargement exhibitors', exhibitorsError);
+        throw exhibitorsError;
+      }
+
+      // Mapper les résultats avec les informations du stand
+      const formatted: DbExhibitor[] = (exhibitorsData || []).map((ex) => {
+        const participation = participations?.find(p => p.id_exposant === ex.id);
+        return {
+          id: ex.id,
+          name: ex.name,
+          website: ex.website || participation?.exhibitor_website || undefined,
+          logo_url: ex.logo_url || undefined,
+          approved: ex.approved || false,
+          stand_info: participation?.stand_exposant || undefined
+        };
       });
 
-      if (error) throw error;
-      setExhibitors(data?.exhibitors || []);
+      setExhibitors(formatted);
     } catch (error) {
+      console.error('[Step1ExhibitorAndUser] Exception', error);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les exposants',
         variant: 'destructive'
       });
+      setExhibitors([]);
     } finally {
       setLoading(false);
     }
