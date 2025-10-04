@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { useUserExhibitors } from '@/hooks/useExhibitorAdmin';
+import { useMyNovelties } from '@/hooks/useMyNovelties';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarRange, Calendar, Heart, Download, MapPin, Users } from 'lucide-react';
+import { CalendarRange, Calendar, Heart, Download, MapPin, Users, Sparkles, Building2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
 import { format } from 'date-fns';
@@ -27,6 +28,7 @@ const Agenda = () => {
   const { user } = useAuth();
   const { data: events = [], isLoading, error } = useFavoriteEvents();
   const { data: userExhibitors = [] } = useUserExhibitors();
+  const { data: myNovelties = [], isLoading: noveltiesLoading } = useMyNovelties();
   const [activeTab, setActiveTab] = useState('events');
 
   // Find next upcoming event
@@ -90,10 +92,17 @@ const Agenda = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="events" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Mes salons à venir
+                Mes salons
+              </TabsTrigger>
+              <TabsTrigger value="novelties" className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                Mes nouveautés
+                {myNovelties.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">{myNovelties.length}</Badge>
+                )}
               </TabsTrigger>
               {hasExhibitorAccess && (
                 <TabsTrigger value="exhibitor" className="flex items-center gap-2">
@@ -189,6 +198,97 @@ const Agenda = () => {
                   </h3>
                   <p className="text-gray-500 mb-6">
                     Likez des nouveautés pour les retrouver ici avec leurs salons
+                  </p>
+                  <Button asChild>
+                    <Link to="/events">Découvrir les salons</Link>
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* My Novelties Tab */}
+            <TabsContent value="novelties" className="mt-6">
+              {noveltiesLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
+                      <div className="flex items-center gap-4">
+                        <div className="h-16 w-16 bg-gray-200 rounded"></div>
+                        <div className="flex-1">
+                          <div className="h-5 bg-gray-200 rounded mb-2 w-3/4"></div>
+                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : myNovelties.length > 0 ? (
+                <div className="space-y-4">
+                  {myNovelties.map((novelty) => (
+                    <div key={novelty.id} className="bg-white rounded-lg shadow-sm border p-6">
+                      <div className="flex items-start gap-4">
+                        {novelty.media_urls[0] && (
+                          <img
+                            src={novelty.media_urls[0]}
+                            alt={novelty.title}
+                            className="w-16 h-16 rounded object-cover"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold">{novelty.title}</h3>
+                            <Badge variant={
+                              novelty.status === 'Published' ? 'default' :
+                              novelty.status === 'Draft' ? 'secondary' : 'outline'
+                            }>
+                              {novelty.status === 'Published' ? 'Publié' :
+                               novelty.status === 'Draft' ? 'En attente' : novelty.status}
+                            </Badge>
+                            <Badge variant="outline">
+                              {NOVELTY_TYPE_LABELS[novelty.type as keyof typeof NOVELTY_TYPE_LABELS] || novelty.type}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground mb-2">
+                            <Building2 className="h-3 w-3 inline mr-1" />
+                            {novelty.exhibitors.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            <MapPin className="h-3 w-3 inline mr-1" />
+                            <Link to={`/events/${novelty.events.slug}`} className="hover:underline">
+                              {novelty.events.nom_event}
+                            </Link>
+                            {' • '}
+                            {novelty.events.ville}
+                            {' • '}
+                            {format(new Date(novelty.events.date_debut), 'dd MMM', { locale: fr })}
+                            {novelty.events.date_fin !== novelty.events.date_debut && 
+                              ` - ${format(new Date(novelty.events.date_fin), 'dd MMM', { locale: fr })}`
+                            }
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <Link to={`/events/${novelty.events.slug}#nouveautes`}>
+                              Voir
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white rounded-lg">
+                  <Sparkles className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                    Aucune nouveauté créée
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Publiez vos innovations sur les salons pour attirer plus de visiteurs
                   </p>
                   <Button asChild>
                     <Link to="/events">Découvrir les salons</Link>

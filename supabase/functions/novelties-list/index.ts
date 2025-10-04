@@ -110,10 +110,10 @@ Deno.serve(async (req) => {
                .order('created_at', { ascending: false })
     }
 
-    // Apply pagination
-    query = query.range(offset, offset + pageSize - 1)
-
+    // Apply pagination and get count
     const { data: novelties, error, count } = await query
+      .range(offset, offset + pageSize - 1)
+      .select('*', { count: 'exact' })
 
     if (error) {
       console.error('Error fetching novelties:', error)

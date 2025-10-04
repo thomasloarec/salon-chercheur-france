@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Check, X, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import NoveltyPreviewDialog from '@/components/novelty/NoveltyPreviewDialog';
 
 interface PendingNovelty {
   id: string;
@@ -28,6 +29,7 @@ interface PendingNovelty {
 
 export default function NoveltyModeration() {
   const [activeTab, setActiveTab] = useState('pending');
+  const [previewNovelty, setPreviewNovelty] = useState<PendingNovelty | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -189,7 +191,7 @@ export default function NoveltyModeration() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => window.open(`/novelties/${novelty.id}`, '_blank')}
+                            onClick={() => setPreviewNovelty(novelty)}
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             Voir
@@ -221,6 +223,15 @@ export default function NoveltyModeration() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Preview Dialog */}
+      {previewNovelty && (
+        <NoveltyPreviewDialog
+          novelty={previewNovelty}
+          open={!!previewNovelty}
+          onOpenChange={(open) => !open && setPreviewNovelty(null)}
+        />
+      )}
     </div>
   );
 }

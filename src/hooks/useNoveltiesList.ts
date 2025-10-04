@@ -60,7 +60,7 @@ async function fetchNovelties(
       exhibitors ( id, name, slug, logo_url )
     `)
     .eq("events.visible", true)
-    .eq("status", "published")  // Only show published novelties
+    .eq("status", "Published")  // Only show published novelties (DB constraint expects 'Published')
     .order("created_at", { ascending: false });
 
   const dbType = typeSlugToDbValue(type);
