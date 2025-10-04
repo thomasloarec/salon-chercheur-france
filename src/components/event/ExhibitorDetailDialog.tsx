@@ -119,15 +119,18 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto">
         <DialogHeader>
-          {onBackToAll && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBackToAll}
-              className="w-fit -ml-2 mb-2"
-            >
-              ← Tous les exposants
-            </Button>
+          {typeof onBackToAll === 'function' && (
+            <div className="mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBackToAll}
+                className="px-2 -ml-2 h-8"
+                aria-label="Retour à tous les exposants"
+              >
+                ← Tous les exposants
+              </Button>
+            </div>
           )}
           <DialogTitle className="flex items-center gap-3">
             <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
