@@ -5,28 +5,78 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
+import { supabase } from '@/integrations/supabase/client';
+import { ExhibitorsModal } from './ExhibitorsModal';
+import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
 import type { Event } from '@/types/event';
 
 interface ExhibitorsSidebarProps {
   event: Event;
 }
 
+const MAX_PREVIEW = 7;
+
 export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
+  const [showAllModal, setShowAllModal] = useState(false);
+  const [allExhibitors, setAllExhibitors] = useState<any[] | null>(null);
+  const [selectedExhibitor, setSelectedExhibitor] = useState<any | null>(null);
   
-  const { data: exhibitorsData, isLoading, error } = useExhibitorsByEvent(
+  // Preview: load only 7 items
+  const { data: previewData, isLoading, error } = useExhibitorsByEvent(
     event.slug || '', 
-    debouncedSearch
+    debouncedSearch,
+    MAX_PREVIEW,
+    0
   );
   
-  const exhibitors = exhibitorsData?.exhibitors || [];
+  const preview = previewData?.exhibitors || [];
+  const total = previewData?.total || 0;
+
+  const handleOpenModal = async () => {
+    setShowAllModal(true);
+    if (allExhibitors === null) {
+      // Fetch all exhibitors directly (no limit)
+      try {
+        const { data: eventData } = await supabase
+          .from('events')
+          .select('id_event')
+          .eq('slug', event.slug || '')
+          .single();
+
+        if (eventData?.id_event) {
+          const { data: participations } = await supabase
+            .from('participations_with_exhibitors')
+            .select('*')
+            .eq('id_event_text', eventData.id_event)
+            .order('exhibitor_name', { ascending: true });
+
+          const mapped = (participations || []).map(p => ({
+            id: p.id_exposant || String(p.exhibitor_uuid || ''),
+            name: p.exhibitor_name || p.id_exposant || '',
+            slug: p.id_exposant || String(p.exhibitor_uuid || ''),
+            logo_url: null,
+            stand: p.stand_exposant || null,
+            hall: null,
+            plan: 'free' as const
+          })).filter(e => e.name);
+
+          setAllExhibitors(mapped);
+        }
+      } catch (err) {
+        console.error('[ExhibitorsSidebar] Error fetching all exhibitors', err);
+        setAllExhibitors([]);
+      }
+    }
+  };
 
   return (
-    <div className="sticky top-24 max-h-[75vh] overflow-y-auto bg-white rounded-lg shadow-sm border p-6">
+    <>
+      <div className="sticky top-24 bg-white rounded-lg shadow-sm border p-6">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-lg">
-            Exposants ({isLoading ? '...' : exhibitors.length})
+            Exposants ({isLoading ? '...' : total})
           </h3>
         </div>
 
@@ -57,55 +107,99 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
             <div className="text-center py-4">
               <p className="text-sm text-red-600">Erreur lors du chargement</p>
             </div>
-          ) : exhibitors.length === 0 ? (
+          ) : preview.length === 0 ? (
             <div className="text-center py-4">
               <p className="text-sm text-gray-500">
                 {debouncedSearch ? 'Aucun exposant trouvé' : 'Aucun exposant inscrit'}
               </p>
             </div>
           ) : (
-            exhibitors.map((exhibitor) => (
-              <div key={exhibitor.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
-                  {exhibitor.logo_url ? (
-                    <img 
-                      src={exhibitor.logo_url} 
-                      alt={`${exhibitor.name} logo`}
-                      className="w-full h-full object-contain rounded"
-                    />
-                  ) : (
-                    <Building2 className="w-4 h-4 text-gray-400" />
-                  )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <a 
-                    href={`/exhibitors/${exhibitor.slug || exhibitor.id}`}
-                    className="font-medium text-sm text-gray-900 hover:text-primary transition-colors block truncate"
-                  >
-                    {exhibitor.name}
-                  </a>
-                  {(exhibitor.stand || exhibitor.hall) && (
-                    <p className="text-xs text-gray-500 truncate">
-                      {[exhibitor.hall, exhibitor.stand].filter(Boolean).join(' • ')}
-                    </p>
-                  )}
-                </div>
-                
-                <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
-              </div>
-            ))
+            preview.map((exhibitor) => {
+              // Convert exhibitor to match ExhibitorDetailDialog interface
+              const exhibitorForDialog = {
+                id_exposant: exhibitor.id,
+                exhibitor_name: exhibitor.name,
+                stand_exposant: exhibitor.stand || undefined,
+                website_exposant: undefined,
+                exposant_description: undefined,
+                urlexpo_event: undefined
+              };
+
+              return (
+                <button
+                  key={exhibitor.id}
+                  onClick={() => setSelectedExhibitor(exhibitorForDialog)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div className="w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
+                    {exhibitor.logo_url ? (
+                      <img 
+                        src={exhibitor.logo_url} 
+                        alt={`${exhibitor.name} logo`}
+                        className="w-full h-full object-contain rounded"
+                      />
+                    ) : (
+                      <Building2 className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm text-gray-900 truncate">
+                      {exhibitor.name}
+                    </div>
+                    {(exhibitor.stand || exhibitor.hall) && (
+                      <p className="text-xs text-gray-500 truncate">
+                        {[exhibitor.hall, exhibitor.stand].filter(Boolean).join(' • ')}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                </button>
+              );
+            })
           )}
         </div>
 
         {/* Footer CTA */}
-        {exhibitors.length > 0 && (
+        {total > MAX_PREVIEW && (
           <div className="mt-6 pt-4 border-t">
-            <Button variant="outline" size="sm" className="w-full">
-              Voir tous les exposants
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={handleOpenModal}
+            >
+              Voir tous les exposants ({total})
             </Button>
           </div>
         )}
       </div>
+
+      {/* Modale liste complète */}
+      <ExhibitorsModal
+        open={showAllModal}
+        onOpenChange={setShowAllModal}
+        exhibitors={allExhibitors?.map(ex => ({
+          id_exposant: ex.id,
+          exhibitor_name: ex.name,
+          stand_exposant: ex.stand,
+          website_exposant: undefined,
+        })) || []}
+        loading={allExhibitors === null}
+        onSelect={(ex) => {
+          setShowAllModal(false);
+          setSelectedExhibitor(ex);
+        }}
+      />
+
+      {/* Fiche exposant */}
+      <ExhibitorDetailDialog
+        open={!!selectedExhibitor}
+        onOpenChange={(open) => !open && setSelectedExhibitor(null)}
+        exhibitor={selectedExhibitor}
+        event={event}
+      />
+    </>
   );
 }

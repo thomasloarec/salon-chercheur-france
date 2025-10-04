@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       }
     )
 
-    const { event_slug, search } = await req.json()
+    const { event_slug, search = '', limit, offset } = await req.json()
 
     if (!event_slug) {
       return new Response(
@@ -64,10 +64,19 @@ Deno.serve(async (req) => {
     }
 
     // Get exhibitors from participations_with_exhibitors view using id_event_text
-    const { data: participations, error } = await supabase
+    let query = supabase
       .from('participations_with_exhibitors')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('id_event_text', eventData.id_event)
+      .order('exhibitor_name', { ascending: true })
+
+    // Apply pagination if provided
+    if (typeof limit === 'number') {
+      const start = offset || 0
+      query = query.range(start, start + limit - 1)
+    }
+
+    const { data: participations, count, error } = await query
 
     if (error) {
       console.error('Database error:', error);
@@ -101,13 +110,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Sort alphabetically
+    // Sort alphabetically (already sorted in query but just in case)
     exhibitors.sort((a, b) => a.name.localeCompare(b.name))
 
     return new Response(
       JSON.stringify({ 
         exhibitors,
-        total: exhibitors.length
+        total: count || exhibitors.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
