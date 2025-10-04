@@ -37,6 +37,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
       try {
         const eventIdText = event.id_event;
         
+        console.log('[SidebarExposants] eventId =', eventIdText ?? event.id);
         console.log('🔍 EventExhibitorsSection - Fetching preview for', eventIdText);
         
         // Requête preview: 7 premiers + count total
@@ -75,6 +76,9 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
         console.log('✅ Loaded preview:', finalPreview.length, 'of', finalCount, 'exhibitors');
         setExhibitorsPreview(finalPreview);
         setTotalExhibitors(finalCount);
+        
+        console.log('[SidebarExposants] loadedCount =', finalCount);
+        console.log('[SidebarExposants] previewCount =', finalPreview.length);
       } catch (err) {
         console.error('[EventExhibitorsSection] Fetch error', err);
         setExhibitorsPreview([]);
@@ -130,6 +134,8 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
   };
 
   const hasMore = totalExhibitors > MAX_SIDEBAR_EXHIBITORS;
+  
+  console.log('[SidebarExposants] hasMore =', hasMore);
 
   return (
     <>
