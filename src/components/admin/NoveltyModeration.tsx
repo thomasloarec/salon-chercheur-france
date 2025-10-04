@@ -34,9 +34,10 @@ export default function NoveltyModeration() {
   const { data: pendingNovelties, isLoading } = useQuery({
     queryKey: ['admin-novelties', activeTab],
     queryFn: async () => {
-      let statusFilter = 'pending_admin_review';
-      if (activeTab === 'published') statusFilter = 'published';
-      if (activeTab === 'rejected') statusFilter = 'rejected';
+      // Map tab to actual DB status values (matching CHECK constraint)
+      let statusFilter = 'Draft'; // Default: newly submitted novelties
+      if (activeTab === 'published') statusFilter = 'Published';
+      if (activeTab === 'rejected') statusFilter = 'Rejected';
 
       const { data, error } = await supabase
         .from('novelties')
@@ -79,11 +80,11 @@ export default function NoveltyModeration() {
   });
 
   const handlePublish = (id: string) => {
-    updateStatusMutation.mutate({ id, status: 'published' });
+    updateStatusMutation.mutate({ id, status: 'Published' });
   };
 
   const handleReject = (id: string) => {
-    updateStatusMutation.mutate({ id, status: 'rejected' });
+    updateStatusMutation.mutate({ id, status: 'Rejected' });
   };
 
   const formatDate = (dateString: string) => {
@@ -98,12 +99,13 @@ export default function NoveltyModeration() {
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      pending_admin_review: { label: 'En attente', variant: 'secondary' as const },
-      published: { label: 'Publié', variant: 'default' as const },
-      rejected: { label: 'Rejeté', variant: 'destructive' as const }
+      Draft: { label: 'En attente', variant: 'secondary' as const },
+      UnderReview: { label: 'En révision', variant: 'default' as const },
+      Published: { label: 'Publié', variant: 'default' as const },
+      Rejected: { label: 'Rejeté', variant: 'destructive' as const }
     };
     
-    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.pending_admin_review;
+    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.Draft;
     
     return (
       <Badge variant={statusInfo.variant}>

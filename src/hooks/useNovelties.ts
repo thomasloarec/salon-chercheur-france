@@ -116,8 +116,8 @@ export const useCreateNovelty = () => {
       queryClient.invalidateQueries({ queryKey: ['novelties'] });
       
       toast({
-        title: 'Nouveauté créée',
-        description: 'Votre nouveauté a été publiée avec succès.',
+        title: '✅ Nouveauté soumise !',
+        description: 'Votre nouveauté a été envoyée avec succès. Elle sera visible après validation par notre équipe.',
       });
     },
     onError: (error: any) => {
