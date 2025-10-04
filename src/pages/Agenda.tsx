@@ -7,6 +7,7 @@ import { useUserExhibitors } from '@/hooks/useExhibitorAdmin';
 import { useMyNovelties } from '@/hooks/useMyNovelties';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarRange, Calendar, Heart, Download, MapPin, Users, Sparkles, Building2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -223,62 +224,63 @@ const Agenda = () => {
                   ))}
                 </div>
               ) : myNovelties.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {myNovelties.map((novelty) => (
-                    <div key={novelty.id} className="bg-white rounded-lg shadow-sm border p-6">
-                      <div className="flex items-start gap-4">
-                        {novelty.media_urls[0] && (
+                    <Card key={novelty.id} className="overflow-hidden">
+                      {/* Hero Image */}
+                      {novelty.media_urls && novelty.media_urls[0] && (
+                        <div className="aspect-video relative">
                           <img
                             src={novelty.media_urls[0]}
                             alt={novelty.title}
-                            className="w-16 h-16 rounded object-cover"
+                            className="w-full h-full object-cover"
                           />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold">{novelty.title}</h3>
-                            <Badge variant={
-                              novelty.status === 'Published' ? 'default' :
-                              novelty.status === 'Draft' ? 'secondary' : 'outline'
-                            }>
-                              {novelty.status === 'Published' ? 'Publié' :
-                               novelty.status === 'Draft' ? 'En attente' : novelty.status}
+                          <div className="absolute top-4 right-4 flex gap-2">
+                            <Badge variant={novelty.status === 'Published' ? 'default' : 'secondary'}>
+                              {novelty.status === 'Published' ? 'Publié' : 
+                               novelty.status === 'Draft' ? 'En attente' :
+                               novelty.status === 'UnderReview' ? 'En révision' : novelty.status}
                             </Badge>
                             <Badge variant="outline">
                               {NOVELTY_TYPE_LABELS[novelty.type as keyof typeof NOVELTY_TYPE_LABELS] || novelty.type}
                             </Badge>
                           </div>
-                          <div className="text-sm text-muted-foreground mb-2">
-                            <Building2 className="h-3 w-3 inline mr-1" />
-                            {novelty.exhibitors.name}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            <MapPin className="h-3 w-3 inline mr-1" />
-                            <Link to={`/events/${novelty.events.slug}`} className="hover:underline">
-                              {novelty.events.nom_event}
-                            </Link>
-                            {' • '}
-                            {novelty.events.ville}
-                            {' • '}
+                        </div>
+                      )}
+                      
+                      <CardContent className="p-6">
+                        <h3 className="text-2xl font-bold mb-2">{novelty.title}</h3>
+                        
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                          <Building2 className="h-4 w-4" />
+                          <span>{novelty.exhibitors.name}</span>
+                          <span>•</span>
+                          <MapPin className="h-4 w-4" />
+                          <Link to={`/events/${novelty.events.slug}`} className="hover:underline">
+                            {novelty.events.nom_event} - {novelty.events.ville}
+                          </Link>
+                          <span>•</span>
+                          <Calendar className="h-4 w-4" />
+                          <span>
                             {format(new Date(novelty.events.date_debut), 'dd MMM', { locale: fr })}
                             {novelty.events.date_fin !== novelty.events.date_debut && 
                               ` - ${format(new Date(novelty.events.date_fin), 'dd MMM', { locale: fr })}`
                             }
-                          </div>
+                          </span>
                         </div>
-                        <div className="flex gap-2">
+
+                        <div className="flex gap-2 mt-4">
                           <Button
                             variant="outline"
-                            size="sm"
                             asChild
                           >
                             <Link to={`/events/${novelty.events.slug}#nouveautes`}>
-                              Voir
+                              Voir sur le salon
                             </Link>
                           </Button>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               ) : (

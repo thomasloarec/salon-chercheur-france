@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.1";
 
+// Frontend schema
 const schema = z.object({
   novelty_id: z.string().uuid(),
   lead_type: z.enum(['brochure_download', 'meeting_request']),
@@ -13,6 +14,12 @@ const schema = z.object({
   phone: z.string().optional(),
   notes: z.string().optional(),
 });
+
+// Map frontend types to database types
+const leadTypeMapping = {
+  'brochure_download': 'resource_download',
+  'meeting_request': 'meeting_request'
+} as const;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,6 +56,9 @@ serve(async (req) => {
     const data = parsed.data;
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Map frontend type to database type
+    const dbLeadType = leadTypeMapping[data.lead_type];
+
     // Verify novelty exists and get brochure URL
     const { data: novelty, error: noveltyError } = await admin
       .from('novelties')
@@ -71,12 +81,12 @@ serve(async (req) => {
       );
     }
 
-    // Create lead
+    // Create lead with mapped type
     const { data: lead, error: leadError } = await admin
       .from('leads')
       .insert([{
         novelty_id: data.novelty_id,
-        lead_type: data.lead_type,
+        lead_type: dbLeadType,
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,

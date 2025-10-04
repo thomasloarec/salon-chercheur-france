@@ -76,29 +76,68 @@ Deno.serve(async (req) => {
       query = query.ilike('events.ville', `%${params.region}%`)
     }
 
-    // Top novelties (one per event)
+    // Top novelties (one per event) - Used for main novelties page
     if (params.top === true || (!params.event_id && !params.sector && !params.type && !params.month && !params.region)) {
-      // For top novelties, we want the most popular novelty per event
-      const { data: topNovelties, error } = await supabase
-        .rpc('get_top_novelties_per_event', {})
-      
-      if (error) {
-        console.error('Error fetching top novelties:', error)
+      // Fetch ALL published novelties with their stats and event info
+      const { data: allNovelties, error: allError } = await supabase
+        .from('novelties')
+        .select(`
+          *,
+          exhibitors!inner(id, name, slug, logo_url),
+          novelty_stats!left(route_users_count, popularity_score),
+          events!inner(id, nom_event, slug, ville, secteur, type_event, date_debut)
+        `)
+        .eq('status', 'Published')
+        .eq('events.visible', true)
+        .gte('events.date_debut', new Date().toISOString().split('T')[0])
+        .order('created_at', { ascending: false });
+
+      if (allError) {
+        console.error('Error fetching novelties:', allError);
         return new Response(
-          JSON.stringify({ error: 'Failed to fetch top novelties' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }  
-        )
+          JSON.stringify({ error: 'Failed to fetch novelties' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
+
+      // Group by event_id and keep only the most popular one per event
+      const topNoveltiesMap = new Map();
+      (allNovelties || []).forEach(novelty => {
+        const eventId = novelty.event_id;
+        const existingNovelty = topNoveltiesMap.get(eventId);
+        
+        if (!existingNovelty) {
+          topNoveltiesMap.set(eventId, novelty);
+        } else {
+          // Compare popularity: route_users_count first, then created_at
+          const currentScore = novelty.novelty_stats?.route_users_count || 0;
+          const existingScore = existingNovelty.novelty_stats?.route_users_count || 0;
+          
+          if (currentScore > existingScore) {
+            topNoveltiesMap.set(eventId, novelty);
+          } else if (currentScore === existingScore && novelty.created_at > existingNovelty.created_at) {
+            topNoveltiesMap.set(eventId, novelty);
+          }
+        }
+      });
+
+      const topNovelties = Array.from(topNoveltiesMap.values())
+        .sort((a, b) => {
+          const scoreA = a.novelty_stats?.route_users_count || 0;
+          const scoreB = b.novelty_stats?.route_users_count || 0;
+          if (scoreB !== scoreA) return scoreB - scoreA;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
 
       return new Response(
         JSON.stringify({
-          data: topNovelties || [],
-          total: topNovelties?.length || 0,
+          data: topNovelties,
+          total: topNovelties.length,
           page,
           pageSize
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
     // Apply sorting
