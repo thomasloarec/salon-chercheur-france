@@ -123,7 +123,7 @@ serve(async (req) => {
       .single();
 
     if (insErr) {
-      console.error("[novelties-create] Insert error:", insErr);
+      console.error("[novelties-create] Insert error raw:", JSON.stringify(insErr, null, 2));
       return new Response(
         JSON.stringify({ 
           error: insErr.message, 

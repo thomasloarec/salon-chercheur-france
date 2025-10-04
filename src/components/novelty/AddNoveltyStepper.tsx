@@ -506,42 +506,49 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       
       console.log('✅ Validation côté client OK');
 
-      // 6. Call Edge function
-      console.log('📡 Appel Edge Function...');
-      const { data: novelty, error: noveltyError } = await supabase.functions.invoke('novelties-create', {
-        body: payload
+      // 6. Call Edge function (via fetch pour lire le JSON en cas de 400)
+      console.log('📡 Appel Edge Function (via fetch pour lire le JSON en cas de 400)...');
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || null;
+
+      // Récupère l'URL du projet depuis l'env
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/novelties-create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify(payload),
       });
 
-      console.log('📡 Response status:', noveltyError ? 'ERROR' : 'SUCCESS');
-      console.log('📡 Response data:', noveltyError || novelty);
+      // Essaie de parser le JSON même si 400
+      let json: any = null;
+      try {
+        json = await res.json();
+      } catch {
+        // pas de JSON – on gère quand même
+      }
 
-      if (noveltyError) {
-        console.group('🚨 ERREUR SERVEUR DÉTAILLÉE');
-        console.log('Error object:', noveltyError);
-        console.log('Error message:', noveltyError.message);
-        console.log('Error code:', (noveltyError as any)?.code);
+      console.log('📡 Response status:', res.status);
+      console.log('📡 Response JSON:', json);
 
-        // 🔎 Récupérer le JSON renvoyé par l'Edge Function
-        let serverJson: any = null;
-        try {
-          const res = (noveltyError as any)?.context?.response;
-          if (res && typeof res.json === 'function') {
-            serverJson = await res.json();
-            console.log('Error body JSON:', serverJson);
-          }
-        } catch (e) {
-          console.warn('Unable to parse Edge Function error body:', e);
-        }
+      if (!res.ok) {
+        console.group('🚨 ERREUR SERVEUR DÉTAILLÉE (fetch)');
+        console.log('HTTP status:', res.status);
+        console.log('JSON:', json);
         console.groupEnd();
 
-        const msg = serverJson?.error || noveltyError.message || 'Impossible de créer la nouveauté';
-        const details = serverJson?.details || serverJson?.hint || null;
-
+        const msg = json?.error || `HTTP ${res.status}`;
+        const details = json?.details || json?.hint || json?.code || null;
         throw new Error(details ? `${msg}: ${typeof details === 'string' ? details : JSON.stringify(details)}` : msg);
       }
 
+      // Succès
+      const novelty = json;  // { id, title } d'après l'Edge
       if (!novelty) {
-        throw new Error('Impossible de créer la nouveauté');
+        throw new Error('Aucune nouveauté retournée');
       }
 
       console.log('✅ Nouveauté créée avec succès:', novelty);
