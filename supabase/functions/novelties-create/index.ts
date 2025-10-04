@@ -6,12 +6,12 @@ const uuid = z.string().uuid();
 const url = z.string().url();
 
 const schema = z.object({
-  event_id: uuid,                // UUID de events.id
-  exhibitor_id: uuid,            // UUID de exhibitors.id
-  created_by: uuid,              // UUID user
-  title: z.string().min(3),
+  event_id: uuid,
+  exhibitor_id: uuid,
+  created_by: uuid,
+  title: z.string().min(3).max(200),
   novelty_type: z.string().min(1),
-  reason: z.string().min(10),
+  reason: z.string().min(10).max(1000),
   images: z.array(z.string().url()).min(1).max(3),
   brochure_pdf: url.optional().nullable(),
   stand_info: z.string().max(200).optional().nullable(),
@@ -35,99 +35,112 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!supabaseUrl || !serviceKey) {
+      console.error("[novelties-create] Missing env vars");
       return new Response(
-        JSON.stringify({ message: "Edge env missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }),
+        JSON.stringify({ error: "Server configuration error" }),
         { status: 500, headers: corsHeaders() }
       );
     }
 
     const body = await req.json();
+    console.log("[novelties-create] Received payload:", JSON.stringify({
+      ...body,
+      images: body.images?.length,
+      brochure_pdf: body.brochure_pdf ? "present" : "absent"
+    }));
+
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
+      console.error("[novelties-create] Validation error:", parsed.error.flatten());
       return new Response(
-        JSON.stringify({ message: "Validation error", errors: parsed.error.flatten() }),
-        { status: 422, headers: corsHeaders() }
+        JSON.stringify({ 
+          error: "Validation error", 
+          details: parsed.error.flatten().fieldErrors 
+        }),
+        { status: 400, headers: corsHeaders() }
       );
     }
     const data = parsed.data;
 
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Vérifier l'événement par UUID (events.id)
+    // Vérifier l'événement
     const { data: ev, error: evErr } = await admin
       .from("events")
-      .select("id, id_event, nom_event, visible")
+      .select("id")
       .eq("id", data.event_id)
       .single();
 
-    if (evErr) {
+    if (evErr || !ev) {
+      console.error("[novelties-create] Invalid event_id:", data.event_id, evErr);
       return new Response(
-        JSON.stringify({ message: "Event lookup failed", details: evErr.message }),
-        { status: 500, headers: corsHeaders() }
+        JSON.stringify({ error: "Invalid event_id" }),
+        { status: 400, headers: corsHeaders() }
       );
     }
-    if (!ev) {
-      return new Response(JSON.stringify({ message: "Event not found" }), {
-        status: 404,
-        headers: corsHeaders(),
-      });
-    }
 
-    // Vérifier l'exposant par UUID (exhibitors.id)
+    // Vérifier l'exposant
     const { data: exhib, error: exhibErr } = await admin
       .from("exhibitors")
-      .select("id, name")
+      .select("id")
       .eq("id", data.exhibitor_id)
       .single();
 
-    if (exhibErr) {
+    if (exhibErr || !exhib) {
+      console.error("[novelties-create] Invalid exhibitor_id:", data.exhibitor_id, exhibErr);
       return new Response(
-        JSON.stringify({ message: "Exhibitor lookup failed", details: exhibErr.message }),
-        { status: 500, headers: corsHeaders() }
+        JSON.stringify({ error: "Invalid exhibitor_id" }),
+        { status: 400, headers: corsHeaders() }
       );
     }
-    if (!exhib) {
-      return new Response(JSON.stringify({ message: "Exhibitor not found" }), {
-        status: 404,
-        headers: corsHeaders(),
-      });
-    }
 
-    // Insertion dans novelties
+    // Mapping front → DB
     const insertPayload = {
-      event_id: data.event_id,              // UUID
-      exhibitor_id: data.exhibitor_id,      // UUID
-      title: data.title,
+      event_id: data.event_id,
+      exhibitor_id: data.exhibitor_id,
+      title: data.title.trim(),
       type: data.novelty_type,
-      reason_1: data.reason,
-      media_urls: data.images,              // jsonb (array<string>)
+      reason_1: data.reason.trim(),
+      media_urls: data.images,
+      images_count: data.images.length,
       doc_url: data.brochure_pdf ?? null,
       stand_info: data.stand_info ?? null,
-      created_at: new Date().toISOString(),
-      created_by: data.created_by,          // si colonne existante
-      status: "pending_admin_review",       // Force moderation workflow
+      created_by: data.created_by,
+      status: "Pending",
     };
+
+    console.log("[novelties-create] Insert payload:", JSON.stringify({
+      ...insertPayload,
+      media_urls: insertPayload.media_urls.length,
+    }));
 
     const { data: inserted, error: insErr } = await admin
       .from("novelties")
       .insert([insertPayload])
-      .select()
+      .select("id, title")
       .single();
 
     if (insErr) {
+      console.error("[novelties-create] Insert error:", insErr);
       return new Response(
-        JSON.stringify({ message: "Insert failed", details: insErr.message }),
-        { status: 500, headers: corsHeaders() }
+        JSON.stringify({ 
+          error: insErr.message, 
+          details: insErr.details,
+          hint: insErr.hint 
+        }),
+        { status: 400, headers: corsHeaders() }
       );
     }
 
+    console.log("[novelties-create] Success:", inserted.id);
     return new Response(
-      JSON.stringify({ message: "Created", novelty: { id: inserted.id, title: inserted.title } }),
-      { status: 201, headers: corsHeaders() }
+      JSON.stringify({ id: inserted.id, title: inserted.title }),
+      { status: 200, headers: corsHeaders() }
     );
   } catch (e) {
+    console.error("[novelties-create] Unhandled error:", e);
     return new Response(
-      JSON.stringify({ message: "Unhandled error", error: String(e) }),
+      JSON.stringify({ error: String(e?.message || e) }),
       { status: 500, headers: corsHeaders() }
     );
   }

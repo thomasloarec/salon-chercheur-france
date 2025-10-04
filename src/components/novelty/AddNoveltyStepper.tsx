@@ -523,7 +523,13 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         console.log('Error code:', noveltyError.code);
         console.groupEnd();
         
-        throw new Error(noveltyError.message || 'Impossible de créer la nouveauté');
+        const errorMessage = noveltyError.message || 'Impossible de créer la nouveauté';
+        const errorDetails = (noveltyError as any)?.details;
+        const fullMessage = errorDetails 
+          ? `${errorMessage}: ${typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails)}`
+          : errorMessage;
+        
+        throw new Error(fullMessage);
       }
 
       if (!novelty) {
