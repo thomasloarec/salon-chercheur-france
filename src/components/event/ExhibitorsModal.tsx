@@ -15,13 +15,15 @@ interface ExhibitorsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exhibitors: Exhibitor[];
+  loading?: boolean;
   onSelect: (exhibitor: Exhibitor) => void;
 }
 
 export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({ 
   open, 
   onOpenChange, 
-  exhibitors = [], 
+  exhibitors = [],
+  loading = false,
   onSelect 
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,11 +52,17 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
+              disabled={loading}
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-auto pr-1">
-            {filtered.map((ex) => (
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Chargement...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-auto pr-1">
+              {filtered.map((ex) => (
               <button
                 key={ex.id_exposant}
                 className="text-left rounded-lg border p-3 hover:bg-accent transition-colors"
@@ -72,13 +80,14 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                   </div>
                 </div>
               </button>
-            ))}
-            {filtered.length === 0 && (
-              <div className="col-span-2 text-center py-8 text-muted-foreground">
-                Aucun exposant trouvé
-              </div>
-            )}
-          </div>
+              ))}
+              {filtered.length === 0 && (
+                <div className="col-span-2 text-center py-8 text-muted-foreground">
+                  Aucun exposant trouvé
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

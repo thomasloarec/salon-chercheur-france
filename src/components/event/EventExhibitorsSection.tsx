@@ -24,72 +24,112 @@ interface EventExhibitorsSectionProps {
 const MAX_SIDEBAR_EXHIBITORS = 7;
 
 export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ event }) => {
-  const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
+  const [exhibitorsPreview, setExhibitorsPreview] = useState<Exhibitor[]>([]);
+  const [totalExhibitors, setTotalExhibitors] = useState<number>(0);
+  const [exhibitorsAll, setExhibitorsAll] = useState<Exhibitor[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAllModal, setShowAllModal] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<Exhibitor | null>(null);
 
   useEffect(() => {
-    const fetchExhibitors = async () => {
+    const fetchPreview = async () => {
       setLoading(true);
       try {
         const eventIdText = event.id_event;
         
-        console.log('🔍 EventExhibitorsSection - Fetching exhibitors for', eventIdText);
+        console.log('🔍 EventExhibitorsSection - Fetching preview for', eventIdText);
         
-        // Requête principale avec id_event_text
-        const { data: exhibitorsData, error } = await supabase
+        // Requête preview: 7 premiers + count total
+        const { data: previewData, count, error } = await supabase
           .from('participations_with_exhibitors')
-          .select('*')
-          .eq('id_event_text', eventIdText);
+          .select('*', { count: 'exact' })
+          .eq('id_event_text', eventIdText)
+          .order('exhibitor_name', { ascending: true })
+          .range(0, 6); // 7 items (0-6)
 
         if (error) {
-          console.warn('[EventExhibitorsSection] Query error', error, { eventIdText });
+          console.warn('[EventExhibitorsSection] Preview query error', error, { eventIdText });
         }
 
-        let finalExhibitors = exhibitorsData ?? [];
+        let finalPreview = previewData ?? [];
+        let finalCount = count ?? 0;
 
         // Fallback vers id_event (UUID) si aucun résultat
-        if (finalExhibitors.length === 0 && event.id) {
+        if (finalPreview.length === 0 && event.id) {
           console.log('🔄 Fallback to UUID for event', event.slug);
-          const { data: fallbackData } = await supabase
+          const { data: fallbackData, count: fallbackCount } = await supabase
             .from('participations_with_exhibitors')
-            .select('*')
-            .eq('id_event', event.id);
+            .select('*', { count: 'exact' })
+            .eq('id_event', event.id)
+            .order('exhibitor_name', { ascending: true })
+            .range(0, 6);
 
-          finalExhibitors = fallbackData ?? [];
+          finalPreview = fallbackData ?? [];
+          finalCount = fallbackCount ?? 0;
           
           if (fallbackData && fallbackData.length > 0) {
             console.warn('[ADMIN] Fallback to UUID worked for event', event.slug, 'but id_event_text should be preferred');
           }
         }
 
-        // Tri alphabétique
-        const sorted = finalExhibitors.sort((a, b) => {
-          const nameA = a.exhibitor_name || '';
-          const nameB = b.exhibitor_name || '';
-          return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
-        });
-
-        console.log('✅ Loaded', sorted.length, 'exhibitors');
-        setExhibitors(sorted);
+        console.log('✅ Loaded preview:', finalPreview.length, 'of', finalCount, 'exhibitors');
+        setExhibitorsPreview(finalPreview);
+        setTotalExhibitors(finalCount);
       } catch (err) {
         console.error('[EventExhibitorsSection] Fetch error', err);
-        setExhibitors([]);
+        setExhibitorsPreview([]);
+        setTotalExhibitors(0);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExhibitors();
+    fetchPreview();
   }, [event.id_event, event.id, event.slug]);
 
-  const previewExhibitors = useMemo(
-    () => exhibitors.slice(0, MAX_SIDEBAR_EXHIBITORS),
-    [exhibitors]
-  );
+  const fetchAllExhibitors = async () => {
+    if (exhibitorsAll !== null) return; // Already loaded
+    
+    try {
+      const eventIdText = event.id_event;
+      console.log('🔍 Fetching all exhibitors for', eventIdText);
+      
+      const { data: allData, error } = await supabase
+        .from('participations_with_exhibitors')
+        .select('*')
+        .eq('id_event_text', eventIdText)
+        .order('exhibitor_name', { ascending: true });
 
-  const hasMore = exhibitors.length > MAX_SIDEBAR_EXHIBITORS;
+      if (error) {
+        console.warn('[EventExhibitorsSection] Full list query error', error);
+      }
+
+      let finalAll = allData ?? [];
+
+      // Fallback to UUID if needed
+      if (finalAll.length === 0 && event.id) {
+        const { data: fallbackData } = await supabase
+          .from('participations_with_exhibitors')
+          .select('*')
+          .eq('id_event', event.id)
+          .order('exhibitor_name', { ascending: true });
+        finalAll = fallbackData ?? [];
+      }
+
+      console.log('✅ Loaded all exhibitors:', finalAll.length);
+      setExhibitorsAll(finalAll);
+    } catch (err) {
+      console.error('[EventExhibitorsSection] Full list fetch error', err);
+      setExhibitorsAll([]);
+    }
+  };
+
+  const handleOpenModal = () => {
+    setShowAllModal(true);
+    fetchAllExhibitors();
+  };
+
+  const hasMore = totalExhibitors > MAX_SIDEBAR_EXHIBITORS;
 
   return (
     <>
@@ -97,13 +137,13 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">
-              Exposants ({exhibitors.length})
+              Exposants ({totalExhibitors})
             </h2>
             {hasMore && (
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setShowAllModal(true)}
+                onClick={handleOpenModal}
               >
                 Voir tous les exposants
               </Button>
@@ -122,14 +162,14 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
                 </div>
               ))}
             </div>
-          ) : exhibitors.length === 0 ? (
+          ) : exhibitorsPreview.length === 0 ? (
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">Aucun exposant inscrit pour le moment</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {previewExhibitors.map((exhibitor) => (
+              {exhibitorsPreview.slice(0, 7).map((exhibitor) => (
                 <button
                   key={exhibitor.id_exposant}
                   className="w-full text-left rounded-lg border p-3 hover:bg-accent transition-colors"
@@ -171,7 +211,8 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
       <ExhibitorsModal
         open={showAllModal}
         onOpenChange={setShowAllModal}
-        exhibitors={exhibitors}
+        exhibitors={exhibitorsAll ?? []}
+        loading={exhibitorsAll === null}
         onSelect={(ex) => {
           setShowAllModal(false);
           setSelectedExhibitor(ex);
