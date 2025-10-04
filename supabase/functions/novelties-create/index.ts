@@ -96,12 +96,25 @@ serve(async (req) => {
       );
     }
 
+    // Map frontend values to database constraint values
+    const typeMapping: Record<string, string> = {
+      'Launch': 'Launch',
+      'Update': 'MajorUpdate',
+      'Prototype': 'Prototype',
+      'Demo': 'LiveDemo',
+      'Partnership': 'Partnership',
+      'Offer': 'Offer',
+      'Talk': 'Talk'
+    };
+
+    const mappedType = typeMapping[data.novelty_type.trim()] || 'Launch';
+
     // Mapping front → DB
     const insertPayload = {
       event_id: data.event_id,
       exhibitor_id: data.exhibitor_id,
       title: data.title.trim(),
-      type: data.novelty_type.trim().toLowerCase(),
+      type: mappedType,
       reason_1: data.reason.trim(),
       media_urls: data.images,
       images_count: data.images.length,
