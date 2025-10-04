@@ -148,15 +148,45 @@ export default function Step1ExhibitorAndUser({
         return;
       }
 
-      // Mapper directement depuis la vue (comme dans useExhibitorsByEvent)
-      const formatted: DbExhibitor[] = rows.map(p => ({
-        id: p.id_exposant || String(p.exhibitor_uuid || ''),
-        name: p.exhibitor_name || p.id_exposant || '',
-        website: p.exhibitor_website || '',
-        logo_url: undefined,
-        approved: true, // Considéré comme approuvé s'il participe à l'événement
-        stand_info: p.stand_exposant || undefined,
-      })).filter(e => e.name); // Filtrer ceux sans nom
+      // Pour chaque participation, vérifier s'il existe dans la table exhibitors (avec UUID)
+      // Si oui, utiliser l'UUID; sinon, utiliser id_exposant comme identifiant temporaire
+      const exhibitorMap = new Map<string, string>();
+      
+      // Essayer de matcher avec la table exhibitors par website (si disponible)
+      const websitesWithData = rows
+        .filter(p => p.exhibitor_website)
+        .map(p => ({ website: p.exhibitor_website!.toLowerCase().trim(), original: p }));
+      
+      if (websitesWithData.length > 0) {
+        const websites = websitesWithData.map(w => w.website);
+        const { data: matchingExhibitors } = await supabase
+          .from('exhibitors')
+          .select('id, website')
+          .in('website', websites);
+        
+        if (matchingExhibitors) {
+          matchingExhibitors.forEach(ex => {
+            if (ex.website) {
+              exhibitorMap.set(ex.website.toLowerCase().trim(), ex.id);
+            }
+          });
+        }
+      }
+
+      // Mapper les résultats
+      const formatted: DbExhibitor[] = rows.map(p => {
+        const website = p.exhibitor_website?.toLowerCase().trim();
+        const matchedUuid = website ? exhibitorMap.get(website) : undefined;
+        
+        return {
+          id: matchedUuid || p.id_exposant || String(p.exhibitor_uuid || ''),
+          name: p.exhibitor_name || p.id_exposant || '',
+          website: p.exhibitor_website || '',
+          logo_url: undefined,
+          approved: !!matchedUuid, // Approuvé si trouvé dans exhibitors
+          stand_info: p.stand_exposant || undefined,
+        };
+      }).filter(e => e.name); // Filtrer ceux sans nom
 
       setExhibitors(formatted);
     } catch (error) {

@@ -292,6 +292,12 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       const step1 = step1Result.data;
       const step2 = step2Result.data;
 
+      // Helper to check if string is valid UUID
+      const isValidUUID = (str: string) => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(str);
+      };
+
       // 2. Vérifications pré-upload
       console.log('🔍 Vérifications pre-upload:');
       console.log('- Images:', step2.images?.map(img => ({
@@ -311,20 +317,26 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       let exhibitorId: string;
       let exhibitorApproved = false;
 
-      if ('id' in step1.exhibitor) {
-        // Existing exhibitor
+      if ('id' in step1.exhibitor && isValidUUID(step1.exhibitor.id)) {
+        // Existing exhibitor with valid UUID
         exhibitorId = step1.exhibitor.id;
         exhibitorApproved = step1.exhibitor.approved;
         console.log('📋 Exposant existant:', { id: exhibitorId, approved: exhibitorApproved });
       } else {
-        // Create new exhibitor
-        console.log('🆕 Création nouvel exposant:', step1.exhibitor.name);
+        // Create new exhibitor (either no ID or ID is not a valid UUID)
+        // Extract properties safely - step1.exhibitor can be either type
+        const exhibitorToCreate = step1.exhibitor as any;
+        const exhibitorName = exhibitorToCreate.name || '';
+        const exhibitorWebsite = exhibitorToCreate.website || null;
+        const exhibitorStandInfo = exhibitorToCreate.stand_info || null;
+        
+        console.log('🆕 Création nouvel exposant:', exhibitorName);
         const { data: newExhibitor, error: exhibitorError } = await supabase.functions.invoke('exhibitors-manage', {
           body: {
             action: 'create',
-            name: step1.exhibitor.name,
-            website: step1.exhibitor.website || null,
-            stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info || null : null,
+            name: exhibitorName,
+            website: exhibitorWebsite,
+            stand_info: exhibitorStandInfo,
             event_id: event.id
           }
         });
@@ -339,23 +351,37 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         console.log('✅ Nouvel exposant créé:', { id: exhibitorId });
       }
 
-      // Check plan limits
-      console.log('🔍 Vérification limites plan...');
-      const { data: canAdd, error: limitError } = await supabase.rpc('can_add_novelty', {
+      // Check plan limits with proper UUID parameters
+      console.log('🔍 Vérification limites plan...', { exhibitorId, eventId: event.id });
+      const { data: quotaResponse, error: limitError } = await supabase.rpc('can_add_novelty', {
         p_exhibitor_id: exhibitorId,
-        p_user_id: user!.id
+        p_event_id: event.id
       });
 
-      if (limitError || !canAdd) {
-        console.error('❌ Limite plan atteinte:', { limitError, canAdd });
+      if (limitError) {
+        console.error('❌ Erreur RPC can_add_novelty:', limitError);
         toast({
-          title: 'Limite atteinte',
-          description: 'Plan gratuit: 1 nouveauté maximum par exposant. Passez au plan payant pour plus.',
+          title: 'Erreur',
+          description: 'Impossible de vérifier le quota. Réessayez.',
           variant: 'destructive'
         });
         return;
       }
-      console.log('✅ Limites plan OK');
+
+      // Parse JSON response
+      const quota = quotaResponse as { allowed: boolean; reason: string; current_count: number; plan: string };
+      console.log('📊 Quota response:', quota);
+
+      if (!quota.allowed) {
+        console.error('❌ Limite plan atteinte:', quota);
+        toast({
+          title: 'Limite atteinte',
+          description: quota.reason || 'Quota dépassé pour cet événement.',
+          variant: 'destructive'
+        });
+        return;
+      }
+      console.log('✅ Limites plan OK:', `${quota.current_count} / ${quota.plan === 'free' ? '1' : '∞'} nouveautés`);
 
       // 3. Upload des fichiers
       let imageUrls: string[] = [];

@@ -1716,8 +1716,8 @@ export type Database = {
     }
     Functions: {
       can_add_novelty: {
-        Args: { p_exhibitor_id: string; p_user_id: string }
-        Returns: boolean
+        Args: { p_event_id: string; p_exhibitor_id: string }
+        Returns: Json
       }
       can_publish_novelty: {
         Args: { event_id: string; exhibitor_id: string }
