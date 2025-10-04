@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ExternalLink, Building2, MapPin, Globe } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
+import { normalizeExternalUrl } from '@/lib/url';
 
 interface Exhibitor {
   id_exposant: string;
@@ -111,6 +112,8 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
   if (!exhibitor) return null;
   
   const e = details ?? exhibitor;
+  const websiteHref = normalizeExternalUrl(e?.website_exposant);
+  const expoPageHref = normalizeExternalUrl(e?.urlexpo_event);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -154,18 +157,18 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            {e.website_exposant && (
+            {websiteHref && (
               <Button asChild variant="default">
-                <a href={e.website_exposant} target="_blank" rel="noopener noreferrer">
+                <a href={websiteHref} target="_blank" rel="noopener noreferrer">
                   <Globe className="h-4 w-4 mr-2" />
                   Site Web
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </a>
               </Button>
             )}
-            {e.urlexpo_event && (
+            {expoPageHref && (
               <Button variant="outline" asChild>
-                <a href={e.urlexpo_event} target="_blank" rel="noopener noreferrer">
+                <a href={expoPageHref} target="_blank" rel="noopener noreferrer">
                   Fiche Salon
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </a>

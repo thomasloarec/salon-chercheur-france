@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeExternalUrl } from '@/lib/url';
 
 type LightExhibitor = {
   id_exposant?: string | null;
@@ -29,7 +30,7 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
         ...light,
         id_exposant: data.id_exposant,
         exhibitor_name: light.exhibitor_name ?? data.nom_exposant,
-        website_exposant: data.website_exposant ?? light.website_exposant ?? null,
+        website_exposant: normalizeExternalUrl(data.website_exposant) ?? light.website_exposant ?? null,
         exposant_description: data.exposant_description ?? light.exposant_description ?? null,
       };
     }
@@ -48,7 +49,7 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
         ...light,
         id_exposant: data.id_exposant,
         exhibitor_name: light.exhibitor_name ?? data.nom_exposant,
-        website_exposant: data.website_exposant ?? light.website_exposant ?? null,
+        website_exposant: normalizeExternalUrl(data.website_exposant) ?? light.website_exposant ?? null,
         exposant_description: data.exposant_description ?? light.exposant_description ?? null,
       };
     }
