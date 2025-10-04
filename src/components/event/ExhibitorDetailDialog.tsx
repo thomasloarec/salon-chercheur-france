@@ -6,6 +6,7 @@ import type { Event } from '@/types/event';
 import { supabase } from '@/integrations/supabase/client';
 import { ExternalLink, Building2, MapPin, Globe } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 
 interface Exhibitor {
   id_exposant: string;
@@ -42,10 +43,30 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
 }) => {
   const [novelties, setNovelties] = useState<Novelty[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [details, setDetails] = useState<Exhibitor | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!open || !exhibitor) {
+        setDetails(null);
+        return;
+      }
+      // Hydrater si les champs website/description manquent
+      if (!exhibitor.website_exposant || !exhibitor.exposant_description) {
+        const full = await hydrateExhibitor(exhibitor as any);
+        if (!cancelled) setDetails(full as any);
+      } else {
+        setDetails(exhibitor);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [open, exhibitor]);
 
   useEffect(() => {
     const fetchNovelties = async () => {
-      if (!open || !exhibitor) {
+      if (!open || !details) {
         setNovelties(null);
         return;
       }
@@ -56,7 +77,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
         const { data: exhibitorData } = await supabase
           .from('exhibitors')
           .select('id')
-          .ilike('name', exhibitor.exhibitor_name)
+          .ilike('name', details.exhibitor_name)
           .single();
 
         if (!exhibitorData) {
@@ -85,9 +106,11 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
     };
     
     fetchNovelties();
-  }, [open, exhibitor, event]);
+  }, [open, details, event]);
 
   if (!exhibitor) return null;
+  
+  const e = details ?? exhibitor;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,11 +131,11 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
               <Building2 className="h-6 w-6 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="truncate">{exhibitor.exhibitor_name}</div>
-              {exhibitor.stand_exposant && (
+              <div className="truncate">{e.exhibitor_name}</div>
+              {e.stand_exposant && (
                 <Badge variant="secondary" className="mt-1">
                   <MapPin className="h-3 w-3 mr-1" />
-                  Stand {exhibitor.stand_exposant}
+                  Stand {e.stand_exposant}
                 </Badge>
               )}
             </div>
@@ -121,28 +144,28 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
 
         <div className="space-y-4">
           {/* Description */}
-          {exhibitor.exposant_description && (
+          {e.exposant_description && (
             <div className="prose prose-sm max-w-none">
               <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-                {exhibitor.exposant_description}
+                {e.exposant_description}
               </p>
             </div>
           )}
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            {exhibitor.website_exposant && (
+            {e.website_exposant && (
               <Button asChild variant="default">
-                <a href={exhibitor.website_exposant} target="_blank" rel="noopener noreferrer">
+                <a href={e.website_exposant} target="_blank" rel="noopener noreferrer">
                   <Globe className="h-4 w-4 mr-2" />
                   Site Web
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </a>
               </Button>
             )}
-            {exhibitor.urlexpo_event && (
+            {e.urlexpo_event && (
               <Button variant="outline" asChild>
-                <a href={exhibitor.urlexpo_event} target="_blank" rel="noopener noreferrer">
+                <a href={e.urlexpo_event} target="_blank" rel="noopener noreferrer">
                   Fiche Salon
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </a>

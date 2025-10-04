@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ExhibitorsModal } from './ExhibitorsModal';
 import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
 import type { Event } from '@/types/event';
+import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 
 interface ExhibitorsSidebarProps {
   event: Event;
@@ -117,21 +118,22 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
             </div>
           ) : (
             preview.map((exhibitor) => {
-              // Convert exhibitor to match ExhibitorDetailDialog interface
-              const exhibitorForDialog = {
-                id_exposant: exhibitor.id,
-                exhibitor_name: exhibitor.name,
-                stand_exposant: exhibitor.stand || undefined,
-                website_exposant: undefined,
-                exposant_description: undefined,
-                urlexpo_event: undefined
-              };
-
               return (
                 <button
                   key={exhibitor.id}
-                  onClick={() => {
-                    setSelectedExhibitor(exhibitorForDialog);
+                  onClick={async () => {
+                    const exhibitorForDialog = {
+                      id_exposant: exhibitor.id,
+                      exhibitor_name: exhibitor.name,
+                      stand_exposant: exhibitor.stand || undefined,
+                      website_exposant: undefined,
+                      exposant_description: undefined,
+                      urlexpo_event: undefined,
+                      logo_url: exhibitor.logo_url || null,
+                    };
+
+                    const full = await hydrateExhibitor(exhibitorForDialog);
+                    setSelectedExhibitor(full);
                     setOpenedFromModal(false);
                   }}
                   className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
@@ -192,9 +194,10 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           website_exposant: undefined,
         })) || []}
         loading={allExhibitors === null}
-        onSelect={(ex) => {
+        onSelect={async (ex) => {
           setShowAllModal(false);
-          setSelectedExhibitor(ex);
+          const full = await hydrateExhibitor(ex);
+          setSelectedExhibitor(full);
           setOpenedFromModal(true);
         }}
       />
