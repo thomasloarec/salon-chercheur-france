@@ -519,17 +519,25 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         console.group('🚨 ERREUR SERVEUR DÉTAILLÉE');
         console.log('Error object:', noveltyError);
         console.log('Error message:', noveltyError.message);
-        console.log('Error details:', noveltyError.details);
-        console.log('Error code:', noveltyError.code);
+        console.log('Error code:', (noveltyError as any)?.code);
+
+        // 🔎 Récupérer le JSON renvoyé par l'Edge Function
+        let serverJson: any = null;
+        try {
+          const res = (noveltyError as any)?.context?.response;
+          if (res && typeof res.json === 'function') {
+            serverJson = await res.json();
+            console.log('Error body JSON:', serverJson);
+          }
+        } catch (e) {
+          console.warn('Unable to parse Edge Function error body:', e);
+        }
         console.groupEnd();
-        
-        const errorMessage = noveltyError.message || 'Impossible de créer la nouveauté';
-        const errorDetails = (noveltyError as any)?.details;
-        const fullMessage = errorDetails 
-          ? `${errorMessage}: ${typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails)}`
-          : errorMessage;
-        
-        throw new Error(fullMessage);
+
+        const msg = serverJson?.error || noveltyError.message || 'Impossible de créer la nouveauté';
+        const details = serverJson?.details || serverJson?.hint || null;
+
+        throw new Error(details ? `${msg}: ${typeof details === 'string' ? details : JSON.stringify(details)}` : msg);
       }
 
       if (!novelty) {

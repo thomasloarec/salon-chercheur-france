@@ -51,11 +51,13 @@ serve(async (req) => {
 
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      console.error("[novelties-create] Validation error:", parsed.error.flatten());
+      const flat = parsed.error.flatten();
+      console.error("[novelties-create] Validation error:", flat);
       return new Response(
         JSON.stringify({ 
           error: "Validation error", 
-          details: parsed.error.flatten().fieldErrors 
+          details: flat.fieldErrors,
+          code: "ZOD_VALIDATION"
         }),
         { status: 400, headers: corsHeaders() }
       );
@@ -126,7 +128,10 @@ serve(async (req) => {
         JSON.stringify({ 
           error: insErr.message, 
           details: insErr.details,
-          hint: insErr.hint 
+          hint: insErr.hint,
+          code: insErr.code,
+          table: "novelties",
+          step: "insert"
         }),
         { status: 400, headers: corsHeaders() }
       );
