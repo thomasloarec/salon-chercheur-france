@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Building, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Step1Data } from '@/lib/validation/noveltySchemas';
@@ -39,6 +40,7 @@ export default function Step1ExhibitorAndUser({
   
   const [exhibitors, setExhibitors] = useState<DbExhibitor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [loading, setLoading] = useState(false);
   const [showNewExhibitorForm, setShowNewExhibitorForm] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<DbExhibitor | null>(null);
@@ -60,10 +62,11 @@ export default function Step1ExhibitorAndUser({
     role: ''
   });
 
-  // Load exhibitors on mount
+  // Load exhibitors on mount and when search changes
   useEffect(() => {
     loadExhibitors();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, event?.id_event]);
 
   // Validate form data
   useEffect(() => {
@@ -114,8 +117,7 @@ export default function Step1ExhibitorAndUser({
   const loadExhibitors = async () => {
     try {
       setLoading(true);
-      
-      // Identifier l'événement courant via son id_event
+
       const eventId = event?.id_event ?? null;
       if (!eventId) {
         console.warn('[Step1ExhibitorAndUser] Aucun id_event défini');
@@ -123,55 +125,38 @@ export default function Step1ExhibitorAndUser({
         return;
       }
 
-      // Charger tous les exposants liés à cet événement depuis participations_with_exhibitors
-      let query = supabase
+      // Charger directement depuis la vue participations_with_exhibitors
+      // (sans jointure avec exhibitors pour éviter les erreurs de type)
+      let q = supabase
         .from('participations_with_exhibitors')
-        .select('id_exposant, exhibitor_name, exhibitor_website, stand_exposant')
+        .select('id_exposant, exhibitor_uuid, exhibitor_name, exhibitor_website, stand_exposant')
         .eq('id_event_text', eventId)
         .order('exhibitor_name', { ascending: true });
 
-      // Appliquer le filtre de recherche si présent
-      if (searchQuery && searchQuery.trim()) {
-        query = query.ilike('exhibitor_name', `%${searchQuery.trim()}%`);
+      const s = debouncedSearch?.trim();
+      if (s) q = q.ilike('exhibitor_name', `%${s}%`);
+
+      const { data: participations, error: partErr } = await q;
+      if (partErr) {
+        console.error('[Step1ExhibitorAndUser] participations error', partErr);
+        throw partErr;
       }
 
-      const { data: participations, error } = await query;
-
-      if (error) {
-        console.error('[Step1ExhibitorAndUser] Erreur de chargement des exposants', error);
-        throw error;
-      }
-
-      // Récupérer les détails complets des exposants depuis la table exhibitors
-      const exhibitorIds = participations?.map(p => p.id_exposant).filter(Boolean) || [];
-      
-      if (exhibitorIds.length === 0) {
+      const rows = participations ?? [];
+      if (rows.length === 0) {
         setExhibitors([]);
         return;
       }
 
-      const { data: exhibitorsData, error: exhibitorsError } = await supabase
-        .from('exhibitors')
-        .select('id, name, website, logo_url, approved')
-        .in('id', exhibitorIds);
-
-      if (exhibitorsError) {
-        console.error('[Step1ExhibitorAndUser] Erreur chargement exhibitors', exhibitorsError);
-        throw exhibitorsError;
-      }
-
-      // Mapper les résultats avec les informations du stand
-      const formatted: DbExhibitor[] = (exhibitorsData || []).map((ex) => {
-        const participation = participations?.find(p => p.id_exposant === ex.id);
-        return {
-          id: ex.id,
-          name: ex.name,
-          website: ex.website || participation?.exhibitor_website || undefined,
-          logo_url: ex.logo_url || undefined,
-          approved: ex.approved || false,
-          stand_info: participation?.stand_exposant || undefined
-        };
-      });
+      // Mapper directement depuis la vue (comme dans useExhibitorsByEvent)
+      const formatted: DbExhibitor[] = rows.map(p => ({
+        id: p.id_exposant || String(p.exhibitor_uuid || ''),
+        name: p.exhibitor_name || p.id_exposant || '',
+        website: p.exhibitor_website || '',
+        logo_url: undefined,
+        approved: true, // Considéré comme approuvé s'il participe à l'événement
+        stand_info: p.stand_exposant || undefined,
+      })).filter(e => e.name); // Filtrer ceux sans nom
 
       setExhibitors(formatted);
     } catch (error) {
@@ -349,10 +334,7 @@ export default function Step1ExhibitorAndUser({
               <Input
                 placeholder="Rechercher une entreprise..."
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  loadExhibitors();
-                }}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
