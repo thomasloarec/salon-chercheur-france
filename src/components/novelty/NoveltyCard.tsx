@@ -32,6 +32,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showExhibitorModal, setShowExhibitorModal] = useState(false);
   const [leadFormType, setLeadFormType] = useState<'brochure_download' | 'meeting_request'>('brochure_download');
+  const [isToggling, setIsToggling] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const images = novelty.media_urls?.filter(url => {
@@ -42,8 +43,13 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const description = [novelty.reason_1, novelty.reason_2, novelty.reason_3].filter(Boolean).join(' ');
 
   const handleLikeToggle = async () => {
-    if (!user) return;
-    await toggleLike.mutateAsync({ noveltyId: novelty.id });
+    if (!user || isToggling) return;
+    setIsToggling(true);
+    try {
+      await toggleLike.mutateAsync({ noveltyId: novelty.id });
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   const handleBrochureDownload = () => {
@@ -236,7 +242,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
               onClick={handleLikeToggle}
               variant={likeStatus.data?.userHasLiked ? "default" : "outline"}
               size="sm"
-              disabled={toggleLike.isPending}
+              disabled={toggleLike.isPending || isToggling}
               className="flex items-center gap-2"
             >
               <Heart className={cn("h-4 w-4", likeStatus.data?.userHasLiked && "fill-current")} />

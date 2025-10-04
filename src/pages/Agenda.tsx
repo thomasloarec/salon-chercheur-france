@@ -9,11 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarRange, Calendar, Heart, Download, MapPin, Users, Sparkles, Building2 } from 'lucide-react';
+import { CalendarRange, Calendar, Heart, Download, MapPin, Users, Sparkles, Building2, Eye, Edit } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const NOVELTY_TYPE_LABELS = {
   Launch: 'Lancement',
@@ -210,38 +211,39 @@ const Agenda = () => {
             {/* My Novelties Tab */}
             <TabsContent value="novelties" className="mt-6">
               {noveltiesLoading ? (
-                <div className="space-y-4">
+                <div className="grid gap-6 md:grid-cols-2">
                   {Array.from({ length: 2 }).map((_, i) => (
-                    <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
-                      <div className="flex items-center gap-4">
-                        <div className="h-16 w-16 bg-gray-200 rounded"></div>
-                        <div className="flex-1">
-                          <div className="h-5 bg-gray-200 rounded mb-2 w-3/4"></div>
-                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                        </div>
-                      </div>
-                    </div>
+                    <Card key={i} className="overflow-hidden animate-pulse">
+                      <div className="aspect-video bg-gray-200"></div>
+                      <CardContent className="p-6">
+                        <div className="h-6 bg-gray-200 rounded mb-4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               ) : myNovelties.length > 0 ? (
-                <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
                   {myNovelties.map((novelty) => (
-                    <Card key={novelty.id} className="overflow-hidden">
-                      {/* Hero Image */}
+                    <Card key={novelty.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      {/* Image principale */}
                       {novelty.media_urls && novelty.media_urls[0] && (
-                        <div className="aspect-video relative">
+                        <div className="aspect-video relative group">
                           <img
                             src={novelty.media_urls[0]}
                             alt={novelty.title}
                             className="w-full h-full object-cover"
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                           <div className="absolute top-4 right-4 flex gap-2">
-                            <Badge variant={novelty.status === 'Published' ? 'default' : 'secondary'}>
+                            <Badge 
+                              variant={novelty.status === 'Published' ? 'default' : 'secondary'}
+                              className="bg-white/90 text-gray-900"
+                            >
                               {novelty.status === 'Published' ? 'Publié' : 
-                               novelty.status === 'Draft' ? 'En attente' :
-                               novelty.status === 'UnderReview' ? 'En révision' : novelty.status}
+                               novelty.status === 'Draft' ? 'En attente' : novelty.status}
                             </Badge>
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="bg-white/90 text-gray-900 border-white">
                               {NOVELTY_TYPE_LABELS[novelty.type as keyof typeof NOVELTY_TYPE_LABELS] || novelty.type}
                             </Badge>
                           </div>
@@ -249,34 +251,59 @@ const Agenda = () => {
                       )}
                       
                       <CardContent className="p-6">
-                        <h3 className="text-2xl font-bold mb-2">{novelty.title}</h3>
+                        {/* Titre */}
+                        <h3 className="text-2xl font-bold mb-3">{novelty.title}</h3>
                         
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                          <Building2 className="h-4 w-4" />
-                          <span>{novelty.exhibitors.name}</span>
-                          <span>•</span>
-                          <MapPin className="h-4 w-4" />
-                          <Link to={`/events/${novelty.events.slug}`} className="hover:underline">
-                            {novelty.events.nom_event} - {novelty.events.ville}
-                          </Link>
-                          <span>•</span>
-                          <Calendar className="h-4 w-4" />
-                          <span>
+                        {/* Exhibitor + Event */}
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Building2 className="h-4 w-4" />
+                            <span className="font-medium">{novelty.exhibitors.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            <Link 
+                              to={`/events/${novelty.events.slug}`} 
+                              className="hover:underline hover:text-primary"
+                            >
+                              {novelty.events.nom_event}
+                            </Link>
+                            <span>•</span>
+                            <span>{novelty.events.ville}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
                             {format(new Date(novelty.events.date_debut), 'dd MMM', { locale: fr })}
                             {novelty.events.date_fin !== novelty.events.date_debut && 
-                              ` - ${format(new Date(novelty.events.date_fin), 'dd MMM', { locale: fr })}`
+                              ` - ${format(new Date(novelty.events.date_fin), 'dd MMM yyyy', { locale: fr })}`
                             }
-                          </span>
+                          </div>
                         </div>
 
-                        <div className="flex gap-2 mt-4">
+                        {/* Actions */}
+                        <div className="flex gap-2">
                           <Button
                             variant="outline"
+                            size="sm"
+                            className="flex-1"
                             asChild
                           >
                             <Link to={`/events/${novelty.events.slug}#nouveautes`}>
+                              <Eye className="h-4 w-4 mr-2" />
                               Voir sur le salon
                             </Link>
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              toast("Fonctionnalité en cours de développement", {
+                                description: "La modification des nouveautés sera bientôt disponible"
+                              });
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Modifier
                           </Button>
                         </div>
                       </CardContent>

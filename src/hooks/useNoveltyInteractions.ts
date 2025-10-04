@@ -42,10 +42,8 @@ export function useToggleLike() {
         userHasLiked: data.liked
       });
       
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ["novelties:list"] });
-      queryClient.invalidateQueries({ queryKey: ["favorites"] });
-      queryClient.invalidateQueries({ queryKey: ["favorite-events"] });
+      // Only invalidate novelties list, not favorites (to avoid re-fetch conflicts)
+      queryClient.invalidateQueries({ queryKey: ["novelties"] });
       
       const message = data.liked 
         ? (data.eventFavorited 
