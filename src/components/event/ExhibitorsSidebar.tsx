@@ -22,6 +22,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
   const [showAllModal, setShowAllModal] = useState(false);
   const [allExhibitors, setAllExhibitors] = useState<any[] | null>(null);
   const [selectedExhibitor, setSelectedExhibitor] = useState<any | null>(null);
+  const [openedFromModal, setOpenedFromModal] = useState(false);
   
   // Preview: load only 7 items
   const { data: previewData, isLoading, error } = useExhibitorsByEvent(
@@ -36,6 +37,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
 
   const handleOpenModal = async () => {
     setShowAllModal(true);
+    setOpenedFromModal(false);
     if (allExhibitors === null) {
       // Fetch all exhibitors directly (no limit)
       try {
@@ -128,7 +130,10 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
               return (
                 <button
                   key={exhibitor.id}
-                  onClick={() => setSelectedExhibitor(exhibitorForDialog)}
+                  onClick={() => {
+                    setSelectedExhibitor(exhibitorForDialog);
+                    setOpenedFromModal(false);
+                  }}
                   className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
@@ -190,6 +195,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
         onSelect={(ex) => {
           setShowAllModal(false);
           setSelectedExhibitor(ex);
+          setOpenedFromModal(true);
         }}
       />
 
@@ -199,6 +205,10 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
         onOpenChange={(open) => !open && setSelectedExhibitor(null)}
         exhibitor={selectedExhibitor}
         event={event}
+        onBackToAll={openedFromModal ? () => {
+          setSelectedExhibitor(null);
+          setShowAllModal(true);
+        } : undefined}
       />
     </>
   );

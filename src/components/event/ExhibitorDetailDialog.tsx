@@ -30,13 +30,15 @@ interface ExhibitorDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   exhibitor: Exhibitor | null;
   event: Event;
+  onBackToAll?: () => void;
 }
 
 export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({ 
   open, 
   onOpenChange, 
   exhibitor, 
-  event 
+  event,
+  onBackToAll
 }) => {
   const [novelties, setNovelties] = useState<Novelty[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -91,6 +93,16 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto">
         <DialogHeader>
+          {onBackToAll && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackToAll}
+              className="w-fit -ml-2 mb-2"
+            >
+              ← Tous les exposants
+            </Button>
+          )}
           <DialogTitle className="flex items-center gap-3">
             <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
               <Building2 className="h-6 w-6 text-muted-foreground" />
