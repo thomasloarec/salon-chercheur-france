@@ -101,14 +101,14 @@ serve(async (req) => {
       event_id: data.event_id,
       exhibitor_id: data.exhibitor_id,
       title: data.title.trim(),
-      type: data.novelty_type,
+      type: data.novelty_type.trim(),
       reason_1: data.reason.trim(),
       media_urls: data.images,
       images_count: data.images.length,
       doc_url: data.brochure_pdf ?? null,
       stand_info: data.stand_info ?? null,
       created_by: data.created_by,
-      status: "pending",
+      status: "Draft",
     };
 
     console.log("[novelties-create] Insert payload:", JSON.stringify({
