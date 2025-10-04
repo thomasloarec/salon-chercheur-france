@@ -101,7 +101,7 @@ serve(async (req) => {
       event_id: data.event_id,
       exhibitor_id: data.exhibitor_id,
       title: data.title.trim(),
-      type: data.novelty_type.trim(),
+      type: data.novelty_type.trim().toLowerCase(),
       reason_1: data.reason.trim(),
       media_urls: data.images,
       images_count: data.images.length,
