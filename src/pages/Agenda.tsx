@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { useUserExhibitors } from '@/hooks/useExhibitorAdmin';
-import { useMyNovelties } from '@/hooks/useMyNovelties';
+import { useMyNovelties, MyNovelty } from '@/hooks/useMyNovelties';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { CalendarRange, Calendar, Heart, Download, MapPin, Users, Sparkles, Buil
 import MainLayout from '@/components/layout/MainLayout';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
 import NoveltyLeadsDisplay from '@/components/novelty/NoveltyLeadsDisplay';
+import { EditNoveltyDialog } from '@/components/novelty/EditNoveltyDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -33,6 +34,11 @@ const Agenda = () => {
   const { data: userExhibitors = [] } = useUserExhibitors();
   const { data: myNovelties = [], isLoading: noveltiesLoading } = useMyNovelties();
   const [activeTab, setActiveTab] = useState('events');
+  const [editingNovelty, setEditingNovelty] = useState<MyNovelty | null>(null);
+
+  const handleEdit = (novelty: MyNovelty) => {
+    setEditingNovelty(novelty);
+  };
 
   // Find next upcoming event
   const nextEvent = events.find(event => new Date(event.date_debut) >= new Date());
@@ -274,11 +280,7 @@ const Agenda = () => {
                           </Button>
                           <Button 
                             size="sm"
-                            onClick={() => {
-                              toast("Fonctionnalité en cours de développement", {
-                                description: "La modification des nouveautés sera bientôt disponible"
-                              });
-                            }}
+                            onClick={() => handleEdit(novelty)}
                           >
                             <Edit className="h-4 w-4 mr-2" />
                             Modifier
@@ -301,25 +303,29 @@ const Agenda = () => {
                         
                         {/* Stats + Description */}
                         <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <Card className="p-4 bg-muted/30">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Heart className="h-4 w-4 text-primary" />
-                                <span className="font-semibold text-sm">Likes</span>
+                          {/* Stats compactes */}
+                          <div className="flex items-center gap-6">
+                            {/* Likes */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                                <Heart className="h-5 w-5 text-primary" />
                               </div>
-                              <p className="text-3xl font-bold">
-                                {novelty.novelty_stats?.route_users_count || 0}
-                              </p>
-                            </Card>
-                            <Card className="p-4 bg-muted/30">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Users className="h-4 w-4 text-primary" />
-                                <span className="font-semibold text-sm">Popularité</span>
+                              <div>
+                                <p className="text-2xl font-bold">{novelty.stats?.likes || 0}</p>
+                                <p className="text-xs text-muted-foreground">Likes</p>
                               </div>
-                              <p className="text-3xl font-bold">
-                                {novelty.novelty_stats?.popularity_score || 0}
-                              </p>
-                            </Card>
+                            </div>
+                            
+                            {/* Leads total */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
+                                <Users className="h-5 w-5 text-green-600" />
+                              </div>
+                              <div>
+                                <p className="text-2xl font-bold">{novelty.stats?.total_leads || 0}</p>
+                                <p className="text-xs text-muted-foreground">Leads</p>
+                              </div>
+                            </div>
                           </div>
                           
                           {novelty.reason_1 && (
@@ -372,6 +378,17 @@ const Agenda = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Edit Novelty Dialog */}
+      {editingNovelty && (
+        <EditNoveltyDialog
+          novelty={editingNovelty}
+          open={!!editingNovelty}
+          onOpenChange={(open) => {
+            if (!open) setEditingNovelty(null);
+          }}
+        />
+      )}
     </MainLayout>
   );
 };
