@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -5,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Lock, Users } from 'lucide-react';
 import LeadCard from './LeadCard';
+import PremiumUpgradeDialog from './PremiumUpgradeDialog';
 
 interface Lead {
   id: string;
@@ -25,6 +27,8 @@ interface NoveltyLeadsDisplayProps {
 }
 
 export default function NoveltyLeadsDisplay({ noveltyId, isPremium }: NoveltyLeadsDisplayProps) {
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  
   const { data: leads, isLoading } = useQuery({
     queryKey: ['novelty-leads', noveltyId],
     queryFn: async () => {
@@ -45,8 +49,12 @@ export default function NoveltyLeadsDisplay({ noveltyId, isPremium }: NoveltyLea
     );
   }
 
-  const visibleLeads = isPremium ? leads : leads?.slice(0, 3);
-  const hiddenCount = isPremium ? 0 : Math.max(0, (leads?.length || 0) - 3);
+  // Leads 1-3: 100% visible
+  const visibleLeads = leads?.slice(0, 3) || [];
+  // Leads 4-6: Blurred preview
+  const previewLeads = isPremium ? [] : (leads?.slice(3, 6) || []);
+  // Leads 7+: Hidden
+  const hiddenCount = Math.max(0, (leads?.length || 0) - 6);
 
   if (!leads || leads.length === 0) {
     return (
@@ -58,10 +66,17 @@ export default function NoveltyLeadsDisplay({ noveltyId, isPremium }: NoveltyLea
 
   return (
     <div className="space-y-2">
-      {visibleLeads?.map((lead) => (
-        <LeadCard key={lead.id} lead={lead} isPremium={isPremium} />
+      {/* Leads 1-3: Full visibility */}
+      {visibleLeads.map((lead) => (
+        <LeadCard key={lead.id} lead={lead} isPremium={true} />
       ))}
       
+      {/* Leads 4-6: Blurred (freemium) */}
+      {previewLeads.map((lead) => (
+        <LeadCard key={lead.id} lead={lead} isPremium={false} />
+      ))}
+      
+      {/* Leads 7+: Premium upsell */}
       {hiddenCount > 0 && (
         <Card className="p-4 bg-muted/50 border-dashed">
           <div className="text-center">
@@ -72,12 +87,18 @@ export default function NoveltyLeadsDisplay({ noveltyId, isPremium }: NoveltyLea
             <p className="text-sm text-muted-foreground mb-3">
               Passez en Premium pour débloquer tous vos leads
             </p>
-            <Button size="sm" variant="default">
+            <Button size="sm" variant="default" onClick={() => setShowPremiumDialog(true)}>
               Passer en Premium - 99€ HT
             </Button>
           </div>
         </Card>
       )}
+      
+      <PremiumUpgradeDialog 
+        open={showPremiumDialog}
+        onOpenChange={setShowPremiumDialog}
+        noveltyId={noveltyId}
+      />
     </div>
   );
 }

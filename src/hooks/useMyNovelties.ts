@@ -10,6 +10,7 @@ interface MyNovelty {
   created_at: string;
   media_urls: string[];
   is_premium?: boolean;
+  reason_1?: string;
   exhibitors: {
     id: string;
     name: string;
@@ -24,6 +25,12 @@ interface MyNovelty {
     date_debut: string;
     date_fin: string;
   };
+  novelty_stats?: {
+    route_users_count: number;
+    saves_count: number;
+    reminders_count: number;
+    popularity_score: number;
+  };
 }
 
 export const useMyNovelties = () => {
@@ -37,9 +44,10 @@ export const useMyNovelties = () => {
       const { data, error } = await supabase
         .from('novelties')
         .select(`
-          id, title, type, status, created_at, media_urls, is_premium,
+          id, title, type, status, created_at, media_urls, is_premium, reason_1,
           exhibitors!inner ( id, name, slug, logo_url ),
-          events!inner ( id, nom_event, slug, ville, date_debut, date_fin )
+          events!inner ( id, nom_event, slug, ville, date_debut, date_fin ),
+          novelty_stats ( route_users_count, saves_count, reminders_count, popularity_score )
         `)
         .eq('created_by', user.id)
         .in('status', ['Draft', 'UnderReview', 'Published'])

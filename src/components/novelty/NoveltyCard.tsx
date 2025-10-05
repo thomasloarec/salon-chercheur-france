@@ -172,7 +172,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
             <img
               src={images[currentImageIndex]}
               alt={`${novelty.title} - Image ${currentImageIndex + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
             
             {hasMultipleImages && (

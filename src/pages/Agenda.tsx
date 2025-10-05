@@ -224,94 +224,56 @@ const Agenda = () => {
                   ))}
                 </div>
               ) : myNovelties.length > 0 ? (
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-6">
                   {myNovelties.map((novelty) => (
-                    <Card key={novelty.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      {/* Image principale */}
-                      {novelty.media_urls && novelty.media_urls[0] && (
-                        <div className="aspect-video relative group">
-                          <img
-                            src={novelty.media_urls[0]}
-                            alt={novelty.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                          <div className="absolute top-4 right-4 flex gap-2">
+                    <Card key={novelty.id} className="overflow-hidden">
+                      {/* Header avec actions */}
+                      <div className="flex items-center justify-between p-6 border-b">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h2 className="text-2xl font-bold">{novelty.title}</h2>
                             <Badge 
                               variant={novelty.status === 'Published' ? 'default' : 'secondary'}
-                              className="bg-white/90 text-gray-900"
                             >
                               {novelty.status === 'Published' ? 'Publié' : 
                                novelty.status === 'Draft' ? 'En attente' : novelty.status}
                             </Badge>
-                            <Badge variant="outline" className="bg-white/90 text-gray-900 border-white">
+                            <Badge variant="outline">
                               {NOVELTY_TYPE_LABELS[novelty.type as keyof typeof NOVELTY_TYPE_LABELS] || novelty.type}
                             </Badge>
                           </div>
-                        </div>
-                      )}
-                      
-                      <CardContent className="p-6">
-                        {/* Titre */}
-                        <h3 className="text-2xl font-bold mb-3">{novelty.title}</h3>
-                        
-                        {/* Exhibitor + Event */}
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Building2 className="h-4 w-4" />
-                            <span className="font-medium">{novelty.exhibitors.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Building2 className="h-4 w-4" />
+                              {novelty.exhibitors.name}
+                            </div>
+                            <span>•</span>
                             <Link 
                               to={`/events/${novelty.events.slug}`} 
-                              className="hover:underline hover:text-primary"
+                              className="flex items-center gap-1 hover:text-primary"
                             >
+                              <MapPin className="h-4 w-4" />
                               {novelty.events.nom_event}
                             </Link>
                             <span>•</span>
-                            <span>{novelty.events.ville}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
-                            {format(new Date(novelty.events.date_debut), 'dd MMM', { locale: fr })}
-                            {novelty.events.date_fin !== novelty.events.date_debut && 
-                              ` - ${format(new Date(novelty.events.date_fin), 'dd MMM yyyy', { locale: fr })}`
-                            }
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              {format(new Date(novelty.events.date_debut), 'dd MMM', { locale: fr })}
+                              {novelty.events.date_fin !== novelty.events.date_debut && 
+                                ` - ${format(new Date(novelty.events.date_fin), 'dd MMM yyyy', { locale: fr })}`
+                              }
+                            </div>
                           </div>
                         </div>
-
-                        {/* Section Leads */}
-                        <div className="mt-4 pt-4 border-t">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-sm flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              Leads
-                            </h4>
-                          </div>
-                          
-                          <NoveltyLeadsDisplay 
-                            noveltyId={novelty.id} 
-                            isPremium={novelty.is_premium || false}
-                          />
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            asChild
-                          >
+                        <div className="flex gap-2 ml-4">
+                          <Button variant="outline" asChild size="sm">
                             <Link to={`/events/${novelty.events.slug}#nouveautes`}>
                               <Eye className="h-4 w-4 mr-2" />
                               Voir sur le salon
                             </Link>
                           </Button>
-                          <Button
+                          <Button 
                             size="sm"
-                            className="flex-1"
                             onClick={() => {
                               toast("Fonctionnalité en cours de développement", {
                                 description: "La modification des nouveautés sera bientôt disponible"
@@ -322,7 +284,66 @@ const Agenda = () => {
                             Modifier
                           </Button>
                         </div>
-                      </CardContent>
+                      </div>
+                      
+                      {/* Body: Image + Stats */}
+                      <div className="grid md:grid-cols-[300px,1fr] gap-6 p-6">
+                        {/* Image principale */}
+                        {novelty.media_urls && novelty.media_urls[0] && (
+                          <div className="aspect-square relative rounded-lg overflow-hidden bg-muted">
+                            <img
+                              src={novelty.media_urls[0]}
+                              alt={novelty.title}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Stats + Description */}
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <Card className="p-4 bg-muted/30">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Heart className="h-4 w-4 text-primary" />
+                                <span className="font-semibold text-sm">Likes</span>
+                              </div>
+                              <p className="text-3xl font-bold">
+                                {novelty.novelty_stats?.route_users_count || 0}
+                              </p>
+                            </Card>
+                            <Card className="p-4 bg-muted/30">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Users className="h-4 w-4 text-primary" />
+                                <span className="font-semibold text-sm">Popularité</span>
+                              </div>
+                              <p className="text-3xl font-bold">
+                                {novelty.novelty_stats?.popularity_score || 0}
+                              </p>
+                            </Card>
+                          </div>
+                          
+                          {novelty.reason_1 && (
+                            <div>
+                              <h3 className="font-semibold mb-2">Description</h3>
+                              <p className="text-muted-foreground leading-relaxed">
+                                {novelty.reason_1}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Section Leads */}
+                      <div className="p-6 border-t bg-muted/20">
+                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          Leads
+                        </h3>
+                        <NoveltyLeadsDisplay 
+                          noveltyId={novelty.id} 
+                          isPremium={novelty.is_premium || false}
+                        />
+                      </div>
                     </Card>
                   ))}
                 </div>

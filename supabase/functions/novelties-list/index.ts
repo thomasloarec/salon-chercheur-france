@@ -100,9 +100,37 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Apply filters BEFORE grouping
+      let filteredNovelties = allNovelties || [];
+
+      if (params.sector) {
+        filteredNovelties = filteredNovelties.filter(n => 
+          n.events?.secteur && Array.isArray(n.events.secteur) && n.events.secteur.includes(params.sector)
+        );
+      }
+
+      if (params.type) {
+        filteredNovelties = filteredNovelties.filter(n => n.events?.type_event === params.type);
+      }
+
+      if (params.month) {
+        const month = parseInt(params.month);
+        filteredNovelties = filteredNovelties.filter(n => {
+          if (!n.events?.date_debut) return false;
+          const eventMonth = new Date(n.events.date_debut).getMonth() + 1;
+          return eventMonth === month;
+        });
+      }
+
+      if (params.region) {
+        filteredNovelties = filteredNovelties.filter(n => 
+          n.events?.ville?.toLowerCase().includes(params.region.toLowerCase())
+        );
+      }
+
       // Group by event_id and keep only the most popular one per event
       const topNoveltiesMap = new Map();
-      (allNovelties || []).forEach(novelty => {
+      filteredNovelties.forEach(novelty => {
         const eventId = novelty.event_id;
         const existingNovelty = topNoveltiesMap.get(eventId);
         
