@@ -27,7 +27,6 @@ const NOVELTY_TYPES = {
 };
 
 export const EditNoveltyDialog = ({ novelty, open, onOpenChange }: EditNoveltyDialogProps) => {
-  const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: novelty.title,
@@ -142,128 +141,106 @@ export const EditNoveltyDialog = ({ novelty, open, onOpenChange }: EditNoveltyDi
           </p>
         </DialogHeader>
 
-        {/* Step 1: General info */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div>
-              <Label>Titre</Label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label>Type</Label>
-              <Select 
-                value={formData.type} 
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(NOVELTY_TYPES).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={formData.reason}
-                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                rows={5}
-                placeholder="Décrivez votre nouveauté..."
-              />
-            </div>
-
-            <div>
-              <Label>Informations stand (optionnel)</Label>
-              <Input
-                value={formData.stand_info}
-                onChange={(e) => setFormData({ ...formData, stand_info: e.target.value })}
-                placeholder="Ex: Hall 3, Stand A45"
-              />
-            </div>
-
-            <Button onClick={() => setStep(2)} className="w-full">
-              Suivant : Médias
-            </Button>
+        <div className="space-y-4">
+          <div>
+            <Label>Titre</Label>
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
           </div>
-        )}
 
-        {/* Step 2: Media */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <div>
-              <Label>Images actuelles</Label>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {formData.existingImages.map((url, idx) => (
-                  <img 
-                    key={idx} 
-                    src={url} 
-                    alt="" 
-                    className="w-full h-24 object-contain rounded border" 
-                  />
+          <div>
+            <Label>Type</Label>
+            <Select 
+              value={formData.type} 
+              onValueChange={(value) => setFormData({ ...formData, type: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(NOVELTY_TYPES).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
                 ))}
-              </div>
-              <Label>Remplacer par de nouvelles images (optionnel)</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => setFormData({ ...formData, images: Array.from(e.target.files || []) })}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Maximum 3 images. Les nouvelles images remplaceront les anciennes.
-              </p>
-            </div>
-
-            <div>
-              <Label>Brochure PDF (optionnel)</Label>
-              {formData.existingBrochure && (
-                <p className="text-sm text-muted-foreground mb-2">
-                  ✅ Brochure existante
-                </p>
-              )}
-              <Input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => setFormData({ ...formData, brochure: e.target.files?.[0] || null })}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setStep(1)} 
-                className="flex-1"
-                disabled={isLoading}
-              >
-                Retour
-              </Button>
-              <Button 
-                onClick={handleUpdate} 
-                className="flex-1"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enregistrement...
-                  </>
-                ) : (
-                  'Enregistrer les modifications'
-                )}
-              </Button>
-            </div>
+              </SelectContent>
+            </Select>
           </div>
-        )}
+
+          <div>
+            <Label>Description</Label>
+            <Textarea
+              value={formData.reason}
+              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              rows={5}
+              placeholder="Décrivez votre nouveauté..."
+            />
+          </div>
+
+          <div>
+            <Label>Informations stand (optionnel)</Label>
+            <Input
+              value={formData.stand_info}
+              onChange={(e) => setFormData({ ...formData, stand_info: e.target.value })}
+              placeholder="Ex: Hall 3, Stand A45"
+            />
+          </div>
+
+          <div>
+            <Label>Images actuelles</Label>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {formData.existingImages.map((url, idx) => (
+                <img 
+                  key={idx} 
+                  src={url} 
+                  alt="" 
+                  className="w-full h-24 object-contain rounded border" 
+                />
+              ))}
+            </div>
+            <Label>Remplacer par de nouvelles images (optionnel)</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => setFormData({ ...formData, images: Array.from(e.target.files || []) })}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Maximum 3 images. Les nouvelles images remplaceront les anciennes.
+            </p>
+          </div>
+
+          <div>
+            <Label>Brochure PDF (optionnel)</Label>
+            {formData.existingBrochure && (
+              <p className="text-sm text-muted-foreground mb-2">
+                ✅ Brochure existante
+              </p>
+            )}
+            <Input
+              type="file"
+              accept=".pdf"
+              onChange={(e) => setFormData({ ...formData, brochure: e.target.files?.[0] || null })}
+            />
+          </div>
+
+          <Button 
+            onClick={handleUpdate} 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Enregistrement...
+              </>
+            ) : (
+              'Enregistrer les modifications'
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
