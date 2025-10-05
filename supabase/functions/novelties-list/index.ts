@@ -76,8 +76,8 @@ Deno.serve(async (req) => {
       query = query.ilike('events.ville', `%${params.region}%`)
     }
 
-    // Top novelties (one per event) - Used for main novelties page
-    if (params.top === true || (!params.event_id && !params.sector && !params.type && !params.month && !params.region)) {
+    // Top novelties (one per event) - Always group by event unless on event-specific page
+    if (!params.event_id) {
       // Fetch ALL published novelties with their stats and event info
       const { data: allNovelties, error: allError } = await supabase
         .from('novelties')
