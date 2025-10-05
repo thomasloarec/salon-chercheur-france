@@ -303,7 +303,6 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
       <AuthRequiredModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
-        message="Connectez-vous pour ajouter des nouveautés à vos favoris"
       />
     </div>
   );
