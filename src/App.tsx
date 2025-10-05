@@ -6,6 +6,7 @@ import { queryClient } from '@/lib/queryClient';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ScrollToTop from '@/components/ScrollToTop';
+import SiteGuard from '@/components/auth/SiteGuard';
 import Index from '@/pages/Index';
 import Events from '@/pages/Events';
 import EventPage from '@/pages/EventPage';
@@ -35,10 +36,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <ScrollToTop />
-          <div className="App">
-            <Routes>
+        <SiteGuard>
+          <Router>
+            <ScrollToTop />
+            <div className="App">
+              <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/events" element={<Events />} />
               <Route path="/events/:slug" element={<EventPage />} />
@@ -62,10 +64,11 @@ function App() {
               <Route path="/oauth/hubspot/test" element={<OAuthHubspotTest />} />
               <Route path="/api/oauth/hubspot/callback" element={<LegacyHubspotApiCallback />} />
               <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </div>
-        </Router>
+              </Routes>
+              <Toaster />
+            </div>
+          </Router>
+        </SiteGuard>
       </AuthProvider>
     </QueryClientProvider>
   );
