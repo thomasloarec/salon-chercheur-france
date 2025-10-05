@@ -76,13 +76,13 @@ export default function NoveltyLeadsDisplay({ noveltyId, isPremium }: NoveltyLea
         <LeadCard key={lead.id} lead={lead} isPremium={false} />
       ))}
       
-      {/* Leads 7+: Premium upsell */}
-      {hiddenCount > 0 && (
+      {/* Premium upsell - shown when there are blurred or hidden leads */}
+      {(previewLeads.length > 0 || hiddenCount > 0) && (
         <Card className="p-4 bg-muted/50 border-dashed">
           <div className="text-center">
             <Lock className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
             <p className="font-medium mb-1">
-              {hiddenCount} lead{hiddenCount > 1 ? 's' : ''} supplémentaire{hiddenCount > 1 ? 's' : ''}
+              {previewLeads.length + hiddenCount} lead{(previewLeads.length + hiddenCount) > 1 ? 's' : ''} {previewLeads.length > 0 ? 'flouté' : 'supplémentaire'}{(previewLeads.length + hiddenCount) > 1 ? 's' : ''}
             </p>
             <p className="text-sm text-muted-foreground mb-3">
               Passez en Premium pour débloquer tous vos leads
