@@ -9,6 +9,7 @@ interface MyNovelty {
   status: string;
   created_at: string;
   media_urls: string[];
+  is_premium?: boolean;
   exhibitors: {
     id: string;
     name: string;
@@ -36,7 +37,7 @@ export const useMyNovelties = () => {
       const { data, error } = await supabase
         .from('novelties')
         .select(`
-          id, title, type, status, created_at, media_urls,
+          id, title, type, status, created_at, media_urls, is_premium,
           exhibitors!inner ( id, name, slug, logo_url ),
           events!inner ( id, nom_event, slug, ville, date_debut, date_fin )
         `)

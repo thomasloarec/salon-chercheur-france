@@ -954,6 +954,7 @@ export type Database = {
           exhibitor_id: string
           id: string
           images_count: number | null
+          is_premium: boolean | null
           media_urls: string[] | null
           reason_1: string | null
           reason_2: string | null
@@ -978,6 +979,7 @@ export type Database = {
           exhibitor_id: string
           id?: string
           images_count?: number | null
+          is_premium?: boolean | null
           media_urls?: string[] | null
           reason_1?: string | null
           reason_2?: string | null
@@ -1002,6 +1004,7 @@ export type Database = {
           exhibitor_id?: string
           id?: string
           images_count?: number | null
+          is_premium?: boolean | null
           media_urls?: string[] | null
           reason_1?: string | null
           reason_2?: string | null

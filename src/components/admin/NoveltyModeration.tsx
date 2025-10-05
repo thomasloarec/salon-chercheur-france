@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Check, X, ExternalLink } from 'lucide-react';
+import { Eye, Check, X, ExternalLink, Crown, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import NoveltyPreviewDialog from '@/components/novelty/NoveltyPreviewDialog';
 
@@ -17,6 +17,7 @@ interface PendingNovelty {
   created_at: string;
   media_urls: string[];
   doc_url?: string;
+  is_premium?: boolean;
   exhibitors: {
     name: string;
     slug: string;
@@ -44,7 +45,7 @@ export default function NoveltyModeration() {
       const { data, error } = await supabase
         .from('novelties')
         .select(`
-          id, title, type, status, created_at, media_urls, doc_url,
+          id, title, type, status, created_at, media_urls, doc_url, is_premium,
           exhibitors!inner ( name, slug ),
           events!inner ( nom_event, slug )
         `)
@@ -88,6 +89,31 @@ export default function NoveltyModeration() {
   const handleReject = (id: string) => {
     updateStatusMutation.mutate({ id, status: 'Rejected' });
   };
+
+  const togglePremiumMutation = useMutation({
+    mutationFn: async ({ id, isPremium }: { id: string; isPremium: boolean }) => {
+      const { error } = await supabase
+        .from('novelties')
+        .update({ is_premium: !isPremium })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-novelties'] });
+      toast({
+        title: "Statut Premium mis à jour",
+        description: "Le statut premium de la nouveauté a été modifié."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour le statut premium.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -186,35 +212,60 @@ export default function NoveltyModeration() {
                         )}
                       </div>
                       
-                      {activeTab === 'pending' && (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setPreviewNovelty(novelty)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Voir
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleReject(novelty.id)}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Rejeter
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handlePublish(novelty.id)}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Publier
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPreviewNovelty(novelty)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Voir
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          variant={novelty.is_premium ? "default" : "outline"}
+                          onClick={() => togglePremiumMutation.mutate({ 
+                            id: novelty.id, 
+                            isPremium: novelty.is_premium || false 
+                          })}
+                          disabled={togglePremiumMutation.isPending}
+                        >
+                          {novelty.is_premium ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Premium
+                            </>
+                          ) : (
+                            <>
+                              <Crown className="h-4 w-4 mr-1" />
+                              Premium
+                            </>
+                          )}
+                        </Button>
+
+                        {activeTab === 'pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleReject(novelty.id)}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Rejeter
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handlePublish(novelty.id)}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Publier
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

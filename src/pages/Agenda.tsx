@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarRange, Calendar, Heart, Download, MapPin, Users, Sparkles, Building2, Eye, Edit } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
+import NoveltyLeadsDisplay from '@/components/novelty/NoveltyLeadsDisplay';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -280,8 +281,23 @@ const Agenda = () => {
                           </div>
                         </div>
 
+                        {/* Section Leads */}
+                        <div className="mt-4 pt-4 border-t">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              Leads
+                            </h4>
+                          </div>
+                          
+                          <NoveltyLeadsDisplay 
+                            noveltyId={novelty.id} 
+                            isPremium={novelty.is_premium || false}
+                          />
+                        </div>
+
                         {/* Actions */}
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 mt-4">
                           <Button
                             variant="outline"
                             size="sm"
