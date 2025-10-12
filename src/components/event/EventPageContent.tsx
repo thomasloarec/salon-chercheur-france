@@ -147,8 +147,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               {/* Colonne gauche */}
               <div className="col-span-12 lg:col-span-8 space-y-6">
                 <EventAbout event={event} />
-                <section>
-                  <h2 id="nouveautes" className="text-2xl font-bold mb-6">Nouveautés</h2>
+                <section id="nouveautes">
                   <NoveltiesSection event={event} />
                 </section>
               </div>

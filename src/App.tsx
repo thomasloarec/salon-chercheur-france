@@ -10,6 +10,7 @@ import SiteGuard from '@/components/auth/SiteGuard';
 import Index from '@/pages/Index';
 import Events from '@/pages/Events';
 import EventPage from '@/pages/EventPage';
+import EventNovelties from '@/pages/EventNovelties';
 import Favorites from '@/pages/Favorites';
 import Profile from '@/pages/Profile';
 import Auth from '@/pages/Auth';
@@ -44,6 +45,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/events" element={<Events />} />
               <Route path="/events/:slug" element={<EventPage />} />
+              <Route path="/events/:slug/nouveautes" element={<EventNovelties />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
             <Route path="/admin/exhibitors/claims" element={<AdminExhibitorClaims />} />
             <Route path="/admin/exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />

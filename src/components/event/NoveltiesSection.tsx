@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
-import NoveltyPager from '@/components/novelty/NoveltyPager';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
 import { useNovelties } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
@@ -14,212 +12,93 @@ interface NoveltiesSectionProps {
 }
 
 export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
-  const [sortBy, setSortBy] = useState<'awaited' | 'recent'>('awaited');
-  const [page, setPage] = useState(1);
-  const [allNovelties, setAllNovelties] = useState<any[]>([]);
-  const [currentNoveltyIndex, setCurrentNoveltyIndex] = useState(0);
-  // Initialize from URL params
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sortParam = params.get('sort');
-    if (sortParam === 'recent') {
-      setSortBy('recent');
-    }
-  }, []);
-
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const pageSize = 10;
-
+  // Fetch only 2 novelties for preview on event page
   const { data: noveltiesData, isLoading, error } = useNovelties({
     event_id: event.id,
-    sort: sortBy,
-    page,
-    pageSize,
+    sort: 'awaited',
+    page: 1,
+    pageSize: 2,
     enabled: !!event.id
   });
 
-  // Update novelties when data changes - with stable comparison
-  useEffect(() => {
-    if (noveltiesData?.data && noveltiesData.data.length > 0) {
-      if (page === 1) {
-        // Only update if data actually changed 
-        setAllNovelties(prev => {
-          const newData = noveltiesData.data;
-          if (JSON.stringify(prev) === JSON.stringify(newData)) return prev;
-          setCurrentNoveltyIndex(0);
-          return newData;
-        });
-      } else {
-        setAllNovelties(prev => [...prev, ...noveltiesData.data]);
-      }
-    }
-  }, [noveltiesData?.data, page]);
-
-  // Update URL with sort param - prevent loops
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const currentSort = params.get('sort');
-    const shouldUpdateUrl = (sortBy === 'recent' && currentSort !== 'recent') || 
-                           (sortBy === 'awaited' && currentSort !== null);
-    
-    if (shouldUpdateUrl) {
-      if (sortBy === 'awaited') {
-        params.delete('sort');
-      } else {
-        params.set('sort', sortBy);
-      }
-      
-      const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-      window.history.replaceState({}, '', newUrl);
-    }
-  }, [sortBy]);
-
-  const handleLoadMore = () => {
-    setLoadingMore(true);
-    setPage(prev => prev + 1);
-  };
-
-  useEffect(() => {
-    if (!isLoading && loadingMore) {
-      setLoadingMore(false);
-    }
-  }, [isLoading, loadingMore]);
-
-  const hasMore = noveltiesData ? allNovelties.length < noveltiesData.total : false;
-  const currentNovelty = allNovelties[currentNoveltyIndex];
-
-  const handlePreviousNovelty = () => {
-    if (currentNoveltyIndex > 0) {
-      setCurrentNoveltyIndex(prev => prev - 1);
-      // Scroll to the novelty
-      const noveltyElement = document.getElementById(`novelty-${allNovelties[currentNoveltyIndex - 1]?.id}`);
-      if (noveltyElement) {
-        noveltyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  };
-
-  const handleNextNovelty = () => {
-    if (currentNoveltyIndex < allNovelties.length - 1) {
-      setCurrentNoveltyIndex(prev => prev + 1);
-      // Scroll to the novelty
-      const noveltyElement = document.getElementById(`novelty-${allNovelties[currentNoveltyIndex + 1]?.id}`);
-      if (noveltyElement) {
-        noveltyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  };
-
-  if (isLoading && page === 1) {
+  if (isLoading) {
     return (
-      <section className="py-8">
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="h-7 w-32 bg-muted animate-pulse rounded" />
+          <div className="h-5 w-24 bg-muted animate-pulse rounded" />
         </div>
-      </section>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="h-40 bg-muted animate-pulse rounded-2xl" />
+          <div className="h-40 bg-muted animate-pulse rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  const total = noveltiesData?.total || 0;
+  const novelties = noveltiesData?.data || [];
+
+  // Empty state
+  if (!error && total === 0) {
+    return (
+      <div className="rounded-2xl border p-8 text-center bg-muted/50">
+        <h3 className="text-xl font-semibold mb-2">Aucune nouveauté pour le moment</h3>
+        <p className="text-muted-foreground mb-4">
+          Les exposants n'ont pas encore publié de nouveautés pour cet événement.
+        </p>
+        <AddNoveltyButton event={event} variant="outline" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="rounded-2xl border p-8 text-center">
+        <p className="text-destructive mb-4">Erreur lors du chargement des nouveautés</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="text-sm text-primary hover:underline"
+        >
+          Réessayer
+        </button>
+      </div>
     );
   }
 
   return (
-    <section className="py-8" id="nouveautes">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">Nouveautés</h2>
-            <div className="text-muted-foreground">
-              Découvrez les innovations présentées lors de cet événement
-              {noveltiesData && (
-                <Badge variant="secondary" className="ml-2">
-                  {noveltiesData.total} nouveauté{noveltiesData.total !== 1 ? 's' : ''}
-                </Badge>
-              )}
-            </div>
-          </div>
-          
-          <AddNoveltyButton event={event} />
+    <div className="space-y-4">
+      {/* Header with count and add button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold">Nouveautés</h2>
+          <Badge variant="secondary">
+            {total} nouveauté{total > 1 ? 's' : ''}
+          </Badge>
         </div>
-
-        {/* Sort Tabs */}
-        <Tabs value={sortBy} onValueChange={(value) => setSortBy(value as 'awaited' | 'recent')} className="mb-6">
-          <TabsList>
-            <TabsTrigger value="awaited">Les plus attendus</TabsTrigger>
-            <TabsTrigger value="recent">Récents</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={sortBy} className="space-y-6">
-            {/* Error State */}
-            {error && (
-              <div className="text-center py-8">
-                <p className="text-destructive mb-4">Erreur lors du chargement des nouveautés</p>
-                <Button onClick={() => window.location.reload()} variant="outline">
-                  Réessayer
-                </Button>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!error && allNovelties.length === 0 && !isLoading && (
-              <div className="text-center py-12 bg-muted/50 rounded-lg">
-                <h3 className="text-xl font-semibold mb-2">Aucune nouveauté pour le moment</h3>
-                <p className="text-muted-foreground mb-4">
-                  Les exposants n'ont pas encore publié de nouveautés pour cet événement.
-                </p>
-                <AddNoveltyButton event={event} variant="outline" />
-              </div>
-            )}
-
-            {/* Novelties List */}
-            {allNovelties.length > 0 && (
-              <>
-                <div className="space-y-8">
-                  {allNovelties.map((novelty, index) => (
-                    <div
-                      key={novelty.id}
-                      id={`novelty-${novelty.id}`}
-                      className={`scroll-mt-24 ${
-                        index === currentNoveltyIndex ? 'ring-2 ring-primary ring-offset-4 rounded-2xl' : ''
-                      }`}
-                    >
-                      <NoveltyCard novelty={novelty} />
-                    </div>
-                  ))}
-                </div>
-
-                {/* Load More Button */}
-                {hasMore && (
-                  <div className="text-center pt-6">
-                    <Button
-                      onClick={handleLoadMore}
-                      disabled={loadingMore}
-                      variant="outline"
-                      className="min-w-32"
-                    >
-                      {loadingMore && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                      {loadingMore ? 'Chargement...' : 'Charger plus'}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
+        <AddNoveltyButton event={event} />
       </div>
 
-      {/* Novelty Pager */}
-      {allNovelties.length > 1 && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <div className="bg-background/95 backdrop-blur border rounded-lg shadow-lg">
-            <NoveltyPager
-              currentIndex={currentNoveltyIndex}
-              total={allNovelties.length}
-              onPrevious={handlePreviousNovelty}
-              onNext={handleNextNovelty}
-            />
+      {/* Grid of 2 novelties */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {novelties.map((novelty) => (
+          <div key={novelty.id} className="h-full">
+            <NoveltyCard novelty={novelty} />
           </div>
-        </div>
+        ))}
+      </div>
+
+      {/* CTA to view all novelties (LinkedIn-style) */}
+      {total > 2 && (
+        <Link
+          to={`/events/${event.slug}/nouveautes`}
+          className="block w-full rounded-xl border p-4 text-center text-sm font-medium hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`Voir les ${total} nouveautés de ${event.nom_event}`}
+        >
+          Afficher toutes les nouveautés →
+        </Link>
       )}
-    </section>
+    </div>
   );
 }
