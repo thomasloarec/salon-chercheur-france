@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Novelty {
   id: string;
   event_id: string;
   exhibitor_id: string;
   title: string;
-  type: 'Launch' | 'Prototype' | 'MajorUpdate' | 'LiveDemo' | 'Partnership' | 'Offer' | 'Talk';
+  type: string;
   reason_1?: string;
   reason_2?: string;
   reason_3?: string;
@@ -17,7 +18,8 @@ export interface Novelty {
   availability?: string;
   stand_info?: string;
   demo_slots?: any;
-  status: 'draft' | 'under_review' | 'published' | 'pending' | 'rejected';
+  status: string;
+  is_premium?: boolean;
   created_at: string;
   updated_at: string;
   exhibitors: {
@@ -64,37 +66,123 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
     sort = 'awaited',
     page = 1,
     pageSize = 10,
-    sector,
-    type,
-    month,
-    region,
     enabled = true
   } = params;
 
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['novelties', event_id ?? 'all', sort, page, pageSize, sector ?? 'all', type ?? 'all', month ?? 'all', region ?? 'all'],
+    queryKey: ['novelties', event_id ?? 'all', sort, page, pageSize],
     queryFn: async (): Promise<NoveltiesResponse> => {
-      const { data, error } = await supabase.functions.invoke('novelties-list', {
-        body: {
-          event_id,
-          sort,
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-          sector,
-          type,
-          month,
-          region
-        }
+      console.log('🔍 useNovelties fetch starting:', {
+        event_id,
+        sort,
+        page,
+        pageSize
       });
 
+      const offset = (page - 1) * pageSize;
+
+      // Build query
+      let query = supabase
+        .from('novelties')
+        .select(`
+          id,
+          event_id,
+          exhibitor_id,
+          title,
+          type,
+          reason_1,
+          reason_2,
+          reason_3,
+          audience_tags,
+          media_urls,
+          doc_url,
+          availability,
+          stand_info,
+          demo_slots,
+          status,
+          is_premium,
+          created_at,
+          updated_at,
+          exhibitors!inner (
+            id,
+            name,
+            slug,
+            logo_url
+          ),
+          events!inner (
+            id,
+            nom_event,
+            slug,
+            ville
+          ),
+          novelty_stats (
+            route_users_count,
+            popularity_score
+          )
+        `, { count: 'exact' })
+        .eq('status', 'published');
+
+      // Filter by event if provided
+      if (event_id) {
+        query = query.eq('event_id', event_id);
+      }
+
+      // Apply sorting
+      if (sort === 'recent') {
+        query = query.order('created_at', { ascending: false });
+      } else {
+        // awaited = popularity
+        query = query
+          .order('novelty_stats.popularity_score', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false });
+      }
+
+      // Apply pagination
+      query = query.range(offset, offset + pageSize - 1);
+
+      const { data, count, error } = await query;
+
       if (error) {
+        console.error('❌ useNovelties Supabase error:', error);
         throw error;
       }
 
-      return data;
+      console.log('✅ useNovelties fetch result:', {
+        total: count,
+        returned: data?.length,
+        items: data
+      });
+
+      // Check user routes
+      let userRouteItems: string[] = [];
+      if (user && data?.length) {
+        const noveltyIds = data.map(n => n.id);
+        const { data: routeItems } = await supabase
+          .from('route_items')
+          .select('novelty_id, user_routes!inner(user_id)')
+          .eq('user_routes.user_id', user.id)
+          .in('novelty_id', noveltyIds);
+
+        userRouteItems = routeItems?.map(item => item.novelty_id) || [];
+      }
+
+      // Add route status
+      const noveltiesWithRouteStatus = data?.map(novelty => ({
+        ...novelty,
+        in_user_route: userRouteItems.includes(novelty.id)
+      })) || [];
+
+      return {
+        data: noveltiesWithRouteStatus as Novelty[],
+        total: count || 0,
+        page,
+        pageSize
+      };
     },
     enabled,
-    staleTime: 30_000, // 30 seconds
+    staleTime: 30_000,
   });
 };
 
