@@ -83,7 +83,7 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
 
       const offset = (page - 1) * pageSize;
 
-      // Build query
+      // Build query - WITHOUT order on joined table
       let query = supabase
         .from('novelties')
         .select(`
@@ -129,15 +129,9 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
         query = query.eq('event_id', event_id);
       }
 
-      // Apply sorting
-      if (sort === 'recent') {
-        query = query.order('created_at', { ascending: false });
-      } else {
-        // awaited = popularity
-        query = query
-          .order('novelty_stats.popularity_score', { ascending: false, nullsFirst: false })
-          .order('created_at', { ascending: false });
-      }
+      // ⚠️ IMPORTANT : Tri uniquement sur les colonnes de la table principale
+      // On ne peut pas trier sur novelty_stats car c'est une relation left join
+      query = query.order('created_at', { ascending: false });
 
       // Apply pagination
       query = query.range(offset, offset + pageSize - 1);
@@ -155,10 +149,27 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
         items: data
       });
 
+      // ✅ TRI CÔTÉ CLIENT si nécessaire
+      let sortedData = data || [];
+      if (sort === 'awaited' && sortedData.length > 0) {
+        // Trier par popularité côté client
+        sortedData = [...sortedData].sort((a, b) => {
+          const scoreA = a.novelty_stats?.popularity_score || 0;
+          const scoreB = b.novelty_stats?.popularity_score || 0;
+          
+          if (scoreB !== scoreA) {
+            return scoreB - scoreA; // Tri décroissant par score
+          }
+          
+          // Si même score, tri par date (plus récent d'abord)
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      }
+
       // Check user routes
       let userRouteItems: string[] = [];
-      if (user && data?.length) {
-        const noveltyIds = data.map(n => n.id);
+      if (user && sortedData.length) {
+        const noveltyIds = sortedData.map(n => n.id);
         const { data: routeItems } = await supabase
           .from('route_items')
           .select('novelty_id, user_routes!inner(user_id)')
@@ -169,10 +180,10 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
       }
 
       // Add route status
-      const noveltiesWithRouteStatus = data?.map(novelty => ({
+      const noveltiesWithRouteStatus = sortedData.map(novelty => ({
         ...novelty,
         in_user_route: userRouteItems.includes(novelty.id)
-      })) || [];
+      }));
 
       return {
         data: noveltiesWithRouteStatus as Novelty[],
