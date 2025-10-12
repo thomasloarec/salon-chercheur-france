@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
           secteur
         )
       `)
-      .eq('status', 'Published');
+      .eq('status', 'published');
 
     // Apply event-based filters
     if (filters.sector_ids || filters.types || filters.months || filters.region_codes) {

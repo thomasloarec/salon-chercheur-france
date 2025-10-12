@@ -38,9 +38,9 @@ export default function NoveltyModeration() {
     queryKey: ['admin-novelties', activeTab],
     queryFn: async () => {
       // Map tab to actual DB status values (matching CHECK constraint)
-      let statusFilter = 'Draft'; // Default: newly submitted novelties
-      if (activeTab === 'published') statusFilter = 'Published';
-      if (activeTab === 'rejected') statusFilter = 'Rejected';
+      let statusFilter = 'draft'; // Default: newly submitted novelties
+      if (activeTab === 'published') statusFilter = 'published';
+      if (activeTab === 'rejected') statusFilter = 'rejected';
 
       const { data, error } = await supabase
         .from('novelties')
@@ -127,13 +127,13 @@ export default function NoveltyModeration() {
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      Draft: { label: 'En attente', variant: 'secondary' as const },
-      UnderReview: { label: 'En révision', variant: 'default' as const },
-      Published: { label: 'Publié', variant: 'default' as const },
-      Rejected: { label: 'Rejeté', variant: 'destructive' as const }
+      draft: { label: 'En attente', variant: 'secondary' as const },
+      under_review: { label: 'En révision', variant: 'default' as const },
+      published: { label: 'Publié', variant: 'default' as const },
+      rejected: { label: 'Rejeté', variant: 'destructive' as const }
     };
     
-    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.Draft;
+    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.draft;
     
     return (
       <Badge variant={statusInfo.variant}>

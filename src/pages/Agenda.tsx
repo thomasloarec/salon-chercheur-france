@@ -239,10 +239,10 @@ const Agenda = () => {
                           <div className="flex items-center gap-3 mb-2">
                             <h2 className="text-2xl font-bold">{novelty.title}</h2>
                             <Badge 
-                              variant={novelty.status === 'Published' ? 'default' : 'secondary'}
+                              variant={novelty.status === 'published' ? 'default' : 'secondary'}
                             >
-                              {novelty.status === 'Published' ? 'Publié' : 
-                               novelty.status === 'Draft' ? 'En attente' : novelty.status}
+                              {novelty.status === 'published' ? 'Publié' : 
+                               novelty.status === 'draft' ? 'En attente' : novelty.status}
                             </Badge>
                             <Badge variant="outline">
                               {NOVELTY_TYPE_LABELS[novelty.type as keyof typeof NOVELTY_TYPE_LABELS] || novelty.type}

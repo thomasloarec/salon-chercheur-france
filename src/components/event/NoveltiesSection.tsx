@@ -21,6 +21,14 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     enabled: !!event.id
   });
 
+  console.log('🔍 NoveltiesSection debug:', {
+    event_id: event.id,
+    total: noveltiesData?.total,
+    displayed: noveltiesData?.data?.length,
+    isLoading,
+    error
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-4">

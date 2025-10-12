@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       .from('novelties')
       .select('id, status, resource_url, exhibitor_id, exhibitors!inner(name, owner_user_id)')
       .eq('id', novelty_id)
-      .eq('status', 'Published')
+      .eq('status', 'published')
       .single()
 
     if (noveltyError || !novelty) {

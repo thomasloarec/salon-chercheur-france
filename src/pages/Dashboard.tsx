@@ -464,8 +464,8 @@ export default function Dashboard() {
               {novelty ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between mb-4">
-                    <Badge variant={novelty.status === 'Published' ? 'default' : 'secondary'}>
-                      {novelty.status === 'Published' ? 'Publiée' : 'En attente'}
+                    <Badge variant={novelty.status === 'published' ? 'default' : 'secondary'}>
+                      {novelty.status === 'published' ? 'Publiée' : 'En attente'}
                     </Badge>
                   </div>
 

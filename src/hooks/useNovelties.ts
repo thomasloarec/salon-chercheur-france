@@ -17,7 +17,7 @@ export interface Novelty {
   availability?: string;
   stand_info?: string;
   demo_slots?: any;
-  status: 'Draft' | 'UnderReview' | 'Published';
+  status: 'draft' | 'under_review' | 'published' | 'pending' | 'rejected';
   created_at: string;
   updated_at: string;
   exhibitors: {

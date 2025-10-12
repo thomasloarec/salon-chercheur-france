@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
         novelty_stats!left(route_users_count, popularity_score),
         events!inner(id, nom_event, slug, ville, secteur, type_event, date_debut)
       `)
-      .eq('status', 'Published')
+      .eq('status', 'published')
 
     // Event-specific query
     if (params.event_id) {
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
           novelty_stats!left(route_users_count, popularity_score),
           events!inner(id, nom_event, slug, ville, secteur, type_event, date_debut)
         `)
-        .eq('status', 'Published')
+        .eq('status', 'published')
         .eq('events.visible', true)
         .gte('events.date_debut', new Date().toISOString().split('T')[0])
         .order('created_at', { ascending: false });

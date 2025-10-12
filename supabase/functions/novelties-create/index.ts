@@ -121,7 +121,7 @@ serve(async (req) => {
       doc_url: data.brochure_pdf ?? null,
       stand_info: data.stand_info ?? null,
       created_by: data.created_by,
-      status: "Draft",
+      status: "draft",
     };
 
     console.log("[novelties-create] Insert payload:", JSON.stringify({

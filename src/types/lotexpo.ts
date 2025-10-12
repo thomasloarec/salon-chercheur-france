@@ -39,7 +39,7 @@ export interface EventLite {
 }
 
 export type NoveltyType = 'Launch' | 'Prototype' | 'MajorUpdate' | 'LiveDemo' | 'Partnership' | 'Offer' | 'Talk';
-export type NoveltyStatus = 'Draft' | 'UnderReview' | 'Published';
+export type NoveltyStatus = 'draft' | 'under_review' | 'published' | 'pending' | 'rejected';
 
 export interface DemoSlot {
   start: string;

@@ -46,13 +46,13 @@ interface NoveltyPreviewDialogProps {
 export default function NoveltyPreviewDialog({ novelty, open, onOpenChange }: NoveltyPreviewDialogProps) {
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      Draft: { label: 'En attente', variant: 'secondary' as const },
-      UnderReview: { label: 'En révision', variant: 'default' as const },
-      Published: { label: 'Publié', variant: 'default' as const },
-      Rejected: { label: 'Rejeté', variant: 'destructive' as const }
+      draft: { label: 'En attente', variant: 'secondary' as const },
+      under_review: { label: 'En révision', variant: 'default' as const },
+      published: { label: 'Publié', variant: 'default' as const },
+      rejected: { label: 'Rejeté', variant: 'destructive' as const }
     };
     
-    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.Draft;
+    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.draft;
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
   };
 

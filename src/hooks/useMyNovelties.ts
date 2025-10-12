@@ -60,7 +60,7 @@ export const useMyNovelties = () => {
           leads ( id, lead_type )
         `)
         .eq('created_by', user.id)
-        .in('status', ['Draft', 'UnderReview', 'Published'])
+        .in('status', ['draft', 'under_review', 'published'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;

@@ -108,7 +108,7 @@ export const EditNoveltyDialog = ({ novelty, open, onOpenChange }: EditNoveltyDi
           media_urls: imageUrls,
           doc_url: pdfUrl,
           stand_info: formData.stand_info,
-          status: 'Draft', // Repasse en attente de validation
+          status: 'draft', // Repasse en attente de validation
           updated_at: new Date().toISOString(),
         })
         .eq('id', novelty.id);
