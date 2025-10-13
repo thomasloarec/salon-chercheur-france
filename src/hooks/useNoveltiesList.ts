@@ -57,10 +57,11 @@ async function fetchNovelties(
       events!inner (
         id, slug, nom_event, date_debut, type_event, secteur, visible, ville, code_postal
       ),
-      exhibitors ( id, name, slug, logo_url )
+      exhibitors ( id, name, slug, logo_url ),
+      novelty_stats ( route_users_count, popularity_score )
     `)
     .eq("events.visible", true)
-    .eq("status", "Published")  // Only show published novelties (DB constraint expects 'Published')
+    .eq("status", "published")  // ✅ Lowercase status after normalization
     .order("created_at", { ascending: false });
 
   const dbType = typeSlugToDbValue(type);
@@ -78,8 +79,11 @@ async function fetchNovelties(
 
   const { data, error } = await q;
   if (error) {
+    console.error('❌ useNoveltiesList fetch error:', error);
     return { data: [], total: 0, page, pageSize };
   }
+
+  console.log('✅ useNoveltiesList fetched:', data?.length || 0, 'novelties');
 
   // Map database results to NoveltyRow interface
   const results: NoveltyRow[] = (data ?? []).map((row: any) => ({
@@ -99,7 +103,8 @@ async function fetchNovelties(
       date_debut: row.events.date_debut,
       type_event: row.events.type_event,
       code_postal: row.events.code_postal
-    } : undefined
+    } : undefined,
+    novelty_stats: row.novelty_stats || undefined
   }));
 
   // Filter to only show novelties from ongoing or upcoming events with client-side filters
@@ -128,10 +133,52 @@ async function fetchNovelties(
     
     return true;
   });
+
+  // ✅ RÈGLE MÉTIER : Garder uniquement 1 nouveauté par événement (la plus populaire)
+  const eventMap = new Map<string, NoveltyRow>();
+  
+  for (const novelty of filteredResults) {
+    const eventId = novelty.event_id;
+    const existing = eventMap.get(eventId);
+    
+    if (!existing) {
+      // Premier pour cet événement
+      eventMap.set(eventId, novelty);
+    } else {
+      // Comparer la popularité pour garder la meilleure
+      const currentScore = novelty.novelty_stats?.popularity_score || novelty.novelty_stats?.route_users_count || 0;
+      const existingScore = existing.novelty_stats?.popularity_score || existing.novelty_stats?.route_users_count || 0;
+      
+      if (currentScore > existingScore) {
+        eventMap.set(eventId, novelty);
+      } else if (currentScore === existingScore) {
+        // À score égal, prendre la plus récente
+        if (new Date(novelty.created_at) > new Date(existing.created_at)) {
+          eventMap.set(eventId, novelty);
+        }
+      }
+    }
+  }
+
+  const uniqueByEvent = Array.from(eventMap.values());
+  
+  // Tri final par popularité puis date
+  uniqueByEvent.sort((a, b) => {
+    const scoreA = a.novelty_stats?.popularity_score || a.novelty_stats?.route_users_count || 0;
+    const scoreB = b.novelty_stats?.popularity_score || b.novelty_stats?.route_users_count || 0;
+    
+    if (scoreB !== scoreA) {
+      return scoreB - scoreA;
+    }
+    
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  console.log('✅ useNoveltiesList after grouping:', uniqueByEvent.length, 'novelties (1 per event)');
   
   return {
-    data: filteredResults,
-    total: filteredResults.length,
+    data: uniqueByEvent,
+    total: uniqueByEvent.length,
     page,
     pageSize
   };
