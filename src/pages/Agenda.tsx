@@ -5,11 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { useUserExhibitors } from '@/hooks/useExhibitorAdmin';
 import { useMyNovelties, MyNovelty } from '@/hooks/useMyNovelties';
+import { useLikedNovelties } from '@/hooks/useNoveltyLike';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarRange, Calendar, Heart, Download, MapPin, Users, Sparkles, Building2, Eye, Edit } from 'lucide-react';
+import { CalendarRange, Calendar, Heart, Download, MapPin, Users, Sparkles, Building2, Eye, Edit, ChevronDown, ChevronUp } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
 import NoveltyLeadsDisplay from '@/components/novelty/NoveltyLeadsDisplay';
@@ -33,11 +34,33 @@ const Agenda = () => {
   const { data: events = [], isLoading, error } = useFavoriteEvents();
   const { data: userExhibitors = [] } = useUserExhibitors();
   const { data: myNovelties = [], isLoading: noveltiesLoading } = useMyNovelties();
+  const { data: likedNovelties = [] } = useLikedNovelties();
   const [activeTab, setActiveTab] = useState('events');
   const [editingNovelty, setEditingNovelty] = useState<MyNovelty | null>(null);
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
 
   const handleEdit = (novelty: MyNovelty) => {
     setEditingNovelty(novelty);
+  };
+
+  // Grouper les nouveautés likées par événement
+  const noveltiesByEvent = likedNovelties.reduce((acc, novelty: any) => {
+    const eventId = novelty.event_id;
+    if (!acc[eventId]) acc[eventId] = [];
+    acc[eventId].push(novelty);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  const toggleExpand = (eventId: string) => {
+    setExpandedEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
   };
 
   // Find next upcoming event
@@ -143,61 +166,138 @@ const Agenda = () => {
                 </div>
               ) : events.length > 0 ? (
                 <div className="space-y-6">
-                  {events.map((event) => (
-                    <div key={event.id} className="bg-white rounded-lg shadow-sm border p-6">
-                      {/* Event Header */}
-                      <div className="flex items-start gap-4 mb-4">
-                        {event.url_image && (
-                          <img
-                            src={event.url_image}
-                            alt={event.nom_event}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
+                  {events.map((event) => {
+                    const eventNovelties = noveltiesByEvent[event.id] || [];
+                    const isExpanded = expandedEvents.has(event.id);
+                    const displayedNovelties = isExpanded 
+                      ? eventNovelties 
+                      : eventNovelties.slice(0, 3);
+
+                    return (
+                      <div key={event.id} className="bg-white rounded-lg shadow-sm border p-6">
+                        {/* Event Header */}
+                        <div className="flex items-start gap-4 mb-4">
+                          {event.url_image && (
+                            <img
+                              src={event.url_image}
+                              alt={event.nom_event}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-xl font-semibold">{event.nom_event}</h3>
+                              {event.secteur && event.secteur.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {Array.isArray(event.secteur) ? event.secteur[0] : event.secteur}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {format(new Date(event.date_debut), 'dd MMM', { locale: fr })}
+                              {event.date_fin !== event.date_debut && 
+                                ` - ${format(new Date(event.date_fin), 'dd MMM', { locale: fr })}`
+                              } • {event.ville}
+                              {event.nom_lieu && ` • ${event.nom_lieu}`}
+                            </div>
+                          </div>
+                          <Link to={`/events/${event.slug}`}>
+                            <Button variant="outline" size="sm">
+                              Voir le salon
+                            </Button>
+                          </Link>
+                        </div>
+
+                        {/* Event Description */}
+                        {event.description_event && (
+                          <div className="mt-4">
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {event.description_event}
+                            </p>
+                          </div>
                         )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-xl font-semibold">{event.nom_event}</h3>
-                            {event.secteur && event.secteur.length > 0 && (
-                              <Badge variant="secondary" className="text-xs">
-                                {Array.isArray(event.secteur) ? event.secteur[0] : event.secteur}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {format(new Date(event.date_debut), 'dd MMM', { locale: fr })}
-                            {event.date_fin !== event.date_debut && 
-                              ` - ${format(new Date(event.date_fin), 'dd MMM', { locale: fr })}`
-                            } • {event.ville}
-                            {event.nom_lieu && ` • ${event.nom_lieu}`}
-                          </div>
-                        </div>
-                        <Link to={`/events/${event.slug}`}>
-                          <Button variant="outline" size="sm">
-                            Voir le salon
-                          </Button>
-                        </Link>
-                      </div>
 
-                      {/* Event Description */}
-                      {event.description_event && (
-                        <div className="mt-4">
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {event.description_event}
-                          </p>
-                        </div>
-                      )}
+                        {/* Section Mon Parcours */}
+                        {eventNovelties.length > 0 ? (
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Sparkles className="h-5 w-5 text-primary" />
+                                <h4 className="font-semibold">Mon parcours</h4>
+                                <Badge variant="secondary" className="text-xs">
+                                  {eventNovelties.length} nouveauté{eventNovelties.length > 1 ? 's' : ''}
+                                </Badge>
+                              </div>
+                              {eventNovelties.length > 3 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleExpand(event.id)}
+                                  className="gap-1"
+                                >
+                                  {isExpanded ? (
+                                    <>
+                                      Réduire <ChevronUp className="h-4 w-4" />
+                                    </>
+                                  ) : (
+                                    <>
+                                      Voir tout ({eventNovelties.length}) <ChevronDown className="h-4 w-4" />
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </div>
 
-                      {/* Action to view novelties */}
-                      <div className="mt-4 pt-4 border-t">
-                        <Link to={`/events/${event.slug}#nouveautes`}>
-                          <Button variant="outline" size="sm" className="w-full">
-                            <Heart className="h-4 w-4 mr-2 text-red-500" />
-                            Découvrir les nouveautés de ce salon
-                          </Button>
-                        </Link>
+                            {/* Liste compacte des nouveautés likées */}
+                            <div className="space-y-2">
+                              {displayedNovelties.map((novelty: any) => (
+                                <Link
+                                  key={novelty.id}
+                                  to={`/events/${event.slug}#nouveautes`}
+                                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group"
+                                >
+                                  {/* Miniature */}
+                                  {novelty.media_urls && novelty.media_urls[0] && (
+                                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                      <img
+                                        src={novelty.media_urls[0]}
+                                        alt={novelty.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Infos */}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                                      {novelty.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {novelty.exhibitors.name}
+                                    </p>
+                                  </div>
+
+                                  {/* Badge type */}
+                                  <Badge variant="outline" className="text-xs flex-shrink-0">
+                                    {NOVELTY_TYPE_LABELS[novelty.type as keyof typeof NOVELTY_TYPE_LABELS] || novelty.type}
+                                  </Badge>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-4 pt-4 border-t">
+                            <Link to={`/events/${event.slug}#nouveautes`}>
+                              <Button variant="outline" size="sm" className="w-full">
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                Découvrir les nouveautés de ce salon
+                              </Button>
+                            </Link>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-12 bg-white rounded-lg">
