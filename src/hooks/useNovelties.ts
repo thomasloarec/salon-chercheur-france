@@ -83,7 +83,7 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
 
       const offset = (page - 1) * pageSize;
 
-      // Build query - WITHOUT order on joined table
+      // Build query
       let query = supabase
         .from('novelties')
         .select(`
@@ -129,8 +129,7 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
         query = query.eq('event_id', event_id);
       }
 
-      // ⚠️ IMPORTANT : Tri uniquement sur les colonnes de la table principale
-      // On ne peut pas trier sur novelty_stats car c'est une relation left join
+      // Sort by created_at for database query
       query = query.order('created_at', { ascending: false });
 
       // Apply pagination
@@ -149,22 +148,40 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
         items: data
       });
 
-      // ✅ TRI CÔTÉ CLIENT si nécessaire
-      let sortedData = data || [];
-      if (sort === 'awaited' && sortedData.length > 0) {
-        // Trier par popularité côté client
-        sortedData = [...sortedData].sort((a, b) => {
-          const scoreA = a.novelty_stats?.popularity_score || 0;
-          const scoreB = b.novelty_stats?.popularity_score || 0;
-          
-          if (scoreB !== scoreA) {
-            return scoreB - scoreA; // Tri décroissant par score
+      // Fetch likes count for all novelties
+      let likesCountMap: Record<string, number> = {};
+      if (data && data.length > 0) {
+        const noveltyIds = data.map(n => n.id);
+        const { data: likesData } = await supabase
+          .from('novelty_likes')
+          .select('novelty_id')
+          .in('novelty_id', noveltyIds);
+        
+        // Count likes per novelty
+        likesCountMap = (likesData || []).reduce((acc, like) => {
+          acc[like.novelty_id] = (acc[like.novelty_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+      }
+
+      // Add likes count to each novelty
+      const dataWithLikes = (data || []).map(novelty => ({
+        ...novelty,
+        likes_count: likesCountMap[novelty.id] || 0
+      }));
+
+      // Sort based on selected filter
+      let sortedData = dataWithLikes;
+      if (sort === 'awaited') {
+        // Sort by likes count (descending), then by created_at as tiebreaker
+        sortedData = [...dataWithLikes].sort((a, b) => {
+          if (b.likes_count !== a.likes_count) {
+            return b.likes_count - a.likes_count;
           }
-          
-          // Si même score, tri par date (plus récent d'abord)
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
       }
+      // For 'recent', data is already sorted by created_at DESC from the query
 
       // Check user routes
       let userRouteItems: string[] = [];
