@@ -128,7 +128,6 @@ const Agenda = () => {
             <ExhibitorDashboard 
               exhibitors={userExhibitors}
               novelties={myNovelties}
-              isLoading={noveltiesLoading}
             />
           )}
         </div>

@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Building2, Eye, Edit, MapPin, Calendar, Users, Heart, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Building2, Eye, Edit, MapPin, Calendar, Users, Heart, Sparkles, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
@@ -11,89 +12,49 @@ import NoveltyLeadsDisplay from '@/components/novelty/NoveltyLeadsDisplay';
 import { EditNoveltyDialog } from '@/components/novelty/EditNoveltyDialog';
 import type { MyNovelty } from '@/hooks/useMyNovelties';
 
-const NOVELTY_TYPE_LABELS = {
-  Launch: 'Lancement',
-  Prototype: 'Prototype',
-  MajorUpdate: 'Mise à jour majeure',
-  LiveDemo: 'Démo live',
-  Partnership: 'Partenariat',
-  Offer: 'Offre spéciale',
-  Talk: 'Conférence'
-};
-
 interface ExhibitorDashboardProps {
   exhibitors: any[];
   novelties: MyNovelty[];
-  isLoading?: boolean;
 }
 
-export function ExhibitorDashboard({ exhibitors, novelties, isLoading }: ExhibitorDashboardProps) {
+export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboardProps) {
   const [editingNovelty, setEditingNovelty] = useState<MyNovelty | null>(null);
 
   const handleEdit = (novelty: MyNovelty) => {
     setEditingNovelty(novelty);
   };
 
-  // Calculer les statistiques globales
-  const totalLikes = novelties.reduce((sum, n) => sum + (n.stats?.likes || 0), 0);
+  // Calculer statistiques globales
   const totalLeads = novelties.reduce((sum, n) => sum + (n.stats?.total_leads || 0), 0);
-  const publishedNovelties = novelties.filter(n => n.status === 'published').length;
-
-  if (isLoading) {
-    return (
-      <div className="grid gap-6 md:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <Card key={i} className="overflow-hidden animate-pulse">
-            <div className="aspect-video bg-gray-200"></div>
-            <CardContent className="p-6">
-              <div className="h-6 bg-gray-200 rounded mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+  const totalLikes = novelties.reduce((sum, n) => sum + (n.stats?.likes || 0), 0);
 
   return (
     <div className="space-y-6">
       {/* Banner explicatif */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <Building2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+          <Building2 className="h-5 w-5 text-green-600 mt-0.5" />
           <div>
             <h3 className="font-semibold text-green-900 mb-1">
-              Espace Exposant
+              Espace professionnel exposant
             </h3>
             <p className="text-sm text-green-700">
-              Gérez vos nouveautés publiées, consultez vos statistiques et suivez vos leads générés sur les salons.
+              Gérez vos nouveautés, suivez vos statistiques et consultez vos leads générés sur les salons.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Statistiques globales */}
+      {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Nouveautés publiées</p>
-                <p className="text-2xl font-bold">{publishedNovelties}</p>
-              </div>
-              <Sparkles className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total nouveautés</p>
+                <p className="text-sm text-muted-foreground">Mes nouveautés</p>
                 <p className="text-2xl font-bold">{novelties.length}</p>
               </div>
-              <Eye className="h-8 w-8 text-muted-foreground" />
+              <Sparkles className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -102,10 +63,10 @@ export function ExhibitorDashboard({ exhibitors, novelties, isLoading }: Exhibit
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Likes totaux</p>
+                <p className="text-sm text-muted-foreground">Total Likes</p>
                 <p className="text-2xl font-bold">{totalLikes}</p>
               </div>
-              <Heart className="h-8 w-8 text-muted-foreground" />
+              <Heart className="h-8 w-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
@@ -114,171 +75,156 @@ export function ExhibitorDashboard({ exhibitors, novelties, isLoading }: Exhibit
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Leads générés</p>
+                <p className="text-sm text-muted-foreground">Total Leads</p>
                 <p className="text-2xl font-bold">{totalLeads}</p>
               </div>
-              <Users className="h-8 w-8 text-muted-foreground" />
+              <Users className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Entreprises</p>
+                <p className="text-2xl font-bold">{exhibitors.length}</p>
+              </div>
+              <Building2 className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Leads Panel si exposant */}
-      {exhibitors.length > 0 && (
-        <div className="mb-6">
-          <ExhibitorLeadsPanel exhibitors={exhibitors} />
-        </div>
-      )}
+      {/* Tabs pour organiser le contenu exposant */}
+      <Tabs defaultValue="novelties" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="novelties" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Mes Nouveautés
+            <Badge variant="secondary">{novelties.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="companies" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Mes Entreprises
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Statistiques
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Liste des nouveautés */}
-      {novelties.length > 0 ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Mes nouveautés</h2>
-            <Button asChild>
-              <Link to="/events">
-                <Sparkles className="h-4 w-4 mr-2" />
-                Créer une nouveauté
-              </Link>
-            </Button>
-          </div>
+        {/* Tab Nouveautés */}
+        <TabsContent value="novelties" className="space-y-6">
+          {novelties.length > 0 ? (
+            novelties.map((novelty) => (
+              <Card key={novelty.id}>
+                <CardContent className="p-6">
+                  {/* Header avec statut */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-semibold">{novelty.title}</h3>
+                        <Badge variant={novelty.status === 'published' ? 'default' : 'secondary'}>
+                          {novelty.status === 'published' ? 'Publié' : 'En attente'}
+                        </Badge>
+                        <Badge variant="outline">{novelty.type}</Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Building2 className="h-4 w-4" />
+                          {novelty.exhibitors.name}
+                        </span>
+                        <Link 
+                          to={`/events/${novelty.events.slug}`}
+                          className="flex items-center gap-1 hover:text-primary"
+                        >
+                          <MapPin className="h-4 w-4" />
+                          {novelty.events.nom_event}
+                        </Link>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(novelty.events.date_debut), 'dd MMM yyyy', { locale: fr })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/events/${novelty.events.slug}#nouveautes`}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Voir
+                        </Link>
+                      </Button>
+                      <Button size="sm" onClick={() => handleEdit(novelty)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Modifier
+                      </Button>
+                    </div>
+                  </div>
 
-          {novelties.map((novelty) => (
-            <Card key={novelty.id} className="overflow-hidden">
-              {/* Header avec actions */}
-              <div className="flex items-center justify-between p-6 border-b">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold">{novelty.title}</h2>
-                    <Badge 
-                      variant={novelty.status === 'published' ? 'default' : 'secondary'}
-                    >
-                      {novelty.status === 'published' ? 'Publié' : 
-                       novelty.status === 'draft' ? 'En attente' : novelty.status}
-                    </Badge>
-                    <Badge variant="outline">
-                      {NOVELTY_TYPE_LABELS[novelty.type as keyof typeof NOVELTY_TYPE_LABELS] || novelty.type}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Building2 className="h-4 w-4" />
-                      {novelty.exhibitors.name}
+                  {/* Statistiques en ligne */}
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-red-600">{novelty.stats?.likes || 0}</p>
+                      <p className="text-xs text-muted-foreground">Likes</p>
                     </div>
-                    <span>•</span>
-                    <Link 
-                      to={`/events/${novelty.events.slug}`} 
-                      className="flex items-center gap-1 hover:text-primary"
-                    >
-                      <MapPin className="h-4 w-4" />
-                      {novelty.events.nom_event}
-                    </Link>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {format(new Date(novelty.events.date_debut), 'dd MMM', { locale: fr })}
-                      {novelty.events.date_fin !== novelty.events.date_debut && 
-                        ` - ${format(new Date(novelty.events.date_fin), 'dd MMM yyyy', { locale: fr })}`
-                      }
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-blue-600">{novelty.stats?.brochure_leads || 0}</p>
+                      <p className="text-xs text-muted-foreground">Téléchargements</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-green-600">{novelty.stats?.total_leads || 0}</p>
+                      <p className="text-xs text-muted-foreground">Leads totaux</p>
                     </div>
                   </div>
-                </div>
-                <div className="flex gap-2 ml-4">
-                  <Button variant="outline" asChild size="sm">
-                    <Link to={`/events/${novelty.events.slug}#nouveautes`}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Voir sur le salon
-                    </Link>
-                  </Button>
-                  <Button 
-                    size="sm"
-                    onClick={() => handleEdit(novelty)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Modifier
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Body: Image + Stats */}
-              <div className="grid md:grid-cols-[300px,1fr] gap-6 p-6">
-                {/* Image principale */}
-                {novelty.media_urls && novelty.media_urls[0] && (
-                  <div className="aspect-square relative rounded-lg overflow-hidden bg-muted">
-                    <img
-                      src={novelty.media_urls[0]}
-                      alt={novelty.title}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                )}
-                
-                {/* Stats + Description */}
-                <div className="space-y-4">
-                  {/* Stats compactes */}
-                  <div className="flex items-center gap-6">
-                    {/* Likes */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                        <Heart className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold">{novelty.stats?.likes || 0}</p>
-                        <p className="text-xs text-muted-foreground">Likes</p>
-                      </div>
-                    </div>
-                    
-                    {/* Leads total */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
-                        <Users className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold">{novelty.stats?.total_leads || 0}</p>
-                        <p className="text-xs text-muted-foreground">Leads</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {novelty.reason_1 && (
-                    <div>
-                      <h3 className="font-semibold mb-2">Description</h3>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {novelty.reason_1}
-                      </p>
+
+                  {/* Section Leads compacte */}
+                  {novelty.stats && novelty.stats.total_leads > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <NoveltyLeadsDisplay 
+                        noveltyId={novelty.id}
+                        isPremium={novelty.is_premium || false}
+                      />
                     </div>
                   )}
-                </div>
-              </div>
-              
-              {/* Section Leads */}
-              <div className="p-6 border-t bg-muted/20">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Leads
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Sparkles className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                  Aucune nouveauté créée
                 </h3>
-                <NoveltyLeadsDisplay 
-                  noveltyId={novelty.id} 
-                  isPremium={novelty.is_premium || false}
-                />
-              </div>
+                <p className="text-gray-500 mb-6">
+                  Publiez vos innovations sur les salons pour attirer des visiteurs
+                </p>
+                <Button asChild>
+                  <Link to="/events">Publier une nouveauté</Link>
+                </Button>
+              </CardContent>
             </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 bg-white rounded-lg">
-          <Sparkles className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">
-            Aucune nouveauté créée
-          </h3>
-          <p className="text-gray-500 mb-6">
-            Publiez vos innovations sur les salons pour attirer plus de visiteurs
-          </p>
-          <Button asChild>
-            <Link to="/events">Découvrir les salons</Link>
-          </Button>
-        </div>
-      )}
+          )}
+        </TabsContent>
+
+        {/* Tab Entreprises */}
+        <TabsContent value="companies">
+          <ExhibitorLeadsPanel exhibitors={exhibitors} />
+        </TabsContent>
+
+        {/* Tab Statistiques */}
+        <TabsContent value="analytics">
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Statistiques globales</h3>
+              <p className="text-muted-foreground">
+                Statistiques détaillées à venir...
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Novelty Dialog */}
       {editingNovelty && (
