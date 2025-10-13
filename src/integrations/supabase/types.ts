@@ -1073,6 +1073,35 @@ export type Database = {
           },
         ]
       }
+      novelty_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          novelty_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          novelty_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          novelty_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_likes_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       novelty_stats: {
         Row: {
           novelty_id: string
@@ -1758,6 +1787,10 @@ export type Database = {
           type: string
           value: string
         }[]
+      }
+      get_novelty_likes_count: {
+        Args: { novelty_uuid: string }
+        Returns: number
       }
       get_top_novelties_per_event: {
         Args: Record<PropertyKey, never>

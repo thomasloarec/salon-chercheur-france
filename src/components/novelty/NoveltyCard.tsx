@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, MapPin, Heart, Download, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToggleLike, useLikeStatus } from '@/hooks/useNoveltyInteractions';
+import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
 import LeadForm from './LeadForm';
 import ExhibitorModal from '@/components/exhibitors/ExhibitorModal';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
@@ -27,14 +27,13 @@ const NOVELTY_TYPE_LABELS = {
 
 export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const { user } = useAuth();
-  const toggleLike = useToggleLike();
-  const likeStatus = useLikeStatus(novelty.id);
+  const { isLiked, toggleLike, isPending } = useNoveltyLike(novelty.id);
+  const { data: likesCount } = useNoveltyLikesCount(novelty.id);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showExhibitorModal, setShowExhibitorModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [leadFormType, setLeadFormType] = useState<'brochure_download' | 'meeting_request'>('brochure_download');
-  const [isToggling, setIsToggling] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const images = novelty.media_urls?.filter(url => {
@@ -44,18 +43,15 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const hasMultipleImages = images.length > 1;
   const description = [novelty.reason_1, novelty.reason_2, novelty.reason_3].filter(Boolean).join(' ');
 
-  const handleLikeToggle = async () => {
+  const handleLikeToggle = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Éviter de déclencher d'autres actions
+    
     if (!user) {
       setShowAuthModal(true);
       return;
     }
-    if (isToggling) return;
-    setIsToggling(true);
-    try {
-      await toggleLike.mutateAsync({ noveltyId: novelty.id });
-    } finally {
-      setIsToggling(false);
-    }
+
+    toggleLike();
   };
 
   const handleBrochureDownload = () => {
@@ -243,13 +239,13 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
         <div className="flex items-center gap-2">
           <Button
             onClick={handleLikeToggle}
-            variant={likeStatus.data?.userHasLiked ? "default" : "outline"}
+            variant={isLiked ? "default" : "outline"}
             size="sm"
-            disabled={toggleLike.isPending || isToggling}
+            disabled={isPending}
             className="flex items-center gap-2"
           >
-            <Heart className={cn("h-4 w-4", likeStatus.data?.userHasLiked && "fill-current")} />
-            <span>{likeStatus.data?.count || 0}</span>
+            <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
+            <span>{likesCount || 0}</span>
           </Button>
 
           {novelty.doc_url && (
