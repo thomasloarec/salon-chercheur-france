@@ -133,23 +133,25 @@ const EventNovelties = () => {
     enabled: !!event?.id
   });
 
-  // Update all novelties list
-  useEffect(() => {
-    if (noveltiesData?.data) {
-      if (page === 1) {
-        setAllNovelties(noveltiesData.data);
-      } else {
-        setAllNovelties(prev => [...prev, ...noveltiesData.data]);
-      }
-      setLoadingMore(false);
-    }
-  }, [noveltiesData, page]);
-
-  // Reset page when sort changes
+  // Reset page and novelties when sort changes
   useEffect(() => {
     setPage(1);
     setAllNovelties([]);
   }, [sortBy]);
+
+  // Update all novelties list
+  useEffect(() => {
+    if (noveltiesData?.data) {
+      if (page === 1) {
+        // For first page, replace all data
+        setAllNovelties(noveltiesData.data);
+      } else {
+        // For subsequent pages, append data
+        setAllNovelties(prev => [...prev, ...noveltiesData.data]);
+      }
+      setLoadingMore(false);
+    }
+  }, [noveltiesData?.data, page]);
 
   const handleSortChange = (newSort: SortBy) => {
     const params = new URLSearchParams(searchParams);
