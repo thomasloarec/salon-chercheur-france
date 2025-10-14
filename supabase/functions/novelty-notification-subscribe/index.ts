@@ -101,7 +101,7 @@ serve(async (req) => {
         'ID Événement': body.eventId,
         'Date Ouverture Nouveautés': body.noveltiesOpenDate,
         'Statut Notification': 'En attente',
-        'Date Inscription': new Date().toISOString(),
+        'Date Inscription': new Date().toISOString().split('T')[0], // Format YYYY-MM-DD seulement
         'Source': 'LotExpo - Page Événement',
       }
     };
