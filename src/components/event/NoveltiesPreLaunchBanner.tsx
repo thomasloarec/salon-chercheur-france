@@ -81,8 +81,8 @@ export function NoveltiesPreLaunchBanner({
           </div>
         </div>
 
-        {/* CTA notification */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        {/* CTA notification - UN SEUL BOUTON */}
+        <div className="flex justify-center">
           {onNotifyMe && (
             <Button 
               onClick={onNotifyMe}
@@ -93,20 +93,6 @@ export function NoveltiesPreLaunchBanner({
               Me notifier à l'ouverture
             </Button>
           )}
-          
-          <Button 
-            variant="outline" 
-            size="lg"
-            onClick={() => {
-              const programSection = document.getElementById('programme');
-              if (programSection) {
-                programSection.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Voir le programme
-          </Button>
         </div>
 
         {/* Note pour exposants */}

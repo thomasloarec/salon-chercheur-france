@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import { differenceInDays } from 'date-fns';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
 import { NoveltiesPreLaunchBanner } from './NoveltiesPreLaunchBanner';
+import { NoveltyNotificationDialog } from './NoveltyNotificationDialog';
 import { useNovelties } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
 
@@ -14,6 +15,8 @@ interface NoveltiesSectionProps {
 }
 
 export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+  
   // Fetch only 2 novelties for preview on event page
   const { data: noveltiesData, isLoading, error } = useNovelties({
     event_id: event.id,
@@ -59,20 +62,29 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   if (!error && total === 0) {
     if (isPreLaunch) {
       return (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Nouveautés</h2>
+        <>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Nouveautés</h2>
+            </div>
+            
+            <NoveltiesPreLaunchBanner
+              eventDate={event.date_debut}
+              eventName={event.nom_event}
+              onNotifyMe={() => setNotificationDialogOpen(true)}
+            />
           </div>
-          
-          <NoveltiesPreLaunchBanner
-            eventDate={event.date_debut}
+
+          {/* Dialog de notification */}
+          <NoveltyNotificationDialog
+            open={notificationDialogOpen}
+            onOpenChange={setNotificationDialogOpen}
+            eventId={event.id}
             eventName={event.nom_event}
-            onNotifyMe={() => {
-              // TODO: Ouvrir modal d'inscription aux notifications
-              console.log('User wants to be notified when novelties open');
-            }}
+            eventDate={event.date_debut}
+            eventSlug={event.slug}
           />
-        </div>
+        </>
       );
     }
 
