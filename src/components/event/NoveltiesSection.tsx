@@ -2,8 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
+import { NoveltiesPreLaunchBanner } from './NoveltiesPreLaunchBanner';
 import { useNovelties } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
 
@@ -21,12 +23,18 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     enabled: !!event.id
   });
 
+  // Calculer si on est en phase de pré-lancement (plus de 60 jours avant l'événement)
+  const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
+  const isPreLaunch = daysUntilEvent > 60;
+
   console.log('🔍 NoveltiesSection debug:', {
     event_id: event.id,
     total: noveltiesData?.total,
     displayed: noveltiesData?.data?.length,
     isLoading,
-    error
+    error,
+    daysUntilEvent,
+    isPreLaunch
   });
 
   if (isLoading) {
@@ -47,8 +55,28 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const total = noveltiesData?.total || 0;
   const novelties = noveltiesData?.data || [];
 
-  // Empty state
+  // Empty state - Si pré-lancement ET aucune nouveauté, afficher le banner spécial
   if (!error && total === 0) {
+    if (isPreLaunch) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Nouveautés</h2>
+          </div>
+          
+          <NoveltiesPreLaunchBanner
+            eventDate={event.date_debut}
+            eventName={event.nom_event}
+            onNotifyMe={() => {
+              // TODO: Ouvrir modal d'inscription aux notifications
+              console.log('User wants to be notified when novelties open');
+            }}
+          />
+        </div>
+      );
+    }
+
+    // Cas normal : événement proche mais pas de nouveautés
     return (
       <div className="rounded-2xl border p-8 text-center bg-muted/50">
         <h3 className="text-xl font-semibold mb-2">Aucune nouveauté pour le moment</h3>

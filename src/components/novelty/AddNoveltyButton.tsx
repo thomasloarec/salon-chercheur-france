@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Lock } from 'lucide-react';
+import { differenceInDays, format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import AddNoveltyStepper from './AddNoveltyStepper';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +34,12 @@ export default function AddNoveltyButton({
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+
+  // Vérifier si on est en période de pré-lancement (plus de 60 jours avant l'événement)
+  const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
+  const isPreLaunch = daysUntilEvent > 60;
+  const noveltiesOpenDate = new Date(event.date_debut);
+  noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 60);
 
   const handleClick = async () => {
     // Not logged in - redirect to auth
@@ -102,6 +116,37 @@ export default function AddNoveltyButton({
     }
   };
 
+  // Si période de pré-lancement, afficher bouton désactivé avec tooltip explicatif
+  if (isPreLaunch) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <Button 
+                disabled 
+                variant={variant}
+                size={size}
+                className={className}
+              >
+                <Lock className="h-4 w-4 mr-2" />
+                Ajouter ma nouveauté
+              </Button>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            <p className="text-sm">
+              La publication de nouveautés ouvrira le{' '}
+              <strong>{format(noveltiesOpenDate, 'dd MMMM yyyy', { locale: fr })}</strong>
+              {' '}(60 jours avant l'événement)
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Bouton normal si période ouverte
   return (
     <>
       <Button
