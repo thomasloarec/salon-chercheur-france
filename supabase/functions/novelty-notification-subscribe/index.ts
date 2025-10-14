@@ -26,15 +26,16 @@ serve(async (req) => {
   try {
     console.log('🔍 Novelty notification function called');
 
-    // Récupérer les variables d'environnement
-    const airtableToken = Deno.env.get('AIRTABLE_TOKEN');
+    // Récupérer les variables d'environnement (utiliser AIRTABLE_PAT qui existe déjà)
+    const airtableToken = Deno.env.get('AIRTABLE_PAT') || Deno.env.get('AIRTABLE_TOKEN');
     const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID');
 
     console.log('📋 Checking env vars:', {
       hasToken: !!airtableToken,
       hasBaseId: !!airtableBaseId,
       tokenPreview: airtableToken ? `${airtableToken.substring(0, 10)}...` : 'MISSING',
-      baseIdPreview: airtableBaseId ? `${airtableBaseId.substring(0, 10)}...` : 'MISSING'
+      baseIdPreview: airtableBaseId ? `${airtableBaseId.substring(0, 10)}...` : 'MISSING',
+      checkedVars: ['AIRTABLE_PAT', 'AIRTABLE_TOKEN', 'AIRTABLE_BASE_ID']
     });
 
     if (!airtableToken || !airtableBaseId) {
