@@ -11,9 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Bell, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNoveltyNotificationSubscribe } from '@/hooks/useNoveltyNotificationSubscribe';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { getEnv } from '@/lib/env';
 
 interface NoveltyNotificationDialogProps {
   open: boolean;
@@ -33,7 +33,6 @@ export function NoveltyNotificationDialog({
   eventSlug,
 }: NoveltyNotificationDialogProps) {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -42,85 +41,44 @@ export function NoveltyNotificationDialog({
     company: '',
   });
 
+  const { mutate: subscribe, isPending: isSubmitting } = useNoveltyNotificationSubscribe();
+
   // Calculer la date d'ouverture des nouveautés (J-60)
   const noveltiesOpenDate = new Date(eventDate);
   noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 60);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    try {
-      // Récupérer les variables d'environnement
-      const airtableToken = getEnv('VITE_AIRTABLE_TOKEN');
-      const airtableBaseId = getEnv('VITE_AIRTABLE_BASE_ID');
-      const airtableTableName = 'Leads Nouveautés'; // Nom exact de la table
+    subscribe(
+      {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        company: formData.company,
+        eventName,
+        eventDate,
+        eventSlug,
+        eventId,
+        noveltiesOpenDate: noveltiesOpenDate.toISOString().split('T')[0],
+      },
+      {
+        onSuccess: () => {
+          setIsSuccess(true);
+          toast({
+            title: '✅ Inscription confirmée !',
+            description: `Vous serez notifié(e) le ${format(noveltiesOpenDate, 'dd MMMM yyyy', { locale: fr })}`,
+          });
 
-      if (!airtableToken || !airtableBaseId) {
-        throw new Error('Configuration Airtable manquante');
-      }
-
-      // Préparer les données pour Airtable
-      const airtableData = {
-        fields: {
-          'Prénom': formData.firstName,
-          'Nom': formData.lastName,
-          'Email': formData.email,
-          'Entreprise': formData.company || '',
-          'Nom Événement': eventName,
-          'Date Événement': eventDate,
-          'Slug Événement': eventSlug,
-          'ID Événement': eventId,
-          'Date Ouverture Nouveautés': noveltiesOpenDate.toISOString().split('T')[0],
-          'Statut Notification': 'En attente',
-          'Date Inscription': new Date().toISOString(),
-          'Source': 'LotExpo - Page Événement',
+          // Fermer après 2 secondes
+          setTimeout(() => {
+            onOpenChange(false);
+            setIsSuccess(false);
+            setFormData({ firstName: '', lastName: '', email: '', company: '' });
+          }, 2000);
         },
-      };
-
-      // Envoyer vers Airtable
-      const response = await fetch(
-        `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(airtableTableName)}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${airtableToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(airtableData),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Airtable error:', errorData);
-        throw new Error('Erreur lors de l\'envoi vers Airtable');
       }
-
-      // Succès
-      setIsSuccess(true);
-      toast({
-        title: '✅ Inscription confirmée !',
-        description: `Vous serez notifié(e) le ${format(noveltiesOpenDate, 'dd MMMM yyyy', { locale: fr })}`,
-      });
-
-      // Fermer après 2 secondes
-      setTimeout(() => {
-        onOpenChange(false);
-        setIsSuccess(false);
-        setFormData({ firstName: '', lastName: '', email: '', company: '' });
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error submitting notification:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'enregistrer votre demande. Réessayez plus tard.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   };
 
   const handleChange = (field: keyof typeof formData) => (
