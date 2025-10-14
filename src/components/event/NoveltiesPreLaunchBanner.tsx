@@ -25,14 +25,6 @@ export function NoveltiesPreLaunchBanner({
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/5">
-      {/* Pattern de fond subtil */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`,
-          backgroundSize: '32px 32px'
-        }} />
-      </div>
-
       <div className="relative p-8 md:p-12 text-center">
         {/* Icône principale */}
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
