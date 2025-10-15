@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Eye, Edit, MapPin, Calendar, Users, Heart, Sparkles, BarChart3 } from 'lucide-react';
+import { Building2, Eye, Edit, MapPin, Calendar, Sparkles, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
@@ -24,10 +24,6 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
     setEditingNovelty(novelty);
   };
 
-  // Calculer statistiques globales
-  const totalLeads = novelties.reduce((sum, n) => sum + (n.stats?.total_leads || 0), 0);
-  const totalLikes = novelties.reduce((sum, n) => sum + (n.stats?.likes || 0), 0);
-
   return (
     <div className="space-y-6">
       {/* Banner explicatif */}
@@ -43,57 +39,6 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
             </p>
           </div>
         </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Mes nouveautés</p>
-                <p className="text-2xl font-bold">{novelties.length}</p>
-              </div>
-              <Sparkles className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Likes</p>
-                <p className="text-2xl font-bold">{totalLikes}</p>
-              </div>
-              <Heart className="h-8 w-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Leads</p>
-                <p className="text-2xl font-bold">{totalLeads}</p>
-              </div>
-              <Users className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Entreprises</p>
-                <p className="text-2xl font-bold">{exhibitors.length}</p>
-              </div>
-              <Building2 className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Tabs pour organiser le contenu exposant */}

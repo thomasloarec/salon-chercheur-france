@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, MapPin, CalendarRange } from 'lucide-react';
+import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -35,21 +35,6 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
   }, {} as Record<string, any[]>);
 
   const toggleExpand = (eventId: string) => {
-    setExpandedEvents(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(eventId)) {
-        newSet.delete(eventId);
-      } else {
-        newSet.add(eventId);
-      }
-      return newSet;
-    });
-  };
-
-  // Count upcoming events
-  const upcomingEvents = events.filter(event => new Date(event.date_debut) >= new Date());
-
-  if (isLoading) {
     return (
       <div className="space-y-6">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -82,45 +67,6 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Statistiques rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Salons à venir</p>
-                <p className="text-2xl font-bold">{upcomingEvents.length}</p>
-              </div>
-              <CalendarRange className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Nouveautés likées</p>
-                <p className="text-2xl font-bold">{likedNovelties.length}</p>
-              </div>
-              <Sparkles className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Parcours créés</p>
-                <p className="text-2xl font-bold">{Object.keys(noveltiesByEvent).length}</p>
-              </div>
-              <MapPin className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Liste des événements */}
