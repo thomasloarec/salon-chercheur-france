@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
 import LeadForm from './LeadForm';
-import ExhibitorModal from '@/components/exhibitors/ExhibitorModal';
+import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import type { Novelty } from '@/hooks/useNovelties';
 
@@ -281,18 +281,21 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
         brochureUrl={novelty.doc_url}
       />
 
-      {/* Exhibitor Modal */}
-      <ExhibitorModal
+      {/* Exhibitor Detail Dialog */}
+      <ExhibitorDetailDialog
+        open={showExhibitorModal}
+        onOpenChange={setShowExhibitorModal}
         exhibitor={{
-          id: novelty.exhibitors.id,
-          name: novelty.exhibitors.name,
+          id_exposant: novelty.exhibitors.id,
+          exhibitor_name: novelty.exhibitors.name,
           logo_url: novelty.exhibitors.logo_url,
-          website: undefined,
-          description: undefined,
-          stand_info: novelty.stand_info,
-        }}
-        isOpen={showExhibitorModal}
-        onClose={() => setShowExhibitorModal(false)}
+          stand_exposant: novelty.stand_info,
+        } as any}
+        event={{
+          id: novelty.events?.id || novelty.event_id,
+          slug: novelty.events?.slug || '',
+          nom_event: novelty.events?.nom_event || '',
+        } as any}
       />
 
       {/* Auth Required Modal */}
