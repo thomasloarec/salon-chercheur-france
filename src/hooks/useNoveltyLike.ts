@@ -137,6 +137,7 @@ export const useLikedNovelties = () => {
             created_at,
             event_id,
             exhibitor_id,
+            stand_info,
             exhibitors!inner (
               id,
               name,

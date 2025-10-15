@@ -57,7 +57,8 @@ export const useMyNovelties = () => {
           exhibitors!inner ( id, name, slug, logo_url ),
           events!inner ( id, nom_event, slug, ville, date_debut, date_fin ),
           novelty_stats ( route_users_count, saves_count, reminders_count, popularity_score ),
-          leads ( id, lead_type )
+          leads ( id, lead_type ),
+          novelty_likes ( id )
         `)
         .eq('created_by', user.id)
         .in('status', ['draft', 'under_review', 'published'])
@@ -69,9 +70,9 @@ export const useMyNovelties = () => {
       return data?.map(novelty => ({
         ...novelty,
         stats: {
-          likes: novelty.novelty_stats?.route_users_count || 0,
-          brochure_leads: novelty.leads?.filter((l: any) => l.lead_type === 'brochure').length || 0,
-          meeting_leads: novelty.leads?.filter((l: any) => l.lead_type === 'meeting').length || 0,
+          likes: novelty.novelty_likes?.length || 0,
+          brochure_leads: novelty.leads?.filter((l: any) => l.lead_type === 'resource_download').length || 0,
+          meeting_leads: novelty.leads?.filter((l: any) => l.lead_type === 'meeting_request').length || 0,
           total_leads: novelty.leads?.length || 0,
         }
       })) as MyNovelty[] || [];
