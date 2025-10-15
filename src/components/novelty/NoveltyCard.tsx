@@ -290,7 +290,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
           exhibitor_name: novelty.exhibitors.name,
           logo_url: novelty.exhibitors.logo_url,
           stand_exposant: novelty.stand_info,
-        } as any}
+        }}
         event={{
           id: novelty.events?.id || novelty.event_id,
           slug: novelty.events?.slug || '',

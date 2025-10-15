@@ -3,9 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Event } from '@/types/event';
-import { supabase } from '@/integrations/supabase/client';
 import { ExternalLink, Building2, MapPin, Globe } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeExternalUrl } from '@/lib/url';
 
@@ -16,15 +14,7 @@ interface Exhibitor {
   website_exposant?: string;
   exposant_description?: string;
   urlexpo_event?: string;
-}
-
-interface Novelty {
-  id: string;
-  title: string;
-  type: string;
-  reason_1?: string;
-  media_urls?: string[];
-  doc_url?: string;
+  logo_url?: string;
 }
 
 interface ExhibitorDetailDialogProps {
@@ -42,8 +32,6 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
   event,
   onBackToAll
 }) => {
-  const [novelties, setNovelties] = useState<Novelty[] | null>(null);
-  const [loading, setLoading] = useState(false);
   const [details, setDetails] = useState<Exhibitor | null>(null);
 
   useEffect(() => {
@@ -56,7 +44,11 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
       // Hydrater si les champs website/description manquent
       if (!exhibitor.website_exposant || !exhibitor.exposant_description) {
         const full = await hydrateExhibitor(exhibitor as any);
-        if (!cancelled) setDetails(full as any);
+        // Préserver le stand_exposant de l'exhibitor original
+        if (!cancelled) setDetails({ 
+          ...full as any,
+          stand_exposant: exhibitor.stand_exposant || (full as any).stand_exposant 
+        });
       } else {
         setDetails(exhibitor);
       }
@@ -65,49 +57,6 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
     return () => { cancelled = true; };
   }, [open, exhibitor]);
 
-  useEffect(() => {
-    const fetchNovelties = async () => {
-      if (!open || !details) {
-        setNovelties(null);
-        return;
-      }
-      
-      setLoading(true);
-      try {
-        // Récupérer l'exhibitor_id depuis la table exhibitors
-        const { data: exhibitorData } = await supabase
-          .from('exhibitors')
-          .select('id')
-          .ilike('name', details.exhibitor_name)
-          .single();
-
-        if (!exhibitorData) {
-          setNovelties([]);
-          return;
-        }
-
-        // Récupérer les nouveautés pour cet exposant et cet événement
-        const { data, error } = await supabase
-          .from('novelties')
-          .select('id, title, type, reason_1, media_urls, doc_url')
-          .eq('exhibitor_id', exhibitorData.id)
-          .eq('event_id', event.id)
-          .eq('status', 'Published');
-
-        if (error) {
-          console.warn('[ExhibitorDetailDialog] novelties error', error);
-        }
-        setNovelties(data ?? []);
-      } catch (err) {
-        console.error('[ExhibitorDetailDialog] fetch error', err);
-        setNovelties([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchNovelties();
-  }, [open, details, event]);
 
   if (!exhibitor) return null;
   
@@ -179,58 +128,6 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             )}
           </div>
 
-          {/* Nouveautés */}
-          <div className="border-t pt-4">
-            <h4 className="font-semibold mb-3">Nouveautés sur ce salon</h4>
-            
-            {loading && (
-              <div className="space-y-3">
-                {[1, 2].map((i) => (
-                  <div key={i} className="rounded-lg border p-4">
-                    <Skeleton className="h-5 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {!loading && novelties && novelties.length === 0 && (
-              <div className="text-sm text-muted-foreground py-4 text-center">
-                Aucune nouveauté publiée pour le moment
-              </div>
-            )}
-
-            {!loading && novelties && novelties.length > 0 && (
-              <div className="space-y-3">
-                {novelties.map((novelty) => (
-                  <div key={novelty.id} className="rounded-lg border p-4 hover:bg-accent transition-colors">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h5 className="font-medium flex-1">{novelty.title}</h5>
-                      <Badge variant="outline">{novelty.type}</Badge>
-                    </div>
-                    {novelty.reason_1 && (
-                      <p className="text-sm text-muted-foreground mb-3">{novelty.reason_1}</p>
-                    )}
-                    <div className="flex gap-2">
-                      <Button size="sm" asChild>
-                        <a href={`/nouveautes?novelty=${novelty.id}`} target="_blank" rel="noopener noreferrer">
-                          Voir la nouveauté
-                        </a>
-                      </Button>
-                      {novelty.doc_url && (
-                        <Button size="sm" variant="secondary" asChild>
-                          <a href={novelty.doc_url} target="_blank" rel="noopener noreferrer">
-                            Documentation
-                            <ExternalLink className="ml-1 h-3 w-3" />
-                          </a>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </DialogContent>
     </Dialog>
