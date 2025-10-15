@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
 import NoveltyLeadsDisplay from '@/components/novelty/NoveltyLeadsDisplay';
+import NoveltyCard from '@/components/novelty/NoveltyCard';
 import { EditNoveltyDialog } from '@/components/novelty/EditNoveltyDialog';
 import type { MyNovelty } from '@/hooks/useMyNovelties';
 
@@ -63,77 +64,103 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
         <TabsContent value="novelties" className="space-y-6">
           {novelties.length > 0 ? (
             novelties.map((novelty) => (
-              <Card key={novelty.id}>
-                <CardContent className="p-6">
-                  {/* Header avec statut */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-semibold">{novelty.title}</h3>
-                        <Badge variant={novelty.status === 'published' ? 'default' : 'secondary'}>
-                          {novelty.status === 'published' ? 'Publié' : 'En attente'}
-                        </Badge>
-                        <Badge variant="outline">{novelty.type}</Badge>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Building2 className="h-4 w-4" />
-                          {novelty.exhibitors.name}
-                        </span>
-                        <Link 
-                          to={`/events/${novelty.events.slug}`}
-                          className="flex items-center gap-1 hover:text-primary"
-                        >
-                          <MapPin className="h-4 w-4" />
-                          {novelty.events.nom_event}
-                        </Link>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(novelty.events.date_debut), 'dd MMM yyyy', { locale: fr })}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/events/${novelty.events.slug}#nouveautes`}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Voir
-                        </Link>
-                      </Button>
-                      <Button size="sm" onClick={() => handleEdit(novelty)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Modifier
-                      </Button>
-                    </div>
+              <div key={novelty.id} className="space-y-4">
+                {/* En-tête avec événement et actions */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <Link 
+                      to={`/events/${novelty.events.slug}`}
+                      className="flex items-center gap-1 hover:text-primary"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      {novelty.events.nom_event}
+                    </Link>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {format(new Date(novelty.events.date_debut), 'dd MMM yyyy', { locale: fr })}
+                    </span>
+                    <Badge variant={novelty.status === 'published' ? 'default' : 'secondary'}>
+                      {novelty.status === 'published' ? 'Publié' : 'En attente'}
+                    </Badge>
                   </div>
-
-                  {/* Statistiques en ligne */}
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-red-600">{novelty.stats?.likes || 0}</p>
-                      <p className="text-xs text-muted-foreground">Likes</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-blue-600">{novelty.stats?.brochure_leads || 0}</p>
-                      <p className="text-xs text-muted-foreground">Téléchargements</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-green-600">{novelty.stats?.total_leads || 0}</p>
-                      <p className="text-xs text-muted-foreground">Leads totaux</p>
-                    </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/events/${novelty.events.slug}#nouveautes`}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Voir
+                      </Link>
+                    </Button>
+                    <Button size="sm" onClick={() => handleEdit(novelty)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Modifier
+                    </Button>
                   </div>
+                </div>
 
-                  {/* Section Leads compacte */}
-                  {novelty.stats && novelty.stats.total_leads > 0 && (
-                    <div className="mt-4 pt-4 border-t">
+                {/* Carte de nouveauté style événement */}
+                <Card>
+                  <CardContent className="p-6">
+                    <NoveltyCard 
+                      novelty={{
+                        id: novelty.id,
+                        event_id: novelty.events.id,
+                        exhibitor_id: novelty.exhibitors.id,
+                        title: novelty.title,
+                        type: novelty.type,
+                        reason_1: novelty.reason_1,
+                        reason_2: undefined,
+                        reason_3: undefined,
+                        media_urls: novelty.media_urls,
+                        stand_info: novelty.stand_info,
+                        doc_url: novelty.doc_url,
+                        availability: undefined,
+                        audience_tags: undefined,
+                        status: novelty.status,
+                        created_at: novelty.created_at,
+                        updated_at: novelty.created_at,
+                        exhibitors: {
+                          id: novelty.exhibitors.id,
+                          name: novelty.exhibitors.name,
+                          slug: novelty.exhibitors.slug,
+                          logo_url: novelty.exhibitors.logo_url
+                        }
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Statistiques */}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-red-600">{novelty.stats?.likes || 0}</p>
+                        <p className="text-xs text-muted-foreground">Likes</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-600">{novelty.stats?.brochure_leads || 0}</p>
+                        <p className="text-xs text-muted-foreground">Téléchargements brochures</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">{novelty.stats?.meeting_leads || 0}</p>
+                        <p className="text-xs text-muted-foreground">Demandes de rendez-vous</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Section Leads */}
+                {novelty.stats && (novelty.stats.brochure_leads > 0 || novelty.stats.meeting_leads > 0) && (
+                  <Card>
+                    <CardContent className="p-6">
                       <NoveltyLeadsDisplay 
                         noveltyId={novelty.id}
                         isPremium={novelty.is_premium || false}
                       />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             ))
           ) : (
             <Card>

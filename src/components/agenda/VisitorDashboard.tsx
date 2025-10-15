@@ -178,9 +178,22 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                             <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                               {novelty.title}
                             </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {novelty.exhibitors.name}
-                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-xs text-muted-foreground truncate">
+                                {novelty.exhibitors.name}
+                              </p>
+                              {novelty.stand_info && (
+                                <>
+                                  <span className="text-xs text-muted-foreground">•</span>
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                                    <p className="text-xs text-muted-foreground">
+                                      Stand {novelty.stand_info}
+                                    </p>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
 
                           {/* Badge type */}
