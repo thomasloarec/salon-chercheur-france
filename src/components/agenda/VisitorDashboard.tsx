@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -159,7 +159,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       {displayedNovelties.map((novelty: any) => (
                         <Link
                           key={novelty.id}
-                          to={`/events/${event.slug}#nouveautes`}
+                          to={`/events/${event.slug}/nouveautes`}
                           className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group"
                         >
                           {/* Miniature */}
@@ -178,22 +178,10 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                             <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                               {novelty.title}
                             </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <p className="text-xs text-muted-foreground truncate">
-                                {novelty.exhibitors.name}
-                              </p>
-                              {novelty.stand_info && (
-                                <>
-                                  <span className="text-xs text-muted-foreground">•</span>
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                                    <p className="text-xs text-muted-foreground">
-                                      Stand {novelty.stand_info}
-                                    </p>
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                            <p className="text-xs text-muted-foreground truncate mt-1">
+                              {novelty.exhibitors.name}
+                              {novelty.stand_info && ` - Stand ${novelty.stand_info}`}
+                            </p>
                           </div>
 
                           {/* Badge type */}
