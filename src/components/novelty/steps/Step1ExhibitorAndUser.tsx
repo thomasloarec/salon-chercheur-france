@@ -4,9 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Building, Upload, X } from 'lucide-react';
+import { Search, Plus, Building, Upload, X, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useNoveltyQuota } from '@/hooks/useNoveltyQuota';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Step1Data } from '@/lib/validation/noveltySchemas';
@@ -45,6 +47,12 @@ export default function Step1ExhibitorAndUser({
   const [showNewExhibitorForm, setShowNewExhibitorForm] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<DbExhibitor | null>(null);
   
+  // Vérifier le quota pour l'exposant sélectionné
+  const { data: quota } = useNoveltyQuota(
+    selectedExhibitor?.id,
+    event?.id
+  );
+  
   // New exhibitor form data
   const [newExhibitorData, setNewExhibitorData] = useState({
     name: '',
@@ -76,11 +84,14 @@ export default function Step1ExhibitorAndUser({
     // Validate professional email if provided
     const emailValid = !userData.email || isProfessionalEmail(userData.email);
     
-    const isValid = hasExhibitor && hasUserData && emailValid;
+    // Bloquer la validation si quota dépassé pour l'exposant sélectionné
+    const quotaOk = !selectedExhibitor || !quota || quota.allowed;
+    
+    const isValid = hasExhibitor && hasUserData && emailValid && quotaOk;
     onValidationChange(isValid);
 
     // Update parent data - Always send valid structure
-    if (hasExhibitor && hasUserData && emailValid) {
+    if (hasExhibitor && hasUserData && emailValid && quotaOk) {
       const exhibitorData = selectedExhibitor 
         ? { 
             id: selectedExhibitor.id, 
@@ -106,7 +117,7 @@ export default function Step1ExhibitorAndUser({
         }
       });
     }
-  }, [selectedExhibitor, newExhibitorData, userData, user, onChange, onValidationChange]);
+  }, [selectedExhibitor, newExhibitorData, userData, user, quota, onChange, onValidationChange]);
 
   // Check if email is professional
   const isProfessionalEmail = (email: string) => {
@@ -262,31 +273,50 @@ export default function Step1ExhibitorAndUser({
 
         {selectedExhibitor ? (
           /* Selected exhibitor display */
-          <Card className="border-primary">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Building className="h-5 w-5 text-primary" />
+          <div className="space-y-3">
+            <Card className="border-primary">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Building className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{selectedExhibitor.name}</h4>
+                      {selectedExhibitor.website && (
+                        <p className="text-sm text-muted-foreground">{selectedExhibitor.website}</p>
+                      )}
+                      {selectedExhibitor.stand_info && (
+                        <p className="text-sm text-muted-foreground">Stand: {selectedExhibitor.stand_info}</p>
+                      )}
+                    </div>
                   </div>
                   <div>
-                    <h4 className="font-medium">{selectedExhibitor.name}</h4>
-                    {selectedExhibitor.website && (
-                      <p className="text-sm text-muted-foreground">{selectedExhibitor.website}</p>
-                    )}
-                    {selectedExhibitor.stand_info && (
-                      <p className="text-sm text-muted-foreground">Stand: {selectedExhibitor.stand_info}</p>
-                    )}
+                    <Badge variant={selectedExhibitor.approved ? "default" : "secondary"}>
+                      {selectedExhibitor.approved ? 'Approuvé' : 'En validation'}
+                    </Badge>
                   </div>
                 </div>
-                <div>
-                  <Badge variant={selectedExhibitor.approved ? "default" : "secondary"}>
-                    {selectedExhibitor.approved ? 'Approuvé' : 'En validation'}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            {/* Afficher un avertissement si le quota est atteint */}
+            {quota && !quota.allowed && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="ml-2">
+                  <p className="font-semibold mb-1">Limite atteinte pour cet exposant</p>
+                  <p className="text-sm">
+                    {selectedExhibitor.name} a déjà publié {quota.current} nouveauté{quota.current > 1 ? 's' : ''} sur cet événement.
+                    Le plan gratuit limite à {quota.limit} nouveauté par exposant et par événement.
+                  </p>
+                  <p className="text-sm mt-2">
+                    Veuillez sélectionner un autre exposant ou passer au plan Pro pour publier davantage de nouveautés.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
         ) : showNewExhibitorForm ? (
           /* New exhibitor form */
           <Card>

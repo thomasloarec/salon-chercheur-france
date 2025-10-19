@@ -5,6 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Circle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNoveltyQuota } from '@/hooks/useNoveltyQuota';
+import { NoveltyLimitDialog } from './NoveltyLimitDialog';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event } from '@/types/event';
 import type { Step1Data, Step2Data } from '@/lib/validation/noveltySchemas';
@@ -34,6 +36,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
   
   const [currentStep, setCurrentStep] = useState<CurrentStep>(1);
   const [loading, setLoading] = useState(false);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submissionResult, setSubmissionResult] = useState<{
     success: boolean;
@@ -48,6 +51,12 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
     step1Valid: false,
     step2Valid: false,
   });
+
+  // Vérifier le quota pour l'exposant sélectionné
+  const selectedExhibitorId = state.step1Data.exhibitor && 'id' in state.step1Data.exhibitor 
+    ? state.step1Data.exhibitor.id 
+    : undefined;
+  const { data: quota } = useNoveltyQuota(selectedExhibitorId, event?.id);
 
   // Load saved state from localStorage on open
   useEffect(() => {
@@ -102,6 +111,12 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
     if (currentStep === 1) {
       // Clear any previous errors
       setFieldErrors({});
+      
+      // Vérifier le quota AVANT de passer à l'étape 2
+      if (quota && !quota.allowed) {
+        setShowLimitDialog(true);
+        return;
+      }
       
       // Handle authentication if needed
       if (!user && state.step1Data.user) {
@@ -650,7 +665,16 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <>
+      <NoveltyLimitDialog
+        open={showLimitDialog}
+        onOpenChange={setShowLimitDialog}
+        currentCount={quota?.current || 0}
+        limit={quota?.limit || 1}
+        eventName={event.nom_event}
+      />
+
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="novelty-stepper-description">
           <DialogHeader>
             <DialogTitle>Ajouter une nouveauté</DialogTitle>
@@ -751,5 +775,6 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
