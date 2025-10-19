@@ -95,7 +95,11 @@ const Events = () => {
             </div>
           ) : (
             <SectorIconBar
-              sectors={sectors.map(s => ({ id: s.id, slug: s.id, name: s.name }))}
+              sectors={sectors.map(s => ({ 
+                id: s.id, 
+                slug: s.id.toLowerCase(), 
+                name: s.name 
+              }))}
               selected={filters.sectors}
               onChange={handleSectorsChange}
             />

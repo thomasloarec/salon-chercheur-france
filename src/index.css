@@ -309,3 +309,12 @@ h1.event-title {
   margin-left: 0 !important;
   padding-left: 0 !important;
 }
+
+/* Hide scrollbar for horizontal carousels */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}

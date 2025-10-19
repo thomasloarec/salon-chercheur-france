@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sectorIconMap, FallbackIcon } from "./sectorIconMap";
+import { sectorColorMap, sectorColorFallback } from "./sectorColorMap";
 
 interface Sector {
   id: string;
@@ -23,6 +24,8 @@ export function SectorIconBar({
   className
 }: SectorIconBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
 
   const toggle = (slug: string) => {
     const set = new Set(selected);
@@ -38,83 +41,145 @@ export function SectorIconBar({
 
   const allActive = selected.length === 0;
 
-  const scrollLeft = () => {
-    scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' });
+  const updateArrows = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanLeft(scrollLeft > 4);
+    setCanRight(scrollLeft + clientWidth < scrollWidth - 4);
   };
 
-  const scrollRight = () => {
-    scrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' });
+  useEffect(() => {
+    updateArrows();
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => updateArrows();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    const onResize = () => updateArrows();
+    window.addEventListener("resize", onResize);
+    // Micro-refresh after paint
+    requestAnimationFrame(updateArrows);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [sectors]);
+
+  const scrollBy = (delta: number) => {
+    scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   };
 
   return (
-    <div className={cn("relative", className)}>
-      {/* Left scroll button - hidden on mobile */}
-      <button
-        onClick={scrollLeft}
-        aria-label="Défiler vers la gauche"
-        className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg rounded-full p-2 hover:bg-background hover:shadow-xl transition-all"
-      >
-        <ChevronLeft className="h-5 w-5 text-foreground" />
-      </button>
+    <div className={cn("w-full", className)}>
+      {/* Inline layout: left arrow — scrollable container — right arrow */}
+      <div className="flex items-center gap-2">
+        {/* Left arrow (hidden when at start) */}
+        {canLeft ? (
+          <button
+            onClick={() => scrollBy(-320)}
+            aria-label="Défiler vers la gauche"
+            className="hidden md:flex shrink-0 rounded-full border bg-background/80 backdrop-blur-sm shadow-lg p-2 hover:bg-background hover:shadow-xl transition-all"
+          >
+            <ChevronLeft className="h-5 w-5 text-foreground" />
+          </button>
+        ) : (
+          <div className="hidden md:block w-9 shrink-0" aria-hidden="true" />
+        )}
 
-      {/* Scrollable container */}
-      <div 
-        ref={scrollRef}
-        className="flex items-center gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide px-12 md:px-10 py-3"
-      >
-        {/* "Tout" button */}
-        <button
-          onClick={clearAll}
-          aria-pressed={allActive}
-          aria-label="Tous les secteurs"
-          className={cn(
-            "snap-start inline-flex items-center gap-2 rounded-full border shadow-sm px-4 py-2.5 text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            "hover:shadow-md hover:scale-105 cursor-pointer",
-            allActive
-              ? "bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-500 text-blue-700 dark:text-blue-400"
-              : "bg-background text-foreground hover:bg-muted border-border"
-          )}
+        {/* Scrollable container with no visible scrollbar */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-x-auto no-scrollbar scroll-smooth"
         >
-          Tout
-        </button>
-
-        {/* Sector buttons */}
-        {sectors.map((sector) => {
-          const IconComponent = sectorIconMap[sector.slug] ?? FallbackIcon;
-          const active = selected.includes(sector.slug);
-
-          return (
+          <div className="flex items-stretch gap-4 px-1 py-3">
+            {/* "Tout" button */}
             <button
-              key={sector.id}
-              onClick={() => toggle(sector.slug)}
-              aria-pressed={active}
-              aria-label={`Filtrer par secteur : ${sector.name}`}
-              title={sector.name}
+              onClick={clearAll}
+              aria-pressed={allActive}
+              aria-label="Tous les secteurs"
               className={cn(
-                "snap-start inline-flex items-center gap-2 rounded-full border shadow-sm px-4 py-2.5 text-sm font-medium transition-all duration-200 shrink-0 whitespace-nowrap",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                "hover:shadow-md hover:scale-105 cursor-pointer",
-                active
-                  ? "bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-500 text-blue-700 dark:text-blue-400"
-                  : "bg-background text-foreground hover:bg-muted border-border"
+                "group flex w-24 flex-col items-center gap-2 text-sm font-medium shrink-0"
               )}
             >
-              <IconComponent className="h-4 w-4 md:h-5 md:w-5 shrink-0" />
-              <span>{sector.name}</span>
+              <span
+                className={cn(
+                  "inline-flex h-14 w-14 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
+                  allActive
+                    ? "bg-gradient-to-br from-blue-200/60 via-purple-200/60 to-pink-200/60 border-blue-500 dark:from-blue-900/40 dark:via-purple-900/40 dark:to-pink-900/40"
+                    : "bg-background border-border hover:bg-muted hover:shadow-md hover:scale-105"
+                )}
+              >
+                <span className="text-xl">✨</span>
+              </span>
+              <span
+                className={cn(
+                  "text-center leading-tight transition-colors",
+                  allActive ? "text-blue-700 dark:text-blue-400" : "text-foreground/80 group-hover:text-foreground"
+                )}
+              >
+                Tout
+              </span>
             </button>
-          );
-        })}
-      </div>
 
-      {/* Right scroll button - hidden on mobile */}
-      <button
-        onClick={scrollRight}
-        aria-label="Défiler vers la droite"
-        className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg rounded-full p-2 hover:bg-background hover:shadow-xl transition-all"
-      >
-        <ChevronRight className="h-5 w-5 text-foreground" />
-      </button>
+            {/* Sector buttons: icon ABOVE label */}
+            {sectors.map((sector) => {
+              const IconComponent = sectorIconMap[sector.slug] ?? FallbackIcon;
+              const active = selected.includes(sector.slug);
+              const colors = sectorColorMap[sector.slug] ?? sectorColorFallback;
+
+              return (
+                <button
+                  key={sector.id}
+                  onClick={() => toggle(sector.slug)}
+                  aria-pressed={active}
+                  aria-label={`Filtrer par secteur : ${sector.name}`}
+                  title={sector.name}
+                  className={cn(
+                    "group flex w-28 flex-col items-center gap-2 text-sm font-medium shrink-0"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-flex h-14 w-14 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
+                      active
+                        ? `${colors.bgActive} ${colors.borderActive}`
+                        : `bg-background border-border ${colors.bgHover} hover:shadow-md hover:scale-105`
+                    )}
+                  >
+                    <IconComponent 
+                      className={cn(
+                        "h-6 w-6 transition-colors",
+                        active ? colors.iconActive : "text-foreground/70"
+                      )} 
+                    />
+                  </span>
+                  <span
+                    className={cn(
+                      "text-center leading-tight transition-colors line-clamp-2",
+                      active ? colors.textActive : `text-foreground/80 ${colors.textHover}`
+                    )}
+                  >
+                    {sector.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right arrow (hidden when at end) */}
+        {canRight ? (
+          <button
+            onClick={() => scrollBy(320)}
+            aria-label="Défiler vers la droite"
+            className="hidden md:flex shrink-0 rounded-full border bg-background/80 backdrop-blur-sm shadow-lg p-2 hover:bg-background hover:shadow-xl transition-all"
+          >
+            <ChevronRight className="h-5 w-5 text-foreground" />
+          </button>
+        ) : (
+          <div className="hidden md:block w-9 shrink-0" aria-hidden="true" />
+        )}
+      </div>
     </div>
   );
 }
