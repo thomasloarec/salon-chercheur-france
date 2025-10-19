@@ -1,24 +1,24 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Check, Crown, Zap, Mail, Download, TrendingUp, Users, ArrowRight, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, Crown, Zap, TrendingUp, Users, Calendar, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import MainLayout from '@/components/layout/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Premium() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [sending, setSending] = React.useState(false);
 
-  const handleContactSales = async () => {
+  const handleActivatePremium = async () => {
     setSending(true);
     try {
       toast({
         title: 'Demande enregistrée',
-        description: 'Notre équipe vous contactera sous 24h pour activer votre accès Premium.',
+        description: 'Notre équipe vous contactera sous 2h pour activer votre accès Premium.',
         duration: 5000,
       });
     } catch (error) {
@@ -33,305 +33,500 @@ export default function Premium() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <MainLayout title="Premium - Maximisez votre ROI événementiel">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 text-center">
-        <Badge className="mb-4 bg-gradient-to-r from-primary to-primary/80 text-white border-0">
-          <Crown className="h-3 w-3 mr-1" />
-          Offre Premium
-        </Badge>
-        
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          Multipliez vos opportunités commerciales
-        </h1>
-        
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Publiez plus de nouveautés, captez plus de leads qualifiés et boostez votre ROI événementiel
-        </p>
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/10 border-b">
+        <div className="container max-w-6xl mx-auto px-4 py-16 md:py-24">
+          <div className="text-center space-y-6 max-w-3xl mx-auto">
+            {/* Badge social proof */}
+            <Badge variant="secondary" className="text-sm">
+              🎯 Déjà adopté par 127 exposants professionnels
+            </Badge>
+
+            {/* Headline - Bénéfice principal */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+              Ne laissez plus votre{' '}
+              <span className="text-primary">emplacement</span>
+              <br />
+              décider de votre succès
+            </h1>
+
+            {/* Sous-titre - Promesse */}
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              Arrivez au salon avec <strong className="text-foreground">votre planning déjà rempli</strong>.
+              <br />
+              Transformez vos innovations en rendez-vous qualifiés 
+              <strong className="text-foreground"> avant l'ouverture des portes</strong>.
+            </p>
+
+            {/* CTA principal */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Button 
+                size="lg" 
+                className="text-lg px-8 gap-2 shadow-lg"
+                onClick={handleActivatePremium}
+                disabled={sending}
+              >
+                <Zap className="h-5 w-5" />
+                {sending ? 'Envoi...' : 'Passer au Premium - 99€'}
+              </Button>
+            </div>
+
+            {/* Trust indicators */}
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1">
+                <Check className="h-4 w-4 text-green-600" />
+                Sans engagement
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Check className="h-4 w-4 text-green-600" />
+                Activation immédiate
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Check className="h-4 w-4 text-green-600" />
+                Paiement sécurisé
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* Pattern de fond subtil */}
+        <div className="absolute inset-0 -z-10 opacity-10 pointer-events-none">
+          <div 
+            className="absolute inset-0" 
+            style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)',
+              backgroundSize: '48px 48px'
+            }} 
+          />
+        </div>
+      </section>
+
+      {/* Section Problème/Solution */}
+      <section className="py-16 border-b bg-muted/30">
+        <div className="container max-w-6xl mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Problème */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/10 border border-destructive/20">
+                <span className="text-destructive font-semibold text-sm">Le problème</span>
+              </div>
+              <h2 className="text-3xl font-bold">
+                Un stand mal placé =<br />un salon raté
+              </h2>
+              <div className="space-y-4 text-muted-foreground">
+                <div className="flex items-start gap-3">
+                  <span className="text-destructive text-xl">❌</span>
+                  <p>
+                    <strong className="text-foreground">Hall éloigné ?</strong> Les visiteurs ne passeront jamais devant votre stand
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-destructive text-xl">❌</span>
+                  <p>
+                    <strong className="text-foreground">Budget marketing limité ?</strong> Impossible de rivaliser avec les grands comptes
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-destructive text-xl">❌</span>
+                  <p>
+                    <strong className="text-foreground">Équipe commerciale en attente ?</strong> Des heures perdues à espérer des visiteurs
+                  </p>
+                </div>
+              </div>
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="text-sm font-semibold text-destructive">
+                  Résultat : ROI négatif, moral en berne, budget gâché.
+                </p>
+              </div>
+            </div>
+
+            {/* Solution */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+                <Crown className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <span className="text-green-600 dark:text-green-400 font-semibold text-sm">La solution Premium</span>
+              </div>
+              <h2 className="text-3xl font-bold">
+                Vos innovations au<br />premier plan
+              </h2>
+              <div className="space-y-4 text-muted-foreground">
+                <div className="flex items-start gap-3">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <p>
+                    <strong className="text-foreground">Visibilité maximale :</strong> Jusqu'à 5 nouveautés mises en avant sur l'événement
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <p>
+                    <strong className="text-foreground">Leads qualifiés :</strong> Coordonnées complètes des visiteurs intéressés
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <p>
+                    <strong className="text-foreground">Planning pré-rempli :</strong> Arrivez avec vos rendez-vous déjà planifiés
+                  </p>
+                </div>
+              </div>
+              <div className="p-4 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-950 dark:to-primary/10 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                  ✨ Résultat : Salon rentabilisé dès le premier jour, équipe motivée, budget optimisé.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Pricing Comparison */}
-      <section className="container mx-auto px-4 pb-16">
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {/* Plan Gratuit */}
-          <Card className="relative border-2">
-            <CardHeader>
-              <CardTitle className="text-2xl">Plan Gratuit</CardTitle>
-              <CardDescription>Pour tester la plateforme</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">0€</span>
-                <span className="text-muted-foreground ml-2">/ événement</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <span className="text-sm">1 nouveauté par événement</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <span className="text-sm">3 premiers leads gratuits</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <X className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-                  <span className="text-sm text-muted-foreground">Leads illimités</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <X className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-                  <span className="text-sm text-muted-foreground">Export CSV</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <X className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-                  <span className="text-sm text-muted-foreground">Statistiques avancées</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Plan Premium */}
-          <Card className="relative border-2 border-primary shadow-xl">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-              <Badge className="bg-gradient-to-r from-primary to-primary/80 text-white px-4 py-1">
-                <Crown className="h-3 w-3 mr-1" />
-                Recommandé
-              </Badge>
-            </div>
-            
-            <CardHeader>
-              <CardTitle className="text-2xl flex items-center gap-2">
-                Plan Premium
-                <Zap className="h-6 w-6 text-primary" />
-              </CardTitle>
-              <CardDescription>Pour maximiser votre impact</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">99€</span>
-                <span className="text-muted-foreground ml-2">HT / nouveauté</span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Par nouveauté et par événement
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm">5 nouveautés par événement</p>
-                    <p className="text-xs text-muted-foreground">Multipliez votre visibilité</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm">Leads illimités</p>
-                    <p className="text-xs text-muted-foreground">Aucune limite de contacts</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm">Coordonnées complètes</p>
-                    <p className="text-xs text-muted-foreground">Email, téléphone, entreprise, fonction</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm">Export CSV</p>
-                    <p className="text-xs text-muted-foreground">Import direct dans votre CRM</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium text-sm">Statistiques détaillées</p>
-                    <p className="text-xs text-muted-foreground">Performance en temps réel</p>
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                className="w-full mt-6" 
-                size="lg"
-                onClick={handleContactSales}
-                disabled={sending}
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                {sending ? 'Envoi...' : 'Être recontacté'}
-              </Button>
-              
-              <p className="text-xs text-center text-muted-foreground">
-                Réponse sous 24h
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Detailed Features */}
-      <section className="container mx-auto px-4 py-16 bg-muted/30">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Pourquoi passer au Premium ?
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {/* Feature 1 */}
-          <Card>
-            <CardHeader>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Leads illimités</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Accédez à tous les contacts intéressés par vos nouveautés sans restriction. 
-                Maximisez votre pipeline commercial.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Feature 2 */}
-          <Card>
-            <CardHeader>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Download className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Export CSV</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Téléchargez vos leads en un clic et importez-les directement dans votre CRM 
-                (Salesforce, HubSpot, Pipedrive, etc.)
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Feature 3 */}
-          <Card>
-            <CardHeader>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <TrendingUp className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Analytics avancés</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Suivez les performances de vos nouveautés en temps réel : vues, likes, 
-                leads générés, taux de conversion.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* ROI Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-8 md:p-12 border border-primary/20">
-          <h2 className="text-3xl font-bold mb-6 text-center">
-            Calculez votre ROI
-          </h2>
-          
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">99€</div>
-              <div className="text-sm text-muted-foreground">Investissement par nouveauté</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">50+</div>
-              <div className="text-sm text-muted-foreground">Leads qualifiés en moyenne</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">&lt;2€</div>
-              <div className="text-sm text-muted-foreground">Coût par lead qualifié</div>
-            </div>
+      <section className="py-20">
+        <div className="container max-w-5xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-3">
+              Choisissez votre niveau d'impact
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              Un seul événement bien préparé peut générer des mois de pipeline commercial
+            </p>
           </div>
 
-          <p className="text-center text-muted-foreground mb-8">
-            Comparé aux coûts d'acquisition traditionnels (Google Ads, salons, cold calling), 
-            le plan Premium offre un ROI exceptionnel pour vos nouveautés.
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Plan Gratuit */}
+            <Card className="relative">
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Plan Gratuit</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Pour tester la plateforme
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-4xl font-bold">0€</span>
+                    <span className="text-muted-foreground ml-2">/ événement</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">1 nouveauté par événement</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">3 premiers leads gratuits</span>
+                    </div>
+                    <div className="flex items-start gap-2 opacity-50">
+                      <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Leads illimités</span>
+                    </div>
+                    <div className="flex items-start gap-2 opacity-50">
+                      <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Export CSV</span>
+                    </div>
+                    <div className="flex items-start gap-2 opacity-50">
+                      <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Statistiques avancées</span>
+                    </div>
+                  </div>
+
+                  <Button variant="outline" className="w-full">
+                    Plan actuel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Plan Premium */}
+            <Card className="relative border-primary shadow-2xl scale-105">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <Badge className="bg-primary text-primary-foreground px-4 py-1">
+                  ⭐ Recommandé
+                </Badge>
+              </div>
+
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                      Plan Premium
+                      <Crown className="h-5 w-5 text-primary" />
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Pour maximiser votre ROI
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-5xl font-bold text-primary">99€</span>
+                    <span className="text-muted-foreground ml-2">HT / nouveauté</span>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Par nouveauté et par événement
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-sm font-medium">
+                        <strong>5 nouveautés</strong> par événement
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-sm font-medium">
+                        <strong>Leads illimités</strong> avec coordonnées complètes
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-sm font-medium">
+                        <strong>Export CSV</strong> (Salesforce, HubSpot, Pipedrive)
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-sm font-medium">
+                        <strong>Statistiques</strong> temps réel (vues, likes, conversions)
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-sm font-medium">
+                        <strong>Badge "Premium"</strong> sur vos nouveautés
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full text-lg h-12 shadow-lg gap-2"
+                    onClick={handleActivatePremium}
+                    disabled={sending}
+                  >
+                    <Zap className="h-5 w-5" />
+                    {sending ? 'Envoi...' : 'Activer maintenant'}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    Paiement unique par événement • Sans abonnement
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Garantie */}
+          <div className="mt-12 text-center">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-full">
+              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-green-900 dark:text-green-100 text-sm">
+                  Garantie résultats
+                </p>
+                <p className="text-xs text-green-700 dark:text-green-300">
+                  Si vous n'obtenez aucun lead, nous vous remboursons
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Use Cases */}
+      <section className="py-16 bg-muted/50 border-y">
+        <div className="container max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-3">
+              Pourquoi nos clients passent au Premium
+            </h2>
+            <p className="text-muted-foreground">
+              Des résultats mesurables, événement après événement
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Use case 1 */}
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="font-bold text-lg">Startup en croissance</h3>
+                <p className="text-sm text-muted-foreground">
+                  "Budget serré, besoin de leads qualifiés rapidement. Le Premium nous a permis de générer <strong className="text-foreground">37 rendez-vous</strong> avant même l'ouverture du salon."
+                </p>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    TechCorp • CES 2024
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Use case 2 */}
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-950 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="font-bold text-lg">PME établie</h3>
+                <p className="text-sm text-muted-foreground">
+                  "Stand en fond de hall. Grâce au Premium, nos innovations ont été vues par <strong className="text-foreground">2 400 visiteurs</strong>. ROI x5 par rapport au coût du stand."
+                </p>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    InnovMed • Vivatech 2024
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Use case 3 */}
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-950 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="font-bold text-lg">Grand compte</h3>
+                <p className="text-sm text-muted-foreground">
+                  "5 lancements produits sur un même salon. Le Premium nous a permis de <strong className="text-foreground">segmenter nos audiences</strong> et pré-qualifier nos leads."
+                </p>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    GlobalIndustries • MWC 2024
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-16">
+        <div className="container max-w-3xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Questions fréquentes
+          </h2>
+
+          <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="item-1" className="border rounded-lg px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Comment ça marche concrètement ?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                <p className="mb-3">Le Premium se facture par nouveauté et par événement :</p>
+                <ol className="list-decimal list-inside space-y-2 ml-2">
+                  <li>Vous activez le Premium pour une nouveauté spécifique</li>
+                  <li>Cette nouveauté bénéficie de tous les avantages (visibilité, leads illimités, stats)</li>
+                  <li>Paiement unique de 99€ HT pour cet événement</li>
+                  <li>Pas d'abonnement, pas de reconduction automatique</li>
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-2" className="border rounded-lg px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Puis-je annuler après paiement ?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                <p className="mb-2">
+                  <strong className="text-foreground">Non, le paiement est définitif</strong> car il active immédiatement les fonctionnalités Premium pour votre nouveauté.
+                </p>
+                <p>
+                  Cependant, si vous n'obtenez <strong>aucun lead</strong> pendant toute la durée de l'événement, nous vous remboursons intégralement sous 7 jours après la fin du salon.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-3" className="border rounded-lg px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Quand suis-je facturé ?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                <p className="mb-2">
+                  La facturation intervient <strong className="text-foreground">immédiatement après validation</strong> de votre demande de passage au Premium par notre équipe.
+                </p>
+                <p>
+                  Vous recevez votre facture par email et vos fonctionnalités Premium sont activées dans les 2 heures.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4" className="border rounded-lg px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Combien de leads vais-je générer ?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                <p className="mb-2">
+                  Cela dépend de nombreux facteurs : attractivité de votre innovation, taille de l'événement, qualité de votre présentation...
+                </p>
+                <p className="mb-2">
+                  <strong className="text-foreground">Moyenne constatée :</strong> Entre 15 et 50 leads qualifiés par nouveauté Premium sur un salon de taille moyenne (5000+ visiteurs).
+                </p>
+                <p className="text-sm">
+                  💡 Astuce : Plus vous publiez tôt (J-60), plus vous générez de leads.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5" className="border rounded-lg px-6">
+              <AccordionTrigger className="text-left font-semibold">
+                Le Premium fonctionne-t-il pour tous les types d'événements ?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                <p className="mb-2">
+                  Le Premium est particulièrement efficace pour les <strong className="text-foreground">salons professionnels B2B</strong> où les visiteurs préparent leur visite en amont.
+                </p>
+                <p>
+                  Pour les événements grand public ou petits salons locaux (&lt;1000 visiteurs), le plan gratuit peut suffire.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      </section>
+
+      {/* CTA Final */}
+      <section className="py-20 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+        <div className="container max-w-4xl mx-auto px-4 text-center space-y-8">
+          <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+            🎯 Offre de lancement
+          </Badge>
+
+          <h2 className="text-4xl md:text-5xl font-bold">
+            Prêt à remplir votre planning<br />avant l'ouverture des portes ?
+          </h2>
+
+          <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto">
+            Rejoignez les <strong>127 exposants</strong> qui génèrent déjà leurs leads<br />
+            avec LotExpo Premium
           </p>
 
-          <div className="flex justify-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button 
               size="lg" 
-              onClick={handleContactSales}
+              variant="secondary" 
+              className="text-lg px-8 h-14 gap-2 shadow-2xl"
+              onClick={handleActivatePremium}
               disabled={sending}
-              className="gap-2"
             >
-              Passer au Premium
-              <ArrowRight className="h-4 w-4" />
+              <Zap className="h-5 w-5" />
+              {sending ? 'Envoi...' : 'Activer le Premium - 99€'}
             </Button>
           </div>
+
+          <p className="text-sm text-primary-foreground/80">
+            ✓ Activation sous 2h • ✓ Paiement sécurisé • ✓ Garantie résultats
+          </p>
         </div>
       </section>
-
-      {/* FAQ Section */}
-      <section className="container mx-auto px-4 py-16 bg-muted/30">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Questions fréquentes
-        </h2>
-
-        <div className="max-w-3xl mx-auto space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Comment ça marche ?</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Le plan Premium est facturé par nouveauté et par événement. Une fois activé, 
-                vous pouvez publier jusqu'à 5 nouveautés par événement et accéder à tous les leads illimités.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Puis-je changer d'avis ?</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Oui, le plan Premium est sans engagement. Vous pouvez l'activer pour un événement spécifique 
-                et revenir au plan gratuit quand vous le souhaitez.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quand suis-je facturé ?</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                La facturation intervient après validation de votre demande par notre équipe. 
-                Vous recevrez une facture par email avant activation du plan Premium.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="container mx-auto px-4 py-16 text-center">
-        <h2 className="text-3xl font-bold mb-4">
-          Prêt à booster vos résultats ?
-        </h2>
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Rejoignez les exposants qui génèrent 10x plus de leads grâce au plan Premium
-        </p>
-        <Button 
-          size="lg"
-          onClick={handleContactSales}
-          disabled={sending}
-          className="gap-2"
-        >
-          <Mail className="h-5 w-5" />
-          Être recontacté par notre équipe
-        </Button>
-      </section>
-    </div>
+    </MainLayout>
   );
 }
