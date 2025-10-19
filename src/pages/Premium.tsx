@@ -5,21 +5,52 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import MainLayout from '@/components/layout/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Premium() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [sending, setSending] = React.useState(false);
+  const [formData, setFormData] = React.useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    company: '',
+    position: ''
+  });
 
-  const handleActivatePremium = async () => {
+  const handleOpenDialog = () => {
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmitActivation = async (e: React.FormEvent) => {
+    e.preventDefault();
     setSending(true);
+    
     try {
+      // Simulation d'envoi - à remplacer par un vrai appel API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       toast({
-        title: 'Demande enregistrée',
-        description: 'Notre équipe vous contactera sous 2h pour activer votre accès Premium.',
+        title: 'Merci !',
+        description: 'Notre équipe va vous recontacter sous 24h.',
         duration: 5000,
+      });
+      
+      setIsDialogOpen(false);
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        company: '',
+        position: ''
       });
     } catch (error) {
       toast({
@@ -64,11 +95,10 @@ export default function Premium() {
               <Button 
                 size="lg" 
                 className="text-lg px-8 gap-2 shadow-lg"
-                onClick={handleActivatePremium}
-                disabled={sending}
+                onClick={handleOpenDialog}
               >
                 <Zap className="h-5 w-5" />
-                {sending ? 'Envoi...' : 'Passer au Premium - 99€'}
+                Passer au Premium - 99€
               </Button>
             </div>
 
@@ -304,11 +334,10 @@ export default function Premium() {
 
                   <Button 
                     className="w-full text-lg h-12 shadow-lg gap-2"
-                    onClick={handleActivatePremium}
-                    disabled={sending}
+                    onClick={handleOpenDialog}
                   >
                     <Zap className="h-5 w-5" />
-                    {sending ? 'Envoi...' : 'Activer maintenant'}
+                    Activer maintenant
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
@@ -343,10 +372,10 @@ export default function Premium() {
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">
-              Pourquoi nos clients passent au Premium
+              Pourquoi le Premium s'adapte à chaque type d'exposant
             </h2>
             <p className="text-muted-foreground">
-              Des résultats mesurables, événement après événement
+              Des besoins différents, une même logique : rentabiliser sa présence sur chaque salon.
             </p>
           </div>
 
@@ -359,13 +388,8 @@ export default function Premium() {
                 </div>
                 <h3 className="font-bold text-lg">Startup en croissance</h3>
                 <p className="text-sm text-muted-foreground">
-                  "Budget serré, besoin de leads qualifiés rapidement. Le Premium nous a permis de générer <strong className="text-foreground">37 rendez-vous</strong> avant même l'ouverture du salon."
+                  Vous lancez vos premiers produits ou cherchez vos premiers clients B2B ? Le Premium vous aide à maximiser votre visibilité sur le salon et à capter des leads qualifiés avant même l'ouverture des portes.
                 </p>
-                <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">
-                    TechCorp • CES 2024
-                  </p>
-                </div>
               </CardContent>
             </Card>
 
@@ -377,13 +401,8 @@ export default function Premium() {
                 </div>
                 <h3 className="font-bold text-lg">PME établie</h3>
                 <p className="text-sm text-muted-foreground">
-                  "Stand en fond de hall. Grâce au Premium, nos innovations ont été vues par <strong className="text-foreground">2 400 visiteurs</strong>. ROI x5 par rapport au coût du stand."
+                  Vous exposez régulièrement et souhaitez renforcer le retour sur investissement de vos salons ? Avec le Premium, vos nouveautés sont mises en avant et vous pouvez exploiter l'intégralité de vos leads sans limite.
                 </p>
-                <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">
-                    InnovMed • Vivatech 2024
-                  </p>
-                </div>
               </CardContent>
             </Card>
 
@@ -395,13 +414,8 @@ export default function Premium() {
                 </div>
                 <h3 className="font-bold text-lg">Grand compte</h3>
                 <p className="text-sm text-muted-foreground">
-                  "5 lancements produits sur un même salon. Le Premium nous a permis de <strong className="text-foreground">segmenter nos audiences</strong> et pré-qualifier nos leads."
+                  Vous gérez plusieurs lancements produits ou participez à de nombreux salons dans l'année ? Le Premium vous permet de centraliser vos leads, de piloter vos actions commerciales et d'optimiser votre présence sur chaque événement.
                 </p>
-                <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">
-                    GlobalIndustries • MWC 2024
-                  </p>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -423,9 +437,9 @@ export default function Premium() {
               <AccordionContent className="text-muted-foreground">
                 <p className="mb-3">Le Premium se facture par nouveauté et par événement :</p>
                 <ol className="list-decimal list-inside space-y-2 ml-2">
-                  <li>Vous activez le Premium pour une nouveauté spécifique</li>
-                  <li>Cette nouveauté bénéficie de tous les avantages (visibilité, leads illimités, stats)</li>
-                  <li>Paiement unique de 99€ HT pour cet événement</li>
+                  <li>Vous cliquez sur "Activer le Premium" et remplissez le formulaire</li>
+                  <li>Notre équipe valide votre demande sous 24h et vous envoie un lien de paiement sécurisé</li>
+                  <li>Une fois le paiement effectué (99€ HT), votre nouveauté bénéficie de tous les avantages Premium</li>
                   <li>Pas d'abonnement, pas de reconduction automatique</li>
                 </ol>
               </AccordionContent>
@@ -451,10 +465,10 @@ export default function Premium() {
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 <p className="mb-2">
-                  La facturation intervient <strong className="text-foreground">immédiatement après validation</strong> de votre demande de passage au Premium par notre équipe.
+                  La facturation intervient <strong className="text-foreground">après validation de votre demande</strong> par notre équipe et réception du lien de paiement sécurisé.
                 </p>
                 <p>
-                  Vous recevez votre facture par email et vos fonctionnalités Premium sont activées dans les 2 heures.
+                  Vos fonctionnalités Premium sont activées dès réception du paiement, généralement sous 2 heures.
                 </p>
               </AccordionContent>
             </AccordionItem>
@@ -472,20 +486,6 @@ export default function Premium() {
                 </p>
                 <p className="text-sm">
                   💡 Astuce : Plus vous publiez tôt (J-60), plus vous générez de leads.
-                </p>
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-5" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left font-semibold">
-                Le Premium fonctionne-t-il pour tous les types d'événements ?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                <p className="mb-2">
-                  Le Premium est particulièrement efficace pour les <strong className="text-foreground">salons professionnels B2B</strong> où les visiteurs préparent leur visite en amont.
-                </p>
-                <p>
-                  Pour les événements grand public ou petits salons locaux (&lt;1000 visiteurs), le plan gratuit peut suffire.
                 </p>
               </AccordionContent>
             </AccordionItem>
@@ -514,11 +514,10 @@ export default function Premium() {
               size="lg" 
               variant="secondary" 
               className="text-lg px-8 h-14 gap-2 shadow-2xl"
-              onClick={handleActivatePremium}
-              disabled={sending}
+              onClick={handleOpenDialog}
             >
               <Zap className="h-5 w-5" />
-              {sending ? 'Envoi...' : 'Activer le Premium - 99€'}
+              Activer le Premium - 99€
             </Button>
           </div>
 
@@ -527,6 +526,108 @@ export default function Premium() {
           </p>
         </div>
       </section>
+
+      {/* Dialog Activation Premium */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Activez votre accès Premium</DialogTitle>
+            <DialogDescription>
+              Remplissez vos informations pour finaliser l'activation sur cet événement.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmitActivation} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">Prénom *</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Jean"
+                  required
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Nom *</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Dupont"
+                  required
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email professionnel *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="jean.dupont@entreprise.fr"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Téléphone professionnel *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+33 6 12 34 56 78"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="company">Entreprise *</Label>
+              <Input
+                id="company"
+                type="text"
+                placeholder="Nom de votre entreprise"
+                required
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="position">Poste *</Label>
+              <Input
+                id="position"
+                type="text"
+                placeholder="Responsable Marketing"
+                required
+                value={formData.position}
+                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full gap-2"
+              disabled={sending}
+            >
+              {sending ? (
+                <>Envoi en cours...</>
+              ) : (
+                <>
+                  <Check className="h-5 w-5" />
+                  Valider et activer le Premium
+                </>
+              )}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
