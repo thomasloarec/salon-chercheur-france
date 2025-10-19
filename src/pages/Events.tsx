@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
 import { SectorIconBar } from '@/components/filters/SectorIconBar';
 import { Loader2 } from 'lucide-react';
+import { sectorWithCanonicalSlug } from '@/utils/sectorMapping';
 
 const Events = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -95,11 +96,7 @@ const Events = () => {
             </div>
           ) : (
             <SectorIconBar
-              sectors={sectors.map(s => ({ 
-                id: s.id, 
-                slug: s.id.toLowerCase(), 
-                name: s.name 
-              }))}
+              sectors={sectors.map(s => sectorWithCanonicalSlug(s))}
               selected={filters.sectors}
               onChange={handleSectorsChange}
             />

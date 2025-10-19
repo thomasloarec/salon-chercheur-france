@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { useUrlFilters } from '@/lib/useUrlFilters'; 
 import { useNoveltiesList } from '@/hooks/useNoveltiesList';
 import { useSectors } from '@/hooks/useSectors';
+import { sectorWithCanonicalSlug } from '@/utils/sectorMapping';
 
 interface Novelty {
   id: string;
@@ -102,11 +103,7 @@ export default function Nouveautes() {
             </div>
           ) : (
             <SectorIconBar
-              sectors={sectors.map(s => ({ 
-                id: s.id, 
-                slug: s.id.toLowerCase(), 
-                name: s.name 
-              }))}
+              sectors={sectors.map(s => sectorWithCanonicalSlug(s))}
               selected={filters.sectors}
               onChange={handleSectorsChange}
             />
