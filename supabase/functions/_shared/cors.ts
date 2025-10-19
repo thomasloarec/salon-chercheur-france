@@ -21,5 +21,8 @@ export function corsHeaders(req: Request) {
 }
 
 export function handleOptions(req: Request) {
-  return new Response('ok', { status: 200, headers: corsHeaders(req) });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(req) });
+  }
+  return null;
 }

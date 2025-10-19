@@ -43,9 +43,10 @@ export const usePremiumGrant = () => {
     },
     onError: (error: any) => {
       console.error('[usePremiumGrant] Error:', error);
+      const errorMessage = error?.message || error?.error || "Impossible d'activer le Premium";
       toast({
         title: "Erreur",
-        description: error.message || "Impossible d'activer le Premium",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -75,9 +76,10 @@ export const usePremiumGrant = () => {
     },
     onError: (error: any) => {
       console.error('[usePremiumGrant] Revoke error:', error);
+      const errorMessage = error?.message || error?.error || "Impossible de révoquer le Premium";
       toast({
         title: "Erreur",
-        description: error.message || "Impossible de révoquer le Premium",
+        description: errorMessage,
         variant: "destructive",
       });
     },
