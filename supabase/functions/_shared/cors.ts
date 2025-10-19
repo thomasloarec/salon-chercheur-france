@@ -32,9 +32,15 @@ export function buildCorsHeaders(origin: string | null) {
 }
 
 export function handleCors(req: Request) {
-  const headers = buildCorsHeaders(req.headers.get("Origin"));
+  const origin = req.headers.get("Origin");
+  console.log('[CORS] Origin:', origin);
+  
+  const headers = buildCorsHeaders(origin);
+  console.log('[CORS] Response headers:', headers);
+  
   if (req.method === "OPTIONS") {
     // Préflight OK
+    console.log('[CORS] Handling OPTIONS preflight');
     return new Response(null, { status: 204, headers });
   }
   return { headers };
