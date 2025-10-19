@@ -311,7 +311,16 @@ export default function Step1ExhibitorAndUser({
                     Le plan gratuit limite à {quota.limit} nouveauté par exposant et par événement.
                   </p>
                   <p className="text-sm mt-2">
-                    Veuillez sélectionner un autre exposant ou passer au plan Pro pour publier davantage de nouveautés.
+                    Veuillez sélectionner un autre exposant ou{' '}
+                    <a 
+                      href="/premium" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="underline font-semibold hover:text-destructive-foreground/80 transition-colors"
+                    >
+                      passer au plan Pro
+                    </a>
+                    {' '}pour publier davantage de nouveautés.
                   </p>
                 </AlertDescription>
               </Alert>

@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Crown, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface NoveltyLimitDialogProps {
   open: boolean;
@@ -25,6 +26,12 @@ export function NoveltyLimitDialog({
   limit,
   eventName,
 }: NoveltyLimitDialogProps) {
+  const navigate = useNavigate();
+
+  const handleUpgrade = () => {
+    window.open('/premium', '_blank');
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -58,7 +65,7 @@ export function NoveltyLimitDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Fermer</AlertDialogCancel>
-          <AlertDialogAction className="bg-primary">
+          <AlertDialogAction className="bg-primary" onClick={handleUpgrade}>
             Découvrir le plan Pro
           </AlertDialogAction>
         </AlertDialogFooter>

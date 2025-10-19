@@ -26,6 +26,7 @@ import LegacyHubspotApiCallback from '@/pages/LegacyHubspotApiCallback';
 import ScrapingTest from '@/pages/ScrapingTest';
 import Agenda from '@/pages/Agenda';
 import Nouveautes from '@/pages/Nouveautes';
+import Premium from '@/pages/Premium';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
@@ -47,6 +48,7 @@ function App() {
               <Route path="/events/:slug" element={<EventPage />} />
               <Route path="/events/:slug/nouveautes" element={<EventNovelties />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
+            <Route path="/premium" element={<Premium />} />
             <Route path="/admin/exhibitors/claims" element={<AdminExhibitorClaims />} />
             <Route path="/admin/exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />
               <Route path="/auth" element={<Auth />} />
