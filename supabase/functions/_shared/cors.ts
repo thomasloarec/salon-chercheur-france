@@ -1,28 +1,41 @@
-export function corsHeaders(req: Request) {
-  const origin = req.headers.get('origin') ?? '*';
+export const ALLOWED_ORIGINS = [
+  "https://lotexpo.fr",
+  "https://*.lovableproject.com",
+  "http://localhost:3000",
+  "http://localhost:5173"
+];
 
-  // Whitelist stricte en prod (ajuste les domaines réels) :
-  const allowed = [
-    'https://lotexpo.com',
-    'https://www.lotexpo.com',
-    'https://id-preview--372be6a2-b585-4c8b-8fb0-060089ac0520.lovable.app', // preview Lovable actuel
-    'http://localhost:5173',
-    'http://localhost:3000'
-  ];
-  const allowOrigin = allowed.includes(origin) ? origin : 'https://lotexpo.com';
-
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin'
-  };
-}
-
-export function handleOptions(req: Request) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders(req) });
+function matchOrigin(origin: string | null): string | null {
+  if (!origin) return null;
+  for (const allowed of ALLOWED_ORIGINS) {
+    if (allowed.includes("*")) {
+      // support wildcard subdomain only: https://*.domain.tld
+      const base = allowed.replace("https://*.", "");
+      if (origin === `https://${base}` || origin.endsWith(`.${base}`)) return origin;
+    } else if (origin === allowed) {
+      return origin;
+    }
   }
   return null;
+}
+
+export function buildCorsHeaders(origin: string | null) {
+  const allowed = matchOrigin(origin);
+  const allowOrigin = allowed ?? "null"; // ne pas mettre "*" si Authorization est utilisé
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin"
+  } as const;
+}
+
+export function handleCors(req: Request) {
+  const headers = buildCorsHeaders(req.headers.get("Origin"));
+  if (req.method === "OPTIONS") {
+    // Préflight OK
+    return new Response(null, { status: 204, headers });
+  }
+  return { headers };
 }

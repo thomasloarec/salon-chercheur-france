@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.1";
 import { z } from "https://esm.sh/zod@3.23.8";
-import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { handleCors } from "../_shared/cors.ts";
 
 const grantSchema = z.object({
   exhibitor_id: z.string().uuid(),
@@ -13,9 +13,9 @@ const grantSchema = z.object({
 });
 
 serve(async (req) => {
-  const cors = corsHeaders(req);
-  const opt = handleOptions(req);
-  if (opt) return opt;
+  const cors = handleCors(req);
+  if (cors instanceof Response) return cors; // OPTIONS handled
+  const { headers } = cors;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -46,14 +46,14 @@ serve(async (req) => {
       console.error('[premium-grant] Auth error:', authError);
       return new Response(
         JSON.stringify({ error: `auth_failed: ${authError.message}` }),
-        { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...headers, 'Content-Type': 'application/json' } }
       );
     }
     if (!user) {
       console.error('[premium-grant] No user');
       return new Response(
         JSON.stringify({ error: 'unauthorized' }),
-        { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...headers, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -68,7 +68,7 @@ serve(async (req) => {
       console.error('[premium-grant] Profile read failed:', profileError);
       return new Response(
         JSON.stringify({ error: `profile_read_failed: ${profileError.message}` }),
-        { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -76,7 +76,7 @@ serve(async (req) => {
       console.error('[premium-grant] Not admin:', user.id);
       return new Response(
         JSON.stringify({ error: 'forbidden' }),
-        { status: 403, headers: { ...cors, 'Content-Type': 'application/json' } }
+        { status: 403, headers: { ...headers, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -110,7 +110,7 @@ serve(async (req) => {
       console.error('[premium-grant] DB error:', error);
       return new Response(
         JSON.stringify({ error: `upsert_failed: ${error.message}` }),
-        { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -118,7 +118,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, data }),
-      { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...headers, 'Content-Type': 'application/json' } }
     );
 
   } catch (e: any) {
@@ -126,7 +126,7 @@ serve(async (req) => {
     const message = (e && (e.message ?? e.toString?.())) || 'unknown_error';
     return new Response(
       JSON.stringify({ error: message }),
-      { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
+      { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } }
     );
   }
 });
