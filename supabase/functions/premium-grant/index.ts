@@ -86,25 +86,65 @@ serve(async (req) => {
 
     console.log('[premium-grant] Granting Premium:', payload);
 
-    // Upsert premium entitlement
-    const { data, error } = await supabaseAdmin
+    // Check if entitlement already exists
+    const { data: existing, error: selectError } = await supabaseAdmin
       .from('premium_entitlements')
-      .upsert({
-        exhibitor_id: payload.exhibitor_id,
-        event_id: payload.event_id,
-        max_novelties: payload.max_novelties ?? 5,
-        leads_unlimited: payload.leads_unlimited ?? true,
-        csv_export: payload.csv_export ?? true,
-        granted_by: user.id,
-        granted_at: new Date().toISOString(),
-        revoked_at: null,
-        notes: payload.notes ?? null,
-      }, {
-        onConflict: 'exhibitor_id,event_id',
-        ignoreDuplicates: false,
-      })
-      .select()
-      .single();
+      .select('id, revoked_at')
+      .eq('exhibitor_id', payload.exhibitor_id)
+      .eq('event_id', payload.event_id)
+      .maybeSingle();
+
+    if (selectError) {
+      console.error('[premium-grant] Select error:', selectError);
+      return new Response(
+        JSON.stringify({ error: `select_failed: ${selectError.message}` }),
+        { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let data;
+    let error;
+
+    if (existing) {
+      // Update existing entitlement
+      const result = await supabaseAdmin
+        .from('premium_entitlements')
+        .update({
+          max_novelties: payload.max_novelties ?? 5,
+          leads_unlimited: payload.leads_unlimited ?? true,
+          csv_export: payload.csv_export ?? true,
+          granted_by: user.id,
+          granted_at: new Date().toISOString(),
+          revoked_at: null,
+          notes: payload.notes ?? null,
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    } else {
+      // Insert new entitlement
+      const result = await supabaseAdmin
+        .from('premium_entitlements')
+        .insert({
+          exhibitor_id: payload.exhibitor_id,
+          event_id: payload.event_id,
+          max_novelties: payload.max_novelties ?? 5,
+          leads_unlimited: payload.leads_unlimited ?? true,
+          csv_export: payload.csv_export ?? true,
+          granted_by: user.id,
+          granted_at: new Date().toISOString(),
+          revoked_at: null,
+          notes: payload.notes ?? null,
+        })
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.error('[premium-grant] DB error:', error);
