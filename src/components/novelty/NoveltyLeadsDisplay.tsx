@@ -51,8 +51,8 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
   const handleExportCSV = () => {
     if (!leads) return;
 
-    // Convert leads to CSV
-    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Entreprise', 'Poste', 'Type', 'Date'];
+    // Convert leads to CSV (sans accents pour éviter les problèmes d'encodage)
+    const headers = ['Prenom', 'Nom', 'Email', 'Telephone', 'Entreprise', 'Poste', 'Type', 'Date'];
     const rows = leads.map(lead => [
       lead.first_name,
       lead.last_name,
@@ -60,11 +60,11 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
       lead.phone || '',
       lead.company || '',
       lead.role || '',
-      lead.lead_type === 'resource_download' ? 'Téléchargement' : 'Rendez-vous',
+      lead.lead_type === 'resource_download' ? 'Telechargement' : 'Rendez-vous',
       new Date(lead.created_at).toLocaleDateString('fr-FR'),
     ]);
 
-    const csvContent = [
+    const csvContent = '\uFEFF' + [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
@@ -84,12 +84,10 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
     );
   }
 
-  // Leads 1-3: 100% visible
-  const visibleLeads = leads?.slice(0, 3) || [];
-  // Leads 4-6: Blurred preview
+  // Si Premium : afficher tous les leads, sinon logique freemium
+  const visibleLeads = isPremium ? (leads || []) : (leads?.slice(0, 3) || []);
   const previewLeads = isPremium ? [] : (leads?.slice(3, 6) || []);
-  // Leads 7+: Hidden
-  const hiddenCount = Math.max(0, (leads?.length || 0) - 6);
+  const hiddenCount = isPremium ? 0 : Math.max(0, (leads?.length || 0) - 6);
 
   if (!leads || leads.length === 0) {
     return (

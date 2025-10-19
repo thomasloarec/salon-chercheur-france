@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Eye, Edit, MapPin, Calendar, Sparkles, BarChart3 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Building2, Eye, Edit, MapPin, Calendar, Sparkles, BarChart3, Heart, Download, CalendarCheck, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
@@ -134,30 +135,43 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                   </CardContent>
                 </Card>
 
-                {/* Statistiques */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-red-600">{novelty.stats?.likes || 0}</p>
-                        <p className="text-xs text-muted-foreground">Likes</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-600">{novelty.stats?.brochure_leads || 0}</p>
-                        <p className="text-xs text-muted-foreground">Téléchargements brochures</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600">{novelty.stats?.meeting_leads || 0}</p>
-                        <p className="text-xs text-muted-foreground">Demandes de rendez-vous</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Section Leads */}
-                {novelty.stats && (novelty.stats.brochure_leads > 0 || novelty.stats.meeting_leads > 0) && (
+                {/* Section Leads avec statistiques intégrées */}
+                {novelty.stats && (novelty.stats.brochure_leads > 0 || novelty.stats.meeting_leads > 0 || novelty.stats.likes > 0) && (
                   <Card>
-                    <CardContent className="p-6">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          Leads
+                          <Badge variant="secondary">
+                            {novelty.stats.total_leads || 0}
+                          </Badge>
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Statistiques avec icônes */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/20">
+                          <Heart className="h-5 w-5 text-red-600" />
+                          <p className="text-2xl font-bold text-red-600">{novelty.stats?.likes || 0}</p>
+                          <p className="text-xs text-center text-muted-foreground">Likes</p>
+                        </div>
+                        <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                          <Download className="h-5 w-5 text-blue-600" />
+                          <p className="text-2xl font-bold text-blue-600">{novelty.stats?.brochure_leads || 0}</p>
+                          <p className="text-xs text-center text-muted-foreground">Téléchargements</p>
+                        </div>
+                        <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/20">
+                          <CalendarCheck className="h-5 w-5 text-green-600" />
+                          <p className="text-2xl font-bold text-green-600">{novelty.stats?.meeting_leads || 0}</p>
+                          <p className="text-xs text-center text-muted-foreground">Rendez-vous</p>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Liste des leads */}
                       <NoveltyLeadsDisplay 
                         noveltyId={novelty.id}
                         exhibitorId={novelty.exhibitors.id}
@@ -165,6 +179,11 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                       />
                     </CardContent>
                   </Card>
+                )}
+
+                {/* Séparation entre nouveautés */}
+                {novelties.indexOf(novelty) < novelties.length - 1 && (
+                  <Separator className="my-8" />
                 )}
               </div>
             ))
