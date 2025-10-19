@@ -38,9 +38,9 @@ export default function Premium() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
-        title: 'Merci !',
-        description: 'Notre équipe va vous recontacter sous 24h.',
-        duration: 5000,
+        title: '✅ Merci !',
+        description: 'Votre demande d\'accès Premium a bien été transmise. Un membre de notre équipe vous contactera rapidement pour confirmer l\'activation et répondre à vos questions.',
+        duration: 6000,
       });
       
       setIsDialogOpen(false);
@@ -530,12 +530,12 @@ export default function Premium() {
       {/* Dialog Activation Premium */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Activez votre accès Premium</DialogTitle>
-            <DialogDescription>
-              Remplissez vos informations pour finaliser l'activation sur cet événement.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Demande d'accès Premium</DialogTitle>
+          <DialogDescription>
+            Remplissez vos informations pour être recontacté(e) par notre équipe et finaliser l'activation de votre offre Premium sur cet événement.
+          </DialogDescription>
+        </DialogHeader>
           
           <form onSubmit={handleSubmitActivation} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -621,7 +621,7 @@ export default function Premium() {
               ) : (
                 <>
                   <Check className="h-5 w-5" />
-                  Valider et activer le Premium
+                  Envoyer ma demande Premium
                 </>
               )}
             </Button>
