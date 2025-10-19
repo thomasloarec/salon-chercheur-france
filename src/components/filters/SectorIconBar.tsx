@@ -28,13 +28,12 @@ export function SectorIconBar({
   const [canRight, setCanRight] = useState(false);
 
   const toggle = (slug: string) => {
-    const set = new Set(selected);
-    if (set.has(slug)) {
-      set.delete(slug);
+    // Sélection exclusive : si déjà sélectionné, on désélectionne, sinon on remplace
+    if (selected.includes(slug)) {
+      onChange([]);
     } else {
-      set.add(slug);
+      onChange([slug]);
     }
-    onChange(Array.from(set));
   };
 
   const clearAll = () => onChange([]);
@@ -65,8 +64,14 @@ export function SectorIconBar({
     };
   }, [sectors]);
 
-  const scrollBy = (delta: number) => {
-    scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
+  const scrollToStart = () => {
+    scrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  };
+
+  const scrollToEnd = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    scrollRef.current?.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
   };
 
   return (
@@ -76,8 +81,8 @@ export function SectorIconBar({
         {/* Left arrow (hidden when at start) */}
         {canLeft ? (
           <button
-            onClick={() => scrollBy(-320)}
-            aria-label="Défiler vers la gauche"
+            onClick={scrollToStart}
+            aria-label="Aller au début"
             className="hidden md:flex shrink-0 rounded-full border bg-background/80 backdrop-blur-sm shadow-lg p-2 hover:bg-background hover:shadow-xl transition-all"
           >
             <ChevronLeft className="h-5 w-5 text-foreground" />
@@ -170,8 +175,8 @@ export function SectorIconBar({
         {/* Right arrow (hidden when at end) */}
         {canRight ? (
           <button
-            onClick={() => scrollBy(320)}
-            aria-label="Défiler vers la droite"
+            onClick={scrollToEnd}
+            aria-label="Aller à la fin"
             className="hidden md:flex shrink-0 rounded-full border bg-background/80 backdrop-blur-sm shadow-lg p-2 hover:bg-background hover:shadow-xl transition-all"
           >
             <ChevronRight className="h-5 w-5 text-foreground" />
