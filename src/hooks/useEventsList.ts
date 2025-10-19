@@ -20,12 +20,12 @@ import { regionSlugFromPostal } from "@/lib/postalToRegion";
  */
 
 async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean): Promise<CanonicalEvent[]> {
-  const { sector, type /* month, region */ } = filters;
+  const { sectors, type } = filters;
 
   let q = supabase
     .from("events")
     .select("*")
-    .eq("visible", true) // respecte RLS et évite les surprises
+    .eq("visible", true)
     .order("date_debut", { ascending: true });
 
   if (tryServerFilters) {
@@ -33,19 +33,22 @@ async function fetchEventsServer(filters: UrlFilters, tryServerFilters: boolean)
     const dbType = typeSlugToDbValue(type);
     if (dbType) q = q.eq("type_event", dbType);
 
-    // SECTEUR via jsonb contains
-    if (sector) {
-      const labels = sectorSlugToDbLabels(sector);
-      if (labels.length === 1) {
-        q = q.contains("secteur", [labels[0]]);
-      } else if (labels.length > 1) {
-        const parts = labels.map(l => `secteur.cs.${JSON.stringify([l])}`);
+    // SECTEUR via jsonb contains (multi-sélection)
+    if (sectors.length > 0) {
+      // Pour chaque secteur, on récupère les labels DB
+      const allLabels = sectors.flatMap(s => sectorSlugToDbLabels(s));
+      
+      if (allLabels.length === 1) {
+        q = q.contains("secteur", [allLabels[0]]);
+      } else if (allLabels.length > 1) {
+        // OR des différents labels
+        const parts = allLabels.map(l => `secteur.cs.${JSON.stringify([l])}`);
         q = q.or(parts.join(","));
       }
     }
 
-    // MOIS -> filtré côté client (pas de LIKE sur date)
-    // REGION → pas de colonne en base pour le moment → pas de filtre serveur
+    // MOIS -> filtré côté client
+    // REGION → pas de colonne en base → pas de filtre serveur
   }
 
   const { data, error } = await q;
@@ -74,11 +77,18 @@ async function fetchEvents(filters: UrlFilters): Promise<CanonicalEvent[]> {
   } catch (e) {
     console.warn("[events] server filters failed, fallback client:", (e as any)?.message ?? e);
     // Fallback: récupérer tout (visible) puis filtrer en mémoire
-    const all = await fetchEventsServer({ sector: null, type: null, month: null, region: null }, false);
+    const all = await fetchEventsServer({ sectors: [], type: null, month: null, region: null }, false);
 
     const byType = all.filter(ev => matchesType(ev, typeSlugToDbValue(filters.type)));
-    const wantedLabels = filters.sector ? sectorSlugToDbLabels(filters.sector) : null;
-    const bySector = byType.filter(ev => matchesSectorLabels(ev, wantedLabels));
+    
+    // Filtrer par secteurs côté client
+    const bySector = filters.sectors.length > 0
+      ? byType.filter(ev => {
+          const allLabels = filters.sectors.flatMap(s => sectorSlugToDbLabels(s));
+          return matchesSectorLabels(ev, allLabels.length > 0 ? allLabels : null);
+        })
+      : byType;
+    
     const byMonth = bySector.filter(ev => matchesMonth(ev, filters.month));
     const byDate = byMonth.filter(ev => isOngoingOrUpcoming(ev));
     const byRegion = byDate.filter(ev => matchesRegion(ev, filters.region));
@@ -88,7 +98,7 @@ async function fetchEvents(filters: UrlFilters): Promise<CanonicalEvent[]> {
 
 export function useEventsList(filters: UrlFilters) {
   return useQuery({
-    queryKey: ["events:list", filters.sector ?? 'all', filters.type ?? 'all', filters.month ?? 'all', filters.region ?? 'all'],
+    queryKey: ["events:list", filters.sectors.join(',') || 'all', filters.type ?? 'all', filters.month ?? 'all', filters.region ?? 'all'],
     queryFn: () => fetchEvents(filters),
     staleTime: 60_000,
   });

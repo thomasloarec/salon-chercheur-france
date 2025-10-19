@@ -1,20 +1,37 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useEventsList } from '@/hooks/useEventsList';
 import { useUrlFilters } from '@/lib/useUrlFilters';
+import { useSectors } from '@/hooks/useSectors';
 import { EventsResults } from '@/components/EventsResults';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
+import { SectorIconBar } from '@/components/filters/SectorIconBar';
+import { Loader2 } from 'lucide-react';
 
 const Events = () => {
-  const { filters, filtersKey } = useUrlFilters(); // ← source de vérité
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { filters, filtersKey } = useUrlFilters();
   const { data: events, isLoading, error } = useEventsList(filters);
+  const { data: sectors = [], isLoading: sectorsLoading } = useSectors();
 
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Handler for sector selection changes
+  const handleSectorsChange = (selectedSlugs: string[]) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (selectedSlugs.length > 0) {
+      newParams.set('sectors', selectedSlugs.join(','));
+    } else {
+      newParams.delete('sectors');
+    }
+    setSearchParams(newParams);
+  };
 
   // Convert CanonicalEvents to Event format for compatibility
   const displayEvents = events?.map(event => ({
@@ -27,7 +44,7 @@ const Events = () => {
     nom_lieu: event.nom_lieu || '',
     ville: event.ville || '',
     country: 'France',
-    url_image: event.image_url || '', // Map from canonical to legacy field
+    url_image: event.image_url || '',
     url_site_officiel: event.url_site_officiel || '',
     tags: [],
     tarif: '',
@@ -46,7 +63,7 @@ const Events = () => {
     sectors: []
   })) || [];
 
-  const hasActiveFilters = !!(filters.sector || filters.type || filters.month || filters.region);
+  const hasActiveFilters = !!(filters.sectors.length > 0 || filters.type || filters.month || filters.region);
 
   if (error) {
     return (
@@ -65,6 +82,25 @@ const Events = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      
+      {/* Sector Icon Bar - New horizontal icon filter */}
+      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 py-4">
+          {sectorsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : (
+            <SectorIconBar
+              sectors={sectors.map(s => ({ id: s.id, slug: s.id, name: s.name }))}
+              selected={filters.sectors}
+              onChange={handleSectorsChange}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Other filters bar */}
       <StickyFiltersBar />
       
       <main className="py-8">
@@ -83,9 +119,9 @@ const Events = () => {
             {hasActiveFilters && (
               <p className="text-gray-600 mt-2">
                 Résultats filtrés
-                {filters.sector && (
+                {filters.sectors.length > 0 && (
                   <span className="ml-2 text-accent font-medium">
-                    • Secteur: {filters.sector}
+                    • Secteur{filters.sectors.length > 1 ? 's' : ''}: {filters.sectors.join(', ')}
                   </span>
                 )}
                 {filters.type && (

@@ -48,7 +48,7 @@ async function fetchNovelties(
   page: number = 1,
   pageSize: number = 12
 ): Promise<NoveltiesListResponse> {
-  const { sector, type, month, region } = filters;
+  const { sectors, type, month, region } = filters;
 
   let q = supabase
     .from("novelties")
@@ -61,18 +61,19 @@ async function fetchNovelties(
       novelty_stats ( route_users_count, popularity_score )
     `)
     .eq("events.visible", true)
-    .eq("status", "published")  // ✅ Lowercase status after normalization
+    .eq("status", "published")
     .order("created_at", { ascending: false });
 
   const dbType = typeSlugToDbValue(type);
   if (dbType) q = q.eq("events.type_event", dbType);
 
-  if (sector) {
-    const labels = sectorSlugToDbLabels(sector);
-    if (labels.length === 1) {
-      q = q.contains("events.secteur", [labels[0]]);
-    } else if (labels.length > 1) {
-      const parts = labels.map(l => `events.secteur.cs.${JSON.stringify([l])}`);
+  // Multi-secteurs : générer un OR des différents labels
+  if (sectors.length > 0) {
+    const allLabels = sectors.flatMap(s => sectorSlugToDbLabels(s));
+    if (allLabels.length === 1) {
+      q = q.contains("events.secteur", [allLabels[0]]);
+    } else if (allLabels.length > 1) {
+      const parts = allLabels.map(l => `events.secteur.cs.${JSON.stringify([l])}`);
       q = q.or(parts.join(","));
     }
   }
@@ -197,7 +198,7 @@ export function useNoveltiesList(
   const { page = 1, pageSize = 12, enabled = true } = options;
 
   return useQuery({
-    queryKey: ["novelties:list", filters.sector ?? 'all', filters.type ?? 'all', filters.month ?? 'all', filters.region ?? 'all', page, pageSize], // ← clé primitive stable
+    queryKey: ["novelties:list", filters.sectors.join(',') || 'all', filters.type ?? 'all', filters.month ?? 'all', filters.region ?? 'all', page, pageSize],
     queryFn: () => fetchNovelties(filters, page, pageSize),
     staleTime: 30_000,
     enabled,

@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
 import NoveltyTile from '@/components/novelty/NoveltyTile';
 import NoveltiesEmptyState from '@/components/novelty/NoveltiesEmptyState';
+import { SectorIconBar } from '@/components/filters/SectorIconBar';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useUrlFilters } from '@/lib/useUrlFilters'; 
 import { useNoveltiesList } from '@/hooks/useNoveltiesList';
+import { useSectors } from '@/hooks/useSectors';
 
 interface Novelty {
   id: string;
@@ -38,8 +41,10 @@ interface Novelty {
 const HOVER_CYCLE_MS = 3000;
 
 export default function Nouveautes() {
-  const { filters, filtersKey } = useUrlFilters(); // ← source de vérité
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { filters, filtersKey } = useUrlFilters();
   const [page, setPage] = useState(1);
+  const { data: sectors = [], isLoading: sectorsLoading } = useSectors();
   
   // Reset page when filters change
   React.useEffect(() => {
@@ -60,7 +65,18 @@ export default function Nouveautes() {
     setPage(prev => prev + 1);
   };
 
-  const hasActiveFilters = !!(filters.sector || filters.type || filters.month || filters.region);
+  // Handler for sector selection changes
+  const handleSectorsChange = (selectedSlugs: string[]) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (selectedSlugs.length > 0) {
+      newParams.set('sectors', selectedSlugs.join(','));
+    } else {
+      newParams.delete('sectors');
+    }
+    setSearchParams(newParams);
+  };
+
+  const hasActiveFilters = !!(filters.sectors.length > 0 || filters.type || filters.month || filters.region);
 
   return (
     <>
@@ -73,7 +89,25 @@ export default function Nouveautes() {
       </Helmet>
 
       <Header />
-      <StickyFiltersBar />
+      
+      {/* Sector Icon Bar */}
+      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 py-4">
+          {sectorsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : (
+            <SectorIconBar
+              sectors={sectors.map(s => ({ id: s.id, slug: s.id, name: s.name }))}
+              selected={filters.sectors}
+              onChange={handleSectorsChange}
+            />
+          )}
+        </div>
+      </div>
+
+      <StickyFiltersBar defaultCollapsed />
       
       <main className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">

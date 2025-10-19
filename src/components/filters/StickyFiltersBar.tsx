@@ -45,21 +45,12 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
     loadOptions();
   }, []);
 
-  const currentSectorRaw = normalizeParam(searchParams.get('sector'));
-  const currentSector = normalizeSectorSlug(currentSectorRaw) || SENTINEL_ALL;
   const currentType = normalizeParam(searchParams.get('type'));
   const currentMonth = normalizeParam(searchParams.get('month'));
   const currentRegion = normalizeParam(searchParams.get('region'));
 
-  // Clean URL if old sector alias detected
-  React.useEffect(() => {
-    if (currentSectorRaw !== SENTINEL_ALL && currentSectorRaw !== currentSector) {
-      updateFilter('sector', currentSector === SENTINEL_ALL ? null : currentSector);
-    }
-  }, [currentSectorRaw, currentSector]);
-
-  const hasActiveFilters = !isAll(currentSector) || !isAll(currentType) || !isAll(currentMonth) || !isAll(currentRegion);
-  const activeFilterCount = [currentSector, currentType, currentMonth, currentRegion].filter(v => !isAll(v)).length;
+  const hasActiveFilters = !isAll(currentType) || !isAll(currentMonth) || !isAll(currentRegion);
+  const activeFilterCount = [currentType, currentMonth, currentRegion].filter(v => !isAll(v)).length;
 
   const updateFilter = (key: string, value: string | null) => {
     const newParams = updateUrlParam(searchParams, key, value);
@@ -115,22 +106,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
           defaultCollapsed && isCollapsed && "hidden",
           defaultCollapsed && !isCollapsed && "mt-3 pt-3 border-t"
         )}>
-          {/* Sector Filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-              Secteur
-            </label>
-            <SafeSelect
-              ariaLabel="Filtre secteur"
-              className="w-40"
-              placeholder="Secteur d'activité"
-              value={isAll(currentSector) ? null : currentSector}
-              onChange={(v) => updateFilter('sector', v)}
-              options={sectors}
-              allLabel="Tous les secteurs"
-            />
-          </div>
-
+          
           {/* Type Filter */}
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
@@ -183,17 +159,6 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
           {hasActiveFilters && (
             <div className="flex items-center gap-2 ml-auto">
               <div className="flex flex-wrap gap-1">
-                {!isAll(currentSector) && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    {getSectorName(currentSector)}
-                    <button
-                      onClick={() => updateFilter('sector', SENTINEL_ALL)}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                )}
                 {!isAll(currentType) && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     {getTypeName(currentType)}

@@ -5,7 +5,7 @@ import { normalizeRegion } from "@/lib/regions";
 import { SENTINEL_ALL } from "@/lib/urlFilters";
 
 export type UrlFilters = {
-  sector: string | null;  // slug canonique (ou null)
+  sectors: string[];      // liste de slugs canoniques (vide si "Tout")
   type: string | null;    // code (ou null)
   month: string | null;   // "01".."12" (ou null)
   region: string | null;  // slug région (ou null)
@@ -20,9 +20,16 @@ function norm(v: string | null): string | null {
 export function useUrlFilters() {
   const [sp] = useSearchParams();
 
-  // lecture + normalisation
-  const rawSector = norm(sp.get("sector"));
-  const sector = rawSector ? normalizeSectorSlug(rawSector) : null;
+  // Lecture du nouveau param "sectors" (liste CSV)
+  const rawSectors = norm(sp.get("sectors"));
+  const sectors = useMemo(() => {
+    if (!rawSectors) return [];
+    return rawSectors
+      .split(",")
+      .map((s) => s.trim())
+      .map((s) => normalizeSectorSlug(s))
+      .filter((s): s is string => s !== null);
+  }, [rawSectors]);
 
   const type = norm(sp.get("type"));
   const month = norm(sp.get("month"));   // "01".."12"
@@ -30,13 +37,13 @@ export function useUrlFilters() {
   const region = rawRegion ? normalizeRegion(rawRegion) : null;
 
   const filtersKey = useMemo(() => [
-    sector ?? 'all',
+    sectors.length > 0 ? sectors.join(',') : 'all',
     type ?? 'all', 
     month ?? 'all',
     region ?? 'all'
-  ], [sector, type, month, region]);
+  ], [sectors, type, month, region]);
 
-  const filters = useMemo(() => ({ sector, type, month, region }), [sector, type, month, region]);
+  const filters = useMemo(() => ({ sectors, type, month, region }), [sectors, type, month, region]);
 
   return { filters, filtersKey };
 }
