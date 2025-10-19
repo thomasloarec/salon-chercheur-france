@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Check, X, ExternalLink, Crown, CheckCircle } from 'lucide-react';
+import { Eye, Check, X, ExternalLink, Crown, ShieldOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import NoveltyPreviewDialog from '@/components/novelty/NoveltyPreviewDialog';
+import { usePremiumGrant } from '@/hooks/usePremiumGrant';
+import { PremiumStatusBadge } from './PremiumStatusBadge';
+import { PremiumActionButtons } from './PremiumActionButtons';
 
 interface PendingNovelty {
   id: string;
@@ -17,12 +20,15 @@ interface PendingNovelty {
   created_at: string;
   media_urls: string[];
   doc_url?: string;
-  is_premium?: boolean;
+  exhibitor_id: string;
+  event_id: string;
   exhibitors: {
+    id: string;
     name: string;
     slug: string;
   };
   events: {
+    id: string;
     nom_event: string;
     slug: string;
   };
@@ -33,6 +39,7 @@ export default function NoveltyModeration() {
   const [previewNovelty, setPreviewNovelty] = useState<PendingNovelty | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { grantPremium, revokePremium, isGranting, isRevoking } = usePremiumGrant();
 
   const { data: pendingNovelties, isLoading } = useQuery({
     queryKey: ['admin-novelties', activeTab],
@@ -45,9 +52,9 @@ export default function NoveltyModeration() {
       const { data, error } = await supabase
         .from('novelties')
         .select(`
-          id, title, type, status, created_at, media_urls, doc_url, is_premium,
-          exhibitors!inner ( name, slug ),
-          events!inner ( nom_event, slug )
+          id, title, type, status, created_at, media_urls, doc_url, exhibitor_id, event_id,
+          exhibitors!inner ( id, name, slug ),
+          events!inner ( id, nom_event, slug )
         `)
         .eq('status', statusFilter)
         .order('created_at', { ascending: false });
@@ -95,30 +102,22 @@ export default function NoveltyModeration() {
     updateStatusMutation.mutate({ id, status: 'rejected' });
   };
 
-  const togglePremiumMutation = useMutation({
-    mutationFn: async ({ id, isPremium }: { id: string; isPremium: boolean }) => {
-      const { error } = await supabase
-        .from('novelties')
-        .update({ is_premium: !isPremium })
-        .eq('id', id);
+  const handleGrantPremium = (exhibitorId: string, eventId: string) => {
+    grantPremium({
+      exhibitor_id: exhibitorId,
+      event_id: eventId,
+      max_novelties: 5,
+      leads_unlimited: true,
+      csv_export: true,
+    });
+  };
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-novelties'] });
-      toast({
-        title: "Statut Premium mis à jour",
-        description: "Le statut premium de la nouveauté a été modifié."
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le statut premium.",
-        variant: "destructive"
-      });
-    }
-  });
+  const handleRevokePremium = (exhibitorId: string, eventId: string) => {
+    revokePremium({
+      exhibitor_id: exhibitorId,
+      event_id: eventId,
+    });
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -199,6 +198,10 @@ export default function NoveltyModeration() {
                       <div className="flex items-center gap-2">
                         {getStatusBadge(novelty.status)}
                         <Badge variant="outline">{novelty.type}</Badge>
+                        <PremiumStatusBadge 
+                          exhibitorId={novelty.exhibitor_id}
+                          eventId={novelty.event_id}
+                        />
                       </div>
                     </div>
                   </CardHeader>
@@ -227,27 +230,14 @@ export default function NoveltyModeration() {
                           Voir
                         </Button>
                         
-                        <Button
-                          size="sm"
-                          variant={novelty.is_premium ? "default" : "outline"}
-                          onClick={() => togglePremiumMutation.mutate({ 
-                            id: novelty.id, 
-                            isPremium: novelty.is_premium || false 
-                          })}
-                          disabled={togglePremiumMutation.isPending}
-                        >
-                          {novelty.is_premium ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Premium
-                            </>
-                          ) : (
-                            <>
-                              <Crown className="h-4 w-4 mr-1" />
-                              Premium
-                            </>
-                          )}
-                        </Button>
+                        <PremiumActionButtons
+                          exhibitorId={novelty.exhibitor_id}
+                          eventId={novelty.event_id}
+                          onGrant={() => handleGrantPremium(novelty.exhibitor_id, novelty.event_id)}
+                          onRevoke={() => handleRevokePremium(novelty.exhibitor_id, novelty.event_id)}
+                          isGranting={isGranting}
+                          isRevoking={isRevoking}
+                        />
 
                         {activeTab === 'pending' && (
                           <>

@@ -1269,6 +1269,67 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_entitlements: {
+        Row: {
+          csv_export: boolean
+          event_id: string
+          exhibitor_id: string
+          granted_at: string
+          granted_by: string
+          id: string
+          leads_unlimited: boolean
+          max_novelties: number
+          notes: string | null
+          revoked_at: string | null
+        }
+        Insert: {
+          csv_export?: boolean
+          event_id: string
+          exhibitor_id: string
+          granted_at?: string
+          granted_by: string
+          id?: string
+          leads_unlimited?: boolean
+          max_novelties?: number
+          notes?: string | null
+          revoked_at?: string | null
+        }
+        Update: {
+          csv_export?: boolean
+          event_id?: string
+          exhibitor_id?: string
+          granted_at?: string
+          granted_by?: string
+          id?: string
+          leads_unlimited?: boolean
+          max_novelties?: number
+          notes?: string | null
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_entitlements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_entitlements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_entitlements_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company: string | null

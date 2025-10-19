@@ -4,9 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Lock, Users } from 'lucide-react';
+import { Lock, Users, Download } from 'lucide-react';
 import LeadCard from './LeadCard';
 import PremiumUpgradeDialog from './PremiumUpgradeDialog';
+import { usePremiumEntitlement } from '@/hooks/usePremiumEntitlement';
 
 interface Lead {
   id: string;
@@ -23,11 +24,17 @@ interface Lead {
 
 interface NoveltyLeadsDisplayProps {
   noveltyId: string;
-  isPremium: boolean;
+  exhibitorId: string;
+  eventId: string;
 }
 
-export default function NoveltyLeadsDisplay({ noveltyId, isPremium }: NoveltyLeadsDisplayProps) {
+export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }: NoveltyLeadsDisplayProps) {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  
+  // Check Premium status
+  const { data: entitlement } = usePremiumEntitlement(exhibitorId, eventId);
+  const isPremium = entitlement?.isPremium ?? false;
+  const canExportCSV = entitlement?.csvExport ?? false;
   
   const { data: leads, isLoading } = useQuery({
     queryKey: ['novelty-leads', noveltyId],
@@ -40,6 +47,34 @@ export default function NoveltyLeadsDisplay({ noveltyId, isPremium }: NoveltyLea
       return data.leads as Lead[];
     }
   });
+
+  const handleExportCSV = () => {
+    if (!leads) return;
+
+    // Convert leads to CSV
+    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Entreprise', 'Poste', 'Type', 'Date'];
+    const rows = leads.map(lead => [
+      lead.first_name,
+      lead.last_name,
+      lead.email,
+      lead.phone || '',
+      lead.company || '',
+      lead.role || '',
+      lead.lead_type === 'resource_download' ? 'Téléchargement' : 'Rendez-vous',
+      new Date(lead.created_at).toLocaleDateString('fr-FR'),
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `leads_${noveltyId}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
 
   if (isLoading) {
     return (
@@ -66,6 +101,16 @@ export default function NoveltyLeadsDisplay({ noveltyId, isPremium }: NoveltyLea
 
   return (
     <div className="space-y-2">
+      {/* Export CSV button for Premium users */}
+      {isPremium && canExportCSV && leads.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <Button size="sm" variant="outline" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            Exporter en CSV
+          </Button>
+        </div>
+      )}
+      
       {/* Leads 1-3: Full visibility */}
       {visibleLeads.map((lead) => (
         <LeadCard key={lead.id} lead={lead} isPremium={true} />

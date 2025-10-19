@@ -11,6 +11,7 @@ import ExhibitorLeadsPanel from '@/components/agenda/ExhibitorLeadsPanel';
 import NoveltyLeadsDisplay from '@/components/novelty/NoveltyLeadsDisplay';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
 import { EditNoveltyDialog } from '@/components/novelty/EditNoveltyDialog';
+import { EventPremiumStatus } from './EventPremiumStatus';
 import type { MyNovelty } from '@/hooks/useMyNovelties';
 
 interface ExhibitorDashboardProps {
@@ -82,6 +83,10 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                     <Badge variant={novelty.status === 'published' ? 'default' : 'secondary'}>
                       {novelty.status === 'published' ? 'Publié' : 'En attente'}
                     </Badge>
+                    <EventPremiumStatus 
+                      exhibitorId={novelty.exhibitors.id}
+                      eventId={novelty.events.id}
+                    />
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" asChild>
@@ -155,7 +160,8 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                     <CardContent className="p-6">
                       <NoveltyLeadsDisplay 
                         noveltyId={novelty.id}
-                        isPremium={novelty.is_premium || false}
+                        exhibitorId={novelty.exhibitors.id}
+                        eventId={novelty.events.id}
                       />
                     </CardContent>
                   </Card>
