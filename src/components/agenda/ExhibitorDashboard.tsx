@@ -103,9 +103,10 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                   </div>
                 </div>
 
-                {/* Carte de nouveauté style événement */}
+                {/* Carte de nouveauté avec leads intégrés */}
                 <Card>
-                  <CardContent className="p-6">
+                  <CardContent className="p-6 space-y-6">
+                    {/* Nouveauté */}
                     <NoveltyCard 
                       novelty={{
                         id: novelty.id,
@@ -132,44 +133,51 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                         }
                       }}
                     />
-                  </CardContent>
-                </Card>
 
-                {/* Section Leads avec statistiques intégrées */}
-                {novelty.stats && (novelty.stats.brochure_leads > 0 || novelty.stats.meeting_leads > 0 || novelty.stats.likes > 0) && (
-                  <Card>
-                    <CardHeader>
+                    <Separator />
+
+                    {/* Section Leads (toujours affichée) */}
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
+                        <h4 className="text-lg font-semibold flex items-center gap-2">
                           <Users className="h-5 w-5" />
                           Leads
-                          <Badge variant="secondary">
-                            {novelty.stats.total_leads || 0}
+                          <Badge variant="secondary" className="ml-1">
+                            {novelty.stats?.total_leads || 0}
                           </Badge>
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Statistiques avec icônes */}
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/20">
-                          <Heart className="h-5 w-5 text-red-600" />
-                          <p className="text-2xl font-bold text-red-600">{novelty.stats?.likes || 0}</p>
-                          <p className="text-xs text-center text-muted-foreground">Likes</p>
-                        </div>
-                        <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                          <Download className="h-5 w-5 text-blue-600" />
-                          <p className="text-2xl font-bold text-blue-600">{novelty.stats?.brochure_leads || 0}</p>
-                          <p className="text-xs text-center text-muted-foreground">Téléchargements</p>
-                        </div>
-                        <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/20">
-                          <CalendarCheck className="h-5 w-5 text-green-600" />
-                          <p className="text-2xl font-bold text-green-600">{novelty.stats?.meeting_leads || 0}</p>
-                          <p className="text-xs text-center text-muted-foreground">Rendez-vous</p>
-                        </div>
+                        </h4>
                       </div>
 
-                      <Separator />
+                      {/* Statistiques compactes */}
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 dark:bg-red-950/30">
+                            <Heart className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-red-600 dark:text-red-400">{novelty.stats?.likes || 0}</p>
+                            <p className="text-xs text-muted-foreground">Likes</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950/30">
+                            <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{novelty.stats?.brochure_leads || 0}</p>
+                            <p className="text-xs text-muted-foreground">Téléchargements</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-950/30">
+                            <CalendarCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-green-600 dark:text-green-400">{novelty.stats?.meeting_leads || 0}</p>
+                            <p className="text-xs text-muted-foreground">Rendez-vous</p>
+                          </div>
+                        </div>
+                      </div>
 
                       {/* Liste des leads */}
                       <NoveltyLeadsDisplay 
@@ -177,13 +185,15 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                         exhibitorId={novelty.exhibitors.id}
                         eventId={novelty.events.id}
                       />
-                    </CardContent>
-                  </Card>
-                )}
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {/* Séparation entre nouveautés */}
+                {/* Séparation plus marquée entre nouveautés */}
                 {novelties.indexOf(novelty) < novelties.length - 1 && (
-                  <Separator className="my-8" />
+                  <div className="my-12">
+                    <Separator className="bg-border/50" />
+                  </div>
                 )}
               </div>
             ))
