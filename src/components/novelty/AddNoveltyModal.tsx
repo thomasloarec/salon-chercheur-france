@@ -8,9 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { SafeSelect } from '@/components/ui/SafeSelect';
 import { X, Plus, Loader2 } from 'lucide-react';
 import { useCreateNovelty } from '@/hooks/useNovelties';
+import { useNoveltyQuota } from '@/hooks/useNoveltyQuota';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { NoveltyLimitDialog } from './NoveltyLimitDialog';
 import type { Event } from '@/types/event';
 import type { 
   Exhibitor, 
@@ -51,6 +53,7 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
   const [userExhibitors, setUserExhibitors] = useState<Exhibitor[]>([]);
   const [participationData, setParticipationData] = useState<DbParticipation[]>([]);
   const [loadingExhibitors, setLoadingExhibitors] = useState(false);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [formData, setFormData] = useState<AddNoveltyFormData>({
     exhibitor_id: '',
     title: '',
@@ -67,6 +70,12 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
   });
   const [newTag, setNewTag] = useState('');
   const [newMediaUrl, setNewMediaUrl] = useState('');
+
+  // Vérifier le quota de nouveautés
+  const { data: quota } = useNoveltyQuota(
+    formData.exhibitor_id || undefined,
+    event.id
+  );
 
   // Fetch user's exhibitors when modal opens
   useEffect(() => {
@@ -209,6 +218,12 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
       return;
     }
 
+    // Vérifier le quota AVANT de créer
+    if (quota && !quota.allowed) {
+      setShowLimitDialog(true);
+      return;
+    }
+
     // Check URL validity
     const invalidUrls = formData.media_urls.filter(url => {
       try {
@@ -245,9 +260,19 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
         demo_slots: formData.demo_slots || undefined
       });
 
+      toast({
+        title: '✅ Nouveauté créée !',
+        description: 'Votre nouveauté a été soumise avec succès.',
+      });
+
       onClose();
     } catch (error) {
-      // Error handled by the hook
+      console.error('Error creating novelty:', error);
+      toast({
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Impossible de créer la nouveauté',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -298,11 +323,20 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
   const isFreePlan = selectedExhibitor?.plan === 'free';
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Ajouter une nouveauté</DialogTitle>
-        </DialogHeader>
+    <>
+      <NoveltyLimitDialog
+        open={showLimitDialog}
+        onOpenChange={setShowLimitDialog}
+        currentCount={quota?.current || 0}
+        limit={quota?.limit || 1}
+        eventName={event.nom_event}
+      />
+
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ajouter une nouveauté</DialogTitle>
+          </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Exhibitor Selection */}
@@ -537,5 +571,6 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

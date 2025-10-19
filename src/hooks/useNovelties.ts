@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Novelty {
   id: string;
@@ -215,7 +215,6 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
 };
 
 export const useCreateNovelty = () => {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -230,26 +229,11 @@ export const useCreateNovelty = () => {
     onSuccess: (data, variables) => {
       // Invalidate and refetch novelties queries
       queryClient.invalidateQueries({ queryKey: ['novelties'] });
-      
-      toast({
-        title: '✅ Nouveauté soumise !',
-        description: 'Votre nouveauté a été envoyée avec succès. Elle sera visible après validation par notre équipe.',
-      });
+      queryClient.invalidateQueries({ queryKey: ['novelty-quota'] });
     },
     onError: (error: any) => {
-      if (error.code === 'LIMIT_REACHED') {
-        toast({
-          title: 'Limite atteinte',
-          description: 'Vous avez atteint la limite d\'1 nouveauté par événement. Passez en plan Pro pour en publier davantage.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Erreur',
-          description: error.message || 'Impossible de créer la nouveauté.',
-          variant: 'destructive',
-        });
-      }
+      // Errors are now handled in the component for better control
+      console.error('[useCreateNovelty] Error:', error);
     },
   });
 };
