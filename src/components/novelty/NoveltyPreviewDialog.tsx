@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -58,11 +59,14 @@ export default function NoveltyPreviewDialog({ novelty, open, onOpenChange }: No
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="novelty-preview-desc">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <DialogTitle className="text-2xl mb-2">{novelty.title}</DialogTitle>
+              <DialogDescription id="novelty-preview-desc" className="sr-only">
+                Aperçu de la nouveauté {novelty.title} proposée par {novelty.exhibitors.name} pour l'événement {novelty.events.nom_event}
+              </DialogDescription>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Building2 className="h-4 w-4" />
                 <span>{novelty.exhibitors.name}</span>

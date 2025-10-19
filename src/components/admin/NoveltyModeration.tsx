@@ -59,12 +59,16 @@ export default function NoveltyModeration() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase
-        .from('novelties')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
+      // Use Edge Function with service role to bypass RLS
+      const { data, error } = await supabase.functions.invoke('novelties-moderate', {
+        body: { 
+          novelty_id: id, 
+          next_status: status 
+        }
+      });
 
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-novelties'] });
@@ -73,21 +77,22 @@ export default function NoveltyModeration() {
         description: "Le statut de la nouveauté a été modifié."
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Erreur",
-        description: "Impossible de mettre à jour le statut.",
+        description: error?.message || "Impossible de mettre à jour le statut.",
         variant: "destructive"
       });
+      console.error('[NoveltyModeration] Update error:', error);
     }
   });
 
   const handlePublish = (id: string) => {
-    updateStatusMutation.mutate({ id, status: 'Published' });
+    updateStatusMutation.mutate({ id, status: 'published' });
   };
 
   const handleReject = (id: string) => {
-    updateStatusMutation.mutate({ id, status: 'Rejected' });
+    updateStatusMutation.mutate({ id, status: 'rejected' });
   };
 
   const togglePremiumMutation = useMutation({
