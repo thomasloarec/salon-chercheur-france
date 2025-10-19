@@ -13,6 +13,7 @@ import {
   Briefcase,
   Landmark,
   UtensilsCrossed,
+  Hammer,
   Tag,
   LucideIcon
 } from "lucide-react";
@@ -32,6 +33,7 @@ export const sectorIconMap: Record<string, LucideIcon> = {
   "services-entreprises-rh": Briefcase,
   "secteur-public-collectivites": Landmark,
   "agroalimentaire-boissons": UtensilsCrossed,
+  "btp-construction": Hammer,
 };
 
 export const FallbackIcon: LucideIcon = Tag;

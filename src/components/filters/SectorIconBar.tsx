@@ -1,3 +1,5 @@
+import { useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sectorIconMap, FallbackIcon } from "./sectorIconMap";
 
@@ -20,6 +22,8 @@ export function SectorIconBar({
   onChange,
   className
 }: SectorIconBarProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const toggle = (slug: string) => {
     const set = new Set(selected);
     if (set.has(slug)) {
@@ -34,21 +38,42 @@ export function SectorIconBar({
 
   const allActive = selected.length === 0;
 
+  const scrollLeft = () => {
+    scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' });
+  };
+
+  const scrollRight = () => {
+    scrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' });
+  };
+
   return (
-    <div className={cn("space-y-3", className)}>
-      {/* Desktop: flex-wrap, Mobile: horizontal scroll */}
-      <div className="flex items-center gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
+    <div className={cn("relative", className)}>
+      {/* Left scroll button - hidden on mobile */}
+      <button
+        onClick={scrollLeft}
+        aria-label="Défiler vers la gauche"
+        className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg rounded-full p-2 hover:bg-background hover:shadow-xl transition-all"
+      >
+        <ChevronLeft className="h-5 w-5 text-foreground" />
+      </button>
+
+      {/* Scrollable container */}
+      <div 
+        ref={scrollRef}
+        className="flex items-center gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide px-12 md:px-10 py-3"
+      >
         {/* "Tout" button */}
         <button
           onClick={clearAll}
           aria-pressed={allActive}
           aria-label="Tous les secteurs"
           className={cn(
-            "snap-start inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap shrink-0",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+            "snap-start inline-flex items-center gap-2 rounded-full border shadow-sm px-4 py-2.5 text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            "hover:shadow-md hover:scale-105 cursor-pointer",
             allActive
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-background text-foreground hover:bg-muted"
+              ? "bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-500 text-blue-700 dark:text-blue-400"
+              : "bg-background text-foreground hover:bg-muted border-border"
           )}
         >
           Tout
@@ -67,20 +92,29 @@ export function SectorIconBar({
               aria-label={`Filtrer par secteur : ${sector.name}`}
               title={sector.name}
               className={cn(
-                "snap-start inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors shrink-0",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                "min-w-[140px] max-w-[200px]",
+                "snap-start inline-flex items-center gap-2 rounded-full border shadow-sm px-4 py-2.5 text-sm font-medium transition-all duration-200 shrink-0 whitespace-nowrap",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "hover:shadow-md hover:scale-105 cursor-pointer",
                 active
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-foreground hover:bg-muted"
+                  ? "bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-500 text-blue-700 dark:text-blue-400"
+                  : "bg-background text-foreground hover:bg-muted border-border"
               )}
             >
-              <IconComponent className="h-4 w-4 shrink-0" />
-              <span className="truncate">{sector.name}</span>
+              <IconComponent className="h-4 w-4 md:h-5 md:w-5 shrink-0" />
+              <span>{sector.name}</span>
             </button>
           );
         })}
       </div>
+
+      {/* Right scroll button - hidden on mobile */}
+      <button
+        onClick={scrollRight}
+        aria-label="Défiler vers la droite"
+        className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg rounded-full p-2 hover:bg-background hover:shadow-xl transition-all"
+      >
+        <ChevronRight className="h-5 w-5 text-foreground" />
+      </button>
     </div>
   );
 }

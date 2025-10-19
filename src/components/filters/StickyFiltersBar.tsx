@@ -1,26 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ChevronDown, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SENTINEL_ALL, normalizeParam, isAll, updateUrlParam } from '@/lib/urlFilters';
-import { normalizeSectorSlug } from '@/lib/taxonomy';
 import { SafeSelect } from '@/components/ui/SafeSelect';
-import { fetchAllSectorsPreferCanonical, fetchAllEventTypes, fetchAllRegions, ALL_MONTHS, type Option } from '@/lib/filtersData';
+import { fetchAllEventTypes, fetchAllRegions, ALL_MONTHS, type Option } from '@/lib/filtersData';
 
 interface StickyFiltersBarProps {
   className?: string;
-  defaultCollapsed?: boolean; // For novelties page
 }
 
 
-export default function StickyFiltersBar({ className, defaultCollapsed = false }: StickyFiltersBarProps) {
+export default function StickyFiltersBar({ className }: StickyFiltersBarProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   
   // State for filter options
-  const [sectors, setSectors] = useState<Option[]>([]);
   const [eventTypes, setEventTypes] = useState<Option[]>([]);
   const [regions, setRegions] = useState<Option[]>([]);
   
@@ -28,13 +23,11 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
   useEffect(() => {
     const loadOptions = async () => {
       try {
-        const [sectorsData, eventTypesData, regionsData] = await Promise.all([
-          fetchAllSectorsPreferCanonical(),
+        const [eventTypesData, regionsData] = await Promise.all([
           fetchAllEventTypes(),
           fetchAllRegions(),
         ]);
         
-        setSectors(sectorsData);
         setEventTypes(eventTypesData);
         setRegions(regionsData);
       } catch (error) {
@@ -50,7 +43,6 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
   const currentRegion = normalizeParam(searchParams.get('region'));
 
   const hasActiveFilters = !isAll(currentType) || !isAll(currentMonth) || !isAll(currentRegion);
-  const activeFilterCount = [currentType, currentMonth, currentRegion].filter(v => !isAll(v)).length;
 
   const updateFilter = (key: string, value: string | null) => {
     const newParams = updateUrlParam(searchParams, key, value);
@@ -58,54 +50,25 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
   };
 
   const clearAllFilters = () => {
-    const newParams = new URLSearchParams();
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('type');
+    newParams.delete('month');
+    newParams.delete('region');
     setSearchParams(newParams);
   };
 
-  const getSectorName = (id: string) => sectors.find(s => s.value === id)?.label || id;
   const getTypeName = (id: string) => eventTypes.find(t => t.value === id)?.label || id;
   const getMonthName = (id: string) => ALL_MONTHS.find(m => m.value === id)?.label || id;
   const getRegionName = (id: string) => regions.find(r => r.value === id)?.label || id;
 
   return (
     <div className={cn(
-      "sticky top-16 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b",
+      "sticky top-16 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b",
       className
     )}>
       <div className="container mx-auto px-4 py-3">
-        {/* Toggle button for collapsible mode */}
-        {defaultCollapsed && (
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              Filtres
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1 h-5 min-w-5 text-xs">
-                  {activeFilterCount}
-                </Badge>
-              )}
-              <ChevronDown className={cn("h-4 w-4 transition-transform", !isCollapsed && "rotate-180")} />
-            </Button>
-            
-            {hasActiveFilters && !isCollapsed && (
-              <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-                Effacer tout
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className={cn(
-          "flex flex-wrap items-center gap-4",
-          defaultCollapsed && isCollapsed && "hidden",
-          defaultCollapsed && !isCollapsed && "mt-3 pt-3 border-t"
-        )}>
+        {/* Filters - Always visible */}
+        <div className="flex flex-wrap items-center gap-4">
           
           {/* Type Filter */}
           <div className="flex items-center gap-2">
@@ -165,6 +128,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
                     <button
                       onClick={() => updateFilter('type', SENTINEL_ALL)}
                       className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                      aria-label="Supprimer le filtre type"
                     >
                       ×
                     </button>
@@ -176,6 +140,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
                     <button
                       onClick={() => updateFilter('month', SENTINEL_ALL)}
                       className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                      aria-label="Supprimer le filtre mois"
                     >
                       ×
                     </button>
@@ -187,6 +152,7 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
                     <button
                       onClick={() => updateFilter('region', SENTINEL_ALL)}
                       className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                      aria-label="Supprimer le filtre région"
                     >
                       ×
                     </button>
@@ -194,11 +160,9 @@ export default function StickyFiltersBar({ className, defaultCollapsed = false }
                 )}
               </div>
               
-              {!defaultCollapsed && (
-                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-                  Effacer tout
-                </Button>
-              )}
+              <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                Effacer tout
+              </Button>
             </div>
           )}
         </div>

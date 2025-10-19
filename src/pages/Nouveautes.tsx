@@ -90,9 +90,12 @@ export default function Nouveautes() {
 
       <Header />
       
-      {/* Sector Icon Bar */}
-      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-4">
+      {/* Filters: Type / Month / Region */}
+      <StickyFiltersBar />
+
+      {/* Sector Icon Bar - Horizontal carousel */}
+      <div className="sticky top-[calc(4rem+3.5rem)] z-30 bg-background border-b">
+        <div className="container mx-auto">
           {sectorsLoading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -106,8 +109,6 @@ export default function Nouveautes() {
           )}
         </div>
       </div>
-
-      <StickyFiltersBar defaultCollapsed />
       
       <main className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
