@@ -18,7 +18,7 @@ export default function ResourceUploader({
   maxSize = 20 * 1024 * 1024, // 20MB
   acceptedTypes = ['application/pdf'],
   className = '',
-  label = 'Dossier de présentation (PDF)'
+  label = 'Dossier de présentation (PDF) - Optionnel'
 }: ResourceUploaderProps) {
   const { toast } = useToast();
   const [dragOver, setDragOver] = useState(false);
@@ -86,7 +86,7 @@ export default function ResourceUploader({
       <div className="space-y-2">
         <label className="text-sm font-medium">{label}</label>
         <p className="text-xs text-muted-foreground">
-          Les utilisateurs intéressés pourront télécharger ce document après avoir fourni leurs coordonnées
+          <span className="text-amber-600 font-medium">Optionnel mais recommandé</span> - Les utilisateurs intéressés pourront télécharger ce document après avoir fourni leurs coordonnées
         </p>
       </div>
 

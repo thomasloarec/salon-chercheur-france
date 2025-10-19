@@ -260,11 +260,13 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
         demo_slots: formData.demo_slots || undefined
       });
 
+      // ✅ Clean success handling - no additional operations
       toast({
         title: '✅ Nouveauté créée !',
         description: 'Votre nouveauté a été soumise avec succès.',
       });
 
+      // ✅ Close modal - queries will be invalidated by the mutation hook
       onClose();
     } catch (error) {
       console.error('Error creating novelty:', error);

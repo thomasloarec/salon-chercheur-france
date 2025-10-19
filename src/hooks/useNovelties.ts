@@ -227,9 +227,13 @@ export const useCreateNovelty = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      // Invalidate and refetch novelties queries
+      // ✅ Invalidate queries only - NO PATCH/UPDATE calls
       queryClient.invalidateQueries({ queryKey: ['novelties'] });
       queryClient.invalidateQueries({ queryKey: ['novelty-quota'] });
+      queryClient.invalidateQueries({ queryKey: ['my-novelties'] });
+      
+      // ✅ DO NOT attempt to update/patch the novelty after creation
+      console.log('[useCreateNovelty] Success - novelty created:', data);
     },
     onError: (error: any) => {
       // Errors are now handled in the component for better control

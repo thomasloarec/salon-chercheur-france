@@ -103,7 +103,8 @@ export const step2Schema = z.object({
   
   brochure: z.instanceof(File)
     .refine(isValidPdfFile, 'Fichier PDF invalide (max 20MB)')
-    .optional(),
+    .optional()
+    .nullable(), // ✅ Explicitement optionnel ET nullable
 });
 
 export type Step1Data = z.infer<typeof step1Schema>;

@@ -569,13 +569,14 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       console.log('✅ Nouveauté créée avec succès:', novelty);
       console.groupEnd();
 
+      // ✅ Clean success - no additional PATCH/UPDATE operations
       toast({
         title: 'Nouveauté envoyée à la validation Lotexpo',
         description: 'Parfait ! Votre nouveauté a été transmise à l\'équipe Lotexpo pour vérification éditoriale. Comptez en général 24–48 h. Nous vous notifierons par e-mail dès sa mise en ligne.',
         variant: 'default'
       });
 
-      // Success!
+      // ✅ Success! Set result and clean localStorage
       setSubmissionResult({
         success: true,
         message: exhibitorApproved 
@@ -583,6 +584,9 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
           : 'Votre nouveauté a été soumise et sera publiée après validation de l\'exposant.',
         noveltyId: novelty.id
       });
+      
+      // ✅ Clear saved state on success
+      localStorage.removeItem('addNoveltyStepperState');
 
     } catch (error: any) {
       console.groupEnd();
