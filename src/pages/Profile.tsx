@@ -114,8 +114,9 @@ const Profile = () => {
       formData.job_title,
       formData.company,
       formData.primary_sector,
+      profile?.avatar_url,
     ];
-    const filledFields = fields.filter(field => field && field.trim() !== '').length;
+    const filledFields = fields.filter(field => field && (typeof field === 'string' ? field.trim() !== '' : true)).length;
     return Math.round((filledFields / fields.length) * 100);
   };
 

@@ -29,7 +29,7 @@ export function useNoveltyComments(noveltyId: string | undefined) {
         .from('novelty_comments')
         .select('*')
         .eq('novelty_id', noveltyId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching comments:', error);
