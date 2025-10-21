@@ -8,10 +8,10 @@ interface NoveltyInteractionBarProps {
   commentsCount: number;
   showComments: boolean;
   hasDownload: boolean;
-  onLikeToggle: () => void;
-  onCommentsToggle: () => void;
-  onMeetingRequest: () => void;
-  onBrochureDownload?: () => void;
+  onLikeToggle: (e?: React.MouseEvent) => void;
+  onCommentsToggle: (e?: React.MouseEvent) => void;
+  onMeetingRequest: (e?: React.MouseEvent) => void;
+  onBrochureDownload?: (e?: React.MouseEvent) => void;
   isPending?: boolean;
 }
 
