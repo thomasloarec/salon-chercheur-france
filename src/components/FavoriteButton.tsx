@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, CalendarCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import AuthRequiredModal from './AuthRequiredModal';
@@ -63,22 +63,31 @@ const FavoriteButton = ({
         aria-label={isFavorite ? "Retirer de mon agenda" : "Ajouter à mon agenda"}
         className={cn(
           'inline-flex items-center justify-center rounded-full transition-all duration-200',
-          'bg-white hover:bg-green-50 focus:ring-2 focus:ring-green-300 focus:outline-none',
+          isFavorite 
+            ? 'bg-green-500 hover:bg-green-600' 
+            : 'bg-white hover:bg-gray-100',
+          'focus:ring-2 focus:ring-green-300 focus:outline-none',
           'shadow-sm hover:shadow-md',
           config.container,
           toggleFavorite.isPending && "animate-pulse",
           className
         )}
       >
-        <Calendar
-          className={cn(
-            config.icon,
-            "transition-all duration-200",
-            isFavorite
-              ? "fill-green-500 text-green-500"
-              : "text-gray-400 hover:text-green-500"
-          )}
-        />
+        {isFavorite ? (
+          <CalendarCheck
+            className={cn(
+              config.icon,
+              "transition-all duration-200 text-white"
+            )}
+          />
+        ) : (
+          <Calendar
+            className={cn(
+              config.icon,
+              "transition-all duration-200 text-gray-500"
+            )}
+          />
+        )}
       </button>
 
       <AuthRequiredModal
