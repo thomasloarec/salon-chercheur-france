@@ -1,10 +1,12 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarDays, MapPin, Building } from 'lucide-react';
+import { CalendarDays, MapPin, Building, Calendar, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { EventImage } from '@/components/ui/event-image';
 import { useEventSectors } from '@/hooks/useSectors';
 import { getSectorConfig } from '@/constants/sectors';
+import { getEventTypeLabel } from '@/constants/eventTypes';
+import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 import type { Event } from '@/types/event';
 
 interface EventHeroProps {
@@ -58,14 +60,14 @@ export const EventHero = ({ event }: EventHeroProps) => {
                 )
               )}
             </div>
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
               {event.nom_event}
             </h1>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center text-lg text-gray-600">
-              <CalendarDays className="h-5 w-5 mr-3 text-accent" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center text-base text-gray-600">
+              <CalendarDays className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
               <span>
                 {formatDate(event.date_debut)}
                 {event.date_debut !== event.date_fin && (
@@ -74,26 +76,25 @@ export const EventHero = ({ event }: EventHeroProps) => {
               </span>
             </div>
 
-            <div className="flex items-center text-lg text-gray-600">
-              <MapPin className="h-5 w-5 mr-3 text-accent" />
-              <span>{event.ville}, France</span>
+            <div className="flex items-center text-base text-gray-600">
+              <Calendar className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+              <span>{getEventTypeLabel(event.type_event)}</span>
             </div>
 
             {event.nom_lieu && (
-              <div className="flex items-center text-lg text-gray-600">
-                <Building className="h-5 w-5 mr-3 text-accent" />
+              <div className="flex items-center text-base text-gray-600">
+                <Building className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
                 <span>{event.nom_lieu}</span>
               </div>
             )}
-          </div>
 
-          {event.affluence && (
-            <div className="bg-accent/10 rounded-lg p-4">
-              <p className="text-accent font-semibold">
-                {event.affluence.toLocaleString()} visiteurs attendus
-              </p>
-            </div>
-          )}
+            {event.affluence && (
+              <div className="flex items-center text-base text-gray-600">
+                <Users className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                <span>{formatAffluenceWithSuffix(event.affluence)}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Image avec hauteur calée sur le contenu */}

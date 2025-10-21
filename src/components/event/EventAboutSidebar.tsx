@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Building2, MapPin, Map, Calendar, Users, Euro } from 'lucide-react';
+import { MapPin, Map, Euro } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getEnv } from '@/lib/env';
-import { getEventTypeLabel } from '@/constants/eventTypes';
-import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 import DOMPurify from 'dompurify';
 import type { Event } from '@/types/event';
 
@@ -68,29 +66,8 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
         )}
       </section>
 
-      {/* Type, Affluence, Tarifs */}
-      <div className="grid grid-cols-1 gap-4 pt-4 border-t">
-        {/* Type */}
-        <div className="flex items-start gap-2">
-          <Calendar size={18} className="mt-0.5 text-orange-500 flex-shrink-0" />
-          <div>
-            <p className="font-medium text-sm">Type</p>
-            <p className="text-sm text-muted-foreground">{getEventTypeLabel(event.type_event)}</p>
-          </div>
-        </div>
-
-        {/* Affluence */}
-        <div className="flex items-start gap-2">
-          <Users size={18} className="mt-0.5 text-orange-500 flex-shrink-0" />
-          <div>
-            <p className="font-medium text-sm">Affluence</p>
-            <p className="text-sm text-muted-foreground">
-              {event.affluence ? formatAffluenceWithSuffix(event.affluence) : '—'}
-            </p>
-          </div>
-        </div>
-
-        {/* Tarifs */}
+      {/* Tarifs */}
+      <div className="pt-4 border-t">
         <div className="flex items-start gap-2">
           <Euro size={18} className="mt-0.5 text-orange-500 flex-shrink-0" />
           <div>
@@ -99,17 +76,6 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
           </div>
         </div>
       </div>
-
-      {/* Nom du lieu */}
-      <section className="pt-4 border-t">
-        <div className="flex items-center gap-2 mb-2">
-          <Building2 className="h-4 w-4 text-orange-500" />
-          <h4 className="font-medium text-sm">Nom du lieu</h4>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {event.nom_lieu?.trim() || 'Lieu non renseigné'}
-        </p>
-      </section>
 
       {/* Adresse */}
       <section>
