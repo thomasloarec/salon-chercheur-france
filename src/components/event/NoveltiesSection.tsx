@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
@@ -10,21 +10,47 @@ import { NoveltyNotificationDialog } from './NoveltyNotificationDialog';
 import { useNovelties } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
 
+type SortBy = 'awaited' | 'recent';
+
 interface NoveltiesSectionProps {
   event: Event;
 }
 
 export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>('awaited');
+  const [page, setPage] = useState(1);
+  const [allNovelties, setAllNovelties] = useState<any[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const pageSize = 10;
   
-  // Fetch only 2 novelties for preview on event page
+  // Fetch novelties with pagination
   const { data: noveltiesData, isLoading, error } = useNovelties({
     event_id: event.id,
-    sort: 'awaited',
-    page: 1,
-    pageSize: 2,
+    sort: sortBy,
+    page,
+    pageSize,
     enabled: !!event.id
   });
+
+  // Reset page and novelties when sort changes
+  useEffect(() => {
+    setPage(1);
+    setAllNovelties([]);
+  }, [sortBy]);
+
+  // Update all novelties list
+  useEffect(() => {
+    if (noveltiesData?.data) {
+      if (page === 1) {
+        setAllNovelties(noveltiesData.data);
+      } else {
+        setAllNovelties(prev => [...prev, ...noveltiesData.data]);
+      }
+      setLoadingMore(false);
+    }
+  }, [noveltiesData?.data, page]);
 
   // Calculer si on est en phase de pré-lancement (plus de 60 jours avant l'événement)
   const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
@@ -56,7 +82,12 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   }
 
   const total = noveltiesData?.total || 0;
-  const novelties = noveltiesData?.data || [];
+  const hasMore = allNovelties.length < total;
+
+  const handleLoadMore = () => {
+    setLoadingMore(true);
+    setPage(prev => prev + 1);
+  };
 
   // Empty state - Si pré-lancement ET aucune nouveauté, afficher le banner spécial
   if (!error && total === 0) {
@@ -116,36 +147,66 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header with count and add button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Nouveautés</h2>
-          <Badge variant="secondary">
-            {total} nouveauté{total > 1 ? 's' : ''}
-          </Badge>
+    <div className="space-y-6">
+      {/* Header with title, info, and add button */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-semibold">Nouveautés</h2>
+            <Badge variant="secondary">
+              {total} nouveauté{total > 1 ? 's' : ''}
+            </Badge>
+          </div>
+          <AddNoveltyButton event={event} />
         </div>
-        <AddNoveltyButton event={event} />
+        
+        {/* Explanatory text */}
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Les exposants publient leurs nouveautés pour attirer l'attention des visiteurs avant l'événement. 
+          Découvrez en avant-première les innovations qui seront présentées et identifiez les stands que vous souhaitez absolument visiter le jour J.
+        </p>
+
+        {/* Filter buttons */}
+        <div className="flex gap-2">
+          <Button
+            variant={sortBy === 'awaited' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('awaited')}
+            aria-pressed={sortBy === 'awaited'}
+          >
+            Les plus attendues
+          </Button>
+          <Button
+            variant={sortBy === 'recent' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('recent')}
+            aria-pressed={sortBy === 'recent'}
+          >
+            Récentes
+          </Button>
+        </div>
       </div>
 
-      {/* Grid of 2 novelties */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {novelties.map((novelty) => (
-          <div key={novelty.id} className="h-full">
-            <NoveltyCard novelty={novelty} />
-          </div>
+      {/* Novelties list */}
+      <div className="space-y-6">
+        {allNovelties.map((novelty) => (
+          <NoveltyCard key={novelty.id} novelty={novelty} />
         ))}
       </div>
 
-      {/* CTA to view all novelties (LinkedIn-style) */}
-      {total > 2 && (
-        <Link
-          to={`/events/${event.slug}/nouveautes`}
-          className="block w-full rounded-xl border p-4 text-center text-sm font-medium hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={`Voir les ${total} nouveautés de ${event.nom_event}`}
-        >
-          Afficher toutes les nouveautés →
-        </Link>
+      {/* Load more button */}
+      {hasMore && (
+        <div className="text-center">
+          <Button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            variant="outline"
+            className="min-w-32"
+          >
+            {loadingMore && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            {loadingMore ? 'Chargement...' : 'Voir plus'}
+          </Button>
+        </div>
       )}
     </div>
   );

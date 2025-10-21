@@ -6,11 +6,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
-import { EventAbout } from '@/components/event/EventAbout';
-import { EventExhibitorsSection } from '@/components/event/EventExhibitorsSection';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
-import EventPracticalInfoCard from '@/components/event/EventPracticalInfoCard';
+import EventAboutSidebar from '@/components/event/EventAboutSidebar';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import Header from '@/components/Header';
@@ -144,17 +142,16 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             <EventPageHeader event={event} />
             
             <div className="grid grid-cols-12 gap-6">
-              {/* Colonne gauche */}
-              <div className="col-span-12 lg:col-span-8 space-y-6">
-                <EventAbout event={event} />
+              {/* Colonne gauche - Nouveautés */}
+              <div className="col-span-12 lg:col-span-8">
                 <section id="nouveautes">
                   <NoveltiesSection event={event} />
                 </section>
               </div>
 
-              {/* Colonne droite */}
+              {/* Colonne droite - À propos et Exposants */}
               <aside className="col-span-12 lg:col-span-4 space-y-6">
-                <EventPracticalInfoCard event={event} />
+                <EventAboutSidebar event={event} />
                 <ExhibitorsSidebar event={event} />
               </aside>
             </div>
