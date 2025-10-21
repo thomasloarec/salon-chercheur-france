@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarDays, ExternalLink, EyeOff, Calendar, Building, Users, CalendarCheck } from 'lucide-react';
@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { EventSectors } from '@/components/ui/event-sectors';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 
 interface EventPageHeaderProps {
   event: Event;
@@ -24,6 +25,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const isAdmin = user?.email === 'admin@lotexpo.com';
   const { data: isFavorite = false } = useIsFavorite(event.id);
   const toggleFavorite = useToggleFavorite();
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
@@ -40,6 +42,18 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
       toast.error("Une erreur est survenue");
     }
   };
+
+  const sanitize = (dirtyHtml: string) => {
+    return DOMPurify.sanitize(dirtyHtml, { 
+      ADD_TAGS: ['mark'],
+      FORBID_ATTR: ['style']
+    });
+  };
+
+  const defaultDescription = `Découvrez ${event.nom_event}, un événement incontournable du secteur ${event.secteur?.toLowerCase() || ''}. 
+    Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`;
+
+  const description = event.description_event || defaultDescription;
 
   return (
     <section className={cn(
@@ -106,6 +120,27 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
                 <span>{event.nom_lieu}</span>
               </div>
             )}
+          </div>
+
+          {/* Description de l'événement */}
+          <div className="my-6">
+            <div
+              className={cn(
+                "prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left",
+                !showFullDescription && "line-clamp-2"
+              )}
+              dangerouslySetInnerHTML={{
+                __html: sanitize(description)
+              }}
+            />
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 h-auto mt-1 text-primary"
+              onClick={() => setShowFullDescription(!showFullDescription)}
+            >
+              {showFullDescription ? 'Voir moins' : 'Voir plus...'}
+            </Button>
           </div>
 
           {/* Conteneur pour le séparateur et les actions afin de limiter la largeur */}

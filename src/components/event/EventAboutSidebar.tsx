@@ -1,23 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { MapPin, Map, Euro } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { getEnv } from '@/lib/env';
-import DOMPurify from 'dompurify';
 import type { Event } from '@/types/event';
 
 interface EventAboutSidebarProps {
   event: Event;
 }
 
-const sanitize = (dirtyHtml: string) => {
-  return DOMPurify.sanitize(dirtyHtml, { 
-    ADD_TAGS: ['mark'],
-    FORBID_ATTR: ['style']
-  });
-};
-
 export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
-  const [showFullDescription, setShowFullDescription] = useState(false);
   const apiKey = getEnv('VITE_GOOGLE_MAPS_API_KEY') || getEnv('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY');
   const hasCoordinates = typeof (event as any).latitude === 'number' && typeof (event as any).longitude === 'number';
 
@@ -31,40 +21,9 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
     return parts.join(', ') || 'Adresse non renseignée';
   };
 
-  const defaultDescription = `Découvrez ${event.nom_event}, un événement incontournable du secteur ${event.secteur?.toLowerCase() || ''}. 
-    Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`;
-
-  const description = event.description_event || defaultDescription;
-  const descriptionPreview = description.slice(0, 150);
-  const needsExpansion = description.length > 150;
-
   return (
     <div className="rounded-xl border bg-card p-4 md:p-5 space-y-5">
       <h3 className="font-semibold text-lg">À propos de l'événement</h3>
-
-      {/* Description */}
-      <section>
-        <div
-          className="prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left"
-          dangerouslySetInnerHTML={{
-            __html: sanitize(
-              showFullDescription || !needsExpansion
-                ? description
-                : descriptionPreview + '...'
-            )
-          }}
-        />
-        {needsExpansion && (
-          <Button
-            variant="link"
-            size="sm"
-            className="p-0 h-auto mt-1 text-primary"
-            onClick={() => setShowFullDescription(!showFullDescription)}
-          >
-            {showFullDescription ? 'Voir moins' : 'Voir plus...'}
-          </Button>
-        )}
-      </section>
 
       {/* Tarifs */}
       <div className="pt-4 border-t">
