@@ -17,7 +17,7 @@ export default function NoveltyComments({ noveltyId }: NoveltyCommentsProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [newComment, setNewComment] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [showCommentsList, setShowCommentsList] = useState(false);
 
   const { data: comments = [], isLoading } = useNoveltyComments(noveltyId);
   const addCommentMutation = useAddComment(noveltyId);
@@ -36,6 +36,8 @@ export default function NoveltyComments({ noveltyId }: NoveltyCommentsProps) {
     try {
       await addCommentMutation.mutateAsync(newComment);
       setNewComment('');
+      // Show comments list after adding a comment
+      setShowCommentsList(true);
     } catch (error) {
       console.error('Error submitting comment:', error);
     }
@@ -70,21 +72,23 @@ export default function NoveltyComments({ noveltyId }: NoveltyCommentsProps) {
 
   return (
     <div className="border-t pt-4 space-y-4">
-      {/* Header - toggle comments */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors w-full"
-      >
-        <MessageCircle className="h-4 w-4" />
-        <span>{comments.length} commentaire{comments.length > 1 ? 's' : ''}</span>
-      </button>
-
-      {/* Comments section */}
-      {isExpanded && (
-        <div className="space-y-4">
-          {/* Add comment form */}
-          {user ? (
-            <form onSubmit={handleSubmitComment} className="space-y-2">
+      {/* Add comment form - Always visible */}
+      {user ? (
+        <form onSubmit={handleSubmitComment} className="space-y-2">
+          <div className="flex gap-3">
+            <Avatar className="w-10 h-10 flex-shrink-0">
+              <AvatarImage 
+                src={user?.user_metadata?.avatar_url || undefined}
+                alt="Votre photo"
+              />
+              <AvatarFallback className="text-xs">
+                {getInitials(
+                  user?.user_metadata?.first_name || null,
+                  user?.user_metadata?.last_name || null
+                )}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
               <Textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
@@ -92,38 +96,55 @@ export default function NoveltyComments({ noveltyId }: NoveltyCommentsProps) {
                 className="min-h-[80px] resize-none"
                 maxLength={1000}
               />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  {newComment.length}/1000
-                </span>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!newComment.trim() || addCommentMutation.isPending}
-                >
-                  {addCommentMutation.isPending ? (
-                    'Envoi...'
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Publier
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="rounded-lg border border-dashed p-4 text-center">
-              <p className="text-sm text-muted-foreground mb-2">
-                Connectez-vous pour commenter
-              </p>
-              <Button size="sm" onClick={() => navigate('/auth')}>
-                Se connecter
-              </Button>
             </div>
-          )}
+          </div>
+          <div className="flex items-center justify-between pl-[52px]">
+            <span className="text-xs text-muted-foreground">
+              {newComment.length}/1000
+            </span>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!newComment.trim() || addCommentMutation.isPending}
+            >
+              {addCommentMutation.isPending ? (
+                'Envoi...'
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Publier
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="rounded-lg border border-dashed p-4 text-center">
+          <p className="text-sm text-muted-foreground mb-2">
+            Connectez-vous pour commenter
+          </p>
+          <Button size="sm" onClick={() => navigate('/auth')}>
+            Se connecter
+          </Button>
+        </div>
+      )}
 
-          {/* Comments list */}
+      {/* Comments count and toggle */}
+      {comments.length > 0 && (
+        <button
+          onClick={() => setShowCommentsList(!showCommentsList)}
+          className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors w-full"
+        >
+          <MessageCircle className="h-4 w-4" />
+          <span>
+            {showCommentsList ? 'Masquer' : 'Voir'} {comments.length} commentaire{comments.length > 1 ? 's' : ''}
+          </span>
+        </button>
+      )}
+
+      {/* Comments list */}
+      {showCommentsList && (
+        <div className="space-y-4">
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2].map((i) => (
@@ -136,10 +157,6 @@ export default function NoveltyComments({ noveltyId }: NoveltyCommentsProps) {
                 </div>
               ))}
             </div>
-          ) : comments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Aucun commentaire pour le moment
-            </p>
           ) : (
             <div className="space-y-4">
               {comments.map((comment) => {
