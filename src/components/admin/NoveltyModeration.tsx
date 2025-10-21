@@ -77,12 +77,16 @@ export default function NoveltyModeration() {
 
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, job_title, company, primary_sector')
+        .select(`
+          user_id, first_name, last_name, job_title, company, primary_sector,
+          sectors:primary_sector ( name )
+        `)
         .in('user_id', uniqueCreatorIds);
 
       // Enrich novelties with creator profile data
       const enrichedNovelties = novelties?.map(novelty => {
         const profile = profiles?.find(p => p.user_id === novelty.created_by);
+        const sectorName = profile?.sectors?.name || '';
 
         return {
           ...novelty,
@@ -91,7 +95,7 @@ export default function NoveltyModeration() {
             last_name: profile.last_name || '',
             job_title: profile.job_title || '',
             company: profile.company || '',
-            primary_sector: profile.primary_sector || '',
+            primary_sector: sectorName,
             email: 'Email non disponible' // Email requires DB migration to profiles table
           } : undefined
         };
