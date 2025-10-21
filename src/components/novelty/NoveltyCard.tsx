@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
+import { useNoveltyComments } from '@/hooks/useNoveltyComments';
 import LeadForm from './LeadForm';
 import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import NoveltyComments from './NoveltyComments';
+import NoveltyInteractionBar from './NoveltyInteractionBar';
 import type { Novelty } from '@/hooks/useNovelties';
 
 interface NoveltyCardProps {
@@ -34,6 +36,10 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showExhibitorModal, setShowExhibitorModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  
+  const { data: commentsData } = useNoveltyComments(novelty.id);
+  const commentsCount = commentsData?.length || 0;
   const [leadFormType, setLeadFormType] = useState<'brochure_download' | 'meeting_request'>('brochure_download');
   const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -246,46 +252,23 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
         </div>
       )}
 
-      {/* CTA Buttons - Always visible */}
-      <div className="flex items-center justify-between gap-3 pt-4 border-t">
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleLikeToggle}
-            variant={isLiked ? "default" : "outline"}
-            size="sm"
-            disabled={isPending}
-            className="flex items-center gap-2"
-          >
-            <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
-            <span>{likesCount || 0}</span>
-          </Button>
-
-          {novelty.doc_url && (
-            <Button
-              onClick={handleBrochureDownload}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Brochure
-            </Button>
-          )}
-
-          <Button
-            onClick={handleMeetingRequest}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Calendar className="h-4 w-4" />
-            RDV
-          </Button>
-        </div>
-      </div>
+      {/* Interaction Bar - LinkedIn style */}
+      <NoveltyInteractionBar
+        likesCount={likesCount || 0}
+        isLiked={isLiked}
+        commentsCount={commentsCount}
+        showComments={showComments}
+        hasDownload={!!novelty.doc_url}
+        onLikeToggle={handleLikeToggle}
+        onCommentsToggle={() => setShowComments(!showComments)}
+        onMeetingRequest={handleMeetingRequest}
+        onBrochureDownload={novelty.doc_url ? handleBrochureDownload : undefined}
+        isPending={isPending}
+      />
 
       {/* Comments Section */}
-      <NoveltyComments noveltyId={novelty.id} />
+      {showComments && <NoveltyComments noveltyId={novelty.id} showAll />}
+      {!showComments && <NoveltyComments noveltyId={novelty.id} />}
 
       {/* Lead Form Modal */}
       <LeadForm

@@ -8,6 +8,7 @@ export interface NoveltyComment {
   novelty_id: string;
   user_id: string;
   content: string;
+  image_url?: string | null;
   created_at: string;
   updated_at: string;
   profiles: {
@@ -63,7 +64,7 @@ export function useAddComment(noveltyId: string) {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, imageUrl }: { content: string; imageUrl?: string }) => {
       if (!user) {
         throw new Error('Vous devez être connecté pour commenter');
       }
@@ -73,7 +74,8 @@ export function useAddComment(noveltyId: string) {
         .insert({
           novelty_id: noveltyId,
           user_id: user.id,
-          content: content.trim()
+          content: content.trim(),
+          image_url: imageUrl || null
         })
         .select()
         .single();
