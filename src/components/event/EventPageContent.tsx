@@ -149,10 +149,10 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 </section>
               </div>
 
-              {/* Colonne droite - À propos et Exposants */}
+              {/* Colonne droite - Exposants et À propos */}
               <aside className="col-span-12 lg:col-span-4 space-y-6">
-                <EventAboutSidebar event={event} />
                 <ExhibitorsSidebar event={event} />
+                <EventAboutSidebar event={event} />
               </aside>
             </div>
           </div>
