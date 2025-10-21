@@ -123,16 +123,11 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
 
       const isAdmin = profile?.role === 'admin';
 
-      // Get exhibitors owned by the user (or all if admin)
-      let exhibitorsQuery = supabase
+      // Get ALL exhibitors participating in the event (not just owned by user)
+      // Moderation will verify permissions after submission
+      const { data: exhibitorsData, error: exhibitorsError } = await supabase
         .from('exhibitors')
         .select('id, name, plan, slug, logo_url, owner_user_id, description, website, created_at, updated_at');
-
-      if (!isAdmin) {
-        exhibitorsQuery = exhibitorsQuery.eq('owner_user_id', user.id);
-      }
-
-      const { data: exhibitorsData, error: exhibitorsError } = await exhibitorsQuery;
 
       if (exhibitorsError) {
         console.error('Error fetching exhibitors:', exhibitorsError);
@@ -386,7 +381,7 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
             ) : userExhibitors.length === 0 ? (
               <div className="p-4 border rounded-lg bg-muted">
                 <p className="text-sm text-muted-foreground">
-                  Aucun exposant participant trouvé. Vous devez être co-administrateur d'un exposant participant à cet événement.
+                  Aucun exposant participant à cet événement. Les nouveautés ne peuvent être créées que pour les exposants participants.
                 </p>
               </div>
             ) : (
