@@ -70,10 +70,10 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             {event.nom_event}
           </h1>
 
-          {/* Infos en grille compacte */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+          {/* Toutes les infos sur une seule ligne */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base text-gray-600 mb-6">
             {/* Date */}
-            <div className="flex items-center text-base text-gray-600">
+            <div className="flex items-center">
               <CalendarDays className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
               <span>
                 {formatDate(event.date_debut)}
@@ -85,25 +85,25 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
 
             {/* Type */}
             {event.type_event && (
-              <div className="flex items-center text-base text-gray-600">
+              <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
                 <span>{getEventTypeLabel(event.type_event)}</span>
               </div>
             )}
 
-            {/* Nom du lieu */}
-            {event.nom_lieu && (
-              <div className="flex items-center text-base text-gray-600">
-                <Building className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
-                <span>{event.nom_lieu}</span>
+            {/* Affluence */}
+            {event.affluence && (
+              <div className="flex items-center">
+                <Users className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                <span>{formatAffluenceWithSuffix(event.affluence)}</span>
               </div>
             )}
 
-            {/* Affluence */}
-            {event.affluence && (
-              <div className="flex items-center text-base text-gray-600">
-                <Users className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
-                <span>{formatAffluenceWithSuffix(event.affluence)}</span>
+            {/* Nom du lieu */}
+            {event.nom_lieu && (
+              <div className="flex items-center">
+                <Building className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                <span>{event.nom_lieu}</span>
               </div>
             )}
           </div>
@@ -117,10 +117,13 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Agenda Lotexpo (Favoris) */}
                   <Button 
-                    variant={isFavorite ? "default" : "outline"}
+                    variant="outline"
                     size="sm"
                     onClick={handleFavoriteClick}
                     disabled={toggleFavorite.isPending}
+                    className={cn(
+                      isFavorite && "bg-accent text-white hover:bg-accent/90 border-accent"
+                    )}
                   >
                     <CalendarDays className="h-4 w-4 mr-2" />
                     Agenda Lotexpo
