@@ -125,10 +125,6 @@ export default function Nouveautes() {
                   : `Découvrez les nouveautés les plus attendues des salons professionnels`
                 }
               </p>
-              
-              <p className="text-sm text-muted-foreground">
-                {novelties.length} nouveauté{novelties.length !== 1 ? 's' : ''} trouvée{novelties.length !== 1 ? 's' : ''}
-              </p>
             </div>
           )}
 

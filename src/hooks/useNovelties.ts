@@ -148,10 +148,13 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
         items: data
       });
 
-      // Fetch likes count for all novelties
+      // Fetch likes count and comments count for all novelties
       let likesCountMap: Record<string, number> = {};
+      let commentsCountMap: Record<string, number> = {};
       if (data && data.length > 0) {
         const noveltyIds = data.map(n => n.id);
+        
+        // Fetch likes
         const { data: likesData } = await supabase
           .from('novelty_likes')
           .select('novelty_id')
@@ -162,12 +165,25 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
           acc[like.novelty_id] = (acc[like.novelty_id] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
+
+        // Fetch comments
+        const { data: commentsData } = await supabase
+          .from('novelty_comments')
+          .select('novelty_id')
+          .in('novelty_id', noveltyIds);
+        
+        // Count comments per novelty
+        commentsCountMap = (commentsData || []).reduce((acc, comment) => {
+          acc[comment.novelty_id] = (acc[comment.novelty_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
       }
 
-      // Add likes count to each novelty
+      // Add likes count and comments count to each novelty
       const dataWithLikes = (data || []).map(novelty => ({
         ...novelty,
-        likes_count: likesCountMap[novelty.id] || 0
+        likes_count: likesCountMap[novelty.id] || 0,
+        comments_count: commentsCountMap[novelty.id] || 0
       }));
 
       // Sort based on selected filter
@@ -180,8 +196,21 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
           }
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
+      } else if (sort === 'recent') {
+        // Sort by likes count first, then comments count, then by created_at
+        sortedData = [...dataWithLikes].sort((a, b) => {
+          // First compare likes
+          if (b.likes_count !== a.likes_count) {
+            return b.likes_count - a.likes_count;
+          }
+          // If likes are equal, compare comments
+          if (b.comments_count !== a.comments_count) {
+            return b.comments_count - a.comments_count;
+          }
+          // If both are equal, compare by date
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
       }
-      // For 'recent', data is already sorted by created_at DESC from the query
 
       // Check user routes
       let userRouteItems: string[] = [];
