@@ -1,17 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { Send, Smile, Image as ImageIcon, X } from 'lucide-react';
+import { Send, Image as ImageIcon, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 interface CommentInputProps {
   onSubmit: (content: string, imageUrl?: string) => Promise<void>;
   isPending: boolean;
 }
-
-const COMMON_EMOJIS = ['👍', '❤️', '😊', '🎉', '🤔', '👏', '🔥', '💡'];
 
 export default function CommentInput({ onSubmit, isPending }: CommentInputProps) {
   const { user } = useAuth();
@@ -27,9 +26,8 @@ export default function CommentInput({ onSubmit, isPending }: CommentInputProps)
     return (first + last).toUpperCase() || '?';
   };
 
-  const handleEmojiClick = (emoji: string) => {
-    setComment(prev => prev + emoji);
-    setShowEmojiPicker(false);
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setComment(prev => prev + emojiData.emoji);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,10 +83,16 @@ export default function CommentInput({ onSubmit, isPending }: CommentInputProps)
     e.preventDefault();
     if (!comment.trim() && !uploadedImage) return;
 
+    if (comment.length > 500) {
+      toast.error('Le commentaire ne peut pas dépasser 500 caractères');
+      return;
+    }
+
     try {
       await onSubmit(comment, uploadedImage || undefined);
       setComment('');
       setUploadedImage(null);
+      setShowEmojiPicker(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -135,23 +139,17 @@ export default function CommentInput({ onSubmit, isPending }: CommentInputProps)
                 className="h-7 w-7 p-0"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               >
-                <Smile className="h-4 w-4" />
+                😊
               </Button>
               
               {showEmojiPicker && (
-                <div className="absolute bottom-full right-0 mb-2 p-2 bg-popover border rounded-lg shadow-lg z-10">
-                  <div className="flex gap-1">
-                    {COMMON_EMOJIS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => handleEmojiClick(emoji)}
-                        className="hover:bg-accent p-1 rounded text-lg"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
+                <div className="absolute bottom-full right-0 mb-2 z-50">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    searchPlaceHolder="Recherche"
+                    width={350}
+                    height={400}
+                  />
                 </div>
               )}
             </div>
@@ -203,12 +201,6 @@ export default function CommentInput({ onSubmit, isPending }: CommentInputProps)
               <X className="h-3 w-3" />
             </Button>
           </div>
-        )}
-
-        {comment.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {comment.length}/500
-          </p>
         )}
       </div>
     </form>

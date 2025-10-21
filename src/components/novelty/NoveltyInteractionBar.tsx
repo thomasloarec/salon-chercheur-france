@@ -63,7 +63,7 @@ export default function NoveltyInteractionBar({
         className="flex items-center gap-2 hover:bg-accent"
       >
         <Calendar className="h-5 w-5" />
-        <span className="font-medium hidden sm:inline">Rendez-vous</span>
+        <span className="font-medium hidden sm:inline">Prendre RDV</span>
         <span className="font-medium sm:hidden">RDV</span>
       </Button>
 
@@ -75,7 +75,8 @@ export default function NoveltyInteractionBar({
           className="flex items-center gap-2 hover:bg-accent"
         >
           <Download className="h-5 w-5" />
-          <span className="font-medium hidden sm:inline">Brochure</span>
+          <span className="font-medium hidden sm:inline">Télécharger la brochure</span>
+          <span className="font-medium sm:hidden">Brochure</span>
         </Button>
       )}
     </div>

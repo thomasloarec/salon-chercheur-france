@@ -94,6 +94,11 @@ export default function LeadForm({
               </>
             )}
           </DialogTitle>
+          {!isDownload && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Réservez un créneau sur le salon pour échanger directement avec notre équipe et approfondir votre projet.
+            </p>
+          )}
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
