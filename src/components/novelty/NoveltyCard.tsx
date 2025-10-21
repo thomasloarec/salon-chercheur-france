@@ -42,6 +42,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
 
   const hasMultipleImages = images.length > 1;
   const description = [novelty.reason_1, novelty.reason_2, novelty.reason_3].filter(Boolean).join(' ');
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   const handleLikeToggle = (e: React.MouseEvent) => {
     e.stopPropagation(); // Éviter de déclencher d'autres actions
@@ -152,7 +153,17 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
       {/* Description */}
       {description && (
         <div className="text-sm text-muted-foreground leading-relaxed">
-          {description}
+          <p className={cn(!isDescriptionExpanded && "line-clamp-2")}>
+            {description}
+          </p>
+          {description.length > 150 && (
+            <button
+              onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+              className="text-primary hover:underline text-sm mt-1 font-medium"
+            >
+              {isDescriptionExpanded ? 'Voir moins' : 'Voir plus...'}
+            </button>
+          )}
         </div>
       )}
 

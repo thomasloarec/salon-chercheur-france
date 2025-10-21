@@ -62,7 +62,7 @@ export default function NoveltyModeration() {
       const { data: novelties, error } = await supabase
         .from('novelties')
         .select(`
-          id, title, type, status, created_at, created_by, media_urls, doc_url, exhibitor_id, event_id,
+          id, title, type, status, created_at, created_by, media_urls, doc_url, exhibitor_id, event_id, reason_1, stand_info,
           exhibitors!inner ( id, name, slug ),
           events!inner ( id, nom_event, slug )
         `)
@@ -83,10 +83,16 @@ export default function NoveltyModeration() {
         `)
         .in('user_id', uniqueCreatorIds);
 
+      // Fetch user emails via RPC function
+      const { data: emails } = await supabase.rpc('get_user_emails_for_moderation', {
+        user_ids: uniqueCreatorIds
+      });
+
       // Enrich novelties with creator profile data
       const enrichedNovelties = novelties?.map(novelty => {
         const profile = profiles?.find(p => p.user_id === novelty.created_by);
         const sectorName = profile?.sectors?.name || '';
+        const userEmail = emails?.find((e: any) => e.user_id === novelty.created_by)?.email || 'Email non disponible';
 
         return {
           ...novelty,
@@ -96,7 +102,7 @@ export default function NoveltyModeration() {
             job_title: profile.job_title || '',
             company: profile.company || '',
             primary_sector: sectorName,
-            email: 'Email non disponible' // Email requires DB migration to profiles table
+            email: userEmail
           } : undefined
         };
       });

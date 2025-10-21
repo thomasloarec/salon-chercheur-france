@@ -1889,6 +1889,13 @@ export type Database = {
           upcoming_events: Json
         }[]
       }
+      get_user_emails_for_moderation: {
+        Args: { user_ids: string[] }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
