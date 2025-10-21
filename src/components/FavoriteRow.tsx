@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, ChevronRight, Heart } from 'lucide-react';
+import { Calendar, MapPin, ChevronRight, CalendarCheck } from 'lucide-react';
 import { SiGooglecalendar, SiMicrosoftoutlook } from "react-icons/si";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -178,9 +178,9 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
         aria-label="Retirer de l'agenda"
         className="flex-shrink-0"
       >
-        <Heart
+        <CalendarCheck
           className={cn(
-            'w-5 h-5 fill-red-500 text-red-500',
+            'w-5 h-5 fill-green-500 text-green-500',
             toggleFavorite.isPending && 'animate-pulse'
           )}
         />

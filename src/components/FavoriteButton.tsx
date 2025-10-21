@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import AuthRequiredModal from './AuthRequiredModal';
@@ -60,23 +60,23 @@ const FavoriteButton = ({
       <button
         onClick={handleClick}
         disabled={toggleFavorite.isPending}
-        aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+        aria-label={isFavorite ? "Retirer de mon agenda" : "Ajouter à mon agenda"}
         className={cn(
           'inline-flex items-center justify-center rounded-full transition-all duration-200',
-          'bg-white hover:bg-red-50 focus:ring-2 focus:ring-red-300 focus:outline-none',
+          'bg-white hover:bg-green-50 focus:ring-2 focus:ring-green-300 focus:outline-none',
           'shadow-sm hover:shadow-md',
           config.container,
           toggleFavorite.isPending && "animate-pulse",
           className
         )}
       >
-        <Heart
+        <Calendar
           className={cn(
             config.icon,
             "transition-all duration-200",
             isFavorite
-              ? "fill-red-500 text-red-500"
-              : "text-gray-400 hover:text-red-500"
+              ? "fill-green-500 text-green-500"
+              : "text-gray-400 hover:text-green-500"
           )}
         />
       </button>
