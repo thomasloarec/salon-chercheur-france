@@ -159,7 +159,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       {displayedNovelties.map((novelty: any) => (
                         <Link
                           key={novelty.id}
-                          to={`/events/${event.slug}/nouveautes`}
+                          to={`/events/${event.slug}`}
                           className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group"
                         >
                           {/* Miniature */}

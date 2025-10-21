@@ -72,7 +72,7 @@ export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
 
   return (
     <Card className={cn("group overflow-hidden hover:shadow-xl transition-all duration-300", className)}>
-      <Link to={`/events/${novelty.events.slug}/nouveautes`} className="block">
+      <Link to={`/events/${novelty.events.slug}`} className="block">
         {/* Image Header avec overlay gradient */}
         <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-muted to-muted/50">
           {mainImage ? (
