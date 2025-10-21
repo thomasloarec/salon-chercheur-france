@@ -33,6 +33,8 @@ export interface NoveltyRow {
     popularity_score: number;
   };
   in_user_route?: boolean;
+  likes_count?: number;
+  comments_count?: number;
 }
 
 export interface NoveltiesListResponse {
@@ -86,7 +88,38 @@ async function fetchNovelties(
 
   console.log('✅ useNoveltiesList fetched:', data?.length || 0, 'novelties');
 
-  // Map database results to NoveltyRow interface
+  // Fetch likes and comments count for all novelties
+  let likesCountMap: Record<string, number> = {};
+  let commentsCountMap: Record<string, number> = {};
+  if (data && data.length > 0) {
+    const noveltyIds = data.map(n => n.id);
+    
+    // Fetch likes
+    const { data: likesData } = await supabase
+      .from('novelty_likes')
+      .select('novelty_id')
+      .in('novelty_id', noveltyIds);
+    
+    // Count likes per novelty
+    likesCountMap = (likesData || []).reduce((acc, like) => {
+      acc[like.novelty_id] = (acc[like.novelty_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Fetch comments
+    const { data: commentsData } = await supabase
+      .from('novelty_comments')
+      .select('novelty_id')
+      .in('novelty_id', noveltyIds);
+    
+    // Count comments per novelty
+    commentsCountMap = (commentsData || []).reduce((acc, comment) => {
+      acc[comment.novelty_id] = (acc[comment.novelty_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }
+
+  // Map database results to NoveltyRow interface with likes and comments count
   const results: NoveltyRow[] = (data ?? []).map((row: any) => ({
     id: row.id,
     title: row.title,
@@ -105,7 +138,9 @@ async function fetchNovelties(
       type_event: row.events.type_event,
       code_postal: row.events.code_postal
     } : undefined,
-    novelty_stats: row.novelty_stats || undefined
+    novelty_stats: row.novelty_stats || undefined,
+    likes_count: likesCountMap[row.id] || 0,
+    comments_count: commentsCountMap[row.id] || 0
   }));
 
   // Filter to only show novelties from ongoing or upcoming events with client-side filters
@@ -146,16 +181,23 @@ async function fetchNovelties(
       // Premier pour cet événement
       eventMap.set(eventId, novelty);
     } else {
-      // Comparer la popularité pour garder la meilleure
-      const currentScore = novelty.novelty_stats?.popularity_score || novelty.novelty_stats?.route_users_count || 0;
-      const existingScore = existing.novelty_stats?.popularity_score || existing.novelty_stats?.route_users_count || 0;
+      // Comparer la popularité : likes d'abord, puis commentaires, puis date
+      const currentLikes = (novelty as any).likes_count || 0;
+      const existingLikes = (existing as any).likes_count || 0;
+      const currentComments = (novelty as any).comments_count || 0;
+      const existingComments = (existing as any).comments_count || 0;
       
-      if (currentScore > existingScore) {
+      if (currentLikes > existingLikes) {
         eventMap.set(eventId, novelty);
-      } else if (currentScore === existingScore) {
-        // À score égal, prendre la plus récente
-        if (new Date(novelty.created_at) > new Date(existing.created_at)) {
+      } else if (currentLikes === existingLikes) {
+        // À likes égaux, comparer les commentaires
+        if (currentComments > existingComments) {
           eventMap.set(eventId, novelty);
+        } else if (currentComments === existingComments) {
+          // À likes et commentaires égaux, prendre la plus récente
+          if (new Date(novelty.created_at) > new Date(existing.created_at)) {
+            eventMap.set(eventId, novelty);
+          }
         }
       }
     }
@@ -163,15 +205,24 @@ async function fetchNovelties(
 
   const uniqueByEvent = Array.from(eventMap.values());
   
-  // Tri final par popularité puis date
+  // Tri final par likes, puis commentaires, puis date
   uniqueByEvent.sort((a, b) => {
-    const scoreA = a.novelty_stats?.popularity_score || a.novelty_stats?.route_users_count || 0;
-    const scoreB = b.novelty_stats?.popularity_score || b.novelty_stats?.route_users_count || 0;
+    const likesA = (a as any).likes_count || 0;
+    const likesB = (b as any).likes_count || 0;
+    const commentsA = (a as any).comments_count || 0;
+    const commentsB = (b as any).comments_count || 0;
     
-    if (scoreB !== scoreA) {
-      return scoreB - scoreA;
+    // D'abord par likes
+    if (likesB !== likesA) {
+      return likesB - likesA;
     }
     
+    // Puis par commentaires
+    if (commentsB !== commentsA) {
+      return commentsB - commentsA;
+    }
+    
+    // Enfin par date
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
