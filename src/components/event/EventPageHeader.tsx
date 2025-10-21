@@ -1,16 +1,19 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarDays, ExternalLink, EyeOff } from 'lucide-react';
+import { CalendarDays, ExternalLink, EyeOff, Calendar, Building, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import CalBtn from '@/components/CalBtn';
-import FavoriteButton from '@/components/FavoriteButton';
+import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
+import { getEventTypeLabel } from '@/constants/eventTypes';
+import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 import type { Event } from '@/types/event';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { EventSectors } from '@/components/ui/event-sectors';
+import { toast } from 'sonner';
 
 interface EventPageHeaderProps {
   event: Event;
@@ -19,12 +22,24 @@ interface EventPageHeaderProps {
 export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const { user } = useAuth();
   const isAdmin = user?.email === 'admin@lotexpo.com';
+  const { data: isFavorite = false } = useIsFavorite(event.id);
+  const toggleFavorite = useToggleFavorite();
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
 
   const official = event.url_site_officiel;
+
+  const handleFavoriteClick = async () => {
+    try {
+      await toggleFavorite.mutateAsync(event.id);
+      toast.success(isFavorite ? "Retiré de votre agenda" : "Ajouté à votre agenda");
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error("Une erreur est survenue");
+    }
+  };
 
   return (
     <section className={cn(
@@ -50,27 +65,47 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             sectorClassName="text-sm px-3 py-1"
           />
 
-          {/* Titre principal avec bouton Favoris */}
-          <div className="inline-flex items-center space-x-2 mb-6">
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight text-left">
-              {event.nom_event}
-            </h1>
-            <FavoriteButton
-              eventId={event.id}
-              size="xl"
-              variant="inline"
-            />
-          </div>
+          {/* Titre principal */}
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight text-left mb-4">
+            {event.nom_event}
+          </h1>
 
-          {/* Date */}
-          <div className="flex items-center text-lg text-gray-600 mb-6">
-            <CalendarDays className="h-6 w-6 mr-3 text-accent" />
-            <span className="font-medium">
-              {formatDate(event.date_debut)}
-              {event.date_debut !== event.date_fin && (
-                <> - {formatDate(event.date_fin)}</>
-              )}
-            </span>
+          {/* Infos en grille compacte */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+            {/* Date */}
+            <div className="flex items-center text-base text-gray-600">
+              <CalendarDays className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+              <span>
+                {formatDate(event.date_debut)}
+                {event.date_debut !== event.date_fin && (
+                  <> - {formatDate(event.date_fin)}</>
+                )}
+              </span>
+            </div>
+
+            {/* Type */}
+            {event.type_event && (
+              <div className="flex items-center text-base text-gray-600">
+                <Calendar className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                <span>{getEventTypeLabel(event.type_event)}</span>
+              </div>
+            )}
+
+            {/* Nom du lieu */}
+            {event.nom_lieu && (
+              <div className="flex items-center text-base text-gray-600">
+                <Building className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                <span>{event.nom_lieu}</span>
+              </div>
+            )}
+
+            {/* Affluence */}
+            {event.affluence && (
+              <div className="flex items-center text-base text-gray-600">
+                <Users className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                <span>{formatAffluenceWithSuffix(event.affluence)}</span>
+              </div>
+            )}
           </div>
 
           {/* Conteneur pour le séparateur et les actions afin de limiter la largeur */}
@@ -80,6 +115,17 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
               {/* Boutons calendrier avec texte explicatif */}
               <div className="flex flex-col">
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* Agenda Lotexpo (Favoris) */}
+                  <Button 
+                    variant={isFavorite ? "default" : "outline"}
+                    size="sm"
+                    onClick={handleFavoriteClick}
+                    disabled={toggleFavorite.isPending}
+                  >
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    Agenda Lotexpo
+                  </Button>
+                  
                   <CalBtn type="gcal" event={event} />
                   <CalBtn type="outlook" event={event} />
                   {official && (
