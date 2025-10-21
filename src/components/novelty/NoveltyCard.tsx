@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, MapPin, Heart, Download, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
 import LeadForm from './LeadForm';
 import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
+import NoveltyComments from './NoveltyComments';
 import type { Novelty } from '@/hooks/useNovelties';
 
 interface NoveltyCardProps {
@@ -282,6 +283,9 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
           </Button>
         </div>
       </div>
+
+      {/* Comments Section */}
+      <NoveltyComments noveltyId={novelty.id} />
 
       {/* Lead Form Modal */}
       <LeadForm

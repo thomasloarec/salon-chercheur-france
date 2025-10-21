@@ -30,6 +30,7 @@ import ChangeEmailModal from '@/components/profile/ChangeEmailModal';
 import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import ProfileSkeleton from '@/components/profile/ProfileSkeleton';
 import EmptyProfileState from '@/components/profile/EmptyProfileState';
+import AvatarUpload from '@/components/profile/AvatarUpload';
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -151,7 +152,20 @@ const Profile = () => {
             {/* Bloc Identité */}
             <Card className="p-6 rounded-2xl shadow-sm">
               <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-2">Informations personnelles</h2>
+                <h2 className="text-xl font-semibold mb-4">Informations personnelles</h2>
+                
+                {/* Avatar Upload */}
+                <div className="mb-6 pb-6 border-b">
+                  <AvatarUpload
+                    currentAvatarUrl={profile?.avatar_url}
+                    firstName={formData.first_name}
+                    lastName={formData.last_name}
+                    onAvatarUpdated={(url) => {
+                      // Avatar updated, could trigger a profile refresh if needed
+                    }}
+                  />
+                </div>
+
                 <div className="flex items-center gap-2 mb-4">
                   <Progress value={profileProgress} className="flex-1" />
                   <span className="text-sm text-gray-600 font-medium">

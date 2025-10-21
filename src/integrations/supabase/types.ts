@@ -1041,6 +1041,41 @@ export type Database = {
           },
         ]
       }
+      novelty_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          novelty_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          novelty_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          novelty_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_comments_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       novelty_images: {
         Row: {
           created_at: string
@@ -1332,6 +1367,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           company: string | null
           created_at: string
           first_name: string | null
@@ -1344,6 +1380,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
           company?: string | null
           created_at?: string
           first_name?: string | null
@@ -1356,6 +1393,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
           company?: string | null
           created_at?: string
           first_name?: string | null
