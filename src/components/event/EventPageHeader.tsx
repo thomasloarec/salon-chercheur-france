@@ -1,7 +1,7 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarDays, ExternalLink, EyeOff, Calendar, Building, Users } from 'lucide-react';
+import { CalendarDays, ExternalLink, EyeOff, Calendar, Building, Users, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -122,10 +122,17 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
                     onClick={handleFavoriteClick}
                     disabled={toggleFavorite.isPending}
                     className={cn(
-                      isFavorite && "bg-accent text-white hover:bg-accent/90 border-accent"
+                      "transition-all duration-200",
+                      isFavorite 
+                        ? "bg-green-500 text-white hover:bg-green-600 border-green-500" 
+                        : "bg-white hover:bg-gray-100"
                     )}
                   >
-                    <CalendarDays className="h-4 w-4 mr-2" />
+                    {isFavorite ? (
+                      <CalendarCheck className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Calendar className="h-4 w-4 mr-2" />
+                    )}
                     Agenda Lotexpo
                   </Button>
                   
