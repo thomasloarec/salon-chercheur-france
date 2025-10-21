@@ -10,6 +10,8 @@ import { X, Plus, Loader2 } from 'lucide-react';
 import { useCreateNovelty } from '@/hooks/useNovelties';
 import { useNoveltyQuota } from '@/hooks/useNoveltyQuota';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfileComplete } from '@/hooks/useProfileComplete';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { NoveltyLimitDialog } from './NoveltyLimitDialog';
@@ -49,6 +51,7 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
   const { user } = useAuth();
   const { toast } = useToast();
   const createNovelty = useCreateNovelty();
+  const { data: profileCheck, isLoading: isLoadingProfile } = useProfileComplete();
 
   const [userExhibitors, setUserExhibitors] = useState<Exhibitor[]>([]);
   const [participationData, setParticipationData] = useState<DbParticipation[]>([]);
@@ -340,7 +343,38 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
             <DialogTitle>Ajouter une nouveauté</DialogTitle>
           </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Profile Completeness Check */}
+          {isLoadingProfile ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : !profileCheck?.isComplete ? (
+            <div className="space-y-4">
+              <div className="p-4 border border-destructive bg-destructive/10 rounded-lg">
+                <h3 className="font-semibold text-destructive mb-2">
+                  Profil incomplet
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Vous devez compléter votre profil à 100% avant de pouvoir publier une nouveauté.
+                </p>
+                <p className="text-sm font-medium mb-2">Champs manquants :</p>
+                <ul className="list-disc list-inside text-sm space-y-1 mb-4">
+                  {profileCheck?.missingFields.map((field, index) => (
+                    <li key={index}>{field}</li>
+                  ))}
+                </ul>
+                <Link to="/profile">
+                  <Button type="button" variant="default" className="w-full">
+                    Compléter mon profil
+                  </Button>
+                </Link>
+              </div>
+              <Button type="button" variant="outline" onClick={onClose} className="w-full">
+                Fermer
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
           {/* Exhibitor Selection */}
           <div className="space-y-2">
             <Label htmlFor="exhibitor">Exposant *</Label>
@@ -571,8 +605,9 @@ export default function AddNoveltyModal({ event, isOpen, onClose }: AddNoveltyMo
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

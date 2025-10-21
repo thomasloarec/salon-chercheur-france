@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Check, X, ExternalLink, Crown, ShieldOff } from 'lucide-react';
+import { Eye, Check, X, ExternalLink, Crown, ShieldOff, User, Mail, Briefcase, Building2, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import NoveltyPreviewDialog from '@/components/novelty/NoveltyPreviewDialog';
 import { usePremiumGrant } from '@/hooks/usePremiumGrant';
@@ -18,6 +18,7 @@ interface PendingNovelty {
   type: string;
   status: string;
   created_at: string;
+  created_by: string;
   media_urls: string[];
   doc_url?: string;
   exhibitor_id: string;
@@ -31,6 +32,14 @@ interface PendingNovelty {
     id: string;
     nom_event: string;
     slug: string;
+  };
+  creator_profile?: {
+    first_name: string;
+    last_name: string;
+    job_title: string;
+    company: string;
+    primary_sector: string;
+    email: string;
   };
 }
 
@@ -49,10 +58,11 @@ export default function NoveltyModeration() {
       if (activeTab === 'published') statusFilter = 'published';
       if (activeTab === 'rejected') statusFilter = 'rejected';
 
-      const { data, error } = await supabase
+      // Fetch novelties with creator profile information
+      const { data: novelties, error } = await supabase
         .from('novelties')
         .select(`
-          id, title, type, status, created_at, media_urls, doc_url, exhibitor_id, event_id,
+          id, title, type, status, created_at, created_by, media_urls, doc_url, exhibitor_id, event_id,
           exhibitors!inner ( id, name, slug ),
           events!inner ( id, nom_event, slug )
         `)
@@ -60,7 +70,34 @@ export default function NoveltyModeration() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as PendingNovelty[];
+
+      // Fetch creator profiles
+      const creatorIds = novelties?.map(n => n.created_by).filter(Boolean) || [];
+      const uniqueCreatorIds = [...new Set(creatorIds)];
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, job_title, company, primary_sector')
+        .in('user_id', uniqueCreatorIds);
+
+      // Enrich novelties with creator profile data
+      const enrichedNovelties = novelties?.map(novelty => {
+        const profile = profiles?.find(p => p.user_id === novelty.created_by);
+
+        return {
+          ...novelty,
+          creator_profile: profile ? {
+            first_name: profile.first_name || '',
+            last_name: profile.last_name || '',
+            job_title: profile.job_title || '',
+            company: profile.company || '',
+            primary_sector: profile.primary_sector || '',
+            email: 'Email non disponible' // Email requires DB migration to profiles table
+          } : undefined
+        };
+      });
+
+      return enrichedNovelties as PendingNovelty[];
     },
   });
 
@@ -207,6 +244,45 @@ export default function NoveltyModeration() {
                   </CardHeader>
                   
                   <CardContent className="space-y-4">
+                    {/* User Information Section */}
+                    {novelty.creator_profile && (
+                      <div className="p-4 bg-muted/50 rounded-lg border">
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Utilisateur
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-medium">Nom :</span>
+                            <span>{novelty.creator_profile.first_name} {novelty.creator_profile.last_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-medium">Fonction :</span>
+                            <span>{novelty.creator_profile.job_title || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-medium">Entreprise :</span>
+                            <span>{novelty.creator_profile.company || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-medium">Email :</span>
+                            <span className="text-xs">{novelty.creator_profile.email || 'N/A'}</span>
+                          </div>
+                          {novelty.creator_profile.primary_sector && (
+                            <div className="flex items-center gap-2 col-span-2">
+                              <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="font-medium">Secteur :</span>
+                              <span>{novelty.creator_profile.primary_sector}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="text-sm">
