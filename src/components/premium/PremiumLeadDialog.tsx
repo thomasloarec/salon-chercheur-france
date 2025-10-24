@@ -211,7 +211,7 @@ export function PremiumLeadDialog({
                   <li>✓ Statistiques en temps réel</li>
                 </ul>
                 <p className="text-sm font-bold text-primary mt-2">
-                  99€ HT par nouveauté
+                  99€ HT par événement
                 </p>
               </div>
 
