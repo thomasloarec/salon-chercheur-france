@@ -1,4 +1,5 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Crown, Check, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { PremiumLeadDialog } from '@/components/premium/PremiumLeadDialog';
 
 interface PremiumUpgradeDialogProps {
   open: boolean;
@@ -23,29 +23,37 @@ export default function PremiumUpgradeDialog({
   onOpenChange,
   noveltyId
 }: PremiumUpgradeDialogProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [sending, setSending] = React.useState(false);
+  const [showLeadForm, setShowLeadForm] = React.useState(false);
 
-  const handleContactSales = async () => {
-    setSending(true);
-    try {
-      toast({
-        title: 'Demande enregistrée',
-        description: 'Notre équipe vous contactera sous 24h pour activer votre accès Premium. Nous vous contacterons à l\'adresse email de votre compte.',
-        duration: 5000,
-      });
+  // Récupérer les infos de la nouveauté pour le formulaire
+  const { data: noveltyData } = useQuery({
+    queryKey: ['novelty-details', noveltyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('novelties')
+        .select(`
+          id,
+          title,
+          event_id,
+          events (
+            id,
+            nom_event,
+            date_debut,
+            slug
+          )
+        `)
+        .eq('id', noveltyId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!noveltyId && open,
+  });
 
-      onOpenChange(false);
-    } catch (error) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'envoyer la demande. Réessayez.',
-        variant: 'destructive'
-      });
-    } finally {
-      setSending(false);
-    }
+  const handleContactSales = () => {
+    onOpenChange(false);
+    setShowLeadForm(true);
   };
 
   return (
@@ -116,10 +124,9 @@ export default function PremiumUpgradeDialog({
             className="w-full" 
             size="lg" 
             onClick={handleContactSales}
-            disabled={sending}
           >
             <Mail className="h-4 w-4 mr-2" />
-            {sending ? 'Envoi...' : 'Être recontacté par l\'équipe LotExpo'}
+            Être recontacté par l'équipe LotExpo
           </Button>
           
           <p className="text-xs text-center text-muted-foreground">
@@ -127,6 +134,15 @@ export default function PremiumUpgradeDialog({
           </p>
         </div>
       </DialogContent>
+
+      <PremiumLeadDialog
+        open={showLeadForm}
+        onOpenChange={setShowLeadForm}
+        eventId={noveltyData?.events?.id}
+        eventName={noveltyData?.events?.nom_event}
+        eventDate={noveltyData?.events?.date_debut}
+        eventSlug={noveltyData?.events?.slug}
+      />
     </Dialog>
   );
 }
