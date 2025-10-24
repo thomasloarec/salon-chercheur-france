@@ -73,7 +73,7 @@ export default function PremiumUpgradeDialog({
           {/* Price */}
           <div className="text-center py-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg">
             <p className="text-5xl font-bold mb-2">99€ <span className="text-xl font-normal text-muted-foreground">HT</span></p>
-            <p className="text-muted-foreground">Par nouveauté et par événement</p>
+            <p className="text-muted-foreground">par événement</p>
           </div>
           
           {/* Features */}
