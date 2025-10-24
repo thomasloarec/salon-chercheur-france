@@ -62,6 +62,9 @@ serve(async (req) => {
       )
     }
 
+    // Format date for Airtable (remove milliseconds)
+    const currentDate = new Date().toISOString().split('.')[0] + 'Z'
+    
     const airtableData = {
       fields: {
         'Prénom': body.firstName,
@@ -73,7 +76,7 @@ serve(async (req) => {
         'Date Événement': body.eventDate || '',
         'Slug Événement': body.eventSlug || '',
         'ID Événement': body.eventId || '',
-        'Date Demande': new Date().toISOString(),
+        'Date Demande': currentDate,
         'Statut': 'En attente',
         'Source': 'LotExpo - Page Premium',
       }
