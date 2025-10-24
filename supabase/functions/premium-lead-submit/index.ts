@@ -29,6 +29,7 @@ serve(async (req) => {
     console.log('📋 Checking premium env vars:', {
       hasToken: !!airtableToken,
       hasBaseId: !!airtableBaseId,
+      baseIdValue: airtableBaseId?.substring(0, 10) + '...', // Log first 10 chars for debug
     })
 
     if (!airtableToken || !airtableBaseId) {
