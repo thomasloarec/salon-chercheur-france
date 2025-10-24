@@ -77,9 +77,12 @@ serve(async (req) => {
       }
     }
 
-    console.log('📤 Sending to Airtable table: Leads Premium Nouveautés')
-
-    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/Leads%20Premium%20Nouveaut%C3%A9s`
+    const tableName = 'Leads Premium Nouveautés';
+    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(tableName)}`;
+    
+    console.log('📤 Sending to Airtable table:', tableName);
+    console.log('🔗 Full Airtable URL:', airtableUrl);
+    console.log('📤 Payload:', JSON.stringify(airtableData, null, 2));
     
     const airtableResponse = await fetch(airtableUrl, {
       method: 'POST',
@@ -91,16 +94,27 @@ serve(async (req) => {
     })
 
     console.log('📡 Airtable response status:', airtableResponse.status)
+    console.log('📡 Airtable response headers:', Object.fromEntries(airtableResponse.headers.entries()))
 
     if (!airtableResponse.ok) {
       const errorText = await airtableResponse.text()
-      console.error('❌ Airtable error:', errorText)
+      console.error('❌ Airtable error response:', errorText)
+      
+      let errorJson;
+      try {
+        errorJson = JSON.parse(errorText);
+        console.error('❌ Airtable error parsed:', errorJson);
+      } catch {
+        console.error('❌ Airtable error (raw):', errorText);
+      }
       
       return new Response(
         JSON.stringify({
           error: 'Failed to save to Airtable',
           details: errorText,
-          status: airtableResponse.status
+          status: airtableResponse.status,
+          url: airtableUrl,
+          tableName: tableName
         }),
         {
           status: 500,
