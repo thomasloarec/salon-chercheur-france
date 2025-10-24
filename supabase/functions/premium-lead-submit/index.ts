@@ -22,10 +22,11 @@ serve(async (req) => {
   try {
     console.log('🔍 Premium lead function called')
 
-    const airtableToken = Deno.env.get('AIRTABLE_PAT') || Deno.env.get('AIRTABLE_TOKEN')
-    const airtableBaseId = Deno.env.get('AIRTABLE_BASE_ID')
+    // Use dedicated secrets for Premium Leads (separate from regular Leads Nouveautés)
+    const airtableToken = Deno.env.get('AIRTABLE_PREMIUM_PAT')
+    const airtableBaseId = Deno.env.get('AIRTABLE_PREMIUM_BASE_ID')
 
-    console.log('📋 Checking env vars:', {
+    console.log('📋 Checking premium env vars:', {
       hasToken: !!airtableToken,
       hasBaseId: !!airtableBaseId,
     })
