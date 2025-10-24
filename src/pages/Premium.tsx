@@ -5,63 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import MainLayout from '@/components/layout/MainLayout';
-import { useToast } from '@/hooks/use-toast';
+import { PremiumLeadDialog } from '@/components/premium/PremiumLeadDialog';
 
 export default function Premium() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [sending, setSending] = React.useState(false);
-  const [formData, setFormData] = React.useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    company: '',
-    position: ''
-  });
-
-  const handleOpenDialog = () => {
-    setIsDialogOpen(true);
-  };
-
-  const handleSubmitActivation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSending(true);
-    
-    try {
-      // Simulation d'envoi - à remplacer par un vrai appel API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: '✅ Merci !',
-        description: 'Votre demande d\'accès Premium a bien été transmise. Un membre de notre équipe vous contactera rapidement pour confirmer l\'activation et répondre à vos questions.',
-        duration: 6000,
-      });
-      
-      setIsDialogOpen(false);
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        company: '',
-        position: ''
-      });
-    } catch (error) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'envoyer la demande. Réessayez.',
-        variant: 'destructive'
-      });
-    } finally {
-      setSending(false);
-    }
-  };
 
   return (
     <MainLayout title="Premium - Maximisez votre ROI événementiel">
@@ -95,7 +44,7 @@ export default function Premium() {
               <Button 
                 size="lg" 
                 className="text-lg px-8 gap-2 shadow-lg"
-                onClick={handleOpenDialog}
+                onClick={() => setIsDialogOpen(true)}
               >
                 <Zap className="h-5 w-5" />
                 Passer au Premium - 99€
@@ -334,7 +283,7 @@ export default function Premium() {
 
                   <Button 
                     className="w-full text-lg h-12 shadow-lg gap-2"
-                    onClick={handleOpenDialog}
+                    onClick={() => setIsDialogOpen(true)}
                   >
                     <Zap className="h-5 w-5" />
                     Activer maintenant
@@ -514,7 +463,7 @@ export default function Premium() {
               size="lg" 
               variant="secondary" 
               className="text-lg px-8 h-14 gap-2 shadow-2xl"
-              onClick={handleOpenDialog}
+              onClick={() => setIsDialogOpen(true)}
             >
               <Zap className="h-5 w-5" />
               Activer le Premium - 99€
@@ -527,107 +476,10 @@ export default function Premium() {
         </div>
       </section>
 
-      {/* Dialog Activation Premium */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Demande d'accès Premium</DialogTitle>
-          <DialogDescription>
-            Remplissez vos informations pour être recontacté(e) par notre équipe et finaliser l'activation de votre offre Premium sur cet événement.
-          </DialogDescription>
-        </DialogHeader>
-          
-          <form onSubmit={handleSubmitActivation} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom *</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Jean"
-                  required
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Nom *</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Dupont"
-                  required
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email professionnel *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="jean.dupont@entreprise.fr"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone professionnel *</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+33 6 12 34 56 78"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="company">Entreprise *</Label>
-              <Input
-                id="company"
-                type="text"
-                placeholder="Nom de votre entreprise"
-                required
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="position">Poste *</Label>
-              <Input
-                id="position"
-                type="text"
-                placeholder="Responsable Marketing"
-                required
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-              />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full gap-2"
-              disabled={sending}
-            >
-              {sending ? (
-                <>Envoi en cours...</>
-              ) : (
-                <>
-                  <Check className="h-5 w-5" />
-                  Envoyer ma demande Premium
-                </>
-              )}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <PremiumLeadDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
     </MainLayout>
   );
 }

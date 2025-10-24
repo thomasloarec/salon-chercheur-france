@@ -61,3 +61,6 @@ verify_jwt = false
 
 [functions.novelty-leads]
 verify_jwt = true
+
+[functions.premium-lead-submit]
+verify_jwt = false
