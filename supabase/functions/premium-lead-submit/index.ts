@@ -62,8 +62,8 @@ serve(async (req) => {
       )
     }
 
-    // Format date for Airtable (remove milliseconds)
-    const currentDate = new Date().toISOString().split('.')[0] + 'Z'
+    // Format date for Airtable (date only without time)
+    const currentDate = new Date().toISOString().split('T')[0]
     
     const airtableData = {
       fields: {
