@@ -905,7 +905,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           sector_id: string | null
           sectors: string[] | null
           subscription_count: number | null
@@ -915,7 +915,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           sector_id?: string | null
           sectors?: string[] | null
           subscription_count?: number | null
@@ -925,7 +925,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           sector_id?: string | null
           sectors?: string[] | null
           subscription_count?: number | null
@@ -1532,7 +1532,7 @@ export type Database = {
           details: Json | null
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           severity: string | null
           user_agent: string | null
           user_id: string | null
@@ -1542,7 +1542,7 @@ export type Database = {
           details?: Json | null
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           severity?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -1552,7 +1552,7 @@ export type Database = {
           details?: Json | null
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           severity?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -1857,28 +1857,16 @@ export type Database = {
         Args: { event_id: string; exhibitor_id: string }
         Returns: boolean
       }
-      cleanup_expired_claim_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_csrf_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      delete_user_account: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      export_user_data: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
+      cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
+      delete_user_account: { Args: never; Returns: Json }
+      export_user_data: { Args: never; Returns: Json }
       generate_event_slug: {
         Args: { event_city: string; event_name: string; event_year: number }
         Returns: string
       }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_location_suggestions: {
@@ -1895,7 +1883,7 @@ export type Database = {
         Returns: number
       }
       get_top_novelties_per_event: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           audience_tags: string[]
           availability: string
@@ -1948,10 +1936,7 @@ export type Database = {
         Args: { p_field: string; p_novelty_id: string }
         Returns: undefined
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
       log_application_event: {
         Args: {
           p_details?: Json
@@ -2025,14 +2010,8 @@ export type Database = {
         }
         Returns: string[]
       }
-      toggle_favorite: {
-        Args: { p_event: string }
-        Returns: undefined
-      }
-      update_existing_events_slugs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      toggle_favorite: { Args: { p_event: string }; Returns: undefined }
+      update_existing_events_slugs: { Args: never; Returns: undefined }
       update_user_password: {
         Args: { current_password: string; new_password: string }
         Returns: Json
