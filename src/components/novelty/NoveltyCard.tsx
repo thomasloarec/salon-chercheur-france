@@ -4,10 +4,10 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
+import { useNoveltyLike, useNoveltyLikesCount, useNoveltyStand } from '@/hooks/useNoveltyLike';
 import { useNoveltyComments } from '@/hooks/useNoveltyComments';
 import LeadForm from './LeadForm';
-import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
+import { ExhibitorDialog } from '@/components/event/ExhibitorDialog';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import NoveltyComments from './NoveltyComments';
 import NoveltyInteractionBar from './NoveltyInteractionBar';
@@ -32,6 +32,11 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const { user } = useAuth();
   const { isLiked, toggleLike, isPending } = useNoveltyLike(novelty.id);
   const { data: likesCount } = useNoveltyLikesCount(novelty.id);
+  const { data: standInfo } = useNoveltyStand({
+    id: novelty.id,
+    event_id: novelty.event_id,
+    exhibitor_id: novelty.exhibitor_id,
+  });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showExhibitorModal, setShowExhibitorModal] = useState(false);
@@ -123,7 +128,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
             </Badge>
           </div>
           
-          {/* Exhibitor info */}
+          {/* Exhibitor info avec stand depuis participation */}
           <div className="flex items-center justify-between">
             <button
               onClick={() => setShowExhibitorModal(true)}
@@ -142,17 +147,17 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
                   </span>
                 </div>
               )}
-              <span className="font-medium text-sm hover:underline">
-                {novelty.exhibitors.name}
-              </span>
+              <div className="flex flex-col items-start">
+                <span className="font-medium text-sm hover:underline">
+                  {novelty.exhibitors.name}
+                </span>
+                {standInfo && (
+                  <span className="text-xs text-primary font-medium">
+                    Stand {standInfo}
+                  </span>
+                )}
+              </div>
             </button>
-            
-            {novelty.stand_info && (
-              <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {novelty.stand_info}
-              </Badge>
-            )}
           </div>
         </div>
       </div>
@@ -279,21 +284,16 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
         brochureUrl={novelty.doc_url}
       />
 
-      {/* Exhibitor Detail Dialog */}
-      <ExhibitorDetailDialog
+      {/* Exhibitor Dialog */}
+      <ExhibitorDialog
         open={showExhibitorModal}
         onOpenChange={setShowExhibitorModal}
         exhibitor={{
-          id_exposant: novelty.exhibitors.id,
-          exhibitor_name: novelty.exhibitors.name,
+          id: novelty.exhibitors.id,
+          name: novelty.exhibitors.name,
+          slug: novelty.exhibitors.slug,
           logo_url: novelty.exhibitors.logo_url,
-          stand_exposant: novelty.stand_info,
         }}
-        event={{
-          id: novelty.events?.id || novelty.event_id,
-          slug: novelty.events?.slug || '',
-          nom_event: novelty.events?.nom_event || '',
-        } as any}
       />
 
       {/* Auth Required Modal */}

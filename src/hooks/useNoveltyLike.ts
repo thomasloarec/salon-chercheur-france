@@ -115,7 +115,7 @@ export const useNoveltyLikesCount = (noveltyId: string) => {
   });
 };
 
-// Hook pour obtenir toutes les nouveautés likées par l'utilisateur
+// Hook pour obtenir toutes les nouveautés likées par l'utilisateur avec le stand depuis participation
 export const useLikedNovelties = () => {
   const { user } = useAuth();
 
@@ -163,9 +163,63 @@ export const useLikedNovelties = () => {
         return [];
       }
 
-      return data?.map(item => item.novelties) || [];
+      // Enrichir avec les infos de stand depuis la vue participations_with_exhibitors
+      const novelties = data?.map(item => item.novelties) || [];
+      
+      const enrichedNovelties = await Promise.all(
+        novelties.map(async (novelty) => {
+          // Rechercher le stand via la vue participations_with_exhibitors
+          // en matchant l'événement et le nom de l'exposant
+          const { data: participation } = await supabase
+            .from('participations_with_exhibitors')
+            .select('stand_exposant')
+            .eq('id_event', novelty.event_id)
+            .ilike('exhibitor_name', novelty.exhibitors.name)
+            .maybeSingle();
+
+          return {
+            ...novelty,
+            stand_info: participation?.stand_exposant || novelty.stand_info,
+          };
+        })
+      );
+
+      return enrichedNovelties;
     },
     enabled: !!user,
     staleTime: 30_000,
+  });
+};
+
+// Hook pour obtenir le stand d'une nouveauté depuis participations_with_exhibitors
+export const useNoveltyStand = (novelty: { id: string; event_id: string; exhibitor_id: string }) => {
+  return useQuery({
+    queryKey: ['novelty-stand', novelty.id, novelty.event_id, novelty.exhibitor_id],
+    queryFn: async () => {
+      // Récupérer le nom de l'exposant
+      const { data: exhibitor } = await supabase
+        .from('exhibitors')
+        .select('name')
+        .eq('id', novelty.exhibitor_id)
+        .single();
+
+      if (!exhibitor) return null;
+
+      // Rechercher le stand via la vue participations_with_exhibitors
+      const { data, error } = await supabase
+        .from('participations_with_exhibitors')
+        .select('stand_exposant')
+        .eq('id_event', novelty.event_id)
+        .ilike('exhibitor_name', exhibitor.name)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching stand:', error);
+        return null;
+      }
+
+      return data?.stand_exposant || null;
+    },
+    staleTime: 300_000, // 5 minutes
   });
 };
