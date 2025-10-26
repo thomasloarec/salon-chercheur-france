@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Calendar, MapPin, Globe, Building2 } from 'lucide-react';
+import { ExternalLink, Calendar, MapPin, Globe, Building2, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
@@ -18,18 +18,20 @@ interface ExhibitorDialogProps {
     id: string;
     name: string;
     slug?: string;
-    logo_url?: string;
-    description?: string;
-    website?: string;
+    logo_url?: string | null;
+    description?: string | null;
+    website?: string | null;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onBackToAll?: () => void;
 }
 
 export function ExhibitorDialog({ 
   exhibitor, 
   open, 
-  onOpenChange 
+  onOpenChange,
+  onBackToAll
 }: ExhibitorDialogProps) {
   const { data: participations = [], isLoading } = useExhibitorParticipations(
     exhibitor?.id || ''
@@ -44,6 +46,19 @@ export function ExhibitorDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* PARTIE HAUTE : Infos génériques (sans stand) */}
         <DialogHeader>
+          {/* Bouton retour si disponible */}
+          {onBackToAll && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackToAll}
+              className="mb-2 w-fit"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Tous les exposants
+            </Button>
+          )}
+          
           <div className="flex items-start gap-4">
             {exhibitor.logo_url ? (
               <img

@@ -7,7 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { supabase } from '@/integrations/supabase/client';
 import { ExhibitorsModal } from './ExhibitorsModal';
-import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
+import { ExhibitorDialog } from './ExhibitorDialog';
 import type { Event } from '@/types/event';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 
@@ -133,7 +133,15 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                     };
 
                     const full = await hydrateExhibitor(exhibitorForDialog);
-                    setSelectedExhibitor(full);
+                    // Convertir au format du nouveau ExhibitorDialog
+                    setSelectedExhibitor({
+                      id: exhibitor.id,
+                      name: full.exhibitor_name,
+                      slug: exhibitor.slug,
+                      logo_url: full.logo_url || null,
+                      description: full.exposant_description,
+                      website: full.website_exposant,
+                    });
                     setOpenedFromModal(false);
                   }}
                   className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
@@ -197,17 +205,24 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
         onSelect={async (ex) => {
           setShowAllModal(false);
           const full = await hydrateExhibitor(ex);
-          setSelectedExhibitor(full);
+          // Convertir au format du nouveau ExhibitorDialog
+          setSelectedExhibitor({
+            id: ex.id_exposant,
+            name: full.exhibitor_name,
+            slug: ex.id_exposant,
+            logo_url: full.logo_url || null,
+            description: full.exposant_description,
+            website: full.website_exposant,
+          });
           setOpenedFromModal(true);
         }}
       />
 
       {/* Fiche exposant */}
-      <ExhibitorDetailDialog
+      <ExhibitorDialog
         open={!!selectedExhibitor}
         onOpenChange={(open) => !open && setSelectedExhibitor(null)}
         exhibitor={selectedExhibitor}
-        event={event}
         onBackToAll={openedFromModal ? () => {
           setSelectedExhibitor(null);
           setShowAllModal(true);
