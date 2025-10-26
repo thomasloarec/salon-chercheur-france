@@ -18,26 +18,38 @@ export interface ExhibitorParticipation {
 /**
  * Hook pour récupérer toutes les participations d'un exposant aux événements à venir
  */
-export const useExhibitorParticipations = (exhibitorId: string) => {
+export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: string) => {
   return useQuery({
-    queryKey: ['exhibitor-participations', exhibitorId],
+    queryKey: ['exhibitor-participations', exhibitorId, exhibitorName],
     queryFn: async (): Promise<ExhibitorParticipation[]> => {
-      if (!exhibitorId) return [];
+      if (!exhibitorId && !exhibitorName) return [];
 
-      // Récupérer le nom de l'exposant pour faire la correspondance
-      const { data: exhibitor } = await supabase
-        .from('exhibitors')
-        .select('id, name')
-        .eq('id', exhibitorId)
-        .single();
+      let searchName = exhibitorName;
 
-      if (!exhibitor) return [];
+      // Si on n'a pas le nom, essayer de le récupérer depuis la table exhibitors
+      if (!searchName && exhibitorId) {
+        const { data: exhibitor } = await supabase
+          .from('exhibitors')
+          .select('id, name')
+          .eq('id', exhibitorId)
+          .maybeSingle();
+
+        if (exhibitor) {
+          searchName = exhibitor.name;
+        }
+      }
+
+      // Si toujours pas de nom, retourner vide
+      if (!searchName) {
+        console.warn('[useExhibitorParticipations] No name found for exhibitor', exhibitorId);
+        return [];
+      }
 
       // Récupérer toutes les participations via la vue participations_with_exhibitors
       const { data: participations, error } = await supabase
         .from('participations_with_exhibitors')
         .select('*')
-        .ilike('exhibitor_name', exhibitor.name);
+        .ilike('exhibitor_name', searchName);
 
       if (error) {
         console.error('Error fetching participations:', error);
@@ -48,7 +60,7 @@ export const useExhibitorParticipations = (exhibitorId: string) => {
         return [];
       }
 
-      // Récupérer les détails des événements associés
+      // Récupérer les détails des événements associés (tous les événements, pas seulement futurs pour debug)
       const eventIds = participations
         .map(p => p.id_event)
         .filter((id): id is string => id !== null);
@@ -59,7 +71,6 @@ export const useExhibitorParticipations = (exhibitorId: string) => {
         .from('events')
         .select('id, nom_event, slug, date_debut, date_fin, ville')
         .in('id', eventIds)
-        .gte('date_debut', new Date().toISOString().split('T')[0])
         .eq('visible', true)
         .order('date_debut', { ascending: true });
 
@@ -69,7 +80,7 @@ export const useExhibitorParticipations = (exhibitorId: string) => {
       }
 
       // Mapper les participations avec les événements
-      return participations
+      const allParticipations = participations
         .map(p => {
           const event = events?.find(e => e.id === p.id_event);
           if (!event) return null;
@@ -77,7 +88,7 @@ export const useExhibitorParticipations = (exhibitorId: string) => {
           return {
             id: p.id_participation as string,
             stand: p.stand_exposant,
-            hall: null, // hall n'existe pas dans la table actuelle
+            hall: null,
             event: {
               id: event.id,
               nom_event: event.nom_event,
@@ -89,8 +100,12 @@ export const useExhibitorParticipations = (exhibitorId: string) => {
           };
         })
         .filter((p): p is ExhibitorParticipation => p !== null);
+
+      // Filtrer uniquement les événements à venir
+      const today = new Date().toISOString().split('T')[0];
+      return allParticipations.filter(p => p.event.date_debut >= today);
     },
-    enabled: !!exhibitorId,
+    enabled: !!(exhibitorId || exhibitorName),
     staleTime: 300_000, // 5 minutes
   });
 };

@@ -34,7 +34,8 @@ export function ExhibitorDialog({
   onBackToAll
 }: ExhibitorDialogProps) {
   const { data: participations = [], isLoading } = useExhibitorParticipations(
-    exhibitor?.id || ''
+    exhibitor?.id || '',
+    exhibitor?.name
   );
 
   if (!exhibitor) return null;
@@ -89,6 +90,7 @@ export function ExhibitorDialog({
           <div className="pt-4">
             <Button
               variant="outline"
+              size="sm"
               className="w-full gap-2"
               onClick={() => window.open(websiteHref, '_blank')}
             >

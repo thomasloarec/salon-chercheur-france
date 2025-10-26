@@ -12,6 +12,7 @@ import AuthRequiredModal from '@/components/AuthRequiredModal';
 import NoveltyComments from './NoveltyComments';
 import NoveltyInteractionBar from './NoveltyInteractionBar';
 import type { Novelty } from '@/hooks/useNovelties';
+import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 
 interface NoveltyCardProps {
   novelty: Novelty;
@@ -42,6 +43,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const [showExhibitorModal, setShowExhibitorModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [hydratedExhibitor, setHydratedExhibitor] = useState<any>(null);
   
   const { data: commentsData } = useNoveltyComments(novelty.id);
   const commentsCount = commentsData?.length || 0;
@@ -131,7 +133,26 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
           {/* Exhibitor info avec stand depuis participation */}
           <div className="flex items-center justify-between">
             <button
-              onClick={() => setShowExhibitorModal(true)}
+              onClick={async () => {
+                // Hydrater l'exposant pour obtenir description et website
+                const exhibitorForDialog = {
+                  id_exposant: novelty.exhibitors.id,
+                  exhibitor_name: novelty.exhibitors.name,
+                  stand_exposant: standInfo || undefined,
+                  logo_url: novelty.exhibitors.logo_url || null,
+                };
+                
+                const hydrated = await hydrateExhibitor(exhibitorForDialog as any);
+                setHydratedExhibitor({
+                  id: novelty.exhibitors.id,
+                  name: hydrated.exhibitor_name,
+                  slug: novelty.exhibitors.slug,
+                  logo_url: hydrated.logo_url || null,
+                  description: hydrated.exposant_description,
+                  website: hydrated.website_exposant,
+                });
+                setShowExhibitorModal(true);
+              }}
               className="flex items-center gap-3 hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
             >
               {novelty.exhibitors.logo_url ? (
@@ -287,13 +308,11 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
       {/* Exhibitor Dialog */}
       <ExhibitorDialog
         open={showExhibitorModal}
-        onOpenChange={setShowExhibitorModal}
-        exhibitor={{
-          id: novelty.exhibitors.id,
-          name: novelty.exhibitors.name,
-          slug: novelty.exhibitors.slug,
-          logo_url: novelty.exhibitors.logo_url,
+        onOpenChange={(open) => {
+          setShowExhibitorModal(open);
+          if (!open) setHydratedExhibitor(null);
         }}
+        exhibitor={hydratedExhibitor}
       />
 
       {/* Auth Required Modal */}
