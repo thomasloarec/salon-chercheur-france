@@ -2,8 +2,6 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,50 +42,52 @@ export function ExhibitorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* PARTIE HAUTE : Infos génériques (sans stand) */}
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto overflow-x-hidden">
+        <div className="space-y-4">
           {/* Bouton retour si disponible */}
           {onBackToAll && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onBackToAll}
-              className="mb-2 w-fit"
+              className="w-fit -mt-2"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Tous les exposants
             </Button>
           )}
-          
+
+          {/* PARTIE HAUTE : En-tête avec logo et nom */}
           <div className="flex items-start gap-4">
             {exhibitor.logo_url ? (
               <img
                 src={exhibitor.logo_url}
                 alt={exhibitor.name}
-                className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                <Building2 className="h-8 w-8 text-muted-foreground" />
+              <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-10 w-10 text-muted-foreground" />
               </div>
             )}
-            <div className="flex-1">
-              <DialogTitle className="text-2xl mb-2">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-2xl font-bold mb-1 break-words">
                 {exhibitor.name}
-              </DialogTitle>
-              {exhibitor.description && (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {exhibitor.description}
-                </p>
-              )}
+              </h2>
             </div>
           </div>
-        </DialogHeader>
 
-        {/* Site web */}
-        {websiteHref && (
-          <div className="pt-4">
+          {/* Description */}
+          {exhibitor.description && (
+            <div className="rounded-lg bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground leading-relaxed break-words">
+                {exhibitor.description}
+              </p>
+            </div>
+          )}
+
+          {/* Site web */}
+          {websiteHref && (
             <Button
               variant="outline"
               size="sm"
@@ -98,71 +98,69 @@ export function ExhibitorDialog({
               Visiter le site web
               <ExternalLink className="ml-auto h-3 w-3" />
             </Button>
-          </div>
-        )}
+          )}
 
-        {/* ✨ PARTIE BASSE : Participations aux événements */}
-        {isLoading && (
-          <div className="mt-6 pt-6 border-t">
-            <div className="flex items-center gap-2 mb-3">
+          {/* Chargement des participations */}
+          {isLoading && (
+            <div className="flex items-center justify-center gap-2 py-8">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
-              <span className="text-sm text-muted-foreground">Chargement des participations...</span>
+              <span className="text-sm text-muted-foreground">Chargement...</span>
             </div>
-          </div>
-        )}
+          )}
 
-        {!isLoading && participations.length > 0 && (
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Présence sur les salons à venir
-            </h3>
-
+          {/* Liste des participations */}
+          {!isLoading && participations.length > 0 && (
             <div className="space-y-3">
-              {participations.map((participation) => (
-                <div
-                  key={participation.id}
-                  className="flex items-start justify-between p-3 rounded-lg bg-muted/50 border hover:bg-muted/70 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">
-                      {participation.event.nom_event}
-                    </p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Calendar className="h-4 w-4 text-primary" />
+                Présence sur les salons à venir
+              </div>
+
+              <div className="space-y-2">
+                {participations.map((participation) => (
+                  <div
+                    key={participation.id}
+                    className="rounded-lg bg-muted/50 border p-3 space-y-2"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-medium text-sm flex-1 break-words">
+                        {participation.event.nom_event}
+                      </p>
+                      {participation.stand && (
+                        <Badge variant="secondary" className="flex-shrink-0 whitespace-nowrap">
+                          Stand {participation.stand}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1 whitespace-nowrap">
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
                         {format(new Date(participation.event.date_debut), 'dd MMM yyyy', { locale: fr })}
                         {participation.event.date_fin !== participation.event.date_debut && (
                           <> - {format(new Date(participation.event.date_fin), 'dd MMM', { locale: fr })}</>
                         )}
                       </span>
                       {participation.event.ville && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
                           {participation.event.ville}
                         </span>
                       )}
                     </div>
                   </div>
-
-                  {/* ✨ Info du stand */}
-                  {participation.stand && (
-                    <Badge variant="secondary" className="ml-2 flex-shrink-0">
-                      Stand {participation.stand}
-                    </Badge>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Message si aucun événement à venir */}
-        {!isLoading && participations.length === 0 && (
-          <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground">
-            Aucune participation à venir pour le moment
-          </div>
-        )}
+          {/* Message si aucun événement à venir */}
+          {!isLoading && participations.length === 0 && (
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              Aucune participation à venir pour le moment
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
