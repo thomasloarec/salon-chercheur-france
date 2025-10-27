@@ -147,12 +147,13 @@ Deno.serve(async (req) => {
         }
 
         // Create participation record linking exhibitor to event
-        // Note: id_event is UUID (from events.id), id_exposant is the exhibitor.id (UUID)
+        // Note: id_event is UUID (from events.id), exhibitor_id is the new UUID column
         const { error: participationError } = await supabase
           .from('participation')
           .insert({
             id_event: event_id,
-            id_exposant: newExhibitor.id
+            id_exposant: newExhibitor.id, // Legacy text column (kept for compatibility)
+            exhibitor_id: newExhibitor.id  // New UUID column
           })
         
         if (participationError) {

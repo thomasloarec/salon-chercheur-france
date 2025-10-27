@@ -39,28 +39,41 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
         }
       }
 
-      // Si toujours pas de nom, retourner vide
-      if (!searchName) {
-        console.warn('[useExhibitorParticipations] No name found for exhibitor', exhibitorId);
+      // Stratégie 1: Chercher par exhibitor_id (UUID) si on l'a
+      let participations: any[] = [];
+      
+      if (exhibitorId) {
+        const { data: uuidParticipations, error: uuidError } = await supabase
+          .from('participation')
+          .select('id_participation, id_event, stand_exposant, exhibitor_id')
+          .eq('exhibitor_id', exhibitorId);
+
+        if (!uuidError && uuidParticipations && uuidParticipations.length > 0) {
+          participations = uuidParticipations.map(p => ({
+            id_participation: p.id_participation,
+            id_event: p.id_event,
+            stand_exposant: p.stand_exposant
+          }));
+        }
+      }
+
+      // Stratégie 2: Si pas de résultats via UUID, essayer par nom dans la vue
+      if (participations.length === 0 && searchName) {
+        const { data: nameParticipations, error } = await supabase
+          .from('participations_with_exhibitors')
+          .select('*')
+          .ilike('exhibitor_name', searchName);
+
+        if (!error && nameParticipations) {
+          participations = nameParticipations;
+        }
+      }
+
+      if (participations.length === 0) {
         return [];
       }
 
-      // Récupérer toutes les participations via la vue participations_with_exhibitors
-      const { data: participations, error } = await supabase
-        .from('participations_with_exhibitors')
-        .select('*')
-        .ilike('exhibitor_name', searchName);
-
-      if (error) {
-        console.error('Error fetching participations:', error);
-        return [];
-      }
-
-      if (!participations || participations.length === 0) {
-        return [];
-      }
-
-      // Récupérer les détails des événements associés (tous les événements, pas seulement futurs pour debug)
+      // Récupérer les détails des événements associés
       const eventIds = participations
         .map(p => p.id_event)
         .filter((id): id is string => id !== null);

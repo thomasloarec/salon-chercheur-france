@@ -1178,6 +1178,7 @@ export type Database = {
       participation: {
         Row: {
           created_at: string | null
+          exhibitor_id: string | null
           id_event: string | null
           id_event_text: string | null
           id_exposant: string
@@ -1188,6 +1189,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          exhibitor_id?: string | null
           id_event?: string | null
           id_event_text?: string | null
           id_exposant: string
@@ -1198,6 +1200,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          exhibitor_id?: string | null
           id_event?: string | null
           id_event_text?: string | null
           id_exposant?: string
@@ -1869,6 +1872,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_exhibitor_uuid: { Args: { old_id: string }; Returns: string }
       get_location_suggestions: {
         Args: { q: string }
         Returns: {

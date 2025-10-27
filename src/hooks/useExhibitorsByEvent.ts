@@ -43,15 +43,61 @@ export const useExhibitorsByEvent = (
 
         const { data: participationData, count } = await query;
 
-        const exhibitors = (participationData || []).map(p => ({
-          id: p.id_exposant || String(p.exhibitor_uuid || ''),
-          name: p.exhibitor_name || p.id_exposant || '',
-          slug: p.id_exposant || String(p.exhibitor_uuid || ''),
-          logo_url: null,
-          stand: p.stand_exposant || null,
-          hall: null,
-          plan: 'free' as const
-        })).filter(e =>
+        // Récupérer les exhibitor_id et logos depuis participation et exhibitors
+        const participationIds = (participationData || [])
+          .map(p => p.id_participation)
+          .filter(Boolean);
+
+        let exhibitorUUIDs: Record<string, string> = {};
+        let exhibitorLogos: Record<string, string> = {};
+
+        if (participationIds.length > 0) {
+          // Récupérer les exhibitor_id depuis participation
+          const { data: participationDetails } = await supabase
+            .from('participation')
+            .select('id_participation, exhibitor_id')
+            .in('id_participation', participationIds);
+
+          if (participationDetails) {
+            participationDetails.forEach(p => {
+              if (p.exhibitor_id && p.id_participation) {
+                exhibitorUUIDs[p.id_participation] = p.exhibitor_id;
+              }
+            });
+
+            // Récupérer les logos depuis exhibitors
+            const uuids = Object.values(exhibitorUUIDs).filter(Boolean);
+            if (uuids.length > 0) {
+              const { data: exhibitors } = await supabase
+                .from('exhibitors')
+                .select('id, logo_url')
+                .in('id', uuids);
+
+              if (exhibitors) {
+                exhibitors.forEach(e => {
+                  if (e.logo_url) {
+                    exhibitorLogos[e.id] = e.logo_url;
+                  }
+                });
+              }
+            }
+          }
+        }
+
+        const exhibitors = (participationData || []).map(p => {
+          const exhibitorUUID = p.id_participation ? exhibitorUUIDs[p.id_participation] : undefined;
+          const logoUrl = exhibitorUUID ? exhibitorLogos[exhibitorUUID] : null;
+
+          return {
+            id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
+            name: p.exhibitor_name || p.id_exposant || '',
+            slug: p.id_exposant || String(p.exhibitor_uuid || ''),
+            logo_url: logoUrl,
+            stand: p.stand_exposant || null,
+            hall: null,
+            plan: 'free' as const
+          };
+        }).filter(e =>
           e.name && (!searchQuery || e.name.toLowerCase().includes(searchQuery.toLowerCase()))
         );
 
