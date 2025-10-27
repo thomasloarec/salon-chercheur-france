@@ -409,6 +409,15 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         const exhibitor = step1.exhibitor as any;
         const pendingLogo = exhibitor.logo;
         
+        console.log('🔍 DEBUG Logo exposant existant:', {
+          hasId: 'id' in step1.exhibitor,
+          exhibitorId: exhibitor.id,
+          hasLogo: !!pendingLogo,
+          logoType: pendingLogo?.constructor?.name,
+          isFile: pendingLogo instanceof File,
+          exhibitorKeys: Object.keys(exhibitor)
+        });
+        
         if (pendingLogo instanceof File) {
           console.log('📤 Upload logo pour exposant existant:', exhibitor.name);
           
