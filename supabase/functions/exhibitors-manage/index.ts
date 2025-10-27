@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Create exhibitor
+        // ÉTAPE 1 : Créer l'exposant moderne
         const { data: newExhibitor, error: createError } = await supabase
           .from('exhibitors')
           .insert({
@@ -133,46 +133,67 @@ Deno.serve(async (req) => {
             website: website || null,
             stand_info: stand_info || null,
             logo_url: logo_url || null,
-            approved: false, // New exhibitors need approval
+            approved: false,
             owner_user_id: user.id
           })
           .select()
           .single()
 
-        if (createError) {
+        if (createError || !newExhibitor) {
+          console.error('❌ Failed to create exhibitor:', createError)
           return new Response(
-            JSON.stringify({ error: 'Failed to create exhibitor' }),
+            JSON.stringify({ 
+              error: 'Failed to create exhibitor',
+              details: createError 
+            }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
 
-        // Create a temporary entry in exposants for legacy compatibility
-        const tempExposantId = `EXP-${Date.now()}`;
-        await supabase
+        console.log('✅ Exhibitor created:', newExhibitor.id)
+
+        // ÉTAPE 2 : Créer l'entrée legacy dans exposants (avec UUID comme id_exposant)
+        const { error: legacyError } = await supabase
           .from('exposants')
           .insert({
-            id_exposant: tempExposantId,
+            id_exposant: newExhibitor.id, // ✅ UUID directement au lieu de timestamp
             nom_exposant: name,
             website_exposant: website || null,
             exposant_description: null
-          });
+          })
 
-        // Create participation record linking exhibitor to event
+        if (legacyError) {
+          console.error('⚠️ Failed to create legacy exposant:', legacyError)
+          // Ne pas échouer, mais logger pour investigation
+        } else {
+          console.log('✅ Legacy exposant created with id:', newExhibitor.id)
+        }
+
+        // ÉTAPE 3 : Créer la participation avec LES DEUX IDs identiques
         const { error: participationError } = await supabase
           .from('participation')
           .insert({
-            id_exposant: tempExposantId, // Links to exposants (TEXT)
-            exhibitor_id: newExhibitor.id, // Links to exhibitors (UUID)
+            id_exposant: newExhibitor.id,      // ✅ UUID (compatible TEXT)
+            exhibitor_id: newExhibitor.id,     // ✅ UUID (natif)
             id_event: event_id,
             website_exposant: website || null,
-            stand_exposant: null,
+            stand_exposant: stand_info || null,
             urlexpo_event: null
           })
         
         if (participationError) {
-          console.error('Failed to create participation:', participationError)
-          // Don't fail the whole request, just log the error
+          console.error('❌ Failed to create participation:', participationError)
+          return new Response(
+            JSON.stringify({ 
+              error: 'Exhibitor created but participation failed',
+              exhibitor_id: newExhibitor.id,
+              details: participationError
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
         }
+
+        console.log('✅ Participation created for event:', event_id)
 
         // Auto-approve claim if email domain matches website domain
         let claimStatus = 'pending'
