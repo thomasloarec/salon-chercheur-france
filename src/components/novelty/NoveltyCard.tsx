@@ -39,6 +39,17 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
     exhibitor_id: novelty.exhibitor_id,
   });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // 🐛 DEBUG - Vérifier le logo reçu
+  useEffect(() => {
+    console.log('🎨 NoveltyCard - Exhibitor data:', {
+      id: novelty.exhibitors.id,
+      name: novelty.exhibitors.name,
+      logo_url: novelty.exhibitors.logo_url,
+      has_logo: !!novelty.exhibitors.logo_url,
+      logo_length: novelty.exhibitors.logo_url?.length
+    });
+  }, [novelty.exhibitors]);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showExhibitorModal, setShowExhibitorModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);

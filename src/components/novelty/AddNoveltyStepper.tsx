@@ -686,6 +686,20 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       
       // ✅ Clear saved state on success
       localStorage.removeItem('addNoveltyStepperState');
+      
+      // 🔄 Invalider TOUS les caches liés aux novelties et exhibitors
+      await queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === 'string' && (
+            key.includes('exhibitor') ||
+            key.includes('novelty') ||
+            key.includes('novelties')
+          );
+        }
+      });
+      
+      console.log('✅ Cache invalidé pour novelties et exhibitors');
 
     } catch (error: any) {
       console.groupEnd();
