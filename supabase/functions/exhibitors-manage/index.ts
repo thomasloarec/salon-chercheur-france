@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
 
       } else if (action === 'create') {
         // Create new exhibitor
-        const { name, website, stand_info, logo_url, event_id } = requestData
+        const { name, website, description, stand_info, logo_url, event_id } = requestData
 
         if (!name || !event_id) {
           return new Response(
@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
           .insert({
             name,
             website: website || null,
+            description: description || null,
             stand_info: stand_info || null,
             logo_url: logo_url || null,
             approved: false,
@@ -159,7 +160,7 @@ Deno.serve(async (req) => {
             id_exposant: newExhibitor.id, // ✅ UUID directement au lieu de timestamp
             nom_exposant: name,
             website_exposant: website || null,
-            exposant_description: null
+            exposant_description: description || null
           })
 
         if (legacyError) {
@@ -169,13 +170,25 @@ Deno.serve(async (req) => {
           console.log('✅ Legacy exposant created with id:', newExhibitor.id)
         }
 
-        // ÉTAPE 3 : Créer la participation avec LES DEUX IDs identiques
+        // ÉTAPE 3 : Récupérer l'id_event_text depuis events
+        const { data: eventData } = await supabase
+          .from('events')
+          .select('id_event')
+          .eq('id', event_id)
+          .single()
+
+        if (!eventData?.id_event) {
+          console.error('❌ Event id_event not found for UUID:', event_id)
+        }
+
+        // ÉTAPE 4 : Créer la participation avec LES DEUX IDs + id_event_text
         const { error: participationError } = await supabase
           .from('participation')
           .insert({
             id_exposant: newExhibitor.id,      // ✅ UUID (compatible TEXT)
             exhibitor_id: newExhibitor.id,     // ✅ UUID (natif)
-            id_event: event_id,
+            id_event: event_id,                // ✅ UUID (natif)
+            id_event_text: eventData?.id_event || null, // ✅ TEXT pour la vue
             website_exposant: website || null,
             stand_exposant: stand_info || null,
             urlexpo_event: null

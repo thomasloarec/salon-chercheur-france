@@ -58,6 +58,7 @@ export default function Step1ExhibitorAndUser({
   const [newExhibitorData, setNewExhibitorData] = useState({
     name: '',
     website: '',
+    description: '',
     stand_info: '',
     logo: null as File | null
   });
@@ -104,6 +105,7 @@ export default function Step1ExhibitorAndUser({
         : { 
             name: newExhibitorData.name, 
             website: newExhibitorData.website || '',
+            description: newExhibitorData.description || '',
             stand_info: newExhibitorData.stand_info || '',
             logo: newExhibitorData.logo 
           };
@@ -274,7 +276,7 @@ export default function Step1ExhibitorAndUser({
   const resetSelection = () => {
     setSelectedExhibitor(null);
     setShowNewExhibitorForm(false);
-    setNewExhibitorData({ name: '', website: '', stand_info: '', logo: null });
+    setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
   };
 
   return (
@@ -415,6 +417,18 @@ export default function Step1ExhibitorAndUser({
                     placeholder="https://votresite.com"
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="company-description">Description de l'entreprise</Label>
+                <textarea
+                  id="company-description"
+                  value={newExhibitorData.description}
+                  onChange={(e) => setNewExhibitorData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Présentez votre entreprise en quelques lignes..."
+                  className="w-full min-h-[100px] px-3 py-2 border border-input rounded-md resize-y"
+                  rows={3}
+                />
               </div>
 
               <div>

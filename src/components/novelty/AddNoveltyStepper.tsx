@@ -407,6 +407,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             action: 'create',
             name: exhibitorName,
             website: exhibitorWebsite,
+            description: exhibitorToCreate.description || null,
             stand_info: exhibitorStandInfo,
             logo_url: logoUrl,
             event_id: event.id
