@@ -80,8 +80,7 @@ export default function NoveltyInteractionBar({
             className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
           >
             <Download className="h-4 w-4" />
-            <span className="font-medium hidden sm:inline">Télécharger</span>
-            <span className="font-medium sm:hidden">Brochure</span>
+            <span className="font-medium">Brochure</span>
           </Button>
         )}
       </div>
