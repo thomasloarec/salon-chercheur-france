@@ -592,6 +592,13 @@ export type Database = {
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "exhibitor_admin_claims_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
         ]
       }
       exhibitor_claim_requests: {
@@ -623,6 +630,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
           },
         ]
       }
@@ -1039,6 +1053,13 @@ export type Database = {
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
         ]
       }
       novelty_comments: {
@@ -1368,6 +1389,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_entitlements_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
           },
         ]
       }
@@ -1821,17 +1849,27 @@ export type Database = {
       }
       participations_with_exhibitors: {
         Row: {
+          approved: boolean | null
+          description_final: string | null
           exhibitor_name: string | null
-          exhibitor_uuid: number | null
+          exhibitor_uuid: string | null
           exhibitor_website: string | null
           exposant_description: string | null
           id_event: string | null
           id_event_text: string | null
           id_exposant: string | null
           id_participation: string | null
+          legacy_description: string | null
+          legacy_name: string | null
+          legacy_website: string | null
+          logo_url: string | null
+          name_final: string | null
+          participation_website: string | null
+          plan: string | null
           stand_exposant: string | null
+          stand_info: string | null
           urlexpo_event: string | null
-          website_exposant: string | null
+          website_final: string | null
         }
         Relationships: [
           {

@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNoveltyQuota } from '@/hooks/useNoveltyQuota';
 import { NoveltyLimitDialog } from './NoveltyLimitDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Event } from '@/types/event';
 import type { Step1Data, Step2Data } from '@/lib/validation/noveltySchemas';
 import { step1Schema, step2Schema, CONSUMER_EMAIL_DOMAINS } from '@/lib/validation/noveltySchemas';
@@ -33,6 +34,7 @@ interface StepperState {
 export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNoveltyStepperProps) {
   const { user, signIn } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [currentStep, setCurrentStep] = useState<CurrentStep>(1);
   const [loading, setLoading] = useState(false);
@@ -403,29 +405,63 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       }
 
       // Mettre à jour le logo pour un exposant existant si fourni
-      if ('id' in step1.exhibitor && isValidUUID(step1.exhibitor.id) && (step1.exhibitor as any).logo instanceof File) {
-        console.log('📤 Upload logo pour exposant existant...');
-        const logoFile = (step1.exhibitor as any).logo;
-        const fileName = `${exhibitorId}/${Date.now()}-${sanitizeFileName(logoFile.name)}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, logoFile);
+      if ('id' in step1.exhibitor && isValidUUID(step1.exhibitor.id)) {
+        const exhibitor = step1.exhibitor as any;
+        const pendingLogo = exhibitor.logo;
         
-        if (!uploadError && uploadData) {
-          const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(fileName);
-          const logoUrl = publicUrl.publicUrl;
+        if (pendingLogo instanceof File) {
+          console.log('📤 Upload logo pour exposant existant:', exhibitor.name);
           
-          // Mettre à jour dans exhibitors uniquement (les exposants legacy n'ont pas de colonne logo_url)
-          const { error: updateExhibitorError } = await supabase
-            .from('exhibitors')
-            .update({ logo_url: logoUrl })
-            .eq('id', exhibitorId);
+          const fileName = `${exhibitorId}/${Date.now()}-${sanitizeFileName(pendingLogo.name)}`;
           
-          if (updateExhibitorError) {
-            console.log('⚠️ Erreur mise à jour logo:', updateExhibitorError);
-          } else {
-            console.log('✅ Logo ajouté à l\'exposant existant:', logoUrl);
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, pendingLogo, {
+              cacheControl: '3600',
+              upsert: false
+            });
+          
+          if (uploadError) {
+            console.error('❌ Erreur upload logo:', uploadError);
+            toast({
+              title: "Erreur d'upload",
+              description: "Le logo n'a pas pu être uploadé.",
+              variant: "destructive"
+            });
+          } else if (uploadData) {
+            const { data: publicUrl } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+            
+            const logoUrl = publicUrl.publicUrl;
+            console.log('✅ Logo uploadé:', logoUrl);
+            
+            // Mise à jour dans exhibitors
+            const { error: updateError } = await supabase
+              .from('exhibitors')
+              .update({ 
+                logo_url: logoUrl,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', exhibitorId);
+            
+            if (updateError) {
+              console.error('❌ Erreur MAJ logo exhibitor:', updateError);
+            } else {
+              console.log('✅ Logo sauvegardé dans exhibitor:', exhibitorId);
+              
+              // Invalider le cache React Query
+              queryClient.invalidateQueries({ queryKey: ['exhibitors-by-event'] });
+              queryClient.invalidateQueries({ queryKey: ['exhibitor', exhibitorId] });
+              
+              toast({
+                title: "Logo ajouté",
+                description: `Le logo a été mis à jour avec succès.`,
+              });
+            }
           }
+        } else {
+          console.log('ℹ️ Aucun logo à uploader pour cet exposant existant');
         }
       }
 

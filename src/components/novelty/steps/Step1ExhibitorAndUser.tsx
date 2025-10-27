@@ -46,6 +46,7 @@ export default function Step1ExhibitorAndUser({
   const [loading, setLoading] = useState(false);
   const [showNewExhibitorForm, setShowNewExhibitorForm] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<DbExhibitor | null>(null);
+  const [selectedExhibitorLogo, setSelectedExhibitorLogo] = useState<File | null>(null);
   
   // Vérifier le quota pour l'exposant sélectionné
   const { data: quota } = useNoveltyQuota(
@@ -241,7 +242,13 @@ export default function Step1ExhibitorAndUser({
       return;
     }
 
-    setNewExhibitorData(prev => ({ ...prev, logo: file }));
+    if (showNewExhibitorForm) {
+      setNewExhibitorData(prev => ({ ...prev, logo: file }));
+    } else if (selectedExhibitor) {
+      console.log('📁 Logo sélectionné pour exposant existant:', file.name);
+      setSelectedExhibitorLogo(file);
+      setNewExhibitorData(prev => ({ ...prev, logo: file }));
+    }
   };
 
   const resetSelection = () => {
@@ -320,9 +327,9 @@ export default function Step1ExhibitorAndUser({
                     htmlFor="selected-exhibitor-logo"
                     className="flex items-center justify-center w-full h-20 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-accent transition-colors"
                   >
-                    {newExhibitorData.logo ? (
+                    {(newExhibitorData.logo || selectedExhibitorLogo) ? (
                       <div className="text-center">
-                        <p className="text-sm font-medium">{newExhibitorData.logo.name}</p>
+                        <p className="text-sm font-medium">✅ {(newExhibitorData.logo || selectedExhibitorLogo)?.name}</p>
                         <p className="text-xs text-muted-foreground">Cliquez pour changer</p>
                       </div>
                     ) : (

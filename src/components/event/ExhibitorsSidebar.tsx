@@ -129,7 +129,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
             const website = exhibitorUUID ? exhibitorWebsites[exhibitorUUID] :
                            (p.id_exposant && legacyExposantData[p.id_exposant]?.website) ||
                            p.exhibitor_website || 
-                           p.website_exposant;
+                           p.participation_website;
 
             return {
               id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
