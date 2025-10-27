@@ -28,57 +28,61 @@ export default function NoveltyInteractionBar({
   isPending = false,
 }: NoveltyInteractionBarProps) {
   return (
-    <div className="flex items-center justify-between gap-2 py-2 border-t border-b">
-      <Button
-        onClick={onLikeToggle}
-        variant="ghost"
-        size="sm"
-        disabled={isPending}
-        className={cn(
-          "flex items-center gap-2 hover:bg-accent",
-          isLiked && "text-primary"
-        )}
-      >
-        <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
-        <span className="font-medium">{likesCount} Like{likesCount > 1 ? 's' : ''}</span>
-      </Button>
-
-      <Button
-        onClick={onCommentsToggle}
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "flex items-center gap-2 hover:bg-accent",
-          showComments && "text-primary"
-        )}
-      >
-        <MessageCircle className="h-5 w-5" />
-        <span className="font-medium">{commentsCount} Commentaire{commentsCount > 1 ? 's' : ''}</span>
-      </Button>
-
-      <Button
-        onClick={onMeetingRequest}
-        variant="ghost"
-        size="sm"
-        className="flex items-center gap-2 hover:bg-accent"
-      >
-        <Calendar className="h-5 w-5" />
-        <span className="font-medium hidden sm:inline">Prendre RDV</span>
-        <span className="font-medium sm:hidden">RDV</span>
-      </Button>
-
-      {hasDownload && onBrochureDownload && (
+    <div className="border-t border-b">
+      {/* Section interactions sociales */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b">
         <Button
-          onClick={onBrochureDownload}
+          onClick={onLikeToggle}
           variant="ghost"
           size="sm"
-          className="flex items-center gap-2 hover:bg-accent"
+          disabled={isPending}
+          className={cn(
+            "flex items-center gap-1.5 hover:bg-accent/50 text-muted-foreground",
+            isLiked && "text-primary"
+          )}
         >
-          <Download className="h-5 w-5" />
-          <span className="font-medium hidden sm:inline">Télécharger la brochure</span>
-          <span className="font-medium sm:hidden">Brochure</span>
+          <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
+          <span className="text-sm">{likesCount}</span>
         </Button>
-      )}
+
+        <Button
+          onClick={onCommentsToggle}
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "flex items-center gap-1.5 hover:bg-accent/50 text-muted-foreground",
+            showComments && "text-primary"
+          )}
+        >
+          <MessageCircle className="h-4 w-4" />
+          <span className="text-sm">{commentsCount}</span>
+        </Button>
+      </div>
+
+      {/* Section boutons d'action CTA */}
+      <div className="flex items-center justify-center gap-3 px-4 py-4 bg-gradient-to-r from-background via-accent/5 to-background">
+        <Button
+          onClick={onMeetingRequest}
+          variant="default"
+          size="default"
+          className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <Calendar className="h-4 w-4" />
+          <span className="font-medium">Prendre RDV</span>
+        </Button>
+
+        {hasDownload && onBrochureDownload && (
+          <Button
+            onClick={onBrochureDownload}
+            variant="outline"
+            size="default"
+            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow border-primary/20 hover:border-primary/40"
+          >
+            <Download className="h-4 w-4" />
+            <span className="font-medium">Télécharger</span>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

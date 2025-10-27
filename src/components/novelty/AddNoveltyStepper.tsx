@@ -422,6 +422,9 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         exhibitorId = newExhibitor.id;
         exhibitorApproved = false; // New exhibitors need approval
         console.log('✅ Nouvel exposant créé:', { id: exhibitorId });
+        
+        // ✅ Invalider le cache pour forcer le rafraîchissement de la sidebar
+        queryClient.invalidateQueries({ queryKey: ['exhibitors-by-event', event.slug] });
       }
 
       // Mettre à jour le logo pour un exposant existant si fourni
