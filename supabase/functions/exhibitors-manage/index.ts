@@ -146,14 +146,27 @@ Deno.serve(async (req) => {
           )
         }
 
+        // Create a temporary entry in exposants for legacy compatibility
+        const tempExposantId = `EXP-${Date.now()}`;
+        await supabase
+          .from('exposants')
+          .insert({
+            id_exposant: tempExposantId,
+            nom_exposant: name,
+            website_exposant: website || null,
+            exposant_description: null
+          });
+
         // Create participation record linking exhibitor to event
-        // Note: id_event is UUID (from events.id), exhibitor_id is the new UUID column
         const { error: participationError } = await supabase
           .from('participation')
           .insert({
+            id_exposant: tempExposantId, // Links to exposants (TEXT)
+            exhibitor_id: newExhibitor.id, // Links to exhibitors (UUID)
             id_event: event_id,
-            id_exposant: newExhibitor.id, // Legacy text column (kept for compatibility)
-            exhibitor_id: newExhibitor.id  // New UUID column
+            website_exposant: website || null,
+            stand_exposant: null,
+            urlexpo_event: null
           })
         
         if (participationError) {

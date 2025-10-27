@@ -406,7 +406,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       if ('id' in step1.exhibitor && isValidUUID(step1.exhibitor.id) && (step1.exhibitor as any).logo instanceof File) {
         console.log('📤 Upload logo pour exposant existant...');
         const logoFile = (step1.exhibitor as any).logo;
-        const fileName = `${Date.now()}-${sanitizeFileName(logoFile.name)}`;
+        const fileName = `${exhibitorId}/${Date.now()}-${sanitizeFileName(logoFile.name)}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(fileName, logoFile);
@@ -415,13 +415,17 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
           const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(fileName);
           const logoUrl = publicUrl.publicUrl;
           
-          // Mettre à jour l'exposant avec le logo
-          await supabase
+          // Mettre à jour dans exhibitors uniquement (les exposants legacy n'ont pas de colonne logo_url)
+          const { error: updateExhibitorError } = await supabase
             .from('exhibitors')
             .update({ logo_url: logoUrl })
-            .eq('id', step1.exhibitor.id);
+            .eq('id', exhibitorId);
           
-          console.log('✅ Logo ajouté à l\'exposant existant:', logoUrl);
+          if (updateExhibitorError) {
+            console.log('⚠️ Erreur mise à jour logo:', updateExhibitorError);
+          } else {
+            console.log('✅ Logo ajouté à l\'exposant existant:', logoUrl);
+          }
         }
       }
 
