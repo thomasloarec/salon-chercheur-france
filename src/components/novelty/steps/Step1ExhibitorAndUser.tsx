@@ -99,7 +99,7 @@ export default function Step1ExhibitorAndUser({
             name: selectedExhibitor.name, 
             website: selectedExhibitor.website || '',
             approved: selectedExhibitor.approved,
-            logo: selectedExhibitorLogo || newExhibitorData.logo // Utiliser selectedExhibitorLogo en priorité
+            logo: selectedExhibitorLogo || newExhibitorData.logo // ✅ Prioriser selectedExhibitorLogo
           }
         : { 
             name: newExhibitorData.name, 
@@ -107,6 +107,15 @@ export default function Step1ExhibitorAndUser({
             stand_info: newExhibitorData.stand_info || '',
             logo: newExhibitorData.logo 
           };
+
+      console.log('🔄 Step1 onUpdate appelé avec:', {
+        hasSelectedExhibitor: !!selectedExhibitor,
+        exhibitorData,
+        selectedExhibitorLogo,
+        hasLogoInData: !!exhibitorData.logo,
+        logoFileName: exhibitorData.logo?.name,
+        logoIsFile: exhibitorData.logo instanceof File
+      });
 
       onChange({
         exhibitor: exhibitorData,
@@ -119,7 +128,7 @@ export default function Step1ExhibitorAndUser({
         }
       });
     }
-  }, [selectedExhibitor, newExhibitorData, userData, user, quota, onChange, onValidationChange]);
+  }, [selectedExhibitor, newExhibitorData, userData, user, quota, onChange, onValidationChange, selectedExhibitorLogo]);
 
   // Check if email is professional
   const isProfessionalEmail = (email: string) => {
@@ -242,11 +251,22 @@ export default function Step1ExhibitorAndUser({
       return;
     }
 
+    console.log('📸 Logo changé dans Step1:', {
+      file,
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      isFile: file instanceof File,
+      forNewExhibitor: showNewExhibitorForm,
+      forExistingExhibitor: !!selectedExhibitor
+    });
+
     if (showNewExhibitorForm) {
       setNewExhibitorData(prev => ({ ...prev, logo: file }));
     } else if (selectedExhibitor) {
       console.log('📁 Logo sélectionné pour exposant existant:', file.name);
       setSelectedExhibitorLogo(file);
+      // ✅ IMPORTANT : Mettre à jour aussi newExhibitorData.logo
       setNewExhibitorData(prev => ({ ...prev, logo: file }));
     }
   };

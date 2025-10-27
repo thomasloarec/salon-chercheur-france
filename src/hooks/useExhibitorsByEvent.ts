@@ -11,29 +11,44 @@ export const useExhibitorsByEvent = (
   return useQuery({
     queryKey: ['exhibitors-by-event', eventSlug, searchQuery, limit, offset],
     queryFn: async (): Promise<EventExhibitorsResponse> => {
+      console.log('🔍 useExhibitorsByEvent - Fetching pour:', eventSlug);
+      
       // 1) Call Edge Function
       const { data, error } = await supabase.functions.invoke('exhibitors-by-event', {
         body: { event_slug: eventSlug, search: searchQuery, limit, offset }
       });
 
+      console.log('📊 Edge Function response:', {
+        hasError: !!error,
+        totalFromEdge: data?.total,
+        exhibitorsCount: data?.exhibitors?.length
+      });
+
       // 2) If error OR total === 0 -> fallback to VIEW
-      if (error || !data || (Array.isArray(data.exhibitors) && data.exhibitors.length === 0) || data.total === 0) {
-        // Get Event_XX from slug
+      if (error || !data || data.total === 0) {
+        console.log('⚠️ Fallback vers la vue participations_with_exhibitors');
+        // Get Event UUID and id_event from slug
         const { data: eventData } = await supabase
           .from('events')
-          .select('id_event')
+          .select('id, id_event')
           .eq('slug', eventSlug)
           .single();
 
-        if (!eventData?.id_event) {
+        if (!eventData) {
+          console.log('❌ Événement non trouvé');
           return { exhibitors: [], total: 0 };
         }
 
-        // Read directly from view with id_event_text
+        console.log('📌 Event trouvé:', {
+          id: eventData.id,
+          id_event: eventData.id_event
+        });
+
+        // ✅ DOUBLE MATCH : Chercher par UUID ET id_event_text
         let query = supabase
           .from('participations_with_exhibitors')
           .select('*', { count: 'exact' })
-          .eq('id_event_text', eventData.id_event);
+          .or(`id_event.eq.${eventData.id},id_event_text.eq.${eventData.id_event}`);
 
         // Apply pagination if limit provided
         if (typeof limit === 'number') {
@@ -41,7 +56,17 @@ export const useExhibitorsByEvent = (
           query = query.range(start, start + limit - 1);
         }
 
-        const { data: participationData, count } = await query;
+        const { data: participationData, count, error: viewError } = await query;
+
+        if (viewError) {
+          console.error('❌ Erreur vue:', viewError);
+          return { exhibitors: [], total: 0 };
+        }
+
+        console.log('📋 Résultats de la vue:', {
+          count,
+          rows: participationData?.length
+        });
 
         // Récupérer les exhibitor_id et logos depuis participation et exhibitors
         const participationIds = (participationData || [])
@@ -83,6 +108,8 @@ export const useExhibitorsByEvent = (
                   if (e.website) exhibitorWebsites[e.id] = e.website;
                 });
               }
+
+              console.log('✅ Logos récupérés:', Object.keys(exhibitorLogos).length);
             }
 
             // Pour les participations sans exhibitor_id, récupérer depuis exposants (legacy)
@@ -134,10 +161,7 @@ export const useExhibitorsByEvent = (
           e.name && (!searchQuery || e.name.toLowerCase().includes(searchQuery.toLowerCase()))
         );
 
-        // Admin warning if function returned 0 but view has data
-        if (data?.total === 0 && exhibitors.length > 0) {
-          console.warn(`[ADMIN] Mismatch detected for ${eventSlug}: Edge Function returned 0 exhibitors but view has ${exhibitors.length}`);
-        }
+        console.log('✅ Exhibitors mappés:', exhibitors.length);
 
         return { exhibitors, total: count || exhibitors.length };
       }
@@ -146,6 +170,9 @@ export const useExhibitorsByEvent = (
       return data as EventExhibitorsResponse;
     },
     enabled: !!eventSlug,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,  // ✅ Pas de cache
+    gcTime: 0,  // ✅ Garbage collect immédiatement
+    refetchOnMount: 'always',  // ✅ Toujours recharger
+    refetchOnWindowFocus: true,  // ✅ Recharger si on revient sur l'onglet
   });
 };

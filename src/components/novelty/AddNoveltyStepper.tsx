@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -46,6 +46,9 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
     noveltyId?: string;
   } | null>(null);
 
+  // ✅ Ref pour capturer le logo avant qu'il soit perdu dans les mises à jour d'état
+  const exhibitorLogoFileRef = useRef<File | null>(null);
+
   // Form state
   const [state, setState] = useState<StepperState>({
     step1Data: {},
@@ -92,6 +95,22 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
 
   // Update step 1 data
   const handleStep1Change = (data: Partial<Step1Data>) => {
+    console.log('🔄 Step1 update reçu:', {
+      hasExhibitor: !!data.exhibitor,
+      exhibitorKeys: data.exhibitor ? Object.keys(data.exhibitor) : [],
+      hasLogoInData: !!(data.exhibitor as any)?.logo,
+      logoType: (data.exhibitor as any)?.logo?.constructor?.name
+    });
+
+    // ✅ Capturer le logo dans le ref AVANT qu'il soit perdu
+    if (data.exhibitor && 'logo' in data.exhibitor) {
+      const logo = (data.exhibitor as any).logo;
+      if (logo instanceof File) {
+        console.log('✅ Logo capturé dans ref:', logo.name);
+        exhibitorLogoFileRef.current = logo;
+      }
+    }
+
     setState(prev => ({ ...prev, step1Data: { ...prev.step1Data, ...data } }));
   };
 
@@ -406,22 +425,25 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
 
       // Mettre à jour le logo pour un exposant existant si fourni
       if ('id' in step1.exhibitor && isValidUUID(step1.exhibitor.id)) {
-        const exhibitor = step1.exhibitor as any;
-        const pendingLogo = exhibitor.logo;
+        const exhibitorIdForLogo = step1.exhibitor.id;
+        
+        // ✅ Récupérer le logo depuis le ref au lieu de l'objet
+        const pendingLogo = exhibitorLogoFileRef.current;
         
         console.log('🔍 DEBUG Logo exposant existant:', {
-          hasId: 'id' in step1.exhibitor,
-          exhibitorId: exhibitor.id,
-          hasLogo: !!pendingLogo,
+          hasId: true,
+          exhibitorId: exhibitorIdForLogo,
+          hasLogoInRef: !!pendingLogo,
           logoType: pendingLogo?.constructor?.name,
           isFile: pendingLogo instanceof File,
-          exhibitorKeys: Object.keys(exhibitor)
+          fileName: pendingLogo?.name,
+          fileSize: pendingLogo?.size
         });
         
         if (pendingLogo instanceof File) {
-          console.log('📤 Upload logo pour exposant existant:', exhibitor.name);
+          console.log('📤 Upload logo pour exposant existant:', step1.exhibitor.name);
           
-          const fileName = `${exhibitorId}/${Date.now()}-${sanitizeFileName(pendingLogo.name)}`;
+          const fileName = `${exhibitorIdForLogo}/${Date.now()}-${sanitizeFileName(pendingLogo.name)}`;
           
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('avatars')
@@ -452,22 +474,25 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
                 logo_url: logoUrl,
                 updated_at: new Date().toISOString()
               })
-              .eq('id', exhibitorId);
+              .eq('id', exhibitorIdForLogo);
             
             if (updateError) {
               console.error('❌ Erreur MAJ logo exhibitor:', updateError);
             } else {
-              console.log('✅ Logo sauvegardé dans exhibitor:', exhibitorId);
+              console.log('✅ Logo sauvegardé dans exhibitor:', exhibitorIdForLogo);
               
               // Invalider le cache React Query
               queryClient.invalidateQueries({ queryKey: ['exhibitors-by-event'] });
-              queryClient.invalidateQueries({ queryKey: ['exhibitor', exhibitorId] });
+              queryClient.invalidateQueries({ queryKey: ['exhibitor', exhibitorIdForLogo] });
               
               toast({
                 title: "Logo ajouté",
                 description: `Le logo a été mis à jour avec succès.`,
               });
             }
+            
+            // ✅ Nettoyer le ref après usage
+            exhibitorLogoFileRef.current = null;
           }
         } else {
           console.log('ℹ️ Aucun logo à uploader pour cet exposant existant');
@@ -696,19 +721,66 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       // ✅ Clear saved state on success
       localStorage.removeItem('addNoveltyStepperState');
       
-      // 🔄 Invalider TOUS les caches liés aux novelties et exhibitors
+      // ✅ Vérifier que la participation existe
+      if (exhibitorId && event?.id) {
+        const { data: participationCheck } = await supabase
+          .from('participation')
+          .select('id_participation, exhibitor_id, id_event')
+          .eq('exhibitor_id', exhibitorId)
+          .eq('id_event', event.id)
+          .single();
+
+        console.log('🔍 Vérification participation:', {
+          exists: !!participationCheck,
+          exhibitorId,
+          eventId: event.id,
+          participationId: participationCheck?.id_participation
+        });
+
+        if (!participationCheck) {
+          console.warn('⚠️ Participation non trouvée ! Création manuelle...');
+          
+          const { error: partError } = await supabase
+            .from('participation')
+            .insert({
+              exhibitor_id: exhibitorId,
+              id_event: event.id,
+              id_event_text: event.id_event,
+              id_exposant: exhibitorId
+            });
+          
+          if (partError) {
+            console.error('❌ Erreur création participation:', partError);
+          } else {
+            console.log('✅ Participation créée manuellement');
+          }
+        }
+      }
+
+      // Invalider TOUS les caches liés aux exposants
+      console.log('🔄 Invalidation des caches après création nouveauté');
+      
       await queryClient.invalidateQueries({ 
         predicate: (query) => {
           const key = query.queryKey[0];
-          return typeof key === 'string' && (
-            key.includes('exhibitor') ||
-            key.includes('novelty') ||
-            key.includes('novelties')
-          );
+          if (typeof key === 'string') {
+            return key.includes('exhibitor') || 
+                   key.includes('novelty') || 
+                   key.includes('novelties') ||
+                   key.includes('participation');
+          }
+          return false;
         }
       });
-      
-      console.log('✅ Cache invalidé pour novelties et exhibitors');
+
+      // Forcer un refetch immédiat de la sidebar
+      if (event?.slug) {
+        await queryClient.refetchQueries({ 
+          queryKey: ['exhibitors-by-event', event.slug]
+        });
+      }
+
+      console.log('✅ Caches invalidés');
 
     } catch (error: any) {
       console.groupEnd();
