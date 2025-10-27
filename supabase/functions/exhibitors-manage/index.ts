@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
 
       } else if (action === 'create') {
         // Create new exhibitor
-        const { name, website, stand_info, event_id } = requestData
+        const { name, website, stand_info, logo_url, event_id } = requestData
 
         if (!name || !event_id) {
           return new Response(
@@ -132,6 +132,7 @@ Deno.serve(async (req) => {
             name,
             website: website || null,
             stand_info: stand_info || null,
+            logo_url: logo_url || null,
             approved: false, // New exhibitors need approval
             owner_user_id: user.id
           })
@@ -145,13 +146,19 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Create participation record
-        await supabase
+        // Create participation record linking exhibitor to event
+        // Note: id_event is UUID (from events.id), id_exposant is the exhibitor.id (UUID)
+        const { error: participationError } = await supabase
           .from('participation')
           .insert({
             id_event: event_id,
             id_exposant: newExhibitor.id
           })
+        
+        if (participationError) {
+          console.error('Failed to create participation:', participationError)
+          // Don't fail the whole request, just log the error
+        }
 
         // Auto-approve claim if email domain matches website domain
         let claimStatus = 'pending'

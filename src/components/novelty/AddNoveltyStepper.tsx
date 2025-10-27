@@ -167,12 +167,28 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
 
       // Create exhibitor if needed
       if (state.step1Data.exhibitor && 'name' in state.step1Data.exhibitor) {
+        // Upload logo si présent
+        let logoUrl: string | null = null;
+        if ('logo' in state.step1Data.exhibitor && state.step1Data.exhibitor.logo instanceof File) {
+          const logoFile = state.step1Data.exhibitor.logo;
+          const fileName = `${Date.now()}-${sanitizeFileName(logoFile.name)}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, logoFile);
+          
+          if (!uploadError && uploadData) {
+            const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(fileName);
+            logoUrl = publicUrl.publicUrl;
+          }
+        }
+
         const { data: newExhibitor, error: exhibitorError } = await supabase.functions.invoke('exhibitors-manage', {
           body: {
             action: 'create',
             name: state.step1Data.exhibitor.name,
             website: state.step1Data.exhibitor.website,
             stand_info: 'stand_info' in state.step1Data.exhibitor ? state.step1Data.exhibitor.stand_info : undefined,
+            logo_url: logoUrl,
             event_id: event.id
           }
         });
@@ -345,6 +361,25 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         const exhibitorWebsite = exhibitorToCreate.website || null;
         const exhibitorStandInfo = exhibitorToCreate.stand_info || null;
         
+        // Upload logo si présent
+        let logoUrl: string | null = null;
+        if (exhibitorToCreate.logo instanceof File) {
+          console.log('📤 Upload logo exposant...');
+          const logoFile = exhibitorToCreate.logo;
+          const fileName = `${Date.now()}-${sanitizeFileName(logoFile.name)}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, logoFile);
+          
+          if (!uploadError && uploadData) {
+            const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(fileName);
+            logoUrl = publicUrl.publicUrl;
+            console.log('✅ Logo uploadé:', logoUrl);
+          } else {
+            console.error('❌ Erreur upload logo:', uploadError);
+          }
+        }
+        
         console.log('🆕 Création nouvel exposant:', exhibitorName);
         const { data: newExhibitor, error: exhibitorError } = await supabase.functions.invoke('exhibitors-manage', {
           body: {
@@ -352,6 +387,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             name: exhibitorName,
             website: exhibitorWebsite,
             stand_info: exhibitorStandInfo,
+            logo_url: logoUrl,
             event_id: event.id
           }
         });
@@ -364,6 +400,29 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         exhibitorId = newExhibitor.id;
         exhibitorApproved = false; // New exhibitors need approval
         console.log('✅ Nouvel exposant créé:', { id: exhibitorId });
+      }
+
+      // Mettre à jour le logo pour un exposant existant si fourni
+      if ('id' in step1.exhibitor && isValidUUID(step1.exhibitor.id) && (step1.exhibitor as any).logo instanceof File) {
+        console.log('📤 Upload logo pour exposant existant...');
+        const logoFile = (step1.exhibitor as any).logo;
+        const fileName = `${Date.now()}-${sanitizeFileName(logoFile.name)}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, logoFile);
+        
+        if (!uploadError && uploadData) {
+          const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(fileName);
+          const logoUrl = publicUrl.publicUrl;
+          
+          // Mettre à jour l'exposant avec le logo
+          await supabase
+            .from('exhibitors')
+            .update({ logo_url: logoUrl })
+            .eq('id', step1.exhibitor.id);
+          
+          console.log('✅ Logo ajouté à l\'exposant existant:', logoUrl);
+        }
       }
 
       // Check plan limits with proper UUID parameters

@@ -97,7 +97,8 @@ export default function Step1ExhibitorAndUser({
             id: selectedExhibitor.id, 
             name: selectedExhibitor.name, 
             website: selectedExhibitor.website || '',
-            approved: selectedExhibitor.approved 
+            approved: selectedExhibitor.approved,
+            logo: newExhibitorData.logo // Logo ajouté pour exposant existant
           }
         : { 
             name: newExhibitorData.name, 
@@ -296,6 +297,41 @@ export default function Step1ExhibitorAndUser({
                       {selectedExhibitor.approved ? 'Approuvé' : 'En validation'}
                     </Badge>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Ajout optionnel du logo pour l'exposant sélectionné */}
+            <Card>
+              <CardContent className="p-4">
+                <Label htmlFor="selected-exhibitor-logo">Ajouter un logo (optionnel)</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Si l'entreprise n'a pas encore de logo, vous pouvez en ajouter un maintenant
+                </p>
+                <div className="mt-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    id="selected-exhibitor-logo"
+                  />
+                  <label
+                    htmlFor="selected-exhibitor-logo"
+                    className="flex items-center justify-center w-full h-20 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                  >
+                    {newExhibitorData.logo ? (
+                      <div className="text-center">
+                        <p className="text-sm font-medium">{newExhibitorData.logo.name}</p>
+                        <p className="text-xs text-muted-foreground">Cliquez pour changer</p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Upload className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Ajouter un logo</p>
+                      </div>
+                    )}
+                  </label>
                 </div>
               </CardContent>
             </Card>
