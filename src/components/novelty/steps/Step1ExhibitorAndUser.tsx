@@ -99,7 +99,7 @@ export default function Step1ExhibitorAndUser({
             name: selectedExhibitor.name, 
             website: selectedExhibitor.website || '',
             approved: selectedExhibitor.approved,
-            logo: newExhibitorData.logo // Logo ajouté pour exposant existant
+            logo: selectedExhibitorLogo || newExhibitorData.logo // Utiliser selectedExhibitorLogo en priorité
           }
         : { 
             name: newExhibitorData.name, 
