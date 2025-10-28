@@ -81,9 +81,7 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
         pageSize
       });
 
-      const offset = (page - 1) * pageSize;
-
-      // Build query
+      // Build query - NO pagination at DB level to allow proper sorting
       let query = supabase
         .from('novelties')
         .select(`
@@ -122,18 +120,13 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
             popularity_score
           )
         `, { count: 'exact' })
-        .eq('status', 'published');
+        .eq('status', 'published')
+        .order('created_at', { ascending: false });
 
       // Filter by event if provided
       if (event_id) {
         query = query.eq('event_id', event_id);
       }
-
-      // Sort by created_at for database query
-      query = query.order('created_at', { ascending: false });
-
-      // Apply pagination
-      query = query.range(offset, offset + pageSize - 1);
 
       const { data, count, error } = await query;
 
@@ -189,15 +182,7 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
       // Sort based on selected filter
       let sortedData = dataWithLikes;
       if (sort === 'awaited') {
-        // Sort by likes count (descending), then by created_at as tiebreaker
-        sortedData = [...dataWithLikes].sort((a, b) => {
-          if (b.likes_count !== a.likes_count) {
-            return b.likes_count - a.likes_count;
-          }
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
-      } else if (sort === 'recent') {
-        // Sort by likes count first, then comments count, then by created_at
+        // Les plus attendues: Sort by likes DESC, then comments DESC, then created_at DESC
         sortedData = [...dataWithLikes].sort((a, b) => {
           // First compare likes
           if (b.likes_count !== a.likes_count) {
@@ -207,7 +192,12 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
           if (b.comments_count !== a.comments_count) {
             return b.comments_count - a.comments_count;
           }
-          // If both are equal, compare by date
+          // If both are equal, sort by most recent
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      } else if (sort === 'recent') {
+        // Récentes: Sort only by created_at DESC (most recent first)
+        sortedData = [...dataWithLikes].sort((a, b) => {
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
       }
@@ -231,8 +221,12 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
         in_user_route: userRouteItems.includes(novelty.id)
       }));
 
+      // Apply pagination AFTER sorting
+      const offset = (page - 1) * pageSize;
+      const paginatedData = noveltiesWithRouteStatus.slice(offset, offset + pageSize);
+
       return {
-        data: noveltiesWithRouteStatus as Novelty[],
+        data: paginatedData as Novelty[],
         total: count || 0,
         page,
         pageSize
