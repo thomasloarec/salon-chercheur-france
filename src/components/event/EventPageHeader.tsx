@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { EventSectors } from '@/components/ui/event-sectors';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
+import AuthRequiredModal from '@/components/AuthRequiredModal';
 
 interface EventPageHeaderProps {
   event: Event;
@@ -26,6 +27,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const { data: isFavorite = false } = useIsFavorite(event.id);
   const toggleFavorite = useToggleFavorite();
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
@@ -34,6 +36,11 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const official = event.url_site_officiel;
 
   const handleFavoriteClick = async () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
     try {
       await toggleFavorite.mutateAsync(event.id);
       toast.success(isFavorite ? "Retiré de votre agenda" : "Ajouté à votre agenda");
@@ -202,6 +209,12 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           />
         )}
       </div>
+
+      {/* Auth Required Modal */}
+      <AuthRequiredModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+      />
     </section>
   );
 };
