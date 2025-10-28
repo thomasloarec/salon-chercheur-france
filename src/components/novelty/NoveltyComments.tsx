@@ -5,6 +5,7 @@ import { useNoveltyComments, useAddComment, useDeleteComment } from '@/hooks/use
 import { Button } from '@/components/ui/button';
 import CommentInput from './CommentInput';
 import CommentItem from './CommentItem';
+import AuthRequiredModal from '@/components/AuthRequiredModal';
 
 interface NoveltyCommentsProps {
   noveltyId: string;
@@ -15,6 +16,7 @@ export default function NoveltyComments({ noveltyId, showAll = false }: NoveltyC
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showAllComments, setShowAllComments] = useState(showAll);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const { data: comments = [], isLoading } = useNoveltyComments(noveltyId);
   const addCommentMutation = useAddComment(noveltyId);
@@ -22,7 +24,7 @@ export default function NoveltyComments({ noveltyId, showAll = false }: NoveltyC
 
   const handleSubmitComment = async (content: string, imageUrl?: string) => {
     if (!user) {
-      navigate('/auth');
+      setShowAuthModal(true);
       return;
     }
 
@@ -89,7 +91,7 @@ export default function NoveltyComments({ noveltyId, showAll = false }: NoveltyC
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/auth')}
+              onClick={() => setShowAuthModal(true)}
               className="w-full justify-start text-muted-foreground rounded-full border"
             >
               Ajouter un commentaire...
@@ -97,6 +99,13 @@ export default function NoveltyComments({ noveltyId, showAll = false }: NoveltyC
           </div>
         </div>
       )}
+
+      {/* Auth Required Modal */}
+      <AuthRequiredModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        actionType="comment"
+      />
     </div>
   );
 }

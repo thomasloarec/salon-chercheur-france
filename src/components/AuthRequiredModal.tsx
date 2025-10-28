@@ -8,18 +8,41 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Heart, Mail, Lock } from 'lucide-react';
+import { Heart, Mail, MessageCircle, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
+type ActionType = 'favorite' | 'comment' | 'add-novelty';
+
 interface AuthRequiredModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  actionType?: ActionType;
 }
 
-const AuthRequiredModal = ({ open, onOpenChange }: AuthRequiredModalProps) => {
+const AUTH_MESSAGES = {
+  favorite: {
+    icon: Heart,
+    title: 'Créer une liste de favoris',
+    description: 'Connectez-vous pour sauvegarder vos événements favoris et les retrouver facilement dans votre profil.',
+  },
+  comment: {
+    icon: MessageCircle,
+    title: 'Créer un compte pour interagir',
+    description: 'Connectez-vous pour ajouter des commentaires, échanger avec les exposants et suivre vos interactions.',
+  },
+  'add-novelty': {
+    icon: Plus,
+    title: 'Créer un compte exposant',
+    description: 'Connectez-vous pour publier vos nouveautés, attirer les visiteurs et présenter vos innovations.',
+  },
+};
+
+const AuthRequiredModal = ({ open, onOpenChange, actionType = 'favorite' }: AuthRequiredModalProps) => {
   const navigate = useNavigate();
+  const message = AUTH_MESSAGES[actionType];
+  const IconComponent = message.icon;
 
   const handleGoogleAuth = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -43,11 +66,11 @@ const AuthRequiredModal = ({ open, onOpenChange }: AuthRequiredModalProps) => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5 text-red-500" />
-            Créer une liste de favoris
+            <IconComponent className="h-5 w-5 text-primary" />
+            {message.title}
           </DialogTitle>
           <DialogDescription>
-            Connectez-vous pour sauvegarder vos événements favoris et les retrouver facilement dans votre profil.
+            {message.description}
           </DialogDescription>
         </DialogHeader>
         

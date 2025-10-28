@@ -15,6 +15,7 @@ import AddNoveltyStepper from './AddNoveltyStepper';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event } from '@/types/event';
+import AuthRequiredModal from '@/components/AuthRequiredModal';
 
 interface AddNoveltyButtonProps {
   event: Event;
@@ -34,6 +35,7 @@ export default function AddNoveltyButton({
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Vérifier si on est en période de pré-lancement (plus de 60 jours avant l'événement)
   const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
@@ -42,9 +44,9 @@ export default function AddNoveltyButton({
   noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 60);
 
   const handleClick = async () => {
-    // Not logged in - redirect to auth
+    // Not logged in - show auth modal
     if (!user) {
-      navigate('/auth');
+      setShowAuthModal(true);
       return;
     }
 
@@ -164,6 +166,12 @@ export default function AddNoveltyButton({
         event={event}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      <AuthRequiredModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        actionType="add-novelty"
       />
     </>
   );
