@@ -65,6 +65,7 @@ export const useNoveltyLike = (noveltyId: string) => {
       // Invalider les queries concernées
       queryClient.invalidateQueries({ queryKey: ['novelty-like', noveltyId] });
       queryClient.invalidateQueries({ queryKey: ['novelty-likes-count', noveltyId] });
+      queryClient.invalidateQueries({ queryKey: ['novelties'] }); // Rafraîchir la liste des nouveautés
       queryClient.invalidateQueries({ queryKey: ['liked-novelties', user?.id] });
 
       // Toast

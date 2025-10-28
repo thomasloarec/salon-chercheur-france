@@ -32,7 +32,8 @@ const NOVELTY_TYPE_LABELS = {
 export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const { user } = useAuth();
   const { isLiked, toggleLike, isPending } = useNoveltyLike(novelty.id);
-  const { data: likesCount } = useNoveltyLikesCount(novelty.id);
+  // Utiliser le likes_count de la nouveauté au lieu de faire une requête séparée
+  const likesCount = novelty.likes_count ?? 0;
   const { data: standInfo } = useNoveltyStand({
     id: novelty.id,
     event_id: novelty.event_id,
@@ -291,7 +292,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
 
       {/* Interaction Bar - LinkedIn style */}
       <NoveltyInteractionBar
-        likesCount={likesCount || 0}
+        likesCount={likesCount}
         isLiked={isLiked}
         commentsCount={commentsCount}
         showComments={showComments}

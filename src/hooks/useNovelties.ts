@@ -39,6 +39,8 @@ export interface Novelty {
     popularity_score: number;
   };
   in_user_route?: boolean;
+  likes_count?: number;
+  comments_count?: number;
 }
 
 export interface NoveltiesResponse {
