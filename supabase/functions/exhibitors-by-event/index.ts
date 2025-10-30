@@ -160,30 +160,60 @@ Deno.serve(async (req) => {
       const enrichedData = exhibitorUUID ? exhibitorData[exhibitorUUID] : undefined
       const legacyData = p.id_exposant ? legacyExposantData[p.id_exposant] : undefined
 
+      // ✅ CORRECTION CRITIQUE : Mapper vers noms LEGACY pour compatibilité frontend
       return {
-        id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
-        name: p.exhibitor_name || p.id_exposant || '',
-        slug: p.id_exposant || String(p.exhibitor_uuid || ''),
+        // Identifiants
+        id_exposant: p.id_exposant || exhibitorUUID || String(p.exhibitor_uuid || ''),
+        exhibitor_uuid: exhibitorUUID,
+        exhibitor_name: p.exhibitor_name || p.name_final || '',
+        
+        // ✅ MAPPING MODERNE → LEGACY (avec cascade de fallback)
+        exposant_description: enrichedData?.description       // exhibitors.description
+                           || legacyData?.description         // exposants.exposant_description
+                           || p.exposant_description          // vue fallback
+                           || p.description_final             // vue coalescence
+                           || null,
+        
+        website_exposant: enrichedData?.website               // exhibitors.website
+                       || legacyData?.website                 // exposants.website_exposant
+                       || p.exhibitor_website                 // vue
+                       || p.participation_website             // participation
+                       || null,
+        
         logo_url: enrichedData?.logo_url || null,
-        description: enrichedData?.description || legacyData?.description || p.exposant_description || null,
-        website: enrichedData?.website || legacyData?.website || p.exhibitor_website || p.participation_website || null,
-        stand: p.stand_exposant || null,
-        hall: null,
-        plan: 'free' as const
+        stand_exposant: p.stand_exposant || null,
+        urlexpo_event: p.urlexpo_event || null,
+        
+        // Métadonnées de debug
+        _source: enrichedData ? 'modern' : (legacyData ? 'legacy' : 'view'),
+        _has_modern_description: !!enrichedData?.description,
+        _has_legacy_description: !!legacyData?.description
       }
-    }).filter(e => e.name)
+    }).filter(e => e.exhibitor_name)
+
+    // ✅ LOG de debug pour diagnostiquer les problèmes
+    console.log('📊 Exhibitors mappés:', {
+      total: exhibitors.length,
+      with_description: exhibitors.filter(e => e.exposant_description).length,
+      with_logo: exhibitors.filter(e => e.logo_url).length,
+      sources: {
+        modern: exhibitors.filter(e => e._source === 'modern').length,
+        legacy: exhibitors.filter(e => e._source === 'legacy').length,
+        view: exhibitors.filter(e => e._source === 'view').length
+      }
+    })
 
     // Apply search filter if provided
     if (search && search.trim()) {
       const searchLower = search.toLowerCase()
       exhibitors = exhibitors.filter(exhibitor => 
-        exhibitor.name.toLowerCase().includes(searchLower) ||
-        (exhibitor.website && exhibitor.website.toLowerCase().includes(searchLower))
+        exhibitor.exhibitor_name.toLowerCase().includes(searchLower) ||
+        (exhibitor.website_exposant && exhibitor.website_exposant.toLowerCase().includes(searchLower))
       )
     }
 
     // Sort alphabetically (already sorted in query but just in case)
-    exhibitors.sort((a, b) => a.name.localeCompare(b.name))
+    exhibitors.sort((a, b) => a.exhibitor_name.localeCompare(b.exhibitor_name))
 
     return new Response(
       JSON.stringify({ 

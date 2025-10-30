@@ -1,7 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeExternalUrl } from '@/lib/url';
 
-type LightExhibitor = {
+export type LightExhibitor = {
   id_exposant?: string | null;
   exhibitor_name?: string | null;
   stand_exposant?: string | null;
@@ -9,80 +8,156 @@ type LightExhibitor = {
   exposant_description?: string | null;
   urlexpo_event?: string | null;
   logo_url?: string | null;
+  exhibitor_uuid?: string | null;
 };
 
+/**
+ * Hydrate exhibitor data with additional info from database
+ * Uses 4 fallback strategies to ensure data is found
+ */
 export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhibitor> {
-  if (!light) return light;
+  console.log('🔍 hydrateExhibitor - Input:', {
+    id_exposant: light.id_exposant,
+    exhibitor_uuid: light.exhibitor_uuid,
+    has_description: !!light.exposant_description,
+    has_website: !!light.website_exposant
+  });
 
-  // si déjà hydraté, ne rien faire
-  if (light.website_exposant || light.exposant_description) return light;
+  // Si toutes les données sont déjà présentes, pas besoin d'hydratation
+  if (light.exposant_description && light.website_exposant && light.logo_url) {
+    console.log('✅ Données déjà complètes, skip hydratation');
+    return light;
+  }
 
-  // Chercher d'abord dans la table exhibitors moderne par id_exposant
+  // ============================================================================
+  // STRATÉGIE 1 : Chercher via exhibitor_uuid (PRIORITÉ pour nouveaux exposants)
+  // ============================================================================
+  
+  if (light.exhibitor_uuid) {
+    console.log('🔍 Tentative 1 : Recherche directe via exhibitor_uuid');
+    
+    const { data: exhibitor, error } = await supabase
+      .from('exhibitors')
+      .select('id, name, website, description, logo_url')
+      .eq('id', light.exhibitor_uuid)
+      .maybeSingle();
+
+    if (exhibitor && !error) {
+      console.log('✅ Trouvé via exhibitor_uuid:', {
+        name: exhibitor.name,
+        has_description: !!exhibitor.description,
+        has_logo: !!exhibitor.logo_url
+      });
+
+      return {
+        ...light,
+        exhibitor_name: exhibitor.name || light.exhibitor_name,
+        website_exposant: exhibitor.website || light.website_exposant,
+        exposant_description: exhibitor.description || light.exposant_description,
+        logo_url: exhibitor.logo_url || light.logo_url
+      };
+    }
+  }
+
+  // ============================================================================
+  // STRATÉGIE 2 : Chercher via participation.exhibitor_id
+  // ============================================================================
+  
   if (light.id_exposant) {
-    // Trouver la participation qui correspond pour obtenir l'exhibitor_id
-    const { data: participation } = await supabase
+    console.log('🔍 Tentative 2 : Recherche via participation.exhibitor_id');
+    
+    const { data: participation, error: partError } = await supabase
       .from('participation')
       .select('exhibitor_id')
       .eq('id_exposant', light.id_exposant)
       .maybeSingle();
 
-    if (participation?.exhibitor_id) {
-      // Récupérer les données de la table exhibitors
-      const { data: exhibitor } = await supabase
+    if (participation?.exhibitor_id && !partError) {
+      console.log('✅ Participation trouvée, exhibitor_id:', participation.exhibitor_id);
+      
+      const { data: exhibitor, error: exError } = await supabase
         .from('exhibitors')
-        .select('name, website, description, logo_url')
+        .select('id, name, website, description, logo_url')
         .eq('id', participation.exhibitor_id)
         .maybeSingle();
 
-      if (exhibitor) {
+      if (exhibitor && !exError) {
+        console.log('✅ Trouvé via participation → exhibitors:', {
+          name: exhibitor.name,
+          has_description: !!exhibitor.description,
+          has_logo: !!exhibitor.logo_url
+        });
+
         return {
           ...light,
-          exhibitor_name: light.exhibitor_name ?? exhibitor.name,
-          website_exposant: normalizeExternalUrl(exhibitor.website) ?? light.website_exposant ?? null,
-          exposant_description: exhibitor.description ?? light.exposant_description ?? null,
-          logo_url: exhibitor.logo_url ?? light.logo_url ?? null,
+          exhibitor_uuid: exhibitor.id,
+          exhibitor_name: exhibitor.name || light.exhibitor_name,
+          website_exposant: exhibitor.website || light.website_exposant,
+          exposant_description: exhibitor.description || light.exposant_description,
+          logo_url: exhibitor.logo_url || light.logo_url
         };
       }
     }
   }
 
-  // Chercher dans la table exposants legacy par id_exposant
+  // ============================================================================
+  // STRATÉGIE 3 : Fallback vers exposants (legacy)
+  // ============================================================================
+  
   if (light.id_exposant) {
-    const { data, error } = await supabase
+    console.log('🔍 Tentative 3 : Fallback vers exposants legacy');
+    
+    const { data: exposant, error: legacyError } = await supabase
       .from('exposants')
       .select('id_exposant, nom_exposant, website_exposant, exposant_description')
       .eq('id_exposant', light.id_exposant)
       .maybeSingle();
 
-    if (!error && data) {
+    if (exposant && !legacyError) {
+      console.log('✅ Trouvé dans exposants legacy:', {
+        name: exposant.nom_exposant,
+        has_description: !!exposant.exposant_description
+      });
+
       return {
         ...light,
-        id_exposant: data.id_exposant,
-        exhibitor_name: light.exhibitor_name ?? data.nom_exposant,
-        website_exposant: normalizeExternalUrl(data.website_exposant) ?? light.website_exposant ?? null,
-        exposant_description: data.exposant_description ?? light.exposant_description ?? null,
+        exhibitor_name: exposant.nom_exposant || light.exhibitor_name,
+        website_exposant: exposant.website_exposant || light.website_exposant,
+        exposant_description: exposant.exposant_description || light.exposant_description
       };
     }
   }
 
-  // Fallback par nom (ilike) dans exposants
+  // ============================================================================
+  // STRATÉGIE 4 : Recherche par nom (dernier recours)
+  // ============================================================================
+  
   if (light.exhibitor_name) {
-    const { data } = await supabase
-      .from('exposants')
-      .select('id_exposant, nom_exposant, website_exposant, exposant_description')
-      .ilike('nom_exposant', light.exhibitor_name)
+    console.log('🔍 Tentative 4 : Recherche par nom dans exhibitors');
+    
+    const { data: exhibitor, error } = await supabase
+      .from('exhibitors')
+      .select('id, name, website, description, logo_url')
+      .ilike('name', light.exhibitor_name)
       .maybeSingle();
 
-    if (data) {
+    if (exhibitor && !error) {
+      console.log('✅ Trouvé par nom dans exhibitors');
+
       return {
         ...light,
-        id_exposant: data.id_exposant,
-        exhibitor_name: light.exhibitor_name ?? data.nom_exposant,
-        website_exposant: normalizeExternalUrl(data.website_exposant) ?? light.website_exposant ?? null,
-        exposant_description: data.exposant_description ?? light.exposant_description ?? null,
+        exhibitor_uuid: exhibitor.id,
+        website_exposant: exhibitor.website || light.website_exposant,
+        exposant_description: exhibitor.description || light.exposant_description,
+        logo_url: exhibitor.logo_url || light.logo_url
       };
     }
   }
 
+  // ============================================================================
+  // Aucune donnée trouvée
+  // ============================================================================
+  
+  console.warn('⚠️ hydrateExhibitor - Aucune donnée supplémentaire trouvée');
   return light;
 }
