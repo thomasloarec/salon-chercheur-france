@@ -113,6 +113,9 @@ export default function Step1ExhibitorAndUser({
       console.log('🔄 Step1 onUpdate appelé avec:', {
         hasSelectedExhibitor: !!selectedExhibitor,
         exhibitorData,
+        exhibitor_has_description: 'description' in exhibitorData,
+        description_value: (exhibitorData as any).description,
+        description_length: (exhibitorData as any).description?.length || 0,
         selectedExhibitorLogo,
         hasLogoInData: !!exhibitorData.logo,
         logoFileName: exhibitorData.logo?.name,

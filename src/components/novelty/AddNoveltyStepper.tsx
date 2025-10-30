@@ -381,6 +381,17 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         const exhibitorName = exhibitorToCreate.name || '';
         const exhibitorWebsite = exhibitorToCreate.website || null;
         const exhibitorStandInfo = exhibitorToCreate.stand_info || null;
+        const exhibitorDescription = exhibitorToCreate.description || null;
+        
+        // ✅ DEBUG : Vérifier que la description est bien présente
+        console.log('🔍 DEBUG Création exposant - Données reçues:', {
+          name: exhibitorName,
+          website: exhibitorWebsite,
+          description: exhibitorDescription,
+          description_length: exhibitorDescription?.length || 0,
+          stand_info: exhibitorStandInfo,
+          has_logo: exhibitorToCreate.logo instanceof File
+        });
         
         // Upload logo si présent
         let logoUrl: string | null = null;
@@ -407,11 +418,24 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             action: 'create',
             name: exhibitorName,
             website: exhibitorWebsite,
-            description: exhibitorToCreate.description || null,
+            description: exhibitorDescription,  // ✅ Utiliser la variable extraite
             stand_info: exhibitorStandInfo,
             logo_url: logoUrl,
             event_id: event.id
           }
+        });
+        
+        // ✅ DEBUG : Log complet de la requête
+        console.log('📤 Requête exhibitors-manage:', {
+          action: 'create',
+          name: exhibitorName,
+          website: exhibitorWebsite,
+          description: exhibitorDescription,
+          description_present: !!exhibitorDescription,
+          description_length: exhibitorDescription?.length || 0,
+          stand_info: exhibitorStandInfo,
+          logo_url: logoUrl ? 'présent' : 'absent',
+          event_id: event.id
         });
 
         if (exhibitorError || !newExhibitor) {

@@ -62,6 +62,7 @@ export const step1Schema = z.object({
         .optional()
         .transform((val) => val ? normalizeWebsiteUrl(val) : '')
         .refine((val) => !val || z.string().url().safeParse(val).success, 'URL invalide'),
+      description: z.string().optional(),  // ✅ AJOUTÉ - Description de l'entreprise
       stand_info: z.string().optional(),
       logo: z.instanceof(File).optional(),
     }),
