@@ -87,9 +87,11 @@ const HeroNovelty = () => {
         {/* Main heading */}
         <div className="text-center mb-12 animate-fade-in">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            Sachez ce qui va vraiment se passer<br />sur un salon —{' '}
-            <span className="text-[#FF7A00]">avant d'y mettre un pied</span>
+            Avant d'ouvrir leurs portes, <span className="text-[#FF7A00]">les salons commencent ici.</span>
           </h1>
+          <p className="text-lg md:text-xl text-[#E6EAF3]/80 max-w-4xl mx-auto">
+            Les exposants attirent leurs premiers leads avant le salon. Les visiteurs repèrent les stands à ne pas manquer et optimisent chaque déplacement.
+          </p>
         </div>
 
         {/* Two column layout */}
