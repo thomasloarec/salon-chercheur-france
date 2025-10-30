@@ -85,13 +85,36 @@ export interface NoveltyDTO extends Novelty {
 
 // For API responses with exhibitors by event
 export interface EventExhibitorDTO {
+  // Identifiants (moderne + legacy)
   id: string;
+  id_exposant?: string;
+  exhibitor_uuid?: string;
+  
+  // Noms
   name: string;
+  exhibitor_name?: string;
   slug?: string | null;
+  
+  // Données exposant (moderne + legacy)
   logo_url?: string | null;
+  description?: string | null;
+  exposant_description?: string | null;
+  website?: string | null;
+  website_exposant?: string | null;
+  
+  // Stand / Localisation
   stand?: string | null;
+  stand_exposant?: string | null;
   hall?: string | null;
+  urlexpo_event?: string | null;
+  
+  // Plan
   plan?: 'free' | 'paid';
+  
+  // Métadonnées de debug (optionnelles)
+  _source?: 'modern' | 'legacy' | 'view';
+  _has_modern_description?: boolean;
+  _has_legacy_description?: boolean;
 }
 
 // Form data interfaces

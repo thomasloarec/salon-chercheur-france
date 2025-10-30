@@ -131,14 +131,22 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                            p.exhibitor_website || 
                            p.participation_website;
 
+            // ✅ CORRECTION : Retourner les noms de champs legacy pour compatibilité
             return {
               id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
+              id_exposant: p.id_exposant,
+              exhibitor_uuid: exhibitorUUID,
               name: p.exhibitor_name || p.id_exposant || '',
+              exhibitor_name: p.exhibitor_name || p.id_exposant || '',
               slug: p.id_exposant || String(p.exhibitor_uuid || ''),
               logo_url: logoUrl,
               description: description,
+              exposant_description: description,  // ✅ Alias legacy
               website: website,
+              website_exposant: website,  // ✅ Alias legacy
               stand: p.stand_exposant || null,
+              stand_exposant: p.stand_exposant || null,  // ✅ Alias legacy
+              urlexpo_event: p.urlexpo_event,
               hall: null,
               plan: 'free' as const
             };
@@ -201,17 +209,34 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                 <button
                   key={exhibitor.id}
                   onClick={async () => {
+                    // ✅ CORRECTION : Utiliser les données déjà disponibles de l'edge function
                     const exhibitorForDialog = {
-                      id_exposant: exhibitor.id,
-                      exhibitor_name: exhibitor.name,
-                      stand_exposant: exhibitor.stand || undefined,
-                      website_exposant: undefined,
-                      exposant_description: undefined,
-                      urlexpo_event: undefined,
+                      id_exposant: exhibitor.id_exposant || exhibitor.id,
+                      exhibitor_uuid: exhibitor.exhibitor_uuid,
+                      exhibitor_name: exhibitor.exhibitor_name || exhibitor.name,
+                      stand_exposant: exhibitor.stand_exposant || exhibitor.stand,
+                      website_exposant: exhibitor.website_exposant,  // ✅ Utiliser les données
+                      exposant_description: exhibitor.exposant_description,  // ✅ Utiliser les données
+                      urlexpo_event: exhibitor.urlexpo_event,
                       logo_url: exhibitor.logo_url || null,
                     };
 
+                    console.log('🔍 ExhibitorsSidebar - Données avant hydratation:', {
+                      name: exhibitorForDialog.exhibitor_name,
+                      has_description: !!exhibitorForDialog.exposant_description,
+                      has_website: !!exhibitorForDialog.website_exposant,
+                      description_length: exhibitorForDialog.exposant_description?.length || 0
+                    });
+
                     const full = await hydrateExhibitor(exhibitorForDialog);
+                    
+                    console.log('🔍 ExhibitorsSidebar - Données après hydratation:', {
+                      name: full.exhibitor_name,
+                      has_description: !!full.exposant_description,
+                      has_website: !!full.website_exposant,
+                      description_length: full.exposant_description?.length || 0
+                    });
+
                     // Convertir au format du nouveau ExhibitorDialog
                     setSelectedExhibitor({
                       id: exhibitor.id,
@@ -283,7 +308,23 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
         loading={allExhibitors === null}
         onSelect={async (ex) => {
           setShowAllModal(false);
-          const full = await hydrateExhibitor(ex);
+          
+          // Trouver l'exposant complet dans allExhibitors
+          const fullEx = allExhibitors?.find(e => e.id === ex.id_exposant);
+          
+          const exhibitorForDialog = {
+            id_exposant: ex.id_exposant,
+            exhibitor_uuid: fullEx?.exhibitor_uuid,
+            exhibitor_name: ex.exhibitor_name,
+            stand_exposant: ex.stand_exposant,
+            website_exposant: fullEx?.website_exposant,
+            exposant_description: fullEx?.exposant_description,
+            urlexpo_event: fullEx?.urlexpo_event,
+            logo_url: fullEx?.logo_url || null,
+          };
+          
+          const full = await hydrateExhibitor(exhibitorForDialog);
+          
           // Convertir au format du nouveau ExhibitorDialog
           setSelectedExhibitor({
             id: ex.id_exposant,
