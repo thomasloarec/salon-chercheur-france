@@ -81,7 +81,7 @@ const HowItWorks = () => {
               {visitorSteps.map((step, index) => (
                 <div 
                   key={index}
-                  className="flex gap-4 items-start bg-card backdrop-blur-xl rounded-xl p-6 border border-border hover:border-primary/50 transition-all duration-300"
+                  className="flex gap-4 items-start bg-primary/5 backdrop-blur-xl rounded-xl p-6 border border-border hover:border-primary/50 transition-all duration-300"
                 >
                   <div className="bg-primary/10 rounded-lg p-3 flex-shrink-0">
                     <step.icon className="h-6 w-6 text-primary" />

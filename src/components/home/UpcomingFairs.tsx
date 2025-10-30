@@ -72,7 +72,7 @@ const UpcomingFairs = () => {
                 className="bg-card backdrop-blur-xl rounded-xl overflow-hidden border border-border hover:border-accent/50 transition-all duration-300 cursor-pointer group"
               >
                 {/* Event image or placeholder */}
-                <div className="relative h-60 bg-muted">
+                <div className="relative aspect-[3/4] bg-muted">
                   {event.url_image ? (
                     <img 
                       src={event.url_image}

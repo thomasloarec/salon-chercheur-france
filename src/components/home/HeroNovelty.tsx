@@ -45,7 +45,7 @@ const mockNovelties: MockNovelty[] = [
     type: 'Partenariat',
     excerpt: "Alliance stratégique entre Scalapay et Payplug : acquisition des flux de paiement pour maximiser l'autorisation des transactions et déploiement de la solution de paiement fractionné auprès des marchands Payplug dès Q1. Une innovation commune pour l'e-commerce européen.",
     image: scalapayImage,
-    exhibitor: { name: 'Scalapay x Payplug' },
+    exhibitor: { name: 'Scalapay' },
     fair: { 
       name: 'Tech Show',
       startDate: '2025-11-05',
@@ -124,9 +124,8 @@ const HeroNovelty = () => {
               {/* Event badge and countdown */}
               <div className="flex items-center gap-3 mb-4">
                 <Badge className="bg-accent text-accent-foreground hover:bg-accent/90">
-                  Événement à venir
+                  J-{daysUntilEvent} avant {currentNovelty.fair.name}
                 </Badge>
-                <span className="text-sm text-muted-foreground">J-{daysUntilEvent}</span>
               </div>
 
               {/* Image */}
@@ -192,7 +191,7 @@ const HeroNovelty = () => {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
                   disabled
-                  className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground opacity-50 cursor-not-allowed"
+                  className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground opacity-70 cursor-not-allowed"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   Réserver un RDV
@@ -200,7 +199,7 @@ const HeroNovelty = () => {
                 <Button 
                   disabled
                   variant="outline"
-                  className="flex-1 opacity-50 cursor-not-allowed"
+                  className="flex-1 opacity-70 cursor-not-allowed"
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Télécharger la brochure
@@ -227,7 +226,7 @@ const HeroNovelty = () => {
 
           {/* Right: Persona Panel */}
           <div className="xl:col-span-5">
-            <div className="bg-card backdrop-blur-xl rounded-2xl p-6 border border-border sticky top-24">
+            <div className="bg-secondary/50 backdrop-blur-xl rounded-2xl p-6 border border-border sticky top-24">
               <Tabs defaultValue="visitors" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="visitors" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
