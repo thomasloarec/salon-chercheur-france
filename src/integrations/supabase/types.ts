@@ -1851,6 +1851,7 @@ export type Database = {
         Row: {
           approved: boolean | null
           description_final: string | null
+          exhibitor_id: string | null
           exhibitor_name: string | null
           exhibitor_uuid: string | null
           exhibitor_website: string | null
@@ -1863,12 +1864,14 @@ export type Database = {
           legacy_name: string | null
           legacy_website: string | null
           logo_url: string | null
+          modern_description: string | null
           name_final: string | null
           participation_website: string | null
           plan: string | null
           stand_exposant: string | null
           stand_info: string | null
           urlexpo_event: string | null
+          website_exposant: string | null
           website_final: string | null
         }
         Relationships: [
