@@ -89,17 +89,89 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Map to expected format
-    let exhibitors = (participations || []).map(p => ({
-      id: p.id_exposant || String(p.exhibitor_uuid || ''),
-      name: p.exhibitor_name || p.id_exposant || '',
-      slug: p.id_exposant || String(p.exhibitor_uuid || ''),
-      logo_url: null,
-      stand: p.stand_exposant || null,
-      hall: null,
-      plan: 'free' as const,
-      website: p.exhibitor_website || p.website_exposant || null
-    })).filter(e => e.name)
+    // Récupérer les exhibitor_id depuis participation pour enrichir les données
+    const participationIds = (participations || [])
+      .map(p => p.id_participation)
+      .filter(Boolean)
+
+    let exhibitorUUIDs: Record<string, string> = {}
+    let exhibitorData: Record<string, { logo_url?: string; description?: string; website?: string }> = {}
+    let legacyExposantData: Record<string, { website?: string; description?: string }> = {}
+
+    if (participationIds.length > 0) {
+      // Récupérer les exhibitor_id depuis participation
+      const { data: participationDetails } = await supabase
+        .from('participation')
+        .select('id_participation, exhibitor_id, id_exposant')
+        .in('id_participation', participationIds)
+
+      if (participationDetails) {
+        participationDetails.forEach(p => {
+          if (p.exhibitor_id && p.id_participation) {
+            exhibitorUUIDs[p.id_participation] = p.exhibitor_id
+          }
+        })
+
+        // Récupérer les données depuis exhibitors (modern)
+        const uuids = Object.values(exhibitorUUIDs).filter(Boolean)
+        if (uuids.length > 0) {
+          const { data: exhibitors } = await supabase
+            .from('exhibitors')
+            .select('id, logo_url, description, website')
+            .in('id', uuids)
+
+          if (exhibitors) {
+            exhibitors.forEach(e => {
+              exhibitorData[e.id] = {
+                logo_url: e.logo_url || undefined,
+                description: e.description || undefined,
+                website: e.website || undefined
+              }
+            })
+          }
+        }
+
+        // Pour les participations sans exhibitor_id, récupérer depuis exposants (legacy)
+        const legacyIds = participationDetails
+          .filter(p => !p.exhibitor_id && p.id_exposant)
+          .map(p => p.id_exposant)
+
+        if (legacyIds.length > 0) {
+          const { data: legacyExposants } = await supabase
+            .from('exposants')
+            .select('id_exposant, website_exposant, exposant_description')
+            .in('id_exposant', legacyIds)
+
+          if (legacyExposants) {
+            legacyExposants.forEach(ex => {
+              legacyExposantData[ex.id_exposant] = {
+                website: ex.website_exposant || undefined,
+                description: ex.exposant_description || undefined
+              }
+            })
+          }
+        }
+      }
+    }
+
+    // Map to expected format with enriched data
+    let exhibitors = (participations || []).map(p => {
+      const exhibitorUUID = p.id_participation ? exhibitorUUIDs[p.id_participation] : undefined
+      const enrichedData = exhibitorUUID ? exhibitorData[exhibitorUUID] : undefined
+      const legacyData = p.id_exposant ? legacyExposantData[p.id_exposant] : undefined
+
+      return {
+        id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
+        name: p.exhibitor_name || p.id_exposant || '',
+        slug: p.id_exposant || String(p.exhibitor_uuid || ''),
+        logo_url: enrichedData?.logo_url || null,
+        description: enrichedData?.description || legacyData?.description || p.exposant_description || null,
+        website: enrichedData?.website || legacyData?.website || p.exhibitor_website || p.participation_website || null,
+        stand: p.stand_exposant || null,
+        hall: null,
+        plan: 'free' as const
+      }
+    }).filter(e => e.name)
 
     // Apply search filter if provided
     if (search && search.trim()) {

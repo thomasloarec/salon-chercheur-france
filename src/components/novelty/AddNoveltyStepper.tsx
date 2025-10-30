@@ -713,6 +713,10 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         variant: 'default'
       });
 
+      // ✅ Invalider le cache pour rafraîchir la liste des exposants dans la sidebar
+      queryClient.invalidateQueries({ queryKey: ['exhibitors-by-event', event.slug] });
+      queryClient.invalidateQueries({ queryKey: ['exhibitors-by-event'] });
+
       // ✅ Success! Set result and clean localStorage
       setSubmissionResult({
         success: true,
