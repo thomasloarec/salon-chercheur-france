@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Menu, X, Calendar, Search, Users, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import UserMenu from './UserMenu';
-import ConstructionBanner from './ConstructionBanner';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -170,9 +169,6 @@ const Header = () => {
           </div>
         )}
       </div>
-      
-      {/* Construction Banner */}
-      <ConstructionBanner />
     </header>
   );
 };
