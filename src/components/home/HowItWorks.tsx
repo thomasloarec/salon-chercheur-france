@@ -27,7 +27,7 @@ const HowItWorks = () => {
     },
     {
       icon: Send,
-      title: 'Interagez',
+      title: 'Interagissez',
       description: 'Likez, commentez et téléchargez les brochures qui vous parlent.'
     },
     {
