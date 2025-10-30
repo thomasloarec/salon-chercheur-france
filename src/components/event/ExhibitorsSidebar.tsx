@@ -264,11 +264,11 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                   
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm text-gray-900 truncate">
-                      {exhibitor.name}
+                      {exhibitor.exhibitor_name || exhibitor.name}
                     </div>
-                    {(exhibitor.stand || exhibitor.hall) && (
+                    {(exhibitor.stand_exposant || exhibitor.stand || exhibitor.hall) && (
                       <p className="text-xs text-gray-500 truncate">
-                        {[exhibitor.hall, exhibitor.stand].filter(Boolean).join(' • ')}
+                        {[exhibitor.hall, exhibitor.stand_exposant || exhibitor.stand].filter(Boolean).join(' • ')}
                       </p>
                     )}
                   </div>
