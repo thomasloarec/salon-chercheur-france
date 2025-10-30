@@ -6,7 +6,7 @@ import { Calendar, Download, Heart, MessageCircle, Eye, Sparkles } from 'lucide-
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import lakantoImage from '@/assets/lakanto-almonds.jpg';
-import scalapayImage from '@/assets/scalapay-payplug.jpg';
+import scalapayImage from '@/assets/scalapay-payplug-new.jpg';
 import eatonImage from '@/assets/eaton-dubai.jpg';
 
 interface MockNovelty {
@@ -87,11 +87,11 @@ const HeroNovelty = () => {
     (new Date(currentNovelty.fair.startDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  // Auto-scroll carousel every 5 seconds
+  // Auto-scroll carousel every 8 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % mockNovelties.length);
-    }, 5000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, []);
@@ -138,7 +138,7 @@ const HeroNovelty = () => {
               </div>
 
               {/* Type badge */}
-              <Badge variant="outline" className="mb-3 border-primary text-primary">
+              <Badge className="mb-3 bg-accent text-accent-foreground hover:bg-accent/90">
                 {currentNovelty.type}
               </Badge>
 
