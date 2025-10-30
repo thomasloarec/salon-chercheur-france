@@ -17,7 +17,36 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
   // si déjà hydraté, ne rien faire
   if (light.website_exposant || light.exposant_description) return light;
 
-  // Chercher dans la table exposants par id_exposant
+  // Chercher d'abord dans la table exhibitors moderne par id_exposant
+  if (light.id_exposant) {
+    // Trouver la participation qui correspond pour obtenir l'exhibitor_id
+    const { data: participation } = await supabase
+      .from('participation')
+      .select('exhibitor_id')
+      .eq('id_exposant', light.id_exposant)
+      .maybeSingle();
+
+    if (participation?.exhibitor_id) {
+      // Récupérer les données de la table exhibitors
+      const { data: exhibitor } = await supabase
+        .from('exhibitors')
+        .select('name, website, description, logo_url')
+        .eq('id', participation.exhibitor_id)
+        .maybeSingle();
+
+      if (exhibitor) {
+        return {
+          ...light,
+          exhibitor_name: light.exhibitor_name ?? exhibitor.name,
+          website_exposant: normalizeExternalUrl(exhibitor.website) ?? light.website_exposant ?? null,
+          exposant_description: exhibitor.description ?? light.exposant_description ?? null,
+          logo_url: exhibitor.logo_url ?? light.logo_url ?? null,
+        };
+      }
+    }
+  }
+
+  // Chercher dans la table exposants legacy par id_exposant
   if (light.id_exposant) {
     const { data, error } = await supabase
       .from('exposants')
@@ -36,7 +65,7 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
     }
   }
 
-  // Fallback par nom (ilike)
+  // Fallback par nom (ilike) dans exposants
   if (light.exhibitor_name) {
     const { data } = await supabase
       .from('exposants')
