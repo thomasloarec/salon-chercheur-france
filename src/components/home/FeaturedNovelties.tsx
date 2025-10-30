@@ -18,11 +18,11 @@ const FeaturedNovelties = () => {
         .select(`
           *,
           exhibitor:exhibitors(*),
-          event:events(id, name_event, slug)
+          event:events(id, nom_event, slug)
         `)
-        .eq('status', 'approved')
+        .eq('status', 'published')
         .order('created_at', { ascending: false })
-        .limit(6);
+        .limit(4);
 
       if (error) throw error;
       return data || [];
@@ -74,7 +74,7 @@ const FeaturedNovelties = () => {
 
         {isLoading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="bg-[#0B0F19]/60 rounded-xl h-64 animate-pulse" />
             ))}
           </div>
@@ -104,7 +104,7 @@ const FeaturedNovelties = () => {
                 </h3>
 
                 <p className="text-sm text-[#E6EAF3]/70 mb-3">
-                  {novelty.exhibitor?.name} • {novelty.event?.name_event}
+                  {novelty.exhibitor?.name} • {novelty.event?.nom_event}
                 </p>
 
                 {/* Metrics */}

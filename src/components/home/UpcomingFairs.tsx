@@ -14,9 +14,10 @@ const UpcomingFairs = () => {
       const { data, error } = await supabase
         .from('events')
         .select('*, novelties(count)')
-        .gte('start_date', new Date().toISOString().split('T')[0])
-        .order('start_date', { ascending: true })
-        .limit(8);
+        .eq('visible', true)
+        .gte('date_debut', new Date().toISOString().split('T')[0])
+        .order('date_debut', { ascending: true })
+        .limit(4);
 
       if (error) throw error;
       return data;
@@ -28,7 +29,7 @@ const UpcomingFairs = () => {
       <section className="bg-[#0B0F19] py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-[#E6EAF3] mb-10">
-            Salons à venir populaires
+            Salons populaires à venir
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-4">
             {[1, 2, 3, 4].map((i) => (
@@ -45,7 +46,7 @@ const UpcomingFairs = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold text-[#E6EAF3]">
-            Salons à venir populaires
+            Salons populaires à venir
           </h2>
           <Button 
             onClick={() => navigate('/events')}
@@ -69,10 +70,10 @@ const UpcomingFairs = () => {
               >
                 {/* Event image or placeholder */}
                 <div className="relative aspect-video mb-4 rounded-lg overflow-hidden bg-gradient-to-br from-[#FF7A00]/20 to-[#5B9DFF]/20">
-                  {event.url_logo ? (
+                  {event.url_image ? (
                     <img 
-                      src={event.url_logo}
-                      alt={event.name_event}
+                      src={event.url_image}
+                      alt={event.nom_event}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
@@ -90,7 +91,7 @@ const UpcomingFairs = () => {
 
                 {/* Content */}
                 <h3 className="text-lg font-semibold text-[#E6EAF3] mb-2 line-clamp-2 group-hover:text-[#5B9DFF] transition-colors">
-                  {event.name_event}
+                  {event.nom_event}
                 </h3>
 
                 <div className="space-y-2 text-sm text-[#E6EAF3]/70">

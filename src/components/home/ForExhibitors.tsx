@@ -90,7 +90,7 @@ const ForExhibitors = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-[#E6EAF3]">Publication illimitée de Nouveautés</span>
+                <span className="text-[#E6EAF3]">Publiez jusqu'à 5 Nouveautés par événement</span>
               </div>
               <div className="flex items-start gap-3">
                 <div className="bg-[#10B981] rounded-full p-1 flex-shrink-0 mt-0.5">
@@ -114,7 +114,7 @@ const ForExhibitors = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-[#E6EAF3]">Badge "Exposant Premium"</span>
+                <span className="text-[#E6EAF3]">Export CSV (Salesforce, HubSpot, Pipedrive)</span>
               </div>
             </div>
 
