@@ -1,81 +1,103 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Download, Heart, MessageCircle, Eye, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import CalendlyModal from '@/components/modals/CalendlyModal';
-import AuthRequiredModal from '@/components/AuthRequiredModal';
+import lakantoImage from '@/assets/lakanto-almonds.jpg';
+import scalapayImage from '@/assets/scalapay-payplug.jpg';
+import eatonImage from '@/assets/eaton-dubai.jpg';
 
 interface MockNovelty {
   id: string;
   title: string;
   type: string;
   excerpt: string;
-  images: string[];
-  brochureUrl?: string;
-  exhibitor: { name: string; logo?: string };
+  image: string;
+  exhibitor: { name: string };
   fair: { name: string; startDate: string; endDate: string; city: string; venue: string };
   tags: string[];
   metrics: { likes: number; comments: number; views: number };
-  calendlyUrl?: string;
 }
 
-const mockNovelty: MockNovelty = {
-  id: '1',
-  title: 'Lancement du capteur X-200 "Zero Drift"',
-  type: 'Lancement produit',
-  excerpt: 'Nouveau capteur industriel haute précision avec calibration automatique et connectivité IoT. Démo en live sur le stand. Offre salon : kit de démarrage à -20% et session technique privée de 15 min.',
-  images: ['/placeholder.svg'],
-  brochureUrl: '/brochures/x200.pdf',
-  exhibitor: { name: 'NexaSense', logo: undefined },
-  fair: { 
-    name: 'SIDO Lyon', 
-    startDate: '2025-09-18', 
-    endDate: '2025-09-19', 
-    city: 'Lyon',
-    venue: 'Cité Internationale'
+const mockNovelties: MockNovelty[] = [
+  {
+    id: '1',
+    title: 'Lakanto Sweet & Savory Almonds : 3 nouvelles saveurs sans sucre',
+    type: 'Lancement produit',
+    excerpt: "Après des années de développement, nous lançons notre nouvelle gamme d'amandes épicées sans sucre ajouté. 3 saveurs audacieuses : Smokey BBQ, Cajun Style et Honey Habanero. L'équilibre parfait entre goût intense et snacking santé.",
+    image: lakantoImage,
+    exhibitor: { name: 'Lakanto' },
+    fair: { 
+      name: 'Snack Show',
+      startDate: '2026-04-01',
+      endDate: '2026-04-02',
+      city: 'Paris',
+      venue: 'Porte de Versailles'
+    },
+    tags: ['Agroalimentaire', 'Innovation'],
+    metrics: { likes: 342, comments: 67, views: 2847 }
   },
-  tags: ['Technologie & Innovation', 'IoT'],
-  metrics: { likes: 128, comments: 23, views: 1942 },
-  calendlyUrl: 'https://calendly.com/example'
-};
+  {
+    id: '2',
+    title: 'Scalapay choisit Payplug pour accélérer en Europe',
+    type: 'Partenariat',
+    excerpt: "Alliance stratégique entre Scalapay et Payplug : acquisition des flux de paiement pour maximiser l'autorisation des transactions et déploiement de la solution de paiement fractionné auprès des marchands Payplug dès Q1. Une innovation commune pour l'e-commerce européen.",
+    image: scalapayImage,
+    exhibitor: { name: 'Scalapay x Payplug' },
+    fair: { 
+      name: 'Tech Show',
+      startDate: '2025-11-05',
+      endDate: '2025-11-06',
+      city: 'Paris',
+      venue: 'Expo Porte de Versailles'
+    },
+    tags: ['Fintech', 'E-commerce'],
+    metrics: { likes: 256, comments: 45, views: 1923 }
+  },
+  {
+    id: '3',
+    title: 'Eaton lance un centre de fabrication nouvelle génération à Dubaï',
+    type: 'Innovation',
+    excerpt: "Construction d'un nouveau centre de fabrication et d'ingénierie à Dubaï intégrant 20 technologies Industrie 4.0. Production de composants électriques avancés pour data centers et infrastructures. Certification LEED Gold visée, 700 emplois créés. Ouverture 2026.",
+    image: eatonImage,
+    exhibitor: { name: 'Eaton' },
+    fair: { 
+      name: 'Global Industries 2027',
+      startDate: '2027-03-15',
+      endDate: '2027-03-18',
+      city: 'Lyon',
+      venue: 'Parc des Expositions'
+    },
+    tags: ['Industrie 4.0', 'Durabilité'],
+    metrics: { likes: 189, comments: 34, views: 1547 }
+  }
+];
 
 const HeroNovelty = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [showCalendly, setShowCalendly] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [liked, setLiked] = useState(false);
 
+  const currentNovelty = mockNovelties[currentIndex];
+
   const daysUntilEvent = Math.ceil(
-    (new Date(mockNovelty.fair.startDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    (new Date(currentNovelty.fair.startDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
 
+  // Auto-scroll carousel every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % mockNovelties.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLike = () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
     setLiked(!liked);
-  };
-
-  const handleDownload = () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    // Track download
-    console.log('Brochure downloaded');
-  };
-
-  const handleRequestMeeting = () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    setShowCalendly(true);
   };
 
   return (
@@ -96,7 +118,7 @@ const HeroNovelty = () => {
 
         {/* Two column layout */}
         <div className="grid xl:grid-cols-12 gap-8 items-start">
-          {/* Left: Large Novelty Card */}
+          {/* Left: Large Novelty Card with Carousel */}
           <div className="xl:col-span-7">
             <div className="bg-card backdrop-blur-xl rounded-2xl p-6 border border-border shadow-lg hover:shadow-xl transition-shadow duration-300">
               {/* Event badge and countdown */}
@@ -110,37 +132,37 @@ const HeroNovelty = () => {
               {/* Image */}
               <div className="relative aspect-video mb-6 rounded-xl overflow-hidden bg-muted">
                 <img 
-                  src={mockNovelty.images[0]} 
-                  alt={mockNovelty.title}
-                  className="w-full h-full object-cover"
+                  src={currentNovelty.image} 
+                  alt={currentNovelty.title}
+                  className="w-full h-full object-cover transition-opacity duration-500"
                 />
               </div>
 
               {/* Type badge */}
               <Badge variant="outline" className="mb-3 border-primary text-primary">
-                {mockNovelty.type}
+                {currentNovelty.type}
               </Badge>
 
               {/* Title */}
-              <h2 className="text-2xl md:text-3xl font-bold mb-4">{mockNovelty.title}</h2>
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">{currentNovelty.title}</h2>
 
               {/* Exhibitor & Fair info */}
               <div className="space-y-2 mb-4 text-sm text-muted-foreground">
-                <p><strong className="text-accent">Exposant :</strong> {mockNovelty.exhibitor.name}</p>
+                <p><strong className="text-accent">Exposant :</strong> {currentNovelty.exhibitor.name}</p>
                 <p>
-                  <strong className="text-accent">Salon :</strong> {mockNovelty.fair.name} — {' '}
-                  {new Date(mockNovelty.fair.startDate).toLocaleDateString('fr-FR')} – {' '}
-                  {new Date(mockNovelty.fair.endDate).toLocaleDateString('fr-FR')} — {' '}
-                  {mockNovelty.fair.venue}, {mockNovelty.fair.city}
+                  <strong className="text-accent">Salon :</strong> {currentNovelty.fair.name} — {' '}
+                  {new Date(currentNovelty.fair.startDate).toLocaleDateString('fr-FR')} – {' '}
+                  {new Date(currentNovelty.fair.endDate).toLocaleDateString('fr-FR')} — {' '}
+                  {currentNovelty.fair.venue}, {currentNovelty.fair.city}
                 </p>
               </div>
 
               {/* Excerpt */}
-              <p className="text-foreground mb-6 leading-relaxed">{mockNovelty.excerpt}</p>
+              <p className="text-foreground mb-6 leading-relaxed">{currentNovelty.excerpt}</p>
 
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-6">
-                {mockNovelty.tags.map((tag) => (
+                {currentNovelty.tags.map((tag) => (
                   <Badge key={tag} variant="secondary">
                     {tag}
                   </Badge>
@@ -154,23 +176,23 @@ const HeroNovelty = () => {
                   className="flex items-center gap-2 hover:text-accent transition-colors"
                 >
                   <Heart className={`h-5 w-5 ${liked ? 'fill-accent text-accent' : ''}`} />
-                  <span>{mockNovelty.metrics.likes + (liked ? 1 : 0)}</span>
+                  <span>{currentNovelty.metrics.likes + (liked ? 1 : 0)}</span>
                 </button>
                 <div className="flex items-center gap-2">
                   <MessageCircle className="h-5 w-5" />
-                  <span>{mockNovelty.metrics.comments}</span>
+                  <span>{currentNovelty.metrics.comments}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Eye className="h-5 w-5" />
-                  <span>{mockNovelty.metrics.views}</span>
+                  <span>{currentNovelty.metrics.views}</span>
                 </div>
               </div>
 
-              {/* CTAs */}
+              {/* CTAs - Disabled */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
                   disabled
-                  className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
+                  className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground opacity-50 cursor-not-allowed"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   Réserver un RDV
@@ -178,11 +200,27 @@ const HeroNovelty = () => {
                 <Button 
                   disabled
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 opacity-50 cursor-not-allowed"
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Télécharger la brochure
                 </Button>
+              </div>
+
+              {/* Carousel Indicators */}
+              <div className="flex justify-center gap-2 mt-6">
+                {mockNovelties.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentIndex 
+                        ? 'w-8 bg-accent' 
+                        : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                    aria-label={`Aller à la nouveauté ${index + 1}`}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -262,20 +300,6 @@ const HeroNovelty = () => {
           </div>
         </div>
       </div>
-
-      {showCalendly && (
-        <CalendlyModal 
-          url={mockNovelty.calendlyUrl || ''}
-          onClose={() => setShowCalendly(false)}
-        />
-      )}
-
-      {showAuthModal && (
-        <AuthRequiredModal
-          open={showAuthModal}
-          onOpenChange={setShowAuthModal}
-        />
-      )}
     </section>
   );
 };
