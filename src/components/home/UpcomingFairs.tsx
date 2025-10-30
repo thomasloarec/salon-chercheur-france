@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, MapPin, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { EventSectors } from '@/components/ui/event-sectors';
+import type { Event } from '@/types/event';
 
 const UpcomingFairs = () => {
   const navigate = useNavigate();
@@ -26,14 +28,14 @@ const UpcomingFairs = () => {
 
   if (isLoading) {
     return (
-      <section className="bg-[#0B0F19] py-20 px-4">
+      <section className="bg-secondary py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#E6EAF3] mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-10">
             Salons populaires à venir
           </h2>
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="min-w-[320px] h-48 bg-[#0F1424]/60 rounded-xl animate-pulse" />
+              <div key={i} className="h-80 bg-muted rounded-xl animate-pulse" />
             ))}
           </div>
         </div>
@@ -42,70 +44,81 @@ const UpcomingFairs = () => {
   }
 
   return (
-    <section className="bg-[#0B0F19] py-20 px-4">
+    <section className="bg-secondary py-20 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#E6EAF3]">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
             Salons populaires à venir
           </h2>
           <Button 
             onClick={() => navigate('/events')}
             variant="ghost"
-            className="text-[#5B9DFF] hover:text-[#5B9DFF]/80"
+            className="text-primary hover:text-primary/80"
           >
             Tous les salons
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {events?.map((event: any) => {
             const noveltiesCount = Array.isArray(event.novelties) ? event.novelties.length : 0;
+            const eventData = event as Event;
             
             return (
               <div 
                 key={event.id}
                 onClick={() => navigate(`/events/${event.slug}`)}
-                className="min-w-[320px] snap-start bg-[#0F1424]/60 backdrop-blur-xl rounded-xl p-5 border border-white/10 hover:border-[#5B9DFF]/50 transition-all duration-300 cursor-pointer group"
+                className="bg-card backdrop-blur-xl rounded-xl overflow-hidden border border-border hover:border-accent/50 transition-all duration-300 cursor-pointer group"
               >
                 {/* Event image or placeholder */}
-                <div className="relative aspect-video mb-4 rounded-lg overflow-hidden bg-gradient-to-br from-[#FF7A00]/20 to-[#5B9DFF]/20">
+                <div className="relative h-60 bg-muted">
                   {event.url_image ? (
                     <img 
                       src={event.url_image}
                       alt={event.nom_event}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Calendar className="h-12 w-12 text-[#E6EAF3]/30" />
+                      <Calendar className="h-12 w-12 text-muted-foreground" />
                     </div>
                   )}
                   
+                  {/* Sector badges overlay */}
+                  <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)] z-[2]">
+                    <EventSectors event={eventData} sectorClassName="shadow-sm" />
+                  </div>
+                  
                   {noveltiesCount > 0 && (
-                    <Badge className="absolute top-2 right-2 bg-[#FF7A00] text-white">
+                    <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground">
                       +{noveltiesCount} Nouveautés
                     </Badge>
                   )}
                 </div>
 
                 {/* Content */}
-                <h3 className="text-lg font-semibold text-[#E6EAF3] mb-2 line-clamp-2 group-hover:text-[#5B9DFF] transition-colors">
-                  {event.nom_event}
-                </h3>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-accent transition-colors">
+                    {event.nom_event}
+                  </h3>
 
-                <div className="space-y-2 text-sm text-[#E6EAF3]/70">
-                  <p className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-[#FF7A00]" />
-                    {new Date(event.date_debut).toLocaleDateString('fr-FR')}
-                    {event.date_fin && ` - ${new Date(event.date_fin).toLocaleDateString('fr-FR')}`}
-                  </p>
-                  {event.ville && (
+                  <div className="space-y-2 text-sm text-muted-foreground">
                     <p className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-[#FF7A00]" />
-                      {event.ville}
+                      <Calendar className="h-4 w-4 text-accent" />
+                      {new Date(event.date_debut).toLocaleDateString('fr-FR')}
+                      {event.date_fin && ` - ${new Date(event.date_fin).toLocaleDateString('fr-FR')}`}
                     </p>
-                  )}
+                    {event.ville && (
+                      <p className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-accent" />
+                        {event.ville}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             );

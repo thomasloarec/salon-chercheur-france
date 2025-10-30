@@ -37,16 +37,16 @@ const ForVisitors = () => {
 
   if (isSubmitted) {
     return (
-      <section className="bg-[#0B0F19] py-20 px-4">
+      <section className="bg-background py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="bg-[#0F1424]/60 backdrop-blur-xl rounded-2xl p-12 border border-white/10">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#10B981]/10 rounded-full mb-6">
-              <Check className="h-8 w-8 text-[#10B981]" />
+          <div className="bg-card backdrop-blur-xl rounded-2xl p-12 border border-border">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-success-green/10 rounded-full mb-6">
+              <Check className="h-8 w-8 text-success-green" />
             </div>
-            <h2 className="text-3xl font-bold text-[#E6EAF3] mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
               Merci de votre inscription !
             </h2>
-            <p className="text-[#E6EAF3]/70 text-lg">
+            <p className="text-muted-foreground text-lg">
               Vous recevrez votre première alerte prochainement avec les nouveautés de votre secteur.
             </p>
           </div>
@@ -56,25 +56,25 @@ const ForVisitors = () => {
   }
 
   return (
-    <section className="bg-[#0B0F19] py-20 px-4">
+    <section className="bg-background py-20 px-4">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#5B9DFF]/10 rounded-full mb-4">
-            <Bell className="h-7 w-7 text-[#5B9DFF]" />
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary/10 rounded-full mb-4">
+            <Bell className="h-7 w-7 text-primary" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#E6EAF3] mb-4">
-            Ne manquez rien de <span className="text-[#5B9DFF]">votre secteur</span>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Ne manquez rien de <span className="text-primary">votre secteur</span>
           </h2>
-          <p className="text-[#E6EAF3]/70 text-lg">
+          <p className="text-muted-foreground text-lg">
             Recevez les nouveautés des salons qui vous intéressent, directement par email.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[#0F1424]/60 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
+        <form onSubmit={handleSubmit} className="bg-card backdrop-blur-xl rounded-2xl p-8 border border-border">
           <div className="space-y-6">
             {/* Email */}
             <div>
-              <Label htmlFor="email" className="text-[#E6EAF3] mb-2 block">
+              <Label htmlFor="email" className="text-foreground mb-2 block">
                 Adresse email
               </Label>
               <Input
@@ -84,20 +84,20 @@ const ForVisitors = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-[#11182A] border-white/10 text-[#E6EAF3] placeholder:text-[#E6EAF3]/40"
+                className="bg-background border-border text-foreground"
               />
             </div>
 
             {/* Sector */}
             <div>
-              <Label htmlFor="sector" className="text-[#E6EAF3] mb-2 block">
+              <Label htmlFor="sector" className="text-foreground mb-2 block">
                 Choisir mon secteur
               </Label>
               <Select value={sector} onValueChange={setSector} required>
-                <SelectTrigger className="bg-[#11182A] border-white/10 text-[#E6EAF3]">
+                <SelectTrigger className="bg-background border-border text-foreground">
                   <SelectValue placeholder="Sélectionnez un secteur" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#11182A] border-white/10">
+                <SelectContent>
                   <SelectItem value="tech">Technologie & Innovation</SelectItem>
                   <SelectItem value="health">Santé & Médical</SelectItem>
                   <SelectItem value="food">Agroalimentaire</SelectItem>
@@ -116,11 +116,11 @@ const ForVisitors = () => {
                 id="consent"
                 checked={consent}
                 onCheckedChange={(checked) => setConsent(checked === true)}
-                className="mt-1 border-white/20 data-[state=checked]:bg-[#5B9DFF]"
+                className="mt-1"
               />
-              <Label htmlFor="consent" className="text-sm text-[#E6EAF3]/70 cursor-pointer leading-relaxed">
+              <Label htmlFor="consent" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
                 J'accepte de recevoir les alertes de nouveautés par email et j'ai lu la{' '}
-                <a href="/politique-confidentialite" className="text-[#5B9DFF] hover:underline">
+                <a href="/politique-confidentialite" className="text-primary hover:underline">
                   politique de confidentialité
                 </a>
                 .
@@ -130,12 +130,12 @@ const ForVisitors = () => {
             <Button 
               type="submit"
               disabled={!email || !sector || !consent || isPending}
-              className="w-full bg-[#5B9DFF] hover:bg-[#5B9DFF]/90 text-white text-lg py-6"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-6"
             >
               {isPending ? 'Inscription en cours...' : 'Suivre mon secteur'}
             </Button>
 
-            <p className="text-center text-xs text-[#E6EAF3]/50">
+            <p className="text-center text-xs text-muted-foreground">
               1 e-mail / mois maximum • Désinscription en 1 clic
             </p>
           </div>

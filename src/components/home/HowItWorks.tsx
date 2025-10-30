@@ -38,32 +38,32 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section className="bg-[#0B0F19] py-20 px-4">
+    <section className="bg-background py-20 px-4">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-[#E6EAF3] mb-16">
+        <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-16">
           Comment ça marche ?
         </h2>
 
         <div className="grid md:grid-cols-2 gap-12">
           {/* Exposants */}
           <div>
-            <h3 className="text-2xl font-semibold text-[#FF7A00] mb-8 text-center md:text-left">
+            <h3 className="text-2xl font-semibold text-accent mb-8 text-center md:text-left">
               Pour les Exposants
             </h3>
             <div className="space-y-8">
               {exhibitorSteps.map((step, index) => (
                 <div 
                   key={index}
-                  className="flex gap-4 items-start bg-[#0F1424]/60 backdrop-blur-xl rounded-xl p-6 border border-white/10 hover:border-[#FF7A00]/50 transition-all duration-300"
+                  className="flex gap-4 items-start bg-card backdrop-blur-xl rounded-xl p-6 border border-border hover:border-accent/50 transition-all duration-300"
                 >
-                  <div className="bg-[#FF7A00]/10 rounded-lg p-3 flex-shrink-0">
-                    <step.icon className="h-6 w-6 text-[#FF7A00]" />
+                  <div className="bg-accent/10 rounded-lg p-3 flex-shrink-0">
+                    <step.icon className="h-6 w-6 text-accent" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-[#E6EAF3] mb-2">
+                    <h4 className="text-lg font-semibold text-foreground mb-2">
                       {index + 1}. {step.title}
                     </h4>
-                    <p className="text-[#E6EAF3]/70 text-sm leading-relaxed">
+                    <p className="text-muted-foreground text-sm leading-relaxed">
                       {step.description}
                     </p>
                   </div>
@@ -74,23 +74,23 @@ const HowItWorks = () => {
 
           {/* Visiteurs */}
           <div>
-            <h3 className="text-2xl font-semibold text-[#5B9DFF] mb-8 text-center md:text-left">
+            <h3 className="text-2xl font-semibold text-primary mb-8 text-center md:text-left">
               Pour les Visiteurs
             </h3>
             <div className="space-y-8">
               {visitorSteps.map((step, index) => (
                 <div 
                   key={index}
-                  className="flex gap-4 items-start bg-[#0F1424]/60 backdrop-blur-xl rounded-xl p-6 border border-white/10 hover:border-[#5B9DFF]/50 transition-all duration-300"
+                  className="flex gap-4 items-start bg-card backdrop-blur-xl rounded-xl p-6 border border-border hover:border-primary/50 transition-all duration-300"
                 >
-                  <div className="bg-[#5B9DFF]/10 rounded-lg p-3 flex-shrink-0">
-                    <step.icon className="h-6 w-6 text-[#5B9DFF]" />
+                  <div className="bg-primary/10 rounded-lg p-3 flex-shrink-0">
+                    <step.icon className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-[#E6EAF3] mb-2">
+                    <h4 className="text-lg font-semibold text-foreground mb-2">
                       {index + 1}. {step.title}
                     </h4>
-                    <p className="text-[#E6EAF3]/70 text-sm leading-relaxed">
+                    <p className="text-muted-foreground text-sm leading-relaxed">
                       {step.description}
                     </p>
                   </div>
