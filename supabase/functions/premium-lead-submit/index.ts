@@ -62,21 +62,28 @@ serve(async (req) => {
       const currentDate = new Date().toISOString().split('T')[0]
       const requestType = body.topic === 'lead_capture_beta' ? 'Capture sur salon (Premium)' : 'Capture sur salon (Waitlist)'
       
+      const betaFields: Record<string, string> = {
+        'Prénom': 'Demande',
+        'Nom': requestType,
+        'Email': body.requestedByUserId || 'beta-request@lotexpo.com',
+        'Entreprise': `Exhibitor: ${body.exhibitorId || 'N/A'}`,
+        'Nom Événement': body.eventName || 'Non spécifié',
+        'ID Événement': body.eventId || '',
+        'Date Demande': currentDate,
+        'Statut': 'En attente',
+        'Source': `LotExpo - ${body.context || 'Espace Exposant'} (Bêta)`,
+      }
+
+      // Only include date fields if they have valid values
+      if (body.eventDate) {
+        betaFields['Date Événement'] = body.eventDate;
+      }
+      if (body.eventSlug) {
+        betaFields['Slug Événement'] = body.eventSlug;
+      }
+      
       const betaData = {
-        fields: {
-          'Prénom': 'Demande',
-          'Nom': requestType,
-          'Email': body.requestedByUserId || 'beta-request@lotexpo.com',
-          'Téléphone': '',
-          'Entreprise': `Exhibitor: ${body.exhibitorId || 'N/A'}`,
-          'Nom Événement': body.eventName || 'Non spécifié',
-          'Date Événement': '',
-          'Slug Événement': '',
-          'ID Événement': body.eventId || '',
-          'Date Demande': currentDate,
-          'Statut': 'En attente',
-          'Source': `LotExpo - ${body.context || 'Espace Exposant'} (Bêta)`,
-        }
+        fields: betaFields
       }
 
       const tableName = 'Leads Premium Nouveautés';
