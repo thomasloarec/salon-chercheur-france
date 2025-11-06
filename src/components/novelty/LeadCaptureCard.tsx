@@ -42,7 +42,7 @@ export default function LeadCaptureCard({
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-semibold text-base">
-                  Capturer des leads pendant le salon (bêta)
+                  Capturer des leads avant et pendant le salon (bêta)
                 </h4>
                 <Badge variant="secondary" className="text-xs">
                   <Sparkles className="h-3 w-3 mr-1" />
@@ -51,11 +51,11 @@ export default function LeadCaptureCard({
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Un lien/QR à partager à votre équipe. Tous les leads « sur salon » sont centralisés ici.
+                Débloquez les leads floutés avant le salon, puis capturez-en directement sur votre stand via un lien/QR unique partagé avec votre équipe.
               </p>
 
               <p className="text-xs text-muted-foreground italic">
-                Vos leads seront tagués <strong>Sur salon</strong> pour les distinguer des leads Pré-événement.
+                Les leads seront automatiquement tagués pour distinguer ceux capturés <strong>avant</strong> et <strong>pendant</strong> le salon.
               </p>
 
               {/* CTA */}
@@ -66,7 +66,7 @@ export default function LeadCaptureCard({
                   </Button>
                 ) : (
                   <Button size="sm" variant="outline" onClick={() => setShowModal(true)}>
-                    Inclus avec Premium – En savoir plus
+                    En savoir plus sur le forfait Premium
                   </Button>
                 )}
               </div>
