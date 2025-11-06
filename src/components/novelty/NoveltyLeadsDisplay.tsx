@@ -44,6 +44,15 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
       });
       
       if (error) throw error;
+      
+      console.log('[NoveltyLeadsDisplay] API response:', {
+        total: data.total,
+        leadsCount: data.leads?.length,
+        blurredCount: data.blurredCount,
+        hiddenCount: data.hiddenCount,
+        isPremium: data.is_premium
+      });
+      
       return {
         leads: data.leads as Lead[],
         total: data.total as number,
@@ -105,6 +114,13 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
   // Use server-provided counts for accurate display
   const blurredCount = isPremium ? 0 : serverBlurredCount;
   const hiddenCount = isPremium ? 0 : serverHiddenCount;
+  
+  console.log('[NoveltyLeadsDisplay] Display state:', {
+    isPremium,
+    blurredCount,
+    hiddenCount,
+    showButton: (blurredCount > 0 || hiddenCount > 0)
+  });
 
   if (!leads || leads.length === 0) {
     return (
