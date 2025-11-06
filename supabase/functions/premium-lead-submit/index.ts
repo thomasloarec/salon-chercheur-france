@@ -57,21 +57,25 @@ serve(async (req) => {
       topic: body.topic
     })
 
-    // Handle beta requests (lead capture feature)
+    // Handle beta requests (lead capture feature) - map to existing Airtable fields
     if (body.topic === 'lead_capture_beta' || body.topic === 'lead_capture_waitlist') {
       const currentDate = new Date().toISOString().split('T')[0]
+      const requestType = body.topic === 'lead_capture_beta' ? 'Capture sur salon (Premium)' : 'Capture sur salon (Waitlist)'
       
       const betaData = {
         fields: {
-          'Type': body.topic === 'lead_capture_beta' ? 'Capture sur salon (Premium)' : 'Capture sur salon (Waitlist)',
-          'ID Exposant': body.exhibitorId || '',
+          'Prénom': 'Demande',
+          'Nom': requestType,
+          'Email': body.requestedByUserId || 'beta-request@lotexpo.com',
+          'Téléphone': '',
+          'Entreprise': `Exhibitor: ${body.exhibitorId || 'N/A'}`,
+          'Nom Événement': body.eventName || 'Non spécifié',
+          'Date Événement': '',
+          'Slug Événement': '',
           'ID Événement': body.eventId || '',
-          'Nom Événement': body.eventName || '',
-          'User ID': body.requestedByUserId || '',
-          'Context': body.context || 'unknown',
           'Date Demande': currentDate,
           'Statut': 'En attente',
-          'Source': 'LotExpo - Espace Exposant',
+          'Source': `LotExpo - ${body.context || 'Espace Exposant'} (Bêta)`,
         }
       }
 
