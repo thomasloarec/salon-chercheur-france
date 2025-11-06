@@ -15,17 +15,25 @@ import { PremiumLeadDialog } from '@/components/premium/PremiumLeadDialog';
 interface PremiumUpgradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  noveltyId: string;
+  noveltyId?: string;
+  eventId?: string;
+  eventName?: string;
+  eventDate?: string;
+  eventSlug?: string;
 }
 
 export default function PremiumUpgradeDialog({ 
   open, 
   onOpenChange,
-  noveltyId
+  noveltyId,
+  eventId: propEventId,
+  eventName: propEventName,
+  eventDate: propEventDate,
+  eventSlug: propEventSlug,
 }: PremiumUpgradeDialogProps) {
   const [showLeadForm, setShowLeadForm] = React.useState(false);
 
-  // Récupérer les infos de la nouveauté pour le formulaire
+  // Récupérer les infos de la nouveauté pour le formulaire (seulement si noveltyId est fourni)
   const { data: noveltyData } = useQuery({
     queryKey: ['novelty-details', noveltyId],
     queryFn: async () => {
@@ -50,6 +58,12 @@ export default function PremiumUpgradeDialog({
     },
     enabled: !!noveltyId && open,
   });
+
+  // Use props directly if noveltyData is not available
+  const eventId = noveltyData?.events?.id || propEventId;
+  const eventName = noveltyData?.events?.nom_event || propEventName;
+  const eventDate = noveltyData?.events?.date_debut || propEventDate;
+  const eventSlug = noveltyData?.events?.slug || propEventSlug;
 
   const handleContactSales = () => {
     onOpenChange(false);
@@ -81,9 +95,29 @@ export default function PremiumUpgradeDialog({
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium">Leads illimités</p>
+                <p className="font-medium">Leads illimités visibles avant le salon</p>
                 <p className="text-sm text-muted-foreground">
                   Accédez à tous les contacts intéressés par votre nouveauté
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Capture de leads avant le salon</p>
+                <p className="text-sm text-muted-foreground">
+                  Les visiteurs peuvent demander à être recontactés via votre nouveauté
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Capture de leads pendant le salon (bêta)</p>
+                <p className="text-sm text-muted-foreground">
+                  Lien unique et QR code pour votre équipe sur le stand
                 </p>
               </div>
             </div>
@@ -138,10 +172,10 @@ export default function PremiumUpgradeDialog({
       <PremiumLeadDialog
         open={showLeadForm}
         onOpenChange={setShowLeadForm}
-        eventId={noveltyData?.events?.id}
-        eventName={noveltyData?.events?.nom_event}
-        eventDate={noveltyData?.events?.date_debut}
-        eventSlug={noveltyData?.events?.slug}
+        eventId={eventId}
+        eventName={eventName}
+        eventDate={eventDate}
+        eventSlug={eventSlug}
       />
     </Dialog>
   );

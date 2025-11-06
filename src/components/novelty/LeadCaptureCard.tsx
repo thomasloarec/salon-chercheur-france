@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScanQrCode, Sparkles } from 'lucide-react';
-import LeadCaptureModal from './LeadCaptureModal';
+import PremiumUpgradeDialog from './PremiumUpgradeDialog';
 import { track } from '@/lib/analytics';
 
 interface LeadCaptureCardProps {
@@ -20,23 +20,11 @@ export default function LeadCaptureCard({
   eventName 
 }: LeadCaptureCardProps) {
   const [showModal, setShowModal] = useState(false);
-  const [hasRequested, setHasRequested] = useState(false);
 
-  const storageKey = `lc_req:${exhibitorId}:${eventId}`;
-
+  // Track card view
   useEffect(() => {
-    // Check localStorage for existing request
-    const requested = localStorage.getItem(storageKey) === '1';
-    setHasRequested(requested);
-
-    // Track card view
     track('lead_capture_card_viewed', { exhibitorId, eventId, isPremium });
-  }, [exhibitorId, eventId, isPremium, storageKey]);
-
-  const handleRequestSuccess = () => {
-    localStorage.setItem(storageKey, '1');
-    setHasRequested(true);
-  };
+  }, [exhibitorId, eventId, isPremium]);
 
   return (
     <>
@@ -60,11 +48,6 @@ export default function LeadCaptureCard({
                   <Sparkles className="h-3 w-3 mr-1" />
                   Bêta
                 </Badge>
-                {hasRequested && (
-                  <Badge variant="outline" className="text-xs">
-                    Demande envoyée
-                  </Badge>
-                )}
               </div>
 
               <p className="text-sm text-muted-foreground">
@@ -77,11 +60,7 @@ export default function LeadCaptureCard({
 
               {/* CTA */}
               <div className="pt-2">
-                {hasRequested ? (
-                  <Button variant="outline" disabled size="sm">
-                    En attente d'activation
-                  </Button>
-                ) : isPremium ? (
+                {isPremium ? (
                   <Button size="sm" onClick={() => setShowModal(true)}>
                     Obtenir mon lien d'équipe
                   </Button>
@@ -96,14 +75,11 @@ export default function LeadCaptureCard({
         </CardContent>
       </Card>
 
-      <LeadCaptureModal
+      <PremiumUpgradeDialog
         open={showModal}
         onOpenChange={setShowModal}
-        isPremium={isPremium}
-        exhibitorId={exhibitorId}
         eventId={eventId}
         eventName={eventName}
-        onRequestSuccess={handleRequestSuccess}
       />
     </>
   );
