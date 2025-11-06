@@ -1,0 +1,501 @@
+{
+  "audit_metadata": {
+    "date": "2025-11-06",
+    "version": "production_current",
+    "scope": "lead_system_preEvent_exhibitor_space_premium",
+    "type": "read_only_audit",
+    "no_modifications": true
+  },
+  "db": {
+    "tables": [
+      {
+        "name": "leads",
+        "columns": [
+          { "name": "id", "type": "uuid", "nullable": false, "default": "gen_random_uuid()", "comment": "Primary key" },
+          { "name": "novelty_id", "type": "uuid", "nullable": false, "default": null, "comment": "FK to novelties.id" },
+          { "name": "lead_type", "type": "text", "nullable": false, "default": null, "comment": "Enum: resource_download | meeting_request" },
+          { "name": "first_name", "type": "text", "nullable": false, "default": null, "comment": "" },
+          { "name": "last_name", "type": "text", "nullable": false, "default": null, "comment": "" },
+          { "name": "email", "type": "text", "nullable": false, "default": null, "comment": "⚠️ No uniqueness constraint" },
+          { "name": "phone", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "company", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "role", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "notes", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()", "comment": "Indexed for chronological sorting" }
+        ],
+        "indexes": [
+          { "name": "leads_pkey", "columns": ["id"], "unique": true, "where": null },
+          { "name": "idx_leads_novelty_id", "columns": ["novelty_id"], "unique": false, "where": null }
+        ],
+        "fks": [
+          { "column": "novelty_id", "ref_table": "novelties", "ref_column": "id" }
+        ],
+        "enums_used": ["lead_type"],
+        "policies": [
+          "Admins can manage all leads",
+          "Exhibitor owners can view their leads",
+          "Novelty creators can view their leads",
+          "Service role can create leads"
+        ],
+        "triggers": [],
+        "missing_constraints": [
+          "UNIQUE (novelty_id, email) - allows duplicate leads from same visitor"
+        ],
+        "missing_columns": [
+          "source - to distinguish pre_event vs onsite leads"
+        ]
+      },
+      {
+        "name": "novelties",
+        "columns": [
+          { "name": "id", "type": "uuid", "nullable": false, "default": "gen_random_uuid()", "comment": "Primary key" },
+          { "name": "exhibitor_id", "type": "uuid", "nullable": false, "default": null, "comment": "FK to exhibitors.id" },
+          { "name": "event_id", "type": "uuid", "nullable": false, "default": null, "comment": "FK to events.id" },
+          { "name": "title", "type": "text", "nullable": false, "default": null, "comment": "" },
+          { "name": "type", "type": "text", "nullable": false, "default": null, "comment": "Enum: Launch | Innovation | Exclusive" },
+          { "name": "status", "type": "text", "nullable": true, "default": "'published'", "comment": "Enum: draft | pending | under_review | published" },
+          { "name": "reason_1", "type": "text", "nullable": true, "default": null, "comment": "3 reasons to visit" },
+          { "name": "reason_2", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "reason_3", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "audience_tags", "type": "text[]", "nullable": true, "default": null, "comment": "Target audience tags" },
+          { "name": "media_urls", "type": "text[]", "nullable": true, "default": null, "comment": "Image/video URLs" },
+          { "name": "doc_url", "type": "text", "nullable": true, "default": null, "comment": "Brochure PDF URL" },
+          { "name": "stand_info", "type": "text", "nullable": true, "default": null, "comment": "Stand details" },
+          { "name": "availability", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "demo_slots", "type": "jsonb", "nullable": true, "default": null, "comment": "Demo time slots" },
+          { "name": "created_by", "type": "uuid", "nullable": true, "default": null, "comment": "FK to profiles.user_id" },
+          { "name": "created_at", "type": "timestamptz", "nullable": true, "default": "now()", "comment": "" },
+          { "name": "updated_at", "type": "timestamptz", "nullable": true, "default": "now()", "comment": "Auto-updated by trigger" }
+        ],
+        "indexes": [
+          { "name": "novelties_pkey", "columns": ["id"], "unique": true, "where": null },
+          { "name": "idx_novelties_exhibitor_id", "columns": ["exhibitor_id"], "unique": false, "where": null },
+          { "name": "idx_novelties_event_id", "columns": ["event_id"], "unique": false, "where": null }
+        ],
+        "fks": [
+          { "column": "exhibitor_id", "ref_table": "exhibitors", "ref_column": "id" },
+          { "column": "event_id", "ref_table": "events", "ref_column": "id" },
+          { "column": "created_by", "ref_table": "profiles", "ref_column": "user_id" }
+        ],
+        "enums_used": ["novelty_type", "novelty_status"],
+        "policies": [
+          "Admins can manage all novelties",
+          "Exhibitor owners can update their novelties",
+          "Public read access to published novelties"
+        ],
+        "triggers": ["update_updated_at_column"]
+      },
+      {
+        "name": "exhibitors",
+        "columns": [
+          { "name": "id", "type": "uuid", "nullable": false, "default": "gen_random_uuid()", "comment": "Primary key" },
+          { "name": "name", "type": "text", "nullable": false, "default": null, "comment": "" },
+          { "name": "slug", "type": "text", "nullable": true, "default": null, "comment": "Auto-generated by trigger" },
+          { "name": "website", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "description", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "logo_url", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "owner_user_id", "type": "uuid", "nullable": true, "default": null, "comment": "FK to profiles.user_id" },
+          { "name": "plan", "type": "text", "nullable": true, "default": "'free'", "comment": "⚠️ Legacy: free | paid (replaced by premium_entitlements)" },
+          { "name": "approved", "type": "boolean", "nullable": true, "default": false, "comment": "Admin approval required" },
+          { "name": "created_at", "type": "timestamptz", "nullable": true, "default": "now()", "comment": "" },
+          { "name": "updated_at", "type": "timestamptz", "nullable": true, "default": "now()", "comment": "Auto-updated by trigger" }
+        ],
+        "indexes": [
+          { "name": "exhibitors_pkey", "columns": ["id"], "unique": true, "where": null },
+          { "name": "idx_exhibitors_slug", "columns": ["slug"], "unique": true, "where": null }
+        ],
+        "fks": [
+          { "column": "owner_user_id", "ref_table": "profiles", "ref_column": "user_id" }
+        ],
+        "enums_used": ["exhibitor_plan"],
+        "policies": [
+          "Admins can manage exhibitors",
+          "Owners can update their exhibitors",
+          "Public read access to exhibitors"
+        ],
+        "triggers": ["generate_exhibitor_slug", "update_updated_at_column"]
+      },
+      {
+        "name": "events",
+        "columns": [
+          { "name": "id", "type": "uuid", "nullable": false, "default": "uuid_generate_v4()", "comment": "Primary key" },
+          { "name": "id_event", "type": "text", "nullable": false, "default": null, "comment": "Business identifier" },
+          { "name": "slug", "type": "text", "nullable": true, "default": null, "comment": "Auto-generated by trigger" },
+          { "name": "nom_event", "type": "text", "nullable": false, "default": null, "comment": "" },
+          { "name": "type_event", "type": "text", "nullable": true, "default": null, "comment": "Enum: Salon | Congrès | Foire" },
+          { "name": "secteur", "type": "jsonb", "nullable": true, "default": "'[]'", "comment": "Array of sectors" },
+          { "name": "date_debut", "type": "date", "nullable": true, "default": null, "comment": "" },
+          { "name": "date_fin", "type": "date", "nullable": true, "default": null, "comment": "" },
+          { "name": "ville", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "code_postal", "type": "text", "nullable": true, "default": null, "comment": "" },
+          { "name": "visible", "type": "boolean", "nullable": true, "default": false, "comment": "Published or not" },
+          { "name": "is_b2b", "type": "boolean", "nullable": false, "default": false, "comment": "" },
+          { "name": "created_at", "type": "timestamptz", "nullable": true, "default": "now()", "comment": "" },
+          { "name": "updated_at", "type": "timestamptz", "nullable": true, "default": "now()", "comment": "Auto-updated by trigger" }
+        ],
+        "indexes": [
+          { "name": "events_pkey", "columns": ["id"], "unique": true, "where": null },
+          { "name": "idx_events_slug", "columns": ["slug"], "unique": true, "where": null },
+          { "name": "idx_events_visible", "columns": ["visible"], "unique": false, "where": null },
+          { "name": "idx_events_date_debut", "columns": ["date_debut"], "unique": false, "where": null }
+        ],
+        "fks": [],
+        "enums_used": ["event_type"],
+        "policies": [
+          "Admins can manage all events",
+          "Events are publicly readable",
+          "Service role can manage events"
+        ],
+        "triggers": ["auto_generate_event_slug", "update_updated_at_column", "sync_event_sectors"]
+      },
+      {
+        "name": "premium_entitlements",
+        "columns": [
+          { "name": "id", "type": "uuid", "nullable": false, "default": "gen_random_uuid()", "comment": "Primary key" },
+          { "name": "exhibitor_id", "type": "uuid", "nullable": false, "default": null, "comment": "FK to exhibitors.id" },
+          { "name": "event_id", "type": "uuid", "nullable": false, "default": null, "comment": "FK to events.id" },
+          { "name": "granted_by", "type": "uuid", "nullable": false, "default": null, "comment": "FK to profiles.user_id (admin)" },
+          { "name": "max_novelties", "type": "int", "nullable": false, "default": 5, "comment": "Max novelties for this event" },
+          { "name": "leads_unlimited", "type": "boolean", "nullable": false, "default": true, "comment": "Unlimited lead access" },
+          { "name": "csv_export", "type": "boolean", "nullable": false, "default": true, "comment": "CSV export enabled" },
+          { "name": "notes", "type": "text", "nullable": true, "default": null, "comment": "Admin notes" },
+          { "name": "granted_at", "type": "timestamptz", "nullable": false, "default": "now()", "comment": "Activation date" },
+          { "name": "revoked_at", "type": "timestamptz", "nullable": true, "default": null, "comment": "Revocation date (NULL = active)" }
+        ],
+        "indexes": [
+          { "name": "premium_entitlements_pkey", "columns": ["id"], "unique": true, "where": null },
+          { "name": "idx_premium_exhibitor_event", "columns": ["exhibitor_id", "event_id"], "unique": false, "where": null }
+        ],
+        "fks": [
+          { "column": "exhibitor_id", "ref_table": "exhibitors", "ref_column": "id" },
+          { "column": "event_id", "ref_table": "events", "ref_column": "id" },
+          { "column": "granted_by", "ref_table": "profiles", "ref_column": "user_id" }
+        ],
+        "enums_used": [],
+        "policies": [
+          "Admins can manage premium entitlements",
+          "Users can view their entitlements or admins view all"
+        ],
+        "triggers": [],
+        "missing_constraints": [
+          "UNIQUE (exhibitor_id, event_id) - to prevent duplicate entitlements (not confirmed by SQL introspection)"
+        ]
+      },
+      {
+        "name": "novelty_stats",
+        "columns": [
+          { "name": "novelty_id", "type": "uuid", "nullable": false, "default": null, "comment": "PK, FK to novelties.id" },
+          { "name": "route_users_count", "type": "int", "nullable": true, "default": 0, "comment": "Number of users who added to their route" },
+          { "name": "reminders_count", "type": "int", "nullable": true, "default": 0, "comment": "" },
+          { "name": "saves_count", "type": "int", "nullable": true, "default": 0, "comment": "" },
+          { "name": "popularity_score", "type": "numeric", "nullable": true, "default": 0, "comment": "Calculated: route_users_count * 3 + reminders_count * 2 + saves_count" },
+          { "name": "updated_at", "type": "timestamptz", "nullable": true, "default": "now()", "comment": "" }
+        ],
+        "indexes": [
+          { "name": "novelty_stats_pkey", "columns": ["novelty_id"], "unique": true, "where": null }
+        ],
+        "fks": [
+          { "column": "novelty_id", "ref_table": "novelties", "ref_column": "id" }
+        ],
+        "enums_used": [],
+        "policies": [
+          "Public read access to novelty stats",
+          "Service role can manage novelty stats"
+        ],
+        "triggers": ["update_novelty_stats (on route_items INSERT/DELETE)"]
+      }
+    ],
+    "enums": [
+      { "name": "lead_type", "values": ["resource_download", "meeting_request"] },
+      { "name": "novelty_type", "values": ["Launch", "Innovation", "Exclusive"] },
+      { "name": "novelty_status", "values": ["draft", "pending", "under_review", "published"] },
+      { "name": "exhibitor_plan", "values": ["free", "paid"], "comment": "⚠️ Legacy, replaced by premium_entitlements" },
+      { "name": "event_type", "values": ["Salon", "Congrès", "Foire"] },
+      { "name": "app_role", "values": ["user", "admin"] }
+    ]
+  },
+  "api": [
+    {
+      "method": "POST",
+      "path": "/functions/v1/leads-create",
+      "files": ["supabase/functions/leads-create/index.ts"],
+      "auth": "public_service_role",
+      "validations": "zod schema",
+      "tables_read": ["novelties"],
+      "tables_write": ["leads"],
+      "payload_schema": {
+        "novelty_id": "string (uuid)",
+        "lead_type": "'brochure_download' | 'meeting_request'",
+        "first_name": "string (min 1)",
+        "last_name": "string (min 1)",
+        "email": "string (email)",
+        "company": "string? (optional)",
+        "role": "string? (optional)",
+        "phone": "string? (optional)",
+        "notes": "string? (optional)"
+      },
+      "response_schema": {
+        "success": "boolean",
+        "lead_id": "string (uuid)",
+        "message": "string",
+        "download_url": "string? (only for brochure downloads)"
+      },
+      "logic": "1. Validate payload with Zod, 2. Verify novelty exists, 3. Check doc_url for brochure downloads, 4. Map lead_type frontend to DB, 5. Insert lead, 6. Return response with download_url if applicable",
+      "no_deduplication": true
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/novelty-leads",
+      "files": ["supabase/functions/novelty-leads/index.ts"],
+      "auth": "jwt_required",
+      "validations": "uuid check",
+      "tables_read": ["novelties", "exhibitors", "leads", "premium_entitlements"],
+      "tables_write": [],
+      "payload_schema": {
+        "novelty_id": "string (uuid)"
+      },
+      "response_schema": {
+        "leads": "Lead[]",
+        "total": "number",
+        "isPremium": "boolean"
+      },
+      "logic": "1. Authenticate user, 2. Fetch novelty + exhibitor, 3. Verify user is admin, owner, or creator, 4. Fetch all leads for novelty, 5. Check premium status, 6. If non-premium: mask data beyond 3 first leads, 7. Return leads array",
+      "masking_logic": "First 3 leads: full data, Beyond: { email: '***', phone: '***', ... }"
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/premium-grant",
+      "files": ["supabase/functions/premium-grant/index.ts"],
+      "auth": "admin_only",
+      "validations": "zod schema",
+      "tables_read": ["profiles", "premium_entitlements"],
+      "tables_write": ["premium_entitlements"],
+      "payload_schema": {
+        "exhibitor_id": "string (uuid)",
+        "event_id": "string (uuid)",
+        "max_novelties": "number? (default 5)",
+        "leads_unlimited": "boolean? (default true)",
+        "csv_export": "boolean? (default true)",
+        "notes": "string?"
+      },
+      "response_schema": {
+        "success": "boolean",
+        "data": "premium_entitlement object"
+      },
+      "logic": "1. Verify user is admin, 2. Check existing entitlement, 3. If exists: update with revoked_at = NULL, 4. Else: insert new, 5. Return success"
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/premium-revoke",
+      "files": ["supabase/functions/premium-revoke/index.ts"],
+      "auth": "admin_only",
+      "validations": "zod schema",
+      "tables_read": [],
+      "tables_write": ["premium_entitlements"],
+      "payload_schema": {
+        "exhibitor_id": "string (uuid)",
+        "event_id": "string (uuid)"
+      },
+      "response_schema": {
+        "success": "boolean",
+        "data": "premium_entitlement object"
+      },
+      "logic": "1. Verify user is admin, 2. Update premium_entitlements.revoked_at = now(), 3. Return success or 404 if no active entitlement"
+    },
+    {
+      "method": "POST",
+      "path": "/functions/v1/premium-lead-submit",
+      "files": ["supabase/functions/premium-lead-submit/index.ts"],
+      "auth": "public",
+      "validations": "unknown",
+      "tables_read": [],
+      "tables_write": ["unknown (commercial_leads?)"],
+      "payload_schema": {
+        "firstName": "string",
+        "lastName": "string",
+        "email": "string",
+        "phone": "string",
+        "company": "string",
+        "eventId": "string",
+        "eventName": "string",
+        "eventDate": "string",
+        "eventSlug": "string"
+      },
+      "response_schema": {
+        "success": "boolean"
+      },
+      "logic": "Records premium upgrade request, probably sends webhook/email (implementation not accessible in context)"
+    }
+  ],
+  "frontend": {
+    "pages": [
+      {
+        "path": "src/pages/Agenda.tsx",
+        "route": "/agenda",
+        "purpose": "Main agenda page with visitor/exhibitor tabs"
+      }
+    ],
+    "components": [
+      {
+        "path": "src/components/agenda/ExhibitorDashboard.tsx",
+        "purpose": "Exhibitor space: lists novelties, displays stats badges, shows leads",
+        "key_features": ["Novelty list", "Stats badges (Likes, Downloads, Meetings)", "NoveltyLeadsDisplay integration", "EditNoveltyDialog"]
+      },
+      {
+        "path": "src/components/novelty/NoveltyLeadsDisplay.tsx",
+        "purpose": "Displays leads for a novelty, handles paywall logic",
+        "key_features": ["Fetches leads via POST /novelty-leads", "Checks premium via usePremiumEntitlement", "Shows first 3 leads visible, 4-6 blurred, 7+ hidden", "CSV export button (premium only)", "PremiumUpgradeDialog trigger"]
+      },
+      {
+        "path": "src/components/novelty/LeadCard.tsx",
+        "purpose": "Renders a single lead card with masking",
+        "key_features": ["Blur CSS: blur-[3px] select-none", "maskData(): text.slice(0, 2) + '***'", "Badge for lead type (Brochure/RDV)"]
+      },
+      {
+        "path": "src/components/novelty/PremiumUpgradeDialog.tsx",
+        "purpose": "Premium upgrade prompt with pricing and benefits",
+        "key_features": ["Displays 99€ HT price", "Lists Premium benefits (unlimited leads, CSV export, stats)", "Opens PremiumLeadDialog on CTA click"]
+      },
+      {
+        "path": "src/components/premium/PremiumLeadDialog.tsx",
+        "purpose": "Contact form for Premium upgrade request",
+        "key_features": ["Form: firstName, lastName, email, phone, company", "Calls POST /premium-lead-submit", "Toast notification on success"]
+      },
+      {
+        "path": "src/components/admin/PremiumStatusBadge.tsx",
+        "purpose": "Admin badge showing Premium status"
+      },
+      {
+        "path": "src/components/admin/PremiumActionButtons.tsx",
+        "purpose": "Admin buttons to grant/revoke Premium"
+      }
+    ],
+    "premium_logic_locations": [
+      "src/components/novelty/NoveltyLeadsDisplay.tsx: lines ~50-80 (blurred count calculation, conditional rendering)",
+      "src/components/novelty/LeadCard.tsx: lines ~26-31 (maskData function), lines ~49-74 (blur CSS classes)",
+      "src/hooks/usePremiumEntitlement.ts: queries premium_entitlements table",
+      "src/hooks/useNoveltyQuota.ts: checks quota based on premium status (1 free, 5 premium)"
+    ],
+    "blur_logic_locations": [
+      "src/components/novelty/NoveltyLeadsDisplay.tsx: lines ~90-100 (leads.slice(0,3) visible, leads.slice(3,6) blurred, leads.slice(6+) hidden)",
+      "src/components/novelty/LeadCard.tsx: className 'blur-[3px] select-none' applied when !isPremium"
+    ],
+    "badges_counters_locations": [
+      "src/components/agenda/ExhibitorDashboard.tsx: lines ~75-115 (Likes, Téléchargements, Rendez-vous badges)",
+      "Data source: novelty.stats from useMyNovelties() hook"
+    ]
+  },
+  "analytics": {
+    "events": [],
+    "comment": "⚠️ No analytics events found in current codebase. Search for 'rudderanalytics.track' and 'analytics.track' returned 0 results.",
+    "env": [],
+    "recommended_events": [
+      {
+        "name": "lead_created",
+        "props": ["lead_id", "novelty_id", "exhibitor_id", "event_id", "lead_type", "timestamp"]
+      },
+      {
+        "name": "lead_viewed",
+        "props": ["lead_id", "novelty_id", "exhibitor_id", "event_id", "is_premium", "timestamp"]
+      },
+      {
+        "name": "premium_upgrade_viewed",
+        "props": ["novelty_id", "exhibitor_id", "event_id", "leads_count", "blurred_count", "timestamp"]
+      },
+      {
+        "name": "premium_lead_submitted",
+        "props": ["exhibitor_id", "event_id", "timestamp"]
+      },
+      {
+        "name": "csv_export_clicked",
+        "props": ["novelty_id", "exhibitor_id", "event_id", "leads_count", "timestamp"]
+      }
+    ]
+  },
+  "deduplication": {
+    "db_uniques": [
+      {
+        "table": "premium_entitlements",
+        "columns": ["exhibitor_id", "event_id"],
+        "status": "probably_present_not_confirmed_by_sql_introspection"
+      },
+      {
+        "table": "exhibitors",
+        "columns": ["slug"],
+        "status": "present"
+      },
+      {
+        "table": "events",
+        "columns": ["slug"],
+        "status": "present"
+      }
+    ],
+    "missing_uniques": [
+      {
+        "table": "leads",
+        "columns": ["novelty_id", "email"],
+        "risk": "A visitor can create multiple leads for the same novelty",
+        "recommendation": "ADD CONSTRAINT UNIQUE (novelty_id, email)"
+      }
+    ],
+    "app_rules": "No application-level deduplication logic found. Relies on DB constraints only."
+  },
+  "integrations": {
+    "n8n_webhooks": [],
+    "comment": "No n8n/webhook integrations detected in leads-create or novelty-leads. Premium-lead-submit implementation not accessible, may contain webhook to Slack/n8n."
+  },
+  "gaps_and_risks": [
+    {
+      "gap": "No UNIQUE constraint on (novelty_id, email) in leads table",
+      "impact": "Spam possible, duplicate leads from same visitor",
+      "recommendation": "ALTER TABLE leads ADD CONSTRAINT unique_lead_per_novelty_email UNIQUE (novelty_id, email);"
+    },
+    {
+      "gap": "No 'source' column on leads table",
+      "impact": "Cannot distinguish pre-event vs onsite leads (future requirement for 'capture sur salon')",
+      "recommendation": "ALTER TABLE leads ADD COLUMN source TEXT CHECK (source IN ('pre_event', 'onsite'));"
+    },
+    {
+      "gap": "Blurring logic only in frontend (LeadCard.tsx)",
+      "impact": "Bypass possible by calling /novelty-leads directly",
+      "recommendation": "Implement masking in novelty-leads Edge Function before returning data"
+    },
+    {
+      "gap": "No analytics/tracking events",
+      "impact": "No visibility on lead creation, premium upgrade funnel, CSV exports",
+      "recommendation": "Implement RudderStack events in leads-create, premium-grant, NoveltyLeadsDisplay, etc."
+    },
+    {
+      "gap": "No audit trail for premium_entitlements",
+      "impact": "No history of activations/revocations",
+      "recommendation": "Create premium_entitlement_history table with granted_by, granted_at, revoked_by, revoked_at"
+    },
+    {
+      "gap": "Legacy 'plan' column in exhibitors table",
+      "impact": "Confusion with new premium_entitlements system",
+      "recommendation": "Deprecate or remove exhibitors.plan column after migration"
+    }
+  ],
+  "non_regression_checklist": [
+    {
+      "item": "No database schema modifications",
+      "status": "✅ Confirmed"
+    },
+    {
+      "item": "No tables created or deleted",
+      "status": "✅ Confirmed"
+    },
+    {
+      "item": "No migrations executed",
+      "status": "✅ Confirmed"
+    },
+    {
+      "item": "No functional code changes",
+      "status": "✅ Confirmed"
+    },
+    {
+      "item": "Build/CI not impacted (only docs/ files created)",
+      "status": "✅ Confirmed"
+    }
+  ]
+}
