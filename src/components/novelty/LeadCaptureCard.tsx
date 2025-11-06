@@ -1,0 +1,110 @@
+import { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScanQrCode, Sparkles } from 'lucide-react';
+import LeadCaptureModal from './LeadCaptureModal';
+import { track } from '@/lib/analytics';
+
+interface LeadCaptureCardProps {
+  isPremium: boolean;
+  exhibitorId: string;
+  eventId: string;
+  eventName?: string;
+}
+
+export default function LeadCaptureCard({ 
+  isPremium, 
+  exhibitorId, 
+  eventId,
+  eventName 
+}: LeadCaptureCardProps) {
+  const [showModal, setShowModal] = useState(false);
+  const [hasRequested, setHasRequested] = useState(false);
+
+  const storageKey = `lc_req:${exhibitorId}:${eventId}`;
+
+  useEffect(() => {
+    // Check localStorage for existing request
+    const requested = localStorage.getItem(storageKey) === '1';
+    setHasRequested(requested);
+
+    // Track card view
+    track('lead_capture_card_viewed', { exhibitorId, eventId, isPremium });
+  }, [exhibitorId, eventId, isPremium, storageKey]);
+
+  const handleRequestSuccess = () => {
+    localStorage.setItem(storageKey, '1');
+    setHasRequested(true);
+  };
+
+  return (
+    <>
+      <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-background to-primary/5">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-4">
+            {/* Icon */}
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ScanQrCode className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-semibold text-base">
+                  Capturer des leads pendant le salon (bêta)
+                </h4>
+                <Badge variant="secondary" className="text-xs">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Bêta
+                </Badge>
+                {hasRequested && (
+                  <Badge variant="outline" className="text-xs">
+                    Demande envoyée
+                  </Badge>
+                )}
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Un lien/QR à partager à votre équipe. Tous les leads « sur salon » sont centralisés ici.
+              </p>
+
+              <p className="text-xs text-muted-foreground italic">
+                Vos leads seront tagués <strong>Sur salon</strong> pour les distinguer des leads Pré-événement.
+              </p>
+
+              {/* CTA */}
+              <div className="pt-2">
+                {hasRequested ? (
+                  <Button variant="outline" disabled size="sm">
+                    En attente d'activation
+                  </Button>
+                ) : isPremium ? (
+                  <Button size="sm" onClick={() => setShowModal(true)}>
+                    Obtenir mon lien d'équipe
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => setShowModal(true)}>
+                    Inclus avec Premium – En savoir plus
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <LeadCaptureModal
+        open={showModal}
+        onOpenChange={setShowModal}
+        isPremium={isPremium}
+        exhibitorId={exhibitorId}
+        eventId={eventId}
+        eventName={eventName}
+        onRequestSuccess={handleRequestSuccess}
+      />
+    </>
+  );
+}

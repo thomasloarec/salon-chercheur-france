@@ -81,6 +81,49 @@ serve(async (req) => {
       );
     }
 
+    // Deduplication check: case-insensitive email matching
+    const { data: existingLead, error: dedupError } = await admin
+      .from('leads')
+      .select('id')
+      .eq('novelty_id', data.novelty_id)
+      .ilike('email', data.email)
+      .maybeSingle();
+
+    if (dedupError) {
+      console.error('Deduplication check error:', dedupError);
+    }
+
+    if (existingLead) {
+      console.log('[lead_duplicate_detected]', { 
+        novelty_id: data.novelty_id, 
+        email: data.email, 
+        existing_id: existingLead.id 
+      });
+      
+      const duplicateResponse: { 
+        success: boolean; 
+        duplicate: boolean; 
+        lead_id: string; 
+        message: string;
+        download_url?: string;
+      } = {
+        success: true,
+        duplicate: true,
+        lead_id: existingLead.id,
+        message: 'Lead already exists'
+      };
+
+      // Still provide download URL if brochure request
+      if (data.lead_type === 'brochure_download' && novelty.doc_url) {
+        duplicateResponse.download_url = novelty.doc_url;
+      }
+
+      return new Response(
+        JSON.stringify(duplicateResponse),
+        { status: 200, headers: corsHeaders }
+      );
+    }
+
     // Create lead with mapped type
     const { data: lead, error: leadError } = await admin
       .from('leads')
@@ -106,8 +149,15 @@ serve(async (req) => {
       );
     }
 
-    const response: { success: boolean; lead_id: any; message: string; download_url?: string } = { 
-      success: true, 
+    const response: { 
+      success: boolean; 
+      duplicate: boolean;
+      lead_id: any; 
+      message: string; 
+      download_url?: string;
+    } = { 
+      success: true,
+      duplicate: false,
       lead_id: lead.id,
       message: data.lead_type === 'brochure_download' ? 'Brochure download recorded' : 'Meeting request created'
     };
@@ -119,7 +169,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(response),
-      { headers: corsHeaders }
+      { status: 201, headers: corsHeaders }
     );
 
   } catch (error) {

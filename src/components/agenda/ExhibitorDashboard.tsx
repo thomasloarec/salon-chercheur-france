@@ -11,8 +11,10 @@ import { fr } from 'date-fns/locale';
 
 import NoveltyLeadsDisplay from '@/components/novelty/NoveltyLeadsDisplay';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
+import LeadCaptureCard from '@/components/novelty/LeadCaptureCard';
 import { EditNoveltyDialog } from '@/components/novelty/EditNoveltyDialog';
 import { EventPremiumStatus } from './EventPremiumStatus';
+import { usePremiumEntitlement } from '@/hooks/usePremiumEntitlement';
 import type { MyNovelty } from '@/hooks/useMyNovelties';
 
 interface ExhibitorDashboardProps {
@@ -26,6 +28,9 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
   const handleEdit = (novelty: MyNovelty) => {
     setEditingNovelty(novelty);
   };
+
+  // Check for Lead Capture Beta feature flag
+  const LEAD_CAPTURE_BETA = true; // Feature flag
 
   return (
     <div className="space-y-6">
@@ -130,6 +135,21 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                           </Badge>
                         </h4>
                       </div>
+
+                      {/* Lead Capture Beta Card */}
+                      {LEAD_CAPTURE_BETA && (() => {
+                        const { data: entitlement } = usePremiumEntitlement(novelty.exhibitors.id, novelty.events.id);
+                        const isPremium = entitlement?.isPremium ?? false;
+                        
+                        return (
+                          <LeadCaptureCard
+                            isPremium={isPremium}
+                            exhibitorId={novelty.exhibitors.id}
+                            eventId={novelty.events.id}
+                            eventName={novelty.events.nom_event}
+                          />
+                        );
+                      })()}
 
                       {/* Statistiques compactes */}
                       <div className="flex items-center gap-4 flex-wrap">

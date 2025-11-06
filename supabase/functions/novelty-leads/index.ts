@@ -105,31 +105,47 @@ Deno.serve(async (req) => {
       );
     }
 
-    // If not premium, mask data for leads beyond the first 3
+    // Server-side masking: apply same logic as frontend paywall
     let filteredLeads = leads || [];
+    const totalLeads = leads?.length || 0;
+    let blurredCount = 0;
+    let hiddenCount = 0;
     
     if (!novelty.is_premium && !isAdmin) {
-      filteredLeads = filteredLeads.map((lead, index) => {
-        if (index < 3) {
-          return lead; // First 3 leads are fully visible
-        }
-        // Mask data for leads beyond the first 3
-        return {
-          ...lead,
-          last_name: '***',
-          email: lead.email.slice(0, 2) + '***@***.***',
-          phone: lead.phone ? lead.phone.slice(0, 2) + ' ** ** ** **' : null,
-          company: lead.company ? lead.company.slice(0, 2) + '***' : null,
-          role: lead.role ? lead.role.slice(0, 2) + '***' : null,
-          notes: null
-        };
+      // Visible: first 3 leads (full data)
+      const visibleLeads = filteredLeads.slice(0, 3);
+      
+      // Blurred: leads 4-6 (partial masking)
+      const blurredLeads = filteredLeads.slice(3, 6).map((lead) => ({
+        ...lead,
+        first_name: lead.first_name.slice(0, 2) + '***',
+        last_name: lead.last_name.charAt(0) + '***',
+        email: lead.email.slice(0, 2) + '***@***.***',
+        phone: lead.phone ? lead.phone.slice(0, 2) + ' ** ** ** **' : null,
+        company: lead.company ? lead.company.slice(0, 2) + '***' : null,
+        role: lead.role ? lead.role.slice(0, 2) + '***' : null,
+        notes: null
+      }));
+      
+      // Hidden: leads 7+ (not returned at all)
+      filteredLeads = [...visibleLeads, ...blurredLeads];
+      blurredCount = Math.min(blurredLeads.length, 3);
+      hiddenCount = Math.max(0, totalLeads - 6);
+      
+      console.log('[premium_masking_applied]', { 
+        total: totalLeads, 
+        visible: visibleLeads.length, 
+        blurred: blurredCount, 
+        hidden: hiddenCount 
       });
     }
 
     return new Response(
       JSON.stringify({ 
         leads: filteredLeads,
-        total: leads?.length || 0,
+        total: totalLeads,
+        blurredCount,
+        hiddenCount,
         is_premium: novelty.is_premium
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

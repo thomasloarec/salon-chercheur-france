@@ -2,15 +2,19 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { handleCors } from '../_shared/cors.ts'
 
 interface PremiumLeadRequest {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  company: string
-  eventId: string
-  eventName: string
-  eventDate: string
-  eventSlug: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  company?: string
+  eventId?: string
+  eventName?: string
+  eventDate?: string
+  eventSlug?: string
+  topic?: string // 'lead_capture_beta' | 'lead_capture_waitlist' | default (regular premium lead)
+  exhibitorId?: string
+  requestedByUserId?: string
+  context?: string
 }
 
 serve(async (req) => {
@@ -49,9 +53,59 @@ serve(async (req) => {
     console.log('📨 Request body:', {
       email: body.email,
       company: body.company,
-      eventName: body.eventName
+      eventName: body.eventName,
+      topic: body.topic
     })
 
+    // Handle beta requests (lead capture feature)
+    if (body.topic === 'lead_capture_beta' || body.topic === 'lead_capture_waitlist') {
+      const currentDate = new Date().toISOString().split('T')[0]
+      
+      const betaData = {
+        fields: {
+          'Type': body.topic === 'lead_capture_beta' ? 'Capture sur salon (Premium)' : 'Capture sur salon (Waitlist)',
+          'ID Exposant': body.exhibitorId || '',
+          'ID Événement': body.eventId || '',
+          'Nom Événement': body.eventName || '',
+          'User ID': body.requestedByUserId || '',
+          'Context': body.context || 'unknown',
+          'Date Demande': currentDate,
+          'Statut': 'En attente',
+          'Source': 'LotExpo - Espace Exposant',
+        }
+      }
+
+      const tableName = 'Leads Premium Nouveautés';
+      const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(tableName)}`;
+      
+      console.log('📤 Beta request to Airtable:', betaData);
+      
+      const airtableResponse = await fetch(airtableUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${airtableToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(betaData),
+      })
+
+      if (!airtableResponse.ok) {
+        const errorText = await airtableResponse.text()
+        console.error('❌ Airtable error:', errorText)
+        return new Response(
+          JSON.stringify({ error: 'Failed to save beta request', details: errorText }),
+          { status: 500, headers: { ...corsResult.headers, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const result = await airtableResponse.json()
+      return new Response(
+        JSON.stringify({ success: true, airtableId: result.id }),
+        { status: 200, headers: { ...corsResult.headers, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Regular premium lead (original behavior)
     if (!body.firstName || !body.lastName || !body.email || !body.phone || !body.company) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),

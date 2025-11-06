@@ -36,7 +36,7 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
   const isPremium = entitlement?.isPremium ?? false;
   const canExportCSV = entitlement?.csvExport ?? false;
   
-  const { data: leads, isLoading } = useQuery({
+  const { data: leadsData, isLoading } = useQuery({
     queryKey: ['novelty-leads', noveltyId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('novelty-leads', {
@@ -44,9 +44,19 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
       });
       
       if (error) throw error;
-      return data.leads as Lead[];
+      return {
+        leads: data.leads as Lead[],
+        total: data.total as number,
+        blurredCount: data.blurredCount as number,
+        hiddenCount: data.hiddenCount as number,
+      };
     }
   });
+
+  const leads = leadsData?.leads;
+  const totalLeads = leadsData?.total ?? 0;
+  const serverBlurredCount = leadsData?.blurredCount ?? 0;
+  const serverHiddenCount = leadsData?.hiddenCount ?? 0;
 
   const handleExportCSV = () => {
     if (!leads) return;
@@ -84,10 +94,17 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
     );
   }
 
-  // Si Premium : afficher tous les leads, sinon logique freemium
-  const visibleLeads = isPremium ? (leads || []) : (leads?.slice(0, 3) || []);
-  const previewLeads = isPremium ? [] : (leads?.slice(3, 6) || []);
-  const hiddenCount = isPremium ? 0 : Math.max(0, (leads?.length || 0) - 6);
+  // Server-side masking: leads are already masked/filtered by the API
+  // No client-side logic needed for non-premium users
+  const visibleLeads = leads || [];
+  
+  // For display: separate first 3 (full) from next 3 (blurred)
+  const fullyVisibleLeads = visibleLeads.slice(0, 3);
+  const previewLeads = visibleLeads.slice(3, 6);
+  
+  // Use server-provided counts for accurate display
+  const blurredCount = isPremium ? 0 : serverBlurredCount;
+  const hiddenCount = isPremium ? 0 : serverHiddenCount;
 
   if (!leads || leads.length === 0) {
     return (
@@ -109,23 +126,23 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
         </div>
       )}
       
-      {/* Leads 1-3: Full visibility */}
-      {visibleLeads.map((lead) => (
+      {/* Leads 1-3: Full visibility (always shown with full data) */}
+      {fullyVisibleLeads.map((lead) => (
         <LeadCard key={lead.id} lead={lead} isPremium={true} />
       ))}
       
-      {/* Leads 4-6: Blurred (freemium) */}
+      {/* Leads 4-6: Blurred preview (already masked by server) */}
       {previewLeads.map((lead) => (
         <LeadCard key={lead.id} lead={lead} isPremium={false} />
       ))}
       
       {/* Premium upsell - shown when there are blurred or hidden leads */}
-      {(previewLeads.length > 0 || hiddenCount > 0) && (
+      {(blurredCount > 0 || hiddenCount > 0) && (
         <Card className="p-4 bg-muted/50 border-dashed">
           <div className="text-center">
             <Lock className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
             <p className="font-medium mb-1">
-              {previewLeads.length + hiddenCount} lead{(previewLeads.length + hiddenCount) > 1 ? 's' : ''} {previewLeads.length > 0 ? 'flouté' : 'supplémentaire'}{(previewLeads.length + hiddenCount) > 1 ? 's' : ''}
+              {blurredCount + hiddenCount} lead{(blurredCount + hiddenCount) > 1 ? 's' : ''} {blurredCount > 0 ? 'flouté' : 'supplémentaire'}{(blurredCount + hiddenCount) > 1 ? 's' : ''}
             </p>
             <p className="text-sm text-muted-foreground mb-3">
               Passez en Premium pour débloquer tous vos leads
