@@ -148,7 +148,7 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
               Passez en Premium pour débloquer tous vos leads
             </p>
             <Button size="sm" variant="default" onClick={() => setShowPremiumDialog(true)}>
-              Passer en Premium - 99€ HT
+              Débloquer les leads cachés - 99€ HT
             </Button>
           </div>
         </Card>
