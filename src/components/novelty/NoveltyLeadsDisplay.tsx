@@ -64,8 +64,9 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
 
   const leads = leadsData?.leads;
   const totalLeads = leadsData?.total ?? 0;
-  const serverBlurredCount = leadsData?.blurredCount ?? 0;
-  const serverHiddenCount = leadsData?.hiddenCount ?? 0;
+  // Use server-provided counts directly (server already handles premium logic)
+  const blurredCount = leadsData?.blurredCount ?? 0;
+  const hiddenCount = leadsData?.hiddenCount ?? 0;
 
   const handleExportCSV = () => {
     if (!leads) return;
@@ -110,17 +111,6 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
   // For display: separate first 3 (full) from next 3 (blurred)
   const fullyVisibleLeads = visibleLeads.slice(0, 3);
   const previewLeads = visibleLeads.slice(3, 6);
-  
-  // Use server-provided counts for accurate display
-  const blurredCount = isPremium ? 0 : serverBlurredCount;
-  const hiddenCount = isPremium ? 0 : serverHiddenCount;
-  
-  console.log('[NoveltyLeadsDisplay] Display state:', {
-    isPremium,
-    blurredCount,
-    hiddenCount,
-    showButton: (blurredCount > 0 || hiddenCount > 0)
-  });
 
   if (!leads || leads.length === 0) {
     return (
