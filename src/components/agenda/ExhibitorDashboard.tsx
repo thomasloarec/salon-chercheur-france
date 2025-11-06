@@ -103,88 +103,92 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                   </div>
                 </div>
 
-                {/* Carte de nouveauté avec leads intégrés */}
+                {/* Carte de nouveauté avec leads en 2 colonnes */}
                 <Card>
-                  <CardContent className="p-6 space-y-6">
-                    {/* Nouveauté */}
-                    <NoveltyCard 
-                      novelty={{
-                        id: novelty.id,
-                        event_id: novelty.events.id,
-                        exhibitor_id: novelty.exhibitors.id,
-                        title: novelty.title,
-                        type: novelty.type,
-                        reason_1: novelty.reason_1,
-                        reason_2: undefined,
-                        reason_3: undefined,
-                        media_urls: novelty.media_urls,
-                        stand_info: novelty.stand_info,
-                        doc_url: novelty.doc_url,
-                        availability: undefined,
-                        audience_tags: undefined,
-                        status: novelty.status,
-                        created_at: novelty.created_at,
-                        updated_at: novelty.created_at,
-                        exhibitors: {
-                          id: novelty.exhibitors.id,
-                          name: novelty.exhibitors.name,
-                          slug: novelty.exhibitors.slug,
-                          logo_url: novelty.exhibitors.logo_url
-                        }
-                      }}
-                    />
-
-                    <Separator />
-
-                    {/* Section Leads (toujours affichée) */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-semibold flex items-center gap-2">
-                          <Users className="h-5 w-5" />
-                          Leads
-                          <Badge variant="secondary" className="ml-1">
-                            {novelty.stats?.total_leads || 0}
-                          </Badge>
-                        </h4>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1.4fr,1fr] gap-6">
+                      {/* Colonne gauche : Nouveauté (60% width) */}
+                      <div>
+                        <NoveltyCard 
+                          novelty={{
+                            id: novelty.id,
+                            event_id: novelty.events.id,
+                            exhibitor_id: novelty.exhibitors.id,
+                            title: novelty.title,
+                            type: novelty.type,
+                            reason_1: novelty.reason_1,
+                            reason_2: undefined,
+                            reason_3: undefined,
+                            media_urls: novelty.media_urls,
+                            stand_info: novelty.stand_info,
+                            doc_url: novelty.doc_url,
+                            availability: undefined,
+                            audience_tags: undefined,
+                            status: novelty.status,
+                            created_at: novelty.created_at,
+                            updated_at: novelty.created_at,
+                            exhibitors: {
+                              id: novelty.exhibitors.id,
+                              name: novelty.exhibitors.name,
+                              slug: novelty.exhibitors.slug,
+                              logo_url: novelty.exhibitors.logo_url
+                            }
+                          }}
+                        />
                       </div>
 
-                      {/* Statistiques compactes */}
-                      <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 dark:bg-red-950/30">
-                            <Heart className="h-4 w-4 text-red-600 dark:text-red-400" />
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold text-red-600 dark:text-red-400">{novelty.stats?.likes || 0}</p>
-                            <p className="text-xs text-muted-foreground">Likes</p>
-                          </div>
+                      {/* Colonne droite : Leads (40% width) */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-lg font-semibold flex items-center gap-2">
+                            <Users className="h-5 w-5" />
+                            Leads
+                            <Badge variant="secondary" className="ml-1">
+                              {novelty.stats?.total_leads || 0}
+                            </Badge>
+                          </h4>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950/30">
-                            <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{novelty.stats?.brochure_leads || 0}</p>
-                            <p className="text-xs text-muted-foreground">Téléchargements</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-950/30">
-                            <CalendarCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold text-green-600 dark:text-green-400">{novelty.stats?.meeting_leads || 0}</p>
-                            <p className="text-xs text-muted-foreground">Rendez-vous</p>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Liste des leads */}
-                      <NoveltyLeadsDisplay 
-                        noveltyId={novelty.id}
-                        exhibitorId={novelty.exhibitors.id}
-                        eventId={novelty.events.id}
-                      />
+                        {/* Statistiques compactes */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 dark:bg-red-950/30">
+                              <Heart className="h-4 w-4 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                              <p className="text-lg font-bold text-red-600 dark:text-red-400">{novelty.stats?.likes || 0}</p>
+                              <p className="text-xs text-muted-foreground">Likes</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950/30">
+                              <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{novelty.stats?.brochure_leads || 0}</p>
+                              <p className="text-xs text-muted-foreground">Téléchargements</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-950/30">
+                              <CalendarCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                              <p className="text-lg font-bold text-green-600 dark:text-green-400">{novelty.stats?.meeting_leads || 0}</p>
+                              <p className="text-xs text-muted-foreground">Rendez-vous</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Separator className="my-4" />
+
+                        {/* Liste des leads */}
+                        <NoveltyLeadsDisplay 
+                          noveltyId={novelty.id}
+                          exhibitorId={novelty.exhibitors.id}
+                          eventId={novelty.events.id}
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
