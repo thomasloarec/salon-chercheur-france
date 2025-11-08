@@ -11,7 +11,6 @@ import { fetchAllRegions } from '@/lib/filtersData';
 const HeroWithFilters = () => {
   const navigate = useNavigate();
   const { data: sectors = [] } = useSectors();
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string[]>([]);
@@ -52,7 +51,6 @@ const HeroWithFilters = () => {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchQuery) params.set('q', searchQuery);
     if (selectedSectors.length > 0) params.set('sectors', selectedSectors.join(','));
     if (selectedType.length > 0) params.set('type', selectedType[0]);
     if (selectedMonth.length > 0) params.set('month', selectedMonth[0]);
@@ -74,57 +72,54 @@ const HeroWithFilters = () => {
           </p>
         </div>
 
-        {/* Filters Bar - Meetup style */}
-        <div className="max-w-6xl mx-auto bg-white rounded-xl p-4 shadow-2xl animate-scale-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
-            <div className="relative lg:col-span-2">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <Input
-                placeholder="Nom du salon, secteur..."
-                className="pl-10 h-12 text-gray-900"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+        {/* Filters Bar - 2 columns layout */}
+        <div className="max-w-6xl mx-auto bg-white rounded-xl p-6 shadow-2xl animate-scale-in">
+          {/* Filters in 2 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Left column */}
+            <div className="space-y-4">
+              <MultiSelect
+                options={sectorOptions}
+                selected={selectedSectors}
+                onChange={setSelectedSectors}
+                placeholder="Secteur d'activité"
+                className="h-12"
+              />
+              
+              <MultiSelect
+                options={monthOptions}
+                selected={selectedMonth}
+                onChange={(values) => setSelectedMonth(values.slice(0, 1))}
+                placeholder="Mois"
+                className="h-12"
               />
             </div>
-            
-            <MultiSelect
-              options={sectorOptions}
-              selected={selectedSectors}
-              onChange={setSelectedSectors}
-              placeholder="Secteur d'activité"
-              className="h-12"
-            />
 
-            <MultiSelect
-              options={typeOptions}
-              selected={selectedType}
-              onChange={(values) => setSelectedType(values.slice(0, 1))}
-              placeholder="Type d'événement"
-              className="h-12"
-            />
+            {/* Right column */}
+            <div className="space-y-4">
+              <MultiSelect
+                options={typeOptions}
+                selected={selectedType}
+                onChange={(values) => setSelectedType(values.slice(0, 1))}
+                placeholder="Type d'événement"
+                className="h-12"
+              />
 
-            <MultiSelect
-              options={monthOptions}
-              selected={selectedMonth}
-              onChange={(values) => setSelectedMonth(values.slice(0, 1))}
-              placeholder="Mois"
-              className="h-12"
-            />
+              <MultiSelect
+                options={regions}
+                selected={selectedRegion}
+                onChange={(values) => setSelectedRegion(values.slice(0, 1))}
+                placeholder="Région"
+                className="h-12"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <MultiSelect
-              options={regions}
-              selected={selectedRegion}
-              onChange={(values) => setSelectedRegion(values.slice(0, 1))}
-              placeholder="Région"
-              className="h-12"
-            />
-
+          {/* Search button centered */}
+          <div className="flex justify-center">
             <Button 
               onClick={handleSearch}
-              className="w-full h-12 bg-accent hover:bg-accent/90 text-lg font-semibold"
+              className="h-12 px-12 bg-accent hover:bg-accent/90 text-lg font-semibold"
             >
               <Search className="mr-2 h-5 w-5" />
               Rechercher

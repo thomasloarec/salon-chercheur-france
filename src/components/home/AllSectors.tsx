@@ -1,14 +1,22 @@
 import { useSectors } from '@/hooks/useSectors';
-import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { SectorIconBar } from '@/components/filters/SectorIconBar';
+import { sectorWithCanonicalSlug } from '@/utils/sectorMapping';
 
 const AllSectors = () => {
   const { data: sectors = [], isLoading } = useSectors();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const handleSectorClick = (sectorId: string) => {
-    navigate(`/events?sectors=${sectorId}`);
+  const handleSectorsChange = (selectedSlugs: string[]) => {
+    const params = new URLSearchParams(searchParams);
+    if (selectedSlugs.length > 0) {
+      params.set('sectors', selectedSlugs.join(','));
+    } else {
+      params.delete('sectors');
+    }
+    navigate(`/events?${params.toString()}`);
   };
 
   return (
@@ -19,27 +27,15 @@ const AllSectors = () => {
         </h2>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-              <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />
-            ))}
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {sectors.map((sector) => (
-              <Button
-                key={sector.id}
-                onClick={() => handleSectorClick(sector.id)}
-                variant="outline"
-                className="h-auto py-6 px-4 flex flex-col items-center justify-center text-center border-2 hover:border-accent hover:bg-accent/5 transition-all group"
-              >
-                <span className="font-semibold text-sm group-hover:text-accent transition-colors line-clamp-2">
-                  {sector.name}
-                </span>
-                <ArrowRight className="h-4 w-4 mt-2 opacity-0 group-hover:opacity-100 text-accent transition-opacity" />
-              </Button>
-            ))}
-          </div>
+          <SectorIconBar
+            sectors={sectors.map(s => sectorWithCanonicalSlug(s))}
+            selected={[]}
+            onChange={handleSectorsChange}
+          />
         )}
       </div>
     </section>

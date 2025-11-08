@@ -13,17 +13,31 @@ const RegionalEvents = () => {
   const { data: events, isLoading } = useQuery({
     queryKey: ['regional-events-idf'],
     queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get postal codes for Île-de-France
+      const { data: communes, error: communesError } = await supabase
+        .from('communes')
+        .select('code_postal')
+        .eq('region_code', '11'); // Île-de-France region code
+
+      if (communesError) throw communesError;
+      
+      const postalCodes = [...new Set(communes?.map(c => c.code_postal).filter(Boolean))];
+      
+      // Fetch events with those postal codes
       const { data, error } = await supabase
         .from('events')
         .select('*, novelties(count)')
         .eq('visible', true)
-        .gte('date_debut', new Date().toISOString().split('T')[0])
-        .ilike('region_code', '11') // Île-de-France code
+        .eq('is_b2b', true)
+        .gte('date_debut', today)
+        .in('code_postal', postalCodes)
         .order('date_debut', { ascending: true })
         .limit(8);
 
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 

@@ -1,87 +1,98 @@
-import { Search, Route, TrendingUp, Calendar } from 'lucide-react';
+import { Search, Sparkles, Users, ArrowRight } from 'lucide-react';
 
 const HowItWorksNew = () => {
   return (
     <section className="bg-secondary py-20 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Fonctionnement de Lotexpo
+            Remettre l'humain au centre de votre travail
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Avant, il n'existait pas d'unique plateforme : on passait à côté d'événements clés et il était difficile de savoir si un salon valait le déplacement.
+            Les salons professionnels sont le meilleur endroit pour créer des relations business, mais on les délaisse parce qu'ils sont difficiles à préparer. Lotexpo change la donne.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-          {/* Problem 1 */}
-          <div className="bg-card border border-border rounded-2xl p-8">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="bg-accent/20 rounded-full p-3">
-                <Search className="h-8 w-8 text-accent" />
+        {/* 3 steps with arrows */}
+        <div className="max-w-5xl mx-auto">
+          <div className="relative">
+            {/* Step 1 */}
+            <div className="mb-8">
+              <div className="bg-card border-2 border-border rounded-2xl p-8 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-4 shrink-0">
+                    <Search className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-sm font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                        Étape 1
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-foreground mb-3">
+                      Connaître toutes les opportunités de salons possibles
+                    </h3>
+                    <p className="text-muted-foreground text-lg">
+                      Tous les événements B2B regroupés au même endroit. Plus de salons inconnus, plus d'opportunités manquées.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">
-                  Choisir les bons salons
-                </h3>
-                <p className="text-muted-foreground">
-                  On filtre par secteur et on voit les Nouveautés annoncées par les exposants
-                </p>
+              {/* Arrow down */}
+              <div className="flex justify-center my-6">
+                <ArrowRight className="h-12 w-12 text-accent rotate-90 animate-bounce" />
               </div>
             </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/10 rounded-full p-1 mt-0.5">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Décision éclairée : on ne joue plus à pile ou face
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/10 rounded-full p-1 mt-0.5">
-                  <Calendar className="h-4 w-4 text-primary" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Tous les événements B2B regroupés au même endroit
-                </p>
-              </div>
-            </div>
-          </div>
 
-          {/* Problem 2 */}
-          <div className="bg-card border border-border rounded-2xl p-8">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="bg-accent/20 rounded-full p-3">
-                <Route className="h-8 w-8 text-accent" />
+            {/* Step 2 */}
+            <div className="mb-8">
+              <div className="bg-card border-2 border-border rounded-2xl p-8 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-full p-4 shrink-0">
+                    <Sparkles className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-sm font-bold text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                        Étape 2
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-foreground mb-3">
+                      Faire son choix avec un maximum d'informations
+                    </h3>
+                    <p className="text-muted-foreground text-lg">
+                      Filtrez par secteur et découvrez les Nouveautés annoncées par les exposants. Décision éclairée, on ne joue plus à pile ou face.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">
-                  Construire son parcours
-                </h3>
-                <p className="text-muted-foreground">
-                  On met des Nouveautés en favoris pour se créer un chemin de stands simple et efficace
-                </p>
+              {/* Arrow down */}
+              <div className="flex justify-center my-6">
+                <ArrowRight className="h-12 w-12 text-accent rotate-90 animate-bounce" />
               </div>
             </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/10 rounded-full p-1 mt-0.5">
-                  <Route className="h-4 w-4 text-primary" />
+
+            {/* Step 3 */}
+            <div>
+              <div className="bg-gradient-to-br from-accent/10 to-accent/5 border-2 border-accent rounded-2xl p-8 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="bg-gradient-to-br from-accent to-accent/80 rounded-full p-4 shrink-0">
+                    <Users className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-sm font-bold text-accent bg-accent/20 px-3 py-1 rounded-full">
+                        Étape 3
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-foreground mb-3">
+                      Rencontrer les gens qui comptent pour votre business
+                    </h3>
+                    <p className="text-muted-foreground text-lg">
+                      Mettez des Nouveautés en favoris, construisez votre parcours de stands. Le salon professionnel redevient un élément charnière de votre business.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Gagnez du temps le jour J avec votre parcours personnalisé
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/10 rounded-full p-1 mt-0.5">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Ne manquez aucune opportunité business importante
-                </p>
               </div>
             </div>
           </div>
