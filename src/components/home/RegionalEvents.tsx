@@ -26,11 +26,11 @@ const RegionalEvents = () => {
 
       if (error) throw error;
       
-      // Filtrage par région Île-de-France (côté client)
+      // Filtrage par région Île-de-France (côté client) - Limite à 4 événements (1 ligne)
       const idfEvents = (data || []).filter(event => {
         const regionSlug = regionSlugFromPostal(event.code_postal);
         return regionSlug === 'ile-de-france';
-      }).slice(0, 8);
+      }).slice(0, 4);
       
       return idfEvents as Event[];
     }
@@ -44,7 +44,7 @@ const RegionalEvents = () => {
             Événements en Île-de-France
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-96 bg-muted rounded-2xl animate-pulse" />
             ))}
           </div>
