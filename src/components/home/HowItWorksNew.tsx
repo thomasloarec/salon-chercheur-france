@@ -40,7 +40,7 @@ const HowItWorksNew = () => {
               </div>
               {/* Arrow down */}
               <div className="flex justify-center my-6">
-                <ArrowRight className="h-12 w-12 text-accent rotate-90 animate-bounce" />
+                <ArrowRight className="h-12 w-12 text-accent rotate-90" />
               </div>
             </div>
 
@@ -68,7 +68,7 @@ const HowItWorksNew = () => {
               </div>
               {/* Arrow down */}
               <div className="flex justify-center my-6">
-                <ArrowRight className="h-12 w-12 text-accent rotate-90 animate-bounce" />
+                <ArrowRight className="h-12 w-12 text-accent rotate-90" />
               </div>
             </div>
 

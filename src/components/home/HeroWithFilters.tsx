@@ -29,9 +29,12 @@ const HeroWithFilters = () => {
 
   const typeOptions = [
     { value: 'salon', label: 'Salon' },
-    { value: 'congres', label: 'Congrès' },
-    { value: 'forum', label: 'Forum' },
     { value: 'conference', label: 'Conférence' },
+    { value: 'congres', label: 'Congrès' },
+    { value: 'exposition', label: 'Exposition' },
+    { value: 'forum', label: 'Forum' },
+    { value: 'convention', label: 'Convention' },
+    { value: 'ceremonie', label: 'Cérémonie' },
   ];
 
   const monthOptions = [
