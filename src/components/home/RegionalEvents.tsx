@@ -15,18 +15,18 @@ const RegionalEvents = () => {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
-      // Fetch all visible B2B upcoming events (same logic as /events page)
+      // ✅ CORRECTION : Suppression du filtre is_b2b pour afficher tous les événements visibles
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('visible', true)
-        .eq('is_b2b', true)
+        // ✅ Filtre is_b2b supprimé - aligné avec la page /events
         .gte('date_debut', today)
         .order('date_debut', { ascending: true });
 
       if (error) throw error;
       
-      // Filter by Île-de-France region using the same logic as /events page
+      // Filtrage par région Île-de-France (côté client)
       const idfEvents = (data || []).filter(event => {
         const regionSlug = regionSlugFromPostal(event.code_postal);
         return regionSlug === 'ile-de-france';
