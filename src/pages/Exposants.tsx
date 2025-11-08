@@ -125,19 +125,9 @@ const Exposants = () => {
                   <h3 className="text-2xl font-bold text-foreground mb-4">
                     Publiez votre nouveauté
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed mb-4">
-                    Démarquez-vous ! Annoncez un nouveau produit, un partenariat, une démonstration exclusive, une offre spéciale...
+                  <p className="text-muted-foreground leading-relaxed">
+                    Démarquez-vous ! Annoncez un nouveau produit, un partenariat, une démonstration exclusive, une offre spéciale... Soyez remarquable pour attirer des visiteurs sur votre stand.
                   </p>
-                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-left">
-                    <p className="text-amber-900 dark:text-amber-100 font-semibold mb-2">
-                      💡 La clé du succès
-                    </p>
-                    <p className="text-amber-800 dark:text-amber-200">
-                      Comme le Purple Cow de Seth Godin : soyez <strong>remarquable</strong>. 
-                      Sans nouveauté, vous êtes noyé parmi 100+ exposants. Avec une nouveauté, 
-                      les visiteurs planifient de venir vous voir <em>avant même l'ouverture</em>.
-                    </p>
-                  </div>
                 </div>
               </div>
 
@@ -188,7 +178,7 @@ const Exposants = () => {
                     <TrendingUp className="h-6 w-6 text-accent" />
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">Sophie M.</p>
+                    <p className="font-semibold text-foreground">Marie D.</p>
                     <p className="text-sm text-muted-foreground">Responsable Marketing</p>
                   </div>
                 </div>
@@ -207,7 +197,7 @@ const Exposants = () => {
                     <BarChart3 className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">Thomas R.</p>
+                    <p className="font-semibold text-foreground">Julien B.</p>
                     <p className="text-sm text-muted-foreground">Directeur Commercial</p>
                   </div>
                 </div>
@@ -226,7 +216,7 @@ const Exposants = () => {
                     <Users className="h-6 w-6 text-accent" />
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">Laurent D.</p>
+                    <p className="font-semibold text-foreground">Alexandre P.</p>
                     <p className="text-sm text-muted-foreground">Dirigeant d'entreprise</p>
                   </div>
                 </div>
