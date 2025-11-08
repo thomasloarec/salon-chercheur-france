@@ -63,6 +63,17 @@ const Header = () => {
               <Calendar className="h-4 w-4" />
               <span>Nouveautés</span>
             </NavLink>
+            <NavLink 
+              to="/exposants" 
+              className={({ isActive }) => 
+                `text-gray-700 hover:text-primary transition-colors flex items-center space-x-1 ${
+                  isActive ? 'text-primary font-medium' : ''
+                }`
+              }
+            >
+              <Users className="h-4 w-4" />
+              <span>Exposants</span>
+            </NavLink>
             {session && isAdmin && (
               <NavLink
                 to="/admin"
@@ -134,6 +145,17 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Nouveautés
+              </NavLink>
+              <NavLink
+                to="/exposants"
+                className={({ isActive }) => 
+                  `block px-3 py-2 text-gray-700 hover:text-primary transition-colors ${
+                    isActive ? 'text-primary font-medium' : ''
+                  }`
+                }
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Exposants
               </NavLink>
               {session && isAdmin && (
                 <NavLink
