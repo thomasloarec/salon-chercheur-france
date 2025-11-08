@@ -14,29 +14,27 @@ const RegionalEvents = () => {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
-      // Get postal codes for Île-de-France
-      const { data: communes, error: communesError } = await supabase
-        .from('communes')
-        .select('code_postal')
-        .eq('region_code', '11'); // Île-de-France region code
-
-      if (communesError) throw communesError;
+      // Départements d'Île-de-France: 75, 77, 78, 91, 92, 93, 94, 95
+      const idfDepartments = ['75', '77', '78', '91', '92', '93', '94', '95'];
       
-      const postalCodes = [...new Set(communes?.map(c => c.code_postal).filter(Boolean))];
-      
-      // Fetch events with those postal codes
+      // Fetch all visible B2B events
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('visible', true)
         .eq('is_b2b', true)
         .gte('date_debut', today)
-        .in('code_postal', postalCodes)
-        .order('date_debut', { ascending: true })
-        .limit(8);
+        .order('date_debut', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as Event[];
+      
+      // Filter events by Île-de-France postal codes (starts with 75, 77, 78, 91, 92, 93, 94, 95)
+      const idfEvents = (data || []).filter(event => {
+        const postalCode = event.code_postal?.substring(0, 2);
+        return postalCode && idfDepartments.includes(postalCode);
+      }).slice(0, 8);
+      
+      return idfEvents as Event[];
     }
   });
 
