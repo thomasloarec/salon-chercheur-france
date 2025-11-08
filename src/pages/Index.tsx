@@ -1,12 +1,14 @@
-
 import Header from '@/components/Header';
-import HeroNovelty from '@/components/home/HeroNovelty';
-import HowItWorks from '@/components/home/HowItWorks';
-import FeaturedNovelties from '@/components/home/FeaturedNovelties';
-import UpcomingFairs from '@/components/home/UpcomingFairs';
-import ForExhibitors from '@/components/home/ForExhibitors';
-import ForVisitors from '@/components/home/ForVisitors';
-import HomeFaq from '@/components/home/HomeFaq';
+import HeroWithFilters from '@/components/home/HeroWithFilters';
+import StatsBar from '@/components/home/StatsBar';
+import RegionalEvents from '@/components/home/RegionalEvents';
+import FeaturedNoveltiesSimple from '@/components/home/FeaturedNoveltiesSimple';
+import JoinBlock from '@/components/home/JoinBlock';
+import AllSectors from '@/components/home/AllSectors';
+import HowItWorksNew from '@/components/home/HowItWorksNew';
+import TestimonialsNew from '@/components/home/TestimonialsNew';
+import NewsletterImproved from '@/components/home/NewsletterImproved';
+import ExhibitorsReference from '@/components/home/ExhibitorsReference';
 import Footer from '@/components/Footer';
 
 const Index = () => {
@@ -14,13 +16,16 @@ const Index = () => {
     <div className="min-h-screen w-full bg-background">
       <Header />
       <main>
-        <HeroNovelty />
-        <HowItWorks />
-        <FeaturedNovelties />
-        <UpcomingFairs />
-        <ForExhibitors />
-        <ForVisitors />
-        <HomeFaq />
+        <HeroWithFilters />
+        <StatsBar />
+        <RegionalEvents />
+        <FeaturedNoveltiesSimple />
+        <JoinBlock />
+        <AllSectors />
+        <HowItWorksNew />
+        <TestimonialsNew />
+        <NewsletterImproved />
+        <ExhibitorsReference />
       </main>
       <Footer />
     </div>

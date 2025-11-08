@@ -31,6 +31,7 @@ import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
 import AdminEventByText from '@/pages/AdminEventByText';
 import NotFound from '@/pages/NotFound';
+import Exposants from '@/pages/Exposants';
 import './App.css';
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
               <Route path="/events/:slug" element={<EventPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
             <Route path="/premium" element={<Premium />} />
+            <Route path="/exposants" element={<Exposants />} />
             <Route path="/admin/exhibitors/claims" element={<AdminExhibitorClaims />} />
             <Route path="/admin/exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />
               <Route path="/auth" element={<Auth />} />
