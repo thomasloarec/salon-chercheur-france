@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import EventCard from '@/components/EventCard';
 import type { Event } from '@/types/event';
+import { regionSlugFromPostal } from '@/lib/postalToRegion';
 
 const RegionalEvents = () => {
   const navigate = useNavigate();
@@ -14,10 +15,7 @@ const RegionalEvents = () => {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
-      // Départements d'Île-de-France: 75, 77, 78, 91, 92, 93, 94, 95
-      const idfDepartments = ['75', '77', '78', '91', '92', '93', '94', '95'];
-      
-      // Fetch all visible B2B events
+      // Fetch all visible B2B upcoming events (same logic as /events page)
       const { data, error } = await supabase
         .from('events')
         .select('*')
@@ -28,10 +26,10 @@ const RegionalEvents = () => {
 
       if (error) throw error;
       
-      // Filter events by Île-de-France postal codes (starts with 75, 77, 78, 91, 92, 93, 94, 95)
+      // Filter by Île-de-France region using the same logic as /events page
       const idfEvents = (data || []).filter(event => {
-        const postalCode = event.code_postal?.substring(0, 2);
-        return postalCode && idfDepartments.includes(postalCode);
+        const regionSlug = regionSlugFromPostal(event.code_postal);
+        return regionSlug === 'ile-de-france';
       }).slice(0, 8);
       
       return idfEvents as Event[];
