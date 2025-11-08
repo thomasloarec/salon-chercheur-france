@@ -132,7 +132,7 @@ export default function AddNoveltyButton({
                 className={className}
               >
                 <Lock className="h-4 w-4 mr-2" />
-                Ajouter ma nouveauté
+                Exposant ? Ajouter votre nouveauté
               </Button>
             </div>
           </TooltipTrigger>
@@ -159,7 +159,7 @@ export default function AddNoveltyButton({
         className={className}
       >
         <Plus className="h-4 w-4 mr-2" />
-        {isChecking ? 'Vérification...' : 'Ajouter ma nouveauté'}
+        {isChecking ? 'Vérification...' : 'Exposant ? Ajouter votre nouveauté'}
       </Button>
 
       <AddNoveltyStepper
