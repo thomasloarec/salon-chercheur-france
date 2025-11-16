@@ -869,42 +869,112 @@ export type Database = {
           company: string | null
           created_at: string
           email: string
+          event_id: string | null
+          exhibitor_id: string | null
           first_name: string
           id: string
           last_name: string
+          lead_company: string | null
+          lead_email: string | null
+          lead_name: string | null
+          lead_phone: string | null
+          lead_position: string | null
           lead_type: string
+          message: string | null
           notes: string | null
           novelty_id: string
           phone: string | null
+          rdv_date: string | null
           role: string | null
+          stand_info: string | null
+          status: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           company?: string | null
           created_at?: string
           email: string
+          event_id?: string | null
+          exhibitor_id?: string | null
           first_name: string
           id?: string
           last_name: string
+          lead_company?: string | null
+          lead_email?: string | null
+          lead_name?: string | null
+          lead_phone?: string | null
+          lead_position?: string | null
           lead_type: string
+          message?: string | null
           notes?: string | null
           novelty_id: string
           phone?: string | null
+          rdv_date?: string | null
           role?: string | null
+          stand_info?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           company?: string | null
           created_at?: string
           email?: string
+          event_id?: string | null
+          exhibitor_id?: string | null
           first_name?: string
           id?: string
           last_name?: string
+          lead_company?: string | null
+          lead_email?: string | null
+          lead_name?: string | null
+          lead_phone?: string | null
+          lead_position?: string | null
           lead_type?: string
+          message?: string | null
           notes?: string | null
           novelty_id?: string
           phone?: string | null
+          rdv_date?: string | null
           role?: string | null
+          stand_info?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
           {
             foreignKeyName: "leads_novelty_id_fkey"
             columns: ["novelty_id"]
@@ -951,6 +1021,126 @@ export type Database = {
             columns: ["sector_id"]
             isOneToOne: false
             referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          actor_avatar_url: string | null
+          actor_company: string | null
+          actor_email: string | null
+          actor_name: string | null
+          actor_user_id: string | null
+          category: string
+          comment_id: string | null
+          created_at: string | null
+          event_id: string | null
+          exhibitor_id: string | null
+          group_count: number | null
+          group_key: string | null
+          icon: string | null
+          id: string
+          lead_id: string | null
+          link_url: string | null
+          message: string
+          metadata: Json | null
+          novelty_id: string | null
+          read: boolean | null
+          read_at: string | null
+          title: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_avatar_url?: string | null
+          actor_company?: string | null
+          actor_email?: string | null
+          actor_name?: string | null
+          actor_user_id?: string | null
+          category: string
+          comment_id?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          exhibitor_id?: string | null
+          group_count?: number | null
+          group_key?: string | null
+          icon?: string | null
+          id?: string
+          lead_id?: string | null
+          link_url?: string | null
+          message: string
+          metadata?: Json | null
+          novelty_id?: string | null
+          read?: boolean | null
+          read_at?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_avatar_url?: string | null
+          actor_company?: string | null
+          actor_email?: string | null
+          actor_name?: string | null
+          actor_user_id?: string | null
+          category?: string
+          comment_id?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          exhibitor_id?: string | null
+          group_count?: number | null
+          group_key?: string | null
+          icon?: string | null
+          id?: string
+          lead_id?: string | null
+          link_url?: string | null
+          message?: string
+          metadata?: Json | null
+          novelty_id?: string | null
+          read?: boolean | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "notifications_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
             referencedColumns: ["id"]
           },
         ]
@@ -1903,6 +2093,7 @@ export type Database = {
       }
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
       cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
+      count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
       delete_user_account: { Args: never; Returns: Json }
       export_user_data: { Args: never; Returns: Json }
       generate_event_slug: {
