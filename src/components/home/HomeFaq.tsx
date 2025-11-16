@@ -8,11 +8,11 @@ const HomeFaq = () => {
     },
     {
       question: 'Qui peut publier une Nouveauté ?',
-      answer: 'Tout exposant inscrit à un salon professionnel peut publier une nouveauté. Il suffit de créer un compte gratuit et de renseigner votre participation à un événement. Vous pouvez publier 1 nouveauté gratuitement par salon, puis <a href="/premium" class="text-[#FF7A00] hover:underline">passer en Premium</a> pour publier plus de nouveautés et recevoir des leads en illimité.'
+      answer: 'Tout exposant inscrit à un salon professionnel peut publier une nouveauté. Il suffit de créer un compte gratuit et de renseigner votre participation à un événement. Vous pouvez publier 1 nouveauté gratuitement par salon, puis <a href="/exposants" class="text-[#FF7A00] hover:underline">passer en Premium</a> pour publier plus de nouveautés et recevoir des leads en illimité.'
     },
     {
       question: 'Comment fonctionnent les leads ?',
-      answer: 'Chaque téléchargement de brochure ou demande de RDV génère un lead que vous pouvez consulter dans votre tableau de bord exposant. En version gratuite, vous recevez jusqu\'à 3 leads par salon (les coordonnées des 3 premiers contacts). Au-delà, <a href="/premium" class="text-[#FF7A00] hover:underline">passez en Premium</a> (99€ HT/salon) pour recevoir tous les leads sans limitation.'
+      answer: 'Chaque téléchargement de brochure ou demande de RDV génère un lead que vous pouvez consulter dans votre tableau de bord exposant. En version gratuite, vous recevez jusqu\'à 3 leads par salon (les coordonnées des 3 premiers contacts). Au-delà, <a href="/exposants" class="text-[#FF7A00] hover:underline">passez en Premium</a> (99€ HT/salon) pour recevoir tous les leads sans limitation.'
     },
     {
       question: 'Faut-il créer un compte pour consulter les nouveautés ?',

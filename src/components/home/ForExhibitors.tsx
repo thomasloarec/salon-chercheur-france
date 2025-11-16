@@ -119,7 +119,7 @@ const ForExhibitors = () => {
             </div>
 
             <Button 
-              onClick={() => navigate('/premium')}
+              onClick={() => navigate('/exposants')}
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-6"
             >
               Passer en Premium

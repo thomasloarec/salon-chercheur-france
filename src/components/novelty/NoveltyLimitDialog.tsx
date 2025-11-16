@@ -29,7 +29,7 @@ export function NoveltyLimitDialog({
   const navigate = useNavigate();
 
   const handleUpgrade = () => {
-    window.open('/premium', '_blank');
+    window.open('/exposants', '_blank');
   };
 
   return (
