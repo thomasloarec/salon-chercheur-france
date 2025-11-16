@@ -25,6 +25,7 @@ import LegacyHubspotApiCallback from '@/pages/LegacyHubspotApiCallback';
 import ScrapingTest from '@/pages/ScrapingTest';
 import Agenda from '@/pages/Agenda';
 import Nouveautes from '@/pages/Nouveautes';
+import Notifications from '@/pages/Notifications';
 import Exposants from '@/pages/Exposants';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
@@ -58,6 +59,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/agenda" element={<Agenda />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/cgu" element={<CGU />} />
               <Route path="/mentions-legales" element={<MentionsLegales />} />
               <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
