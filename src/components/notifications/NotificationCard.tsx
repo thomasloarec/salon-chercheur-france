@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
 import { useNavigate } from "react-router-dom"
@@ -21,53 +22,45 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
   }
   
   return (
-    <div
+    <div 
       onClick={handleClick}
       className={cn(
-        "flex items-start gap-3 p-4 rounded-lg cursor-pointer hover:bg-accent transition-colors border",
-        !notification.read ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900" : "bg-card border-border"
+        "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50 relative",
+        !notification.read ? "bg-primary/5 border-primary/20" : "bg-background"
       )}
     >
-      {/* Avatar émetteur ou icône système */}
-      <Avatar className="h-10 w-10 flex-shrink-0">
-        {notification.actor_avatar_url ? (
-          <AvatarImage src={notification.actor_avatar_url} alt={notification.actor_name || ''} />
-        ) : (
-          <AvatarFallback className="bg-primary/10 text-primary">
-            {notification.actor_name?.[0] || notification.icon || '🔔'}
-          </AvatarFallback>
-        )}
+      {!notification.read && (
+        <div className="absolute top-2 right-2">
+          <Badge variant="default" className="text-xs">Nouveau</Badge>
+        </div>
+      )}
+      
+      <Avatar className="h-10 w-10">
+        <AvatarImage src={notification.actor_avatar_url || undefined} />
+        <AvatarFallback>{notification.actor_name?.charAt(0) || '?'}</AvatarFallback>
       </Avatar>
       
-      {/* Contenu */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 space-y-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            <p className="text-sm text-foreground">
-              {notification.actor_name && (
-                <span className="font-semibold">{notification.actor_name}</span>
-              )}
-              {notification.actor_name && ' '}
-              <span>{notification.message}</span>
-            </p>
+          <div>
+            <p className="font-medium text-sm">{notification.actor_name}</p>
+            {notification.actor_company && (
+              <p className="text-xs text-muted-foreground">{notification.actor_company}</p>
+            )}
           </div>
           <span className="text-xs text-muted-foreground whitespace-nowrap">
             {formatDistanceToNow(new Date(notification.created_at), { 
-              addSuffix: true, 
+              addSuffix: true,
               locale: fr 
             })}
           </span>
         </div>
         
-        {/* Icône type notification et badge non lu */}
-        <div className="flex items-center gap-2 mt-1">
-          {notification.icon && (
-            <span className="text-base">{notification.icon}</span>
-          )}
-          {!notification.read && (
-            <div className="h-2 w-2 rounded-full bg-blue-500" />
-          )}
-        </div>
+        <p className="text-sm text-foreground">{notification.message}</p>
+        
+        {notification.link_url && (
+          <p className="text-xs text-primary">Voir plus →</p>
+        )}
       </div>
     </div>
   )
