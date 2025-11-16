@@ -30,30 +30,22 @@ export interface Notification {
   updated_at: string
 }
 
-export const useNotifications = (filter?: 'all' | 'unread' | string) => {
+export const useNotifications = (limit?: number) => {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   
   // Fetch notifications
   const { data: notifications, isLoading } = useQuery({
-    queryKey: ['notifications', user?.id, filter],
+    queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user) return []
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(50)
       
-      if (filter === 'unread') {
-        query = query.eq('read', false)
-      } else if (filter && filter !== 'all') {
-        query = query.eq('category', filter)
-      }
-      
-      const { data, error } = await query
       if (error) throw error
       return data as Notification[]
     },
@@ -116,11 +108,33 @@ export const useNotifications = (filter?: 'all' | 'unread' | string) => {
     }
   })
   
+  // Mark all current notifications as viewed
+  const markAllAsViewed = async () => {
+    if (!user || !notifications) return
+
+    const unreadIds = notifications
+      .filter(n => !n.read)
+      .map(n => n.id)
+
+    if (unreadIds.length === 0) return
+
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .in('id', unreadIds)
+
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] })
+    }
+  }
+
   return {
     notifications,
     isLoading,
     unreadCount,
     markAsRead: markAsReadMutation.mutate,
-    markAllAsRead: markAllAsReadMutation.mutate
+    markAllAsRead: markAllAsReadMutation.mutate,
+    markAllAsViewed
   }
 }
