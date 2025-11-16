@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Bell, BellOff } from "lucide-react"
 import { useState } from "react"
+import MainLayout from "@/components/layout/MainLayout"
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<'all' | 'unread' | string>('all')
@@ -26,7 +27,8 @@ export default function NotificationsPage() {
   )
   
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
+    <MainLayout title="Notifications">
+      <div className="container mx-auto py-8 max-w-4xl">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <Bell className="h-8 w-8 text-primary" />
@@ -154,6 +156,7 @@ export default function NotificationsPage() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </MainLayout>
   )
 }
