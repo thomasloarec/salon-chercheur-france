@@ -95,7 +95,7 @@ export default function Exposants() {
               </div>
               
               <h2 className="text-3xl font-bold leading-tight">
-                Pourquoi 80% des exposants repartent déçus ?
+                Pourquoi 80% des exposants repartent des salons déçus ?
               </h2>
 
               <div className="space-y-4">
@@ -136,7 +136,7 @@ export default function Exposants() {
               <div className="space-y-4">
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Visibilité maximale :</strong> Vos nouveautés apparaissent en première page
+                    <strong className="text-foreground">Visibilité maximale :</strong> Vos nouveautés sont visibles par tous les futurs visiteurs du salon.
                   </p>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
@@ -493,7 +493,7 @@ export default function Exposants() {
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 Le Premium débloque toutes les fonctionnalités pour un événement spécifique. 
-                Vous pouvez publier autant de nouveautés que vous le souhaitez, collecter tous les leads 
+                Vous pouvez publier jusqu'à 5 nouveautés, collecter tous les leads 
                 sans limitation, et exporter vos données au format CSV pour les intégrer à votre CRM.
               </AccordionContent>
             </AccordionItem>
@@ -527,8 +527,8 @@ export default function Exposants() {
               <AccordionContent className="text-muted-foreground">
                 Le nombre de leads dépend de plusieurs facteurs : la qualité de vos nouveautés, 
                 l'attractivité de votre offre, et la taille de l'événement. Nos exposants Premium 
-                génèrent en moyenne entre 20 et 80 leads qualifiés par salon, avec des pics à plus 
-                de 150 pour les innovations les plus remarquables.
+                génèrent un traffic lors du salon et un nombre de leads toujours plus élevés que 
+                les exposants qui n'utilisent pas Lotexpo.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
