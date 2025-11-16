@@ -380,7 +380,7 @@ export default function Step1ExhibitorAndUser({
                   </p>
                   <p className="text-sm mt-2">
                     <a 
-                      href="/premium" 
+                      href="/exposants" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="underline font-semibold hover:text-destructive-foreground/80 transition-colors"
