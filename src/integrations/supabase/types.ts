@@ -284,6 +284,13 @@ export type Database = {
             referencedColumns: ["id_event"]
           },
           {
+            foreignKeyName: "event_sectors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id_event"]
+          },
+          {
             foreignKeyName: "event_sectors_sector_id_fkey"
             columns: ["sector_id"]
             isOneToOne: false
@@ -2022,12 +2029,43 @@ export type Database = {
     Views: {
       events_geo: {
         Row: {
+          affluence: string | null
+          airtable_id: string | null
           code_postal: string | null
+          commune_id: number | null
+          created_at: string | null
+          date_debut: string | null
+          date_fin: string | null
           dep_code: string | null
+          description_event: string | null
           id: string | null
+          id_event: string | null
+          is_b2b: boolean | null
+          location: string | null
+          nom_event: string | null
+          nom_lieu: string | null
+          pays: string | null
           region_code: string | null
+          rue: string | null
+          secteur: Json | null
+          slug: string | null
+          status_event: string | null
+          tarif: string | null
+          type_event: string | null
+          updated_at: string | null
+          url_image: string | null
+          url_site_officiel: string | null
+          ville: string | null
+          visible: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "communes_dep_code_fkey"
+            columns: ["dep_code"]
+            isOneToOne: false
+            referencedRelation: "departements"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "departements_region_code_fkey"
             columns: ["region_code"]
