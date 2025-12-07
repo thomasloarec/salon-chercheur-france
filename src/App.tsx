@@ -7,8 +7,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import SiteGuard from '@/components/auth/SiteGuard';
-import Index from '@/pages/Index';
 import Events from '@/pages/Events';
+import HowItWorks from '@/pages/HowItWorks';
 import EventPage from '@/pages/EventPage';
 import Favorites from '@/pages/Favorites';
 import Profile from '@/pages/Profile';
@@ -43,8 +43,8 @@ function App() {
             <ScrollToTop />
             <div className="App">
               <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/events" element={<Events />} />
+              <Route path="/" element={<Events />} />
+              <Route path="/comment-ca-marche" element={<HowItWorks />} />
               <Route path="/events/:slug" element={<EventPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
             <Route path="/exposants" element={<Exposants />} />
