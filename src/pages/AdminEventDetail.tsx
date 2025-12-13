@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Navigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { convertSecteurToString } from '@/utils/sectorUtils';
@@ -50,12 +51,11 @@ const transformEventData = (data: any, source: 'events' | 'staging_events_import
 const AdminEventDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Move all hooks to the top, before any conditional logic
-  const isAdmin = user?.email === 'admin@lotexpo.com';
   
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['admin-event-detail', id],
@@ -91,7 +91,7 @@ const AdminEventDetail = () => {
   });
 
   // Now handle conditional rendering after all hooks are called
-  if (loading) {
+  if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

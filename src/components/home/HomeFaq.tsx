@@ -1,4 +1,5 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import DOMPurify from 'dompurify';
 
 const HomeFaq = () => {
   const faqs = [
@@ -46,7 +47,7 @@ const HomeFaq = () => {
                 {faq.question}
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground leading-relaxed">
-                <div dangerouslySetInnerHTML={{ __html: faq.answer }} />
+                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(faq.answer, { ADD_TAGS: ['a'], ADD_ATTR: ['href', 'class', 'target'] }) }} />
               </AccordionContent>
             </AccordionItem>
           ))}

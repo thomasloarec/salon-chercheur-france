@@ -10,6 +10,7 @@ import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import { getEventTypeLabel } from '@/constants/eventTypes';
 import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 import type { Event } from '@/types/event';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { EventSectors } from '@/components/ui/event-sectors';
@@ -23,7 +24,7 @@ interface EventPageHeaderProps {
 
 export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const { user } = useAuth();
-  const isAdmin = user?.email === 'admin@lotexpo.com';
+  const { isAdmin } = useIsAdmin();
   const { data: isFavorite = false } = useIsFavorite(event.id);
   const toggleFavorite = useToggleFavorite();
   const [showFullDescription, setShowFullDescription] = useState(false);
