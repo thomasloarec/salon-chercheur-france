@@ -64,3 +64,6 @@ verify_jwt = true
 
 [functions.premium-lead-submit]
 verify_jwt = false
+
+[functions.site-unlock]
+verify_jwt = false
