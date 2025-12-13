@@ -5,16 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Menu, X, Calendar, Search, Users, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import UserMenu from './UserMenu';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, session } = useAuth();
+  const { isAdmin } = useIsAdmin();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
-  // Check if current user is admin
-  const isAdmin = user?.email === 'admin@salonspro.com';
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
