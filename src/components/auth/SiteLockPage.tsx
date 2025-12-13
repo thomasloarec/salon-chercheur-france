@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SiteLockPageProps {
-  onUnlock: (password: string) => boolean;
+  onUnlock: (password: string) => Promise<boolean>;
 }
 
 const SiteLockPage = ({ onUnlock }: SiteLockPageProps) => {
@@ -13,22 +13,24 @@ const SiteLockPage = ({ onUnlock }: SiteLockPageProps) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate a small delay for better UX
-    setTimeout(() => {
-      const isValid = onUnlock(password);
+    try {
+      const isValid = await onUnlock(password);
       
       if (!isValid) {
         setError('Mot de passe incorrect. Veuillez réessayer.');
         setPassword('');
       }
-      
+    } catch (err) {
+      setError('Une erreur est survenue. Veuillez réessayer.');
+      setPassword('');
+    } finally {
       setIsLoading(false);
-    }, 300);
+    }
   };
 
   return (

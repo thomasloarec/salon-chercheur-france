@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SiteLockPage from './SiteLockPage';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SiteGuardProps {
   children: React.ReactNode;
@@ -26,16 +27,29 @@ const SiteGuard = ({ children }: SiteGuardProps) => {
     setIsChecking(false);
   }, [isSiteLockEnabled]);
 
-  const handleUnlock = (password: string): boolean => {
-    const correctPassword = import.meta.env.VITE_SITE_PASSWORD;
-    
-    if (password === correctPassword) {
-      sessionStorage.setItem('site_unlocked', 'true');
-      setIsUnlocked(true);
-      return true;
+  const handleUnlock = async (password: string): Promise<boolean> => {
+    try {
+      // Server-side password validation with rate limiting
+      const { data, error } = await supabase.functions.invoke('site-unlock', {
+        body: { password }
+      });
+
+      if (error) {
+        console.error('Site unlock error:', error);
+        return false;
+      }
+
+      if (data?.success) {
+        sessionStorage.setItem('site_unlocked', 'true');
+        setIsUnlocked(true);
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('Site unlock failed:', err);
+      return false;
     }
-    
-    return false;
   };
 
   // Show loading state while checking
