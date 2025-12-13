@@ -1,21 +1,31 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { z } from 'https://esm.sh/zod@3.23.8'
 import { handleCors } from '../_shared/cors.ts'
 
-interface PremiumLeadRequest {
-  firstName?: string
-  lastName?: string
-  email?: string
-  phone?: string
-  company?: string
-  eventId?: string
-  eventName?: string
-  eventDate?: string
-  eventSlug?: string
-  topic?: string // 'lead_capture_beta' | 'lead_capture_waitlist' | default (regular premium lead)
-  exhibitorId?: string
-  requestedByUserId?: string
-  context?: string
-}
+// Zod schemas for input validation
+const betaRequestSchema = z.object({
+  topic: z.enum(['lead_capture_beta', 'lead_capture_waitlist']),
+  exhibitorId: z.string().uuid().optional(),
+  eventId: z.string().uuid().optional(),
+  eventName: z.string().max(200).optional(),
+  eventDate: z.string().optional(),
+  eventSlug: z.string().max(200).optional(),
+  requestedByUserId: z.string().uuid().optional(),
+  context: z.string().max(100).optional(),
+})
+
+const premiumLeadSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, 'Last name is required').max(100),
+  email: z.string().email('Invalid email address').max(255),
+  phone: z.string().min(1, 'Phone is required').max(50),
+  company: z.string().min(1, 'Company is required').max(200),
+  eventId: z.string().uuid().optional(),
+  eventName: z.string().max(200).optional(),
+  eventDate: z.string().optional(),
+  eventSlug: z.string().max(200).optional(),
+  topic: z.string().optional(),
+})
 
 serve(async (req) => {
   const corsResult = handleCors(req);
@@ -49,16 +59,27 @@ serve(async (req) => {
       )
     }
 
-    const body: PremiumLeadRequest = await req.json()
+    const rawBody = await req.json()
     console.log('📨 Request body:', {
-      email: body.email,
-      company: body.company,
-      eventName: body.eventName,
-      topic: body.topic
+      email: rawBody.email,
+      company: rawBody.company,
+      eventName: rawBody.eventName,
+      topic: rawBody.topic
     })
 
     // Handle beta requests (lead capture feature) - map to existing Airtable fields
-    if (body.topic === 'lead_capture_beta' || body.topic === 'lead_capture_waitlist') {
+    if (rawBody.topic === 'lead_capture_beta' || rawBody.topic === 'lead_capture_waitlist') {
+      // Validate beta request
+      const parsed = betaRequestSchema.safeParse(rawBody)
+      if (!parsed.success) {
+        console.error('❌ Validation error:', parsed.error.flatten())
+        return new Response(
+          JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten() }),
+          { status: 422, headers: { ...corsResult.headers, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      const body = parsed.data
       const currentDate = new Date().toISOString().split('T')[0]
       const requestType = body.topic === 'lead_capture_beta' ? 'Capture sur salon (Premium)' : 'Capture sur salon (Waitlist)'
       
@@ -116,16 +137,17 @@ serve(async (req) => {
       )
     }
 
-    // Regular premium lead (original behavior)
-    if (!body.firstName || !body.lastName || !body.email || !body.phone || !body.company) {
+    // Regular premium lead - validate with Zod schema
+    const parsed = premiumLeadSchema.safeParse(rawBody)
+    if (!parsed.success) {
+      console.error('❌ Validation error:', parsed.error.flatten())
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        {
-          status: 400,
-          headers: { ...corsResult.headers, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten() }),
+        { status: 422, headers: { ...corsResult.headers, 'Content-Type': 'application/json' } }
       )
     }
+    
+    const body = parsed.data
 
     // Format date for Airtable (date only without time)
     const currentDate = new Date().toISOString().split('T')[0]
