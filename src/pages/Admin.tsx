@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Navigate } from 'react-router-dom';
 import AirtableValidationTest from '@/components/admin/AirtableValidationTest';
 import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
@@ -25,9 +26,10 @@ import {
 } from '@/components/ui/accordion';
 
 const Admin = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
 
-  if (loading) {
+  if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -37,8 +39,6 @@ const Admin = () => {
       </div>
     );
   }
-
-  const isAdmin = user?.email === 'admin@salonspro.com';
 
   if (!user || !isAdmin) {
     return <Navigate to="/" replace />;

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
@@ -16,6 +17,7 @@ const EventPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const [searchParams] = useSearchParams();
   const isPreview = searchParams.get('preview') === '1';
   const invalidateEvents = useInvalidateEvents();
@@ -24,7 +26,6 @@ const EventPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = user?.email === 'admin@lotexpo.com';
 
   const fetchEvent = async () => {
     if (!slug) {

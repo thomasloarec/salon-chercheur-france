@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { EventImage } from '@/components/ui/event-image';
-import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 import { cn } from '@/lib/utils';
 import FavoriteButton from './FavoriteButton';
@@ -34,8 +34,8 @@ function formatDateRange(start: string, end: string) {
 }
 
 const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: EventCardProps) => {
-  const { user } = useAuth();
-  const isAdmin = user?.email === 'admin@salonspro.com';
+  const { isAdmin } = useIsAdmin();
+
 
   // Use database-generated slug (tous les événements en ont un maintenant)
   const eventSlug = event.slug;

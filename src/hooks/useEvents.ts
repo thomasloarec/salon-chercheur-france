@@ -2,12 +2,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Event, SearchFilters } from '@/types/event';
-import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { getMonthRange } from '@/utils/dateUtils';
 
 export const useEvents = (filters?: SearchFilters) => {
-  const { user } = useAuth();
-  const isAdmin = user?.email === 'admin@lotexpo.com';
+  const { isAdmin } = useIsAdmin();
+
 
   return useQuery({
     queryKey: ['events', 

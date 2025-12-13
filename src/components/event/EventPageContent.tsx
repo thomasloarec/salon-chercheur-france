@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -30,14 +30,13 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   onEventUpdated,
   onEventDeleted
 }) => {
-  const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
   
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
 
-  const isAdmin = user?.email === 'admin@salonspro.com';
 
   // Mini debug pour admin : compter les participations
   useEffect(() => {

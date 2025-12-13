@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { convertSecteurToString } from '@/utils/sectorUtils';
 import type { Event, SearchFilters } from '@/types/event';
-import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 interface SearchEventsResult {
   events: Event[];
@@ -11,8 +11,8 @@ interface SearchEventsResult {
 }
 
 export const useEventsWithRPC = (filters?: SearchFilters, page: number = 1, pageSize: number = 20) => {
-  const { user } = useAuth();
-  const isAdmin = user?.email === 'admin@lotexpo.com';
+  const { isAdmin } = useIsAdmin();
+
 
   return useQuery({
     queryKey: ['events-rpc', 
