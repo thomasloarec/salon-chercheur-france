@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
 import { CalendarDays, ExternalLink, EyeOff, Calendar, Building, Users, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -87,8 +88,8 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             sectorClassName="text-sm px-3 py-1"
           />
 
-          {/* Titre principal */}
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight text-left mb-2">
+          {/* ✅ AMÉLIORATION : Titre optimisé mobile */}
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight text-left mb-2 break-words">
             {event.nom_event}
           </h1>
 
@@ -156,6 +157,20 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             >
               {showFullDescription ? 'Voir moins' : 'Voir plus...'}
             </Button>
+
+            {/* ✅ AJOUT : Lien interne contextuel pour le maillage SEO */}
+            {event.secteur && Array.isArray(event.secteur) && event.secteur.length > 0 && (
+              <p className="text-sm text-muted-foreground mt-3">
+                Découvrez aussi d'autres{' '}
+                <Link
+                  to={`/events?sectors=${encodeURIComponent(event.secteur[0])}`}
+                  className="text-primary hover:underline"
+                >
+                  événements {event.secteur[0]}
+                </Link>
+                {' '}en France.
+              </p>
+            )}
           </div>
 
           {/* Conteneur pour le séparateur et les actions afin de limiter la largeur */}
@@ -207,12 +222,16 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           </div>
         </div>
 
-        {/* Image de l'événement */}
+        {/* ✅ AMÉLIORATION : Image optimisée avec srcset pour SEO */}
         {event.url_image && (
           <img
             src={event.url_image}
-            alt={`Affiche de ${event.nom_event}`}
+            srcSet={`${event.url_image} 1x, ${event.url_image} 2x`}
+            sizes="(max-width: 640px) 112px, (max-width: 1024px) 160px, 192px"
+            alt={`Affiche du salon ${event.nom_event}${event.ville ? ` à ${event.ville}` : ''}${event.date_debut ? ` ${new Date(event.date_debut).getFullYear()}` : ''}`}
             loading="lazy"
+            width="192"
+            height="auto"
             className="w-28 sm:w-40 lg:w-48 h-auto object-contain flex-shrink-0 rounded-md shadow-lg"
           />
         )}

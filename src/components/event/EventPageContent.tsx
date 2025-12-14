@@ -6,6 +6,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
+import { Breadcrumbs } from '@/components/event/Breadcrumbs';
+import { EventWhyVisit } from '@/components/event/EventWhyVisit';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
@@ -125,6 +127,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
             
+            {/* ✅ AJOUT : Breadcrumbs SEO avec Schema.org */}
+            <Breadcrumbs event={event} />
+
             {/* Admin Menu */}
             <section className="flex items-center justify-between">
               <div></div>
@@ -139,6 +144,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </section>
             
             <EventPageHeader event={event} />
+
+            {/* ✅ AJOUT : Bloc "Pourquoi visiter" pour contenu SEO enrichi */}
+            <EventWhyVisit event={event} />
             
             <div className="grid grid-cols-12 gap-6">
               {/* Colonne gauche - Nouveautés */}
