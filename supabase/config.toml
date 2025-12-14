@@ -67,3 +67,6 @@ verify_jwt = false
 
 [functions.site-unlock]
 verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false

@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { Breadcrumbs } from '@/components/event/Breadcrumbs';
 import { EventWhyVisit } from '@/components/event/EventWhyVisit';
+import { RelatedEvents } from '@/components/event/RelatedEvents';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
@@ -159,6 +160,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 <EventAboutSidebar event={event} />
               </aside>
             </div>
+
+            {/* ✅ Événements similaires pour le maillage interne SEO */}
+            <RelatedEvents event={event} limit={4} />
 
             {/* ✅ Bloc "Pourquoi visiter" en bas de page */}
             <EventWhyVisit event={event} />

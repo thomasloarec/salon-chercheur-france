@@ -2,5 +2,8 @@
 # Fallback redirect for legacy OAuth URL
 /api/oauth/hubspot/callback /oauth/hubspot/callback 302
 
+# SEO: Dynamic sitemap.xml served by edge function
+/sitemap.xml https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/sitemap 200
+
 # SPA fallback - must be last
 /* /index.html 200
