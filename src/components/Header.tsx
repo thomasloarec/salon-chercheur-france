@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import UserMenu from './UserMenu';
@@ -61,6 +61,17 @@ const Header = () => {
             >
               <Users className="h-4 w-4" />
               <span>Exposants</span>
+            </NavLink>
+            <NavLink 
+              to="/comment-ca-marche" 
+              className={({ isActive }) => 
+                `text-gray-700 hover:text-primary transition-colors flex items-center space-x-1 ${
+                  isActive ? 'text-primary font-medium' : ''
+                }`
+              }
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span>Comment ça marche</span>
             </NavLink>
             {session && isAdmin && (
               <NavLink
@@ -133,6 +144,17 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Exposants
+              </NavLink>
+              <NavLink
+                to="/comment-ca-marche"
+                className={({ isActive }) => 
+                  `block px-3 py-2 text-gray-700 hover:text-primary transition-colors ${
+                    isActive ? 'text-primary font-medium' : ''
+                  }`
+                }
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Comment ça marche
               </NavLink>
               {session && isAdmin && (
                 <NavLink
