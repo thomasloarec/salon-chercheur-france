@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
-import { Breadcrumbs } from '@/components/event/Breadcrumbs';
+
 import { EventWhyVisit } from '@/components/event/EventWhyVisit';
 import { RelatedEvents } from '@/components/event/RelatedEvents';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
@@ -128,8 +128,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
             
-            {/* ✅ AJOUT : Breadcrumbs SEO avec Schema.org */}
-            <Breadcrumbs event={event} />
 
             {/* Admin Menu */}
             <section className="flex items-center justify-between">
