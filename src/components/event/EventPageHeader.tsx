@@ -88,21 +88,28 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           />
 
           {/* Titre principal */}
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight text-left mb-4">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight text-left mb-2">
             {event.nom_event}
           </h1>
+
+          {/* ✅ AJOUT : Ville visible sous le H1 pour le local SEO */}
+          {event.ville && (
+            <p className="text-base text-muted-foreground mb-4 flex items-center gap-1">
+              📍 {event.ville}{event.country && event.country !== 'France' ? `, ${event.country}` : ', France'}
+            </p>
+          )}
 
           {/* Toutes les infos sur une seule ligne */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base text-gray-600 mb-6">
             {/* Date */}
             <div className="flex items-center">
               <CalendarDays className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
-              <span>
+              <time dateTime={event.date_debut}>
                 {formatDate(event.date_debut)}
                 {event.date_debut !== event.date_fin && (
-                  <> - {formatDate(event.date_fin)}</>
+                  <> - <time dateTime={event.date_fin}>{formatDate(event.date_fin)}</time></>
                 )}
-              </span>
+              </time>
             </div>
 
             {/* Type */}

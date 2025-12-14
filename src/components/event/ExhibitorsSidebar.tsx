@@ -163,11 +163,12 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
 
   return (
     <>
-      <div className="sticky top-24 bg-white rounded-lg shadow-sm border p-6">
+      <aside className="sticky top-24 bg-white rounded-lg shadow-sm border p-6" aria-label="Liste des exposants">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-lg">
+          {/* ✅ AMÉLIORATION : H3 → H2 pour hiérarchie correcte */}
+          <h2 className="font-semibold text-lg">
             Exposants ({isLoading ? '...' : total})
-          </h3>
+          </h2>
         </div>
 
         {/* Search */}
@@ -293,7 +294,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
             </Button>
           </div>
         )}
-      </div>
+      </aside>
 
       {/* Modale liste complète */}
       <ExhibitorsModal
