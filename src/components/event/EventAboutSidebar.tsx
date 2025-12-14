@@ -22,8 +22,9 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
   };
 
   return (
-    <div className="rounded-xl border bg-card p-4 md:p-5 space-y-5">
-      <h3 className="font-semibold text-lg">À propos de l'événement</h3>
+    <aside className="rounded-xl border bg-card p-4 md:p-5 space-y-5" aria-label="Informations pratiques">
+      {/* ✅ AMÉLIORATION : H3 → H2 pour hiérarchie correcte */}
+      <h2 className="font-semibold text-lg">À propos de l'événement</h2>
 
       {/* Tarifs */}
       <div className="pt-4 border-t">
@@ -71,6 +72,6 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
           </div>
         )}
       </section>
-    </div>
+    </aside>
   );
 }
