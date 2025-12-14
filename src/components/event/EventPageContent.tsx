@@ -144,9 +144,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </section>
             
             <EventPageHeader event={event} />
-
-            {/* ✅ AJOUT : Bloc "Pourquoi visiter" pour contenu SEO enrichi */}
-            <EventWhyVisit event={event} />
             
             <div className="grid grid-cols-12 gap-6">
               {/* Colonne gauche - Nouveautés */}
@@ -162,6 +159,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 <EventAboutSidebar event={event} />
               </aside>
             </div>
+
+            {/* ✅ Bloc "Pourquoi visiter" en bas de page */}
+            <EventWhyVisit event={event} />
           </div>
         </main>
 
