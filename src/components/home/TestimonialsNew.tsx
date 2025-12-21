@@ -5,20 +5,17 @@ const TestimonialsNew = () => {
     {
       quote: "Je fais de la prospection sur les salons. Avec Lotexpo, je ne passe plus à côté des bons événements — je cible ceux qui créent vraiment des opportunités.",
       name: "Marc D.",
-      role: "Commercial",
-      image: "/placeholder.svg"
+      role: "Commercial"
     },
     {
       quote: "Je prépare ma veille à l'avance : je repère les nouveautés qui m'intéressent et je sais exactement quels stands voir en priorité.",
       name: "Sophie L.",
-      role: "Responsable Marketing & Veille",
-      image: "/placeholder.svg"
+      role: "Responsable Marketing & Veille"
     },
     {
       quote: "Je dois trouver des fournisseurs fiables rapidement. Les Nouveautés me montrent qui apporte vraiment de la valeur — je planifie un parcours efficace en 30 minutes.",
       name: "Thomas R.",
-      role: "Acheteur / Sourcing",
-      image: "/placeholder.svg"
+      role: "Acheteur / Sourcing"
     }
   ];
 
@@ -43,15 +40,7 @@ const TestimonialsNew = () => {
               <Quote className="h-12 w-12 text-accent/20 absolute top-6 right-6" />
               
               <div className="mb-6">
-                <div className="w-16 h-16 rounded-full bg-muted overflow-hidden mb-4">
-                  <img 
-                    src={testimonial.image}
-                    alt={testimonial.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                
-                <p className="text-foreground text-lg italic leading-relaxed mb-4">
+                <p className="text-foreground text-lg italic leading-relaxed">
                   "{testimonial.quote}"
                 </p>
               </div>
