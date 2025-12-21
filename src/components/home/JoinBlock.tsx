@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import tradeShowImage from '@/assets/trade-show-people.jpg';
 
 const JoinBlock = () => {
   const navigate = useNavigate();
@@ -13,8 +14,8 @@ const JoinBlock = () => {
           <div className="relative">
             <div className="rounded-3xl overflow-hidden shadow-2xl">
               <img 
-                src="/placeholder.svg" 
-                alt="Rejoindre Lotexpo"
+                src={tradeShowImage} 
+                alt="Visiteurs à un salon professionnel"
                 className="w-full h-[400px] object-cover"
               />
             </div>
