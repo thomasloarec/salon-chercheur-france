@@ -38,11 +38,19 @@ async function syncToAirtable(email: string, sectorNames: string[]): Promise<voi
   const tableName = 'Table 1';
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`;
 
+  // Format current date as DD/MM/YYYY
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const formattedDate = `${day}/${month}/${year}`;
+
   // Airtable multi-select format: array of strings
   const requestBody = {
     fields: {
       'Email': email,
-      'Secteur': sectorNames // Array of strings for multi-select
+      'Secteur': sectorNames, // Array of strings for multi-select
+      'Date': formattedDate // Date d'inscription au format JJ/MM/AAAA
     }
   };
 
