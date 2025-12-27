@@ -14,26 +14,45 @@ interface SubscribeRequest {
 
 // Sync to Airtable Newsletter base
 async function syncToAirtable(email: string, sectorNames: string[]): Promise<void> {
-  const airtablePat = Deno.env.get('AIRTABLE_PAT');
+  // Use dedicated Newsletter PAT if available, fallback to general PAT
+  const airtablePat = Deno.env.get('AIRTABLE_NEWSLETTER_PAT') || Deno.env.get('AIRTABLE_PAT');
   const baseId = Deno.env.get('AIRTABLE_NEWSLETTER_BASE_ID');
   
-  if (!airtablePat || !baseId) {
-    console.warn('Airtable Newsletter credentials not configured, skipping sync');
-    return;
+  console.log('[Airtable Newsletter] Config check:', {
+    hasNewsletterPat: !!Deno.env.get('AIRTABLE_NEWSLETTER_PAT'),
+    hasGeneralPat: !!Deno.env.get('AIRTABLE_PAT'),
+    hasBaseId: !!baseId,
+    baseId: baseId || 'NOT SET'
+  });
+  
+  if (!airtablePat) {
+    console.error('[Airtable Newsletter] No PAT configured (neither AIRTABLE_NEWSLETTER_PAT nor AIRTABLE_PAT)');
+    throw new Error('Airtable PAT not configured');
+  }
+  
+  if (!baseId) {
+    console.error('[Airtable Newsletter] AIRTABLE_NEWSLETTER_BASE_ID not configured');
+    throw new Error('Airtable Newsletter Base ID not configured');
   }
 
   const tableName = 'Table 1';
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`;
 
   // Airtable multi-select format: array of strings
-  const record = {
+  const requestBody = {
     fields: {
       'Email': email,
-      'Secteur': sectorNames
+      'Secteur': sectorNames // Array of strings for multi-select
     }
   };
 
-  console.log('Syncing to Airtable Newsletter:', { email, sectors: sectorNames });
+  console.log('[Airtable Newsletter] Request details:', {
+    url,
+    method: 'POST',
+    email,
+    sectors: sectorNames,
+    bodyPreview: JSON.stringify(requestBody)
+  });
 
   const response = await fetch(url, {
     method: 'POST',
@@ -41,17 +60,24 @@ async function syncToAirtable(email: string, sectorNames: string[]): Promise<voi
       'Authorization': `Bearer ${airtablePat}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(record)
+    body: JSON.stringify(requestBody)
+  });
+
+  const responseText = await response.text();
+  
+  console.log('[Airtable Newsletter] Response:', {
+    status: response.status,
+    statusText: response.statusText,
+    body: responseText
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Airtable sync failed:', response.status, errorText);
-    throw new Error(`Airtable sync failed: ${response.status}`);
+    console.error('[Airtable Newsletter] FAILED:', response.status, responseText);
+    throw new Error(`Airtable sync failed: ${response.status} - ${responseText}`);
   }
 
-  const result = await response.json();
-  console.log('Airtable sync successful:', result.id);
+  const result = JSON.parse(responseText);
+  console.log('[Airtable Newsletter] SUCCESS - Record created:', result.id);
 }
 
 const handler = async (req: Request): Promise<Response> => {
