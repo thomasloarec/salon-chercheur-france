@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +10,48 @@ const corsHeaders = {
 interface SubscribeRequest {
   email: string;
   sectorIds: string[];
+}
+
+// Sync to Airtable Newsletter base
+async function syncToAirtable(email: string, sectorNames: string[]): Promise<void> {
+  const airtablePat = Deno.env.get('AIRTABLE_PAT');
+  const baseId = Deno.env.get('AIRTABLE_NEWSLETTER_BASE_ID');
+  
+  if (!airtablePat || !baseId) {
+    console.warn('Airtable Newsletter credentials not configured, skipping sync');
+    return;
+  }
+
+  const tableName = 'Table 1';
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`;
+
+  // Airtable multi-select format: array of strings
+  const record = {
+    fields: {
+      'Email': email,
+      'Secteur': sectorNames
+    }
+  };
+
+  console.log('Syncing to Airtable Newsletter:', { email, sectors: sectorNames });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${airtablePat}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(record)
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Airtable sync failed:', response.status, errorText);
+    throw new Error(`Airtable sync failed: ${response.status}`);
+  }
+
+  const result = await response.json();
+  console.log('Airtable sync successful:', result.id);
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -62,7 +103,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Newsletter subscription request:', { email, sectorIds });
 
-    // Utiliser UPSERT pour éviter les conflits de contrainte unique
+    // Récupérer les noms des secteurs pour Airtable
+    const { data: sectors } = await supabase
+      .from('sectors')
+      .select('id, name')
+      .in('id', sectorIds);
+
+    const sectorNames = sectors?.map(s => s.name) || [];
+    console.log('Sector names resolved:', sectorNames);
+
+    // 1. Sync to Airtable (source principale)
+    try {
+      await syncToAirtable(email, sectorNames);
+    } catch (airtableError) {
+      console.error('Airtable sync error (continuing with Supabase):', airtableError);
+    }
+
+    // 2. Also save to Supabase for backup/local queries
     const subscriptions = sectorIds.map(sectorId => ({
       email,
       sector_id: sectorId,
@@ -76,10 +133,11 @@ const handler = async (req: Request): Promise<Response> => {
       })
       .select();
 
-    if (upsertError) throw upsertError;
-    
-    console.log(`Upserted ${sectorIds.length} sector subscriptions for ${email}`);
-    const result = data;
+    if (upsertError) {
+      console.error('Supabase upsert error:', upsertError);
+    } else {
+      console.log(`Upserted ${sectorIds.length} sector subscriptions for ${email} in Supabase`);
+    }
 
     // Récupérer tous les abonnements de l'utilisateur
     const { data: allSubscriptions } = await supabase
@@ -91,7 +149,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true, 
         message: 'Abonnement confirmé ! Vous recevrez votre première newsletter début du mois prochain.',
-        data: result,
+        data: data,
         totalSubscriptions: allSubscriptions?.length || 0
       }),
       { 
