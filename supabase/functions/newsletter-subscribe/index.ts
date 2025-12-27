@@ -38,13 +38,13 @@ async function syncToAirtable(email: string, sectorNames: string[]): Promise<voi
   const tableName = 'Table 1';
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`;
 
-  // Format current date as DD/MM/YYYY
+  // Format current date as YYYY-MM-DD (ISO format required by Airtable date fields)
+  // Airtable will display it as DD/MM/YYYY based on your field settings
   const now = new Date();
-  const day = String(now.getDate()).padStart(2, '0');
-  const month = String(now.getMonth() + 1).padStart(2, '0');
   const year = now.getFullYear();
-  const formattedDate = `${day}/${month}/${year}`;
-
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const formattedDate = `${year}-${month}-${day}`;
   // Airtable multi-select format: array of strings
   const requestBody = {
     fields: {
