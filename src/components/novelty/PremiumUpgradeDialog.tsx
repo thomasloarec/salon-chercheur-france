@@ -43,7 +43,7 @@ export default function PremiumUpgradeDialog({
           id,
           title,
           event_id,
-          events (
+          events!novelties_event_id_fkey (
             id,
             nom_event,
             date_debut,
@@ -53,17 +53,42 @@ export default function PremiumUpgradeDialog({
         .eq('id', noveltyId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('PremiumUpgradeDialog: Failed to fetch novelty details', error);
+        throw error;
+      }
+      console.log('PremiumUpgradeDialog: Fetched novelty data', data);
       return data;
     },
     enabled: !!noveltyId && open,
   });
 
-  // Use props directly if noveltyData is not available
-  const eventId = noveltyData?.events?.id || propEventId;
-  const eventName = noveltyData?.events?.nom_event || propEventName;
-  const eventDate = noveltyData?.events?.date_debut || propEventDate;
-  const eventSlug = noveltyData?.events?.slug || propEventSlug;
+  // Fallback: récupérer les infos de l'événement si eventId est fourni mais pas les autres props
+  const needsEventFetch = !!propEventId && (!propEventName || !propEventDate || !propEventSlug) && !noveltyId;
+  const { data: eventData } = useQuery({
+    queryKey: ['event-details', propEventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, nom_event, date_debut, slug')
+        .eq('id', propEventId)
+        .single();
+      
+      if (error) {
+        console.error('PremiumUpgradeDialog: Failed to fetch event details', error);
+        throw error;
+      }
+      console.log('PremiumUpgradeDialog: Fetched event data', data);
+      return data;
+    },
+    enabled: needsEventFetch && open,
+  });
+
+  // Priority: noveltyData > eventData > props
+  const eventId = noveltyData?.events?.id || eventData?.id || propEventId;
+  const eventName = noveltyData?.events?.nom_event || eventData?.nom_event || propEventName;
+  const eventDate = noveltyData?.events?.date_debut || eventData?.date_debut || propEventDate;
+  const eventSlug = noveltyData?.events?.slug || eventData?.slug || propEventSlug;
 
   const handleContactSales = () => {
     onOpenChange(false);
