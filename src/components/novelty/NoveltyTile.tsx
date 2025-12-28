@@ -55,6 +55,14 @@ export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
   const { isLiked, toggleLike, isPending } = useNoveltyLike(novelty.id);
   const { data: likesCount, isLoading: likesLoading } = useNoveltyLikesCount(novelty.id);
 
+  // Sécurité : vérifier que exhibitors existe
+  const exhibitor = novelty.exhibitors ?? {
+    id: novelty.id,
+    name: 'Exposant inconnu',
+    slug: '',
+    logo_url: undefined
+  };
+
   const handleLikeClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -157,10 +165,10 @@ export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
           <div className="space-y-2">
             {/* Exposant avec logo */}
             <div className="flex items-center gap-2">
-              {novelty.exhibitors.logo_url ? (
+              {exhibitor.logo_url ? (
                 <img
-                  src={novelty.exhibitors.logo_url}
-                  alt={novelty.exhibitors.name}
+                  src={exhibitor.logo_url}
+                  alt={exhibitor.name}
                   className="w-6 h-6 rounded object-cover"
                 />
               ) : (
@@ -169,7 +177,7 @@ export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
                 </div>
               )}
               <span className="text-sm font-medium text-foreground truncate">
-                {novelty.exhibitors.name}
+                {exhibitor.name}
               </span>
             </div>
 
