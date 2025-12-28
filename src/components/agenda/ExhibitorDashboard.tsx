@@ -147,6 +147,8 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                             exhibitorId={novelty.exhibitors.id}
                             eventId={novelty.events.id}
                             eventName={novelty.events.nom_event}
+                            eventDate={novelty.events.date_debut}
+                            eventSlug={novelty.events.slug}
                           />
                         );
                       })()}

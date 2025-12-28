@@ -34,8 +34,9 @@ export default function PremiumUpgradeDialog({
   const [showLeadForm, setShowLeadForm] = React.useState(false);
 
   // Récupérer les infos de la nouveauté pour le formulaire (seulement si noveltyId est fourni)
+  // On garde staleTime: Infinity pour garder les données en cache même quand le dialog se ferme
   const { data: noveltyData } = useQuery({
-    queryKey: ['novelty-details', noveltyId],
+    queryKey: ['novelty-details-premium', noveltyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('novelties')
@@ -60,13 +61,14 @@ export default function PremiumUpgradeDialog({
       console.log('PremiumUpgradeDialog: Fetched novelty data', data);
       return data;
     },
-    enabled: !!noveltyId && open,
+    enabled: !!noveltyId,
+    staleTime: Infinity, // Keep data in cache
   });
 
   // Fallback: récupérer les infos de l'événement si eventId est fourni mais pas les autres props
   const needsEventFetch = !!propEventId && (!propEventName || !propEventDate || !propEventSlug) && !noveltyId;
   const { data: eventData } = useQuery({
-    queryKey: ['event-details', propEventId],
+    queryKey: ['event-details-premium', propEventId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
@@ -81,7 +83,8 @@ export default function PremiumUpgradeDialog({
       console.log('PremiumUpgradeDialog: Fetched event data', data);
       return data;
     },
-    enabled: needsEventFetch && open,
+    enabled: needsEventFetch,
+    staleTime: Infinity, // Keep data in cache
   });
 
   // Priority: noveltyData > eventData > props
@@ -89,6 +92,9 @@ export default function PremiumUpgradeDialog({
   const eventName = noveltyData?.events?.nom_event || eventData?.nom_event || propEventName;
   const eventDate = noveltyData?.events?.date_debut || eventData?.date_debut || propEventDate;
   const eventSlug = noveltyData?.events?.slug || eventData?.slug || propEventSlug;
+  
+  // Debug logging
+  console.log('PremiumUpgradeDialog: Event data resolved', { eventId, eventName, eventDate, eventSlug });
 
   const handleContactSales = () => {
     onOpenChange(false);
