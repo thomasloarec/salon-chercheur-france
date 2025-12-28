@@ -420,7 +420,9 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             description: exhibitorDescription,
             stand_info: exhibitorStandInfo,
             logo_url: logoUrl,
-            event_id: event.id
+            event_id: event.id,
+            // ✅ Ne pas créer la participation maintenant - elle sera créée quand la nouveauté sera publiée
+            defer_participation: true
           }
         });
         
