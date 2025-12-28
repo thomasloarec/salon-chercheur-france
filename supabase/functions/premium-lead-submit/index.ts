@@ -152,21 +152,29 @@ serve(async (req) => {
     // Format date for Airtable (date only without time)
     const currentDate = new Date().toISOString().split('T')[0]
     
+    // Build fields object - only include optional fields if they have valid values
+    const airtableFields: Record<string, string> = {
+      'Prénom': body.firstName,
+      'Nom': body.lastName,
+      'Email': body.email,
+      'Téléphone': body.phone,
+      'Entreprise': body.company,
+      'Date Demande': currentDate,
+      'Statut': 'En attente',
+      'Source': 'LotExpo - Page Premium',
+    };
+
+    // Only add optional text fields if they have values
+    if (body.eventName) airtableFields['Nom Événement'] = body.eventName;
+    if (body.eventSlug) airtableFields['Slug Événement'] = body.eventSlug;
+    if (body.eventId) airtableFields['ID Événement'] = body.eventId;
+    // Only add date field if it's a valid date string (not empty)
+    if (body.eventDate && body.eventDate.trim() !== '') {
+      airtableFields['Date Événement'] = body.eventDate;
+    }
+
     const airtableData = {
-      fields: {
-        'Prénom': body.firstName,
-        'Nom': body.lastName,
-        'Email': body.email,
-        'Téléphone': body.phone,
-        'Entreprise': body.company,
-        'Nom Événement': body.eventName || 'Non spécifié',
-        'Date Événement': body.eventDate || '',
-        'Slug Événement': body.eventSlug || '',
-        'ID Événement': body.eventId || '',
-        'Date Demande': currentDate,
-        'Statut': 'En attente',
-        'Source': 'LotExpo - Page Premium',
-      }
+      fields: airtableFields
     }
 
     const tableName = 'Leads Premium Nouveautés';
