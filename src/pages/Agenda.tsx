@@ -16,14 +16,24 @@ import { fr } from 'date-fns/locale';
 
 const Agenda = () => {
   const { user } = useAuth();
-  const { data: events = [], isLoading, error } = useFavoriteEvents();
+  const { data: allEvents = [], isLoading, error } = useFavoriteEvents();
   const { data: userExhibitors = [] } = useUserExhibitors();
   const { data: myNovelties = [], isLoading: noveltiesLoading } = useMyNovelties();
   const { data: likedNovelties = [] } = useLikedNovelties();
   const [activeRole, setActiveRole] = useState<'visitor' | 'exhibitor'>('visitor');
 
+  // Filter events: only upcoming or ongoing for visitor mode
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const upcomingOrOngoingEvents = allEvents.filter(event => {
+    const endDate = new Date(event.date_fin || event.date_debut);
+    endDate.setHours(23, 59, 59, 999);
+    return endDate >= today;
+  });
+
   // Find next upcoming event
-  const nextEvent = events.find(event => new Date(event.date_debut) >= new Date());
+  const nextEvent = upcomingOrOngoingEvents.find(event => new Date(event.date_debut) >= today);
   const hasExhibitorAccess = userExhibitors.length > 0 || myNovelties.length > 0;
 
   if (!user) {
@@ -84,7 +94,7 @@ const Agenda = () => {
                   <Ticket className="h-4 w-4" />
                   Mode Visiteur
                   <Badge variant="secondary" className="ml-1">
-                    {events.length + likedNovelties.length}
+                    {upcomingOrOngoingEvents.length + likedNovelties.length}
                   </Badge>
                 </button>
                 
@@ -106,7 +116,7 @@ const Agenda = () => {
             ) : (
               <div className="flex items-center gap-4">
                 <p className="text-gray-600">
-                  {isLoading ? 'Chargement...' : `${events.length} salon(s) dans votre agenda`}
+                  {isLoading ? 'Chargement...' : `${upcomingOrOngoingEvents.length} salon(s) dans votre agenda`}
                 </p>
                 {nextEvent && (
                   <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
@@ -120,7 +130,7 @@ const Agenda = () => {
           {/* Contenu conditionnel selon le rôle */}
           {activeRole === 'visitor' ? (
             <VisitorDashboard 
-              events={events}
+              events={upcomingOrOngoingEvents}
               likedNovelties={likedNovelties}
               isLoading={isLoading}
             />
