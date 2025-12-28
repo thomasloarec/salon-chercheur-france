@@ -9,6 +9,7 @@ import NoveltyModeration from '@/components/admin/NoveltyModeration';
 
 import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
+import TestModeManager from '@/components/admin/TestModeManager';
 import MainLayout from '@/components/layout/MainLayout';
 import AirtableStatusWidget from '@/components/admin/AirtableStatusWidget';
 import AirtableDiagnostic from '@/components/admin/AirtableDiagnostic';
@@ -122,6 +123,9 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="system" className="space-y-6">
+            {/* Gestion du mode test */}
+            <TestModeManager />
+            
             <Accordion type="single" collapsible className="mb-8">
               <AccordionItem value="tests">
                 <AccordionTrigger className="text-xl font-semibold">
