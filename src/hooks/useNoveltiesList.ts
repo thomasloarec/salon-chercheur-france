@@ -141,7 +141,7 @@ async function fetchNovelties(
     novelty_stats: row.novelty_stats || undefined,
     likes_count: likesCountMap[row.id] || 0,
     comments_count: commentsCountMap[row.id] || 0
-  }));
+  })).filter(novelty => novelty.exhibitors !== null);
 
   // Filter to only show novelties from ongoing or upcoming events with client-side filters
   const filteredResults = results.filter(novelty => {
