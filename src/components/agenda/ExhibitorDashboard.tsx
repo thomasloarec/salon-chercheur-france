@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { Separator } from '@/components/ui/separator';
-import { Building2, Eye, Edit, MapPin, Calendar, Sparkles, Heart, Download, CalendarCheck, Users } from 'lucide-react';
+import { Building2, Eye, Edit, MapPin, Calendar, Sparkles, Heart, Download, CalendarCheck, Users, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -52,8 +52,32 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
       {/* Contenu direct : Nouveautés */}
       {novelties.length > 0 ? (
         <div className="space-y-6">
-          {novelties.map((novelty) => (
+          {novelties.map((novelty) => {
+            const isPending = novelty.status !== 'published';
+            
+            return (
             <div key={novelty.id} className="space-y-4">
+              {/* Bannière d'attente de validation */}
+              {isPending && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50">
+                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      En attente de validation
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Cette nouveauté sera visible sur la page du salon après validation par l'administrateur.
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Non publiée
+                  </Badge>
+                </div>
+              )}
+
               {/* En-tête avec événement et actions */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -68,8 +92,11 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                     <Calendar className="h-4 w-4" />
                     {format(new Date(novelty.events.date_debut), 'dd MMM yyyy', { locale: fr })}
                   </span>
-                  <Badge variant={novelty.status === 'published' ? 'default' : 'secondary'}>
-                    {novelty.status === 'published' ? 'Publié' : 'En attente'}
+                  <Badge 
+                    variant={novelty.status === 'published' ? 'default' : 'outline'}
+                    className={isPending ? 'border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300' : ''}
+                  >
+                    {novelty.status === 'published' ? 'Publié' : novelty.status === 'draft' ? 'Brouillon' : 'En révision'}
                   </Badge>
                   <EventPremiumStatus 
                     exhibitorId={novelty.exhibitors.id}
@@ -77,12 +104,14 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/events/${novelty.events.slug}#nouveautes`}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Voir
-                    </Link>
-                  </Button>
+                  {novelty.status === 'published' && (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/events/${novelty.events.slug}#nouveautes`}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Voir
+                      </Link>
+                    </Button>
+                  )}
                   <Button size="sm" onClick={() => handleEdit(novelty)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Modifier
@@ -91,11 +120,11 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
               </div>
 
               {/* Carte de nouveauté avec leads en 2 colonnes */}
-              <Card>
+              <Card className={isPending ? 'border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10' : ''}>
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-[1.4fr,1fr] gap-6">
                     {/* Colonne gauche : Nouveauté (60% width) */}
-                    <div>
+                    <div className={isPending ? 'opacity-75' : ''}>
                       <NoveltyCard 
                         novelty={{
                           id: novelty.id,
@@ -204,7 +233,8 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
       ) : (
         <Card>
