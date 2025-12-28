@@ -134,9 +134,10 @@ serve(async (req) => {
     console.log(`[novelties-moderate] Success: novelty ${novelty_id} → ${next_status}`);
 
     // ============================================
-    // SI PUBLICATION: Approuver l'exposant en attente
+    // SI PUBLICATION: Approuver l'exposant en attente ET créer la participation
     // ============================================
     let exhibitorApproved = false;
+    let participationCreated = false;
     
     if (next_status === 'published' && novelty.pending_exhibitor_id) {
       console.log(`[novelties-moderate] Approving pending exhibitor: ${novelty.pending_exhibitor_id}`);
@@ -155,6 +156,61 @@ serve(async (req) => {
       } else {
         exhibitorApproved = true;
         console.log(`[novelties-moderate] Exhibitor ${novelty.pending_exhibitor_id} approved`);
+        
+        // ✅ CRÉER LA PARTICIPATION maintenant que la nouveauté est publiée
+        // Récupérer les infos de l'exposant et de l'événement
+        const { data: exhibitorData } = await supabaseAdmin
+          .from('exhibitors')
+          .select('website, stand_info')
+          .eq('id', novelty.pending_exhibitor_id)
+          .single();
+        
+        const { data: noveltyData } = await supabaseAdmin
+          .from('novelties')
+          .select('event_id')
+          .eq('id', novelty_id)
+          .single();
+
+        if (noveltyData?.event_id) {
+          // Récupérer l'id_event_text depuis events
+          const { data: eventData } = await supabaseAdmin
+            .from('events')
+            .select('id_event')
+            .eq('id', noveltyData.event_id)
+            .single();
+
+          // Vérifier si une participation existe déjà
+          const { data: existingParticipation } = await supabaseAdmin
+            .from('participation')
+            .select('id_participation')
+            .eq('exhibitor_id', novelty.pending_exhibitor_id)
+            .eq('id_event', noveltyData.event_id)
+            .maybeSingle();
+
+          if (!existingParticipation) {
+            const { error: participationError } = await supabaseAdmin
+              .from('participation')
+              .insert({
+                id_exposant: novelty.pending_exhibitor_id,
+                exhibitor_id: novelty.pending_exhibitor_id,
+                id_event: noveltyData.event_id,
+                id_event_text: eventData?.id_event || null,
+                website_exposant: exhibitorData?.website || null,
+                stand_exposant: exhibitorData?.stand_info || null,
+                urlexpo_event: null
+              });
+
+            if (participationError) {
+              console.error("[novelties-moderate] Failed to create participation:", participationError);
+            } else {
+              participationCreated = true;
+              console.log(`[novelties-moderate] Participation created for exhibitor ${novelty.pending_exhibitor_id} on event ${noveltyData.event_id}`);
+            }
+          } else {
+            console.log(`[novelties-moderate] Participation already exists for exhibitor ${novelty.pending_exhibitor_id}`);
+            participationCreated = true;
+          }
+        }
         
         // Nettoyer le champ pending_exhibitor_id
         await supabaseAdmin
@@ -176,6 +232,7 @@ serve(async (req) => {
         novelty_id,
         status: next_status,
         exhibitor_approved: exhibitorApproved,
+        participation_created: participationCreated,
         pending_exhibitor_id: novelty.pending_exhibitor_id
       }),
       { status: 200, headers: corsHeaders() }
