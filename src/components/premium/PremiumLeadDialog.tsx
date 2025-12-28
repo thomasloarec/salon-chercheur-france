@@ -46,18 +46,29 @@ export function PremiumLeadDialog({
     setIsSubmitting(true);
 
     try {
+      // Build payload - only include eventId if it's a valid UUID
+      const isValidUUID = (str?: string): boolean => {
+        if (!str) return false;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(str);
+      };
+
+      const payload: Record<string, string> = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+      };
+
+      // Only include optional fields if they have valid values
+      if (isValidUUID(eventId)) payload.eventId = eventId!;
+      if (eventName) payload.eventName = eventName;
+      if (eventDate) payload.eventDate = eventDate;
+      if (eventSlug) payload.eventSlug = eventSlug;
+
       const { data, error } = await supabase.functions.invoke('premium-lead-submit', {
-        body: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          company: formData.company,
-          eventId: eventId || '',
-          eventName: eventName || '',
-          eventDate: eventDate || '',
-          eventSlug: eventSlug || '',
-        },
+        body: payload,
       });
 
       if (error) {
