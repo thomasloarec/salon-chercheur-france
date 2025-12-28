@@ -59,7 +59,7 @@ async function fetchNovelties(
       events!inner (
         id, slug, nom_event, date_debut, type_event, secteur, visible, ville, code_postal
       ),
-      exhibitors ( id, name, slug, logo_url ),
+      exhibitors!novelties_exhibitor_id_fkey ( id, name, slug, logo_url ),
       novelty_stats ( route_users_count, popularity_score )
     `)
     .eq("events.visible", true)
