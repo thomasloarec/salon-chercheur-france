@@ -41,16 +41,24 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
+  // Sécurité : vérifier que exhibitors existe
+  const exhibitor = novelty.exhibitors ?? {
+    id: novelty.exhibitor_id,
+    name: 'Exposant inconnu',
+    slug: '',
+    logo_url: undefined
+  };
+  
   // 🐛 DEBUG - Vérifier le logo reçu
   useEffect(() => {
     console.log('🎨 NoveltyCard - Exhibitor data:', {
-      id: novelty.exhibitors.id,
-      name: novelty.exhibitors.name,
-      logo_url: novelty.exhibitors.logo_url,
-      has_logo: !!novelty.exhibitors.logo_url,
-      logo_length: novelty.exhibitors.logo_url?.length
+      id: exhibitor.id,
+      name: exhibitor.name,
+      logo_url: exhibitor.logo_url,
+      has_logo: !!exhibitor.logo_url,
+      logo_length: exhibitor.logo_url?.length
     });
-  }, [novelty.exhibitors]);
+  }, [exhibitor]);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showExhibitorModal, setShowExhibitorModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -148,17 +156,17 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
               onClick={async () => {
                 // Hydrater l'exposant pour obtenir description et website
                 const exhibitorForDialog = {
-                  id_exposant: novelty.exhibitors.id,
-                  exhibitor_name: novelty.exhibitors.name,
+                  id_exposant: exhibitor.id,
+                  exhibitor_name: exhibitor.name,
                   stand_exposant: standInfo || undefined,
-                  logo_url: novelty.exhibitors.logo_url || null,
+                  logo_url: exhibitor.logo_url || null,
                 };
                 
                 const hydrated = await hydrateExhibitor(exhibitorForDialog as any);
                 setHydratedExhibitor({
-                  id: novelty.exhibitors.id,
+                  id: exhibitor.id,
                   name: hydrated.exhibitor_name,
-                  slug: novelty.exhibitors.slug,
+                  slug: exhibitor.slug,
                   logo_url: hydrated.logo_url || null,
                   description: hydrated.exposant_description,
                   website: hydrated.website_exposant,
@@ -167,22 +175,22 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
               }}
               className="flex items-center gap-3 hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
             >
-              {novelty.exhibitors.logo_url ? (
+              {exhibitor.logo_url ? (
                 <img
-                  src={novelty.exhibitors.logo_url}
-                  alt={novelty.exhibitors.name}
+                  src={exhibitor.logo_url}
+                  alt={exhibitor.name}
                   className="w-8 h-8 rounded object-cover"
                 />
               ) : (
                 <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
                   <span className="text-xs font-medium">
-                    {novelty.exhibitors.name.charAt(0)}
+                    {exhibitor.name.charAt(0)}
                   </span>
                 </div>
               )}
               <div className="flex flex-col items-start">
                 <span className="font-medium text-sm hover:underline">
-                  {novelty.exhibitors.name}
+                  {exhibitor.name}
                 </span>
                 {standInfo && (
                   <span className="text-xs text-primary font-medium">

@@ -137,17 +137,21 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
         throw error;
       }
 
+      // Filtrer les novelties dont l'exhibitor est null (RLS peut bloquer l'accès)
+      const validData = (data || []).filter(novelty => novelty.exhibitors !== null);
+      
       console.log('✅ useNovelties fetch result:', {
         total: count,
         returned: data?.length,
-        items: data
+        valid: validData.length,
+        filtered: (data?.length || 0) - validData.length
       });
 
       // Fetch likes count and comments count for all novelties
       let likesCountMap: Record<string, number> = {};
       let commentsCountMap: Record<string, number> = {};
-      if (data && data.length > 0) {
-        const noveltyIds = data.map(n => n.id);
+      if (validData.length > 0) {
+        const noveltyIds = validData.map(n => n.id);
         
         // Fetch likes
         const { data: likesData } = await supabase
@@ -175,7 +179,7 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
       }
 
       // Add likes count and comments count to each novelty
-      const dataWithLikes = (data || []).map(novelty => ({
+      const dataWithLikes = validData.map(novelty => ({
         ...novelty,
         likes_count: likesCountMap[novelty.id] || 0,
         comments_count: commentsCountMap[novelty.id] || 0
