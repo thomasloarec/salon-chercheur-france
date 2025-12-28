@@ -7,6 +7,7 @@ import { Menu, X, Calendar, Search, Users, Settings, HelpCircle } from 'lucide-r
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import UserMenu from './UserMenu';
+import logoLotexpo from '@/assets/logo-lotexpo.png';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,11 +21,8 @@ const Header = () => {
       <div className="w-full px-6 mx-auto">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <Calendar className="h-8 w-8 text-primary" />
-            <div className="text-xl font-bold">
-              <span className="text-black">Lot</span><span className="text-orange-500">Expo</span>
-            </div>
+          <Link to="/" className="flex items-center">
+            <img src={logoLotexpo} alt="LotExpo" className="h-8" />
           </Link>
 
           {/* Navigation Desktop */}

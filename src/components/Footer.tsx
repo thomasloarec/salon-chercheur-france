@@ -1,5 +1,6 @@
 
 import { MapPin, Mail, Phone, Linkedin, Twitter } from 'lucide-react';
+import logoLotexpo from '@/assets/logo-lotexpo.png';
 
 const Footer = () => {
   return (
@@ -8,9 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Company Info */}
           <div className="md:col-span-1">
-            <div className="text-2xl font-bold mb-4">
-              <span className="text-white">Lot</span><span className="text-orange-500">Expo</span>
-            </div>
+            <img src={logoLotexpo} alt="LotExpo" className="h-8 mb-4 brightness-0 invert" />
             <p className="text-gray-300 mb-4">
               La plateforme de référence pour découvrir tous les salons professionnels en France.
             </p>
