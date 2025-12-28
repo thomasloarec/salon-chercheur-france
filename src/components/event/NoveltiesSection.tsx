@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
 import { NoveltiesPreLaunchBanner } from './NoveltiesPreLaunchBanner';
 import { NoveltyNotificationDialog } from './NoveltyNotificationDialog';
-import { useNovelties } from '@/hooks/useNovelties';
+import { useInfiniteNovelties } from '@/hooks/useInfiniteNovelties';
 import type { Event } from '@/types/event';
+import { Button } from '@/components/ui/button';
 
 type SortBy = 'awaited' | 'recent';
 
@@ -19,47 +19,56 @@ interface NoveltiesSectionProps {
 export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('awaited');
-  const [page, setPage] = useState(1);
-  const [allNovelties, setAllNovelties] = useState<any[]>([]);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const pageSize = 10;
+  const loaderRef = useRef<HTMLDivElement>(null);
   
-  // Fetch novelties with pagination
-  const { data: noveltiesData, isLoading, error } = useNovelties({
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error
+  } = useInfiniteNovelties({
     event_id: event.id,
     sort: sortBy,
-    page,
-    pageSize,
+    pageSize: 10,
     enabled: !!event.id
   });
 
-  // Reset page and novelties when sort changes
-  useEffect(() => {
-    setPage(1);
-    setAllNovelties([]);
-  }, [sortBy]);
-
-  // Update all novelties list
-  useEffect(() => {
-    if (noveltiesData?.data) {
-      if (page === 1) {
-        setAllNovelties(noveltiesData.data);
-      } else {
-        setAllNovelties(prev => [...prev, ...noveltiesData.data]);
-      }
-      setLoadingMore(false);
+  // Intersection Observer pour le scroll infini
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const target = entries[0];
+    if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [noveltiesData?.data, page]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  useEffect(() => {
+    const option = {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    };
+    const observer = new IntersectionObserver(handleObserver, option);
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   // Calculer si on est en phase de pré-lancement (plus de 60 jours avant l'événement)
   const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
   const isPreLaunch = daysUntilEvent > 60;
 
+  // Flatten all pages into a single array
+  const allNovelties = data?.pages.flatMap(page => page.data) ?? [];
+  const total = data?.pages[0]?.total ?? 0;
+
   console.log('🔍 NoveltiesSection debug:', {
     event_id: event.id,
-    total: noveltiesData?.total,
-    displayed: noveltiesData?.data?.length,
+    total,
+    displayed: allNovelties.length,
+    hasNextPage,
     isLoading,
     error,
     daysUntilEvent,
@@ -80,14 +89,6 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
       </div>
     );
   }
-
-  const total = noveltiesData?.total || 0;
-  const hasMore = allNovelties.length < total;
-
-  const handleLoadMore = () => {
-    setLoadingMore(true);
-    setPage(prev => prev + 1);
-  };
 
   // Empty state - Si pré-lancement ET aucune nouveauté, afficher le banner spécial
   if (!error && total === 0) {
@@ -194,20 +195,12 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
         ))}
       </div>
 
-      {/* Load more button */}
-      {hasMore && (
-        <div className="text-center">
-          <Button
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            variant="outline"
-            className="min-w-32"
-          >
-            {loadingMore && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            {loadingMore ? 'Chargement...' : 'Voir plus'}
-          </Button>
-        </div>
-      )}
+      {/* Infinite scroll loader */}
+      <div ref={loaderRef} className="flex justify-center py-4">
+        {isFetchingNextPage && (
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        )}
+      </div>
     </div>
   );
 }
