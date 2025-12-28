@@ -15,6 +15,8 @@ const schema = z.object({
   images: z.array(z.string().url()).min(1).max(3),
   brochure_pdf: url.optional().nullable(),
   stand_info: z.string().max(200).optional().nullable(),
+  // Nouveau champ: ID de l'exposant créé avec cette nouveauté (en attente d'approbation)
+  pending_exhibitor_id: uuid.optional().nullable(),
 });
 
 function corsHeaders() {
@@ -46,7 +48,8 @@ serve(async (req) => {
     console.log("[novelties-create] Received payload:", JSON.stringify({
       ...body,
       images: body.images?.length,
-      brochure_pdf: body.brochure_pdf ? "present" : "absent"
+      brochure_pdf: body.brochure_pdf ? "present" : "absent",
+      pending_exhibitor_id: body.pending_exhibitor_id || "none"
     }));
 
     const parsed = schema.safeParse(body);
@@ -84,7 +87,7 @@ serve(async (req) => {
     // Vérifier l'exposant
     const { data: exhib, error: exhibErr } = await admin
       .from("exhibitors")
-      .select("id")
+      .select("id, plan")
       .eq("id", data.exhibitor_id)
       .single();
 
@@ -93,6 +96,57 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Invalid exhibitor_id" }),
         { status: 400, headers: corsHeaders() }
+      );
+    }
+
+    // ==========================================
+    // VÉRIFICATION QUOTA CÔTÉ SERVEUR (BLOQUANTE)
+    // ==========================================
+    
+    // Vérifier entitlement premium
+    const { data: entitlement } = await admin
+      .from("premium_entitlements")
+      .select("max_novelties")
+      .eq("exhibitor_id", data.exhibitor_id)
+      .eq("event_id", data.event_id)
+      .is("revoked_at", null)
+      .maybeSingle();
+
+    const isPremium = !!entitlement;
+    const maxNovelties = isPremium ? entitlement.max_novelties : 1;
+
+    // Compter les nouveautés existantes (hors rejected)
+    const { count: currentCount, error: countErr } = await admin
+      .from("novelties")
+      .select("id", { count: "exact", head: true })
+      .eq("exhibitor_id", data.exhibitor_id)
+      .eq("event_id", data.event_id)
+      .in("status", ["draft", "pending", "under_review", "published"]);
+
+    if (countErr) {
+      console.error("[novelties-create] Error counting novelties:", countErr);
+      return new Response(
+        JSON.stringify({ error: "Failed to check quota" }),
+        { status: 500, headers: corsHeaders() }
+      );
+    }
+
+    const noveltyCount = currentCount || 0;
+    console.log(`[novelties-create] Quota check: ${noveltyCount}/${maxNovelties} (premium: ${isPremium})`);
+
+    if (noveltyCount >= maxNovelties) {
+      console.error("[novelties-create] Quota exceeded:", { noveltyCount, maxNovelties, isPremium });
+      return new Response(
+        JSON.stringify({ 
+          error: "Quota exceeded",
+          message: isPremium 
+            ? `Limite atteinte: ${maxNovelties} nouveauté(s) maximum pour votre forfait Premium.`
+            : "Plan gratuit: 1 nouveauté maximum par exposant et par événement. Passez au forfait Premium pour en publier davantage.",
+          code: "QUOTA_EXCEEDED",
+          current: noveltyCount,
+          limit: maxNovelties
+        }),
+        { status: 403, headers: corsHeaders() }
       );
     }
 
@@ -110,7 +164,7 @@ serve(async (req) => {
     const mappedType = typeMapping[data.novelty_type.trim()] || 'Launch';
 
     // Mapping front → DB
-    const insertPayload = {
+    const insertPayload: Record<string, unknown> = {
       event_id: data.event_id,
       exhibitor_id: data.exhibitor_id,
       title: data.title.trim(),
@@ -124,9 +178,15 @@ serve(async (req) => {
       status: "draft",
     };
 
+    // Si un nouvel exposant a été créé avec cette nouveauté, le tracker
+    if (data.pending_exhibitor_id) {
+      insertPayload.pending_exhibitor_id = data.pending_exhibitor_id;
+      console.log("[novelties-create] Tracking pending exhibitor:", data.pending_exhibitor_id);
+    }
+
     console.log("[novelties-create] Insert payload:", JSON.stringify({
       ...insertPayload,
-      media_urls: insertPayload.media_urls.length,
+      media_urls: (insertPayload.media_urls as string[]).length,
     }));
 
     const { data: inserted, error: insErr } = await admin
@@ -152,7 +212,11 @@ serve(async (req) => {
 
     console.log("[novelties-create] Success:", inserted.id);
     return new Response(
-      JSON.stringify({ id: inserted.id, title: inserted.title }),
+      JSON.stringify({ 
+        id: inserted.id, 
+        title: inserted.title,
+        pending_exhibitor_id: data.pending_exhibitor_id || null
+      }),
       { status: 200, headers: corsHeaders() }
     );
   } catch (e) {

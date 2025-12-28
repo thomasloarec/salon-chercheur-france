@@ -96,6 +96,21 @@ serve(async (req) => {
 
     console.log(`[novelties-moderate] Admin ${user.id} updating novelty ${novelty_id} to ${next_status}`);
 
+    // Récupérer la nouveauté actuelle pour vérifier s'il y a un exposant en attente
+    const { data: novelty, error: fetchError } = await supabaseAdmin
+      .from('novelties')
+      .select('id, pending_exhibitor_id, exhibitor_id')
+      .eq('id', novelty_id)
+      .single();
+
+    if (fetchError || !novelty) {
+      console.error("[novelties-moderate] Novelty not found:", novelty_id, fetchError);
+      return new Response(
+        JSON.stringify({ error: "Novelty not found" }),
+        { status: 404, headers: corsHeaders() }
+      );
+    }
+
     // Update novelty status using service role (bypasses RLS)
     const { error: updateError } = await supabaseAdmin
       .from('novelties')
@@ -117,12 +132,51 @@ serve(async (req) => {
     }
 
     console.log(`[novelties-moderate] Success: novelty ${novelty_id} → ${next_status}`);
+
+    // ============================================
+    // SI PUBLICATION: Approuver l'exposant en attente
+    // ============================================
+    let exhibitorApproved = false;
+    
+    if (next_status === 'published' && novelty.pending_exhibitor_id) {
+      console.log(`[novelties-moderate] Approving pending exhibitor: ${novelty.pending_exhibitor_id}`);
+      
+      const { error: approveError } = await supabaseAdmin
+        .from('exhibitors')
+        .update({ 
+          approved: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', novelty.pending_exhibitor_id);
+
+      if (approveError) {
+        console.error("[novelties-moderate] Failed to approve exhibitor:", approveError);
+        // On ne fait pas échouer la modération pour ça, mais on log l'erreur
+      } else {
+        exhibitorApproved = true;
+        console.log(`[novelties-moderate] Exhibitor ${novelty.pending_exhibitor_id} approved`);
+        
+        // Nettoyer le champ pending_exhibitor_id
+        await supabaseAdmin
+          .from('novelties')
+          .update({ pending_exhibitor_id: null })
+          .eq('id', novelty_id);
+      }
+    }
+
+    // Si rejet et qu'il y avait un exposant en attente, on pourrait le supprimer
+    // Mais pour l'instant on le laisse (l'admin peut le supprimer manuellement)
+    if (next_status === 'rejected' && novelty.pending_exhibitor_id) {
+      console.log(`[novelties-moderate] Note: Novelty rejected but pending exhibitor ${novelty.pending_exhibitor_id} kept for review`);
+    }
     
     return new Response(
       JSON.stringify({ 
         ok: true,
         novelty_id,
-        status: next_status
+        status: next_status,
+        exhibitor_approved: exhibitorApproved,
+        pending_exhibitor_id: novelty.pending_exhibitor_id
       }),
       { status: 200, headers: corsHeaders() }
     );

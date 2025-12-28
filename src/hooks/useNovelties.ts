@@ -105,7 +105,7 @@ export const useNovelties = (params: UseNoveltiesParams = {}) => {
           is_premium,
           created_at,
           updated_at,
-          exhibitors!inner (
+          exhibitors!novelties_exhibitor_id_fkey (
             id,
             name,
             slug,

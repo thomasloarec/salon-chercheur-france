@@ -367,13 +367,12 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
 
       // Get or create exhibitor
       let exhibitorId: string;
-      let exhibitorApproved = false;
+      let pendingExhibitorId: string | null = null; // Nouvel exposant en attente d'approbation
 
       if ('id' in step1.exhibitor && isValidUUID(step1.exhibitor.id)) {
         // Existing exhibitor with valid UUID
         exhibitorId = step1.exhibitor.id;
-        exhibitorApproved = step1.exhibitor.approved;
-        console.log('📋 Exposant existant:', { id: exhibitorId, approved: exhibitorApproved });
+        console.log('📋 Exposant existant:', { id: exhibitorId });
       } else {
         // Create new exhibitor (either no ID or ID is not a valid UUID)
         // Extract properties safely - step1.exhibitor can be either type
@@ -418,7 +417,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             action: 'create',
             name: exhibitorName,
             website: exhibitorWebsite,
-            description: exhibitorDescription,  // ✅ Utiliser la variable extraite
+            description: exhibitorDescription,
             stand_info: exhibitorStandInfo,
             logo_url: logoUrl,
             event_id: event.id
@@ -444,11 +443,13 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         }
 
         exhibitorId = newExhibitor.id;
-        exhibitorApproved = false; // New exhibitors need approval
-        console.log('✅ Nouvel exposant créé:', { id: exhibitorId });
+        // ✅ IMPORTANT: Tracker que cet exposant est nouveau et en attente
+        // Il sera approuvé uniquement quand la nouveauté sera publiée par l'admin
+        pendingExhibitorId = newExhibitor.id;
+        console.log('✅ Nouvel exposant créé (en attente):', { id: exhibitorId, pendingExhibitorId });
         
-        // ✅ Invalider le cache pour forcer le rafraîchissement de la sidebar
-        queryClient.invalidateQueries({ queryKey: ['exhibitors-by-event', event.slug] });
+        // Note: On n'invalide PAS le cache ici car l'exposant n'est pas encore approuvé
+        // Il sera visible après la validation de la nouveauté
       }
 
       // Mettre à jour le logo pour un exposant existant si fourni
@@ -650,8 +651,8 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       }
 
       // 4. Construction du payload final
-      const payload = {
-        event_id: event.id, // ✅ CORRECTION: Utiliser l'UUID de l'événement
+      const payload: Record<string, unknown> = {
+        event_id: event.id,
         exhibitor_id: exhibitorId,
         title: step2.title.trim(),
         novelty_type: step2.type,
@@ -659,7 +660,9 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         images: imageUrls,
         brochure_pdf: brochureUrl,
         stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info?.trim() || null : null,
-        created_by: user!.id
+        created_by: user!.id,
+        // ✅ NOUVEAU: Tracker l'exposant en attente pour l'approuver à la publication
+        pending_exhibitor_id: pendingExhibitorId
       };
 
       console.log('🚀 PAYLOAD FINAL:');
@@ -667,13 +670,16 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       
       // 5. Validation côté client avant envoi
       const validationErrors: string[] = [];
+      const title = payload.title as string | undefined;
+      const reason = payload.reason as string | undefined;
+      const images = payload.images as string[] | undefined;
       
       if (!payload.event_id) validationErrors.push('event_id manquant');
       if (!payload.exhibitor_id) validationErrors.push('exhibitor_id manquant');
-      if (!payload.title || payload.title.length < 3) validationErrors.push('title invalide');
+      if (!title || title.length < 3) validationErrors.push('title invalide');
       if (!payload.novelty_type) validationErrors.push('novelty_type manquant');
-      if (!payload.reason || payload.reason.length < 10) validationErrors.push('reason invalide');
-      if (!payload.images || payload.images.length === 0) validationErrors.push('images manquantes');
+      if (!reason || reason.length < 10) validationErrors.push('reason invalide');
+      if (!images || images.length === 0) validationErrors.push('images manquantes');
       
       if (validationErrors.length > 0) {
         console.error('❌ Erreurs de validation côté client:', validationErrors);
@@ -716,6 +722,12 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         console.log('JSON:', json);
         console.groupEnd();
 
+        // ✅ Gestion spéciale de l'erreur de quota
+        if (json?.code === 'QUOTA_EXCEEDED') {
+          setShowLimitDialog(true);
+          throw new Error(json.message || 'Quota dépassé');
+        }
+
         const msg = json?.error || `HTTP ${res.status}`;
         const details = json?.details || json?.hint || json?.code || null;
         throw new Error(details ? `${msg}: ${typeof details === 'string' ? details : JSON.stringify(details)}` : msg);
@@ -742,11 +754,13 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       queryClient.invalidateQueries({ queryKey: ['exhibitors-by-event'] });
 
       // ✅ Success! Set result and clean localStorage
+      // Message uniforme: toutes les nouveautés passent par la validation admin
+      const isNewExhibitor = !!pendingExhibitorId;
       setSubmissionResult({
         success: true,
-        message: exhibitorApproved 
-          ? 'Votre nouveauté est publiée ! 🎉'
-          : 'Votre nouveauté a été soumise et sera publiée après validation de l\'exposant.',
+        message: isNewExhibitor 
+          ? 'Votre nouveauté et votre fiche exposant ont été soumises et seront publiées après validation par l\'équipe LotExpo.'
+          : 'Votre nouveauté a été soumise et sera publiée après validation par l\'équipe LotExpo.',
         noveltyId: novelty.id
       });
       
