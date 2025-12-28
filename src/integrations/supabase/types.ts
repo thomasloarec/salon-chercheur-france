@@ -311,6 +311,7 @@ export type Database = {
           id: string
           id_event: string
           is_b2b: boolean
+          is_test: boolean
           location: string | null
           nom_event: string
           nom_lieu: string | null
@@ -338,6 +339,7 @@ export type Database = {
           id?: string
           id_event: string
           is_b2b?: boolean
+          is_test?: boolean
           location?: string | null
           nom_event: string
           nom_lieu?: string | null
@@ -365,6 +367,7 @@ export type Database = {
           id?: string
           id_event?: string
           is_b2b?: boolean
+          is_test?: boolean
           location?: string | null
           nom_event?: string
           nom_lieu?: string | null
@@ -725,6 +728,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_test: boolean
           logo_url: string | null
           name: string
           owner_user_id: string | null
@@ -739,6 +743,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_test?: boolean
           logo_url?: string | null
           name: string
           owner_user_id?: string | null
@@ -753,6 +758,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_test?: boolean
           logo_url?: string | null
           name?: string
           owner_user_id?: string | null
@@ -1166,6 +1172,7 @@ export type Database = {
           id: string
           images_count: number | null
           is_premium: boolean | null
+          is_test: boolean
           media_urls: string[] | null
           pending_exhibitor_id: string | null
           reason_1: string | null
@@ -1192,6 +1199,7 @@ export type Database = {
           id?: string
           images_count?: number | null
           is_premium?: boolean | null
+          is_test?: boolean
           media_urls?: string[] | null
           pending_exhibitor_id?: string | null
           reason_1?: string | null
@@ -1218,6 +1226,7 @@ export type Database = {
           id?: string
           images_count?: number | null
           is_premium?: boolean | null
+          is_test?: boolean
           media_urls?: string[] | null
           pending_exhibitor_id?: string | null
           reason_1?: string | null
