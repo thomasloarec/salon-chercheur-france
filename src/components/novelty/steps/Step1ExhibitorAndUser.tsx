@@ -153,10 +153,9 @@ export default function Step1ExhibitorAndUser({
       }
 
       // Charger directement depuis la vue participations_with_exhibitors
-      // (sans jointure avec exhibitors pour éviter les erreurs de type)
       let q = supabase
         .from('participations_with_exhibitors')
-        .select('id_exposant, exhibitor_uuid, exhibitor_name, exhibitor_website, stand_exposant')
+        .select('id_exposant, exhibitor_uuid, exhibitor_name, exhibitor_website, stand_exposant, approved, logo_url')
         .eq('id_event_text', eventId)
         .order('exhibitor_name', { ascending: true });
 
@@ -175,47 +174,54 @@ export default function Step1ExhibitorAndUser({
         return;
       }
 
-      // Pour chaque participation, vérifier s'il existe dans la table exhibitors (avec UUID)
-      // Si oui, utiliser l'UUID; sinon, utiliser id_exposant comme identifiant temporaire
-      const exhibitorMap = new Map<string, string>();
-      
-      // Essayer de matcher avec la table exhibitors par website (si disponible)
-      const websitesWithData = rows
-        .filter(p => p.exhibitor_website)
-        .map(p => ({ website: p.exhibitor_website!.toLowerCase().trim(), original: p }));
-      
-      if (websitesWithData.length > 0) {
-        const websites = websitesWithData.map(w => w.website);
-        const { data: matchingExhibitors } = await supabase
-          .from('exhibitors')
-          .select('id, website')
-          .in('website', websites);
-        
-        if (matchingExhibitors) {
-          matchingExhibitors.forEach(ex => {
-            if (ex.website) {
-              exhibitorMap.set(ex.website.toLowerCase().trim(), ex.id);
-            }
-          });
-        }
-      }
+      // ✅ AMÉLIORATION: Utiliser exhibitor_uuid directement s'il est présent (UUID valide)
+      // Cela évite les duplications car on utilise l'ID réel de la table exhibitors
+      const isValidUUID = (str: string | null | undefined): boolean => {
+        if (!str) return false;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(str);
+      };
 
-      // Mapper les résultats
+      // Mapper les résultats en utilisant exhibitor_uuid en priorité
       const formatted: DbExhibitor[] = rows.map(p => {
-        const website = p.exhibitor_website?.toLowerCase().trim();
-        const matchedUuid = website ? exhibitorMap.get(website) : undefined;
+        // Priorité: exhibitor_uuid (si UUID valide) > id_exposant (si UUID valide) > id_exposant brut
+        const exhibitorUuid = p.exhibitor_uuid ? String(p.exhibitor_uuid) : null;
+        const idExposant = p.id_exposant;
+        
+        let id: string;
+        let approved = false;
+        
+        if (isValidUUID(exhibitorUuid)) {
+          // L'exposant a un UUID valide dans la table exhibitors
+          id = exhibitorUuid!;
+          approved = p.approved === true;
+        } else if (isValidUUID(idExposant)) {
+          // id_exposant est un UUID (exposant créé via exhibitors-manage)
+          id = idExposant!;
+          approved = p.approved === true;
+        } else {
+          // Legacy: id_exposant est un identifiant texte
+          id = idExposant || '';
+          approved = false;
+        }
         
         return {
-          id: matchedUuid || p.id_exposant || String(p.exhibitor_uuid || ''),
-          name: p.exhibitor_name || p.id_exposant || '',
+          id,
+          name: p.exhibitor_name || idExposant || '',
           website: p.exhibitor_website || '',
-          logo_url: undefined,
-          approved: !!matchedUuid, // Approuvé si trouvé dans exhibitors
+          logo_url: p.logo_url || undefined,
+          approved,
           stand_info: p.stand_exposant || undefined,
         };
-      }).filter(e => e.name); // Filtrer ceux sans nom
+      }).filter(e => e.name && e.id); // Filtrer ceux sans nom ou sans ID
 
-      setExhibitors(formatted);
+      // ✅ Dédupliquer par ID pour éviter les doublons
+      const uniqueExhibitors = Array.from(
+        new Map(formatted.map(e => [e.id, e])).values()
+      );
+
+      console.log('[Step1ExhibitorAndUser] Loaded exhibitors:', uniqueExhibitors.length, 'unique from', formatted.length);
+      setExhibitors(uniqueExhibitors);
     } catch (error) {
       console.error('[Step1ExhibitorAndUser] Exception', error);
       toast({

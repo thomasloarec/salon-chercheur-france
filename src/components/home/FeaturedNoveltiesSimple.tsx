@@ -47,7 +47,7 @@ const FeaturedNoveltiesSimple = () => {
           reason_1,
           media_urls,
           created_at,
-          exhibitors!inner (
+          exhibitors!novelties_exhibitor_id_fkey (
             id,
             name,
             slug,

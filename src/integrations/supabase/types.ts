@@ -1167,6 +1167,7 @@ export type Database = {
           images_count: number | null
           is_premium: boolean | null
           media_urls: string[] | null
+          pending_exhibitor_id: string | null
           reason_1: string | null
           reason_2: string | null
           reason_3: string | null
@@ -1192,6 +1193,7 @@ export type Database = {
           images_count?: number | null
           is_premium?: boolean | null
           media_urls?: string[] | null
+          pending_exhibitor_id?: string | null
           reason_1?: string | null
           reason_2?: string | null
           reason_3?: string | null
@@ -1217,6 +1219,7 @@ export type Database = {
           images_count?: number | null
           is_premium?: boolean | null
           media_urls?: string[] | null
+          pending_exhibitor_id?: string | null
           reason_1?: string | null
           reason_2?: string | null
           reason_3?: string | null
@@ -1253,6 +1256,20 @@ export type Database = {
           {
             foreignKeyName: "novelties_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "novelties_pending_exhibitor_id_fkey"
+            columns: ["pending_exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_pending_exhibitor_id_fkey"
+            columns: ["pending_exhibitor_id"]
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]

@@ -139,7 +139,7 @@ export const useLikedNovelties = () => {
             event_id,
             exhibitor_id,
             stand_info,
-            exhibitors!inner (
+            exhibitors!novelties_exhibitor_id_fkey (
               id,
               name,
               slug,

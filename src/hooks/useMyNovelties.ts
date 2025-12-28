@@ -54,7 +54,7 @@ export const useMyNovelties = () => {
         .from('novelties')
         .select(`
           id, title, type, status, created_at, media_urls, is_premium, reason_1, stand_info, doc_url,
-          exhibitors!inner ( id, name, slug, logo_url ),
+          exhibitors!novelties_exhibitor_id_fkey ( id, name, slug, logo_url ),
           events!inner ( id, nom_event, slug, ville, date_debut, date_fin ),
           novelty_stats ( route_users_count, saves_count, reminders_count, popularity_score ),
           leads ( id, lead_type ),

@@ -63,7 +63,7 @@ export default function NoveltyModeration() {
         .from('novelties')
         .select(`
           id, title, type, status, created_at, created_by, media_urls, doc_url, exhibitor_id, event_id, reason_1, stand_info,
-          exhibitors!inner ( id, name, slug ),
+          exhibitors!novelties_exhibitor_id_fkey ( id, name, slug ),
           events!inner ( id, nom_event, slug )
         `)
         .eq('status', statusFilter)
