@@ -11,13 +11,17 @@ interface LeadCaptureCardProps {
   exhibitorId: string;
   eventId: string;
   eventName?: string;
+  eventDate?: string;
+  eventSlug?: string;
 }
 
 export default function LeadCaptureCard({ 
   isPremium, 
   exhibitorId, 
   eventId,
-  eventName 
+  eventName,
+  eventDate,
+  eventSlug,
 }: LeadCaptureCardProps) {
   const [showModal, setShowModal] = useState(false);
 
@@ -80,6 +84,8 @@ export default function LeadCaptureCard({
         onOpenChange={setShowModal}
         eventId={eventId}
         eventName={eventName}
+        eventDate={eventDate}
+        eventSlug={eventSlug}
       />
     </>
   );
