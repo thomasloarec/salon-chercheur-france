@@ -108,12 +108,12 @@ serve(async (req) => {
 
     console.log('📤 Sending to Airtable:', {
       baseId: airtableBaseId,
-      table: 'Leads Nouveautés',
+      table: 'Notification Lancement Nouveauté',
       email: body.email
     });
 
-    // Envoyer vers Airtable
-    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/Leads%20Nouveaut%C3%A9s`;
+    // Envoyer vers Airtable - Table "Notification Lancement Nouveauté"
+    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/Notification%20Lancement%20Nouveaut%C3%A9`;
     console.log('🌐 Airtable URL:', airtableUrl);
 
     const airtableResponse = await fetch(airtableUrl, {
