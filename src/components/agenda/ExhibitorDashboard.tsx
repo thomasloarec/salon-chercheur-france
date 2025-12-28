@@ -59,19 +59,19 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
             <div key={novelty.id} className="space-y-4">
               {/* Bannière d'attente de validation */}
               {isPending && (
-                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50">
-                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <div className="bg-muted/50 border border-border rounded-lg p-3 flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    <p className="text-sm font-medium text-foreground">
                       En attente de validation
                     </p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                    <p className="text-xs text-muted-foreground">
                       Cette nouveauté sera visible sur la page du salon après validation par l'administrateur.
                     </p>
                   </div>
-                  <Badge variant="outline" className="border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30">
+                  <Badge variant="secondary">
                     <AlertCircle className="h-3 w-3 mr-1" />
                     Non publiée
                   </Badge>
@@ -93,8 +93,7 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                     {format(new Date(novelty.events.date_debut), 'dd MMM yyyy', { locale: fr })}
                   </span>
                   <Badge 
-                    variant={novelty.status === 'published' ? 'default' : 'outline'}
-                    className={isPending ? 'border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300' : ''}
+                    variant={novelty.status === 'published' ? 'default' : 'secondary'}
                   >
                     {novelty.status === 'published' ? 'Publié' : novelty.status === 'draft' ? 'Brouillon' : 'En révision'}
                   </Badge>
@@ -120,7 +119,7 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
               </div>
 
               {/* Carte de nouveauté avec leads en 2 colonnes */}
-              <Card className={isPending ? 'border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10' : ''}>
+              <Card className={isPending ? 'border-muted-foreground/20 bg-muted/20' : ''}>
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-[1.4fr,1fr] gap-6">
                     {/* Colonne gauche : Nouveauté (60% width) */}
