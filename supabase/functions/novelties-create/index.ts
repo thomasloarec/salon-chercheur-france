@@ -210,6 +210,67 @@ serve(async (req) => {
       );
     }
 
+    // ==========================================
+    // ENVOI VERS AIRTABLE "Publication Nouveauté"
+    // ==========================================
+    try {
+      const airtableBaseId = Deno.env.get("AIRTABLE_PUBLICATION_BASE_ID");
+      const airtablePat = Deno.env.get("AIRTABLE_PUBLICATION_PAT");
+      
+      if (airtableBaseId && airtablePat) {
+        // Récupérer le nom de l'événement
+        const { data: eventData } = await admin
+          .from("events")
+          .select("nom_event")
+          .eq("id", data.event_id)
+          .single();
+
+        // Récupérer le nom de l'entreprise (exposant)
+        const { data: exhibitorData } = await admin
+          .from("exhibitors")
+          .select("name")
+          .eq("id", data.exhibitor_id)
+          .single();
+
+        const tableName = encodeURIComponent("Table 1");
+        const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${tableName}`;
+
+        const airtablePayload = {
+          records: [{
+            fields: {
+              "Name": data.title.trim(),
+              "Événement": eventData?.nom_event || "Événement inconnu",
+              "Entreprise": exhibitorData?.name || "Entreprise inconnue",
+              "Date": new Date().toISOString().split('T')[0],
+            }
+          }]
+        };
+
+        console.log("[novelties-create] Sending to Airtable:", JSON.stringify(airtablePayload));
+
+        const airtableResponse = await fetch(airtableUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${airtablePat}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(airtablePayload),
+        });
+
+        if (airtableResponse.ok) {
+          console.log("[novelties-create] Airtable sync successful");
+        } else {
+          const errorText = await airtableResponse.text();
+          console.error("[novelties-create] Airtable sync failed:", errorText);
+        }
+      } else {
+        console.log("[novelties-create] Airtable publication secrets not configured, skipping sync");
+      }
+    } catch (airtableError) {
+      // Ne pas bloquer la création si Airtable échoue
+      console.error("[novelties-create] Airtable sync error (non-blocking):", airtableError);
+    }
+
     console.log("[novelties-create] Success:", inserted.id);
     return new Response(
       JSON.stringify({ 
