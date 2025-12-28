@@ -769,41 +769,9 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       // ✅ Clear saved state on success
       localStorage.removeItem('addNoveltyStepperState');
       
-      // ✅ Vérifier que la participation existe
-      if (exhibitorId && event?.id) {
-        const { data: participationCheck } = await supabase
-          .from('participation')
-          .select('id_participation, exhibitor_id, id_event')
-          .eq('exhibitor_id', exhibitorId)
-          .eq('id_event', event.id)
-          .single();
-
-        console.log('🔍 Vérification participation:', {
-          exists: !!participationCheck,
-          exhibitorId,
-          eventId: event.id,
-          participationId: participationCheck?.id_participation
-        });
-
-        if (!participationCheck) {
-          console.warn('⚠️ Participation non trouvée ! Création manuelle...');
-          
-          const { error: partError } = await supabase
-            .from('participation')
-            .insert({
-              exhibitor_id: exhibitorId,
-              id_event: event.id,
-              id_event_text: event.id_event,
-              id_exposant: exhibitorId
-            });
-          
-          if (partError) {
-            console.error('❌ Erreur création participation:', partError);
-          } else {
-            console.log('✅ Participation créée manuellement');
-          }
-        }
-      }
+      // NOTE: Pour les nouveaux exposants, la participation sera créée automatiquement
+      // par novelties-moderate lors de la publication de la nouveauté par l'admin.
+      // Ne PAS créer la participation ici pour éviter que l'exposant apparaisse avant validation.
 
       // Invalider TOUS les caches liés aux exposants
       console.log('🔄 Invalidation des caches après création nouveauté');
