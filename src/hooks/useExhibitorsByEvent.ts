@@ -163,12 +163,13 @@ export const useExhibitorsByEvent = (
           if (legacyIds.length > 0) {
             const { data: legacyExposants } = await supabase
               .from('exposants')
-              .select('id_exposant, website_exposant, exposant_description')
+              .select('id_exposant, nom_exposant, website_exposant, exposant_description')
               .in('id_exposant', legacyIds);
 
             if (legacyExposants) {
               legacyExposants.forEach(ex => {
                 legacyExposantData[ex.id_exposant] = {
+                  name: ex.nom_exposant,
                   website: ex.website_exposant,
                   description: ex.exposant_description
                 };
@@ -188,15 +189,22 @@ export const useExhibitorsByEvent = (
                        (p.id_exposant && legacyExposantData[p.id_exposant]?.website) ||
                        p.exhibitor_website || 
                        p.participation_website;
+        
+        // Priorité: exhibitor_name (modern) > nom_exposant (legacy lookup) > id_exposant (fallback)
+        const exhibitorName = p.exhibitor_name || 
+                              (p.id_exposant && legacyExposantData[p.id_exposant]?.name) ||
+                              p.id_exposant || '';
 
         return {
           id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
-          name: p.exhibitor_name || p.id_exposant || '',
+          name: exhibitorName,
+          exhibitor_name: exhibitorName, // Alias pour compatibilité
           slug: p.id_exposant || String(p.exhibitor_uuid || ''),
           logo_url: logoUrl,
           description: description,
           website: website,
           stand: p.stand_exposant || null,
+          stand_exposant: p.stand_exposant || null, // Alias pour compatibilité
           hall: null,
           plan: 'free' as const
         };
