@@ -7,29 +7,28 @@ interface EventImport {
   id_event: string;
   nom_event: string | null;
   status_event: string | null;
-  ai_certainty: string | null;
   type_event: string | null;
   date_debut: string | null;
   date_fin: string | null;
-  date_complete: string | null;
-  secteur: string | null;
+  secteur: string[] | null;
   url_image: string | null;
   url_site_officiel: string | null;
   description_event: string | null;
   affluence: string | null;
-  tarifs: string | null;
+  tarif: string | null;
   nom_lieu: string | null;
-  adresse: string | null;
-  chatgpt_prompt: string | null;
-  created_at: string;
-  updated_at: string | null;
-  ville: string | null;
   rue: string | null;
   code_postal: string | null;
+  ville: string | null;
+  pays: string | null;
+  location: string | null;
+  is_b2b: boolean | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 const schema = z.object({ 
-  id_event: z.string().nonempty() // Force redeploy v3
+  id_event: z.string().nonempty() // Force redeploy v4 - fix tarif field
 });
 
 Deno.serve(async (req) => {
@@ -119,7 +118,7 @@ Deno.serve(async (req) => {
           url_image: eventImport.url_image,
           url_site_officiel: eventImport.url_site_officiel,
           affluence: eventImport.affluence,
-          tarif: eventImport.tarifs,
+          tarif: eventImport.tarif,
           nom_lieu: eventImport.nom_lieu,
           rue: eventImport.rue,
           code_postal: eventImport.code_postal,
