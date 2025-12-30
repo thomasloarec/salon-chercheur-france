@@ -42,6 +42,8 @@ export interface AirtableParticipationRecord {
     'website_exposant': string;
     'stand_exposant': string;
     'nom_exposant': string;
+    'id_exposant': string;  // Clé de liaison avec All_Exposants
+    'nom_exposant_stand': string;  // Nouvelle clé unique (nom + stand)
   };
 }
 
