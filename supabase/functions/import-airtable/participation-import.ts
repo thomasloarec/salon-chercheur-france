@@ -225,14 +225,14 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
 
     const standInfo = f['stand_exposant']?.trim() || '';
     
-    // Clé unique pour déduplication: domaine_stand (ex: "energycomposite.com.tw_5N44")
-    const urlExpoKey = `${normalizedWebsite}_${standInfo}`;
+    // Clé unique pour déduplication: event_domaine_stand (inclut l'event pour éviter les conflits)
+    const urlExpoKey = `${eventIdText}_${normalizedWebsite}_${standInfo}`;
     
     // Récupérer l'UUID de l'événement pour référence (optionnel)
     const eventUuid = eventIdToUuidMap.get(eventIdText);
 
     toInsert.push({
-      urlexpo_event: urlExpoKey,           // Clé unique pour déduplication
+      urlexpo_event: urlExpoKey,           // Clé unique pour déduplication (inclut event)
       id_event_text: eventIdText,          // Clé principale Event_XX
       id_event: eventUuid || null,         // UUID en référence (nullable)
       id_exposant: exposantId,             // id_exposant Airtable
@@ -242,20 +242,28 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     });
   }
 
+  // Dédupliquer le batch avant insertion (évite l'erreur "cannot affect row a second time")
+  const uniqueMap = new Map<string, typeof toInsert[0]>();
+  for (const item of toInsert) {
+    uniqueMap.set(item.urlexpo_event, item);
+  }
+  const deduplicatedInsert = Array.from(uniqueMap.values());
+  const duplicatesRemoved = toInsert.length - deduplicatedInsert.length;
+  
   // Métriques avant insertion
   const rejectedCount = participationErrors.length;
-  const validCount = toInsert.length;
-  console.log(`[METRICS] Participations: ${validCount} valides, ${rejectedCount} rejetées`);
+  const validCount = deduplicatedInsert.length;
+  console.log(`[METRICS] Participations: ${validCount} valides, ${rejectedCount} rejetées, ${duplicatesRemoved} doublons supprimés`);
 
   // Upsert avec clé composite
-  console.log(`Insertion de ${toInsert.length} participations...`);
+  console.log(`Insertion de ${deduplicatedInsert.length} participations...`);
   let participationsImported = 0;
   
-  if (toInsert.length > 0) {
+  if (deduplicatedInsert.length > 0) {
     try {
       const { data, error } = await supabaseClient
         .from('participation')
-        .upsert(toInsert, { onConflict: 'urlexpo_event' })
+        .upsert(deduplicatedInsert, { onConflict: 'urlexpo_event' })
         .select();
       
       if (error) {
@@ -283,10 +291,11 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
   console.log(`
 [RÉCAPITULATIF IMPORT PARTICIPATION]
 - Événements synchronisés staging→events: ${syncedEventsCount}
-- Participations valides à insérer: ${toInsert.length}
+- Participations valides à insérer: ${deduplicatedInsert.length}
+- Doublons supprimés: ${duplicatesRemoved}
 - Participations rejetées: ${participationErrors.length}
 - Participations effectivement importées: ${participationsImported}
-- Taux de succès: ${toInsert.length > 0 ? Math.round(participationsImported/toInsert.length*100) : 0}%
+- Taux de succès: ${deduplicatedInsert.length > 0 ? Math.round(participationsImported/deduplicatedInsert.length*100) : 0}%
 `);
 
   return { 
