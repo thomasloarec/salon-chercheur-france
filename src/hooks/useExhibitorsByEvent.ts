@@ -2,177 +2,216 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { EventExhibitorsResponse } from '@/types/lotexpo';
 
+/**
+ * Hook pour récupérer les exposants d'un événement
+ * @param eventSlugOrId - Peut être un slug (events) ou un id_event (Event_XX)
+ * @param searchQuery - Filtre de recherche optionnel
+ * @param limit - Limite de résultats
+ * @param offset - Offset pour pagination
+ * @param idEvent - id_event optionnel pour les événements staging (Event_XX)
+ */
 export const useExhibitorsByEvent = (
-  eventSlug: string, 
+  eventSlugOrId: string, 
   searchQuery?: string,
   limit?: number,
-  offset?: number
+  offset?: number,
+  idEvent?: string // Nouveau paramètre pour supporter staging
 ) => {
   return useQuery({
-    queryKey: ['exhibitors-by-event', eventSlug, searchQuery, limit, offset],
+    queryKey: ['exhibitors-by-event', eventSlugOrId, idEvent, searchQuery, limit, offset],
     queryFn: async (): Promise<EventExhibitorsResponse> => {
-      console.log('🔍 useExhibitorsByEvent - Fetching pour:', eventSlug);
+      console.log('🔍 useExhibitorsByEvent - Fetching pour:', eventSlugOrId, 'id_event:', idEvent);
       
-      // 1) Call Edge Function
-      const { data, error } = await supabase.functions.invoke('exhibitors-by-event', {
-        body: { event_slug: eventSlug, search: searchQuery, limit, offset }
-      });
-
-      console.log('📊 Edge Function response:', {
-        hasError: !!error,
-        totalFromEdge: data?.total,
-        exhibitorsCount: data?.exhibitors?.length
-      });
-
-      // 2) If error OR total === 0 -> fallback to VIEW
-      if (error || !data || data.total === 0) {
-        console.log('⚠️ Fallback vers la vue participations_with_exhibitors');
-        // Get Event UUID and id_event from slug
-        const { data: eventData } = await supabase
-          .from('events')
-          .select('id, id_event')
-          .eq('slug', eventSlug)
-          .single();
-
-        if (!eventData) {
-          console.log('❌ Événement non trouvé');
-          return { exhibitors: [], total: 0 };
-        }
-
-        console.log('📌 Event trouvé:', {
-          id: eventData.id,
-          id_event: eventData.id_event
+      // Pour les événements staging (slug commence par "pending-"), utiliser id_event_text
+      const isStagingEvent = eventSlugOrId.startsWith('pending-');
+      
+      // 1) Call Edge Function (seulement pour les events publiés avec slug)
+      if (!isStagingEvent) {
+        const { data, error } = await supabase.functions.invoke('exhibitors-by-event', {
+          body: { event_slug: eventSlugOrId, search: searchQuery, limit, offset }
         });
 
-        // ✅ DOUBLE MATCH : Chercher par UUID ET id_event_text
-        let query = supabase
-          .from('participations_with_exhibitors')
-          .select('*', { count: 'exact' })
-          .or(`id_event.eq.${eventData.id},id_event_text.eq.${eventData.id_event}`);
-
-        // Apply pagination if limit provided
-        if (typeof limit === 'number') {
-          const start = offset || 0;
-          query = query.range(start, start + limit - 1);
-        }
-
-        const { data: participationData, count, error: viewError } = await query;
-
-        if (viewError) {
-          console.error('❌ Erreur vue:', viewError);
-          return { exhibitors: [], total: 0 };
-        }
-
-        console.log('📋 Résultats de la vue:', {
-          count,
-          rows: participationData?.length
+        console.log('📊 Edge Function response:', {
+          hasError: !!error,
+          totalFromEdge: data?.total,
+          exhibitorsCount: data?.exhibitors?.length
         });
 
-        // Récupérer les exhibitor_id et logos depuis participation et exhibitors
-        const participationIds = (participationData || [])
-          .map(p => p.id_participation)
-          .filter(Boolean);
+        // Si succès avec des données, retourner
+        if (!error && data && data.total > 0) {
+          return data as EventExhibitorsResponse;
+        }
+      }
 
-        let exhibitorUUIDs: Record<string, string> = {};
-        let exhibitorLogos: Record<string, string> = {};
-        let exhibitorDescriptions: Record<string, string> = {};
-        let exhibitorWebsites: Record<string, string> = {};
-        let legacyExposantData: Record<string, any> = {};
+      // 2) Fallback to VIEW - chercher par id_event_text (Event_XX)
+      console.log('⚠️ Fallback vers la vue participations_with_exhibitors');
+      
+      // Déterminer le id_event_text à utiliser
+      let eventIdText = idEvent;
+      let eventUUID: string | null = null;
+      
+      if (!eventIdText) {
+        // Si pas de id_event fourni, chercher l'événement par slug ou UUID
+        if (isStagingEvent) {
+          // Extraire l'UUID du slug "pending-UUID"
+          const stagingUUID = eventSlugOrId.replace('pending-', '');
+          const { data: stagingData } = await supabase
+            .from('staging_events_import')
+            .select('id, id_event')
+            .eq('id', stagingUUID)
+            .maybeSingle();
+          
+          if (stagingData) {
+            eventIdText = stagingData.id_event;
+            console.log('📌 Staging event trouvé, id_event:', eventIdText);
+          }
+        } else {
+          // Chercher par slug dans events
+          const { data: eventData } = await supabase
+            .from('events')
+            .select('id, id_event')
+            .eq('slug', eventSlugOrId)
+            .maybeSingle();
+          
+          if (eventData) {
+            eventIdText = eventData.id_event;
+            eventUUID = eventData.id;
+          }
+        }
+      }
 
-        if (participationIds.length > 0) {
-          // Récupérer les exhibitor_id depuis participation
-          const { data: participationDetails } = await supabase
-            .from('participation')
-            .select('id_participation, exhibitor_id, id_exposant')
-            .in('id_participation', participationIds);
+      if (!eventIdText) {
+        console.log('❌ Événement non trouvé');
+        return { exhibitors: [], total: 0 };
+      }
 
-          if (participationDetails) {
-            participationDetails.forEach(p => {
-              if (p.exhibitor_id && p.id_participation) {
-                exhibitorUUIDs[p.id_participation] = p.exhibitor_id;
-              }
-            });
+      console.log('📌 Recherche participations avec id_event_text:', eventIdText);
 
-            // Récupérer les logos et descriptions depuis exhibitors (modern)
-            const uuids = Object.values(exhibitorUUIDs).filter(Boolean);
-            if (uuids.length > 0) {
-              const { data: exhibitors } = await supabase
-                .from('exhibitors')
-                .select('id, logo_url, description, website')
-                .in('id', uuids);
+      // Chercher les participations par id_event_text (la clé fiable)
+      let query = supabase
+        .from('participations_with_exhibitors')
+        .select('*', { count: 'exact' })
+        .eq('id_event_text', eventIdText);
 
-              if (exhibitors) {
-                exhibitors.forEach(e => {
-                  if (e.logo_url) exhibitorLogos[e.id] = e.logo_url;
-                  if (e.description) exhibitorDescriptions[e.id] = e.description;
-                  if (e.website) exhibitorWebsites[e.id] = e.website;
-                });
-              }
+      // Apply pagination if limit provided
+      if (typeof limit === 'number') {
+        const start = offset || 0;
+        query = query.range(start, start + limit - 1);
+      }
 
-              console.log('✅ Logos récupérés:', Object.keys(exhibitorLogos).length);
+      const { data: participationData, count, error: viewError } = await query;
+
+      if (viewError) {
+        console.error('❌ Erreur vue:', viewError);
+        return { exhibitors: [], total: 0 };
+      }
+
+      console.log('📋 Résultats de la vue:', {
+        count,
+        rows: participationData?.length
+      });
+
+      // Récupérer les exhibitor_id et logos depuis participation et exhibitors
+      const participationIds = (participationData || [])
+        .map(p => p.id_participation)
+        .filter(Boolean);
+
+      let exhibitorUUIDs: Record<string, string> = {};
+      let exhibitorLogos: Record<string, string> = {};
+      let exhibitorDescriptions: Record<string, string> = {};
+      let exhibitorWebsites: Record<string, string> = {};
+      let legacyExposantData: Record<string, any> = {};
+
+      if (participationIds.length > 0) {
+        // Récupérer les exhibitor_id depuis participation
+        const { data: participationDetails } = await supabase
+          .from('participation')
+          .select('id_participation, exhibitor_id, id_exposant')
+          .in('id_participation', participationIds);
+
+        if (participationDetails) {
+          participationDetails.forEach(p => {
+            if (p.exhibitor_id && p.id_participation) {
+              exhibitorUUIDs[p.id_participation] = p.exhibitor_id;
+            }
+          });
+
+          // Récupérer les logos et descriptions depuis exhibitors (modern)
+          const uuids = Object.values(exhibitorUUIDs).filter(Boolean);
+          if (uuids.length > 0) {
+            const { data: exhibitors } = await supabase
+              .from('exhibitors')
+              .select('id, logo_url, description, website')
+              .in('id', uuids);
+
+            if (exhibitors) {
+              exhibitors.forEach(e => {
+                if (e.logo_url) exhibitorLogos[e.id] = e.logo_url;
+                if (e.description) exhibitorDescriptions[e.id] = e.description;
+                if (e.website) exhibitorWebsites[e.id] = e.website;
+              });
             }
 
-            // Pour les participations sans exhibitor_id, récupérer depuis exposants (legacy)
-            const legacyIds = participationDetails
-              .filter(p => !p.exhibitor_id && p.id_exposant)
-              .map(p => p.id_exposant);
+            console.log('✅ Logos récupérés:', Object.keys(exhibitorLogos).length);
+          }
 
-            if (legacyIds.length > 0) {
-              const { data: legacyExposants } = await supabase
-                .from('exposants')
-                .select('id_exposant, website_exposant, exposant_description')
-                .in('id_exposant', legacyIds);
+          // Pour les participations sans exhibitor_id, récupérer depuis exposants (legacy)
+          const legacyIds = participationDetails
+            .filter(p => !p.exhibitor_id && p.id_exposant)
+            .map(p => p.id_exposant);
 
-              if (legacyExposants) {
-                legacyExposants.forEach(ex => {
-                  legacyExposantData[ex.id_exposant] = {
-                    website: ex.website_exposant,
-                    description: ex.exposant_description
-                  };
-                });
-              }
+          if (legacyIds.length > 0) {
+            const { data: legacyExposants } = await supabase
+              .from('exposants')
+              .select('id_exposant, website_exposant, exposant_description')
+              .in('id_exposant', legacyIds);
+
+            if (legacyExposants) {
+              legacyExposants.forEach(ex => {
+                legacyExposantData[ex.id_exposant] = {
+                  website: ex.website_exposant,
+                  description: ex.exposant_description
+                };
+              });
             }
           }
         }
-
-        const exhibitors = (participationData || []).map(p => {
-          const exhibitorUUID = p.id_participation ? exhibitorUUIDs[p.id_participation] : undefined;
-          const logoUrl = exhibitorUUID ? exhibitorLogos[exhibitorUUID] : null;
-          const description = exhibitorUUID ? exhibitorDescriptions[exhibitorUUID] : 
-                             (p.id_exposant && legacyExposantData[p.id_exposant]?.description) || 
-                             p.exposant_description;
-          const website = exhibitorUUID ? exhibitorWebsites[exhibitorUUID] :
-                         (p.id_exposant && legacyExposantData[p.id_exposant]?.website) ||
-                         p.exhibitor_website || 
-                         p.participation_website;
-
-          return {
-            id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
-            name: p.exhibitor_name || p.id_exposant || '',
-            slug: p.id_exposant || String(p.exhibitor_uuid || ''),
-            logo_url: logoUrl,
-            description: description,
-            website: website,
-            stand: p.stand_exposant || null,
-            hall: null,
-            plan: 'free' as const
-          };
-        }).filter(e =>
-          e.name && (!searchQuery || e.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
-
-        console.log('✅ Exhibitors mappés:', exhibitors.length);
-
-        return { exhibitors, total: count || exhibitors.length };
       }
 
-      // 3) Return Edge Function response
-      return data as EventExhibitorsResponse;
+      const exhibitors = (participationData || []).map(p => {
+        const exhibitorUUID = p.id_participation ? exhibitorUUIDs[p.id_participation] : undefined;
+        const logoUrl = exhibitorUUID ? exhibitorLogos[exhibitorUUID] : null;
+        const description = exhibitorUUID ? exhibitorDescriptions[exhibitorUUID] : 
+                           (p.id_exposant && legacyExposantData[p.id_exposant]?.description) || 
+                           p.exposant_description;
+        const website = exhibitorUUID ? exhibitorWebsites[exhibitorUUID] :
+                       (p.id_exposant && legacyExposantData[p.id_exposant]?.website) ||
+                       p.exhibitor_website || 
+                       p.participation_website;
+
+        return {
+          id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
+          name: p.exhibitor_name || p.id_exposant || '',
+          slug: p.id_exposant || String(p.exhibitor_uuid || ''),
+          logo_url: logoUrl,
+          description: description,
+          website: website,
+          stand: p.stand_exposant || null,
+          hall: null,
+          plan: 'free' as const
+        };
+      }).filter(e =>
+        e.name && (!searchQuery || e.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+
+      console.log('✅ Exhibitors mappés:', exhibitors.length);
+
+      return { exhibitors, total: count || exhibitors.length };
     },
-    enabled: !!eventSlug,
-    staleTime: 0,  // ✅ Pas de cache
-    gcTime: 0,  // ✅ Garbage collect immédiatement
-    refetchOnMount: 'always',  // ✅ Toujours recharger
-    refetchOnWindowFocus: true,  // ✅ Recharger si on revient sur l'onglet
+    enabled: !!eventSlugOrId,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 };
