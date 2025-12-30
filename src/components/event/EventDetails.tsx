@@ -53,7 +53,7 @@ export const EventDetails = ({ event }: EventDetailsProps) => {
 
         {event.tarif && (
           <div className="text-left">
-            <h4 className="font-medium text-gray-900 mb-2 text-left">Tarifs</h4>
+            <h4 className="font-medium text-gray-900 mb-2 text-left">Tarif</h4>
             <p className="text-gray-600 text-left ml-6">{event.tarif}</p>
           </div>
         )}

@@ -31,7 +31,7 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
         <div className="flex items-start gap-2">
           <Euro size={18} className="mt-0.5 text-orange-500 flex-shrink-0" />
           <div>
-            <p className="font-medium text-sm">Tarifs</p>
+            <p className="font-medium text-sm">Tarif</p>
             <p className="text-sm text-muted-foreground">{event.tarif || '—'}</p>
           </div>
         </div>
