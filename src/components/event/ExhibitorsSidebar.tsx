@@ -26,11 +26,13 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
   const [openedFromModal, setOpenedFromModal] = useState(false);
   
   // Preview: load only 7 items
+  // Passer id_event pour supporter les événements staging
   const { data: previewData, isLoading, error } = useExhibitorsByEvent(
     event.slug || '', 
     debouncedSearch,
     MAX_PREVIEW,
-    0
+    0,
+    event.id_event // id_event pour les événements staging (Event_XX)
   );
   
   const preview = previewData?.exhibitors || [];
@@ -42,17 +44,25 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
     if (allExhibitors === null) {
       // Fetch all exhibitors directly (no limit)
       try {
-        const { data: eventData } = await supabase
-          .from('events')
-          .select('id_event')
-          .eq('slug', event.slug || '')
-          .single();
+        // Utiliser id_event directement si disponible (pour staging et events)
+        let eventIdText = event.id_event;
+        
+        if (!eventIdText && event.slug) {
+          // Fallback: chercher par slug dans events
+          const { data: eventData } = await supabase
+            .from('events')
+            .select('id_event')
+            .eq('slug', event.slug)
+            .single();
+          
+          eventIdText = eventData?.id_event;
+        }
 
-        if (eventData?.id_event) {
+        if (eventIdText) {
           const { data: participations } = await supabase
             .from('participations_with_exhibitors')
             .select('*')
-            .eq('id_event_text', eventData.id_event)
+            .eq('id_event_text', eventIdText)
             .order('exhibitor_name', { ascending: true });
 
           // Récupérer les exhibitor_id depuis la table participation
