@@ -11,15 +11,18 @@ export const formatAffluence = (affluence?: string | number): string => {
     return affluence.toLocaleString('fr-FR');
   }
   
-  // Si c'est une chaîne, vérifier si elle est numérique
-  const numericValue = parseInt(affluence, 10);
+  // Nettoyer la chaîne : enlever les points (séparateurs de milliers) et les espaces
+  const cleanedValue = String(affluence).replace(/\./g, '').replace(/\s/g, '').trim();
   
-  // Si c'est un nombre valide
-  if (!isNaN(numericValue) && isFinite(numericValue)) {
+  // Si c'est une chaîne, vérifier si elle est numérique
+  const numericValue = parseInt(cleanedValue, 10);
+  
+  // Si c'est un nombre valide et positif
+  if (!isNaN(numericValue) && isFinite(numericValue) && numericValue > 0) {
     return numericValue.toLocaleString('fr-FR');
   }
   
-  // Sinon, retourner la valeur telle quelle (ex: "Inconnu")
+  // Sinon, retourner la valeur telle quelle (ex: "Non communiqué")
   return affluence;
 };
 
@@ -27,13 +30,24 @@ export const formatAffluence = (affluence?: string | number): string => {
  * Formate l'affluence avec le suffixe "visiteurs attendus"
  */
 export const formatAffluenceWithSuffix = (affluence?: string | number): string => {
+  if (!affluence) return 'Affluence inconnue';
+  
   const formatted = formatAffluence(affluence);
   
-  // Si c'est un nombre, ajouter "visiteurs attendus"
-  if (formatted !== 'Affluence inconnue' && formatted !== affluence) {
+  // Vérifier si le résultat formaté est un nombre valide (contient des chiffres)
+  const hasValidNumber = /^\d/.test(formatted.replace(/\s/g, ''));
+  
+  // Si c'est un nombre valide, ajouter "visiteurs attendus"
+  if (hasValidNumber && formatted !== String(affluence)) {
     return `${formatted} visiteurs attendus`;
   }
   
+  // Si c'est "non communiqué" ou similaire, ne pas afficher
+  const lowerAffluence = String(affluence).toLowerCase();
+  if (lowerAffluence.includes('non communiqué') || lowerAffluence.includes('inconnu')) {
+    return '';
+  }
+  
   // Sinon, retourner tel quel
-  return formatted === 'Affluence inconnue' ? 'Affluence inconnue' : formatted;
+  return formatted === 'Affluence inconnue' ? '' : formatted;
 };

@@ -39,19 +39,28 @@ export const EventWhyVisit = ({ event }: EventWhyVisitProps) => {
       </h2>
 
       <ul className="space-y-3 text-sm text-muted-foreground">
-        {event.affluence && (
-          <li className="flex items-start gap-3">
-            <Users className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-            <span>
-              Rencontrez les{" "}
-              <strong className="text-foreground">
-                {parseInt(event.affluence).toLocaleString("fr-FR")} visiteurs professionnels
-              </strong>{" "}
-              attendus sur cet événement incontournable
-              {event.ville && ` à ${event.ville}`}
-            </span>
-          </li>
-        )}
+        {event.affluence && (() => {
+          // Nettoyer l'affluence : remplacer les points par rien pour parser le nombre
+          const cleanedAffluence = String(event.affluence).replace(/\./g, '').replace(/\s/g, '');
+          const parsedAffluence = parseInt(cleanedAffluence, 10);
+          const isValidNumber = !isNaN(parsedAffluence) && isFinite(parsedAffluence) && parsedAffluence > 0;
+          
+          return (
+            <li className="flex items-start gap-3">
+              <Users className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>
+                Rencontrez les{" "}
+                {isValidNumber && (
+                  <strong className="text-foreground">
+                    {parsedAffluence.toLocaleString("fr-FR")}{" "}
+                  </strong>
+                )}
+                visiteurs professionnels attendus sur cet événement incontournable
+                {event.ville && ` à ${event.ville}`}
+              </span>
+            </li>
+          );
+        })()}
 
         {sectors.length > 0 && (
           <li className="flex items-start gap-3">
@@ -60,7 +69,7 @@ export const EventWhyVisit = ({ event }: EventWhyVisitProps) => {
               Découvrez les dernières innovations dans{" "}
               {sectors.length === 1 ? "le secteur" : "les secteurs"} :{" "}
               <strong className="text-foreground">
-                {sectors.slice(0, 2).join(" et ")}
+                {sectors.join(", ")}
               </strong>
             </span>
           </li>

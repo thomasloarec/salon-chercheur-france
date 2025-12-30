@@ -121,13 +121,17 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
               </div>
             )}
 
-            {/* Affluence */}
-            {event.affluence && (
-              <div className="flex items-center">
-                <Users className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
-                <span>{formatAffluenceWithSuffix(event.affluence)}</span>
-              </div>
-            )}
+            {/* Affluence - ne pas afficher si "non communiqué" ou similaire */}
+            {event.affluence && (() => {
+              const formattedAffluence = formatAffluenceWithSuffix(event.affluence);
+              if (!formattedAffluence) return null;
+              return (
+                <div className="flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                  <span>{formattedAffluence}</span>
+                </div>
+              );
+            })()}
 
             {/* Nom du lieu */}
             {event.nom_lieu && (

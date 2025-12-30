@@ -125,7 +125,8 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
       url_image: fields['url_image'] || null,
       url_site_officiel: fields['url_site_officiel'] || null,
       description_event: fields['description_event'] || null,
-      affluence: fields['affluence'] && fields['affluence'].trim() !== '' ? fields['affluence'] : null,
+      // Garder l'affluence exactement comme dans Airtable (ex: "45.000")
+      affluence: fields['affluence'] && String(fields['affluence']).trim() !== '' ? String(fields['affluence']).trim() : null,
       tarif: fields['tarif'] || null,
       nom_lieu: fields['nom_lieu'] || null,
       rue: fields['rue'] || null,
