@@ -73,7 +73,7 @@ export const EventAbout = ({ event }: EventAboutProps) => {
           <div className="flex items-start gap-2">
             <Euro size={18} className="mt-0.5 text-orange-500" />
             <div>
-              <p className="font-medium">Tarifs</p>
+              <p className="font-medium">Tarif</p>
               <p className="text-gray-600">{event.tarif || '—'}</p>
             </div>
           </div>
