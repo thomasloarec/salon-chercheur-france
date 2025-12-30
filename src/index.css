@@ -1,9 +1,9 @@
+/* Import MapLibre GL CSS for map functionality */
+@import '@maptiler/sdk/dist/maptiler-sdk.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import MapLibre GL CSS for map functionality */
-@import '@maptiler/sdk/dist/maptiler-sdk.css';
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
