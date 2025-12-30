@@ -190,21 +190,23 @@ export const useExhibitorsByEvent = (
                        p.exhibitor_website || 
                        p.participation_website;
         
-        // Priorité: exhibitor_name (modern) > nom_exposant (legacy lookup) > id_exposant (fallback)
-        const exhibitorName = p.exhibitor_name || 
+        // Priorité: name_final (vue) > exhibitor_name > legacy_name > nom_exposant (lookup) > id_exposant
+        const exhibitorName = p.name_final || 
+                              p.exhibitor_name || 
+                              p.legacy_name ||
                               (p.id_exposant && legacyExposantData[p.id_exposant]?.name) ||
                               p.id_exposant || '';
 
         return {
           id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
           name: exhibitorName,
-          exhibitor_name: exhibitorName, // Alias pour compatibilité
+          exhibitor_name: exhibitorName,
           slug: p.id_exposant || String(p.exhibitor_uuid || ''),
           logo_url: logoUrl,
           description: description,
           website: website,
           stand: p.stand_exposant || null,
-          stand_exposant: p.stand_exposant || null, // Alias pour compatibilité
+          stand_exposant: p.stand_exposant || null,
           hall: null,
           plan: 'free' as const
         };

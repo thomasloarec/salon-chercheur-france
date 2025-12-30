@@ -142,8 +142,10 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                            p.exhibitor_website || 
                            p.participation_website;
             
-            // Priorité: exhibitor_name (modern) > nom_exposant (legacy lookup) > id_exposant (fallback)
-            const exhibitorName = p.exhibitor_name || 
+            // Priorité: name_final (vue) > exhibitor_name > legacy_name > nom_exposant (lookup) > id_exposant
+            const exhibitorName = p.name_final || 
+                                  p.exhibitor_name || 
+                                  p.legacy_name ||
                                   (p.id_exposant && legacyExposantData[p.id_exposant]?.name) ||
                                   p.id_exposant || '';
 
