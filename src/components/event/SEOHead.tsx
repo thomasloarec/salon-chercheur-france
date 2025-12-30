@@ -10,27 +10,25 @@ interface SEOHeadProps {
 }
 
 export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
+  const currentYear = new Date().getFullYear();
+  
   const formatDateShort = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
   };
 
-  // ✅ AMÉLIORATION : Titre optimisé avec ville pour le local SEO
-  const title = `${event.nom_event} – ${formatDateShort(event.date_debut)}${
-    event.date_debut !== event.date_fin ? ` au ${formatDateShort(event.date_fin)}` : ''
-  } – ${event.ville || 'France'}`;
+  // Optimized title: {{Nom de l'événement}} {{Année}} | Salon professionnel à {{Ville}} – Lotexpo
+  // Max 60 chars, keyword first, brand suffix
+  const eventYear = event.date_debut ? new Date(event.date_debut).getFullYear() : currentYear;
+  const title = `${event.nom_event} ${eventYear} | Salon professionnel à ${event.ville || 'France'} – Lotexpo`.slice(0, 60);
 
-  // ✅ AMÉLIORATION : Description enrichie avec affluence
-  const description = `Découvrez les infos, exposants et contacts de l'événement ${event.nom_event}. ${
-    event.affluence ? `${formatAffluence(event.affluence)} visiteurs attendus.` : ''
-  } Du ${formatDateShort(event.date_debut)}${
-    event.date_debut !== event.date_fin ? ` au ${formatDateShort(event.date_fin)}` : ''
-  }.`;
+  // Optimized description: max 160 chars, action-oriented
+  const description = `${event.nom_event} à ${event.ville || 'France'} : dates, exposants, secteurs représentés et informations pratiques pour préparer votre visite professionnelle.`.slice(0, 160);
 
-  // ✅ AJOUT : URL canonique pour éviter le duplicate content
-  const canonicalUrl = `https://lotexpo.com/events/${event.slug}`;
+  // Canonical URL
+  const canonicalUrl = `https://www.lotexpo.com/events/${event.slug}`;
 
-  // ✅ AMÉLIORATION : JSON-LD enrichi avec organizer et offers
-  const jsonLd = {
+  // Enhanced JSON-LD Event schema
+  const eventSchema = {
     "@context": "https://schema.org",
     "@type": "Event",
     "name": event.nom_event,
@@ -52,13 +50,11 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     "image": event.url_image,
     "eventStatus": "https://schema.org/EventScheduled",
     "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-    // ✅ AJOUT : Organisateur pour Google
     "organizer": {
       "@type": "Organization",
       "name": event.nom_lieu || "Organisateur",
       "url": event.url_site_officiel || undefined
     },
-    // ✅ AMÉLIORATION : Offre avec plus de détails
     "offers": event.tarif ? {
       "@type": "Offer",
       "description": event.tarif,
@@ -67,16 +63,35 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     } : undefined
   };
 
+  // Breadcrumb schema
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://www.lotexpo.com" },
+      { "@type": "ListItem", "position": 2, "name": "Salons professionnels", "item": "https://www.lotexpo.com" },
+      { "@type": "ListItem", "position": 3, "name": event.nom_event, "item": canonicalUrl }
+    ]
+  };
+
+  // WebSite schema for consistent site name
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Lotexpo",
+    "url": "https://www.lotexpo.com"
+  };
+
   return (
     <Helmet>
       <title>{title}</title>
       <meta name="description" content={description} />
       {noIndex && <meta name="robots" content="noindex, nofollow" />}
       
-      {/* ✅ AJOUT : Balise canonical pour éviter le duplicate content */}
+      {/* Canonical URL */}
       <link rel="canonical" href={canonicalUrl} />
       
-      {/* ✅ AMÉLIORATION : Open Graph complet */}
+      {/* Open Graph */}
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
@@ -85,16 +100,22 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
       <meta property="og:locale" content="fr_FR" />
       {event.url_image && <meta property="og:image" content={event.url_image} />}
       
-      {/* ✅ AMÉLIORATION : Twitter Cards complet */}
+      {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@lotexpo" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       {event.url_image && <meta name="twitter:image" content={event.url_image} />}
       
-      {/* JSON-LD enrichi */}
+      {/* Structured Data */}
       <script type="application/ld+json">
-        {JSON.stringify(jsonLd)}
+        {JSON.stringify(websiteSchema)}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify(eventSchema)}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify(breadcrumbSchema)}
       </script>
     </Helmet>
   );
