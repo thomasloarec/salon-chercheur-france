@@ -201,6 +201,7 @@ export const useExhibitorsByEvent = (
           id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
           name: exhibitorName,
           exhibitor_name: exhibitorName,
+          sortName: exhibitorName.toLowerCase(),
           slug: p.id_exposant || String(p.exhibitor_uuid || ''),
           logo_url: logoUrl,
           description: description,
@@ -212,7 +213,7 @@ export const useExhibitorsByEvent = (
         };
       }).filter(e =>
         e.name && (!searchQuery || e.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+      ).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }));
 
       console.log('✅ Exhibitors mappés:', exhibitors.length);
 
