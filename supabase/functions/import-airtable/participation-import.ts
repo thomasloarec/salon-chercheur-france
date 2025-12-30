@@ -143,18 +143,32 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     console.log('[SYNC] Aucun événement staging à synchroniser');
   }
   
-  // Mapping exposants par id_exposant (clé Airtable)
+  // Fonction de normalisation de domaine pour matcher les exposants
+  function normalizeDomain(input?: string|null): string|null {
+    if (!input) return null;
+    let s = input.trim().toLowerCase();
+    s = s.replace(/^https?:\/\//, '');
+    s = s.replace(/^www\./, '');
+    s = s.split('/')[0].split('#')[0].split('?')[0];
+    s = s.replace(/\.$/, '');
+    return s || null;
+  }
+
+  // Mapping exposants par website_exposant normalisé -> id_exposant
   const { data: exposants } = await supabaseClient
     .from('exposants')
-    .select('id_exposant');
+    .select('id_exposant, website_exposant');
   
-  const exposantIdSet = new Set<string>();
+  const websiteToExposantMap = new Map<string, string>();
   exposants?.forEach((e: any) => {
-    if (e.id_exposant) {
-      exposantIdSet.add(e.id_exposant);
+    if (e.website_exposant && e.id_exposant) {
+      const normalized = normalizeDomain(e.website_exposant);
+      if (normalized) {
+        websiteToExposantMap.set(normalized, e.id_exposant);
+      }
     }
   });
-  console.log(`[MAPPING] ${exposantIdSet.size} exposants chargés pour validation`);
+  console.log(`[MAPPING] ${websiteToExposantMap.size} exposants avec website chargés pour matching`);
   
   // Les participations sont déjà chargées plus haut
 
@@ -186,33 +200,33 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       continue;
     }
 
-    // Récupérer id_exposant directement depuis Airtable (linked record ou lookup)
-    const rawExposantId = f['id_exposant'];
-    const exposantId = Array.isArray(rawExposantId) ? rawExposantId[0]?.trim() : rawExposantId?.trim();
+    // Matcher l'exposant via website_exposant
+    const rawWebsite = f['website_exposant'];
+    const websiteExposant = Array.isArray(rawWebsite) ? rawWebsite[0]?.trim() : rawWebsite?.trim();
+    const normalizedWebsite = normalizeDomain(websiteExposant);
     
-    if (!exposantId) {
+    if (!normalizedWebsite) {
       participationErrors.push({
         record_id: recordId,
-        reason: `id_exposant manquant`
+        reason: `website_exposant manquant ou invalide`
       });
       continue;
     }
     
-    // Vérifier que l'exposant existe en base
-    if (!exposantIdSet.has(exposantId)) {
+    // Trouver l'exposant correspondant via son website
+    const exposantId = websiteToExposantMap.get(normalizedWebsite);
+    if (!exposantId) {
       participationErrors.push({
         record_id: recordId,
-        reason: `exposant ${exposantId} non trouvé en base`
+        reason: `exposant non trouvé pour website: ${normalizedWebsite}`
       });
       continue;
     }
 
     const standInfo = f['stand_exposant']?.trim() || '';
-    const websiteExposant = f['website_exposant']?.trim() || null;
     
-    // Utiliser nom_exposant_stand comme clé unique si disponible, sinon construire depuis id_exposant + stand
-    const nomExposantStand = f['nom_exposant_stand']?.trim();
-    const urlExpoKey = nomExposantStand || `${exposantId}_${standInfo}`;
+    // Clé unique pour déduplication: domaine_stand (ex: "energycomposite.com.tw_5N44")
+    const urlExpoKey = `${normalizedWebsite}_${standInfo}`;
     
     // Récupérer l'UUID de l'événement pour référence (optionnel)
     const eventUuid = eventIdToUuidMap.get(eventIdText);
@@ -221,7 +235,7 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       urlexpo_event: urlExpoKey,           // Clé unique pour déduplication
       id_event_text: eventIdText,          // Clé principale Event_XX
       id_event: eventUuid || null,         // UUID en référence (nullable)
-      id_exposant: exposantId,             // id_exposant Airtable (ex: Exporec0HdpGKPar9ae8Q)
+      id_exposant: exposantId,             // id_exposant Airtable
       stand_exposant: standInfo || null,  
       website_exposant: websiteExposant,
       created_at: new Date().toISOString()
