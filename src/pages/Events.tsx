@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useEventsList } from '@/hooks/useEventsList';
 import { useUrlFilters } from '@/lib/useUrlFilters';
 import { useSectors } from '@/hooks/useSectors';
@@ -82,6 +83,23 @@ const Events = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>Salons professionnels en France | Calendrier B2B – Lotexpo</title>
+        <meta name="description" content="Lotexpo référence tous les salons professionnels B2B en France. Dates, lieux, secteurs, exposants et informations pratiques en un seul site." />
+        <link rel="canonical" href="https://www.lotexpo.com" />
+        <meta property="og:title" content="Salons professionnels en France | Calendrier B2B – Lotexpo" />
+        <meta property="og:description" content="Lotexpo référence tous les salons professionnels B2B en France. Dates, lieux, secteurs, exposants et informations pratiques en un seul site." />
+        <meta property="og:url" content="https://www.lotexpo.com" />
+        <meta property="og:site_name" content="Lotexpo" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Lotexpo",
+            "url": "https://www.lotexpo.com"
+          })}
+        </script>
+      </Helmet>
       <Header />
       
       {/* Filters: Type / Month / Region */}

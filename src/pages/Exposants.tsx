@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { Check, Crown, Zap, TrendingUp, Users, Calendar, X, BarChart3, Search, Megaphone, LineChart, Quote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,28 @@ export default function Exposants() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   return (
+    <>
+      <Helmet>
+        <title>Exposants | Maximisez votre ROI salon professionnel – Lotexpo</title>
+        <meta 
+          name="description" 
+          content="Découvrez comment Lotexpo aide les exposants à maximiser leur ROI événementiel. Générez des leads qualifiés avant l'ouverture des salons B2B." 
+        />
+        <link rel="canonical" href="https://www.lotexpo.com/exposants" />
+        <meta property="og:title" content="Exposants | Maximisez votre ROI salon professionnel – Lotexpo" />
+        <meta property="og:url" content="https://www.lotexpo.com/exposants" />
+        <meta property="og:site_name" content="Lotexpo" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://www.lotexpo.com" },
+              { "@type": "ListItem", "position": 2, "name": "Exposants", "item": "https://www.lotexpo.com/exposants" }
+            ]
+          })}
+        </script>
+      </Helmet>
     <MainLayout title="Lotexpo pour les Exposants - Maximisez votre ROI événementiel">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/10 border-b">
@@ -574,5 +597,6 @@ export default function Exposants() {
         onOpenChange={setIsDialogOpen}
       />
     </MainLayout>
+    </>
   );
 }
