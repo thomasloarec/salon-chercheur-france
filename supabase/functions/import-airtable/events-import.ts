@@ -33,7 +33,14 @@ async function fetchAllEvents(airtableConfig: AirtableConfig): Promise<AirtableE
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch events: ${response.status}`);
+      const errorBody = await response.text();
+      console.error(`[ERROR] Airtable API error ${response.status}:`, errorBody);
+      console.error(`[ERROR] PAT length: ${airtableConfig.pat?.length || 0}, Base ID: ${airtableConfig.baseId}`);
+      
+      if (response.status === 403) {
+        throw new Error(`Airtable 403 Forbidden: Le PAT n'a pas accès à cette base ou est expiré. Vérifiez les permissions du PAT dans Airtable. Détails: ${errorBody}`);
+      }
+      throw new Error(`Failed to fetch events: ${response.status} - ${errorBody}`);
     }
 
     const data: AirtableResponse<AirtableEventRecord> = await response.json();
