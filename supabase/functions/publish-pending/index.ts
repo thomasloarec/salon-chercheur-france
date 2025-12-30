@@ -1,7 +1,6 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { z } from 'https://esm.sh/zod@3.24.1'
-import { corsHeaders, handleOptions } from '../_shared/cors.ts'
+import { buildCorsHeaders, handleCors } from '../_shared/cors.ts'
 
 interface EventImport {
   id: string;
@@ -30,13 +29,18 @@ interface EventImport {
 }
 
 const schema = z.object({ 
-  id_event: z.string().nonempty() // Force redeploy v2
+  id_event: z.string().nonempty() // Force redeploy v3
 });
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = buildCorsHeaders(origin);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return handleOptions(req);
+    const corsResult = handleCors(req);
+    if (corsResult instanceof Response) return corsResult;
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
@@ -45,7 +49,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('🔵 Début publication événement en attente - v2');
+    console.log('🔵 Début publication événement en attente - v3');
 
     // Validation du payload avec Zod
     let id_event: string;
@@ -61,7 +65,7 @@ Deno.serve(async (req) => {
           details: error instanceof z.ZodError ? error.errors : 'Format JSON invalide'
         }),
         { 
-          headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400 
         }
       );
@@ -82,7 +86,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Événement non trouvé ou non approuvé' }),
         { 
-          headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 404 
         }
       );
@@ -93,7 +97,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Événement non trouvé' }),
         { 
-          headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 404 
         }
       );
@@ -131,7 +135,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         error: 'Erreur lors de la publication',
         details: rpcError.message
-      }), { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 500 });
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
     }
 
     // Vérifier si la RPC a retourné une erreur dans le JSON
@@ -140,7 +144,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         error: 'Erreur lors de la publication',
         details: publishedEvent.message
-      }), { headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 500 });
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
     }
 
     console.log('✅ Événement publié avec succès');
@@ -178,7 +182,7 @@ Deno.serve(async (req) => {
         event_name: eventImport.nom_event
       }),
       { 
-        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
       }
     );
@@ -191,7 +195,7 @@ Deno.serve(async (req) => {
         details: error instanceof Error ? error.message : String(error) 
       }),
       { 
-        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
       }
     );

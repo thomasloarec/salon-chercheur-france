@@ -91,7 +91,8 @@ export const useExhibitorsByEvent = (
       let query = supabase
         .from('participations_with_exhibitors')
         .select('*', { count: 'exact' })
-        .eq('id_event_text', eventIdText);
+        .eq('id_event_text', eventIdText)
+        .order('name_final', { ascending: true });
 
       // Apply pagination if limit provided
       if (typeof limit === 'number') {
