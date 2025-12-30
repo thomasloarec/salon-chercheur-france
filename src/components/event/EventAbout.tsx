@@ -19,7 +19,10 @@ const sanitize = (dirtyHtml: string) => {
 };
 
 export const EventAbout = ({ event }: EventAboutProps) => {
-  const defaultDescription = `Découvrez ${event.nom_event}, un événement incontournable du secteur ${event.secteur.toLowerCase()}. 
+  const secteurText = Array.isArray(event.secteur) 
+    ? event.secteur.join(', ').toLowerCase() 
+    : (event.secteur?.toLowerCase() || '');
+  const defaultDescription = `Découvrez ${event.nom_event}, un événement incontournable du secteur ${secteurText}. 
     Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`;
 
   return (

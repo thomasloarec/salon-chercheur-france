@@ -6,7 +6,7 @@ export interface Event {
   description_event?: string;
   date_debut: string;
   date_fin?: string;
-  secteur?: string;
+  secteur?: string | string[];
   nom_lieu?: string;
   ville?: string;
   country?: string;

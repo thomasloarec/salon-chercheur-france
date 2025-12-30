@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Navigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { convertSecteurToString } from '@/utils/sectorUtils';
+import { convertSecteurToArray } from '@/utils/sectorUtils';
 import { formatAddress } from '@/utils/formatAddress';
 import type { Event } from '@/types/event';
 import { AdminEventWrapper } from '@/components/admin/AdminEventWrapper';
@@ -23,7 +23,7 @@ const transformEventData = (data: any, source: 'events' | 'staging_events_import
     description_event: data.description_event,
     date_debut: data.date_debut || '1970-01-01',
     date_fin: data.date_fin || data.date_debut || '1970-01-01',
-    secteur: convertSecteurToString(data.secteur || 'Autre'),
+    secteur: convertSecteurToArray(data.secteur),
     nom_lieu: data.nom_lieu,
     ville: data.ville || 'Ville non précisée',
     country: isImport ? 'France' : (data.pays || 'France'),
