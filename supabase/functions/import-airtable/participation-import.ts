@@ -143,31 +143,18 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     console.log('[SYNC] Aucun événement staging à synchroniser');
   }
   
-  // Fonction de normalisation locale pour la cohérence
-  function normalizeDomain(input?: string|null): string|null {
-    if (!input) return null;
-    let s = input.trim().toLowerCase();
-    s = s.replace(/^https?:\/\//, '');
-    s = s.replace(/^www\./, '');
-    s = s.split('/')[0].split('#')[0].split('?')[0];
-    s = s.replace(/\.$/, '');
-    return s || null;
-  }
-  
-  // Mapping exposants en amont
+  // Mapping exposants par id_exposant (clé Airtable)
   const { data: exposants } = await supabaseClient
     .from('exposants')
-    .select('id_exposant, website_exposant');
+    .select('id_exposant');
   
-  const exposantMap = new Map<string, string>();
+  const exposantIdSet = new Set<string>();
   exposants?.forEach((e: any) => {
-    if (e.website_exposant) {
-      const normalized = normalizeDomain(e.website_exposant);
-      if (normalized) {
-        exposantMap.set(normalized, e.id_exposant);
-      }
+    if (e.id_exposant) {
+      exposantIdSet.add(e.id_exposant);
     }
   });
+  console.log(`[MAPPING] ${exposantIdSet.size} exposants chargés pour validation`);
   
   // Les participations sont déjà chargées plus haut
 
@@ -199,41 +186,44 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       continue;
     }
 
-    // Mapping exposant
-    const rawWeb = f['website_exposant'];
-    const domain = normalizeDomain(rawWeb);
+    // Récupérer id_exposant directement depuis Airtable (linked record ou lookup)
+    const rawExposantId = f['id_exposant'];
+    const exposantId = Array.isArray(rawExposantId) ? rawExposantId[0]?.trim() : rawExposantId?.trim();
     
-    if (!domain) {
-      participationErrors.push({
-        record_id: recordId,
-        reason: `website_exposant invalide: ${rawWeb}`
-      });
-      continue;
-    }
-    
-    const exposantId = exposantMap.get(domain);
     if (!exposantId) {
       participationErrors.push({
         record_id: recordId,
-        reason: `exposant introuvable (${domain})`
+        reason: `id_exposant manquant`
+      });
+      continue;
+    }
+    
+    // Vérifier que l'exposant existe en base
+    if (!exposantIdSet.has(exposantId)) {
+      participationErrors.push({
+        record_id: recordId,
+        reason: `exposant ${exposantId} non trouvé en base`
       });
       continue;
     }
 
-    // Construire urlexpo_event pour déduplication
     const standInfo = f['stand_exposant']?.trim() || '';
-    const urlExpoKey = `${domain}_${standInfo}`;
+    const websiteExposant = f['website_exposant']?.trim() || null;
     
-    // Récupérer l'UUID pour référence (optionnel)
+    // Utiliser nom_exposant_stand comme clé unique si disponible, sinon construire depuis id_exposant + stand
+    const nomExposantStand = f['nom_exposant_stand']?.trim();
+    const urlExpoKey = nomExposantStand || `${exposantId}_${standInfo}`;
+    
+    // Récupérer l'UUID de l'événement pour référence (optionnel)
     const eventUuid = eventIdToUuidMap.get(eventIdText);
 
     toInsert.push({
-      urlexpo_event: urlExpoKey,
-      id_event_text: eventIdText,    // <— Clé principale Event_XX
-      id_event: eventUuid || null,   // UUID en référence (nullable)
-      id_exposant: exposantId,       // Texte exposant ID  
+      urlexpo_event: urlExpoKey,           // Clé unique pour déduplication
+      id_event_text: eventIdText,          // Clé principale Event_XX
+      id_event: eventUuid || null,         // UUID en référence (nullable)
+      id_exposant: exposantId,             // id_exposant Airtable (ex: Exporec0HdpGKPar9ae8Q)
       stand_exposant: standInfo || null,  
-      website_exposant: rawWeb || null,
+      website_exposant: websiteExposant,
       created_at: new Date().toISOString()
     });
   }
