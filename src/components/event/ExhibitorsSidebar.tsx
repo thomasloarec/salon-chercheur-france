@@ -167,7 +167,8 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
               hall: null,
               plan: 'free' as const
             };
-          }).filter(e => e.name);
+          }).filter(e => e.name)
+            .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }));
 
           setAllExhibitors(mapped);
         }

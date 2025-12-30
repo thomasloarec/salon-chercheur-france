@@ -34,7 +34,10 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
   const [letterFilter, setLetterFilter] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    let result = exhibitors;
+    let result = [...exhibitors];
+    
+    // Tri alphabétique
+    result.sort((a, b) => (a.exhibitor_name ?? '').localeCompare(b.exhibitor_name ?? '', 'fr', { sensitivity: 'base' }));
     
     // Filtre par lettre
     if (letterFilter && letterFilter !== 'All') {
