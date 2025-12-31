@@ -24,10 +24,10 @@ const ExhibitorsReference = () => {
           <Button
             onClick={() => navigate('/exposants')}
             size="lg"
-            className="bg-accent hover:bg-accent/90 text-lg font-semibold px-8 h-14"
+            className="bg-accent hover:bg-accent/90 text-base sm:text-lg font-semibold px-4 sm:px-8 h-12 sm:h-14 max-w-full"
           >
-            Découvrir Lotexpo pour les exposants
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <span className="truncate">Découvrir Lotexpo pour les exposants</span>
+            <ArrowRight className="ml-2 h-5 w-5 flex-shrink-0" />
           </Button>
         </div>
       </div>

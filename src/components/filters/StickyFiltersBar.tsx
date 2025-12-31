@@ -67,11 +67,11 @@ export default function StickyFiltersBar({ className }: StickyFiltersBarProps) {
       className
     )}>
       <div className="container mx-auto px-4 py-3">
-        {/* Filters - Always visible */}
-        <div className="flex flex-wrap items-center gap-4">
+        {/* Filters - Horizontal scroll on mobile */}
+        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar md:overflow-visible md:flex-wrap">
           
           {/* Type Filter */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Type
             </label>
@@ -87,7 +87,7 @@ export default function StickyFiltersBar({ className }: StickyFiltersBarProps) {
           </div>
 
           {/* Month Filter */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Mois
             </label>
@@ -103,7 +103,7 @@ export default function StickyFiltersBar({ className }: StickyFiltersBarProps) {
           </div>
 
           {/* Region Filter */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
               Région
             </label>

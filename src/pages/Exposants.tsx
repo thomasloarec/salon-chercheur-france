@@ -581,7 +581,7 @@ export default function Exposants() {
               size="lg"
               variant="outline"
               className="text-lg px-8"
-              onClick={() => navigate('/events')}
+              onClick={() => navigate('/')}
             >
               Voir les événements
             </Button>

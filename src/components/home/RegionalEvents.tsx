@@ -1,32 +1,38 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import EventCard from '@/components/EventCard';
 import type { Event } from '@/types/event';
 import { regionSlugFromPostal } from '@/lib/postalToRegion';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const RegionalEvents = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const { data: events, isLoading } = useQuery({
     queryKey: ['regional-events-idf'],
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
-      // ✅ CORRECTION : Suppression du filtre is_b2b pour afficher tous les événements visibles
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('visible', true)
-        // ✅ Filtre is_b2b supprimé - aligné avec la page /events
         .gte('date_debut', today)
         .order('date_debut', { ascending: true });
 
       if (error) throw error;
       
-      // Filtrage par région Île-de-France (côté client) - Limite à 4 événements (1 ligne)
       const idfEvents = (data || []).filter(event => {
         const regionSlug = regionSlugFromPostal(event.code_postal);
         return regionSlug === 'ile-de-france';
@@ -65,19 +71,46 @@ const RegionalEvents = () => {
             Événements en Île-de-France
           </h2>
           <Button 
-            onClick={() => navigate('/events?region=ile-de-france')}
+            onClick={() => navigate('/?region=ile-de-france')}
             variant="ghost"
-            className="text-accent hover:text-accent/80"
+            className="text-accent hover:text-accent/80 hidden sm:flex"
           >
             Voir tous les événements
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {events.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
+        {/* Mobile: Carousel */}
+        {isMobile ? (
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-4">
+              {events.map((event) => (
+                <CarouselItem key={event.id} className="pl-4 basis-[85%]">
+                  <EventCard event={event} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-0 -translate-x-1/2" />
+            <CarouselNext className="right-0 translate-x-1/2" />
+          </Carousel>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {events.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        )}
+
+        {/* Mobile CTA */}
+        <div className="sm:hidden mt-6 text-center">
+          <Button 
+            onClick={() => navigate('/?region=ile-de-france')}
+            variant="ghost"
+            className="text-accent hover:text-accent/80"
+          >
+            Voir tous les événements
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </div>
     </section>

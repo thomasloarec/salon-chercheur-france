@@ -83,7 +83,29 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
       )}
       
       <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-        <div className="flex-1">
+        {/* Mobile: Image à droite du titre */}
+        <div className="flex sm:hidden items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <EventSectors 
+              event={event} 
+              className="flex flex-wrap gap-2 mb-3"
+              sectorClassName="text-xs px-2 py-0.5"
+            />
+            <h1 className="text-xl font-bold text-gray-900 leading-tight text-left mb-2 break-words">
+              {event.nom_event}
+            </h1>
+          </div>
+          {event.url_image && (
+            <img
+              src={event.url_image}
+              alt={`Affiche ${event.nom_event}`}
+              loading="lazy"
+              className="w-20 h-auto object-contain flex-shrink-0 rounded-md shadow"
+            />
+          )}
+        </div>
+
+        <div className="flex-1 hidden sm:block">
           {/* Secteurs d'activité avec pastilles couleur */}
           <EventSectors 
             event={event} 
@@ -91,7 +113,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             sectorClassName="text-sm px-3 py-1"
           />
 
-          {/* ✅ AMÉLIORATION : Titre optimisé mobile */}
+          {/* ✅ AMÉLIORATION : Titre optimisé */}
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight text-left mb-2 break-words">
             {event.nom_event}
           </h1>
@@ -216,7 +238,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           </div>
         </div>
 
-        {/* ✅ AMÉLIORATION : Image optimisée avec srcset pour SEO */}
+        {/* ✅ AMÉLIORATION : Image optimisée avec srcset pour SEO - Masquée sur mobile (affichée en haut) */}
         {event.url_image && (
           <img
             src={event.url_image}
@@ -226,7 +248,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             loading="lazy"
             width="192"
             height="auto"
-            className="w-28 sm:w-40 lg:w-48 h-auto object-contain flex-shrink-0 rounded-md shadow-lg"
+            className="hidden sm:block sm:w-40 lg:w-48 h-auto object-contain flex-shrink-0 rounded-md shadow-lg"
           />
         )}
       </div>
