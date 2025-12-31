@@ -122,12 +122,14 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
 
     // Cas normal : événement proche mais pas de nouveautés
     return (
-      <div className="rounded-2xl border p-8 text-center bg-muted/50">
+      <div className="rounded-2xl border p-4 sm:p-8 text-center bg-muted/50 overflow-hidden">
         <h3 className="text-xl font-semibold mb-2">Aucune nouveauté pour le moment</h3>
         <p className="text-muted-foreground mb-4">
           Les exposants n'ont pas encore publié de nouveautés pour cet événement.
         </p>
-        <AddNoveltyButton event={event} variant="outline" />
+        <div className="flex justify-center">
+          <AddNoveltyButton event={event} variant="outline" className="max-w-full text-sm sm:text-base whitespace-normal h-auto py-2" />
+        </div>
       </div>
     );
   }
