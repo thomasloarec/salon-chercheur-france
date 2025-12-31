@@ -30,10 +30,10 @@ export const useHomeStats = () => {
         console.error('Error fetching sectors count:', sectorsError);
       }
 
-      // Fetch exhibitors count
+      // Fetch exhibitors count from participation table (unique exhibitors)
       const { count: exhibitorsCount, error: exhibitorsError } = await supabase
-        .from('exhibitors')
-        .select('*', { count: 'exact', head: true });
+        .from('participation')
+        .select('id_exposant', { count: 'exact', head: true });
 
       if (exhibitorsError) {
         console.error('Error fetching exhibitors count:', exhibitorsError);
