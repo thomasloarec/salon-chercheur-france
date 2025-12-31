@@ -200,15 +200,20 @@ export const useExhibitorsByEvent = (
 
         return {
           id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
+          id_exposant: p.id_exposant,
+          exhibitor_uuid: exhibitorUUID,
           name: exhibitorName,
           exhibitor_name: exhibitorName,
           sortName: exhibitorName.toLowerCase(),
           slug: p.id_exposant || String(p.exhibitor_uuid || ''),
           logo_url: logoUrl,
           description: description,
+          exposant_description: description,
           website: website,
+          website_exposant: website,
           stand: p.stand_exposant || null,
           stand_exposant: p.stand_exposant || null,
+          urlexpo_event: p.urlexpo_event,
           hall: null,
           plan: 'free' as const
         };

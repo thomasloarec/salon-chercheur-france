@@ -273,8 +273,9 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                     });
 
                     // Convertir au format du nouveau ExhibitorDialog
+                    // Utiliser id_exposant pour le hook de participations
                     setSelectedExhibitor({
-                      id: exhibitor.id,
+                      id: exhibitor.id_exposant || exhibitor.id,
                       name: full.exhibitor_name,
                       slug: exhibitor.slug,
                       logo_url: full.logo_url || null,
