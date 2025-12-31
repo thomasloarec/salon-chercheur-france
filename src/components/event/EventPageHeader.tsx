@@ -83,26 +83,134 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
       )}
       
       <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-        {/* Mobile: Image à droite du titre */}
-        <div className="flex sm:hidden items-start gap-4">
-          <div className="flex-1 min-w-0">
-            <EventSectors 
-              event={event} 
-              className="flex flex-wrap gap-2 mb-3"
-              sectorClassName="text-xs px-2 py-0.5"
-            />
-            <h1 className="text-xl font-bold text-gray-900 leading-tight text-left mb-2 break-words">
-              {event.nom_event}
-            </h1>
+        {/* Mobile: Bloc complet avec image à droite du titre */}
+        <div className="sm:hidden">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="flex-1 min-w-0">
+              <EventSectors 
+                event={event} 
+                className="flex flex-wrap gap-2 mb-3"
+                sectorClassName="text-xs px-2 py-0.5"
+              />
+              <h1 className="text-xl font-bold text-gray-900 leading-tight text-left mb-2 break-words">
+                {event.nom_event}
+              </h1>
+            </div>
+            {event.url_image && (
+              <img
+                src={event.url_image}
+                alt={`Affiche ${event.nom_event}`}
+                loading="lazy"
+                className="w-20 h-auto object-contain flex-shrink-0 rounded-md shadow"
+              />
+            )}
           </div>
-          {event.url_image && (
-            <img
-              src={event.url_image}
-              alt={`Affiche ${event.nom_event}`}
-              loading="lazy"
-              className="w-20 h-auto object-contain flex-shrink-0 rounded-md shadow"
-            />
+
+          {/* Ville */}
+          {event.ville && (
+            <p className="text-sm text-muted-foreground mb-3 flex items-center gap-1">
+              📍 {event.ville}{event.country && event.country !== 'France' ? `, ${event.country}` : ', France'}
+            </p>
           )}
+
+          {/* Infos: Date, Type, Affluence, Lieu */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600 mb-4">
+            <div className="flex items-center">
+              <CalendarDays className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
+              <time dateTime={event.date_debut}>
+                {formatDate(event.date_debut)}
+                {event.date_debut !== event.date_fin && (
+                  <> - <time dateTime={event.date_fin}>{formatDate(event.date_fin)}</time></>
+                )}
+              </time>
+            </div>
+
+            {event.type_event && (
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
+                <span>{getEventTypeLabel(event.type_event)}</span>
+              </div>
+            )}
+
+            {event.affluence && (() => {
+              const formattedAffluence = formatAffluenceWithSuffix(event.affluence);
+              if (!formattedAffluence) return null;
+              return (
+                <div className="flex items-center">
+                  <Users className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
+                  <span>{formattedAffluence}</span>
+                </div>
+              );
+            })()}
+
+            {event.nom_lieu && (
+              <div className="flex items-center">
+                <Building className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
+                <span>{event.nom_lieu}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Description mobile */}
+          <div className="mb-4">
+            <div
+              className={cn(
+                "prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left",
+                !showFullDescription && "line-clamp-2"
+              )}
+              dangerouslySetInnerHTML={{
+                __html: sanitize(description)
+              }}
+            />
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 h-auto mt-1 text-primary"
+              onClick={() => setShowFullDescription(!showFullDescription)}
+            >
+              {showFullDescription ? 'Voir moins' : 'Voir plus...'}
+            </Button>
+          </div>
+
+          {/* Boutons d'action mobile */}
+          <Separator className="mb-4" />
+          <div className="flex flex-wrap gap-2 items-center">
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={handleFavoriteClick}
+              disabled={toggleFavorite.isPending}
+              className={cn(
+                "transition-all duration-200",
+                isFavorite 
+                  ? "bg-green-500 text-white hover:bg-green-600 border-green-500" 
+                  : "bg-white hover:bg-gray-100"
+              )}
+            >
+              {isFavorite ? (
+                <CalendarCheck className="h-4 w-4 mr-1.5" />
+              ) : (
+                <Calendar className="h-4 w-4 mr-1.5" />
+              )}
+              Agenda
+            </Button>
+            
+            <CalBtn type="gcal" event={event} />
+            <CalBtn type="outlook" event={event} />
+            {official && (
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(official, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-1.5" />
+                Site officiel
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Ajoutez cet événement à votre agenda en un clic.
+          </p>
         </div>
 
         <div className="flex-1 hidden sm:block">
