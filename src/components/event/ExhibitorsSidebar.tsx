@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Building2, ExternalLink } from 'lucide-react';
+import { Search, Building2, ExternalLink, Info, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { supabase } from '@/integrations/supabase/client';
@@ -179,15 +180,30 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
     }
   };
 
+  const [infoOpen, setInfoOpen] = useState(false);
+
   return (
     <>
       <aside className="sticky top-24 bg-white rounded-lg shadow-sm border p-6" aria-label="Liste des exposants">
         <div className="flex items-center justify-between">
-          {/* ✅ AMÉLIORATION : H3 → H2 pour hiérarchie correcte */}
           <h2 className="font-semibold text-lg">
             Exposants ({isLoading ? '...' : total})
           </h2>
         </div>
+
+        {/* Info bulle */}
+        <Collapsible open={infoOpen} onOpenChange={setInfoOpen} className="mt-3">
+          <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-full">
+            <Info className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="underline underline-offset-2">À propos de cette liste</span>
+            <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${infoOpen ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 text-xs text-muted-foreground bg-muted/50 rounded-md p-3 leading-relaxed">
+            Cette liste est constituée à partir des informations publiques disponibles. 
+            Elle peut être incomplète : certains exposants n'annoncent pas leur participation en ligne. 
+            Pour une liste exhaustive, consultez le site officiel de l'événement.
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Search */}
         <div className="relative mt-4">
