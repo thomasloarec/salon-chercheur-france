@@ -165,19 +165,6 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
               {showFullDescription ? 'Voir moins' : 'Voir plus...'}
             </Button>
 
-            {/* ✅ AJOUT : Lien interne contextuel pour le maillage SEO */}
-            {event.secteur && Array.isArray(event.secteur) && event.secteur.length > 0 && (
-              <p className="text-sm text-muted-foreground mt-3">
-                Découvrez aussi d'autres{' '}
-                <Link
-                  to={`/events?sectors=${encodeURIComponent(event.secteur[0])}`}
-                  className="text-primary hover:underline"
-                >
-                  événements {event.secteur[0]}
-                </Link>
-                {' '}en France.
-              </p>
-            )}
           </div>
 
           {/* Conteneur pour le séparateur et les actions afin de limiter la largeur */}
