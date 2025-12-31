@@ -43,6 +43,7 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
       let participations: any[] = [];
       
       if (exhibitorId) {
+        // Essayer d'abord par exhibitor_id (UUID)
         const { data: uuidParticipations, error: uuidError } = await supabase
           .from('participation')
           .select('id_participation, id_event, stand_exposant, exhibitor_id')
@@ -55,9 +56,25 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
             stand_exposant: p.stand_exposant
           }));
         }
+
+        // Si pas de résultat par UUID, essayer par id_exposant (texte legacy)
+        if (participations.length === 0) {
+          const { data: legacyParticipations, error: legacyError } = await supabase
+            .from('participation')
+            .select('id_participation, id_event, stand_exposant, id_exposant')
+            .eq('id_exposant', exhibitorId);
+
+          if (!legacyError && legacyParticipations && legacyParticipations.length > 0) {
+            participations = legacyParticipations.map(p => ({
+              id_participation: p.id_participation,
+              id_event: p.id_event,
+              stand_exposant: p.stand_exposant
+            }));
+          }
+        }
       }
 
-      // Stratégie 2: Si pas de résultats via UUID, essayer par nom dans la vue
+      // Stratégie 2: Si pas de résultats via ID, essayer par nom dans la vue
       if (participations.length === 0 && searchName) {
         const { data: nameParticipations, error } = await supabase
           .from('participations_with_exhibitors')
