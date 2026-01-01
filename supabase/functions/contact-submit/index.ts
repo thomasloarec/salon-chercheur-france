@@ -69,7 +69,7 @@ serve(async (req) => {
             nom_contact: body.nom,
             email_contact: body.email,
             telephone_contact: body.telephone || "",
-            object_contact: body.objet,
+            objet_contact: body.objet,
             description_contact: body.description
           }
         }
