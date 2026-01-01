@@ -58,8 +58,8 @@ serve(async (req) => {
       );
     }
 
-    // Créer l'entrée dans Airtable
-    const airtableUrl = `https://api.airtable.com/v0/${baseId}/Contact`;
+    // Créer l'entrée dans Airtable (Table 1)
+    const airtableUrl = `https://api.airtable.com/v0/${baseId}/Table%201`;
     
     const airtablePayload = {
       records: [
