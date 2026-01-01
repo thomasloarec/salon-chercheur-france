@@ -30,6 +30,7 @@ import Exposants from '@/pages/Exposants';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
+import Contact from '@/pages/Contact';
 import AdminEventByText from '@/pages/AdminEventByText';
 import NotFound from '@/pages/NotFound';
 import './App.css';
@@ -63,6 +64,7 @@ function App() {
               <Route path="/cgu" element={<CGU />} />
               <Route path="/mentions-legales" element={<MentionsLegales />} />
               <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/crm-integrations" element={<CrmIntegrations />} />
               <Route path="/oauth/callback" element={<OAuthCallback />} />
               <Route path="/oauth/hubspot/callback" element={<OAuthCallback />} />
