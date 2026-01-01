@@ -30,25 +30,28 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Contact */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Contact</h4>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-accent" />
-                <a href="mailto:admin@lotexpo.com" className="text-gray-300 hover:text-accent transition-colors">admin@lotexpo.com</a>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-accent" />
-                <a href="tel:+33623765293" className="text-gray-300 hover:text-accent transition-colors">06.23.76.52.93</a>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-accent" />
-                <span className="text-gray-300">Caen, France</span>
-              </div>
+        {/* Contact */}
+        <div>
+          <h4 className="text-lg font-semibold mb-4">Contact</h4>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-accent" />
+              <a href="mailto:admin@lotexpo.com" className="text-gray-300 hover:text-accent transition-colors">admin@lotexpo.com</a>
             </div>
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-accent" />
+              <a href="tel:+33623765293" className="text-gray-300 hover:text-accent transition-colors">06.23.76.52.93</a>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-accent" />
+              <span className="text-gray-300">Caen, France</span>
+            </div>
+            <a href="/contact" className="inline-block mt-2 text-accent hover:text-white transition-colors font-medium">
+              Nous contacter →
+            </a>
           </div>
         </div>
+      </div>
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 pt-8">
