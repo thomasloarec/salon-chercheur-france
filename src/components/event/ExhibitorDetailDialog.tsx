@@ -6,7 +6,7 @@ import type { Event } from '@/types/event';
 import { ExternalLink, Building2, MapPin, Globe } from 'lucide-react';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeExternalUrl } from '@/lib/url';
-
+import { normalizeStandNumber } from '@/utils/standUtils';
 interface Exhibitor {
   id_exposant: string;
   exhibitor_name: string;
@@ -90,7 +90,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
               {e.stand_exposant && (
                 <Badge variant="secondary" className="mt-1">
                   <MapPin className="h-3 w-3 mr-1" />
-                  Stand {e.stand_exposant}
+                  Stand {normalizeStandNumber(e.stand_exposant)}
                 </Badge>
               )}
             </div>
