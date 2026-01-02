@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ExhibitorsModal } from './ExhibitorsModal';
 import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
 import type { Event } from '@/types/event';
-
+import { normalizeStandNumber } from '@/utils/standUtils';
 interface Exhibitor {
   id_exposant: string;
   exhibitor_name: string;
@@ -189,7 +189,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
                       <div className="truncate font-medium">{exhibitor.exhibitor_name}</div>
                       {exhibitor.stand_exposant && (
                         <div className="text-xs text-muted-foreground">
-                          Stand {exhibitor.stand_exposant}
+                          Stand {normalizeStandNumber(exhibitor.stand_exposant)}
                         </div>
                       )}
                     </div>

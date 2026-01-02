@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Building2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizeStandNumber } from '@/utils/standUtils';
 
 interface Exhibitor {
   id_exposant: string;
@@ -153,7 +154,7 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{ex.exhibitor_name}</div>
                     {ex.stand_exposant && (
-                      <div className="text-xs text-muted-foreground">Stand {ex.stand_exposant}</div>
+                      <div className="text-xs text-muted-foreground">Stand {normalizeStandNumber(ex.stand_exposant)}</div>
                     )}
                   </div>
                 </div>
