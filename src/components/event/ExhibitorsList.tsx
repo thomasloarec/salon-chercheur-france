@@ -1,8 +1,8 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Building, ExternalLink, Target } from 'lucide-react';
+import { normalizeStandNumber } from '@/utils/standUtils';
 
 interface Exhibitor {
   nom_exposant: string;
@@ -85,7 +85,7 @@ export const ExhibitorsList = ({ exhibitors, crmTargets }: ExhibitorsListProps) 
                 </TableCell>
                 <TableCell>
                   {exhibitor.stand_exposant && (
-                    <Badge variant="outline">{exhibitor.stand_exposant}</Badge>
+                    <Badge variant="outline">{normalizeStandNumber(exhibitor.stand_exposant)}</Badge>
                   )}
                 </TableCell>
                 <TableCell>
