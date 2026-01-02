@@ -508,15 +508,7 @@ export default function Step1ExhibitorAndUser({
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{exhibitor.name}</h4>
-                          {exhibitor.website && (
-                            <p className="text-sm text-muted-foreground">{exhibitor.website}</p>
-                          )}
-                          {exhibitor.stand_info && (
-                            <p className="text-sm text-muted-foreground">Stand: {normalizeStandNumber(exhibitor.stand_info)}</p>
-                          )}
-                        </div>
+                        <h4 className="font-medium">{exhibitor.name}</h4>
                         <Button size="sm">Sélectionner</Button>
                       </div>
                     </CardContent>
