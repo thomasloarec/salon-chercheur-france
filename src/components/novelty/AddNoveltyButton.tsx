@@ -22,14 +22,17 @@ interface AddNoveltyButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg';
   className?: string;
+  label?: string;
 }
 
 export default function AddNoveltyButton({ 
   event, 
   variant = 'default', 
   size = 'default',
-  className 
+  className,
+  label
 }: AddNoveltyButtonProps) {
+  const defaultLabel = 'Exposant ? Ajouter votre nouveauté';
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -132,7 +135,7 @@ export default function AddNoveltyButton({
                 className={className}
               >
                 <Lock className="h-4 w-4 mr-2" />
-                Exposant ? Ajouter votre nouveauté
+                {label || defaultLabel}
               </Button>
             </div>
           </TooltipTrigger>
@@ -159,7 +162,7 @@ export default function AddNoveltyButton({
         className={className}
       >
         <Plus className="h-4 w-4 mr-2" />
-        {isChecking ? 'Vérification...' : 'Exposant ? Ajouter votre nouveauté'}
+        {isChecking ? 'Vérification...' : (label || defaultLabel)}
       </Button>
 
       <AddNoveltyStepper

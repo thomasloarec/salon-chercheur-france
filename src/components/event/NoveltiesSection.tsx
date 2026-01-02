@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Rocket } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
@@ -122,13 +122,23 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
 
     // Cas normal : événement proche mais pas de nouveautés
     return (
-      <div className="rounded-2xl border p-4 sm:p-8 text-center bg-muted/50 overflow-hidden">
-        <h3 className="text-xl font-semibold mb-2">Aucune nouveauté pour le moment</h3>
-        <p className="text-muted-foreground mb-4">
-          Les exposants n'ont pas encore publié de nouveautés pour cet événement.
+      <div className="rounded-2xl border border-[#ffe8d9] p-6 sm:p-8 text-center bg-[#ffe8d9]/40 overflow-hidden">
+        <div className="flex justify-center mb-4">
+          <div className="w-12 h-12 rounded-full bg-[#ff751f]/10 flex items-center justify-center">
+            <Rocket className="h-6 w-6 text-[#ff751f]" />
+          </div>
+        </div>
+        <h3 className="text-xl font-semibold mb-2">Soyez parmi les premiers à vous démarquer sur cet événement</h3>
+        <p className="text-muted-foreground mb-5 max-w-lg mx-auto">
+          Les exposants peuvent publier ici leurs nouveautés, lancements produits ou annonces clés, visibles par les visiteurs de l'événement.
         </p>
         <div className="flex justify-center">
-          <AddNoveltyButton event={event} variant="outline" className="max-w-full text-sm sm:text-base whitespace-normal h-auto py-2" />
+          <AddNoveltyButton 
+            event={event} 
+            variant="outline" 
+            className="max-w-full text-sm sm:text-base whitespace-normal h-auto py-2 border-[#ff751f]/30 hover:bg-[#ff751f]/5" 
+            label="👤 Exposant : publier une nouveauté"
+          />
         </div>
       </div>
     );
