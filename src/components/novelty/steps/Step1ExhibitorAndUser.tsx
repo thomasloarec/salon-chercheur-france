@@ -156,12 +156,12 @@ export default function Step1ExhibitorAndUser({
       // Charger directement depuis la vue participations_with_exhibitors
       let q = supabase
         .from('participations_with_exhibitors')
-        .select('id_exposant, exhibitor_uuid, exhibitor_name, exhibitor_website, stand_exposant, approved, logo_url')
+        .select('id_exposant, exhibitor_uuid, exhibitor_name, name_final, exhibitor_website, website_final, stand_exposant, approved, logo_url')
         .eq('id_event_text', eventId)
-        .order('exhibitor_name', { ascending: true });
+        .order('name_final', { ascending: true, nullsFirst: false });
 
       const s = debouncedSearch?.trim();
-      if (s) q = q.ilike('exhibitor_name', `%${s}%`);
+      if (s) q = q.ilike('name_final', `%${s}%`);
 
       const { data: participations, error: partErr } = await q;
       if (partErr) {
@@ -208,8 +208,8 @@ export default function Step1ExhibitorAndUser({
         
         return {
           id,
-          name: p.exhibitor_name || idExposant || '',
-          website: p.exhibitor_website || '',
+          name: p.name_final || p.exhibitor_name || idExposant || '',
+          website: p.website_final || p.exhibitor_website || '',
           logo_url: p.logo_url || undefined,
           approved,
           stand_info: p.stand_exposant || undefined,
