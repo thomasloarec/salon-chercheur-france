@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
 import { normalizeExternalUrl } from '@/lib/url';
+import { normalizeStandNumber } from '@/utils/standUtils';
 
 interface ExhibitorDialogProps {
   exhibitor: {
@@ -128,7 +129,7 @@ export function ExhibitorDialog({
                       </p>
                       {participation.stand && (
                         <Badge variant="secondary" className="flex-shrink-0 whitespace-nowrap">
-                          Stand {participation.stand}
+                          Stand {normalizeStandNumber(participation.stand)}
                         </Badge>
                       )}
                     </div>
