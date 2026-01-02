@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Step1Data } from '@/lib/validation/noveltySchemas';
 import { step1Schema, CONSUMER_EMAIL_DOMAINS } from '@/lib/validation/noveltySchemas';
 import type { Event } from '@/types/event';
+import { normalizeStandNumber } from '@/utils/standUtils';
 
 interface DbExhibitor {
   id: string;
@@ -326,7 +327,7 @@ export default function Step1ExhibitorAndUser({
                         <p className="text-sm text-muted-foreground">{selectedExhibitor.website}</p>
                       )}
                       {selectedExhibitor.stand_info && (
-                        <p className="text-sm text-muted-foreground">Stand: {selectedExhibitor.stand_info}</p>
+                        <p className="text-sm text-muted-foreground">Stand: {normalizeStandNumber(selectedExhibitor.stand_info)}</p>
                       )}
                     </div>
                   </div>
@@ -513,7 +514,7 @@ export default function Step1ExhibitorAndUser({
                             <p className="text-sm text-muted-foreground">{exhibitor.website}</p>
                           )}
                           {exhibitor.stand_info && (
-                            <p className="text-sm text-muted-foreground">Stand: {exhibitor.stand_info}</p>
+                            <p className="text-sm text-muted-foreground">Stand: {normalizeStandNumber(exhibitor.stand_info)}</p>
                           )}
                         </div>
                         <Button size="sm">Sélectionner</Button>
