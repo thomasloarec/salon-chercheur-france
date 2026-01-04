@@ -94,8 +94,9 @@ export const useExhibitorsByEvent = (
         .eq('id_event_text', eventIdText)
         .order('name_final', { ascending: true });
 
-      // Apply pagination if limit provided
-      if (typeof limit === 'number') {
+      // Si recherche active, ne pas appliquer de limite pour chercher parmi TOUS les exposants
+      // Sinon appliquer pagination si limit est fourni
+      if (!searchQuery && typeof limit === 'number') {
         const start = offset || 0;
         query = query.range(start, start + limit - 1);
       }
