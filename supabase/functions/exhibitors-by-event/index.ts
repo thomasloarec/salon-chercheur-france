@@ -70,8 +70,8 @@ Deno.serve(async (req) => {
       .eq('id_event_text', eventData.id_event)
       .order('exhibitor_name', { ascending: true })
 
-    // Apply pagination if provided
-    if (typeof limit === 'number') {
+    // Apply pagination ONLY if no search term (otherwise we need all results to filter)
+    if (!search?.trim() && typeof limit === 'number') {
       const start = offset || 0
       query = query.range(start, start + limit - 1)
     }
