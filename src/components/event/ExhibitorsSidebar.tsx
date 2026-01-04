@@ -11,6 +11,7 @@ import { ExhibitorsModal } from './ExhibitorsModal';
 import { ExhibitorDialog } from './ExhibitorDialog';
 import type { Event } from '@/types/event';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
+import { normalizeStandNumber } from '@/utils/standUtils';
 
 interface ExhibitorsSidebarProps {
   event: Event;
@@ -304,7 +305,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                     </div>
                     {(exhibitor.stand_exposant || exhibitor.stand || exhibitor.hall) && (
                       <p className="text-xs text-gray-500 truncate">
-                        {[exhibitor.hall, exhibitor.stand_exposant || exhibitor.stand].filter(Boolean).join(' • ')}
+                        {[exhibitor.hall, (exhibitor.stand_exposant || exhibitor.stand) ? `Stand ${normalizeStandNumber(exhibitor.stand_exposant || exhibitor.stand)}` : null].filter(Boolean).join(' • ')}
                       </p>
                     )}
                   </div>
