@@ -61,7 +61,7 @@ export function PendingEventsImport() {
         .from('staging_events_import')
         .select('*')
         .eq('status_event', 'Approved')
-        .order('created_at', { ascending: false });
+        .order('date_debut', { ascending: true });
 
       if (error) throw error;
       return (data as unknown) as EventImport[];
