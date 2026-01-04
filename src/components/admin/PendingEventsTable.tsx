@@ -31,7 +31,7 @@ export const PendingEventsTable = () => {
         .from('events')
         .select('*')
         .eq('visible', false)
-        .order('created_at', { ascending: false });
+        .order('date_debut', { ascending: true });
 
       if (error) throw error;
       
