@@ -273,9 +273,9 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                     });
 
                     // Convertir au format du nouveau ExhibitorDialog
-                    // Utiliser id_exposant pour le hook de participations
+                    // Utiliser id_exposant ET le nom pour le hook de participations
                     setSelectedExhibitor({
-                      id: exhibitor.id_exposant || exhibitor.id,
+                      id: exhibitor.exhibitor_uuid || exhibitor.id_exposant || exhibitor.id,
                       name: full.exhibitor_name,
                       slug: exhibitor.slug,
                       logo_url: full.logo_url || null,
@@ -362,8 +362,9 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           const full = await hydrateExhibitor(exhibitorForDialog);
           
           // Convertir au format du nouveau ExhibitorDialog
+          // Utiliser exhibitor_uuid en priorité pour le lien avec participations
           setSelectedExhibitor({
-            id: ex.id_exposant,
+            id: fullEx?.exhibitor_uuid || ex.id_exposant,
             name: full.exhibitor_name,
             slug: ex.id_exposant,
             logo_url: full.logo_url || null,
