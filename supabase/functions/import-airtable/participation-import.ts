@@ -143,29 +143,43 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     console.log('[SYNC] Aucun événement staging à synchroniser');
   }
   
-  // Charger tous les id_exposant existants pour validation
-  const { data: exposants } = await supabaseClient
-    .from('exposants')
-    .select('id_exposant');
-  
-  const validExposantIds = new Set<string>();
-  exposants?.forEach((e: any) => {
-    if (e.id_exposant) {
-      validExposantIds.add(e.id_exposant);
-    }
-  });
-  console.log(`[MAPPING] ${validExposantIds.size} exposants valides chargés pour validation`);
-  
-  // Fonction de normalisation de domaine (pour urlexpo_event uniquement)
+  // Fonction de normalisation de domaine robuste
   function normalizeDomain(input?: string|null): string|null {
     if (!input) return null;
     let s = input.trim().toLowerCase();
+    // Retirer protocole
     s = s.replace(/^https?:\/\//, '');
+    // Retirer www.
     s = s.replace(/^www\./, '');
+    // Retirer path, hash, query
     s = s.split('/')[0].split('#')[0].split('?')[0];
+    // Retirer point final
     s = s.replace(/\.$/, '');
+    // Retirer port
+    s = s.replace(/:\d+$/, '');
     return s || null;
   }
+
+  // Charger tous les exposants avec leurs websites pour le matching
+  const { data: exposants } = await supabaseClient
+    .from('exposants')
+    .select('id_exposant, website_exposant');
+  
+  // Créer un mapping website normalisé -> id_exposant (avec plusieurs variantes)
+  const websiteToExposantMap = new Map<string, string>();
+  exposants?.forEach((e: any) => {
+    if (e.website_exposant && e.id_exposant) {
+      const normalized = normalizeDomain(e.website_exposant);
+      if (normalized) {
+        websiteToExposantMap.set(normalized, e.id_exposant);
+      }
+    }
+  });
+  console.log(`[MAPPING] ${websiteToExposantMap.size} exposants avec website chargés pour matching`);
+  
+  // Debug: afficher quelques exemples de mappings
+  const sampleMappings = Array.from(websiteToExposantMap.entries()).slice(0, 5);
+  console.log('[DEBUG] Exemples de mappings website→id_exposant:', sampleMappings);
   
   // Les participations sont déjà chargées plus haut
 
@@ -197,31 +211,28 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       continue;
     }
 
-    // Récupérer l'id_exposant directement depuis Airtable
-    const rawExposantId = f['id_exposant'];
-    const exposantId = Array.isArray(rawExposantId) ? rawExposantId[0]?.trim() : rawExposantId?.trim();
+    // Matcher l'exposant via website_exposant
+    const rawWebsite = f['website_exposant'];
+    const websiteExposant = Array.isArray(rawWebsite) ? rawWebsite[0]?.trim() : rawWebsite?.trim();
+    const normalizedWebsite = normalizeDomain(websiteExposant);
     
+    if (!normalizedWebsite) {
+      participationErrors.push({
+        record_id: recordId,
+        reason: `website_exposant manquant ou invalide`
+      });
+      continue;
+    }
+    
+    // Trouver l'exposant correspondant via son website
+    const exposantId = websiteToExposantMap.get(normalizedWebsite);
     if (!exposantId) {
       participationErrors.push({
         record_id: recordId,
-        reason: `id_exposant manquant`
+        reason: `exposant non trouvé pour website: ${normalizedWebsite} (original: ${websiteExposant})`
       });
       continue;
     }
-    
-    // Vérifier que l'exposant existe dans la table exposants
-    if (!validExposantIds.has(exposantId)) {
-      participationErrors.push({
-        record_id: recordId,
-        reason: `exposant ${exposantId} non trouvé dans la table exposants`
-      });
-      continue;
-    }
-    
-    // Récupérer le website pour la clé unique (optionnel)
-    const rawWebsite = f['website_exposant'];
-    const websiteExposant = Array.isArray(rawWebsite) ? rawWebsite[0]?.trim() : rawWebsite?.trim();
-    const normalizedWebsite = normalizeDomain(websiteExposant) || exposantId;
 
     const standInfo = f['stand_exposant']?.trim() || '';
     
