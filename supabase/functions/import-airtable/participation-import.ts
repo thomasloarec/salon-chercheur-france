@@ -160,14 +160,42 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     return s || null;
   }
 
-  // Charger tous les exposants avec leurs websites pour le matching
-  const { data: exposants } = await supabaseClient
-    .from('exposants')
-    .select('id_exposant, website_exposant');
+  // Charger TOUS les exposants avec pagination (Supabase limite à 1000 par défaut)
+  console.log('[MAPPING] Chargement de tous les exposants avec pagination...');
+  const allExposants: Array<{ id_exposant: string; website_exposant: string | null }> = [];
+  let offset = 0;
+  const pageSize = 1000;
   
-  // Créer un mapping website normalisé -> id_exposant (avec plusieurs variantes)
+  while (true) {
+    const { data: exposantsPage, error } = await supabaseClient
+      .from('exposants')
+      .select('id_exposant, website_exposant')
+      .range(offset, offset + pageSize - 1);
+    
+    if (error) {
+      console.error('[ERROR] Erreur chargement exposants:', error);
+      break;
+    }
+    
+    if (!exposantsPage || exposantsPage.length === 0) {
+      break;
+    }
+    
+    allExposants.push(...exposantsPage);
+    console.log(`[MAPPING] Page chargée: ${exposantsPage.length} exposants (total: ${allExposants.length})`);
+    
+    if (exposantsPage.length < pageSize) {
+      break; // Dernière page
+    }
+    
+    offset += pageSize;
+  }
+  
+  console.log(`[MAPPING] Total exposants chargés: ${allExposants.length}`);
+  
+  // Créer un mapping website normalisé -> id_exposant
   const websiteToExposantMap = new Map<string, string>();
-  exposants?.forEach((e: any) => {
+  allExposants.forEach((e: any) => {
     if (e.website_exposant && e.id_exposant) {
       const normalized = normalizeDomain(e.website_exposant);
       if (normalized) {
@@ -175,7 +203,7 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       }
     }
   });
-  console.log(`[MAPPING] ${websiteToExposantMap.size} exposants avec website chargés pour matching`);
+  console.log(`[MAPPING] ${websiteToExposantMap.size} exposants avec website valide pour matching`);
   
   // Debug: afficher quelques exemples de mappings
   const sampleMappings = Array.from(websiteToExposantMap.entries()).slice(0, 5);
