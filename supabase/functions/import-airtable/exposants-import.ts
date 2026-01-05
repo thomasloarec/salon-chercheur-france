@@ -36,6 +36,23 @@ async function fetchAllExposants(airtableConfig: AirtableConfig): Promise<Airtab
 export async function importExposants(supabaseClient: any, airtableConfig: AirtableConfig): Promise<ExposantImportResult> {
   console.log('Importing exposants standalone...');
   
+  // Fonction de normalisation de domaine (même logique que participation-import)
+  function normalizeDomain(input?: string|null): string|null {
+    if (!input) return null;
+    let s = input.trim().toLowerCase();
+    // Retirer protocole
+    s = s.replace(/^https?:\/\//, '');
+    // Retirer www.
+    s = s.replace(/^www\./, '');
+    // Retirer path, hash, query
+    s = s.split('/')[0].split('#')[0].split('?')[0];
+    // Retirer point final
+    s = s.replace(/\.$/, '');
+    // Retirer port
+    s = s.replace(/:\d+$/, '');
+    return s || null;
+  }
+  
   const allExposants = await fetchAllExposants(airtableConfig);
   console.log('[DEBUG] exposants records:', allExposants.length);
 
@@ -69,10 +86,13 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
       continue;
     }
     
+    // Normaliser le website pour un matching cohérent avec participation-import
+    const normalizedWebsite = normalizeDomain(f['website_exposant']);
+    
     exposantsToUpsert.push({
       id_exposant: f['id_exposant'].trim(),
       nom_exposant: f['nom_exposant'].trim(),
-      website_exposant: f['website_exposant']?.trim() || null,
+      website_exposant: normalizedWebsite,
       exposant_description: f['exposant_description']?.trim() || null
     });
   }
