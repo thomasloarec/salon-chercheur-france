@@ -45,19 +45,33 @@ const splitConcatenatedSectors = (text: string): string[] => {
 };
 
 // Fonction utilitaire pour parser les secteurs depuis le champ secteur JSONB
-const parseSectorsFromJson = (secteur: string | string[] | any): string[] => {
+const parseSectorsFromJson = (secteur: string | string[] | unknown): string[] => {
   if (!secteur) return [];
+  
+  // Fonction helper pour aplatir récursivement
+  const flattenToStrings = (arr: unknown[]): string[] => {
+    const result: string[] = [];
+    for (const item of arr) {
+      if (typeof item === 'string') {
+        result.push(item);
+      } else if (Array.isArray(item)) {
+        result.push(...flattenToStrings(item));
+      }
+    }
+    return result;
+  };
   
   let rawSectors: string[] = [];
   
   if (Array.isArray(secteur)) {
-    rawSectors = secteur;
+    // Déjà un tableau - aplatir et extraire les strings
+    rawSectors = flattenToStrings(secteur);
   } else if (typeof secteur === 'string') {
     // Si c'est une string qui contient du JSON
     if (secteur.startsWith('[') && secteur.endsWith(']')) {
       try {
         const parsed = JSON.parse(secteur);
-        rawSectors = Array.isArray(parsed) ? parsed : [secteur];
+        rawSectors = Array.isArray(parsed) ? flattenToStrings(parsed) : [secteur];
       } catch {
         rawSectors = [secteur];
       }
@@ -66,23 +80,16 @@ const parseSectorsFromJson = (secteur: string | string[] | any): string[] => {
     }
   }
   
-  // Nettoyer et séparer les secteurs concaténés
+  // Nettoyer les secteurs
   const allSectors: string[] = [];
   for (const sector of rawSectors) {
-    if (Array.isArray(sector)) {
-      // Structure [["secteur"]] - traiter chaque sous-élément
-      for (const subSector of sector) {
-        if (typeof subSector === 'string') {
-          const cleaned = subSector.replace(/^\["|"\]$/g, '').replace(/"/g, '').trim();
-          if (cleaned) {
-            allSectors.push(...splitConcatenatedSectors(cleaned));
-          }
-        }
-      }
-    } else if (typeof sector === 'string') {
-      const cleaned = sector.replace(/^\["|"\]$/g, '').replace(/"/g, '').trim();
-      if (cleaned) {
-        // Vérifier si c'est un secteur concaténé
+    const cleaned = sector.replace(/^\["|"\]$/g, '').replace(/"/g, '').trim();
+    if (cleaned) {
+      // Vérifier si c'est un secteur connu directement
+      if (KNOWN_SECTORS.includes(cleaned)) {
+        allSectors.push(cleaned);
+      } else {
+        // Sinon essayer de séparer les secteurs concaténés
         allSectors.push(...splitConcatenatedSectors(cleaned));
       }
     }
