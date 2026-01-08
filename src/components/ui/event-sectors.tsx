@@ -106,6 +106,9 @@ export const EventSectors = ({ event, className = "", sectorClassName = "" }: Ev
   // Priorité 2 : Fallback sur le parsing du champ JSONB secteur  
   const sectorsFromJson = eventSectors.length === 0 ? parseSectorsFromJson(event.secteur) : [];
   
+  // Debug logging
+  console.log('[EventSectors] event:', event.nom_event, 'secteur raw:', event.secteur, 'type:', typeof event.secteur, 'isArray:', Array.isArray(event.secteur), 'parsed:', sectorsFromJson);
+  
   if (eventSectors.length > 0) {
     // Utiliser les secteurs de la table normalisée
     const sectorNames = eventSectors.map(s => s.name);
