@@ -1,5 +1,4 @@
 
-import { Linkedin, Twitter } from 'lucide-react';
 import logoLotexpo from '@/assets/logo-lotexpo.png';
 
 const Footer = () => {
@@ -13,10 +12,6 @@ const Footer = () => {
             <p className="text-gray-300 mb-4">
               La plateforme de référence pour découvrir tous les salons professionnels en France.
             </p>
-            <div className="flex space-x-4">
-              <Linkedin className="h-5 w-5 text-gray-300 hover:text-accent cursor-pointer transition-colors" />
-              <Twitter className="h-5 w-5 text-gray-300 hover:text-accent cursor-pointer transition-colors" />
-            </div>
           </div>
 
           {/* Quick Links */}
