@@ -16,7 +16,7 @@ const AllSectors = () => {
     } else {
       params.delete('sectors');
     }
-    navigate(`/events?${params.toString()}`);
+    navigate(`/?${params.toString()}`);
   };
 
   return (
