@@ -196,7 +196,22 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
         {!isLoading && total === 0 && !debouncedSearch && (
           <div className="mt-4 text-sm text-muted-foreground bg-muted/50 rounded-md p-4 leading-relaxed">
             <p className="font-medium text-foreground mb-1">Liste des exposants non disponible pour le moment.</p>
-            <p>Consultez le site officiel de l'événement pour plus d'informations.</p>
+            <p>
+              Consultez le{' '}
+              {event.url_site_officiel ? (
+                <a 
+                  href={event.url_site_officiel} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline font-medium"
+                >
+                  site officiel
+                </a>
+              ) : (
+                <span>site officiel</span>
+              )}{' '}
+              de l'événement pour plus d'informations.
+            </p>
           </div>
         )}
 
