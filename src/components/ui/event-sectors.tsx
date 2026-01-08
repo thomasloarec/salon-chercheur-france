@@ -61,22 +61,57 @@ const parseSectorsFromJson = (secteur: string | string[] | unknown): string[] =>
     return result;
   };
   
+  // Fonction pour séparer une chaîne contenant plusieurs secteurs
+  // en utilisant les secteurs connus pour éviter de couper "Finance, Assurance & Immobilier"
+  const splitBySectors = (text: string): string[] => {
+    const sortedSectors = [...KNOWN_SECTORS].sort((a, b) => b.length - a.length);
+    const foundSectors: string[] = [];
+    let remaining = text.trim();
+    
+    while (remaining.length > 0) {
+      let found = false;
+      for (const sector of sortedSectors) {
+        if (remaining.startsWith(sector)) {
+          foundSectors.push(sector);
+          remaining = remaining.slice(sector.length).trim();
+          // Enlever la virgule et les espaces au début
+          if (remaining.startsWith(',')) {
+            remaining = remaining.slice(1).trim();
+          }
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        // Si aucun secteur connu n'est trouvé au début, retourner le texte original
+        if (foundSectors.length === 0) {
+          return [text];
+        }
+        break;
+      }
+    }
+    
+    return foundSectors.length > 0 ? foundSectors : [text];
+  };
+  
   let rawSectors: string[] = [];
   
   if (Array.isArray(secteur)) {
     // Déjà un tableau - aplatir et extraire les strings
     rawSectors = flattenToStrings(secteur);
   } else if (typeof secteur === 'string') {
-    // Si c'est une string qui contient du JSON
-    if (secteur.startsWith('[') && secteur.endsWith(']')) {
+    // C'est une string - peut être du JSON ou une liste séparée par des virgules
+    const trimmed = secteur.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
       try {
-        const parsed = JSON.parse(secteur);
-        rawSectors = Array.isArray(parsed) ? flattenToStrings(parsed) : [secteur];
+        const parsed = JSON.parse(trimmed);
+        rawSectors = Array.isArray(parsed) ? flattenToStrings(parsed) : [trimmed];
       } catch {
-        rawSectors = [secteur];
+        rawSectors = splitBySectors(trimmed);
       }
     } else {
-      rawSectors = [secteur];
+      // String simple ou séparée par des virgules - utiliser splitBySectors
+      rawSectors = splitBySectors(trimmed);
     }
   }
   
@@ -89,7 +124,7 @@ const parseSectorsFromJson = (secteur: string | string[] | unknown): string[] =>
       if (KNOWN_SECTORS.includes(cleaned)) {
         allSectors.push(cleaned);
       } else {
-        // Sinon essayer de séparer les secteurs concaténés
+        // Sinon essayer de séparer les secteurs concaténés (sans virgule)
         allSectors.push(...splitConcatenatedSectors(cleaned));
       }
     }
