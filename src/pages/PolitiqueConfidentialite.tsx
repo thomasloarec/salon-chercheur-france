@@ -6,7 +6,7 @@ const PolitiqueConfidentialite = () => {
   return (
     <MainLayout title="Politique de confidentialité">
       <Helmet>
-        <meta name="description" content="Comment LotExpo collecte, utilise et protège vos données personnelles conformément au RGPD" />
+        <meta name="description" content="Comment Lotexpo collecte, utilise et protège vos données personnelles conformément au RGPD" />
       </Helmet>
       
       <div className="container mx-auto px-4 py-8 prose prose-lg max-w-4xl">
@@ -14,18 +14,18 @@ const PolitiqueConfidentialite = () => {
 
         {/* 0. Préambule */}
         <p className="mb-6">
-          La présente politique de confidentialité décrit comment [NOM_Entreprise] (« nous », « notre », « nos ») collecte, utilise et protège les données personnelles que vous nous communiquez lorsque vous utilisez le site [NOM_Site] (ci‑après « le Site »).
+          La présente politique de confidentialité décrit comment CECILE NOEL COMMUNICATION (« nous », « notre », « nos ») collecte, utilise et protège les données personnelles que vous nous communiquez lorsque vous utilisez le site Lotexpo (ci‑après « le Site »).
         </p>
 
         {/* 1. Responsable du traitement */}
         <section id="responsable-traitement" className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-primary">1. Responsable du traitement</h2>
           <p className="mb-4">
-            Responsable : <strong>[NOM_Responsable]</strong> – [NOM_Entreprise] (entreprise individuelle)
-            <br /> Adresse : [ADRESSE_Entreprise]
-            <br /> Email : <a href="mailto:[EMAIL_Contact]" className="text-primary hover:underline">[EMAIL_Contact]</a>
-            <br /> Numéro SIREN : [NUMERO_SIREN]
-            <br /> Délégué à la protection des données (DPO) : [DPO_NOM] – <a href="mailto:[DPO_EMAIL]" className="text-primary hover:underline">[DPO_EMAIL]</a> (le cas échéant)
+            Responsable : <strong>Cécile Noël</strong> – CECILE NOEL COMMUNICATION (entreprise individuelle)
+            <br /> Adresse : 12 allée des Longrais, 14200 Hérouville Saint Clair
+            <br /> Téléphone : 06.23.76.52.93
+            <br /> Email : <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>
+            <br /> Numéro SIREN : 929562320
           </p>
         </section>
 
@@ -88,12 +88,11 @@ const PolitiqueConfidentialite = () => {
         <section id="destinataires" className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-primary">4. Destinataires</h2>
           <p className="mb-4">
-            Les données sont destinées uniquement aux personnes habilitées de [NOM_Entreprise] et à nos prestataires techniques listés ci‑dessous :
+            Les données sont destinées uniquement aux personnes habilitées de CECILE NOEL COMMUNICATION et à nos prestataires techniques listés ci‑dessous :
           </p>
           <ul className="list-disc pl-6 mb-4">
-            <li>Hébergement : [HEBERGEUR_NOM] ([HEBERGEUR_PAYS])</li>
-            <li>Service d'emailing : [EMAILING_FOURNISSEUR] ([EMAILING_PAYS])</li>
-            <li>Outil de statistiques : [ANALYTICS_NOM] ([ANALYTICS_PAYS])</li>
+            <li>Hébergement : GoDaddy (Inde)</li>
+            <li>Service d'emailing : Brevo (France)</li>
           </ul>
         </section>
 
@@ -129,7 +128,7 @@ const PolitiqueConfidentialite = () => {
         <section id="droits" className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-primary">8. Vos droits</h2>
           <p className="mb-4">
-            Conformément au RGPD, vous disposez des droits d'accès, rectification, effacement, opposition, limitation et portabilité. Vous pouvez les exercer auprès de <a href="mailto:[EMAIL_Contact]" className="text-primary hover:underline">[EMAIL_Contact]</a>. En cas de doute raisonnable sur votre identité, une preuve pourra être demandée.
+            Conformément au RGPD, vous disposez des droits d'accès, rectification, effacement, opposition, limitation et portabilité. Vous pouvez les exercer auprès de <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>. En cas de doute raisonnable sur votre identité, une preuve pourra être demandée.
           </p>
           <p className="mb-4">
             Vous disposez également du droit d'introduire une réclamation auprès de la CNIL (www.cnil.fr).
@@ -155,11 +154,6 @@ const PolitiqueConfidentialite = () => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-gray-300 px-4 py-2">_ga</td>
-                    <td className="border border-gray-300 px-4 py-2">Statistiques Google Analytics</td>
-                    <td className="border border-gray-300 px-4 py-2">13 mois</td>
-                  </tr>
-                  <tr>
                     <td className="border border-gray-300 px-4 py-2">cookie_consent</td>
                     <td className="border border-gray-300 px-4 py-2">Stocker vos préférences</td>
                     <td className="border border-gray-300 px-4 py-2">6 mois</td>
@@ -174,14 +168,14 @@ const PolitiqueConfidentialite = () => {
         <section id="modifications" className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-primary">10. Modifications de la politique</h2>
           <p className="mb-4">
-            Cette politique peut être mise à jour à tout moment. Dernière mise à jour : [DATE_MAJ]. Nous vous invitons à la consulter régulièrement.
+            Cette politique peut être mise à jour à tout moment. Dernière mise à jour : 08/01/2026. Nous vous invitons à la consulter régulièrement.
           </p>
         </section>
 
         {/* 11. Contact */}
         <section id="contact" className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-primary">11. Nous contacter</h2>
-          <p className="mb-4">Pour toute question sur cette politique, contactez‑nous à <a href="mailto:[EMAIL_Contact]" className="text-primary hover:underline">[EMAIL_Contact]</a>.</p>
+          <p className="mb-4">Pour toute question sur cette politique, contactez‑nous à <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>.</p>
         </section>
       </div>
     </MainLayout>

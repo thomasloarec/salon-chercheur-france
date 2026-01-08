@@ -10,8 +10,8 @@ const SiteGuard = ({ children }: SiteGuardProps) => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  // Check if site lock is enabled
-  const isSiteLockEnabled = import.meta.env.VITE_SITE_LOCK_ENABLED === 'true';
+  // Site lock is now disabled - the site is publicly accessible
+  const isSiteLockEnabled = false;
 
   useEffect(() => {
     // If site lock is disabled, allow access immediately
