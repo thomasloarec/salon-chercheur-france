@@ -2,6 +2,7 @@ import React from 'react';
 import { SectorBadge } from './sector-badge';
 import { useEventSectors } from '@/hooks/useSectors';
 import type { Event } from '@/types/event';
+import { SECTOR_CONFIG } from '@/constants/sectors';
 
 interface EventSectorsProps {
   event: Event;
@@ -9,42 +10,86 @@ interface EventSectorsProps {
   sectorClassName?: string;
 }
 
+// Liste des noms de secteurs connus pour la séparation
+const KNOWN_SECTORS = Object.keys(SECTOR_CONFIG);
+
+// Fonction pour séparer les secteurs concaténés (ex: "Industrie & Production Commerce & Distribution")
+const splitConcatenatedSectors = (text: string): string[] => {
+  // Trier par longueur décroissante pour matcher les noms les plus longs en premier
+  const sortedSectors = [...KNOWN_SECTORS].sort((a, b) => b.length - a.length);
+  
+  const foundSectors: string[] = [];
+  let remaining = text.trim();
+  
+  while (remaining.length > 0) {
+    let found = false;
+    for (const sector of sortedSectors) {
+      if (remaining.startsWith(sector)) {
+        foundSectors.push(sector);
+        remaining = remaining.slice(sector.length).trim();
+        found = true;
+        break;
+      }
+    }
+    // Si aucun secteur n'est trouvé, on arrête pour éviter une boucle infinie
+    if (!found) {
+      // Retourner le texte original si on ne peut pas parser
+      if (foundSectors.length === 0) {
+        return [text];
+      }
+      break;
+    }
+  }
+  
+  return foundSectors.length > 0 ? foundSectors : [text];
+};
+
 // Fonction utilitaire pour parser les secteurs depuis le champ secteur JSONB
 const parseSectorsFromJson = (secteur: string | string[] | any): string[] => {
   if (!secteur) return [];
   
-  let sectors = [];
+  let rawSectors: string[] = [];
   
   if (Array.isArray(secteur)) {
-    sectors = secteur;
+    rawSectors = secteur;
   } else if (typeof secteur === 'string') {
     // Si c'est une string qui contient du JSON
     if (secteur.startsWith('[') && secteur.endsWith(']')) {
       try {
         const parsed = JSON.parse(secteur);
-        sectors = Array.isArray(parsed) ? parsed : [secteur];
+        rawSectors = Array.isArray(parsed) ? parsed : [secteur];
       } catch {
-        sectors = [secteur];
+        rawSectors = [secteur];
       }
     } else {
-      sectors = [secteur];
+      rawSectors = [secteur];
     }
   }
   
-  // Nettoyer les secteurs - gérer les structures [["secteur"]] et ["secteur1", "secteur2"]
-  const cleanedSectors = [];
-  for (const sector of sectors) {
+  // Nettoyer et séparer les secteurs concaténés
+  const allSectors: string[] = [];
+  for (const sector of rawSectors) {
     if (Array.isArray(sector)) {
-      // Structure [["secteur"]] - prendre le premier élément de chaque sous-tableau
-      cleanedSectors.push(...sector);
+      // Structure [["secteur"]] - traiter chaque sous-élément
+      for (const subSector of sector) {
+        if (typeof subSector === 'string') {
+          const cleaned = subSector.replace(/^\["|"\]$/g, '').replace(/"/g, '').trim();
+          if (cleaned) {
+            allSectors.push(...splitConcatenatedSectors(cleaned));
+          }
+        }
+      }
     } else if (typeof sector === 'string') {
-      // Structure ["secteur1", "secteur2"] - garder tel quel
-      const cleaned = sector.replace(/^\["|"\]$/g, '').replace(/"/g, '');
-      if (cleaned) cleanedSectors.push(cleaned);
+      const cleaned = sector.replace(/^\["|"\]$/g, '').replace(/"/g, '').trim();
+      if (cleaned) {
+        // Vérifier si c'est un secteur concaténé
+        allSectors.push(...splitConcatenatedSectors(cleaned));
+      }
     }
   }
   
-  return cleanedSectors.filter(Boolean);
+  // Dédupliquer
+  return [...new Set(allSectors.filter(Boolean))];
 };
 
 export const EventSectors = ({ event, className = "", sectorClassName = "" }: EventSectorsProps) => {
