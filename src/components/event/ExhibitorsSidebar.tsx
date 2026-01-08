@@ -188,34 +188,46 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
       <aside className="sticky top-24 bg-white rounded-lg shadow-sm border p-6" aria-label="Liste des exposants">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-lg">
-            Exposants ({isLoading ? '...' : total})
+            {isLoading ? 'Exposants (...)' : total > 0 ? `Exposants (${total})` : 'Exposants'}
           </h2>
         </div>
 
-        {/* Info bulle */}
-        <Collapsible open={infoOpen} onOpenChange={setInfoOpen} className="mt-3">
-          <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-full">
-            <Info className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="underline underline-offset-2">À propos de cette liste</span>
-            <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${infoOpen ? 'rotate-180' : ''}`} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2 text-xs text-muted-foreground bg-muted/50 rounded-md p-3 leading-relaxed">
-            Cette liste est constituée à partir des informations publiques disponibles. 
-            Elle peut être incomplète : certains exposants n'annoncent pas leur participation en ligne. 
-            Pour une liste exhaustive, consultez le site officiel de l'événement.
-          </CollapsibleContent>
-        </Collapsible>
+        {/* Message si aucun exposant disponible */}
+        {!isLoading && total === 0 && !debouncedSearch && (
+          <div className="mt-4 text-sm text-muted-foreground bg-muted/50 rounded-md p-4 leading-relaxed">
+            <p className="font-medium text-foreground mb-1">Liste des exposants non disponible pour le moment.</p>
+            <p>Consultez le site officiel de l'événement pour plus d'informations.</p>
+          </div>
+        )}
 
-        {/* Search */}
-        <div className="relative mt-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Rechercher un exposant..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+        {/* Info bulle - affichée seulement s'il y a des exposants */}
+        {total > 0 && (
+          <Collapsible open={infoOpen} onOpenChange={setInfoOpen} className="mt-3">
+            <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-full">
+              <Info className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="underline underline-offset-2">À propos de cette liste</span>
+              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${infoOpen ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 text-xs text-muted-foreground bg-muted/50 rounded-md p-3 leading-relaxed">
+              Cette liste est constituée à partir des informations publiques disponibles. 
+              Elle peut être incomplète : certains exposants n'annoncent pas leur participation en ligne. 
+              Pour une liste exhaustive, consultez le site officiel de l'événement.
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* Search - affiché seulement s'il y a des exposants */}
+        {total > 0 && (
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Rechercher un exposant..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        )}
 
         {/* Content */}
         <div className="mt-4 space-y-2">
@@ -233,13 +245,11 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
             <div className="text-center py-4">
               <p className="text-sm text-red-600">Erreur lors du chargement</p>
             </div>
-          ) : preview.length === 0 ? (
+          ) : preview.length === 0 && debouncedSearch ? (
             <div className="text-center py-4">
-              <p className="text-sm text-gray-500">
-                {debouncedSearch ? 'Aucun exposant trouvé' : 'Aucun exposant inscrit'}
-              </p>
+              <p className="text-sm text-gray-500">Aucun exposant trouvé</p>
             </div>
-          ) : (
+          ) : preview.length > 0 ? (
             preview.map((exhibitor) => {
               return (
                 <button
@@ -314,7 +324,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                 </button>
               );
             })
-          )}
+          ) : null}
         </div>
 
         {/* Footer CTA */}
