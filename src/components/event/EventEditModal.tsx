@@ -67,6 +67,40 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     label: s.name,
   }));
 
+  // Charger les secteurs depuis la DB quand le modal s'ouvre
+  useEffect(() => {
+    const loadEventSectors = async () => {
+      if (event && open) {
+        // Utiliser id_event pour la table event_sectors
+        const eventIdForSectors = event.id_event || event.id;
+        
+        console.log('Loading sectors for event:', { 
+          eventId: event.id, 
+          id_event: event.id_event,
+          eventIdForSectors 
+        });
+        
+        const { data, error } = await supabase
+          .from('event_sectors')
+          .select('sector_id')
+          .eq('event_id', eventIdForSectors);
+        
+        console.log('Loaded sectors:', { data, error });
+        
+        if (!error && data) {
+          const sectorIds = data.map(row => row.sector_id);
+          console.log('Setting selectedSectorIds:', sectorIds);
+          setSelectedSectorIds(sectorIds);
+        } else {
+          console.error('Error loading event sectors:', error);
+          setSelectedSectorIds([]);
+        }
+      }
+    };
+    
+    loadEventSectors();
+  }, [event, open]);
+
   useEffect(() => {
     if (event) {
       setFormData({
@@ -85,13 +119,6 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         tarif: event.tarif || '',
         visible: event.visible ?? true,
       });
-      
-      // Charger les secteurs existants de l'événement
-      if (event.sectors && event.sectors.length > 0) {
-        setSelectedSectorIds(event.sectors.map((s: Sector) => s.id));
-      } else {
-        setSelectedSectorIds([]);
-      }
     }
   }, [event]);
 
@@ -214,22 +241,32 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
         // Mettre à jour les secteurs dans event_sectors (seulement pour events, pas staging)
         if (!error && data) {
+          const eventIdForSectors = event.id_event || event.id;
+          console.log('Updating sectors for event:', { 
+            eventIdForSectors, 
+            selectedSectorIds 
+          });
+          
           // Supprimer les anciens secteurs
           const { error: deleteError } = await supabase
             .from('event_sectors')
             .delete()
-            .eq('event_id', event.id_event || event.id);
+            .eq('event_id', eventIdForSectors);
 
           if (deleteError) {
             console.error('Error deleting old sectors:', deleteError);
+          } else {
+            console.log('Old sectors deleted successfully');
           }
 
           // Ajouter les nouveaux secteurs
           if (selectedSectorIds.length > 0) {
             const sectorInserts = selectedSectorIds.map(sectorId => ({
-              event_id: event.id_event || event.id,
+              event_id: eventIdForSectors,
               sector_id: sectorId,
             }));
+
+            console.log('Inserting new sectors:', sectorInserts);
 
             const { error: insertError } = await supabase
               .from('event_sectors')
@@ -237,6 +274,8 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
             if (insertError) {
               console.error('Error inserting new sectors:', insertError);
+            } else {
+              console.log('New sectors inserted successfully');
             }
           }
         }
@@ -262,6 +301,10 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       // Invalider aussi les requêtes globales des événements
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['admin-events'] });
+      
+      // Invalider les secteurs de l'événement
+      const eventIdForSectors = event.id_event || event.id;
+      queryClient.invalidateQueries({ queryKey: ['event-sectors', eventIdForSectors] });
 
       // Transform the response to match our Event interface
       const transformedEvent: Event = isEventsImport ? {
