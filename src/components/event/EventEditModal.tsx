@@ -71,14 +71,21 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   useEffect(() => {
     const loadEventSectors = async () => {
       if (event && open) {
-        // Utiliser id_event pour la table event_sectors
-        const eventIdForSectors = event.id_event || event.id;
+        // IMPORTANT: utiliser id_event (ex: "Event_84") pour la table event_sectors
+        // La foreign key event_sectors.event_id -> events.id_event (text)
+        const eventIdForSectors = event.id_event;
         
         console.log('Loading sectors for event:', { 
           eventId: event.id, 
           id_event: event.id_event,
           eventIdForSectors 
         });
+        
+        if (!eventIdForSectors) {
+          console.warn('No id_event found, cannot load sectors from event_sectors table');
+          setSelectedSectorIds([]);
+          return;
+        }
         
         const { data, error } = await supabase
           .from('event_sectors')
@@ -203,6 +210,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           console.error('Error updating staging_events_import:', error);
         }
       } else {
+        // Récupérer les noms des secteurs sélectionnés pour la colonne legacy "secteur"
+        const selectedSectorNames = allSectors
+          .filter(s => selectedSectorIds.includes(s.id))
+          .map(s => s.name);
+
         // Update events table
         const updateData = {
           nom_event: formData.nom_event,
@@ -220,6 +232,8 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           tarif: formData.tarif || null,
           visible: formData.visible,
           slug: newSlug,
+          // Mettre à jour la colonne secteur legacy avec les noms des secteurs
+          secteur: selectedSectorNames.length > 0 ? selectedSectorNames : null,
           updated_at: new Date().toISOString(),
         };
 
@@ -241,42 +255,48 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
         // Mettre à jour les secteurs dans event_sectors (seulement pour events, pas staging)
         if (!error && data) {
-          const eventIdForSectors = event.id_event || event.id;
-          console.log('Updating sectors for event:', { 
-            eventIdForSectors, 
-            selectedSectorIds 
-          });
+          // IMPORTANT: utiliser id_event (ex: "Event_84"), pas id (UUID)
+          const eventIdForSectors = event.id_event;
           
-          // Supprimer les anciens secteurs
-          const { error: deleteError } = await supabase
-            .from('event_sectors')
-            .delete()
-            .eq('event_id', eventIdForSectors);
-
-          if (deleteError) {
-            console.error('Error deleting old sectors:', deleteError);
-          } else {
-            console.log('Old sectors deleted successfully');
-          }
-
-          // Ajouter les nouveaux secteurs
-          if (selectedSectorIds.length > 0) {
-            const sectorInserts = selectedSectorIds.map(sectorId => ({
-              event_id: eventIdForSectors,
-              sector_id: sectorId,
-            }));
-
-            console.log('Inserting new sectors:', sectorInserts);
-
-            const { error: insertError } = await supabase
+          if (eventIdForSectors) {
+            console.log('Updating sectors for event:', { 
+              eventIdForSectors, 
+              selectedSectorIds 
+            });
+            
+            // Supprimer les anciens secteurs
+            const { error: deleteError } = await supabase
               .from('event_sectors')
-              .insert(sectorInserts);
+              .delete()
+              .eq('event_id', eventIdForSectors);
 
-            if (insertError) {
-              console.error('Error inserting new sectors:', insertError);
+            if (deleteError) {
+              console.error('Error deleting old sectors:', deleteError);
             } else {
-              console.log('New sectors inserted successfully');
+              console.log('Old sectors deleted successfully');
             }
+
+            // Ajouter les nouveaux secteurs
+            if (selectedSectorIds.length > 0) {
+              const sectorInserts = selectedSectorIds.map(sectorId => ({
+                event_id: eventIdForSectors,
+                sector_id: sectorId,
+              }));
+
+              console.log('Inserting new sectors:', sectorInserts);
+
+              const { error: insertError } = await supabase
+                .from('event_sectors')
+                .insert(sectorInserts);
+
+              if (insertError) {
+                console.error('Error inserting new sectors:', insertError);
+              } else {
+                console.log('New sectors inserted successfully');
+              }
+            }
+          } else {
+            console.warn('No id_event found, skipping event_sectors update');
           }
         }
       }
@@ -306,10 +326,16 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       const eventIdForSectors = event.id_event || event.id;
       queryClient.invalidateQueries({ queryKey: ['event-sectors', eventIdForSectors] });
 
+      // Construire les secteurs mis à jour pour l'objet Event
+      const updatedSectors = allSectors
+        .filter(s => selectedSectorIds.includes(s.id))
+        .map(s => ({ id: s.id, name: s.name, created_at: '' }));
+
       // Transform the response to match our Event interface
       const transformedEvent: Event = isEventsImport ? {
         // For staging_events_import, transform the data
         id: data.id,
+        id_event: event.id_event, // Préserver id_event
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
@@ -334,11 +360,12 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         code_postal: data.code_postal,
         visible: false,
         slug: event.slug,
-        sectors: event.sectors || [],
+        sectors: updatedSectors,
         is_favorite: event.is_favorite
       } : {
         // For events table, use actual DB column names
         id: data.id,
+        id_event: data.id_event || event.id_event, // Préserver id_event
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
@@ -363,7 +390,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         code_postal: data.code_postal,
         visible: data.visible,
         slug: data.slug,
-        sectors: event.sectors || [],
+        sectors: updatedSectors,
         is_favorite: event.is_favorite
       };
 
