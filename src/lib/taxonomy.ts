@@ -27,10 +27,33 @@ export const SECTOR_ALIASES: Record<string, string> = {
 };
 
 // Normalisation universelle d'un slug secteur
-export function normalizeSectorSlug(slug?: string | null) {
-  if (!slug) return slug;
+export function normalizeSectorSlug(slug?: string | null): string | null {
+  if (!slug) return null;
   const trimmed = String(slug).trim();
-  return SECTOR_ALIASES[trimmed] ?? trimmed;
+  
+  // Si c'est déjà un slug canonique, le retourner
+  const existingSlug = CANONICAL_SECTORS.find(s => s.value === trimmed);
+  if (existingSlug) return trimmed;
+  
+  // Si c'est un alias, retourner le slug canonique
+  if (SECTOR_ALIASES[trimmed]) return SECTOR_ALIASES[trimmed];
+  
+  // Si c'est un label (nom complet), trouver le slug correspondant
+  const byLabel = CANONICAL_SECTORS.find(s => 
+    s.label.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (byLabel) return byLabel.value;
+  
+  // Fallback: retourner tel quel (peut-être un nouveau slug non répertorié)
+  return trimmed;
+}
+
+// Convertir un label de secteur en slug canonique
+export function sectorLabelToSlug(label: string): string | null {
+  const found = CANONICAL_SECTORS.find(s => 
+    s.label.toLowerCase() === label.toLowerCase()
+  );
+  return found?.value ?? null;
 }
 
 export const SECTOR_DB_LABELS: Record<string, string[]> = {
