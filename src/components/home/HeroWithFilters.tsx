@@ -23,7 +23,7 @@ const HeroWithFilters = () => {
   });
 
   const sectorOptions = sectors.map(s => ({
-    value: s.id,
+    value: s.name,
     label: s.name,
   }));
 
