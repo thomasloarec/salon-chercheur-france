@@ -59,7 +59,7 @@ const HeroWithFilters = () => {
     if (selectedMonth.length > 0) params.set('month', selectedMonth[0]);
     if (selectedRegion.length > 0) params.set('region', selectedRegion[0]);
     
-    navigate(`/events?${params.toString()}`);
+    navigate(`/?${params.toString()}`);
   };
 
   return (
