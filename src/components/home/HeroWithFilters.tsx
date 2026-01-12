@@ -7,6 +7,7 @@ import { useSectors } from '@/hooks/useSectors';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAllRegions } from '@/lib/filtersData';
+import { CANONICAL_SECTORS, sectorLabelToSlug } from '@/lib/taxonomy';
 
 const HeroWithFilters = () => {
   const navigate = useNavigate();
@@ -22,10 +23,14 @@ const HeroWithFilters = () => {
     staleTime: 300_000,
   });
 
-  const sectorOptions = sectors.map(s => ({
-    value: s.name,
-    label: s.name,
-  }));
+  // Utiliser les slugs canoniques pour les secteurs
+  const sectorOptions = sectors.map(s => {
+    const slug = sectorLabelToSlug(s.name);
+    return {
+      value: slug || s.name, // Utiliser le slug si trouvé, sinon le nom
+      label: s.name,
+    };
+  });
 
   const typeOptions = [
     { value: 'salon', label: 'Salon' },
