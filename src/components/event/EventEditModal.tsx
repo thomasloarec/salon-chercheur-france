@@ -12,13 +12,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { SafeSelect } from '@/components/ui/SafeSelect';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { convertSecteurToString } from '@/utils/sectorUtils';
+import { useSectors } from '@/hooks/useSectors';
 import type { Event } from '@/types/event';
-
+import type { Sector } from '@/types/sector';
 const EVENT_TYPES = [
   { value: 'salon', label: 'Salon' },
   { value: 'conference', label: 'Conférence' },
@@ -53,9 +55,17 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     tarif: '',
     visible: true,
   });
+  const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: allSectors = [] } = useSectors();
+
+  // Options pour le MultiSelect des secteurs
+  const sectorOptions = allSectors.map((s: Sector) => ({
+    value: s.id,
+    label: s.name,
+  }));
 
   useEffect(() => {
     if (event) {
@@ -75,8 +85,28 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         tarif: event.tarif || '',
         visible: event.visible ?? true,
       });
+      
+      // Charger les secteurs existants de l'événement
+      if (event.sectors && event.sectors.length > 0) {
+        setSelectedSectorIds(event.sectors.map((s: Sector) => s.id));
+      } else {
+        setSelectedSectorIds([]);
+      }
     }
   }, [event]);
+
+  // Handler pour la sélection de secteurs avec limite à 3
+  const handleSectorChange = (newSelected: string[]) => {
+    if (newSelected.length <= 3) {
+      setSelectedSectorIds(newSelected);
+    } else {
+      toast({
+        title: "Limite atteinte",
+        description: "Vous ne pouvez sélectionner que 3 secteurs maximum.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,6 +210,35 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         
         if (error) {
           console.error('Error updating events:', error);
+        }
+
+        // Mettre à jour les secteurs dans event_sectors (seulement pour events, pas staging)
+        if (!error && data) {
+          // Supprimer les anciens secteurs
+          const { error: deleteError } = await supabase
+            .from('event_sectors')
+            .delete()
+            .eq('event_id', event.id_event || event.id);
+
+          if (deleteError) {
+            console.error('Error deleting old sectors:', deleteError);
+          }
+
+          // Ajouter les nouveaux secteurs
+          if (selectedSectorIds.length > 0) {
+            const sectorInserts = selectedSectorIds.map(sectorId => ({
+              event_id: event.id_event || event.id,
+              sector_id: sectorId,
+            }));
+
+            const { error: insertError } = await supabase
+              .from('event_sectors')
+              .insert(sectorInserts);
+
+            if (insertError) {
+              console.error('Error inserting new sectors:', insertError);
+            }
+          }
         }
       }
 
@@ -392,6 +451,27 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <Label>Secteurs (1 à 3 maximum)</Label>
+              <MultiSelect
+                options={sectorOptions}
+                selected={selectedSectorIds}
+                onChange={handleSectorChange}
+                placeholder="Sélectionnez les secteurs..."
+                className="mt-1"
+              />
+              {selectedSectorIds.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Aucun secteur sélectionné
+                </p>
+              )}
+              {selectedSectorIds.length === 3 && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Limite de 3 secteurs atteinte
+                </p>
+              )}
             </div>
 
             <div className="md:col-span-2">
