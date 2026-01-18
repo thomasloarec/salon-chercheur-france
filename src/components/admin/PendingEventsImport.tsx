@@ -125,7 +125,10 @@ export function PendingEventsImport() {
   }, [stagingEvents, hiddenEvents]);
 
   const publishPendingEvent = async (eventId: string) => {
+    // Check directly if this is a hidden event (from events table with visible=false)
+    const isHiddenEvent = hiddenEvents?.some(e => e.id === eventId);
     const eventImport = allPendingEvents?.find(e => e.id === eventId);
+    
     if (!eventImport) {
       console.error('❌ Événement non trouvé dans la liste:', eventId);
       return;
@@ -134,10 +137,11 @@ export function PendingEventsImport() {
     setPublishingId(eventId);
     
     try {
-      console.log('🔵 Début publication événement:', eventImport.nom_event, 'source:', eventImport.source);
+      console.log('🔵 Début publication événement:', eventImport.nom_event, 'isHiddenEvent:', isHiddenEvent);
 
-      if (eventImport.source === 'events') {
+      if (isHiddenEvent) {
         // Event is already in events table, just set visible = true
+        console.log('📝 Mise à jour directe dans events table');
         const { error } = await supabase
           .from('events')
           .update({ visible: true, updated_at: new Date().toISOString() })
@@ -146,6 +150,7 @@ export function PendingEventsImport() {
         if (error) throw error;
       } else {
         // Event is in staging, use the edge function
+        console.log('📤 Appel edge function publish-pending avec id_event:', eventImport.id_event);
         const { data, error } = await supabase.functions.invoke('publish-pending', {
           body: { id_event: eventImport.id_event }
         });
