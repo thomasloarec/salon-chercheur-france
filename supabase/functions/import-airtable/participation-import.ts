@@ -63,7 +63,7 @@ async function batchUpsert(
       const { data, error } = await supabaseClient
         .from(tableName)
         .upsert(batch, { onConflict: conflictColumn })
-        .select('id');
+        .select();
       
       if (error) {
         console.error(`[BATCH ${batchNum}/${totalBatches}] Erreur:`, error.message);
