@@ -5,9 +5,13 @@ import type {
   AirtableResponse 
 } from '../_shared/types.ts';
 
+// Configuration des batches pour éviter le CPU timeout
+const SUPABASE_BATCH_SIZE = 500;
+
 async function fetchAllExposants(airtableConfig: AirtableConfig): Promise<AirtableExposantRecord[]> {
   const allRecords: AirtableExposantRecord[] = [];
   let offset: string | undefined;
+  let pageCount = 0;
   
   do {
     const url = new URL(`https://api.airtable.com/v0/${airtableConfig.baseId}/All_Exposants`);
@@ -26,44 +30,77 @@ async function fetchAllExposants(airtableConfig: AirtableConfig): Promise<Airtab
     const data: AirtableResponse<AirtableExposantRecord> = await response.json();
     allRecords.push(...data.records);
     offset = data.offset;
+    pageCount++;
     
-    console.log(`[DEBUG] Fetched ${data.records.length} exposants, total: ${allRecords.length}`);
+    // Log moins fréquent
+    if (pageCount % 10 === 0) {
+      console.log(`[FETCH] ${allRecords.length} exposants chargés...`);
+    }
   } while (offset);
   
+  console.log(`[FETCH] Total: ${allRecords.length} exposants depuis Airtable`);
   return allRecords;
 }
 
-export async function importExposants(supabaseClient: any, airtableConfig: AirtableConfig): Promise<ExposantImportResult> {
-  console.log('Importing exposants standalone...');
+// Fonction utilitaire pour insérer par lots
+async function batchUpsert(
+  supabaseClient: any, 
+  records: any[], 
+  batchSize: number
+): Promise<{ inserted: number; errors: string[] }> {
+  let totalInserted = 0;
+  const errors: string[] = [];
   
-  // Fonction de normalisation de domaine (même logique que participation-import)
+  for (let i = 0; i < records.length; i += batchSize) {
+    const batch = records.slice(i, i + batchSize);
+    const batchNum = Math.floor(i / batchSize) + 1;
+    const totalBatches = Math.ceil(records.length / batchSize);
+    
+    try {
+      const { data, error } = await supabaseClient
+        .from('exposants')
+        .upsert(batch, { onConflict: 'id_exposant' })
+        .select('id');
+      
+      if (error) {
+        console.error(`[BATCH ${batchNum}/${totalBatches}] Erreur:`, error.message);
+        errors.push(`Batch ${batchNum}: ${error.message}`);
+      } else {
+        totalInserted += data?.length || 0;
+        // Log seulement tous les 5 batches
+        if (batchNum % 5 === 0 || batchNum === totalBatches) {
+          console.log(`[BATCH ${batchNum}/${totalBatches}] ${totalInserted} exposants insérés`);
+        }
+      }
+    } catch (e) {
+      errors.push(`Batch ${batchNum}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  
+  return { inserted: totalInserted, errors };
+}
+
+export async function importExposants(supabaseClient: any, airtableConfig: AirtableConfig): Promise<ExposantImportResult> {
+  console.log('[EXPOSANTS] Début import...');
+  
+  // Fonction de normalisation de domaine
   function normalizeDomain(input?: string|null): string|null {
     if (!input) return null;
     let s = input.trim().toLowerCase();
-    // Retirer protocole
-    s = s.replace(/^https?:\/\//, '');
-    // Retirer www.
-    s = s.replace(/^www\./, '');
-    // Retirer path, hash, query
+    s = s.replace(/^https?:\/\//, '').replace(/^www\./, '');
     s = s.split('/')[0].split('#')[0].split('?')[0];
-    // Retirer point final
-    s = s.replace(/\.$/, '');
-    // Retirer port
-    s = s.replace(/:\d+$/, '');
+    s = s.replace(/\.$/, '').replace(/:\d+$/, '');
     return s || null;
   }
   
   const allExposants = await fetchAllExposants(airtableConfig);
-  console.log('[DEBUG] exposants records:', allExposants.length);
-
   const exposantErrors: Array<{ record_id: string; reason: string }> = [];
 
-  // Filtrer les imports tests
-  const exposantsRaw = allExposants
-    .filter((r: any) =>
-      !/^TEST/.test(r.fields.nom_exposant || '') &&
-      !/test-/.test((r.fields.website_exposant || '').toLowerCase())
-    );
+  // Filtrer les tests
+  const exposantsRaw = allExposants.filter((r: any) =>
+    !/^TEST/.test(r.fields.nom_exposant || '') &&
+    !/test-/.test((r.fields.website_exposant || '').toLowerCase())
+  );
 
   const exposantsToUpsert = [];
   
@@ -71,22 +108,15 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
     const f = r.fields;
     
     if (!f['id_exposant']?.trim()) {
-      exposantErrors.push({
-        record_id: r.id,
-        reason: 'id_exposant manquant'
-      });
+      exposantErrors.push({ record_id: r.id, reason: 'id_exposant manquant' });
       continue;
     }
     
     if (!f['nom_exposant']?.trim()) {
-      exposantErrors.push({
-        record_id: r.id,
-        reason: 'nom_exposant manquant'
-      });
+      exposantErrors.push({ record_id: r.id, reason: 'nom_exposant manquant' });
       continue;
     }
     
-    // Normaliser le website pour un matching cohérent avec participation-import
     const normalizedWebsite = normalizeDomain(f['website_exposant']);
     
     exposantsToUpsert.push({
@@ -97,35 +127,22 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
     });
   }
 
-  console.log('[DEBUG] exposantsToUpsert.length =', exposantsToUpsert.length);
+  console.log(`[PREP] ${exposantsToUpsert.length} exposants à insérer (${exposantErrors.length} erreurs)`);
+  
   let exposantsImported = 0;
   
-  if (exposantsToUpsert.length) {
-    try {
-      const { data, error } = await supabaseClient
-        .from('exposants')
-        .upsert(exposantsToUpsert, { onConflict: 'id_exposant' })
-        .select();
-        
-      if (error) {
-        console.error('[ERROR] Supabase exposants upsert error:', error);
-        exposantErrors.push({
-          record_id: 'UPSERT_ERROR',
-          reason: `Erreur upsert: ${error.message}`
-        });
-        return { exposantsImported: 0, exposantErrors };
-      }
-      
-      console.log('[DEBUG] exposants upserted:', data.length);
-      exposantsImported = data.length;
-    } catch (error) {
-      console.error('[ERROR] Exception during exposants import:', error);
-      exposantErrors.push({
-        record_id: 'EXCEPTION_ERROR',
-        reason: `Exception: ${error instanceof Error ? error.message : String(error)}`
-      });
-    }
+  if (exposantsToUpsert.length > 0) {
+    const { inserted, errors } = await batchUpsert(
+      supabaseClient,
+      exposantsToUpsert,
+      SUPABASE_BATCH_SIZE
+    );
+    
+    exposantsImported = inserted;
+    errors.forEach(err => exposantErrors.push({ record_id: 'BATCH', reason: err }));
   }
+
+  console.log(`[DONE] ${exposantsImported} exposants importés`);
   
   return { exposantsImported, exposantErrors };
 }
