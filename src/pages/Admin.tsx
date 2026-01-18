@@ -8,6 +8,7 @@ import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicate
 import NoveltyModeration from '@/components/admin/NoveltyModeration';
 
 import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
+import { PendingEventsTable } from '@/components/admin/PendingEventsTable';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import TestModeManager from '@/components/admin/TestModeManager';
 import MainLayout from '@/components/layout/MainLayout';
@@ -93,8 +94,11 @@ const Admin = () => {
               </CardContent>
             </Card>
 
-            {/* Événements importés en attente de publication */}
+            {/* Événements importés en attente de publication (staging) */}
             <PendingEventsImport />
+
+            {/* Événements non visibles dans la table events */}
+            <PendingEventsTable />
 
             {/* Vérification anti-doublons */}
             <AirtableAntiDuplicateCheck />
