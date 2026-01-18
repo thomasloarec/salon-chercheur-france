@@ -55,18 +55,41 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
   const handlePublishEvent = async () => {
     setIsPublishing(true);
     try {
-      console.log('Publishing pending event with ID:', event.id);
+      console.log('Publishing pending event with ID:', event.id, 'id_event:', event.id_event);
       
-      const { data, error } = await supabase.functions.invoke('publish-pending', {
-        body: { id_event: event.id_event }
-      });
+      // First, check if the event exists in the events table (not staging)
+      const { data: existingEvent } = await supabase
+        .from('events')
+        .select('id')
+        .eq('id', event.id)
+        .maybeSingle();
+      
+      if (existingEvent) {
+        // Event is already in events table, just update visible to true
+        console.log('Event exists in events table, updating visible to true');
+        const { error } = await supabase
+          .from('events')
+          .update({ visible: true, updated_at: new Date().toISOString() })
+          .eq('id', event.id);
+        
+        if (error) {
+          console.error('Error updating event visibility:', error);
+          throw error;
+        }
+      } else {
+        // Event is in staging, use the edge function
+        console.log('Event is in staging, calling publish-pending edge function');
+        const { data, error } = await supabase.functions.invoke('publish-pending', {
+          body: { id_event: event.id_event }
+        });
 
-      if (error) {
-        console.error('Error publishing event:', error);
-        throw error;
+        if (error) {
+          console.error('Error publishing event:', error);
+          throw error;
+        }
+        
+        console.log('Event published via edge function:', data);
       }
-
-      console.log('Event published successfully:', data);
       
       toast({
         title: "Événement publié",
