@@ -7,8 +7,8 @@ import { importExposants } from './exposants-import.ts';
 import { importParticipation } from './participation-import.ts';
 import type { AirtableConfig } from '../_shared/types.ts';
 
-// 🚧 MODE DEBUG ROOT-CAUSE 🚧
-const DEBUG_ROOT_CAUSE = true;
+// Mode simplifié pour éviter CPU timeout
+const DEBUG_ROOT_CAUSE = false;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
