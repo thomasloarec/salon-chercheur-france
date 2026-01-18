@@ -121,7 +121,13 @@ export function PendingEventsImport() {
     const stagingIds = new Set(stagingList.map(e => e.id_event));
     const uniqueHidden = hiddenList.filter(e => !stagingIds.has(e.id_event));
     
-    return [...stagingList, ...uniqueHidden];
+    // Merge and sort by date_debut (chronological order)
+    const merged = [...stagingList, ...uniqueHidden];
+    return merged.sort((a, b) => {
+      const dateA = a.date_debut ? new Date(a.date_debut).getTime() : Infinity;
+      const dateB = b.date_debut ? new Date(b.date_debut).getTime() : Infinity;
+      return dateA - dateB;
+    });
   }, [stagingEvents, hiddenEvents]);
 
   const publishPendingEvent = async (eventId: string) => {
