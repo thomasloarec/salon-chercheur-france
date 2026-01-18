@@ -1,11 +1,10 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useEventsList } from '@/hooks/useEventsList';
+import { useInfiniteEvents } from '@/hooks/useInfiniteEvents';
 import { useUrlFilters } from '@/lib/useUrlFilters';
 import { useSectors } from '@/hooks/useSectors';
-import { EventsResults } from '@/components/EventsResults';
+import { EventsResultsInfinite } from '@/components/EventsResultsInfinite';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
@@ -16,7 +15,14 @@ import { sectorWithCanonicalSlug } from '@/utils/sectorMapping';
 const Events = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { filters, filtersKey } = useUrlFilters();
-  const { data: events, isLoading, error } = useEventsList(filters);
+  const { 
+    data, 
+    isLoading, 
+    error, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage 
+  } = useInfiniteEvents({ filters, pageSize: 24 });
   const { data: sectors = [], isLoading: sectorsLoading } = useSectors();
 
   // Scroll to top when component mounts
@@ -35,8 +41,17 @@ const Events = () => {
     setSearchParams(newParams);
   };
 
+  // Flatten all pages into a single array of events
+  const allEvents = useMemo(() => {
+    if (!data?.pages) return [];
+    return data.pages.flatMap(page => page.data);
+  }, [data?.pages]);
+
+  // Get total count from the first page
+  const totalCount = data?.pages?.[0]?.total ?? 0;
+
   // Convert CanonicalEvents to Event format for compatibility
-  const displayEvents = events?.map(event => ({
+  const displayEvents = allEvents.map(event => ({
     id: event.id,
     nom_event: event.title,
     description_event: '',
@@ -63,7 +78,7 @@ const Events = () => {
     visible: event.visible || true,
     slug: event.slug,
     sectors: []
-  })) || [];
+  }));
 
   const hasActiveFilters = !!(filters.sectors.length > 0 || filters.type || filters.month || filters.region);
 
@@ -127,12 +142,11 @@ const Events = () => {
           {/* Header with results count */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
-              {isLoading ? 'Chargement...' : `${displayEvents.length || 0} salon(s) trouvé(s)`}
+              {isLoading ? 'Chargement...' : `${totalCount} salon(s) trouvé(s)`}
             </h1>
-            {events && (
+            {data && (
               <div className="sr-only" aria-hidden="true">
-                {/* compteur accessible pour debug */}
-                Chargement terminé — {events.length} événements
+                Chargement terminé — {totalCount} événements
               </div>
             )}
             {hasActiveFilters && (
@@ -162,8 +176,15 @@ const Events = () => {
             )}
           </div>
 
-          {/* Results with month grouping */}
-          <EventsResults events={displayEvents} isLoading={isLoading} />
+          {/* Results with infinite scroll */}
+          <EventsResultsInfinite 
+            events={displayEvents} 
+            isLoading={isLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage ?? false}
+            fetchNextPage={fetchNextPage}
+            totalCount={totalCount}
+          />
         </div>
       </main>
       
