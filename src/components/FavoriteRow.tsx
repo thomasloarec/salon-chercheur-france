@@ -3,8 +3,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, ChevronRight, CalendarCheck } from 'lucide-react';
 import { SiGooglecalendar, SiMicrosoftoutlook } from "react-icons/si";
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { SectorTag } from '@/components/ui/sector-tag';
 import {
   Tooltip,
   TooltipContent,
@@ -60,16 +60,15 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
     }
   };
 
-  // Fonction utilitaire pour formater le secteur
-  const formatSector = (secteur: string | string[]) => {
-    if (!secteur) return null;
+  // Fonction utilitaire pour parser les secteurs
+  const parseSectors = (secteur: string | string[]): string[] => {
+    if (!secteur) return [];
     
-    let sectors = [];
+    let sectors: string[] = [];
     
     if (Array.isArray(secteur)) {
       sectors = secteur;
     } else if (typeof secteur === 'string') {
-      // Si c'est une string qui contient du JSON
       if (secteur.startsWith('[') && secteur.endsWith(']')) {
         try {
           const parsed = JSON.parse(secteur);
@@ -82,12 +81,12 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
       }
     }
     
-    // Nettoyer les secteurs en retirant les crochets supplémentaires
     return sectors
       .map(s => typeof s === 'string' ? s.replace(/^\["|"\]$/g, '').replace(/"/g, '') : s)
-      .filter(Boolean)
-      .join(', ');
+      .filter(Boolean);
   };
+
+  const sectors = parseSectors(event.secteur as string | string[]);
 
   return (
     <div className="favorite-row flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-muted/50 transition-colors group">
@@ -122,10 +121,8 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
               <MapPin className="h-3 w-3" />
               {event.ville}
             </span>
-            {event.secteur && (
-              <Badge variant="outline" className="text-xs">
-                {formatSector(event.secteur)}
-              </Badge>
+            {sectors.length > 0 && (
+              <SectorTag label={sectors[0]} />
             )}
           </div>
         </div>
