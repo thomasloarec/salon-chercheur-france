@@ -76,8 +76,32 @@ export const HIDDEN_SECTORS_ON_HOME = [
   'Secteur Public & Collectivités'
 ];
 
+// Normalise une chaîne pour comparaison (sans accents, minuscules)
+const normalizeForComparison = (str: string): string => {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
+    .trim();
+};
+
 export const getSectorConfig = (sectorName: string) => {
-  return SECTOR_CONFIG[sectorName] || {
+  // D'abord essayer une correspondance exacte
+  if (SECTOR_CONFIG[sectorName]) {
+    return SECTOR_CONFIG[sectorName];
+  }
+  
+  // Sinon, essayer une correspondance normalisée (sans accents, insensible à la casse)
+  const normalizedInput = normalizeForComparison(sectorName);
+  
+  for (const [key, value] of Object.entries(SECTOR_CONFIG)) {
+    if (normalizeForComparison(key) === normalizedInput) {
+      return value;
+    }
+  }
+  
+  // Fallback par défaut
+  return {
     color: "bg-gray-100 text-gray-800",
     description: "Secteur d'activité"
   };
