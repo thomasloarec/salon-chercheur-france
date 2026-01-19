@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SectorTag } from '@/components/ui/sector-tag';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
@@ -93,10 +94,10 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-xl font-semibold">{event.nom_event}</h3>
-                      {event.secteur && event.secteur.length > 0 && (
-                        <Badge variant="secondary" className="text-xs">
-                          {Array.isArray(event.secteur) ? event.secteur[0] : event.secteur}
-                        </Badge>
+                      {event.secteur && (
+                        <SectorTag 
+                          label={Array.isArray(event.secteur) ? event.secteur[0] : String(event.secteur).split(',')[0].trim()} 
+                        />
                       )}
                     </div>
                     <div className="text-sm text-muted-foreground">
