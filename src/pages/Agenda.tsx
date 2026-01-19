@@ -26,14 +26,17 @@ const Agenda = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const upcomingOrOngoingEvents = allEvents.filter(event => {
-    const endDate = new Date(event.date_fin || event.date_debut);
-    endDate.setHours(23, 59, 59, 999);
-    return endDate >= today;
-  });
+  const upcomingOrOngoingEvents = allEvents
+    .filter(event => {
+      const endDate = new Date(event.date_fin || event.date_debut);
+      endDate.setHours(23, 59, 59, 999);
+      return endDate >= today;
+    })
+    // Sort chronologically: closest events first
+    .sort((a, b) => new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime());
 
-  // Find next upcoming event
-  const nextEvent = upcomingOrOngoingEvents.find(event => new Date(event.date_debut) >= today);
+  // Next event is now the first one in the sorted list
+  const nextEvent = upcomingOrOngoingEvents[0];
   const hasExhibitorAccess = userExhibitors.length > 0 || myNovelties.length > 0;
 
   if (!user) {
