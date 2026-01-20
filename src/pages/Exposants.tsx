@@ -41,10 +41,6 @@ export default function Exposants() {
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/10 border-b">
         <div className="container max-w-6xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center space-y-6 max-w-3xl mx-auto">
-            {/* Badge social proof */}
-            <Badge variant="secondary" className="text-sm">
-              🎯 Déjà adopté par 127 exposants professionnels
-            </Badge>
 
             {/* Headline - Bénéfice principal */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
