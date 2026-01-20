@@ -58,7 +58,7 @@ export const EventsResultsInfinite = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
             <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
@@ -89,13 +89,13 @@ export const EventsResultsInfinite = ({
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
       {groupedEvents.map(({ monthLabel, events: monthEvents }) => (
         <section key={monthLabel} className="border-t border-gray-200 pt-8 first:border-t-0 first:pt-0">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6 capitalize">
             {monthLabel}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
             {monthEvents.map((event) => (
               <EventCard key={event.id} event={event} view="grid" />
             ))}
