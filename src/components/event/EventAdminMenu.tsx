@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Trash2, Edit, EyeOff, Eye, Settings, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -45,6 +46,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
   const [isPublishing, setIsPublishing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   if (!isAdmin) {
     return null;
@@ -97,6 +99,12 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       });
 
       setShowPublishDialog(false);
+      
+      // Invalider les caches AVANT la redirection pour que les données soient fraîches
+      console.log('Invalidating caches before navigation...');
+      await queryClient.invalidateQueries({ queryKey: ['events-import-pending-staging'] });
+      await queryClient.invalidateQueries({ queryKey: ['events-hidden'] });
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
       
       // Redirection automatique après publication
       console.log('Redirecting to admin page after successful publication');
