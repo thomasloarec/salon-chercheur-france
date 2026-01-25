@@ -877,6 +877,90 @@ export type Database = {
           },
         ]
       }
+      import_errors: {
+        Row: {
+          airtable_record_id: string
+          context_data: Json | null
+          created_at: string | null
+          entity_type: string
+          error_category: string
+          error_reason: string
+          id: string
+          import_session_id: string
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          airtable_record_id: string
+          context_data?: Json | null
+          created_at?: string | null
+          entity_type: string
+          error_category: string
+          error_reason: string
+          id?: string
+          import_session_id: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          airtable_record_id?: string
+          context_data?: Json | null
+          created_at?: string | null
+          entity_type?: string
+          error_category?: string
+          error_reason?: string
+          id?: string
+          import_session_id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: []
+      }
+      import_sessions: {
+        Row: {
+          completed_at: string | null
+          created_by: string | null
+          events_errors: number | null
+          events_imported: number | null
+          exposants_errors: number | null
+          exposants_imported: number | null
+          id: string
+          participations_errors: number | null
+          participations_imported: number | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_by?: string | null
+          events_errors?: number | null
+          events_imported?: number | null
+          exposants_errors?: number | null
+          exposants_imported?: number | null
+          id?: string
+          participations_errors?: number | null
+          participations_imported?: number | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_by?: string | null
+          events_errors?: number | null
+          events_imported?: number | null
+          exposants_errors?: number | null
+          exposants_imported?: number | null
+          id?: string
+          participations_errors?: number | null
+          participations_imported?: number | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           company: string | null

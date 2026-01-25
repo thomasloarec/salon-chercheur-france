@@ -14,6 +14,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import AirtableStatusWidget from '@/components/admin/AirtableStatusWidget';
 import AirtableDiagnostic from '@/components/admin/AirtableDiagnostic';
 import { AirtableImport } from '@/components/admin/AirtableImport';
+import { ImportErrorsPanel } from '@/components/admin/ImportErrorsPanel';
 import { OAuthHubSpotDiagnostic } from '@/components/admin/OAuthHubSpotDiagnostic';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -74,6 +75,9 @@ const Admin = () => {
           <TabsContent value="events" className="space-y-6">
             {/* Import Airtable simplifié */}
             <AirtableImport />
+            
+            {/* Panneau des erreurs d'import persistées */}
+            <ImportErrorsPanel />
             
             {/* Lien vers diagnostic détaillé */}
             <Card>
