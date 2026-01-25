@@ -173,6 +173,8 @@ const EventPage = () => {
   const handleEventDeleted = () => {
     console.log('🗑️ Event deleted, invalidating cache and redirecting');
     invalidateEvents();
+    queryClient.invalidateQueries({ queryKey: ['events-import-pending-staging'] });
+    queryClient.invalidateQueries({ queryKey: ['events-hidden'] });
     navigate('/events');
   };
 
@@ -189,7 +191,12 @@ const EventPage = () => {
 
       toast.success('Événement publié !');
       setEvent({ ...event, visible: true });
+      
+      // Invalider tous les caches pertinents
       invalidateEvents();
+      queryClient.invalidateQueries({ queryKey: ['events-import-pending-staging'] });
+      queryClient.invalidateQueries({ queryKey: ['events-hidden'] });
+      
       navigate(`/events/${event.slug}`, { replace: true });
       
     } catch (error) {
