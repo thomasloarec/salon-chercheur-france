@@ -142,7 +142,7 @@ serve(async (req) => {
           title: 'Nouvelle nouveauté',
           message: `${exhibitor?.name || 'Un exposant'} a publié une nouveauté sur ${eventFav?.nom_event || 'un événement'}`,
           icon: '⭐',
-          link_url: `/evenements/${eventFav?.slug}#novelty-${payload.novelty_id}`
+          link_url: `/events/${eventFav?.slug}#novelty-${payload.novelty_id}`
         }
         break
       }
@@ -197,7 +197,7 @@ serve(async (req) => {
           title: 'Événement dans 7 jours',
           message: `${eventName} commence dans 7 jours`,
           icon: '📅',
-          link_url: payload.metadata?.event_slug ? `/evenements/${payload.metadata.event_slug}` : '/agenda'
+          link_url: payload.metadata?.event_slug ? `/events/${payload.metadata.event_slug}` : '/agenda'
         }
         break
       }
@@ -210,7 +210,7 @@ serve(async (req) => {
           title: 'Événement demain',
           message: `${eventName} commence demain !`,
           icon: '🔔',
-          link_url: payload.metadata?.event_slug ? `/evenements/${payload.metadata.event_slug}` : '/agenda'
+          link_url: payload.metadata?.event_slug ? `/events/${payload.metadata.event_slug}` : '/agenda'
         }
         break
       }
