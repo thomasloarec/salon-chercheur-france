@@ -1,7 +1,17 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -20,12 +30,14 @@ serve(async (req) => {
       tomorrow: formatDate(tomorrow)
     })
 
+    let notifications7d = 0
+    let notifications1d = 0
+
     // Événements dans 7 jours
     const { data: events7d, error: error7d } = await supabase
       .from('events')
       .select('id, nom_event, slug, date_debut')
-      .gte('date_debut', formatDate(in7Days))
-      .lte('date_debut', formatDate(in7Days))
+      .eq('date_debut', formatDate(in7Days))
       .eq('visible', true)
 
     if (error7d) {
@@ -42,25 +54,43 @@ serve(async (req) => {
         console.log(`Event ${event.nom_event}: ${favorites?.length || 0} favorites`)
 
         for (const fav of favorites || []) {
-          await fetch(
-            `${Deno.env.get('SUPABASE_URL')}/functions/v1/notifications-create`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
-              },
-              body: JSON.stringify({
-                type: 'event_reminder_7d',
-                user_id: fav.user_id,
-                event_id: event.id,
-                metadata: { 
-                  event_name: event.nom_event,
-                  event_slug: event.slug
-                }
-              })
+          // Vérifier si notification déjà envoyée
+          const { data: existing } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('user_id', fav.user_id)
+            .eq('event_id', event.id)
+            .eq('type', 'event_reminder_7d')
+            .maybeSingle()
+
+          if (!existing) {
+            const response = await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/notifications-create`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+                },
+                body: JSON.stringify({
+                  type: 'event_reminder_7d',
+                  user_id: fav.user_id,
+                  event_id: event.id,
+                  metadata: { 
+                    event_name: event.nom_event,
+                    event_slug: event.slug
+                  }
+                })
+              }
+            )
+            
+            if (response.ok) {
+              notifications7d++
+              console.log(`Created 7d reminder for user ${fav.user_id} - event ${event.nom_event}`)
             }
-          )
+          } else {
+            console.log(`7d reminder already exists for user ${fav.user_id} - event ${event.nom_event}`)
+          }
         }
       }
     }
@@ -69,8 +99,7 @@ serve(async (req) => {
     const { data: eventsTmrw, error: errorTmrw } = await supabase
       .from('events')
       .select('id, nom_event, slug, date_debut')
-      .gte('date_debut', formatDate(tomorrow))
-      .lte('date_debut', formatDate(tomorrow))
+      .eq('date_debut', formatDate(tomorrow))
       .eq('visible', true)
 
     if (errorTmrw) {
@@ -87,42 +116,69 @@ serve(async (req) => {
         console.log(`Event ${event.nom_event}: ${favorites?.length || 0} favorites`)
 
         for (const fav of favorites || []) {
-          await fetch(
-            `${Deno.env.get('SUPABASE_URL')}/functions/v1/notifications-create`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
-              },
-              body: JSON.stringify({
-                type: 'event_reminder_1d',
-                user_id: fav.user_id,
-                event_id: event.id,
-                metadata: { 
-                  event_name: event.nom_event,
-                  event_slug: event.slug
-                }
-              })
+          // Vérifier si notification déjà envoyée
+          const { data: existing } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('user_id', fav.user_id)
+            .eq('event_id', event.id)
+            .eq('type', 'event_reminder_1d')
+            .maybeSingle()
+
+          if (!existing) {
+            const response = await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/notifications-create`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+                },
+                body: JSON.stringify({
+                  type: 'event_reminder_1d',
+                  user_id: fav.user_id,
+                  event_id: event.id,
+                  metadata: { 
+                    event_name: event.nom_event,
+                    event_slug: event.slug
+                  }
+                })
+              }
+            )
+            
+            if (response.ok) {
+              notifications1d++
+              console.log(`Created 1d reminder for user ${fav.user_id} - event ${event.nom_event}`)
             }
-          )
+          } else {
+            console.log(`1d reminder already exists for user ${fav.user_id} - event ${event.nom_event}`)
+          }
         }
       }
     }
 
+    const result = { 
+      success: true,
+      timestamp: new Date().toISOString(),
+      events_7d: events7d?.length || 0,
+      events_tmrw: eventsTmrw?.length || 0,
+      notifications_created: {
+        reminder_7d: notifications7d,
+        reminder_1d: notifications1d
+      }
+    }
+
+    console.log('Cron completed:', result)
+
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        events_7d: events7d?.length || 0,
-        events_tmrw: eventsTmrw?.length || 0
-      }),
-      { headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     console.error('Error in notifications-cron:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
