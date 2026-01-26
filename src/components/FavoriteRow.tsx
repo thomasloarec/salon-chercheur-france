@@ -109,22 +109,24 @@ const FavoriteRow = ({ event, onRemove }: FavoriteRowProps) => {
 
         {/* Contenu */}
         <div className="flex-1 min-w-0">
-          <p className="event-title font-medium truncate text-gray-900 group-hover:text-primary transition-colors">
+          <p className="event-title font-medium text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
             {event.nom_event}
           </p>
-          <div className="text-sm text-muted-foreground flex flex-wrap gap-3 mt-1">
+          <div className="text-sm text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
             <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
+              <Calendar className="h-3 w-3 flex-shrink-0" />
               {formatDateRange(event.date_debut, event.date_fin)}
             </span>
             <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
+              <MapPin className="h-3 w-3 flex-shrink-0" />
               {event.ville}
             </span>
-            {sectors.length > 0 && (
-              <SectorTag label={sectors[0]} />
-            )}
           </div>
+          {sectors.length > 0 && (
+            <div className="mt-1.5">
+              <SectorTag label={sectors[0]} />
+            </div>
+          )}
         </div>
 
         {/* Chevron */}

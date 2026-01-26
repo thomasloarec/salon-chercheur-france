@@ -267,25 +267,26 @@ const Profile = () => {
             <Card className="p-6 rounded-2xl shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Accès au compte</h2>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-gray-500" />
-                    <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Mail className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                    <div className="min-w-0">
                       <p className="font-medium">Adresse email</p>
-                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <p className="text-sm text-gray-600 truncate">{user.email}</p>
                     </div>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full sm:w-auto flex-shrink-0"
                     onClick={() => setShowEmailModal(true)}
                   >
                     Modifier
                   </Button>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Lock className="h-5 w-5 text-gray-500" />
+                    <Lock className="h-5 w-5 text-gray-500 flex-shrink-0" />
                     <div>
                       <p className="font-medium">Mot de passe</p>
                       <p className="text-sm text-gray-600">••••••••</p>
@@ -294,6 +295,7 @@ const Profile = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full sm:w-auto flex-shrink-0"
                     onClick={() => setShowPasswordModal(true)}
                   >
                     Modifier
@@ -304,17 +306,17 @@ const Profile = () => {
 
             {/* Bloc Newsletters */}
             <Card className="p-6 rounded-2xl shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
+              <div className="mb-4">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h2 className="text-xl font-semibold">Newsletters sectorielles</h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {headerText}
-                  </p>
+                  <Badge variant="outline" className="text-green-600 border-green-200 flex-shrink-0">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    {badgeText}
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-200">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  {badgeText}
-                </Badge>
+                <p className="text-sm text-gray-600 mt-1">
+                  {headerText}
+                </p>
               </div>
 
               <div className="space-y-3">
@@ -355,9 +357,9 @@ const Profile = () => {
             <Card className="p-6 rounded-2xl shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Gestion des données</h2>
               <div className="w-full">
-                <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-red-200 rounded-lg bg-red-50">
                   <div className="flex items-center gap-3">
-                    <Trash2 className="h-5 w-5 text-red-500" />
+                    <Trash2 className="h-5 w-5 text-red-500 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-red-800">Supprimer mon compte</p>
                       <p className="text-sm text-red-600">
@@ -367,7 +369,7 @@ const Profile = () => {
                   </div>
                   <Button
                     variant="destructive"
-                    className="w-full md:w-auto"
+                    className="w-full sm:w-auto flex-shrink-0"
                     onClick={() => setShowDeleteModal(true)}
                   >
                     Supprimer
