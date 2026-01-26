@@ -191,7 +191,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                 ) : null}
 
                 {/* Bouton Voir le salon - toujours affiché */}
-                <div className="mt-4 pt-4 border-t">
+                <div className="mt-4 pt-4">
                   <Link to={`/events/${event.slug}`}>
                     <Button variant="outline" size="sm" className="w-full">
                       Voir le salon
