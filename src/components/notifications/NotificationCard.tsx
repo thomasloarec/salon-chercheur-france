@@ -69,16 +69,10 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
       <div 
         onClick={handleClick}
         className={cn(
-          "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50 relative",
+          "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50",
           !notification.read ? "bg-primary/5 border-primary/20" : "bg-background"
         )}
       >
-        {!notification.read && (
-          <div className="absolute top-2 right-2">
-            <Badge variant="default" className="text-xs">Nouveau</Badge>
-          </div>
-        )}
-        
         {/* Event image thumbnail */}
         <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-muted">
           {eventMetadata.event_image ? (
@@ -96,11 +90,16 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
         
         <div className="flex-1 space-y-2 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="font-semibold text-sm line-clamp-2">
-                {notification.title}
-              </p>
-              <p className="text-base font-medium text-foreground mt-1">
+            <div className="flex-1 min-w-0 pr-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-semibold text-sm">
+                  {notification.title}
+                </p>
+                {!notification.read && (
+                  <Badge variant="default" className="text-xs flex-shrink-0">Nouveau</Badge>
+                )}
+              </div>
+              <p className="text-base font-medium text-foreground mt-1 line-clamp-2">
                 {eventMetadata.event_name}
               </p>
             </div>
@@ -147,16 +146,10 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
     <div 
       onClick={handleClick}
       className={cn(
-        "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50 relative",
+        "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50",
         !notification.read ? "bg-primary/5 border-primary/20" : "bg-background"
       )}
     >
-      {!notification.read && (
-        <div className="absolute top-2 right-2">
-          <Badge variant="default" className="text-xs">Nouveau</Badge>
-        </div>
-      )}
-      
       <Avatar className="h-10 w-10 flex-shrink-0">
         <AvatarImage src={notification.actor_avatar_url || undefined} />
         <AvatarFallback className="text-lg">
@@ -166,8 +159,13 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
       
       <div className="flex-1 space-y-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="font-medium text-sm">{notification.title}</p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-medium text-sm">{notification.title}</p>
+              {!notification.read && (
+                <Badge variant="default" className="text-xs flex-shrink-0">Nouveau</Badge>
+              )}
+            </div>
             {notification.actor_name && (
               <p className="text-xs text-muted-foreground">
                 {notification.actor_name}
