@@ -109,15 +109,6 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                     )}
                   </div>
                 </div>
-                
-                {/* Button Voir le salon - always full width on mobile */}
-                <div className="mb-4">
-                  <Link to={`/events/${event.slug}`} className="block">
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                      Voir le salon
-                    </Button>
-                  </Link>
-                </div>
 
                 {/* Event Description */}
                 {event.description_event && (
@@ -197,16 +188,16 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       ))}
                     </div>
                   </div>
-                ) : (
-                  <div className="mt-4 pt-4 border-t">
-                    <Link to={`/events/${event.slug}#nouveautes`}>
-                      <Button variant="outline" size="sm" className="w-full text-sm">
-                        <Sparkles className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">Découvrir les nouveautés</span>
-                      </Button>
-                    </Link>
-                  </div>
-                )}
+                ) : null}
+
+                {/* Bouton Voir le salon - toujours affiché */}
+                <div className="mt-4 pt-4 border-t">
+                  <Link to={`/events/${event.slug}`}>
+                    <Button variant="outline" size="sm" className="w-full">
+                      Voir le salon
+                    </Button>
+                  </Link>
+                </div>
               </div>
             );
           })}
