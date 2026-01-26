@@ -36,7 +36,7 @@ serve(async (req) => {
     // Événements dans 7 jours
     const { data: events7d, error: error7d } = await supabase
       .from('events')
-      .select('id, nom_event, slug, date_debut')
+      .select('id, nom_event, slug, date_debut, date_fin, ville, nom_lieu, url_image')
       .eq('date_debut', formatDate(in7Days))
       .eq('visible', true)
 
@@ -78,7 +78,12 @@ serve(async (req) => {
                   event_id: event.id,
                   metadata: { 
                     event_name: event.nom_event,
-                    event_slug: event.slug
+                    event_slug: event.slug,
+                    event_image: event.url_image,
+                    event_date_debut: event.date_debut,
+                    event_date_fin: event.date_fin,
+                    event_ville: event.ville,
+                    event_nom_lieu: event.nom_lieu
                   }
                 })
               }
@@ -98,7 +103,7 @@ serve(async (req) => {
     // Événements demain
     const { data: eventsTmrw, error: errorTmrw } = await supabase
       .from('events')
-      .select('id, nom_event, slug, date_debut')
+      .select('id, nom_event, slug, date_debut, date_fin, ville, nom_lieu, url_image')
       .eq('date_debut', formatDate(tomorrow))
       .eq('visible', true)
 
@@ -140,7 +145,12 @@ serve(async (req) => {
                   event_id: event.id,
                   metadata: { 
                     event_name: event.nom_event,
-                    event_slug: event.slug
+                    event_slug: event.slug,
+                    event_image: event.url_image,
+                    event_date_debut: event.date_debut,
+                    event_date_fin: event.date_fin,
+                    event_ville: event.ville,
+                    event_nom_lieu: event.nom_lieu
                   }
                 })
               }
