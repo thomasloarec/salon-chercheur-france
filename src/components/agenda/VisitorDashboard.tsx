@@ -81,35 +81,39 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
               : eventNovelties.slice(0, 3);
 
             return (
-              <div key={event.id} className="bg-white rounded-lg shadow-sm border p-6">
+              <div key={event.id} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
                 {/* Event Header */}
-                <div className="flex items-start gap-4 mb-4">
+                <div className="flex items-start gap-3 sm:gap-4 mb-4">
                   {event.url_image && (
                     <img
                       src={event.url_image}
                       alt={event.nom_event}
-                      className="w-16 h-16 rounded-lg object-cover"
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0"
                     />
                   )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-xl font-semibold">{event.nom_event}</h3>
-                      {event.secteur && (
-                        <SectorTag 
-                          label={Array.isArray(event.secteur) ? event.secteur[0] : String(event.secteur).split(',')[0].trim()} 
-                        />
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-semibold line-clamp-2">{event.nom_event}</h3>
+                    <div className="text-sm text-muted-foreground mt-1">
                       {format(new Date(event.date_debut), 'dd MMM', { locale: fr })}
                       {event.date_fin !== event.date_debut && 
                         ` - ${format(new Date(event.date_fin), 'dd MMM', { locale: fr })}`
                       } • {event.ville}
                       {event.nom_lieu && ` • ${event.nom_lieu}`}
                     </div>
+                    {event.secteur && (
+                      <div className="mt-2">
+                        <SectorTag 
+                          label={Array.isArray(event.secteur) ? event.secteur[0] : String(event.secteur).split(',')[0].trim()} 
+                        />
+                      </div>
+                    )}
                   </div>
-                  <Link to={`/events/${event.slug}`}>
-                    <Button variant="outline" size="sm">
+                </div>
+                
+                {/* Button Voir le salon - always full width on mobile */}
+                <div className="mb-4">
+                  <Link to={`/events/${event.slug}`} className="block">
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
                       Voir le salon
                     </Button>
                   </Link>
@@ -196,9 +200,9 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                 ) : (
                   <div className="mt-4 pt-4 border-t">
                     <Link to={`/events/${event.slug}#nouveautes`}>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Découvrir les nouveautés de ce salon
+                      <Button variant="outline" size="sm" className="w-full text-sm">
+                        <Sparkles className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">Découvrir les nouveautés</span>
                       </Button>
                     </Link>
                   </div>
