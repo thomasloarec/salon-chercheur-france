@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -125,7 +126,13 @@ export function ExhibitorDialog({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <p className="font-medium text-sm flex-1 break-words">
-                        {participation.event.nom_event}
+                        <Link 
+                          to={`/events/${participation.event.slug}`}
+                          className="hover:text-primary hover:underline transition-colors"
+                          onClick={() => onOpenChange(false)}
+                        >
+                          {participation.event.nom_event}
+                        </Link>
                       </p>
                       {participation.stand && (
                         <Badge variant="secondary" className="flex-shrink-0 whitespace-nowrap">
