@@ -12,6 +12,9 @@ interface Exhibitor {
   stand_exposant?: string;
   website_exposant?: string;
   exposant_description?: string;
+  // Fields from participations_with_exhibitors view
+  name_final?: string;
+  legacy_name?: string;
 }
 
 interface ExhibitorsModalProps {
@@ -25,9 +28,11 @@ interface ExhibitorsModalProps {
 const ALPHABET = ['All', '0-9', ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i))];
 const ITEMS_PER_PAGE = 50;
 
-// Normalise le nom en supprimant espaces et caractères invisibles en début
-const normalizeName = (name: string | null | undefined): string => {
-  return (name ?? '').trim().replace(/^[\s\u00A0\u200B]+/, '');
+// Récupère le nom réel de l'exposant depuis les différents champs possibles
+const getDisplayName = (exhibitor: Exhibitor): string => {
+  // Priorité: name_final (vue) > exhibitor_name > legacy_name
+  const rawName = exhibitor.name_final || exhibitor.exhibitor_name || exhibitor.legacy_name || '';
+  return rawName.trim().replace(/^[\s\u00A0\u200B]+/, '');
 };
 
 export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({ 
@@ -60,23 +65,27 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
   const filtered = useMemo(() => {
     let result = [...exhibitors];
     
-    // Tri alphabétique avec normalisation
+    // Tri alphabétique avec le bon nom
     result.sort((a, b) => {
-      const nameA = normalizeName(a.exhibitor_name);
-      const nameB = normalizeName(b.exhibitor_name);
+      const nameA = getDisplayName(a);
+      const nameB = getDisplayName(b);
       return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
     });
     
-    // Filtre par lettre avec normalisation
+    // Filtre par lettre avec le bon nom
     if (letterFilter && letterFilter !== 'All') {
       if (letterFilter === '0-9') {
         result = result.filter((e) => {
-          const firstChar = normalizeName(e.exhibitor_name).charAt(0);
+          const displayName = getDisplayName(e);
+          if (!displayName) return false;
+          const firstChar = displayName.charAt(0);
           return /^[0-9]/.test(firstChar);
         });
       } else {
         result = result.filter((e) => {
-          const firstChar = normalizeName(e.exhibitor_name).charAt(0).toUpperCase();
+          const displayName = getDisplayName(e);
+          if (!displayName) return false;
+          const firstChar = displayName.charAt(0).toUpperCase();
           return firstChar === letterFilter;
         });
       }
@@ -85,10 +94,11 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     // Filtre par recherche texte
     const query = searchQuery.trim().toLowerCase();
     if (query) {
-      result = result.filter((e) =>
-        normalizeName(e.exhibitor_name).toLowerCase().includes(query) ||
-        (e.stand_exposant ?? '').toLowerCase().includes(query)
-      );
+      result = result.filter((e) => {
+        const displayName = getDisplayName(e);
+        return displayName.toLowerCase().includes(query) ||
+          (e.stand_exposant ?? '').toLowerCase().includes(query);
+      });
     }
     
     return result;
@@ -205,25 +215,28 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[45vh] overflow-auto pr-1">
-              {displayedExhibitors.map((ex) => (
-                <button
-                  key={ex.id_exposant}
-                  className="text-left rounded-lg border p-3 hover:bg-accent transition-colors"
-                  onClick={() => onSelect(ex)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-5 w-5 text-muted-foreground" />
+              {displayedExhibitors.map((ex) => {
+                const displayName = getDisplayName(ex);
+                return (
+                  <button
+                    key={ex.id_exposant}
+                    className="text-left rounded-lg border p-3 hover:bg-accent transition-colors"
+                    onClick={() => onSelect(ex)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                        <Building2 className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">{displayName}</div>
+                        {ex.stand_exposant && (
+                          <div className="text-xs text-muted-foreground">Stand {normalizeStandNumber(ex.stand_exposant)}</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium">{normalizeName(ex.exhibitor_name)}</div>
-                      {ex.stand_exposant && (
-                        <div className="text-xs text-muted-foreground">Stand {normalizeStandNumber(ex.stand_exposant)}</div>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
               
               {/* Sentinel pour infinite scroll */}
               {hasMore && (
