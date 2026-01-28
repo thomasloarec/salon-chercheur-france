@@ -76,10 +76,23 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
 
       // Stratégie 2: Si pas de résultats via ID, essayer par nom dans la vue
       if (participations.length === 0 && searchName) {
-        const { data: nameParticipations, error } = await supabase
+        // Essayer d'abord avec name_final (coalescence des noms)
+        let { data: nameParticipations, error } = await supabase
           .from('participations_with_exhibitors')
           .select('*')
-          .ilike('exhibitor_name', searchName);
+          .ilike('name_final', searchName);
+
+        // Si pas de résultat, essayer avec legacy_name
+        if ((!nameParticipations || nameParticipations.length === 0) && !error) {
+          const { data: legacyNameParticipations, error: legacyError } = await supabase
+            .from('participations_with_exhibitors')
+            .select('*')
+            .ilike('legacy_name', searchName);
+          
+          if (!legacyError && legacyNameParticipations) {
+            nameParticipations = legacyNameParticipations;
+          }
+        }
 
         if (!error && nameParticipations) {
           participations = nameParticipations;
