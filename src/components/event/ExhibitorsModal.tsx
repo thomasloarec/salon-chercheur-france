@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Building2, X } from 'lucide-react';
+import { Search, Building2, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { normalizeStandNumber } from '@/utils/standUtils';
 
@@ -23,6 +23,12 @@ interface ExhibitorsModalProps {
 }
 
 const ALPHABET = ['All', '0-9', ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i))];
+const ITEMS_PER_PAGE = 50;
+
+// Normalise le nom en supprimant espaces et caractères invisibles en début
+const normalizeName = (name: string | null | undefined): string => {
+  return (name ?? '').trim().replace(/^[\s\u00A0\u200B]+/, '');
+};
 
 export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({ 
   open, 
@@ -33,23 +39,44 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [letterFilter, setLetterFilter] = useState<string | null>(null);
+  const [displayedCount, setDisplayedCount] = useState(ITEMS_PER_PAGE);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset displayed count when filter changes
+  useEffect(() => {
+    setDisplayedCount(ITEMS_PER_PAGE);
+  }, [letterFilter, searchQuery]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery('');
+      setLetterFilter(null);
+      setDisplayedCount(ITEMS_PER_PAGE);
+    }
+  }, [open]);
 
   const filtered = useMemo(() => {
     let result = [...exhibitors];
     
-    // Tri alphabétique
-    result.sort((a, b) => (a.exhibitor_name ?? '').localeCompare(b.exhibitor_name ?? '', 'fr', { sensitivity: 'base' }));
+    // Tri alphabétique avec normalisation
+    result.sort((a, b) => {
+      const nameA = normalizeName(a.exhibitor_name);
+      const nameB = normalizeName(b.exhibitor_name);
+      return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
+    });
     
-    // Filtre par lettre
+    // Filtre par lettre avec normalisation
     if (letterFilter && letterFilter !== 'All') {
       if (letterFilter === '0-9') {
         result = result.filter((e) => {
-          const firstChar = (e.exhibitor_name ?? '').charAt(0);
+          const firstChar = normalizeName(e.exhibitor_name).charAt(0);
           return /^[0-9]/.test(firstChar);
         });
       } else {
         result = result.filter((e) => {
-          const firstChar = (e.exhibitor_name ?? '').charAt(0).toUpperCase();
+          const firstChar = normalizeName(e.exhibitor_name).charAt(0).toUpperCase();
           return firstChar === letterFilter;
         });
       }
@@ -59,13 +86,49 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     const query = searchQuery.trim().toLowerCase();
     if (query) {
       result = result.filter((e) =>
-        (e.exhibitor_name ?? '').toLowerCase().includes(query) ||
+        normalizeName(e.exhibitor_name).toLowerCase().includes(query) ||
         (e.stand_exposant ?? '').toLowerCase().includes(query)
       );
     }
     
     return result;
   }, [searchQuery, letterFilter, exhibitors]);
+
+  // Infinite scroll setup
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const [entry] = entries;
+    if (entry.isIntersecting && displayedCount < filtered.length) {
+      setDisplayedCount(prev => Math.min(prev + ITEMS_PER_PAGE, filtered.length));
+    }
+  }, [displayedCount, filtered.length]);
+
+  useEffect(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    observerRef.current = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    });
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [handleObserver]);
+
+  const displayedExhibitors = useMemo(() => {
+    return filtered.slice(0, displayedCount);
+  }, [filtered, displayedCount]);
+
+  const hasMore = displayedCount < filtered.length;
 
   const handleLetterClick = (letter: string) => {
     if (letter === 'All') {
@@ -122,7 +185,7 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
           {/* Indicateur de filtre actif */}
           {letterFilter && letterFilter !== 'All' && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Filtre actif :</span>
+              <span>Filtre actif : {filtered.length} résultat{filtered.length > 1 ? 's' : ''}</span>
               <Button
                 variant="secondary"
                 size="sm"
@@ -137,29 +200,38 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
 
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
               Chargement...
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[45vh] overflow-auto pr-1">
-              {filtered.map((ex) => (
-              <button
-                key={ex.id_exposant}
-                className="text-left rounded-lg border p-3 hover:bg-accent transition-colors"
-                onClick={() => onSelect(ex)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
+              {displayedExhibitors.map((ex) => (
+                <button
+                  key={ex.id_exposant}
+                  className="text-left rounded-lg border p-3 hover:bg-accent transition-colors"
+                  onClick={() => onSelect(ex)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{normalizeName(ex.exhibitor_name)}</div>
+                      {ex.stand_exposant && (
+                        <div className="text-xs text-muted-foreground">Stand {normalizeStandNumber(ex.stand_exposant)}</div>
+                      )}
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{ex.exhibitor_name}</div>
-                    {ex.stand_exposant && (
-                      <div className="text-xs text-muted-foreground">Stand {normalizeStandNumber(ex.stand_exposant)}</div>
-                    )}
-                  </div>
-                </div>
-              </button>
+                </button>
               ))}
+              
+              {/* Sentinel pour infinite scroll */}
+              {hasMore && (
+                <div ref={loadMoreRef} className="col-span-full flex justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              
               {filtered.length === 0 && (
                 <div className="col-span-2 text-center py-8 text-muted-foreground">
                   {letterFilter ? `Aucun exposant commençant par "${letterFilter}"` : 'Aucun exposant trouvé'}
