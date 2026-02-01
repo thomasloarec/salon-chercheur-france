@@ -62,11 +62,13 @@ export function ExhibitorDialog({
           {/* PARTIE HAUTE : En-tête avec logo et nom */}
           <div className="flex items-start gap-4">
             {exhibitor.logo_url ? (
-              <img
-                src={exhibitor.logo_url}
-                alt={exhibitor.name}
-                className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-              />
+              <div className="w-20 h-20 rounded-lg bg-white border flex items-center justify-center flex-shrink-0 p-1">
+                <img
+                  src={exhibitor.logo_url}
+                  alt={exhibitor.name}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
             ) : (
               <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                 <Building2 className="h-10 w-10 text-muted-foreground" />

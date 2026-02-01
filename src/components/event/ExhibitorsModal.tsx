@@ -12,6 +12,7 @@ interface Exhibitor {
   stand_exposant?: string;
   website_exposant?: string;
   exposant_description?: string;
+  logo_url?: string;
   // Fields from participations_with_exhibitors view
   name_final?: string;
   legacy_name?: string;
@@ -224,9 +225,19 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                     onClick={() => onSelect(ex)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                      </div>
+                      {ex.logo_url ? (
+                        <div className="h-10 w-10 rounded bg-white border flex items-center justify-center flex-shrink-0 p-0.5">
+                          <img
+                            src={ex.logo_url}
+                            alt={displayName}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">{displayName}</div>
                         {ex.stand_exposant && (

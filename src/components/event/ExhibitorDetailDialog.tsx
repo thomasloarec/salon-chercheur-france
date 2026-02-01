@@ -122,9 +122,19 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             </div>
           )}
           <DialogTitle className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
-              <Building2 className="h-6 w-6 text-muted-foreground" />
-            </div>
+            {e.logo_url ? (
+              <div className="h-12 w-12 rounded bg-white border flex items-center justify-center flex-shrink-0 p-1">
+                <img
+                  src={e.logo_url}
+                  alt={displayName}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="truncate">{displayName}</div>
               {e.stand_exposant && (
