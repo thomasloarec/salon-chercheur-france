@@ -531,6 +531,26 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         } else {
           console.log('ℹ️ Aucun logo à uploader pour cet exposant existant');
         }
+        
+        // ✅ Mettre à jour le stand_info si fourni
+        const standInfo = (step1.exhibitor as any).stand_info;
+        if (standInfo && standInfo.trim()) {
+          console.log('📍 Mise à jour stand_info pour exposant existant:', standInfo);
+          
+          const { error: standUpdateError } = await supabase
+            .from('exhibitors')
+            .update({ 
+              stand_info: standInfo.trim(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', exhibitorIdForLogo);
+          
+          if (standUpdateError) {
+            console.error('❌ Erreur MAJ stand_info:', standUpdateError);
+          } else {
+            console.log('✅ Stand info sauvegardé:', standInfo);
+          }
+        }
       }
 
       // Check plan limits with proper UUID parameters
