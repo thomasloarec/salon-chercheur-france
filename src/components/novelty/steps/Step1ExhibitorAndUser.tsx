@@ -48,6 +48,7 @@ export default function Step1ExhibitorAndUser({
   const [showNewExhibitorForm, setShowNewExhibitorForm] = useState(false);
   const [selectedExhibitor, setSelectedExhibitor] = useState<DbExhibitor | null>(null);
   const [selectedExhibitorLogo, setSelectedExhibitorLogo] = useState<File | null>(null);
+  const [selectedExhibitorStandInfo, setSelectedExhibitorStandInfo] = useState<string>('');
   
   // Vérifier le quota pour l'exposant sélectionné
   const { data: quota } = useNoveltyQuota(
@@ -101,7 +102,8 @@ export default function Step1ExhibitorAndUser({
             name: selectedExhibitor.name, 
             website: selectedExhibitor.website || '',
             approved: selectedExhibitor.approved,
-            logo: selectedExhibitorLogo || newExhibitorData.logo // ✅ Prioriser selectedExhibitorLogo
+            logo: selectedExhibitorLogo || newExhibitorData.logo, // ✅ Prioriser selectedExhibitorLogo
+            stand_info: selectedExhibitorStandInfo || selectedExhibitor.stand_info || '' // ✅ Inclure le stand modifié
           }
         : { 
             name: newExhibitorData.name, 
@@ -134,7 +136,7 @@ export default function Step1ExhibitorAndUser({
         }
       });
     }
-  }, [selectedExhibitor, newExhibitorData, userData, user, quota, onChange, onValidationChange, selectedExhibitorLogo]);
+  }, [selectedExhibitor, newExhibitorData, userData, user, quota, onChange, onValidationChange, selectedExhibitorLogo, selectedExhibitorStandInfo]);
 
   // Check if email is professional
   const isProfessionalEmail = (email: string) => {
@@ -238,6 +240,7 @@ export default function Step1ExhibitorAndUser({
 
   const handleExhibitorSelect = (exhibitor: DbExhibitor) => {
     setSelectedExhibitor(exhibitor);
+    setSelectedExhibitorStandInfo(exhibitor.stand_info || '');
     setShowNewExhibitorForm(false);
   };
 
@@ -285,6 +288,7 @@ export default function Step1ExhibitorAndUser({
 
   const resetSelection = () => {
     setSelectedExhibitor(null);
+    setSelectedExhibitorStandInfo('');
     setShowNewExhibitorForm(false);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
   };
@@ -326,9 +330,6 @@ export default function Step1ExhibitorAndUser({
                       {selectedExhibitor.website && (
                         <p className="text-sm text-muted-foreground">{selectedExhibitor.website}</p>
                       )}
-                      {selectedExhibitor.stand_info && (
-                        <p className="text-sm text-muted-foreground">Stand: {normalizeStandNumber(selectedExhibitor.stand_info)}</p>
-                      )}
                     </div>
                   </div>
                   <div>
@@ -337,6 +338,25 @@ export default function Step1ExhibitorAndUser({
                     </Badge>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+            
+            {/* Informations du stand - toujours éditable */}
+            <Card>
+              <CardContent className="p-4">
+                <Label htmlFor="selected-exhibitor-stand">Informations du stand</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {selectedExhibitor.stand_info 
+                    ? "Vous pouvez modifier le numéro de stand si nécessaire"
+                    : "Le numéro de stand n'est pas renseigné, vous pouvez l'ajouter maintenant"
+                  }
+                </p>
+                <Input
+                  id="selected-exhibitor-stand"
+                  value={selectedExhibitorStandInfo}
+                  onChange={(e) => setSelectedExhibitorStandInfo(e.target.value)}
+                  placeholder="Numéro de stand, emplacement..."
+                />
               </CardContent>
             </Card>
             
