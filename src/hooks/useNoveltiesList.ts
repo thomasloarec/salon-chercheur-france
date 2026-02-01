@@ -57,7 +57,7 @@ async function fetchNovelties(
     .select(`
       id, title, type, media_urls, created_at, event_id, exhibitor_id,
       events!inner (
-        id, slug, nom_event, date_debut, type_event, secteur, visible, ville, code_postal
+        id, slug, nom_event, date_debut, date_fin, type_event, secteur, visible, ville, code_postal
       ),
       exhibitors!novelties_exhibitor_id_fkey ( id, name, slug, logo_url ),
       novelty_stats ( route_users_count, popularity_score )
@@ -147,10 +147,10 @@ async function fetchNovelties(
   const filteredResults = results.filter(novelty => {
     if (!novelty.events) return false;
     
-    // Check if event is ongoing/upcoming
+    // Check if event is ongoing/upcoming (using date_fin for ongoing events)
     const event = {
       start_date: novelty.events.date_debut,
-      end_date: null, // Not available in this query
+      end_date: (novelty.events as any).date_fin ?? null,
     };
     if (!isOngoingOrUpcoming(event as any)) return false;
     
