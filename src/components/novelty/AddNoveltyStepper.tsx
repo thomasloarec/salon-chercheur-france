@@ -392,11 +392,12 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
           has_logo: exhibitorToCreate.logo instanceof File
         });
         
-        // Upload logo si présent
+        // Upload logo si présent - ✅ UTILISER LE REF car File n'est pas sérialisable en localStorage
         let logoUrl: string | null = null;
-        if (exhibitorToCreate.logo instanceof File) {
-          console.log('📤 Upload logo exposant...');
-          const logoFile = exhibitorToCreate.logo;
+        const logoFile = exhibitorLogoFileRef.current || (exhibitorToCreate.logo instanceof File ? exhibitorToCreate.logo : null);
+        
+        if (logoFile instanceof File) {
+          console.log('📤 Upload logo exposant (nouvel exposant):', logoFile.name);
           const fileName = `${Date.now()}-${sanitizeFileName(logoFile.name)}`;
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('avatars')
@@ -409,6 +410,8 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
           } else {
             console.error('❌ Erreur upload logo:', uploadError);
           }
+        } else {
+          console.log('⚠️ Pas de logo à uploader pour le nouvel exposant');
         }
         
         console.log('🆕 Création nouvel exposant:', exhibitorName);
