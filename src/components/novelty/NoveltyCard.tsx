@@ -176,11 +176,13 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
               className="flex items-center gap-3 hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
             >
               {exhibitor.logo_url ? (
-                <img
-                  src={exhibitor.logo_url}
-                  alt={exhibitor.name}
-                  className="w-8 h-8 rounded object-cover"
-                />
+                <div className="w-8 h-8 rounded bg-white flex items-center justify-center flex-shrink-0 border">
+                  <img
+                    src={exhibitor.logo_url}
+                    alt={exhibitor.name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
               ) : (
                 <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
                   <span className="text-xs font-medium">
