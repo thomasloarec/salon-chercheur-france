@@ -81,8 +81,8 @@ export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
   return (
     <Card className={cn("group overflow-hidden hover:shadow-xl transition-all duration-300", className)}>
       <Link to={`/events/${novelty.events.slug}`} className="block">
-        {/* Image Header avec format carré - fond gris pour les images non carrées */}
-        <div className="relative aspect-square overflow-hidden bg-muted">
+        {/* Image Header avec format 4:5 (portrait léger, standard social media) */}
+        <div className="relative aspect-[4/5] overflow-hidden bg-muted">
           {mainImage ? (
             <>
               <div className="absolute inset-0 flex items-center justify-center bg-muted">
