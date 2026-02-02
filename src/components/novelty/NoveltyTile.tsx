@@ -81,18 +81,20 @@ export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
   return (
     <Card className={cn("group overflow-hidden hover:shadow-xl transition-all duration-300", className)}>
       <Link to={`/events/${novelty.events.slug}`} className="block">
-        {/* Image Header avec overlay gradient */}
-        <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+        {/* Image Header avec format carré - fond gris pour les images non carrées */}
+        <div className="relative aspect-square overflow-hidden bg-muted">
           {mainImage ? (
             <>
-              <img
-                src={mainImage}
-                alt={novelty.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
-              {/* Gradient overlay pour meilleure lisibilité */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/20" />
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                <img
+                  src={mainImage}
+                  alt={novelty.title}
+                  className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+              </div>
+              {/* Gradient overlay pour meilleure lisibilité des badges */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10 pointer-events-none" />
             </>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
