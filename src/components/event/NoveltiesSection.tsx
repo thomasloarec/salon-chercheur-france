@@ -160,9 +160,9 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Container centré style LinkedIn - max-w-xl aligné avec les cartes */}
-      <div className="max-w-xl mx-auto space-y-6">
+    <div className="flex justify-end">
+      {/* Container aligné à droite style LinkedIn - proche de la sidebar */}
+      <div className="w-full max-w-xl space-y-6">
         {/* Header with title, info, and add button */}
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
