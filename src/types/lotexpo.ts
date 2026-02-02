@@ -38,7 +38,8 @@ export interface EventLite {
   image_url?: string | null;
 }
 
-export type NoveltyType = 'Launch' | 'Prototype' | 'MajorUpdate' | 'LiveDemo' | 'Partnership' | 'Offer' | 'Talk';
+// ✅ Types alignés avec le formulaire de création
+export type NoveltyType = 'Launch' | 'Update' | 'Demo' | 'Special_Offer' | 'Partnership' | 'Innovation';
 export type NoveltyStatus = 'draft' | 'under_review' | 'published' | 'pending' | 'rejected';
 
 export interface DemoSlot {
@@ -232,14 +233,14 @@ export type CanonicalEvent = {
 };
 
 // Constants
+// ✅ Labels alignés avec le formulaire de création (Step2NoveltyDetails)
 export const NOVELTY_TYPES: { value: NoveltyType; label: string }[] = [
-  { value: 'Launch', label: 'Lancement' },
-  { value: 'Prototype', label: 'Prototype' },
-  { value: 'MajorUpdate', label: 'Mise à jour majeure' },
-  { value: 'LiveDemo', label: 'Démo live' },
+  { value: 'Launch', label: 'Lancement produit' },
+  { value: 'Update', label: 'Mise à jour' },
+  { value: 'Demo', label: 'Démonstration' },
+  { value: 'Special_Offer', label: 'Offre spéciale' },
   { value: 'Partnership', label: 'Partenariat' },
-  { value: 'Offer', label: 'Offre spéciale' },
-  { value: 'Talk', label: 'Conférence' },
+  { value: 'Innovation', label: 'Innovation' },
 ];
 
 export const MAX_NOVELTY_IMAGES = 5;

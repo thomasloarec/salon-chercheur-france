@@ -11,14 +11,14 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
+// ✅ Labels alignés avec le formulaire de création (Step2NoveltyDetails)
 const TYPE_LABELS: Record<string, string> = {
-  Launch: 'Lancement',
-  Prototype: 'Prototype',
-  MajorUpdate: 'Mise à jour',
-  LiveDemo: 'Démo live',
+  Launch: 'Lancement produit',
+  Update: 'Mise à jour',
+  Demo: 'Démonstration',
+  Special_Offer: 'Offre spéciale',
   Partnership: 'Partenariat',
-  Offer: 'Offre',
-  Talk: 'Conférence',
+  Innovation: 'Innovation',
 };
 
 interface NoveltyTileProps {
