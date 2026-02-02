@@ -19,14 +19,14 @@ interface NoveltyCardProps {
   className?: string;
 }
 
-const NOVELTY_TYPE_LABELS = {
-  Launch: 'Lancement',
-  Prototype: 'Prototype',
-  MajorUpdate: 'Mise à jour majeure',
-  LiveDemo: 'Démo live',
+// ✅ Labels alignés avec le formulaire de création (Step2NoveltyDetails)
+const NOVELTY_TYPE_LABELS: Record<string, string> = {
+  Launch: 'Lancement produit',
+  Update: 'Mise à jour',
+  Demo: 'Démonstration',
+  Special_Offer: 'Offre spéciale',
   Partnership: 'Partenariat',
-  Offer: 'Offre spéciale',
-  Talk: 'Conférence'
+  Innovation: 'Innovation',
 };
 
 export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
@@ -230,7 +230,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
           tabIndex={0}
           data-suppress-global-arrows="true"
         >
-          <div className="aspect-[16/9] relative">
+          <div className="aspect-[4/5] relative flex items-center justify-center bg-muted">
             <img
               src={images[currentImageIndex]}
               alt={`${novelty.title} - Image ${currentImageIndex + 1}`}
