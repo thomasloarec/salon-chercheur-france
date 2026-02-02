@@ -139,7 +139,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   }, [hasMultipleImages]);
 
   return (
-    <div className={cn("rounded-2xl border shadow-sm p-6 space-y-4 bg-card", className)}>
+    <div className={cn("rounded-2xl border shadow-sm p-5 space-y-4 bg-card w-full max-w-xl mx-auto", className)}>
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
@@ -222,21 +222,20 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
         </div>
       )}
 
-      {/* Media Carousel - Style social media (largeur limitée, centré) */}
+      {/* Media Carousel - Style LinkedIn (image pleine largeur dans la carte) */}
       {images.length > 0 && (
-        <div className="flex justify-center">
-          <div 
-            ref={carouselRef}
-            className="relative rounded-lg overflow-hidden bg-muted w-full max-w-md"
-            tabIndex={0}
-            data-suppress-global-arrows="true"
-          >
-            <div className="aspect-[4/5] relative flex items-center justify-center bg-muted">
-              <img
-                src={images[currentImageIndex]}
-                alt={`${novelty.title} - Image ${currentImageIndex + 1}`}
-                className="max-w-full max-h-full object-contain"
-              />
+        <div 
+          ref={carouselRef}
+          className="relative rounded-lg overflow-hidden bg-muted -mx-5"
+          tabIndex={0}
+          data-suppress-global-arrows="true"
+        >
+          <div className="aspect-[4/5] relative flex items-center justify-center bg-muted">
+            <img
+              src={images[currentImageIndex]}
+              alt={`${novelty.title} - Image ${currentImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
+            />
               
               {hasMultipleImages && (
                 <>
@@ -271,8 +270,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
                     ))}
                   </div>
                 </>
-              )}
-            </div>
+            )}
           </div>
         </div>
       )}
