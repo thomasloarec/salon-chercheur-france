@@ -63,25 +63,29 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
     : undefined;
   const { data: quota } = useNoveltyQuota(selectedExhibitorId, event?.id);
 
-  // Load saved state from localStorage on open
+  // ✅ ALWAYS reset to step 1 when modal opens
   useEffect(() => {
     if (isOpen) {
-      const savedState = localStorage.getItem('addNoveltyStepperState');
-      if (savedState) {
-        try {
-          const parsed = JSON.parse(savedState);
-          setState(prev => ({ ...prev, ...parsed }));
-          
-          // If user is now logged in and step 1 was completed, go to step 2
-          if (user && parsed.step1Valid) {
-            setCurrentStep(2);
-          }
-        } catch (error) {
-          console.error('Error loading saved state:', error);
-        }
-      }
+      // Toujours réinitialiser à l'étape 1 à l'ouverture
+      setCurrentStep(1);
+      
+      // Réinitialiser l'état complet pour éviter les données stales
+      setState({
+        step1Data: {},
+        step2Data: {},
+        step1Valid: false,
+        step2Valid: false,
+      });
+      
+      // Nettoyer le localStorage pour éviter de reprendre un ancien état
+      localStorage.removeItem('addNoveltyStepperState');
+      
+      // Réinitialiser les erreurs et résultats précédents
+      setFieldErrors({});
+      setSubmissionResult(null);
+      exhibitorLogoFileRef.current = null;
     }
-  }, [isOpen, user]);
+  }, [isOpen]);
 
   // Save state to localStorage
   const saveState = () => {
