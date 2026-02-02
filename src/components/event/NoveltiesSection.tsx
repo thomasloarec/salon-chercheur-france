@@ -161,57 +161,60 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with title, info, and add button */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">Nouveautés</h2>
-            <Badge variant="secondary" className="whitespace-nowrap">
-              {total} nouveauté{total > 1 ? 's' : ''}
-            </Badge>
+      {/* Container centré style LinkedIn - max-w-xl aligné avec les cartes */}
+      <div className="max-w-xl mx-auto space-y-6">
+        {/* Header with title, info, and add button */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-semibold">Nouveautés</h2>
+              <Badge variant="secondary" className="whitespace-nowrap">
+                {total} nouveauté{total > 1 ? 's' : ''}
+              </Badge>
+            </div>
+            <AddNoveltyButton event={event} label="Ajouter" className="w-full sm:w-auto" />
           </div>
-          <AddNoveltyButton event={event} label="Ajouter" className="w-full sm:w-auto" />
+          
+          {/* Explanatory text */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Les exposants publient leurs nouveautés pour attirer l'attention des visiteurs avant l'événement. 
+            Découvrez en avant-première les innovations qui seront présentées et identifiez les stands que vous souhaitez absolument visiter le jour J.
+          </p>
+
+          {/* Filter buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant={sortBy === 'awaited' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortBy('awaited')}
+              aria-pressed={sortBy === 'awaited'}
+            >
+              Les plus attendues
+            </Button>
+            <Button
+              variant={sortBy === 'recent' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSortBy('recent')}
+              aria-pressed={sortBy === 'recent'}
+            >
+              Récentes
+            </Button>
+          </div>
         </div>
-        
-        {/* Explanatory text */}
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Les exposants publient leurs nouveautés pour attirer l'attention des visiteurs avant l'événement. 
-          Découvrez en avant-première les innovations qui seront présentées et identifiez les stands que vous souhaitez absolument visiter le jour J.
-        </p>
 
-        {/* Filter buttons */}
-        <div className="flex gap-2">
-          <Button
-            variant={sortBy === 'awaited' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSortBy('awaited')}
-            aria-pressed={sortBy === 'awaited'}
-          >
-            Les plus attendues
-          </Button>
-          <Button
-            variant={sortBy === 'recent' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSortBy('recent')}
-            aria-pressed={sortBy === 'recent'}
-          >
-            Récentes
-          </Button>
+        {/* Novelties list */}
+        <div className="space-y-6">
+          {allNovelties.map((novelty) => (
+            <NoveltyCard key={novelty.id} novelty={novelty} />
+          ))}
         </div>
-      </div>
 
-      {/* Novelties list */}
-      <div className="space-y-6">
-        {allNovelties.map((novelty) => (
-          <NoveltyCard key={novelty.id} novelty={novelty} />
-        ))}
-      </div>
-
-      {/* Infinite scroll loader */}
-      <div ref={loaderRef} className="flex justify-center py-4">
-        {isFetchingNextPage && (
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        )}
+        {/* Infinite scroll loader */}
+        <div ref={loaderRef} className="flex justify-center py-4">
+          {isFetchingNextPage && (
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          )}
+        </div>
       </div>
     </div>
   );
