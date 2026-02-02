@@ -143,9 +143,9 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
             <h3 className="text-lg font-semibold leading-tight">{novelty.title}</h3>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs w-fit">
               {NOVELTY_TYPE_LABELS[novelty.type] || novelty.type}
             </Badge>
           </div>
