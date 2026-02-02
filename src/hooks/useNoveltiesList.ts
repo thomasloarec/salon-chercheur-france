@@ -52,6 +52,8 @@ async function fetchNovelties(
 ): Promise<NoveltiesListResponse> {
   const { sectors, type, month, region } = filters;
 
+  // Note: sector filtering is done client-side because Supabase JS doesn't support
+  // .or() with .contains() on related table JSONB columns (events.secteur)
   let q = supabase
     .from("novelties")
     .select(`
@@ -69,16 +71,10 @@ async function fetchNovelties(
   const dbType = typeSlugToDbValue(type);
   if (dbType) q = q.eq("events.type_event", dbType);
 
-  // Multi-secteurs : générer un OR des différents labels
-  if (sectors.length > 0) {
-    const allLabels = sectors.flatMap(s => sectorSlugToDbLabels(s));
-    if (allLabels.length === 1) {
-      q = q.contains("events.secteur", [allLabels[0]]);
-    } else if (allLabels.length > 1) {
-      const parts = allLabels.map(l => `events.secteur.cs.${JSON.stringify([l])}`);
-      q = q.or(parts.join(","));
-    }
-  }
+  // Sector labels for client-side filtering (Supabase JS .or() doesn't work with .contains() on related tables)
+  const sectorLabels = sectors.length > 0 
+    ? sectors.flatMap(s => sectorSlugToDbLabels(s)) 
+    : [];
 
   const { data, error } = await q;
   if (error) {
@@ -153,6 +149,21 @@ async function fetchNovelties(
       end_date: (novelty.events as any).date_fin ?? null,
     };
     if (!isOngoingOrUpcoming(event as any)) return false;
+    
+    // Sector filter (client-side because Supabase JS .or() doesn't work with .contains() on related JSONB)
+    if (sectorLabels.length > 0) {
+      const eventSecteur = (novelty.events as any).secteur;
+      // eventSecteur can be an array of strings or a JSON array
+      const eventSectors: string[] = Array.isArray(eventSecteur) 
+        ? eventSecteur 
+        : (typeof eventSecteur === 'string' ? JSON.parse(eventSecteur) : []);
+      
+      // Check if any of the selected sector labels match the event's sectors
+      const hasMatchingSector = sectorLabels.some(label => 
+        eventSectors.some((es: string) => es.toLowerCase() === label.toLowerCase())
+      );
+      if (!hasMatchingSector) return false;
+    }
     
     // Month filter
     if (month) {
