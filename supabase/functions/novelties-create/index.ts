@@ -150,25 +150,25 @@ serve(async (req) => {
       );
     }
 
-    // Map frontend values to database constraint values
-    const typeMapping: Record<string, string> = {
-      'Launch': 'Launch',
-      'Update': 'MajorUpdate',
-      'Prototype': 'Prototype',
-      'Demo': 'LiveDemo',
-      'Partnership': 'Partnership',
-      'Offer': 'Offer',
-      'Talk': 'Talk'
-    };
-
-    const mappedType = typeMapping[data.novelty_type.trim()] || 'Launch';
+    // ✅ Types alignés avec le formulaire (pas de mapping, valeurs directes)
+    // Les types valides sont: Launch, Update, Demo, Special_Offer, Partnership, Innovation
+    const validTypes = ['Launch', 'Update', 'Demo', 'Special_Offer', 'Partnership', 'Innovation'];
+    const noveltyType = data.novelty_type.trim();
+    
+    if (!validTypes.includes(noveltyType)) {
+      console.error("[novelties-create] Invalid novelty type:", noveltyType);
+      return new Response(
+        JSON.stringify({ error: "Invalid novelty type", received: noveltyType }),
+        { status: 400, headers: corsHeaders() }
+      );
+    }
 
     // Mapping front → DB
     const insertPayload: Record<string, unknown> = {
       event_id: data.event_id,
       exhibitor_id: data.exhibitor_id,
       title: data.title.trim(),
-      type: mappedType,
+      type: noveltyType, // ✅ Utilise directement le type validé
       reason_1: data.reason.trim(),
       media_urls: data.images,
       images_count: data.images.length,
