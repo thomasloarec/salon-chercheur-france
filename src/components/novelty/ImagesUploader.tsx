@@ -131,6 +131,9 @@ export default function ImagesUploader({
           <p className="text-xs text-muted-foreground">
             {acceptedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} • Max {Math.round(maxSize / (1024 * 1024))}MB • {maxFiles} images max
           </p>
+          <p className="text-xs text-muted-foreground/70 mt-1 italic">
+            💡 Format carré recommandé (1:1) pour un meilleur affichage
+          </p>
         </label>
       </div>
 
