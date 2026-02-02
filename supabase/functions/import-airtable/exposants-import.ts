@@ -96,11 +96,19 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
   const allExposants = await fetchAllExposants(airtableConfig);
   const exposantErrors: Array<{ record_id: string; reason: string }> = [];
 
-  // Filtrer les tests
-  const exposantsRaw = allExposants.filter((r: any) =>
-    !/^TEST/.test(r.fields.nom_exposant || '') &&
-    !/test-/.test((r.fields.website_exposant || '').toLowerCase())
-  );
+  // Filtrer uniquement les exposants de test Lovable (pas les vrais exposants comme TEST-OK)
+  // On filtre seulement les entrées qui sont clairement des tests internes
+  const exposantsRaw = allExposants.filter((r: any) => {
+    const nom = (r.fields.nom_exposant || '').toLowerCase().trim();
+    const website = (r.fields.website_exposant || '').toLowerCase().trim();
+    
+    // Exclure uniquement les tests internes évidents (ex: "Test special", "Zasp Test", entrées avec google.com comme site de test)
+    const isInternalTest = 
+      (nom === 'test' || nom === 'test special' || nom.endsWith(' test')) &&
+      (website === 'google.com' || website === 'example.com' || !website);
+    
+    return !isInternalTest;
+  });
 
   const exposantsToUpsert = [];
   
