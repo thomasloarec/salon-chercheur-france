@@ -177,8 +177,7 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
           
           {/* Explanatory text */}
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Les exposants publient leurs nouveautés pour attirer l'attention des visiteurs avant l'événement. 
-            Découvrez en avant-première les innovations qui seront présentées et identifiez les stands que vous souhaitez absolument visiter le jour J.
+            Les exposants partagent ici leurs nouveautés qui seront présentées sur le salon : repérez les stands à ne pas manquer.
           </p>
 
           {/* Filter buttons */}
