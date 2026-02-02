@@ -170,7 +170,7 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
               {total} nouveauté{total > 1 ? 's' : ''}
             </Badge>
           </div>
-          <AddNoveltyButton event={event} label="+ Ajouter" className="w-full sm:w-auto" />
+          <AddNoveltyButton event={event} label="Ajouter" className="w-full sm:w-auto" />
         </div>
         
         {/* Explanatory text */}
