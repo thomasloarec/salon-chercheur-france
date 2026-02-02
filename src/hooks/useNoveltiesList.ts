@@ -82,8 +82,6 @@ async function fetchNovelties(
     return { data: [], total: 0, page, pageSize };
   }
 
-  console.log('✅ useNoveltiesList fetched:', data?.length || 0, 'novelties');
-
   // Fetch likes and comments count for all novelties
   let likesCountMap: Record<string, number> = {};
   let commentsCountMap: Record<string, number> = {};
@@ -131,8 +129,10 @@ async function fetchNovelties(
       slug: row.events.slug,
       ville: row.events.ville || '',
       date_debut: row.events.date_debut,
+      date_fin: row.events.date_fin,
       type_event: row.events.type_event,
-      code_postal: row.events.code_postal
+      code_postal: row.events.code_postal,
+      secteur: row.events.secteur
     } : undefined,
     novelty_stats: row.novelty_stats || undefined,
     likes_count: likesCountMap[row.id] || 0,
@@ -153,10 +153,24 @@ async function fetchNovelties(
     // Sector filter (client-side because Supabase JS .or() doesn't work with .contains() on related JSONB)
     if (sectorLabels.length > 0) {
       const eventSecteur = (novelty.events as any).secteur;
-      // eventSecteur can be an array of strings or a JSON array
-      const eventSectors: string[] = Array.isArray(eventSecteur) 
-        ? eventSecteur 
-        : (typeof eventSecteur === 'string' ? JSON.parse(eventSecteur) : []);
+      
+      // Parse secteur - it can be: array, JSON string, comma-separated string, or null
+      let eventSectors: string[] = [];
+      if (Array.isArray(eventSecteur)) {
+        eventSectors = eventSecteur;
+      } else if (typeof eventSecteur === 'string') {
+        // Try JSON parse first, otherwise treat as comma-separated
+        try {
+          const parsed = JSON.parse(eventSecteur);
+          eventSectors = Array.isArray(parsed) ? parsed : [eventSecteur];
+        } catch {
+          // Fallback: comma-separated or single value
+          eventSectors = eventSecteur.split(',').map(s => s.trim()).filter(Boolean);
+        }
+      } else if (eventSecteur && typeof eventSecteur === 'object') {
+        // Handle JSONB object that might have been parsed by Supabase
+        eventSectors = Object.values(eventSecteur).filter((v): v is string => typeof v === 'string');
+      }
       
       // Check if any of the selected sector labels match the event's sectors
       const hasMatchingSector = sectorLabels.some(label => 
