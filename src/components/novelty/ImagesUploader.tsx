@@ -132,7 +132,7 @@ export default function ImagesUploader({
             {acceptedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} • Max {Math.round(maxSize / (1024 * 1024))}MB • {maxFiles} images max
           </p>
           <p className="text-xs text-muted-foreground/70 mt-1 italic">
-            💡 Format carré recommandé (1:1) pour un meilleur affichage
+            💡 Format portrait 4:5 recommandé pour un meilleur affichage
           </p>
         </label>
       </div>
