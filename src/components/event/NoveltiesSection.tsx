@@ -163,14 +163,14 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     <div className="space-y-6">
       {/* Header with title, info, and add button */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-semibold">Nouveautés</h2>
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="whitespace-nowrap">
               {total} nouveauté{total > 1 ? 's' : ''}
             </Badge>
           </div>
-          <AddNoveltyButton event={event} />
+          <AddNoveltyButton event={event} label="+ Ajouter" className="w-full sm:w-auto" />
         </div>
         
         {/* Explanatory text */}

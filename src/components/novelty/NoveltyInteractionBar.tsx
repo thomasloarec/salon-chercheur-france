@@ -28,16 +28,16 @@ export default function NoveltyInteractionBar({
   isPending = false,
 }: NoveltyInteractionBarProps) {
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-b">
+    <div className="flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-t border-b">
       {/* Section interactions sociales - minimaliste à gauche */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3">
         <Button
           onClick={onLikeToggle}
           variant="ghost"
           size="sm"
           disabled={isPending}
           className={cn(
-            "flex items-center gap-1.5 hover:bg-accent/50 text-muted-foreground h-8 px-2",
+            "flex items-center gap-1 sm:gap-1.5 hover:bg-accent/50 text-muted-foreground h-8 px-1.5 sm:px-2",
             isLiked && "text-primary"
           )}
         >
@@ -50,7 +50,7 @@ export default function NoveltyInteractionBar({
           variant="ghost"
           size="sm"
           className={cn(
-            "flex items-center gap-1.5 hover:bg-accent/50 text-muted-foreground h-8 px-2",
+            "flex items-center gap-1 sm:gap-1.5 hover:bg-accent/50 text-muted-foreground h-8 px-1.5 sm:px-2",
             showComments && "text-primary"
           )}
         >
@@ -60,12 +60,12 @@ export default function NoveltyInteractionBar({
       </div>
 
       {/* Section boutons d'action CTA - alignés à droite */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <Button
           onClick={onMeetingRequest}
           variant="default"
           size="sm"
-          className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
+          className="flex items-center gap-1 sm:gap-2 shadow-sm hover:shadow-md transition-shadow px-2 sm:px-3"
         >
           <Calendar className="h-4 w-4" />
           <span className="font-medium hidden sm:inline">Prendre RDV</span>
@@ -77,10 +77,10 @@ export default function NoveltyInteractionBar({
             onClick={onBrochureDownload}
             variant="secondary"
             size="sm"
-            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
+            className="flex items-center gap-1 sm:gap-2 shadow-sm hover:shadow-md transition-shadow px-2 sm:px-3"
           >
-            <Download className="h-4 w-4" />
-            <span className="font-medium">Brochure</span>
+            <Download className="h-4 w-4 flex-shrink-0" />
+            <span className="font-medium hidden xs:inline">Brochure</span>
           </Button>
         )}
       </div>
