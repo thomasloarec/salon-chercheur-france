@@ -143,12 +143,15 @@ export default function CommentInput({ onSubmit, isPending }: CommentInputProps)
               </Button>
               
               {showEmojiPicker && (
-                <div className="absolute bottom-full right-0 mb-2 z-50">
+                <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} />
+              )}
+              {showEmojiPicker && (
+                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 sm:absolute sm:bottom-full sm:left-auto sm:right-0 sm:translate-x-0 mb-2 z-50">
                   <EmojiPicker
                     onEmojiClick={handleEmojiClick}
                     searchPlaceHolder="Recherche"
-                    width={350}
-                    height={400}
+                    width={Math.min(350, window.innerWidth - 32)}
+                    height={350}
                   />
                 </div>
               )}
