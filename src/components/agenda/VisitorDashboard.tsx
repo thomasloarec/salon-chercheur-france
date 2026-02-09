@@ -92,7 +92,9 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg sm:text-xl font-semibold line-clamp-2">{event.nom_event}</h3>
+                    <Link to={`/events/${event.slug}`} className="hover:text-primary transition-colors">
+                      <h3 className="text-lg sm:text-xl font-semibold line-clamp-2">{event.nom_event}</h3>
+                    </Link>
                     <div className="text-sm text-muted-foreground mt-1">
                       {format(new Date(event.date_debut), 'dd MMM', { locale: fr })}
                       {event.date_fin !== event.date_debut && 
