@@ -29,7 +29,7 @@ const MainLayout = ({ title, description, canonical, children }: MainLayoutProps
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "Lotexpo",
-            "url": "https://www.lotexpo.com"
+            "url": "https://lotexpo.com"
           })}
         </script>
       </Helmet>

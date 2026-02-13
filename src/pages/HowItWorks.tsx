@@ -21,17 +21,17 @@ const Index = () => {
           name="description" 
           content="Découvrez comment utiliser Lotexpo pour trouver les meilleurs salons professionnels B2B en France, préparer vos visites et maximiser votre ROI événementiel." 
         />
-        <link rel="canonical" href="https://www.lotexpo.com/comment-ca-marche" />
+        <link rel="canonical" href="https://lotexpo.com/comment-ca-marche" />
         <meta property="og:title" content="Comment ça marche | Guide Lotexpo – Lotexpo" />
-        <meta property="og:url" content="https://www.lotexpo.com/comment-ca-marche" />
+        <meta property="og:url" content="https://lotexpo.com/comment-ca-marche" />
         <meta property="og:site_name" content="Lotexpo" />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://www.lotexpo.com" },
-              { "@type": "ListItem", "position": 2, "name": "Comment ça marche", "item": "https://www.lotexpo.com/comment-ca-marche" }
+              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://lotexpo.com" },
+              { "@type": "ListItem", "position": 2, "name": "Comment ça marche", "item": "https://lotexpo.com/comment-ca-marche" }
             ]
           })}
         </script>

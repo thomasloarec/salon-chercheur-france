@@ -19,14 +19,14 @@ export const GlobalSEO = ({
   canonical,
   noIndex = false
 }: GlobalSEOProps) => {
-  const canonicalUrl = canonical || 'https://www.lotexpo.com';
+  const canonicalUrl = canonical || 'https://lotexpo.com';
   
   // WebSite schema for Google site name
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Lotexpo",
-    "url": "https://www.lotexpo.com"
+    "url": "https://lotexpo.com"
   };
 
   return (
@@ -45,7 +45,7 @@ export const GlobalSEO = ({
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:site_name" content="Lotexpo" />
       <meta property="og:locale" content="fr_FR" />
-      <meta property="og:image" content="https://www.lotexpo.com/favicon.png" />
+      <meta property="og:image" content="https://lotexpo.com/favicon.png" />
       
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />

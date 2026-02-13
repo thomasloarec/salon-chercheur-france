@@ -25,7 +25,7 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
   const description = `${event.nom_event} à ${event.ville || 'France'} : dates, exposants, secteurs représentés et informations pratiques pour préparer votre visite professionnelle.`.slice(0, 160);
 
   // Canonical URL
-  const canonicalUrl = `https://www.lotexpo.com/events/${event.slug}`;
+  const canonicalUrl = `https://lotexpo.com/events/${event.slug}`;
 
   // Enhanced JSON-LD Event schema
   const eventSchema = {
@@ -68,8 +68,8 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://www.lotexpo.com" },
-      { "@type": "ListItem", "position": 2, "name": "Salons professionnels", "item": "https://www.lotexpo.com" },
+      { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://lotexpo.com" },
+      { "@type": "ListItem", "position": 2, "name": "Salons professionnels", "item": "https://lotexpo.com" },
       { "@type": "ListItem", "position": 3, "name": event.nom_event, "item": canonicalUrl }
     ]
   };
@@ -79,7 +79,7 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Lotexpo",
-    "url": "https://www.lotexpo.com"
+    "url": "https://lotexpo.com"
   };
 
   return (
