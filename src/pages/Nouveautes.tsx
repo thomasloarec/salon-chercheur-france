@@ -87,17 +87,17 @@ export default function Nouveautes() {
           name="description" 
           content="Découvrez les dernières nouveautés des salons professionnels B2B en France. Innovations, lancements produits et tendances à ne pas manquer." 
         />
-        <link rel="canonical" href="https://www.lotexpo.com/nouveautes" />
+        <link rel="canonical" href="https://lotexpo.com/nouveautes" />
         <meta property="og:title" content="Nouveautés des salons professionnels | Innovations B2B – Lotexpo" />
-        <meta property="og:url" content="https://www.lotexpo.com/nouveautes" />
+        <meta property="og:url" content="https://lotexpo.com/nouveautes" />
         <meta property="og:site_name" content="Lotexpo" />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://www.lotexpo.com" },
-              { "@type": "ListItem", "position": 2, "name": "Nouveautés", "item": "https://www.lotexpo.com/nouveautes" }
+              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://lotexpo.com" },
+              { "@type": "ListItem", "position": 2, "name": "Nouveautés", "item": "https://lotexpo.com/nouveautes" }
             ]
           })}
         </script>

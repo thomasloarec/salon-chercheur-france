@@ -21,17 +21,17 @@ export default function Exposants() {
           name="description" 
           content="Découvrez comment Lotexpo aide les exposants à maximiser leur ROI événementiel. Générez des leads qualifiés avant l'ouverture des salons B2B." 
         />
-        <link rel="canonical" href="https://www.lotexpo.com/exposants" />
+        <link rel="canonical" href="https://lotexpo.com/exposants" />
         <meta property="og:title" content="Exposants | Maximisez votre ROI salon professionnel – Lotexpo" />
-        <meta property="og:url" content="https://www.lotexpo.com/exposants" />
+        <meta property="og:url" content="https://lotexpo.com/exposants" />
         <meta property="og:site_name" content="Lotexpo" />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://www.lotexpo.com" },
-              { "@type": "ListItem", "position": 2, "name": "Exposants", "item": "https://www.lotexpo.com/exposants" }
+              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://lotexpo.com" },
+              { "@type": "ListItem", "position": 2, "name": "Exposants", "item": "https://lotexpo.com/exposants" }
             ]
           })}
         </script>
