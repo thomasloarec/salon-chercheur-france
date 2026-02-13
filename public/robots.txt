@@ -50,7 +50,7 @@ Disallow: /api/
 Crawl-delay: 5
 
 # Sitemaps
-Sitemap: https://lotexpo.com/sitemap.xml
+Sitemap: https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/sitemap
 
 # Host directive
 Host: https://lotexpo.com
