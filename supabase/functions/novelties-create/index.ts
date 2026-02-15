@@ -47,10 +47,9 @@ serve(async (req) => {
 
     const body = await req.json();
     console.log("[novelties-create] Received payload:", JSON.stringify({
-      ...body,
-      images: body.images?.length,
-      brochure_pdf: body.brochure_pdf ? "present" : "absent",
-      pending_exhibitor_id: body.pending_exhibitor_id || "none"
+      images_count: body.images?.length,
+      has_brochure: !!body.brochure_pdf,
+      has_pending_exhibitor: !!body.pending_exhibitor_id
     }));
 
     const parsed = schema.safeParse(body);

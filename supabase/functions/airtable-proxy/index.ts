@@ -248,7 +248,7 @@ serve(async (req) => {
     
     // 🔍 NOUVEAU: Log détaillé de l'URL (sans exposer la PAT)
     console.log(`[airtable-proxy] 🌐 URL Airtable: https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`);
-    console.log(`[airtable-proxy] 🔑 PAT présente: ${AIRTABLE_PAT ? 'OUI (***' + AIRTABLE_PAT.slice(-4) + ')' : 'NON'}`);
+    console.log(`[airtable-proxy] 🔑 PAT présente: ${AIRTABLE_PAT ? 'OUI' : 'NON'}`);
 
     // 6. Exécution de l'action
     let response;
@@ -279,7 +279,7 @@ serve(async (req) => {
             ? normalizePayload(payload, validFields, table)
             : payload;
           
-          console.log(`[airtable-proxy][DEBUG] Payload normalisé:`, JSON.stringify(normalizedPayload, null, 2));
+          console.log(`[airtable-proxy][DEBUG] Payload normalisé: ${normalizedPayload?.length || 0} records`);
           console.log(`[airtable-proxy][DEBUG] URL complète: ${airtableUrl}`);
           
           try {
@@ -297,8 +297,8 @@ serve(async (req) => {
               const errorBody = await response.text();
               
               // 🔍 DEBUG AVANCÉ: Logging détaillé de l'erreur 422
-              console.log(`[airtable-proxy][DEBUG] 422 payload:`, JSON.stringify(normalizedPayload, null, 2));
-              console.log(`[airtable-proxy][DEBUG] 422 response body:`, errorBody);
+              console.log(`[airtable-proxy][DEBUG] 422 on ${normalizedPayload?.length || 0} records`);
+              console.log(`[airtable-proxy][DEBUG] 422 error type:`, errorBody.slice(0, 100));
               
               try {
                 const errorJson = JSON.parse(errorBody);

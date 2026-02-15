@@ -241,10 +241,7 @@ serve(async (req: Request) => {
       access_token_enc = await encryptJson(tokens.access_token);
       if (tokens.refresh_token) refresh_token_enc = await encryptJson(tokens.refresh_token);
       
-      log(req, "tokens_encrypted", { 
-        accessTokenHash: btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(tokens.access_token))))).slice(0,8),
-        hasRefreshToken: !!tokens.refresh_token
-      });
+      log(req, "tokens_encrypted", { hasRefreshToken: !!tokens.refresh_token });
     } catch (encError) {
       log(req, "encryption_failed", { error: String(encError) });
       return new Response(JSON.stringify({ 

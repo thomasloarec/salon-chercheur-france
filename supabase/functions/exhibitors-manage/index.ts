@@ -358,14 +358,8 @@ Deno.serve(async (req) => {
           )
         }
 
-        // Check if user is admin or owner
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single()
-
-        const isAdmin = profile?.role === 'admin'
+        // Check if user is admin via server-side RPC
+        const { data: isAdmin } = await supabase.rpc('is_admin')
 
         if (!isAdmin) {
           const { data: exhibitor } = await supabase
