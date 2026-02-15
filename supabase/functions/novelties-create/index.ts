@@ -15,7 +15,6 @@ const schema = z.object({
   images: z.array(z.string().url()).min(1).max(3),
   brochure_pdf: url.optional().nullable(),
   stand_info: z.string().max(200).optional().nullable(),
-  // Nouveau champ: ID de l'exposant créé avec cette nouveauté (en attente d'approbation)
   pending_exhibitor_id: uuid.optional().nullable(),
 });
 
@@ -27,6 +26,8 @@ function corsHeaders() {
     "Content-Type": "application/json",
   };
 }
+
+const validTypes = ['Launch', 'Update', 'Demo', 'Special_Offer', 'Partnership', 'Innovation'];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -67,6 +68,16 @@ serve(async (req) => {
     }
     const data = parsed.data;
 
+    // Validate novelty type
+    const noveltyType = data.novelty_type.trim();
+    if (!validTypes.includes(noveltyType)) {
+      console.error("[novelties-create] Invalid novelty type:", noveltyType);
+      return new Response(
+        JSON.stringify({ error: "Invalid novelty type", received: noveltyType }),
+        { status: 400, headers: corsHeaders() }
+      );
+    }
+
     const admin = createClient(supabaseUrl, serviceKey);
 
     // Vérifier l'événement
@@ -100,113 +111,42 @@ serve(async (req) => {
     }
 
     // ==========================================
-    // VÉRIFICATION QUOTA CÔTÉ SERVEUR (BLOQUANTE)
+    // CRÉATION ATOMIQUE AVEC VÉRIFICATION QUOTA
+    // Utilise pg_advisory_xact_lock pour empêcher les race conditions
     // ==========================================
-    
-    // Vérifier entitlement premium
-    const { data: entitlement } = await admin
-      .from("premium_entitlements")
-      .select("max_novelties")
-      .eq("exhibitor_id", data.exhibitor_id)
-      .eq("event_id", data.event_id)
-      .is("revoked_at", null)
-      .maybeSingle();
+    const { data: result, error: rpcErr } = await admin.rpc("create_novelty_atomic", {
+      p_event_id: data.event_id,
+      p_exhibitor_id: data.exhibitor_id,
+      p_created_by: data.created_by,
+      p_title: data.title,
+      p_type: noveltyType,
+      p_reason: data.reason,
+      p_images: data.images,
+      p_brochure_pdf: data.brochure_pdf ?? null,
+      p_stand_info: data.stand_info ?? null,
+      p_pending_exhibitor_id: data.pending_exhibitor_id ?? null,
+    });
 
-    const isPremium = !!entitlement;
-    const maxNovelties = isPremium ? entitlement.max_novelties : 1;
-
-    // Compter les nouveautés existantes (hors rejected)
-    const { count: currentCount, error: countErr } = await admin
-      .from("novelties")
-      .select("id", { count: "exact", head: true })
-      .eq("exhibitor_id", data.exhibitor_id)
-      .eq("event_id", data.event_id)
-      .in("status", ["draft", "pending", "under_review", "published"]);
-
-    if (countErr) {
-      console.error("[novelties-create] Error counting novelties:", countErr);
+    if (rpcErr) {
+      console.error("[novelties-create] RPC error:", JSON.stringify(rpcErr, null, 2));
       return new Response(
-        JSON.stringify({ error: "Failed to check quota" }),
+        JSON.stringify({ error: rpcErr.message, code: "RPC_ERROR" }),
         { status: 500, headers: corsHeaders() }
       );
     }
 
-    const noveltyCount = currentCount || 0;
-    console.log(`[novelties-create] Quota check: ${noveltyCount}/${maxNovelties} (premium: ${isPremium})`);
-
-    if (noveltyCount >= maxNovelties) {
-      console.error("[novelties-create] Quota exceeded:", { noveltyCount, maxNovelties, isPremium });
+    // La fonction retourne { error: true/false, ... }
+    if (result.error) {
+      console.error("[novelties-create] Quota exceeded:", result);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: "Quota exceeded",
-          message: isPremium 
-            ? `Limite atteinte: ${maxNovelties} nouveauté(s) maximum pour votre forfait Premium.`
-            : "Plan gratuit: 1 nouveauté maximum par exposant et par événement. Passez au forfait Premium pour en publier davantage.",
-          code: "QUOTA_EXCEEDED",
-          current: noveltyCount,
-          limit: maxNovelties
+          message: result.message,
+          code: result.code,
+          current: result.current,
+          limit: result.limit,
         }),
         { status: 403, headers: corsHeaders() }
-      );
-    }
-
-    // ✅ Types alignés avec le formulaire (pas de mapping, valeurs directes)
-    // Les types valides sont: Launch, Update, Demo, Special_Offer, Partnership, Innovation
-    const validTypes = ['Launch', 'Update', 'Demo', 'Special_Offer', 'Partnership', 'Innovation'];
-    const noveltyType = data.novelty_type.trim();
-    
-    if (!validTypes.includes(noveltyType)) {
-      console.error("[novelties-create] Invalid novelty type:", noveltyType);
-      return new Response(
-        JSON.stringify({ error: "Invalid novelty type", received: noveltyType }),
-        { status: 400, headers: corsHeaders() }
-      );
-    }
-
-    // Mapping front → DB
-    const insertPayload: Record<string, unknown> = {
-      event_id: data.event_id,
-      exhibitor_id: data.exhibitor_id,
-      title: data.title.trim(),
-      type: noveltyType, // ✅ Utilise directement le type validé
-      reason_1: data.reason.trim(),
-      media_urls: data.images,
-      images_count: data.images.length,
-      doc_url: data.brochure_pdf ?? null,
-      stand_info: data.stand_info ?? null,
-      created_by: data.created_by,
-      status: "draft",
-    };
-
-    // Si un nouvel exposant a été créé avec cette nouveauté, le tracker
-    if (data.pending_exhibitor_id) {
-      insertPayload.pending_exhibitor_id = data.pending_exhibitor_id;
-      console.log("[novelties-create] Tracking pending exhibitor:", data.pending_exhibitor_id);
-    }
-
-    console.log("[novelties-create] Insert payload:", JSON.stringify({
-      ...insertPayload,
-      media_urls: (insertPayload.media_urls as string[]).length,
-    }));
-
-    const { data: inserted, error: insErr } = await admin
-      .from("novelties")
-      .insert([insertPayload])
-      .select("id, title")
-      .single();
-
-    if (insErr) {
-      console.error("[novelties-create] Insert error raw:", JSON.stringify(insErr, null, 2));
-      return new Response(
-        JSON.stringify({ 
-          error: insErr.message, 
-          details: insErr.details,
-          hint: insErr.hint,
-          code: insErr.code,
-          table: "novelties",
-          step: "insert"
-        }),
-        { status: 400, headers: corsHeaders() }
       );
     }
 
@@ -218,14 +158,12 @@ serve(async (req) => {
       const airtablePat = Deno.env.get("AIRTABLE_PUBLICATION_PAT");
       
       if (airtableBaseId && airtablePat) {
-        // Récupérer le nom de l'événement
         const { data: eventData } = await admin
           .from("events")
           .select("nom_event")
           .eq("id", data.event_id)
           .single();
 
-        // Récupérer le nom de l'entreprise (exposant)
         const { data: exhibitorData } = await admin
           .from("exhibitors")
           .select("name")
@@ -267,16 +205,15 @@ serve(async (req) => {
         console.log("[novelties-create] Airtable publication secrets not configured, skipping sync");
       }
     } catch (airtableError) {
-      // Ne pas bloquer la création si Airtable échoue
       console.error("[novelties-create] Airtable sync error (non-blocking):", airtableError);
     }
 
-    console.log("[novelties-create] Success:", inserted.id);
+    console.log("[novelties-create] Success:", result.id);
     return new Response(
       JSON.stringify({ 
-        id: inserted.id, 
-        title: inserted.title,
-        pending_exhibitor_id: data.pending_exhibitor_id || null
+        id: result.id, 
+        title: result.title,
+        pending_exhibitor_id: result.pending_exhibitor_id || null
       }),
       { status: 200, headers: corsHeaders() }
     );

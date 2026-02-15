@@ -17,6 +17,8 @@ interface LeadCaptureRequest {
   notes?: string
 }
 
+const MAX_LEADS_PER_EMAIL_PER_HOUR = 5;
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -72,6 +74,35 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Sanitize inputs - trim and limit length
+    const sanitizedEmail = email.trim().toLowerCase().slice(0, 255)
+    const sanitizedFirstName = first_name.trim().slice(0, 100)
+    const sanitizedLastName = last_name.trim().slice(0, 100)
+
+    // Create service client for rate limiting check and inserts
+    const serviceSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // ==========================================
+    // RATE LIMITING: max leads per email per hour
+    // ==========================================
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { count: recentCount, error: countError } = await serviceSupabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', sanitizedEmail)
+      .gte('created_at', oneHourAgo)
+
+    if (!countError && (recentCount ?? 0) >= MAX_LEADS_PER_EMAIL_PER_HOUR) {
+      console.warn(`[lead-capture] Rate limit hit for email: ${sanitizedEmail.slice(0, 3)}***`)
+      return new Response(
+        JSON.stringify({ error: 'Trop de demandes. Veuillez réessayer dans une heure.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Verify novelty exists and is published
     const { data: novelty, error: noveltyError } = await supabase
       .from('novelties')
@@ -95,24 +126,19 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create lead record using service role
-    const serviceSupabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
+    // Create lead record
     const { data: lead, error: leadError } = await serviceSupabase
       .from('leads')
       .insert({
         novelty_id,
         lead_type,
-        first_name: first_name.trim(),
-        last_name: last_name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: requestData.phone?.trim() || null,
-        company: requestData.company?.trim() || null,
-        role: requestData.role?.trim() || null,
-        notes: requestData.notes?.trim() || null
+        first_name: sanitizedFirstName,
+        last_name: sanitizedLastName,
+        email: sanitizedEmail,
+        phone: requestData.phone?.trim().slice(0, 20) || null,
+        company: requestData.company?.trim().slice(0, 200) || null,
+        role: requestData.role?.trim().slice(0, 100) || null,
+        notes: requestData.notes?.trim().slice(0, 1000) || null
       })
       .select()
       .single()
@@ -134,7 +160,6 @@ Deno.serve(async (req) => {
 
     if (statError) {
       console.error('Error updating stats:', statError)
-      // Don't fail the request if stats update fails
     }
 
     // For resource downloads, generate signed URL
@@ -142,7 +167,7 @@ Deno.serve(async (req) => {
     if (lead_type === 'resource_download' && novelty.resource_url) {
       const { data: signedUrlData, error: urlError } = await supabase.storage
         .from('novelty-resources')
-        .createSignedUrl(novelty.resource_url, 3600) // 1 hour expiry
+        .createSignedUrl(novelty.resource_url, 3600)
 
       if (urlError) {
         console.error('Error creating signed URL:', urlError)
@@ -150,9 +175,6 @@ Deno.serve(async (req) => {
         downloadUrl = signedUrlData.signedUrl
       }
     }
-
-    // TODO: Send notification email to exhibitor owner
-    // This would require configuring email service (Resend)
 
     const response = {
       success: true,
