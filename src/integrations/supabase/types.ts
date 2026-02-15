@@ -2242,6 +2242,21 @@ export type Database = {
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
       cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
+      create_novelty_atomic: {
+        Args: {
+          p_brochure_pdf?: string
+          p_created_by: string
+          p_event_id: string
+          p_exhibitor_id: string
+          p_images: string[]
+          p_pending_exhibitor_id?: string
+          p_reason: string
+          p_stand_info?: string
+          p_title: string
+          p_type: string
+        }
+        Returns: Json
+      }
       delete_user_account: { Args: never; Returns: Json }
       export_user_data: { Args: never; Returns: Json }
       generate_event_slug: {
