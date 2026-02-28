@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import AirtableValidationTest from '@/components/admin/AirtableValidationTest';
 import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
 import NoveltyModeration from '@/components/admin/NoveltyModeration';
@@ -70,10 +70,10 @@ const Admin = () => {
                 <p className="text-sm text-muted-foreground">Gérer les articles du blog</p>
               </div>
               <Button asChild>
-                <a href="/admin/blog">
+                <Link to="/admin/blog">
                   <BookOpen className="h-4 w-4 mr-2" />
                   Gestion du Blog
-                </a>
+                </Link>
               </Button>
             </div>
           </CardContent>
