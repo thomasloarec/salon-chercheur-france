@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
-import { useBlogArticle, useSaveBlogArticle, generateSlug, BlogArticle } from '@/hooks/useBlogArticles';
+import { useBlogArticle, useSaveBlogArticle, generateSlug, BlogArticle, BlogEventLink, BlogFaqItem } from '@/hooks/useBlogArticles';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Sparkles, X, ChevronUp, ChevronDown, Loader2, Search, ExternalLink, Upload, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Sparkles, X, ChevronUp, ChevronDown, Loader2, Search, ExternalLink, Upload, ImageIcon, Plus, Trash2, GripVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSectors } from '@/hooks/useSectors';
 import { REGIONS } from '@/lib/regions';
@@ -43,7 +43,7 @@ const MONTHS = [
 ];
 
 const REGION_OPTIONS = Object.values(REGIONS)
-  .filter(r => !['01', '02', '03', '04', '06'].includes(r.code)) // exclude DROM for cleaner list
+  .filter(r => !['01', '02', '03', '04', '06'].includes(r.code))
   .sort((a, b) => a.name.localeCompare(b.name));
 
 const AdminBlogEdit = () => {
@@ -64,12 +64,13 @@ const AdminBlogEdit = () => {
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const [introText, setIntroText] = useState('');
-  const [bodyText, setBodyText] = useState('');
+  const [whyVisitText, setWhyVisitText] = useState('');
   const [headerImageUrl, setHeaderImageUrl] = useState('');
   const [status, setStatus] = useState<'draft' | 'ready' | 'published'>('draft');
   const [publishedAt, setPublishedAt] = useState('');
-  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+  const [selectedEventLinks, setSelectedEventLinks] = useState<BlogEventLink[]>([]);
   const [selectedEvents, setSelectedEvents] = useState<EventRow[]>([]);
+  const [faqItems, setFaqItems] = useState<BlogFaqItem[]>([]);
 
   // Image upload
   const [imageUploading, setImageUploading] = useState(false);
@@ -92,6 +93,8 @@ const AdminBlogEdit = () => {
   const { data: sectors } = useSectors();
   const PAGE_SIZE = 10;
 
+  const selectedEventIds = selectedEventLinks.map(l => l.event_id);
+
   // Load existing article
   useEffect(() => {
     if (existingArticle) {
@@ -102,11 +105,12 @@ const AdminBlogEdit = () => {
       setMetaTitle(existingArticle.meta_title || '');
       setMetaDescription(existingArticle.meta_description || '');
       setIntroText(existingArticle.intro_text || '');
-      setBodyText(existingArticle.body_text || '');
+      setWhyVisitText(existingArticle.why_visit_text || '');
       setHeaderImageUrl(existingArticle.header_image_url || '');
       setStatus(existingArticle.status);
       setPublishedAt(existingArticle.published_at ? existingArticle.published_at.slice(0, 16) : '');
-      setSelectedEventIds(existingArticle.event_ids || []);
+      setSelectedEventLinks(existingArticle.event_ids || []);
+      setFaqItems(existingArticle.faq || []);
     }
   }, [existingArticle]);
 
@@ -136,13 +140,12 @@ const AdminBlogEdit = () => {
       }
     };
     loadSelectedEvents();
-  }, [selectedEventIds]);
+  }, [selectedEventIds.join(',')]);
 
-  // Load available events with proper server-side filtering
+  // Load available events
   const loadEvents = useCallback(async () => {
     setEventsLoading(true);
 
-    // Step 1: If region filter is active, get matching dept codes
     let regionDeptCodes: Set<string> | null = null;
     if (eventRegionFilter !== 'all') {
       const { data: depts } = await supabase
@@ -152,7 +155,6 @@ const AdminBlogEdit = () => {
       regionDeptCodes = new Set((depts || []).map(d => d.code));
     }
 
-    // Step 2: If sector filter is active, get matching event IDs from event_sectors
     let sectorEventIds: Set<string> | null = null;
     if (eventSectorFilter !== 'all') {
       const { data: esRows } = await supabase
@@ -162,7 +164,6 @@ const AdminBlogEdit = () => {
       sectorEventIds = new Set((esRows || []).map(r => r.event_id));
     }
 
-    // Step 3: Fetch all matching events (larger batch for client-side filters)
     const needsClientFilter = regionDeptCodes !== null || sectorEventIds !== null;
     const fetchLimit = needsClientFilter ? 1000 : PAGE_SIZE;
     const fetchOffset = needsClientFilter ? 0 : eventPage * PAGE_SIZE;
@@ -190,7 +191,6 @@ const AdminBlogEdit = () => {
     const { data, count } = await query;
     let filtered = data || [];
 
-    // Apply region filter client-side
     if (regionDeptCodes) {
       filtered = filtered.filter(e => {
         if (!e.code_postal) return false;
@@ -199,12 +199,10 @@ const AdminBlogEdit = () => {
       });
     }
 
-    // Apply sector filter client-side using event_sectors join results
     if (sectorEventIds) {
       filtered = filtered.filter(e => sectorEventIds!.has(e.id_event));
     }
 
-    // Paginate client-side if we fetched a large batch
     if (needsClientFilter) {
       const totalFiltered = filtered.length;
       const start = eventPage * PAGE_SIZE;
@@ -227,7 +225,6 @@ const AdminBlogEdit = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     setImageUploading(true);
     try {
       const ext = file.name.split('.').pop();
@@ -235,13 +232,8 @@ const AdminBlogEdit = () => {
       const { error: uploadError } = await supabase.storage
         .from('blog-images')
         .upload(fileName, file, { upsert: true });
-      
       if (uploadError) throw uploadError;
-      
-      const { data: urlData } = supabase.storage
-        .from('blog-images')
-        .getPublicUrl(fileName);
-      
+      const { data: urlData } = supabase.storage.from('blog-images').getPublicUrl(fileName);
       setHeaderImageUrl(urlData.publicUrl);
       toast({ title: 'Image téléchargée avec succès' });
     } catch (err: any) {
@@ -271,17 +263,43 @@ const AdminBlogEdit = () => {
   }
 
   const toggleEvent = (eventId: string) => {
-    setSelectedEventIds(prev =>
-      prev.includes(eventId) ? prev.filter(id => id !== eventId) : [...prev, eventId]
+    setSelectedEventLinks(prev => {
+      const exists = prev.find(l => l.event_id === eventId);
+      if (exists) return prev.filter(l => l.event_id !== eventId);
+      return [...prev, { event_id: eventId, description: '' }];
+    });
+  };
+
+  const updateEventDescription = (eventId: string, description: string) => {
+    setSelectedEventLinks(prev =>
+      prev.map(l => l.event_id === eventId ? { ...l, description } : l)
     );
   };
 
   const moveEvent = (index: number, direction: 'up' | 'down') => {
-    const newIds = [...selectedEventIds];
+    const newLinks = [...selectedEventLinks];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newIds.length) return;
-    [newIds[index], newIds[targetIndex]] = [newIds[targetIndex], newIds[index]];
-    setSelectedEventIds(newIds);
+    if (targetIndex < 0 || targetIndex >= newLinks.length) return;
+    [newLinks[index], newLinks[targetIndex]] = [newLinks[targetIndex], newLinks[index]];
+    setSelectedEventLinks(newLinks);
+  };
+
+  // FAQ handlers
+  const addFaqItem = () => {
+    setFaqItems(prev => [...prev, { question: '', answer: '' }]);
+  };
+  const updateFaqItem = (index: number, field: 'question' | 'answer', value: string) => {
+    setFaqItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
+  const removeFaqItem = (index: number) => {
+    setFaqItems(prev => prev.filter((_, i) => i !== index));
+  };
+  const moveFaqItem = (index: number, direction: 'up' | 'down') => {
+    const newItems = [...faqItems];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newItems.length) return;
+    [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
+    setFaqItems(newItems);
   };
 
   const handleSave = async (publishNow = false) => {
@@ -289,17 +307,19 @@ const AdminBlogEdit = () => {
       toast({ title: 'Le titre et le slug sont requis', variant: 'destructive' });
       return;
     }
-    const articleData: Partial<BlogArticle> = {
+    const articleData: any = {
       title,
       h1_title: h1Title || title,
       slug,
       meta_title: metaTitle || title,
       meta_description: metaDescription,
       intro_text: introText,
-      body_text: bodyText,
+      body_text: null, // no longer used
+      why_visit_text: whyVisitText || null,
       header_image_url: headerImageUrl || null,
       status: publishNow ? 'published' : status,
-      event_ids: selectedEventIds,
+      event_ids: selectedEventLinks,
+      faq: faqItems.filter(f => f.question.trim() || f.answer.trim()),
       created_by: user?.id,
     };
     if (publishNow && !publishedAt) {
@@ -329,6 +349,7 @@ const AdminBlogEdit = () => {
         return;
       }
       const eventsPayload = selectedEvents.map(e => ({
+        id: e.id,
         name: e.nom_event,
         date: e.date_debut,
         city: e.ville,
@@ -339,8 +360,9 @@ const AdminBlogEdit = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           context: aiContext,
-          events: eventsPayload,
           article_id: id || null,
+          events: eventsPayload,
+          fields_to_generate: ['meta_title', 'meta_description', 'h1_title', 'intro_text', 'why_visit_text', 'event_descriptions', 'faq'],
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -349,7 +371,18 @@ const AdminBlogEdit = () => {
       if (data.meta_description) setMetaDescription(data.meta_description);
       if (data.h1_title) setH1Title(data.h1_title);
       if (data.intro_text) setIntroText(data.intro_text);
-      if (data.body_text) setBodyText(data.body_text);
+      if (data.why_visit_text) setWhyVisitText(data.why_visit_text);
+      if (Array.isArray(data.event_descriptions)) {
+        setSelectedEventLinks(prev =>
+          prev.map(link => {
+            const match = data.event_descriptions.find((ed: any) => ed.event_id === link.event_id);
+            return match ? { ...link, description: match.description } : link;
+          })
+        );
+      }
+      if (Array.isArray(data.faq)) {
+        setFaqItems(data.faq);
+      }
       toast({ title: 'Contenu généré avec succès !' });
       setAiModalOpen(false);
     } catch (e: any) {
@@ -387,56 +420,31 @@ const AdminBlogEdit = () => {
           <CardContent className="space-y-4">
             <div>
               <Label>Meta Title <span className="text-muted-foreground text-xs">({metaTitle.length}/60)</span></Label>
-              <Input
-                value={metaTitle}
-                onChange={e => setMetaTitle(e.target.value.slice(0, 60))}
-                placeholder="Titre de la page (max 60 caractères)"
-                maxLength={60}
-              />
+              <Input value={metaTitle} onChange={e => setMetaTitle(e.target.value.slice(0, 60))} placeholder="Titre de la page (max 60 caractères)" maxLength={60} />
             </div>
             <div>
               <Label>Meta Description <span className="text-muted-foreground text-xs">({metaDescription.length}/160)</span></Label>
-              <Textarea
-                value={metaDescription}
-                onChange={e => setMetaDescription(e.target.value.slice(0, 160))}
-                placeholder="Description pour les moteurs de recherche (max 160 caractères)"
-                maxLength={160}
-                className="min-h-[60px]"
-              />
+              <Textarea value={metaDescription} onChange={e => setMetaDescription(e.target.value.slice(0, 160))} placeholder="Description pour les moteurs de recherche (max 160 caractères)" maxLength={160} className="min-h-[60px]" />
             </div>
             <div>
               <Label>Slug URL</Label>
-              <Input
-                value={slug}
-                onChange={e => { setSlug(e.target.value); setSlugManual(true); }}
-                placeholder="url-de-l-article"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                lotexpo.com/blog/<strong>{slug || '...'}</strong>
-              </p>
+              <Input value={slug} onChange={e => { setSlug(e.target.value); setSlugManual(true); }} placeholder="url-de-l-article" />
+              <p className="text-xs text-muted-foreground mt-1">lotexpo.com/blog/<strong>{slug || '...'}</strong></p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Section 2: Contenu */}
+        {/* Section 2: Contenu éditorial */}
         <Card>
           <CardHeader><CardTitle>Contenu éditorial</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div>
               <Label>Titre H1 affiché sur la page</Label>
-              <Input
-                value={h1Title}
-                onChange={e => setH1Title(e.target.value)}
-                placeholder="Titre affiché sur la page (peut différer du meta title)"
-              />
+              <Input value={h1Title} onChange={e => setH1Title(e.target.value)} placeholder="Titre affiché sur la page (peut différer du meta title)" />
             </div>
             <div>
               <Label>Titre interne (pour l'admin)</Label>
-              <Input
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="Titre de l'article"
-              />
+              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Titre de l'article" />
             </div>
             <div>
               <Label>Image d'en-tête</Label>
@@ -445,19 +453,9 @@ const AdminBlogEdit = () => {
               </p>
               <div className="flex items-center gap-3">
                 <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                    disabled={imageUploading}
-                  />
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageUpload} disabled={imageUploading} />
                   <div className="flex items-center gap-2 px-4 py-2 border rounded-md bg-background hover:bg-muted transition-colors text-sm">
-                    {imageUploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
+                    {imageUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                     {imageUploading ? 'Téléchargement...' : 'Charger une image'}
                   </div>
                 </label>
@@ -468,12 +466,7 @@ const AdminBlogEdit = () => {
                 )}
               </div>
               {headerImageUrl && (
-                <img
-                  src={headerImageUrl}
-                  alt="Aperçu"
-                  className="mt-3 rounded-lg max-h-48 object-cover w-full"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
+                <img src={headerImageUrl} alt="Aperçu" className="mt-3 rounded-lg max-h-48 object-cover w-full" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               )}
               {!headerImageUrl && (
                 <div className="mt-3 border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-muted-foreground">
@@ -483,64 +476,76 @@ const AdminBlogEdit = () => {
               )}
             </div>
             <div>
-              <Label>Introduction (200-300 mots)</Label>
+              <Label>Accroche d'introduction <span className="text-muted-foreground text-xs">({introText.length}/600)</span></Label>
               <Textarea
                 value={introText}
-                onChange={e => setIntroText(e.target.value)}
-                placeholder="Introduction de l'article..."
-                className="min-h-[150px]"
+                onChange={e => setIntroText(e.target.value.slice(0, 600))}
+                placeholder="Présentez en 3-4 lignes le sujet de cet article et ce que le lecteur va trouver ici."
+                className="min-h-[100px]"
+                maxLength={600}
               />
             </div>
             <div>
-              <Label>Corps de l'article (500-800 mots)</Label>
+              <Label>Pourquoi visiter ces salons ?</Label>
               <Textarea
-                value={bodyText}
-                onChange={e => setBodyText(e.target.value)}
-                placeholder="Contenu principal de l'article..."
-                className="min-h-[300px]"
+                value={whyVisitText}
+                onChange={e => setWhyVisitText(e.target.value)}
+                placeholder="Décrivez l'intérêt concret de ces salons : types d'exposants, public cible, opportunités business, tendances du secteur..."
+                className="min-h-[200px]"
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Section 4: Event Selector */}
+        {/* Section 3: Événements liés */}
         <Card>
           <CardHeader><CardTitle>Événements liés</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            {/* Selected events */}
+            {/* Selected events with contextual text */}
             {selectedEvents.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Événements sélectionnés ({selectedEvents.length})</Label>
-                <div className="space-y-2">
-                  {selectedEvents.map((event, idx) => (
-                    <div key={event.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      {event.url_image && (
-                        <img src={event.url_image} alt="" className="h-10 w-14 object-cover rounded" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{event.nom_event}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {event.date_debut ? new Date(event.date_debut).toLocaleDateString('fr-FR') : ''} — {event.ville}
-                        </p>
+                <div className="space-y-3">
+                  {selectedEvents.map((event, idx) => {
+                    const link = selectedEventLinks.find(l => l.event_id === event.id);
+                    return (
+                      <div key={event.id} className="p-3 bg-muted rounded-lg space-y-2">
+                        <div className="flex items-center gap-3">
+                          {event.url_image && (
+                            <img src={event.url_image} alt="" className="h-10 w-14 object-cover rounded" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{event.nom_event}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {event.date_debut ? new Date(event.date_debut).toLocaleDateString('fr-FR') : ''} — {event.ville}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                              <a href={getEventUrl(event)} target="_blank" rel="noopener noreferrer" title="Voir l'événement">
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveEvent(idx, 'up')} disabled={idx === 0}>
+                              <ChevronUp className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveEvent(idx, 'down')} disabled={idx === selectedEvents.length - 1}>
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleEvent(event.id)}>
+                              <X className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Textarea
+                          value={link?.description || ''}
+                          onChange={e => updateEventDescription(event.id, e.target.value)}
+                          placeholder="2-3 phrases décrivant ce salon spécifiquement dans le contexte de cet article (exposants typiques, intérêt pour le secteur, particularité de l'édition...)"
+                          className="min-h-[60px] text-sm"
+                        />
                       </div>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                          <a href={getEventUrl(event)} target="_blank" rel="noopener noreferrer" title="Voir l'événement">
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveEvent(idx, 'up')} disabled={idx === 0}>
-                          <ChevronUp className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveEvent(idx, 'down')} disabled={idx === selectedEvents.length - 1}>
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleEvent(event.id)}>
-                          <X className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -549,12 +554,7 @@ const AdminBlogEdit = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={eventSearch}
-                  onChange={e => { setEventSearch(e.target.value); setEventPage(0); }}
-                  placeholder="Rechercher un événement..."
-                  className="pl-9"
-                />
+                <Input value={eventSearch} onChange={e => { setEventSearch(e.target.value); setEventPage(0); }} placeholder="Rechercher un événement..." className="pl-9" />
               </div>
               <Select value={eventSectorFilter} onValueChange={v => { setEventSectorFilter(v); setEventPage(0); }}>
                 <SelectTrigger><SelectValue placeholder="Secteur" /></SelectTrigger>
@@ -593,18 +593,10 @@ const AdminBlogEdit = () => {
                 <p className="text-center text-muted-foreground py-6">Aucun événement trouvé</p>
               ) : (
                 availableEvents.map(event => (
-                  <div
-                    key={event.id}
-                    className="flex items-center gap-3 p-3 hover:bg-muted/50"
-                  >
+                  <div key={event.id} className="flex items-center gap-3 p-3 hover:bg-muted/50">
                     <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
-                      <Checkbox
-                        checked={selectedEventIds.includes(event.id)}
-                        onCheckedChange={() => toggleEvent(event.id)}
-                      />
-                      {event.url_image && (
-                        <img src={event.url_image} alt="" className="h-8 w-12 object-cover rounded" />
-                      )}
+                      <Checkbox checked={selectedEventIds.includes(event.id)} onCheckedChange={() => toggleEvent(event.id)} />
+                      {event.url_image && <img src={event.url_image} alt="" className="h-8 w-12 object-cover rounded" />}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{event.nom_event}</p>
                         <p className="text-xs text-muted-foreground">
@@ -623,17 +615,57 @@ const AdminBlogEdit = () => {
             </div>
             {totalPages > 1 && (
               <div className="flex justify-center gap-2">
-                <Button variant="outline" size="sm" disabled={eventPage === 0} onClick={() => setEventPage(p => p - 1)}>
-                  Précédent
-                </Button>
-                <span className="text-sm self-center">
-                  Page {eventPage + 1} / {totalPages}
-                </span>
-                <Button variant="outline" size="sm" disabled={eventPage >= totalPages - 1} onClick={() => setEventPage(p => p + 1)}>
-                  Suivant
-                </Button>
+                <Button variant="outline" size="sm" disabled={eventPage === 0} onClick={() => setEventPage(p => p - 1)}>Précédent</Button>
+                <span className="text-sm self-center">Page {eventPage + 1} / {totalPages}</span>
+                <Button variant="outline" size="sm" disabled={eventPage >= totalPages - 1} onClick={() => setEventPage(p => p + 1)}>Suivant</Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Section 4: FAQ */}
+        <Card>
+          <CardHeader>
+            <CardTitle>FAQ — Questions fréquentes</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              La FAQ améliore significativement le référencement Google. Ajoutez 3 à 5 questions que se posent vos visiteurs sur ce sujet.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {faqItems.map((item, idx) => (
+              <div key={idx} className="p-4 border rounded-lg space-y-3 relative">
+                <div className="flex items-start gap-2">
+                  <div className="flex flex-col gap-1 pt-1">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveFaqItem(idx, 'up')} disabled={idx === 0}>
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveFaqItem(idx, 'down')} disabled={idx === faqItems.length - 1}>
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      value={item.question}
+                      onChange={e => updateFaqItem(idx, 'question', e.target.value)}
+                      placeholder="Question"
+                      className="font-medium"
+                    />
+                    <Textarea
+                      value={item.answer}
+                      onChange={e => updateFaqItem(idx, 'answer', e.target.value)}
+                      placeholder="Réponse"
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeFaqItem(idx)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button variant="outline" onClick={addFaqItem} className="w-full">
+              <Plus className="h-4 w-4 mr-2" /> Ajouter une question
+            </Button>
           </CardContent>
         </Card>
 
@@ -656,23 +688,14 @@ const AdminBlogEdit = () => {
               {status === 'published' && (
                 <div>
                   <Label>Date de publication</Label>
-                  <Input
-                    type="datetime-local"
-                    value={publishedAt}
-                    onChange={e => setPublishedAt(e.target.value)}
-                  />
+                  <Input type="datetime-local" value={publishedAt} onChange={e => setPublishedAt(e.target.value)} />
                 </div>
               )}
             </div>
             {(status === 'published' || status === 'ready') && slug && (
               <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href={`/blog/${slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline"
-                >
+                <a href={`/blog/${slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
                   Voir l'article : /blog/{slug}
                 </a>
               </div>
@@ -700,18 +723,16 @@ const AdminBlogEdit = () => {
           <div className="space-y-4">
             <div>
               <Label>Contexte de génération</Label>
-              <Textarea
-                value={aiContext}
-                onChange={e => setAiContext(e.target.value)}
-                placeholder="Ex : Article sur les salons professionnels dans le secteur industrie à Lyon en 2025"
-                className="min-h-[100px]"
-              />
+              <Textarea value={aiContext} onChange={e => setAiContext(e.target.value)} placeholder="Ex : Article sur les salons professionnels dans le secteur industrie à Lyon en 2025" className="min-h-[100px]" />
             </div>
             {selectedEvents.length > 0 && (
               <p className="text-sm text-muted-foreground">
                 {selectedEvents.length} événement(s) seront envoyés comme contexte.
               </p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Champs générés : meta title, meta description, H1, accroche, texte "pourquoi visiter", descriptions d'événements, FAQ
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAiModalOpen(false)}>Annuler</Button>
