@@ -22,6 +22,7 @@ import { REGIONS } from '@/lib/regions';
 
 interface EventRow {
   id: string;
+  id_event: string;
   nom_event: string;
   date_debut: string | null;
   date_fin: string | null;
@@ -125,7 +126,7 @@ const AdminBlogEdit = () => {
     const loadSelectedEvents = async () => {
       const { data } = await supabase
         .from('events')
-        .select('id, nom_event, date_debut, date_fin, ville, url_image, slug, secteur, code_postal')
+        .select('id, id_event, nom_event, date_debut, date_fin, ville, url_image, slug, secteur, code_postal')
         .in('id', selectedEventIds);
       if (data) {
         const ordered = selectedEventIds
@@ -137,15 +138,41 @@ const AdminBlogEdit = () => {
     loadSelectedEvents();
   }, [selectedEventIds]);
 
-  // Load available events
+  // Load available events with proper server-side filtering
   const loadEvents = useCallback(async () => {
     setEventsLoading(true);
+
+    // Step 1: If region filter is active, get matching dept codes
+    let regionDeptCodes: Set<string> | null = null;
+    if (eventRegionFilter !== 'all') {
+      const { data: depts } = await supabase
+        .from('departements')
+        .select('code')
+        .eq('region_code', eventRegionFilter);
+      regionDeptCodes = new Set((depts || []).map(d => d.code));
+    }
+
+    // Step 2: If sector filter is active, get matching event IDs from event_sectors
+    let sectorEventIds: Set<string> | null = null;
+    if (eventSectorFilter !== 'all') {
+      const { data: esRows } = await supabase
+        .from('event_sectors')
+        .select('event_id')
+        .eq('sector_id', eventSectorFilter);
+      sectorEventIds = new Set((esRows || []).map(r => r.event_id));
+    }
+
+    // Step 3: Fetch all matching events (larger batch for client-side filters)
+    const needsClientFilter = regionDeptCodes !== null || sectorEventIds !== null;
+    const fetchLimit = needsClientFilter ? 1000 : PAGE_SIZE;
+    const fetchOffset = needsClientFilter ? 0 : eventPage * PAGE_SIZE;
+
     let query = supabase
       .from('events')
-      .select('id, nom_event, date_debut, date_fin, ville, url_image, slug, secteur, code_postal', { count: 'exact' })
+      .select('id, id_event, nom_event, date_debut, date_fin, ville, url_image, slug, secteur, code_postal', { count: 'exact' })
       .eq('visible', true)
       .order('date_debut', { ascending: true })
-      .range(eventPage * PAGE_SIZE, (eventPage + 1) * PAGE_SIZE - 1);
+      .range(fetchOffset, fetchOffset + fetchLimit - 1);
 
     if (eventSearch) {
       query = query.ilike('nom_event', `%${eventSearch}%`);
@@ -161,25 +188,34 @@ const AdminBlogEdit = () => {
     }
 
     const { data, count } = await query;
-    
-    // Client-side region filter (uses code_postal → departement → region)
     let filtered = data || [];
-    if (eventRegionFilter !== 'all') {
-      // We need to check which department codes belong to the selected region
-      const { data: depts } = await supabase
-        .from('departements')
-        .select('code')
-        .eq('region_code', eventRegionFilter);
-      const deptCodes = new Set((depts || []).map(d => d.code));
+
+    // Apply region filter client-side
+    if (regionDeptCodes) {
       filtered = filtered.filter(e => {
         if (!e.code_postal) return false;
         const dept = e.code_postal.substring(0, 2);
-        return deptCodes.has(dept);
+        return regionDeptCodes!.has(dept);
       });
     }
-    
-    setAvailableEvents(filtered);
-    setTotalEvents(eventRegionFilter !== 'all' ? filtered.length : (count || 0));
+
+    // Apply sector filter client-side using event_sectors join results
+    if (sectorEventIds) {
+      filtered = filtered.filter(e => sectorEventIds!.has(e.id_event));
+    }
+
+    // Paginate client-side if we fetched a large batch
+    if (needsClientFilter) {
+      const totalFiltered = filtered.length;
+      const start = eventPage * PAGE_SIZE;
+      const paged = filtered.slice(start, start + PAGE_SIZE);
+      setAvailableEvents(paged);
+      setTotalEvents(totalFiltered);
+    } else {
+      setAvailableEvents(filtered);
+      setTotalEvents(count || 0);
+    }
+
     setEventsLoading(false);
   }, [eventSearch, eventSectorFilter, eventMonthFilter, eventRegionFilter, eventPage]);
 
@@ -628,6 +664,19 @@ const AdminBlogEdit = () => {
                 </div>
               )}
             </div>
+            {(status === 'published' || status === 'ready') && slug && (
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                <a
+                  href={`/blog/${slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Voir l'article : /blog/{slug}
+                </a>
+              </div>
+            )}
             <div className="flex gap-3 justify-end">
               <Button variant="outline" onClick={() => handleSave(false)} disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
