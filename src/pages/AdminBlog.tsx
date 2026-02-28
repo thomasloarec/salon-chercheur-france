@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowLeft, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const statusLabels: Record<string, string> = {
@@ -124,6 +124,13 @@ const AdminBlog = () => {
                       </TableCell>
                       <TableCell>{article.event_ids?.length || 0}</TableCell>
                       <TableCell className="text-right space-x-2">
+                        {(article.status === 'published' || article.status === 'ready') && article.slug && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={`/blog/${article.slug}`} target="_blank" rel="noopener noreferrer" title="Voir l'article">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
