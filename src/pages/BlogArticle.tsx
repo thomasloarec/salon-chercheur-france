@@ -129,25 +129,65 @@ const BlogArticle = () => {
     })),
   } : null;
 
+  const blogPostingSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: article.h1_title || article.title,
+    description: article.meta_description || '',
+    ...(article.header_image_url && { image: article.header_image_url }),
+    datePublished: article.published_at || article.created_at || '',
+    dateModified: article.updated_at || article.published_at || '',
+    author: { '@type': 'Organization', name: 'Lotexpo' },
+    publisher: { '@type': 'Organization', name: 'Lotexpo', url: 'https://lotexpo.com' },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `https://lotexpo.com/blog/${article.slug}` },
+  };
+
+  const eventSchemas = linkedEvents.map(event => ({
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: event.nom_event,
+    ...(event.date_debut && { startDate: event.date_debut }),
+    ...(event.date_fin && { endDate: event.date_fin }),
+    ...(event.ville && { location: { '@type': 'Place', name: event.ville } }),
+    ...(event.slug && { url: `https://lotexpo.com/events/${event.slug}` }),
+  }));
+
   const formattedUpdatedAt = article.updated_at
     ? new Date(article.updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
 
+  const isoPublished = article.published_at ? new Date(article.published_at).toISOString() : undefined;
+  const isoModified = article.updated_at ? new Date(article.updated_at).toISOString() : undefined;
+
+  const articleTitle = article.h1_title || article.title;
+
   return (
-    <MainLayout title={article.h1_title || article.title}>
+    <MainLayout title={articleTitle}>
       <Helmet>
         <title>{article.meta_title || article.title}</title>
         <meta name="description" content={article.meta_description || ''} />
         <link rel="canonical" href={`https://lotexpo.com/blog/${article.slug}`} />
         {article.header_image_url && <meta property="og:image" content={article.header_image_url} />}
+        {article.header_image_url && <meta property="og:image:width" content="1200" />}
+        {article.header_image_url && <meta property="og:image:height" content="628" />}
         <meta property="og:title" content={article.meta_title || article.title} />
         <meta property="og:description" content={article.meta_description || ''} />
         <meta property="og:url" content={`https://lotexpo.com/blog/${article.slug}`} />
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content="Lotexpo" />
         <meta property="og:locale" content="fr_FR" />
+        {isoPublished && <meta property="article:published_time" content={isoPublished} />}
+        {isoModified && <meta property="article:modified_time" content={isoModified} />}
+        <meta property="article:author" content="Lotexpo" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={article.meta_title || article.title} />
+        <meta name="twitter:description" content={article.meta_description || ''} />
+        <script type="application/ld+json">{JSON.stringify(blogPostingSchema)}</script>
         {faqSchema && (
           <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+        )}
+        {eventSchemas.length > 0 && (
+          <script type="application/ld+json">{JSON.stringify(eventSchemas)}</script>
         )}
       </Helmet>
 
@@ -167,8 +207,8 @@ const BlogArticle = () => {
         {/* 2. Metadata */}
         <div className="mx-auto px-4 max-w-[720px] pt-10">
           <div className="flex items-center gap-4 text-sm text-muted-foreground mb-5">
-            {publishedDate && (
-              <time className="flex items-center gap-1.5">
+            {publishedDate && article.published_at && (
+              <time dateTime={new Date(article.published_at).toISOString().split('T')[0]} className="flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4" />
                 Publié le {publishedDate}
               </time>
@@ -196,7 +236,7 @@ const BlogArticle = () => {
         {/* 5. Events */}
         {linkedEvents.length > 0 && (
           <section className="mx-auto px-4 max-w-[800px] mb-14">
-            <SectionTitle>Les salons de cet article</SectionTitle>
+            <SectionTitle>{articleTitle}</SectionTitle>
             <p className="text-sm text-muted-foreground -mt-5 mb-8">
               {linkedEvents.length} salon{linkedEvents.length > 1 ? 's' : ''} référencé{linkedEvents.length > 1 ? 's' : ''}
               {formattedUpdatedAt && <> — mis à jour le {formattedUpdatedAt}</>}
@@ -312,7 +352,7 @@ const BlogArticle = () => {
         {/* 7. FAQ */}
         {faqItems.length > 0 && (
           <section className="mx-auto px-4 max-w-[720px] mb-14">
-            <SectionTitle>Questions fréquentes</SectionTitle>
+            <SectionTitle>Questions fréquentes — {articleTitle}</SectionTitle>
             <div className="divide-y divide-border/60">
               {faqItems.map((faq, i) => (
                 <details key={i} className="group blog-faq-item">
