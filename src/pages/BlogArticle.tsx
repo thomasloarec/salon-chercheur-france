@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, MapPin, ArrowRight, FileText } from 'lucide-react';
+import { CalendarDays, MapPin, ArrowRight, FileText, Users } from 'lucide-react';
 
 interface LinkedEvent {
   id: string;
@@ -19,8 +19,16 @@ interface LinkedEvent {
   url_image: string | null;
   slug: string | null;
   secteur: any;
-  description?: string; // contextual description from article
+  affluence: string | null;
+  description?: string;
 }
+
+const SectionTitle = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`mb-8 ${className}`}>
+    <h2 className="text-2xl md:text-[28px] font-bold text-foreground">{children}</h2>
+    <div className="w-12 h-[3px] bg-primary mt-3 rounded-full" />
+  </div>
+);
 
 const BlogArticle = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -28,7 +36,6 @@ const BlogArticle = () => {
   const { data: allArticles } = usePublishedArticles();
   const [linkedEvents, setLinkedEvents] = useState<LinkedEvent[]>([]);
 
-  // Load linked events
   useEffect(() => {
     if (!article?.event_ids?.length) {
       setLinkedEvents([]);
@@ -39,10 +46,9 @@ const BlogArticle = () => {
     const load = async () => {
       const { data } = await supabase
         .from('events')
-        .select('id, nom_event, date_debut, date_fin, ville, url_image, slug, secteur')
+        .select('id, nom_event, date_debut, date_fin, ville, url_image, slug, secteur, affluence')
         .in('id', ids);
       if (data) {
-        // Sort: upcoming first by date
         const now = new Date();
         const withDesc = data.map(e => {
           const link = eventLinks.find(l => l.event_id === e.id);
@@ -63,7 +69,6 @@ const BlogArticle = () => {
     load();
   }, [article?.event_ids]);
 
-  // Similar articles
   const similarArticles = allArticles
     ?.filter(a => a.id !== article?.id)
     .sort(() => Math.random() - 0.5)
@@ -111,7 +116,6 @@ const BlogArticle = () => {
 
   const faqItems = article.faq?.filter(f => f.question && f.answer) || [];
 
-  // FAQ Schema for SEO
   const faqSchema = faqItems.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -124,6 +128,10 @@ const BlogArticle = () => {
       },
     })),
   } : null;
+
+  const formattedUpdatedAt = article.updated_at
+    ? new Date(article.updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
 
   return (
     <MainLayout title={article.h1_title || article.title}>
@@ -144,7 +152,7 @@ const BlogArticle = () => {
       </Helmet>
 
       <article>
-        {/* 1. Header image - full width with gradient overlay */}
+        {/* 1. Header image */}
         {article.header_image_url && (
           <div className="relative w-full aspect-[1.91/1] max-h-[500px] overflow-hidden">
             <img
@@ -156,11 +164,11 @@ const BlogArticle = () => {
           </div>
         )}
 
-        <div className="container mx-auto px-4 max-w-4xl py-8">
-          {/* 2. Publication metadata */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+        {/* 2. Metadata */}
+        <div className="mx-auto px-4 max-w-[720px] pt-10">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-5">
             {publishedDate && (
-              <time className="flex items-center gap-1">
+              <time className="flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4" />
                 Publié le {publishedDate}
               </time>
@@ -168,162 +176,199 @@ const BlogArticle = () => {
             {updatedDate && <span>· Mis à jour le {updatedDate}</span>}
           </div>
 
-          {/* 3. H1 Title */}
-          <h1 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">
+          {/* 3. H1 */}
+          <h1 className="text-3xl md:text-[40px] font-bold mb-8 leading-tight tracking-tight text-foreground">
             {article.h1_title || article.title}
           </h1>
+        </div>
 
-          {/* 4. Intro hook */}
-          {article.intro_text && (
-            <div className="text-lg text-muted-foreground leading-relaxed mb-10 border-l-4 border-primary pl-5 py-3 bg-muted/30 rounded-r-lg">
+        {/* 4. Intro hook */}
+        {article.intro_text && (
+          <div className="mx-auto px-4 max-w-[720px] mb-14">
+            <div className="text-[17px] leading-[1.8] text-foreground/80">
               {article.intro_text.split('\n').map((p, i) => (
-                <p key={i} className={i > 0 ? 'mt-2' : ''}>{p}</p>
+                <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* 5. Events integrated in flow */}
-          {linkedEvents.length > 0 && (
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold mb-6">Les salons de cet article</h2>
-              <div className="space-y-4">
-                {linkedEvents.map(event => (
-                  <div key={event.id}>
-                    <div className="flex items-center gap-4 p-4 border rounded-xl hover:shadow-md transition-shadow">
-                      {event.url_image ? (
-                        <img src={event.url_image} alt={event.nom_event} className="h-20 w-28 object-cover rounded-lg flex-shrink-0" />
-                      ) : (
-                        <div className="h-20 w-28 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                          <FileText className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold truncate">{event.nom_event}</h3>
-                          {isPast(event.date_fin || event.date_debut) && (
-                            <Badge variant="outline" className="text-xs shrink-0">Événement passé</Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          {event.date_debut && (
-                            <span className="flex items-center gap-1">
-                              <CalendarDays className="h-3.5 w-3.5" />
-                              {new Date(event.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                            </span>
-                          )}
-                          {event.ville && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5" />
-                              {event.ville}
-                            </span>
-                          )}
-                        </div>
-                        {getSectors(event.secteur).length > 0 && (
-                          <div className="flex gap-1 mt-1.5 flex-wrap">
-                            {getSectors(event.secteur).slice(0, 3).map((s, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>
-                            ))}
-                          </div>
-                        )}
+        {/* 5. Events */}
+        {linkedEvents.length > 0 && (
+          <section className="mx-auto px-4 max-w-[800px] mb-14">
+            <SectionTitle>Les salons de cet article</SectionTitle>
+            <p className="text-sm text-muted-foreground -mt-5 mb-8">
+              {linkedEvents.length} salon{linkedEvents.length > 1 ? 's' : ''} référencé{linkedEvents.length > 1 ? 's' : ''}
+              {formattedUpdatedAt && <> — mis à jour le {formattedUpdatedAt}</>}
+            </p>
+
+            <div className="space-y-8">
+              {linkedEvents.map(event => (
+                <div
+                  key={event.id}
+                  className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300"
+                >
+                  {/* Event image */}
+                  {event.url_image ? (
+                    <div className="w-full max-h-[320px] bg-muted/30 flex items-center justify-center overflow-hidden">
+                      <img
+                        src={event.url_image}
+                        alt={event.nom_event}
+                        className="w-full h-auto max-h-[320px] object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-40 bg-muted/30 flex items-center justify-center">
+                      <FileText className="h-10 w-10 text-muted-foreground/40" />
+                    </div>
+                  )}
+
+                  {/* Event content */}
+                  <div className="p-5">
+                    {/* Badges */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex gap-1.5 flex-wrap">
+                        {getSectors(event.secteur).slice(0, 3).map((s, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs font-medium">{s}</Badge>
+                        ))}
                       </div>
-                      {event.slug && (
-                        <Link to={`/events/${event.slug}`}>
-                          <Button variant="outline" size="sm">
-                            Voir <ArrowRight className="h-4 w-4 ml-1" />
-                          </Button>
-                        </Link>
+                      {isPast(event.date_fin || event.date_debut) && (
+                        <Badge variant="outline" className="text-xs text-muted-foreground shrink-0">Événement passé</Badge>
                       )}
                     </div>
-                    {/* Event contextual description */}
+
+                    {/* Name */}
+                    <h3 className="text-lg font-bold text-foreground mt-2 leading-snug">
+                      {event.nom_event}
+                    </h3>
+
+                    {/* Date & location */}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1.5">
+                      {event.date_debut && (
+                        <span className="flex items-center gap-1.5">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {new Date(event.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
+                      )}
+                      {event.ville && (
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {event.ville}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Affluence */}
+                    {event.affluence && (
+                      <div className="flex items-center gap-1.5 text-sm font-medium text-primary/80 mt-1.5">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>~{event.affluence} visiteurs attendus</span>
+                      </div>
+                    )}
+
+                    {/* Contextual description */}
                     {event.description && (
-                      <p className="text-sm italic text-muted-foreground mt-2 ml-4 pl-4 border-l-2 border-muted">
+                      <p className="text-[15px] leading-[1.7] text-foreground/70 mt-3">
                         {event.description}
                       </p>
                     )}
+
+                    {/* CTA */}
+                    {event.slug && (
+                      <div className="flex justify-end mt-4">
+                        <Link to={`/events/${event.slug}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-lg px-4 transition-colors"
+                          >
+                            Voir l'événement <ArrowRight className="h-4 w-4 ml-1.5" />
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-          {/* 6. Why visit block */}
-          {article.why_visit_text && (
-            <section className="mb-12 bg-muted/40 rounded-xl p-6 md:p-8">
-              <h2 className="text-2xl font-bold mb-4">Pourquoi visiter ces salons ?</h2>
-              <div className="prose prose-lg max-w-none">
-                {article.why_visit_text.split('\n').map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-              </div>
-            </section>
-          )}
+        {/* 6. Why visit */}
+        {article.why_visit_text && (
+          <section className="mx-auto px-4 max-w-[720px] mb-14">
+            <SectionTitle>Pourquoi visiter ces salons ?</SectionTitle>
+            <div className="text-base leading-[1.8] text-foreground/80">
+              {article.why_visit_text.split('\n').map((p, i) => (
+                <p key={i} className={i > 0 ? 'mt-4' : ''}>{p}</p>
+              ))}
+            </div>
+          </section>
+        )}
 
-          {/* 7. FAQ section with native details/summary */}
-          {faqItems.length > 0 && (
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold mb-6">Questions fréquentes</h2>
-              <div className="space-y-3">
-                {faqItems.map((faq, i) => (
-                  <details
-                    key={i}
-                    className="group border rounded-lg overflow-hidden"
-                  >
-                    <summary className="flex items-center justify-between p-4 cursor-pointer font-semibold text-foreground hover:bg-muted/50 transition-colors list-none [&::-webkit-details-marker]:hidden">
-                      <span>{faq.question}</span>
-                      <span className="ml-2 text-muted-foreground group-open:rotate-180 transition-transform duration-200">
-                        ▾
-                      </span>
-                    </summary>
-                    <div className="px-4 pb-4 pt-0 text-muted-foreground leading-relaxed">
-                      {faq.answer.split('\n').map((p, j) => (
-                        <p key={j} className={j > 0 ? 'mt-2' : ''}>{p}</p>
-                      ))}
-                    </div>
-                  </details>
-                ))}
-              </div>
-            </section>
-          )}
+        {/* 7. FAQ */}
+        {faqItems.length > 0 && (
+          <section className="mx-auto px-4 max-w-[720px] mb-14">
+            <SectionTitle>Questions fréquentes</SectionTitle>
+            <div className="divide-y divide-border/60">
+              {faqItems.map((faq, i) => (
+                <details key={i} className="group blog-faq-item">
+                  <summary className="flex items-center justify-between py-[18px] cursor-pointer text-base font-semibold text-foreground list-none [&::-webkit-details-marker]:hidden select-none">
+                    <span className="pr-4">{faq.question}</span>
+                    <span className="shrink-0 w-5 h-5 flex items-center justify-center text-muted-foreground text-lg leading-none transition-transform duration-200">
+                      <span className="group-open:hidden">+</span>
+                      <span className="hidden group-open:inline">−</span>
+                    </span>
+                  </summary>
+                  <div className="pb-[18px] text-[15px] text-muted-foreground leading-[1.7] animate-fade-in-up" style={{ animationDuration: '0.25s' }}>
+                    {faq.answer.split('\n').map((p, j) => (
+                      <p key={j} className={j > 0 ? 'mt-2' : ''}>{p}</p>
+                    ))}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
 
-          {/* 8. Similar articles */}
-          {similarArticles && similarArticles.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-bold mb-6">Articles similaires</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {similarArticles.map(a => (
-                  <Link key={a.id} to={`/blog/${a.slug}`} className="group">
-                    <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
-                      {a.header_image_url ? (
-                        <div className="aspect-[16/9] overflow-hidden">
-                          <img
-                            src={a.header_image_url}
-                            alt={a.h1_title || a.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-[16/9] bg-muted flex items-center justify-center">
-                          <FileText className="h-8 w-8 text-muted-foreground" />
-                        </div>
+        {/* 8. Similar articles */}
+        {similarArticles && similarArticles.length > 0 && (
+          <section className="mx-auto px-4 max-w-[800px] mb-14">
+            <SectionTitle>Articles similaires</SectionTitle>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {similarArticles.map(a => (
+                <Link key={a.id} to={`/blog/${a.slug}`} className="group">
+                  <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow border-border/50">
+                    {a.header_image_url ? (
+                      <div className="aspect-[16/9] overflow-hidden">
+                        <img
+                          src={a.header_image_url}
+                          alt={a.h1_title || a.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-[16/9] bg-muted flex items-center justify-center">
+                        <FileText className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
+                        {a.h1_title || a.title}
+                      </h3>
+                      {a.published_at && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(a.published_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
                       )}
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
-                          {a.h1_title || a.title}
-                        </h3>
-                        {a.published_at && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {new Date(a.published_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </article>
     </MainLayout>
   );
