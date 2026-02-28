@@ -86,6 +86,60 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_articles: {
+        Row: {
+          body_text: string | null
+          created_at: string | null
+          created_by: string | null
+          event_ids: string[] | null
+          h1_title: string | null
+          header_image_url: string | null
+          id: string
+          intro_text: string | null
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          body_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          event_ids?: string[] | null
+          h1_title?: string | null
+          header_image_url?: string | null
+          id?: string
+          intro_text?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          body_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          event_ids?: string[] | null
+          h1_title?: string | null
+          header_image_url?: string | null
+          id?: string
+          intro_text?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       communes: {
         Row: {
           code_postal: string | null
