@@ -31,6 +31,10 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  const isEventPast = event.date_fin
+    ? new Date(event.date_fin) < new Date()
+    : event.date_debut ? new Date(event.date_debut) < new Date() : false;
+
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
   };
@@ -97,12 +101,21 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
               </h1>
             </div>
             {event.url_image && (
-              <img
-                src={event.url_image}
-                alt={`Affiche ${event.nom_event}`}
-                loading="lazy"
-                className="w-20 h-auto object-contain flex-shrink-0 rounded-md shadow"
-              />
+              <div className="relative">
+                <img
+                  src={event.url_image}
+                  alt={`Affiche ${event.nom_event}`}
+                  loading="lazy"
+                  className="w-20 h-auto object-contain flex-shrink-0 rounded-md shadow"
+                />
+                {isEventPast && (
+                  <div className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center">
+                    <span className="text-white text-[10px] font-semibold tracking-[0.8px] uppercase border border-white/60 rounded-md px-2 py-1 bg-white/15">
+                      Terminé
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -175,28 +188,35 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           {/* Boutons d'action mobile */}
           <Separator className="mb-4" />
           <div className="flex flex-wrap gap-2 items-center">
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={handleFavoriteClick}
-              disabled={toggleFavorite.isPending}
-              className={cn(
-                "transition-all duration-200",
-                isFavorite 
-                  ? "bg-green-500 text-white hover:bg-green-600 border-green-500" 
-                  : "bg-white hover:bg-gray-100"
-              )}
-            >
-              {isFavorite ? (
-                <CalendarCheck className="h-4 w-4 mr-1.5" />
-              ) : (
-                <Calendar className="h-4 w-4 mr-1.5" />
-              )}
-              Agenda
-            </Button>
-            
-            <CalBtn type="gcal" event={event} />
-            <CalBtn type="outlook" event={event} />
+            {isEventPast ? (
+              <Button variant="outline" size="sm" disabled className="opacity-50 cursor-not-allowed">
+                Inscriptions fermées
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFavoriteClick}
+                  disabled={toggleFavorite.isPending}
+                  className={cn(
+                    "transition-all duration-200",
+                    isFavorite 
+                      ? "bg-green-500 text-white hover:bg-green-600 border-green-500" 
+                      : "bg-white hover:bg-gray-100"
+                  )}
+                >
+                  {isFavorite ? (
+                    <CalendarCheck className="h-4 w-4 mr-1.5" />
+                  ) : (
+                    <Calendar className="h-4 w-4 mr-1.5" />
+                  )}
+                  Agenda
+                </Button>
+                <CalBtn type="gcal" event={event} />
+                <CalBtn type="outlook" event={event} />
+              </>
+            )}
             {official && (
               <Button 
                 variant="outline"
@@ -209,7 +229,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Ajoutez cet événement à votre agenda en un clic.
+            {isEventPast ? 'Cet événement est terminé.' : 'Ajoutez cet événement à votre agenda en un clic.'}
           </p>
         </div>
 
@@ -304,29 +324,35 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
               {/* Boutons calendrier avec texte explicatif */}
               <div className="flex flex-col">
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Agenda Lotexpo (Favoris) */}
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={handleFavoriteClick}
-                    disabled={toggleFavorite.isPending}
-                    className={cn(
-                      "transition-all duration-200",
-                      isFavorite 
-                        ? "bg-green-500 text-white hover:bg-green-600 border-green-500" 
-                        : "bg-white hover:bg-gray-100"
-                    )}
-                  >
-                    {isFavorite ? (
-                      <CalendarCheck className="h-4 w-4 mr-2" />
-                    ) : (
-                      <Calendar className="h-4 w-4 mr-2" />
-                    )}
-                    Agenda Lotexpo
-                  </Button>
-                  
-                  <CalBtn type="gcal" event={event} />
-                  <CalBtn type="outlook" event={event} />
+                  {isEventPast ? (
+                    <Button variant="outline" size="sm" disabled className="opacity-50 cursor-not-allowed">
+                      Inscriptions fermées
+                    </Button>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={handleFavoriteClick}
+                        disabled={toggleFavorite.isPending}
+                        className={cn(
+                          "transition-all duration-200",
+                          isFavorite 
+                            ? "bg-green-500 text-white hover:bg-green-600 border-green-500" 
+                            : "bg-white hover:bg-gray-100"
+                        )}
+                      >
+                        {isFavorite ? (
+                          <CalendarCheck className="h-4 w-4 mr-2" />
+                        ) : (
+                          <Calendar className="h-4 w-4 mr-2" />
+                        )}
+                        Agenda Lotexpo
+                      </Button>
+                      <CalBtn type="gcal" event={event} />
+                      <CalBtn type="outlook" event={event} />
+                    </>
+                  )}
                   {official && (
                     <Button 
                       variant="outline"
@@ -339,7 +365,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Ajoutez cet événement à votre agenda en un clic.
+                  {isEventPast ? 'Cet événement est terminé.' : 'Ajoutez cet événement à votre agenda en un clic.'}
                 </p>
               </div>
             </div>
@@ -348,16 +374,25 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
 
         {/* ✅ AMÉLIORATION : Image optimisée avec srcset pour SEO - Masquée sur mobile (affichée en haut) */}
         {event.url_image && (
-          <img
-            src={event.url_image}
-            srcSet={`${event.url_image} 1x, ${event.url_image} 2x`}
-            sizes="(max-width: 640px) 112px, (max-width: 1024px) 160px, 192px"
-            alt={`Affiche du salon ${event.nom_event}${event.ville ? ` à ${event.ville}` : ''}${event.date_debut ? ` ${new Date(event.date_debut).getFullYear()}` : ''}`}
-            loading="lazy"
-            width="192"
-            height="auto"
-            className="hidden sm:block sm:w-40 lg:w-48 h-auto object-contain flex-shrink-0 rounded-md shadow-lg"
-          />
+          <div className="relative hidden sm:block flex-shrink-0">
+            <img
+              src={event.url_image}
+              srcSet={`${event.url_image} 1x, ${event.url_image} 2x`}
+              sizes="(max-width: 640px) 112px, (max-width: 1024px) 160px, 192px"
+              alt={`Affiche du salon ${event.nom_event}${event.ville ? ` à ${event.ville}` : ''}${event.date_debut ? ` ${new Date(event.date_debut).getFullYear()}` : ''}`}
+              loading="lazy"
+              width="192"
+              height="auto"
+              className="sm:w-40 lg:w-48 h-auto object-contain rounded-md shadow-lg"
+            />
+            {isEventPast && (
+              <div className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center">
+                <span className="text-white text-[13px] font-semibold tracking-[0.8px] uppercase border-[1.5px] border-white/60 rounded-md px-4 py-2 bg-white/15">
+                  Événement passé
+                </span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

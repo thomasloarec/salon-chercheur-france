@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 
@@ -37,6 +37,19 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   const navigate = useNavigate();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
   
+  const isEventPast = useMemo(() => {
+    const endDate = event.date_fin || event.date_debut;
+    return endDate ? new Date(endDate) < new Date() : false;
+  }, [event.date_fin, event.date_debut]);
+
+  const sectorLink = useMemo(() => {
+    const secteur = event.secteur;
+    if (!secteur) return '/';
+    const first = Array.isArray(secteur) ? secteur[0] : secteur;
+    if (!first) return '/';
+    return `/?sector=${encodeURIComponent(first)}`;
+  }, [event.secteur]);
+
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
 
@@ -143,6 +156,21 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </section>
             
             <EventPageHeader event={event} />
+
+            {/* Past event banner */}
+            {isEventPast && (
+              <div className="rounded-r-lg border-l-4 border-orange-400 bg-orange-50 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+                <p className="text-sm text-foreground/80">
+                  Cet événement est terminé. Retrouvez les prochains salons de ce secteur sur Lotexpo.
+                </p>
+                <Link
+                  to={sectorLink}
+                  className="text-sm font-medium text-primary hover:underline whitespace-nowrap"
+                >
+                  Voir les prochains événements →
+                </Link>
+              </div>
+            )}
             
             <div className="grid grid-cols-12 gap-6">
               {/* Colonne gauche - Nouveautés */}

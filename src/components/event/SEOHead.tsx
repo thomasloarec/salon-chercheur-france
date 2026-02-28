@@ -16,10 +16,16 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
   };
 
+  // Detect past event
+  const isEventPast = event.date_fin
+    ? new Date(event.date_fin) < new Date()
+    : event.date_debut ? new Date(event.date_debut) < new Date() : false;
+
   // Optimized title: {{Nom de l'événement}} {{Année}} | Salon professionnel à {{Ville}} – Lotexpo
   // Max 60 chars, keyword first, brand suffix
   const eventYear = event.date_debut ? new Date(event.date_debut).getFullYear() : currentYear;
-  const title = `${event.nom_event} ${eventYear} | Salon professionnel à ${event.ville || 'France'} – Lotexpo`.slice(0, 60);
+  const baseTitle = `${event.nom_event} ${eventYear} | Salon professionnel à ${event.ville || 'France'} – Lotexpo`.slice(0, 60);
+  const title = isEventPast ? `[Terminé] ${baseTitle}`.slice(0, 60) : baseTitle;
 
   // Optimized description: max 160 chars, action-oriented
   const description = `${event.nom_event} à ${event.ville || 'France'} : dates, exposants, secteurs représentés et informations pratiques pour préparer votre visite professionnelle.`.slice(0, 160);

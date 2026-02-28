@@ -203,93 +203,96 @@ const BlogArticle = () => {
             </p>
 
             <div className="space-y-8">
-              {linkedEvents.map(event => (
-                <div
-                  key={event.id}
-                  className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300"
-                >
-                  {/* Event image */}
-                  {event.url_image ? (
-                    <div className="w-full max-h-[320px] bg-muted/30 flex items-center justify-center overflow-hidden">
-                      <img
-                        src={event.url_image}
-                        alt={event.nom_event}
-                        className="w-full h-auto max-h-[320px] object-contain"
-                      />
+              {linkedEvents.map(event => {
+                const eventIsPast = isPast(event.date_fin || event.date_debut);
+                return (
+                  <div
+                    key={event.id}
+                    className="flex flex-col sm:flex-row bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300"
+                  >
+                    {/* Image column */}
+                    <div className="relative sm:w-[220px] md:w-[220px] sm:min-h-[180px] w-full h-[160px] sm:h-auto bg-[hsl(var(--muted)/0.15)] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {event.url_image ? (
+                        <img
+                          src={event.url_image}
+                          alt={event.nom_event}
+                          className="w-full h-full object-contain p-2"
+                        />
+                      ) : (
+                        <FileText className="h-10 w-10 text-muted-foreground/40" />
+                      )}
+                      {eventIsPast && (
+                        <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
+                          <span className="text-white text-[11px] font-semibold tracking-[0.5px] uppercase">
+                            Événement passé
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="w-full h-40 bg-muted/30 flex items-center justify-center">
-                      <FileText className="h-10 w-10 text-muted-foreground/40" />
-                    </div>
-                  )}
 
-                  {/* Event content */}
-                  <div className="p-5">
-                    {/* Badges */}
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                    {/* Content column */}
+                    <div className="flex-1 p-5 sm:px-6 flex flex-col">
+                      {/* Badges */}
                       <div className="flex gap-1.5 flex-wrap">
                         {getSectors(event.secteur).slice(0, 3).map((s, i) => (
                           <Badge key={i} variant="secondary" className="text-xs font-medium">{s}</Badge>
                         ))}
                       </div>
-                      {isPast(event.date_fin || event.date_debut) && (
-                        <Badge variant="outline" className="text-xs text-muted-foreground shrink-0">Événement passé</Badge>
+
+                      {/* Name */}
+                      <h3 className="text-[17px] font-bold text-foreground mt-2 leading-snug">
+                        {event.nom_event}
+                      </h3>
+
+                      {/* Date & location */}
+                      <div className="flex items-center gap-4 text-[13px] text-muted-foreground mt-1.5">
+                        {event.date_debut && (
+                          <span className="flex items-center gap-1.5">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            {new Date(event.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </span>
+                        )}
+                        {event.ville && (
+                          <span className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {event.ville}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Affluence */}
+                      {event.affluence && (
+                        <div className="flex items-center gap-1.5 text-[13px] font-medium text-primary/80 mt-1">
+                          <Users className="h-3.5 w-3.5" />
+                          <span>~{event.affluence} visiteurs attendus</span>
+                        </div>
+                      )}
+
+                      {/* Contextual description */}
+                      {event.description && (
+                        <p className="text-sm leading-[1.7] text-muted-foreground mt-3">
+                          {event.description}
+                        </p>
+                      )}
+
+                      {/* CTA */}
+                      {event.slug && (
+                        <div className="flex justify-end mt-auto pt-4">
+                          <Link to={`/events/${event.slug}`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-lg px-4 text-[13px] transition-colors"
+                            >
+                              Voir l'événement <ArrowRight className="h-4 w-4 ml-1.5" />
+                            </Button>
+                          </Link>
+                        </div>
                       )}
                     </div>
-
-                    {/* Name */}
-                    <h3 className="text-lg font-bold text-foreground mt-2 leading-snug">
-                      {event.nom_event}
-                    </h3>
-
-                    {/* Date & location */}
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1.5">
-                      {event.date_debut && (
-                        <span className="flex items-center gap-1.5">
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          {new Date(event.date_debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        </span>
-                      )}
-                      {event.ville && (
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {event.ville}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Affluence */}
-                    {event.affluence && (
-                      <div className="flex items-center gap-1.5 text-sm font-medium text-primary/80 mt-1.5">
-                        <Users className="h-3.5 w-3.5" />
-                        <span>~{event.affluence} visiteurs attendus</span>
-                      </div>
-                    )}
-
-                    {/* Contextual description */}
-                    {event.description && (
-                      <p className="text-[15px] leading-[1.7] text-foreground/70 mt-3">
-                        {event.description}
-                      </p>
-                    )}
-
-                    {/* CTA */}
-                    {event.slug && (
-                      <div className="flex justify-end mt-4">
-                        <Link to={`/events/${event.slug}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-lg px-4 transition-colors"
-                          >
-                            Voir l'événement <ArrowRight className="h-4 w-4 ml-1.5" />
-                          </Button>
-                        </Link>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
