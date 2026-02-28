@@ -13,12 +13,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Sparkles, X, ChevronUp, ChevronDown, Loader2, Search } from 'lucide-react';
+import { ArrowLeft, Sparkles, X, ChevronUp, ChevronDown, Loader2, Search, ExternalLink, Upload, ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSectors } from '@/hooks/useSectors';
+import { REGIONS } from '@/lib/regions';
 
 interface EventRow {
   id: string;
@@ -29,6 +29,7 @@ interface EventRow {
   url_image: string | null;
   slug: string | null;
   secteur: any;
+  code_postal: string | null;
 }
 
 const MONTHS = [
@@ -39,6 +40,10 @@ const MONTHS = [
   { value: '9', label: 'Septembre' }, { value: '10', label: 'Octobre' },
   { value: '11', label: 'Novembre' }, { value: '12', label: 'Décembre' },
 ];
+
+const REGION_OPTIONS = Object.values(REGIONS)
+  .filter(r => !['01', '02', '03', '04', '06'].includes(r.code)) // exclude DROM for cleaner list
+  .sort((a, b) => a.name.localeCompare(b.name));
 
 const AdminBlogEdit = () => {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +70,9 @@ const AdminBlogEdit = () => {
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [selectedEvents, setSelectedEvents] = useState<EventRow[]>([]);
 
+  // Image upload
+  const [imageUploading, setImageUploading] = useState(false);
+
   // AI modal
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiContext, setAiContext] = useState('');
@@ -74,6 +82,7 @@ const AdminBlogEdit = () => {
   const [eventSearch, setEventSearch] = useState('');
   const [eventSectorFilter, setEventSectorFilter] = useState('all');
   const [eventMonthFilter, setEventMonthFilter] = useState('all');
+  const [eventRegionFilter, setEventRegionFilter] = useState('all');
   const [eventPage, setEventPage] = useState(0);
   const [availableEvents, setAvailableEvents] = useState<EventRow[]>([]);
   const [totalEvents, setTotalEvents] = useState(0);
@@ -116,10 +125,9 @@ const AdminBlogEdit = () => {
     const loadSelectedEvents = async () => {
       const { data } = await supabase
         .from('events')
-        .select('id, nom_event, date_debut, date_fin, ville, url_image, slug, secteur')
+        .select('id, nom_event, date_debut, date_fin, ville, url_image, slug, secteur, code_postal')
         .in('id', selectedEventIds);
       if (data) {
-        // Preserve order
         const ordered = selectedEventIds
           .map(eid => data.find(e => e.id === eid))
           .filter(Boolean) as EventRow[];
@@ -134,7 +142,7 @@ const AdminBlogEdit = () => {
     setEventsLoading(true);
     let query = supabase
       .from('events')
-      .select('id, nom_event, date_debut, date_fin, ville, url_image, slug, secteur', { count: 'exact' })
+      .select('id, nom_event, date_debut, date_fin, ville, url_image, slug, secteur, code_postal', { count: 'exact' })
       .eq('visible', true)
       .order('date_debut', { ascending: true })
       .range(eventPage * PAGE_SIZE, (eventPage + 1) * PAGE_SIZE - 1);
@@ -143,7 +151,6 @@ const AdminBlogEdit = () => {
       query = query.ilike('nom_event', `%${eventSearch}%`);
     }
     if (eventMonthFilter !== 'all') {
-      // Filter by month using date_debut
       const month = parseInt(eventMonthFilter);
       const currentYear = new Date().getFullYear();
       const startDate = `${currentYear}-${String(month).padStart(2, '0')}-01`;
@@ -154,14 +161,59 @@ const AdminBlogEdit = () => {
     }
 
     const { data, count } = await query;
-    setAvailableEvents(data || []);
-    setTotalEvents(count || 0);
+    
+    // Client-side region filter (uses code_postal → departement → region)
+    let filtered = data || [];
+    if (eventRegionFilter !== 'all') {
+      // We need to check which department codes belong to the selected region
+      const { data: depts } = await supabase
+        .from('departements')
+        .select('code')
+        .eq('region_code', eventRegionFilter);
+      const deptCodes = new Set((depts || []).map(d => d.code));
+      filtered = filtered.filter(e => {
+        if (!e.code_postal) return false;
+        const dept = e.code_postal.substring(0, 2);
+        return deptCodes.has(dept);
+      });
+    }
+    
+    setAvailableEvents(filtered);
+    setTotalEvents(eventRegionFilter !== 'all' ? filtered.length : (count || 0));
     setEventsLoading(false);
-  }, [eventSearch, eventSectorFilter, eventMonthFilter, eventPage]);
+  }, [eventSearch, eventSectorFilter, eventMonthFilter, eventRegionFilter, eventPage]);
 
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  // Image upload handler
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setImageUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `blog-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('blog-images')
+        .upload(fileName, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: urlData } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(fileName);
+      
+      setHeaderImageUrl(urlData.publicUrl);
+      toast({ title: 'Image téléchargée avec succès' });
+    } catch (err: any) {
+      toast({ title: 'Erreur upload: ' + err.message, variant: 'destructive' });
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   if (authLoading || adminLoading) {
     return (
@@ -273,6 +325,11 @@ const AdminBlogEdit = () => {
 
   const totalPages = Math.ceil(totalEvents / PAGE_SIZE);
 
+  const getEventUrl = (event: EventRow) => {
+    if (event.slug) return `/events/${event.slug}`;
+    return `/events/${event.id}`;
+  };
+
   return (
     <MainLayout title={isNew ? 'Nouvel article' : 'Éditer l\'article'}>
       <div className="container mx-auto py-8 space-y-6 max-w-4xl">
@@ -346,19 +403,47 @@ const AdminBlogEdit = () => {
               />
             </div>
             <div>
-              <Label>Image d'en-tête (URL)</Label>
-              <Input
-                value={headerImageUrl}
-                onChange={e => setHeaderImageUrl(e.target.value)}
-                placeholder="https://exemple.com/image.jpg"
-              />
+              <Label>Image d'en-tête</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Taille recommandée : <strong>1200 × 630 px</strong> (ratio 1.91:1) — format JPEG, PNG ou WebP, max 5 Mo
+              </p>
+              <div className="flex items-center gap-3">
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={imageUploading}
+                  />
+                  <div className="flex items-center gap-2 px-4 py-2 border rounded-md bg-background hover:bg-muted transition-colors text-sm">
+                    {imageUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    {imageUploading ? 'Téléchargement...' : 'Charger une image'}
+                  </div>
+                </label>
+                {headerImageUrl && (
+                  <Button variant="ghost" size="sm" onClick={() => setHeaderImageUrl('')}>
+                    <X className="h-4 w-4 mr-1" /> Supprimer
+                  </Button>
+                )}
+              </div>
               {headerImageUrl && (
                 <img
                   src={headerImageUrl}
                   alt="Aperçu"
-                  className="mt-2 rounded-lg max-h-48 object-cover w-full"
+                  className="mt-3 rounded-lg max-h-48 object-cover w-full"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
+              )}
+              {!headerImageUrl && (
+                <div className="mt-3 border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-muted-foreground">
+                  <ImageIcon className="h-10 w-10 mb-2" />
+                  <p className="text-sm">Aucune image sélectionnée</p>
+                </div>
               )}
             </div>
             <div>
@@ -403,6 +488,11 @@ const AdminBlogEdit = () => {
                         </p>
                       </div>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                          <a href={getEventUrl(event)} target="_blank" rel="noopener noreferrer" title="Voir l'événement">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveEvent(idx, 'up')} disabled={idx === 0}>
                           <ChevronUp className="h-4 w-4" />
                         </Button>
@@ -420,7 +510,7 @@ const AdminBlogEdit = () => {
             )}
 
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -436,6 +526,15 @@ const AdminBlogEdit = () => {
                   <SelectItem value="all">Tous les secteurs</SelectItem>
                   {sectors?.map(s => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={eventRegionFilter} onValueChange={v => { setEventRegionFilter(v); setEventPage(0); }}>
+                <SelectTrigger><SelectValue placeholder="Région" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les régions</SelectItem>
+                  {REGION_OPTIONS.map(r => (
+                    <SelectItem key={r.code} value={r.code}>{r.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -458,24 +557,31 @@ const AdminBlogEdit = () => {
                 <p className="text-center text-muted-foreground py-6">Aucun événement trouvé</p>
               ) : (
                 availableEvents.map(event => (
-                  <label
+                  <div
                     key={event.id}
-                    className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                    className="flex items-center gap-3 p-3 hover:bg-muted/50"
                   >
-                    <Checkbox
-                      checked={selectedEventIds.includes(event.id)}
-                      onCheckedChange={() => toggleEvent(event.id)}
-                    />
-                    {event.url_image && (
-                      <img src={event.url_image} alt="" className="h-8 w-12 object-cover rounded" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{event.nom_event}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {event.date_debut ? new Date(event.date_debut).toLocaleDateString('fr-FR') : ''} — {event.ville}
-                      </p>
-                    </div>
-                  </label>
+                    <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+                      <Checkbox
+                        checked={selectedEventIds.includes(event.id)}
+                        onCheckedChange={() => toggleEvent(event.id)}
+                      />
+                      {event.url_image && (
+                        <img src={event.url_image} alt="" className="h-8 w-12 object-cover rounded" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{event.nom_event}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {event.date_debut ? new Date(event.date_debut).toLocaleDateString('fr-FR') : ''} — {event.ville}
+                        </p>
+                      </div>
+                    </label>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" asChild>
+                      <a href={getEventUrl(event)} target="_blank" rel="noopener noreferrer" title="Voir l'événement">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
                 ))
               )}
             </div>
