@@ -19,7 +19,7 @@ import { OAuthHubSpotDiagnostic } from '@/components/admin/OAuthHubSpotDiagnosti
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, BookOpen } from 'lucide-react';
 import {
   Accordion,
   AccordionItem,
@@ -60,6 +60,24 @@ const Admin = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Administration</h1>
           <p className="text-gray-600">Gestion des événements, nouveautés et modération</p>
         </div>
+
+        {/* Lien rapide vers le Blog */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium">Blog SEO</h3>
+                <p className="text-sm text-muted-foreground">Gérer les articles du blog</p>
+              </div>
+              <Button asChild>
+                <a href="/admin/blog">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Gestion du Blog
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="novelties" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">

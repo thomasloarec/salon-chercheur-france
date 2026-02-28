@@ -140,8 +140,40 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Add novelty pages (if you have dedicated novelty pages)
-    // For now, novelties are part of event pages, so we skip individual URLs
+    // Add blog articles
+    const { data: blogArticles, error: blogError } = await supabase
+      .from('blog_articles')
+      .select('slug, updated_at')
+      .eq('status', 'published')
+      .not('slug', 'is', null);
+
+    if (blogError) {
+      console.error('[sitemap] Error fetching blog articles:', blogError);
+    }
+
+    if (blogArticles && blogArticles.length > 0) {
+      xml += '\n  <!-- Blog articles -->\n';
+      xml += `  <url>
+    <loc>${SITE_URL}/blog</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+      for (const article of blogArticles) {
+        if (!article.slug) continue;
+        const lastmod = article.updated_at
+          ? new Date(article.updated_at).toISOString().split('T')[0]
+          : now;
+        xml += `  <url>
+    <loc>${SITE_URL}/blog/${encodeURIComponent(article.slug)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+`;
+      }
+    }
 
     xml += '</urlset>';
 

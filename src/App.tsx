@@ -32,6 +32,10 @@ import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
 import Contact from '@/pages/Contact';
 import AdminEventByText from '@/pages/AdminEventByText';
+import AdminBlog from '@/pages/AdminBlog';
+import AdminBlogEdit from '@/pages/AdminBlogEdit';
+import Blog from '@/pages/Blog';
+import BlogArticle from '@/pages/BlogArticle';
 import NotFound from '@/pages/NotFound';
 import './App.css';
 
@@ -57,6 +61,11 @@ function App() {
               <Route path="/admin/events/:id" element={<AdminEventDetail />} />
               <Route path="/admin/events/by-text/:id_event_text" element={<AdminEventByText />} />
               <Route path="/admin/import-diagnostics" element={<AdminImportDiagnostics />} />
+              <Route path="/admin/blog" element={<AdminBlog />} />
+              <Route path="/admin/blog/new" element={<AdminBlogEdit />} />
+              <Route path="/admin/blog/edit/:id" element={<AdminBlogEdit />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogArticle />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/agenda" element={<Agenda />} />
