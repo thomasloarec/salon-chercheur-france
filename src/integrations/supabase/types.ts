@@ -91,7 +91,8 @@ export type Database = {
           body_text: string | null
           created_at: string | null
           created_by: string | null
-          event_ids: string[] | null
+          event_ids: Json | null
+          faq: Json | null
           h1_title: string | null
           header_image_url: string | null
           id: string
@@ -103,12 +104,14 @@ export type Database = {
           status: string
           title: string
           updated_at: string | null
+          why_visit_text: string | null
         }
         Insert: {
           body_text?: string | null
           created_at?: string | null
           created_by?: string | null
-          event_ids?: string[] | null
+          event_ids?: Json | null
+          faq?: Json | null
           h1_title?: string | null
           header_image_url?: string | null
           id?: string
@@ -120,12 +123,14 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string | null
+          why_visit_text?: string | null
         }
         Update: {
           body_text?: string | null
           created_at?: string | null
           created_by?: string | null
-          event_ids?: string[] | null
+          event_ids?: Json | null
+          faq?: Json | null
           h1_title?: string | null
           header_image_url?: string | null
           id?: string
@@ -137,6 +142,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string | null
+          why_visit_text?: string | null
         }
         Relationships: []
       }

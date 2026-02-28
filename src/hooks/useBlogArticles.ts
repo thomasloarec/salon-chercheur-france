@@ -2,6 +2,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface BlogEventLink {
+  event_id: string;
+  description: string;
+}
+
+export interface BlogFaqItem {
+  question: string;
+  answer: string;
+}
+
 export interface BlogArticle {
   id: string;
   title: string;
@@ -16,8 +26,18 @@ export interface BlogArticle {
   published_at: string | null;
   created_at: string;
   updated_at: string;
-  event_ids: string[];
+  event_ids: BlogEventLink[];
+  faq: BlogFaqItem[];
+  why_visit_text: string | null;
   created_by: string | null;
+}
+
+function parseArticle(raw: any): BlogArticle {
+  return {
+    ...raw,
+    event_ids: Array.isArray(raw.event_ids) ? raw.event_ids : [],
+    faq: Array.isArray(raw.faq) ? raw.faq : [],
+  };
 }
 
 export function useBlogArticles(statusFilter?: string) {
@@ -35,7 +55,7 @@ export function useBlogArticles(statusFilter?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as BlogArticle[];
+      return (data || []).map(parseArticle);
     },
   });
 }
@@ -51,7 +71,7 @@ export function useBlogArticle(id: string | undefined) {
         .eq('id', id!)
         .single();
       if (error) throw error;
-      return data as BlogArticle;
+      return parseArticle(data);
     },
   });
 }
@@ -67,7 +87,7 @@ export function useBlogArticleBySlug(slug: string | undefined) {
         .eq('slug', slug!)
         .single();
       if (error) throw error;
-      return data as BlogArticle;
+      return parseArticle(data);
     },
   });
 }
@@ -82,7 +102,7 @@ export function usePublishedArticles() {
         .eq('status', 'published')
         .order('published_at', { ascending: false });
       if (error) throw error;
-      return data as BlogArticle[];
+      return (data || []).map(parseArticle);
     },
   });
 }
@@ -91,8 +111,11 @@ export function useSaveBlogArticle() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (article: Partial<BlogArticle> & { id?: string }) => {
+      // Prepare data for Supabase - event_ids and faq are jsonb now
+      const payload: any = { ...article };
+      
       if (article.id) {
-        const { id, created_at, ...updates } = article;
+        const { id, created_at, ...updates } = payload;
         const { data, error } = await supabase
           .from('blog_articles')
           .update(updates)
@@ -100,16 +123,16 @@ export function useSaveBlogArticle() {
           .select()
           .single();
         if (error) throw error;
-        return data as BlogArticle;
+        return parseArticle(data);
       } else {
-        const { id, ...insert } = article;
+        const { id, ...insert } = payload;
         const { data, error } = await supabase
           .from('blog_articles')
           .insert(insert)
           .select()
           .single();
         if (error) throw error;
-        return data as BlogArticle;
+        return parseArticle(data);
       }
     },
     onSuccess: () => {
