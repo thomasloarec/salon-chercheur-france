@@ -46,6 +46,7 @@ export function normalizeEventType(raw: string | null): string {
     'salon': 'salon',
     'salons': 'salon',
     'congrès': 'congres',
+    'congrés': 'congres',
     'congres': 'congres',
     'congress': 'congres',
     'conférence': 'conference',
