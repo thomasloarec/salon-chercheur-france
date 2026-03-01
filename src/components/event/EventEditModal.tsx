@@ -148,7 +148,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
     try {
       // Determine if we're updating events or staging_events_import table
-      const isEventsImport = event.slug?.startsWith('pending-') || !event.visible;
+      const isEventsImport = event.slug?.startsWith('pending-');
       
       console.log('Updating event:', { 
         eventId: event.id, 
