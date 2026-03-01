@@ -26,7 +26,7 @@ const Blog = () => {
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-3">Blog</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Guides, tendances et conseils pour réussir vos salons professionnels B2B.
+            Salons professionnels en France : calendriers, guides et décryptages.
           </p>
         </div>
 
