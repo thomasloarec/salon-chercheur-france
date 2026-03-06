@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin, EyeOff, Eye } from 'lucide-react';
+import { CalendarDays, MapPin, EyeOff, Eye, Radio } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import { format } from 'date-fns';
@@ -17,6 +17,13 @@ import FavoriteButton from './FavoriteButton';
 import { EventSectors } from '@/components/ui/event-sectors';
 import { formatAddress } from '@/utils/formatAddress';
 import { EVENT_PLACEHOLDER } from '@/lib/images';
+
+function isEventOngoing(event: Event): boolean {
+  const today = new Date().toISOString().split('T')[0];
+  const start = event.date_debut;
+  const end = event.date_fin || event.date_debut;
+  return !!(start && end && start <= today && today <= end);
+}
 
 interface EventCardProps {
   event: Event;
@@ -35,6 +42,7 @@ function formatDateRange(start: string, end: string) {
 
 const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: EventCardProps) => {
   const { isAdmin } = useIsAdmin();
+  const ongoing = isEventOngoing(event);
 
 
   // Use database-generated slug (tous les événements en ont un maintenant)
@@ -62,8 +70,9 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
     <div className="relative group">
       <Card className={cn(
         "flex flex-col w-full max-w-[272px] overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative event-card",
-        !event.visible && isAdmin && "bg-gray-100 opacity-50",
-        adminPreview && "border-orange-200"
+        !event.visible && isAdmin && "bg-muted opacity-50",
+        adminPreview && "border-orange-200",
+        ongoing && "ring-2 ring-accent/60 border-accent/40"
       )}>
         {/* Badge "Brouillon" pour adminPreview */}
         {adminPreview && (
@@ -105,12 +114,21 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
               }}
             />
             
-            {!adminPreview && (
+            {!adminPreview && !ongoing && (
               <FavoriteButton 
                 eventId={event.id} 
                 size="default"
                 variant="overlay"
               />
+            )}
+            {!adminPreview && ongoing && (
+              <div 
+                className="absolute top-2 right-2 z-[3] flex items-center gap-1 bg-accent text-accent-foreground px-2 py-1 rounded-full text-xs font-semibold shadow-md"
+                title="Événement en cours"
+              >
+                <Radio className="h-3 w-3 animate-pulse" />
+                En cours
+              </div>
             )}
             
             <div className="absolute left-2 bottom-2 flex flex-wrap gap-1 max-w-[calc(100%-1rem)] z-[2]">
@@ -139,7 +157,12 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             <Button 
               variant="default" 
               size="sm" 
-              className="w-full mt-4 bg-accent hover:bg-accent/90"
+              className={cn(
+                "w-full mt-4",
+                ongoing 
+                  ? "bg-accent/20 text-accent hover:bg-accent/30 border border-accent/40" 
+                  : "bg-accent hover:bg-accent/90"
+              )}
             >
               {adminPreview ? 'Voir / Éditer' : 'Voir le salon'}
             </Button>
