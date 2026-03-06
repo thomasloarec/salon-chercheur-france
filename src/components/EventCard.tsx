@@ -72,7 +72,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
         "flex flex-col w-full max-w-[272px] overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative event-card",
         !event.visible && isAdmin && "bg-muted opacity-50",
         adminPreview && "border-orange-200",
-        ongoing && "ring-2 ring-accent/60 border-accent/40"
+        ongoing && ""
       )}>
         {/* Badge "Brouillon" pour adminPreview */}
         {adminPreview && (
