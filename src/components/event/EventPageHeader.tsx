@@ -31,9 +31,10 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  const today = new Date().toISOString().split('T')[0];
   const isEventPast = event.date_fin
-    ? new Date(event.date_fin) < new Date()
-    : event.date_debut ? new Date(event.date_debut) < new Date() : false;
+    ? event.date_fin < today
+    : event.date_debut ? event.date_debut < today : false;
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
