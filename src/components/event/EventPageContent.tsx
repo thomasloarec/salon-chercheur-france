@@ -39,7 +39,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   
   const isEventPast = useMemo(() => {
     const endDate = event.date_fin || event.date_debut;
-    return endDate ? new Date(endDate) < new Date() : false;
+    if (!endDate) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return endDate < today;
   }, [event.date_fin, event.date_debut]);
 
   const sectorLink = useMemo(() => {
