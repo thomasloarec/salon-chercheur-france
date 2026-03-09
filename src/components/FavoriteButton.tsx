@@ -5,9 +5,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import AuthRequiredModal from './AuthRequiredModal';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface FavoriteButtonProps {
-  eventId: string;       // UUID de l'événement (event.id)
+  eventId: string;
   className?: string;
   size?: 'sm' | 'default' | 'lg' | 'xl';
   variant?: 'overlay' | 'inline';
@@ -40,7 +46,6 @@ const FavoriteButton = ({
     }
   };
 
-  // Size configurations for button container and icon
   const sizeConfig = {
     sm: { container: "w-7 h-7", icon: "h-4 w-4" },
     default: { container: "w-9 h-9", icon: "h-5 w-5" },
@@ -50,45 +55,60 @@ const FavoriteButton = ({
 
   const config = sizeConfig[size];
 
-  // Wrapper classes based on variant
   const wrapperClasses = variant === 'overlay' 
     ? 'absolute top-2 right-2 z-10' 
     : '';
 
+  const tooltipText = isFavorite
+    ? "Retirer de mon agenda"
+    : "Ajoutez ce salon à votre agenda Lotexpo pour recevoir des rappels et retrouver facilement tous les salons que vous souhaitez visiter.";
+
   return (
     <div className={wrapperClasses}>
-      <button
-        onClick={handleClick}
-        disabled={toggleFavorite.isPending}
-        aria-label={isFavorite ? "Retirer de mon agenda" : "Ajouter à mon agenda"}
-        className={cn(
-          'inline-flex items-center justify-center rounded-full transition-all duration-200',
-          isFavorite 
-            ? 'bg-green-500 hover:bg-green-600' 
-            : 'bg-white hover:bg-gray-100',
-          'focus:ring-2 focus:ring-green-300 focus:outline-none',
-          'shadow-sm hover:shadow-md',
-          config.container,
-          toggleFavorite.isPending && "animate-pulse",
-          className
-        )}
-      >
-        {isFavorite ? (
-          <CalendarCheck
-            className={cn(
-              config.icon,
-              "transition-all duration-200 text-white"
-            )}
-          />
-        ) : (
-          <Calendar
-            className={cn(
-              config.icon,
-              "transition-all duration-200 text-gray-500"
-            )}
-          />
-        )}
-      </button>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleClick}
+              disabled={toggleFavorite.isPending}
+              aria-label={isFavorite ? "Retirer de mon agenda" : "Ajouter à mon agenda"}
+              className={cn(
+                'inline-flex items-center justify-center rounded-full transition-all duration-200',
+                isFavorite 
+                  ? 'bg-green-500 hover:bg-green-600' 
+                  : 'bg-white hover:bg-gray-100',
+                'focus:ring-2 focus:ring-green-300 focus:outline-none',
+                'shadow-sm hover:shadow-md',
+                config.container,
+                toggleFavorite.isPending && "animate-pulse",
+                className
+              )}
+            >
+              {isFavorite ? (
+                <CalendarCheck
+                  className={cn(
+                    config.icon,
+                    "transition-all duration-200 text-white"
+                  )}
+                />
+              ) : (
+                <Calendar
+                  className={cn(
+                    config.icon,
+                    "transition-all duration-200 text-gray-500"
+                  )}
+                />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent 
+            side="bottom" 
+            className="max-w-[220px] text-center text-xs"
+          >
+            {tooltipText}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <AuthRequiredModal
         open={showAuthModal}
