@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { useUserExhibitors } from '@/hooks/useExhibitorAdmin';
@@ -16,11 +16,23 @@ import { fr } from 'date-fns/locale';
 
 const Agenda = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const { data: allEvents = [], isLoading, error } = useFavoriteEvents();
   const { data: userExhibitors = [] } = useUserExhibitors();
   const { data: myNovelties = [], isLoading: noveltiesLoading } = useMyNovelties();
   const { data: likedNovelties = [] } = useLikedNovelties();
-  const [activeRole, setActiveRole] = useState<'visitor' | 'exhibitor'>('visitor');
+  
+  // Initialize role from URL param ?tab=exposant
+  const initialRole = searchParams.get('tab') === 'exposant' ? 'exhibitor' : 'visitor';
+  const [activeRole, setActiveRole] = useState<'visitor' | 'exhibitor'>(initialRole);
+  
+  // Sync role when URL changes
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'exposant') {
+      setActiveRole('exhibitor');
+    }
+  }, [searchParams]);
 
   // Filter events: only upcoming or ongoing for visitor mode
   const today = new Date();
