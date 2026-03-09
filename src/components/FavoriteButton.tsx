@@ -102,8 +102,8 @@ const FavoriteButton = ({
             </button>
           </TooltipTrigger>
           <TooltipContent 
-            side="bottom" 
-            className="max-w-[220px] text-center text-xs"
+            side="left" 
+            className="max-w-[280px] text-center text-xs"
           >
             {tooltipText}
           </TooltipContent>
