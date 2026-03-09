@@ -61,7 +61,7 @@ const FavoriteButton = ({
 
   const tooltipText = isFavorite
     ? "Retirer de mon agenda"
-    : "Ajoutez ce salon à votre agenda Lotexpo pour recevoir des rappels et retrouver facilement tous les salons que vous souhaitez visiter.";
+    : "Ajouter à mon agenda pour recevoir des rappels";
 
   return (
     <div className={wrapperClasses}>
