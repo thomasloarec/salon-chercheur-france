@@ -34,13 +34,37 @@ const getNotificationIcon = (type: string): string => {
 const isEventReminder = (type: string) => 
   type === 'event_reminder_7d' || type === 'event_reminder_1d'
 
+// Sanitize notification link URLs
+const sanitizeLinkUrl = (url: string | null): string | null => {
+  if (!url) return null
+  
+  // Fix legacy /evenements/ → /events/
+  let cleaned = url.replace(/^\/evenements\//, '/events/')
+  
+  // Remove fragments with undefined (e.g., #novelty-undefined)
+  cleaned = cleaned.replace(/#[a-z]+-undefined$/, '')
+  
+  // Remove query params with undefined values (e.g., &id=undefined)
+  cleaned = cleaned.replace(/([?&])id=undefined/g, (match, prefix) => {
+    // If it's the first param, remove the ?
+    return prefix === '?' ? '?' : ''
+  })
+  // Clean up trailing ? or & 
+  cleaned = cleaned.replace(/[?&]$/, '')
+  // Clean up ?& → ?
+  cleaned = cleaned.replace(/\?&/, '?')
+  
+  return cleaned || null
+}
+
 export const NotificationCard = ({ notification, onClick }: NotificationCardProps) => {
   const navigate = useNavigate()
   
   const handleClick = () => {
     onClick() // Mark as read
-    if (notification.link_url) {
-      navigate(notification.link_url)
+    const cleanUrl = sanitizeLinkUrl(notification.link_url)
+    if (cleanUrl) {
+      navigate(cleanUrl)
     }
   }
 
