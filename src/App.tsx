@@ -82,6 +82,7 @@ function App() {
               <Route path="/api/oauth/hubspot/callback" element={<LegacyHubspotApiCallback />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
+              <OnboardingTour />
               <Toaster />
             </div>
           </Router>
