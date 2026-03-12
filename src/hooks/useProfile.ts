@@ -278,12 +278,13 @@ export const useDeleteAccount = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Compte supprimé",
-        description: "Votre compte a été supprimé avec succès.",
+        description: "Votre compte a été supprimé avec succès. Redirection...",
       });
-      // Redirection handled by auth state change
+      await supabase.auth.signOut();
+      window.location.href = '/';
     },
     onError: (error: any) => {
       toast({
