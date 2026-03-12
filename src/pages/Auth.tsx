@@ -22,6 +22,8 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
