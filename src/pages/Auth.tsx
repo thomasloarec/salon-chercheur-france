@@ -125,7 +125,7 @@ const Auth = () => {
       <div className="bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">LotExpo</h1>
+            <h1 className="text-3xl font-bold text-primary">Lotexpo</h1>
             <p className="text-gray-600 mt-2">Gérez vos événements professionnels</p>
           </div>
 
