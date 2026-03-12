@@ -3,8 +3,16 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const ONBOARDING_KEY = 'lotexpo_onboarding_completed';
 const ONBOARDING_STEP_KEY = 'lotexpo_onboarding_step';
+const ONBOARDING_TRIGGER_KEY = 'lotexpo_onboarding_pending';
 
 export type OnboardingStep = 0 | 1 | 2 | 3;
+
+/**
+ * Call this right after a successful signup to flag onboarding for the new user.
+ */
+export function triggerOnboarding() {
+  localStorage.setItem(ONBOARDING_TRIGGER_KEY, 'true');
+}
 
 export function useOnboarding() {
   const { user } = useAuth();
@@ -18,11 +26,17 @@ export function useOnboarding() {
     }
 
     const completed = localStorage.getItem(`${ONBOARDING_KEY}_${user.id}`);
-    const savedStep = localStorage.getItem(`${ONBOARDING_STEP_KEY}_${user.id}`);
+    const pending = localStorage.getItem(ONBOARDING_TRIGGER_KEY);
 
-    if (!completed) {
+    // Only show onboarding if it was explicitly triggered by signup
+    if (!completed && pending === 'true') {
+      localStorage.removeItem(ONBOARDING_TRIGGER_KEY);
+      const savedStep = localStorage.getItem(`${ONBOARDING_STEP_KEY}_${user.id}`);
       setIsActive(true);
       setStep((savedStep ? parseInt(savedStep, 10) : 0) as OnboardingStep);
+    } else if (!completed && !pending) {
+      // Existing user visiting for the first time since feature launch — skip
+      localStorage.setItem(`${ONBOARDING_KEY}_${user.id}`, 'true');
     }
   }, [user]);
 
