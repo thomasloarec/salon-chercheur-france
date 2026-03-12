@@ -109,6 +109,7 @@ const Auth = () => {
         setError(error.message);
       }
     } else {
+      triggerOnboarding();
       setMessage('Compte créé avec succès ! Vérifiez votre email pour confirmer votre inscription.');
       setEmail('');
       setPassword('');
