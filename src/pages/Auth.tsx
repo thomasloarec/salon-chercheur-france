@@ -123,9 +123,13 @@ const Auth = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-center">Connexion</CardTitle>
+              <CardTitle className="text-center">
+                {activeTab === 'signup' ? "S'inscrire" : 'Se connecter'}
+              </CardTitle>
               <CardDescription className="text-center">
-                Accédez à votre compte ou créez-en un nouveau
+                {activeTab === 'signup'
+                  ? 'Créez votre compte pour gérer vos événements'
+                  : 'Accédez à votre compte LotExpo'}
               </CardDescription>
             </CardHeader>
             <CardContent>
