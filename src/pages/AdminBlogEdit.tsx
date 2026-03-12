@@ -681,6 +681,7 @@ const AdminBlogEdit = () => {
                   <SelectContent>
                     <SelectItem value="draft">Brouillon</SelectItem>
                     <SelectItem value="ready">Prêt</SelectItem>
+                    <SelectItem value="scheduled">Planifié</SelectItem>
                     <SelectItem value="published">Publié</SelectItem>
                   </SelectContent>
                 </Select>
