@@ -97,11 +97,14 @@ export type Database = {
           header_image_url: string | null
           id: string
           intro_text: string | null
+          is_auto_generated: boolean | null
           meta_description: string | null
           meta_title: string | null
           published_at: string | null
+          sector_slug: string | null
           slug: string
           status: string
+          target_month: string | null
           title: string
           updated_at: string | null
           why_visit_text: string | null
@@ -116,11 +119,14 @@ export type Database = {
           header_image_url?: string | null
           id?: string
           intro_text?: string | null
+          is_auto_generated?: boolean | null
           meta_description?: string | null
           meta_title?: string | null
           published_at?: string | null
+          sector_slug?: string | null
           slug: string
           status?: string
+          target_month?: string | null
           title: string
           updated_at?: string | null
           why_visit_text?: string | null
@@ -135,11 +141,14 @@ export type Database = {
           header_image_url?: string | null
           id?: string
           intro_text?: string | null
+          is_auto_generated?: boolean | null
           meta_description?: string | null
           meta_title?: string | null
           published_at?: string | null
+          sector_slug?: string | null
           slug?: string
           status?: string
+          target_month?: string | null
           title?: string
           updated_at?: string | null
           why_visit_text?: string | null
