@@ -3,5 +3,15 @@
     "app/api/**": {
       "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/sitemap"
+    },
+    {
+      "source": "/((?!assets|favicon|logos|robots\\.txt|sitemap\\.xml).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
