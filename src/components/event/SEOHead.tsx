@@ -16,10 +16,11 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     return format(new Date(dateStr), 'dd MMM yyyy', { locale: fr });
   };
 
-  // Detect past event
-  const isEventPast = event.date_fin
-    ? new Date(event.date_fin) < new Date()
-    : event.date_debut ? new Date(event.date_debut) < new Date() : false;
+  // Detect past event – compare ISO date strings (YYYY-MM-DD) to avoid
+  // timezone issues where the last day would already show as "[Terminé]"
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const endStr = event.date_fin?.slice(0, 10) ?? event.date_debut?.slice(0, 10) ?? null;
+  const isEventPast = endStr ? endStr < todayStr : false;
 
   // Optimized title: {{Nom de l'événement}} {{Année}} | Salon professionnel à {{Ville}} – Lotexpo
   // Max 60 chars, keyword first, brand suffix
