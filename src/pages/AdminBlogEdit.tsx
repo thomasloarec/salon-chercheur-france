@@ -66,7 +66,7 @@ const AdminBlogEdit = () => {
   const [introText, setIntroText] = useState('');
   const [whyVisitText, setWhyVisitText] = useState('');
   const [headerImageUrl, setHeaderImageUrl] = useState('');
-  const [status, setStatus] = useState<'draft' | 'ready' | 'published'>('draft');
+  const [status, setStatus] = useState<'draft' | 'ready' | 'scheduled' | 'published'>('draft');
   const [publishedAt, setPublishedAt] = useState('');
   const [selectedEventLinks, setSelectedEventLinks] = useState<BlogEventLink[]>([]);
   const [selectedEvents, setSelectedEvents] = useState<EventRow[]>([]);
