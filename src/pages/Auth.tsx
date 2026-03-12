@@ -34,6 +34,12 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    const tab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+    setActiveTab(tab);
+    resetForm();
+  }, [searchParams]);
+
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError('');
