@@ -92,9 +92,14 @@ const Header = () => {
             {user ? (
               <UserMenu />
             ) : (
-              <Link to="/auth">
-                <Button>Se connecter</Button>
-              </Link>
+              <>
+                <Link to="/auth?tab=signin">
+                  <Button variant="ghost">Se connecter</Button>
+                </Link>
+                <Link to="/auth?tab=signup">
+                  <Button>S'inscrire</Button>
+                </Link>
+              </>
             )}
           </div>
 
