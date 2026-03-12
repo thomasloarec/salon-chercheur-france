@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import SiteGuard from '@/components/auth/SiteGuard';
+import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import Events from '@/pages/Events';
 import HowItWorks from '@/pages/HowItWorks';
 import EventPage from '@/pages/EventPage';
