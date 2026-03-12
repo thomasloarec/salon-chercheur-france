@@ -101,10 +101,10 @@ const Events = () => {
       <Helmet>
         <title>Salons professionnels en France | Calendrier B2B – Lotexpo</title>
         <meta name="description" content="Lotexpo référence tous les salons professionnels B2B en France. Dates, lieux, secteurs, exposants et informations pratiques en un seul site." />
-        <link rel="canonical" href="https://lotexpo.com/events" />
+        <link rel="canonical" href="https://lotexpo.com" />
         <meta property="og:title" content="Salons professionnels en France | Calendrier B2B – Lotexpo" />
         <meta property="og:description" content="Lotexpo référence tous les salons professionnels B2B en France. Dates, lieux, secteurs, exposants et informations pratiques en un seul site." />
-        <meta property="og:url" content="https://lotexpo.com/events" />
+        <meta property="og:url" content="https://lotexpo.com" />
         <meta property="og:site_name" content="Lotexpo" />
         <script type="application/ld+json">
           {JSON.stringify({
