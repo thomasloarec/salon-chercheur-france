@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Lock, Mail, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { triggerOnboarding } from '@/hooks/useOnboarding';
 import MainLayout from '@/components/layout/MainLayout';
 
 const Auth = () => {
