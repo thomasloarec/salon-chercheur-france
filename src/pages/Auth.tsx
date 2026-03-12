@@ -45,6 +45,11 @@ const Auth = () => {
     setLoading(true);
     setError('');
 
+    // For Google signup on the signup tab, trigger onboarding
+    if (activeTab === 'signup') {
+      triggerOnboarding();
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
