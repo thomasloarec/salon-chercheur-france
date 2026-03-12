@@ -92,9 +92,14 @@ const Header = () => {
             {user ? (
               <UserMenu />
             ) : (
-              <Link to="/auth">
-                <Button>Se connecter</Button>
-              </Link>
+              <>
+                <Link to="/auth?tab=signin">
+                  <Button variant="ghost">Se connecter</Button>
+                </Link>
+                <Link to="/auth?tab=signup">
+                  <Button>S'inscrire</Button>
+                </Link>
+              </>
             )}
           </div>
 
@@ -175,13 +180,20 @@ const Header = () => {
                     <UserMenu />
                   </div>
                 ) : (
-                  <Link
-                    to="/auth"
-                    className="block px-3 py-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Button className="w-full">Se connecter</Button>
-                  </Link>
+                  <div className="px-3 py-2 flex flex-col gap-2">
+                    <Link
+                      to="/auth?tab=signin"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Button variant="ghost" className="w-full">Se connecter</Button>
+                    </Link>
+                    <Link
+                      to="/auth?tab=signup"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Button className="w-full">S'inscrire</Button>
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>
