@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Lock, Mail, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { triggerOnboarding } from '@/hooks/useOnboarding';
 import MainLayout from '@/components/layout/MainLayout';
 
 const Auth = () => {
@@ -43,6 +44,11 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError('');
+
+    // For Google signup on the signup tab, trigger onboarding
+    if (activeTab === 'signup') {
+      triggerOnboarding();
+    }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -103,6 +109,7 @@ const Auth = () => {
         setError(error.message);
       }
     } else {
+      triggerOnboarding();
       setMessage('Compte créé avec succès ! Vérifiez votre email pour confirmer votre inscription.');
       setEmail('');
       setPassword('');
