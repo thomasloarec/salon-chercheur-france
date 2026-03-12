@@ -125,6 +125,7 @@ const OnboardingTour: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // All hooks above, conditional return below
   if (!isActive) return null;
 
   const currentStep = STEPS[step];
