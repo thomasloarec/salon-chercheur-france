@@ -66,7 +66,7 @@ const AdminBlogEdit = () => {
   const [introText, setIntroText] = useState('');
   const [whyVisitText, setWhyVisitText] = useState('');
   const [headerImageUrl, setHeaderImageUrl] = useState('');
-  const [status, setStatus] = useState<'draft' | 'ready' | 'published'>('draft');
+  const [status, setStatus] = useState<'draft' | 'ready' | 'scheduled' | 'published'>('draft');
   const [publishedAt, setPublishedAt] = useState('');
   const [selectedEventLinks, setSelectedEventLinks] = useState<BlogEventLink[]>([]);
   const [selectedEvents, setSelectedEvents] = useState<EventRow[]>([]);
@@ -681,6 +681,7 @@ const AdminBlogEdit = () => {
                   <SelectContent>
                     <SelectItem value="draft">Brouillon</SelectItem>
                     <SelectItem value="ready">Prêt</SelectItem>
+                    <SelectItem value="scheduled">Planifié</SelectItem>
                     <SelectItem value="published">Publié</SelectItem>
                   </SelectContent>
                 </Select>

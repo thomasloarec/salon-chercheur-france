@@ -22,7 +22,7 @@ export interface BlogArticle {
   intro_text: string | null;
   body_text: string | null;
   header_image_url: string | null;
-  status: 'draft' | 'ready' | 'published';
+  status: 'draft' | 'ready' | 'scheduled' | 'published';
   published_at: string | null;
   created_at: string;
   updated_at: string;
