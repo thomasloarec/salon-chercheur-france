@@ -155,13 +155,11 @@ const AdminBlogEdit = () => {
       regionDeptCodes = new Set((depts || []).map(d => d.code));
     }
 
-    let sectorEventIds: Set<string> | null = null;
-    if (eventSectorFilter !== 'all') {
-      const { data: esRows } = await supabase
-        .from('event_sectors')
-        .select('event_id')
-        .eq('sector_id', eventSectorFilter);
-      sectorEventIds = new Set((esRows || []).map(r => r.event_id));
+    // Récupérer le nom du secteur sélectionné pour filtrer via JSONB
+    let sectorName: string | null = null;
+    if (eventSectorFilter !== 'all' && sectors) {
+      const found = sectors.find(s => s.id === eventSectorFilter);
+      sectorName = found?.name || null;
     }
 
     const needsClientFilter = regionDeptCodes !== null || sectorEventIds !== null;
