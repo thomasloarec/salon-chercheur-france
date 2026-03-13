@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin, ArrowRight, FileText, Users } from 'lucide-react';
+import BlogNewsletterCTA from '@/components/blog/BlogNewsletterCTA';
 
 interface LinkedEvent {
   id: string;
