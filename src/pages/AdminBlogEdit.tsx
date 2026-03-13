@@ -112,18 +112,19 @@ const AdminBlogEdit = () => {
       }
     }
     
-    // Resolve raw names to UUIDs
+    // Resolve raw names to UUIDs (case-insensitive)
     if (namesToResolve.length > 0) {
-      const { data } = await supabase
-        .from('events')
-        .select('id, nom_event')
-        .in('nom_event', namesToResolve);
-      if (data) {
-        for (const event of data) {
-          if (!validLinks.some(l => l.event_id === event.id)) {
-            validLinks.push({ event_id: event.id, description: '' });
-          }
+      for (const name of namesToResolve) {
+        const { data } = await supabase
+          .from('events')
+          .select('id, nom_event')
+          .ilike('nom_event', name)
+          .eq('visible', true)
+          .limit(1);
+        if (data && data.length > 0 && !validLinks.some(l => l.event_id === data[0].id)) {
+          validLinks.push({ event_id: data[0].id, description: '' });
         }
+      }
       }
     }
     
