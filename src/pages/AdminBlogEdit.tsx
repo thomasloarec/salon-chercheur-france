@@ -213,6 +213,7 @@ const AdminBlogEdit = () => {
         const allNames = flatten(secteurArr);
         return allNames.some(name => name === sectorName);
       });
+    }
 
     if (needsClientFilter) {
       const totalFiltered = filtered.length;
