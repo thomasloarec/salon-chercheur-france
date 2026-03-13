@@ -197,9 +197,22 @@ const AdminBlogEdit = () => {
       });
     }
 
-    if (sectorEventIds) {
-      filtered = filtered.filter(e => sectorEventIds!.has(e.id_event));
-    }
+    if (sectorName) {
+      filtered = filtered.filter(e => {
+        if (!e.secteur) return false;
+        const secteurArr = Array.isArray(e.secteur) ? e.secteur : [];
+        // Handle nested arrays and flat arrays in JSONB
+        const flatten = (arr: any[]): string[] => {
+          const result: string[] = [];
+          for (const item of arr) {
+            if (typeof item === 'string') result.push(item);
+            else if (Array.isArray(item)) result.push(...flatten(item));
+          }
+          return result;
+        };
+        const allNames = flatten(secteurArr);
+        return allNames.some(name => name === sectorName);
+      });
 
     if (needsClientFilter) {
       const totalFiltered = filtered.length;
