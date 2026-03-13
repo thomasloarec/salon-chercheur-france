@@ -377,7 +377,10 @@ const BlogArticle = () => {
           </section>
         )}
 
-        {/* 8. Similar articles */}
+        {/* 8. Newsletter CTA */}
+        <BlogNewsletterCTA />
+
+        {/* 9. Similar articles */}
         {similarArticles && similarArticles.length > 0 && (
           <section className="mx-auto px-4 max-w-[800px] mb-14">
             <SectionTitle>Articles similaires</SectionTitle>
