@@ -54,14 +54,16 @@ const BlogArticle = () => {
           const link = eventLinks.find(l => l.event_id === e.id);
           return { ...e, description: link?.description || '' } as LinkedEvent;
         });
+        // Tri par affluence décroissante (plus grande affluence en premier, "non communiqué" en dernier)
+        const parseAffluence = (a: string | null): number => {
+          if (!a) return -1;
+          const num = parseInt(a.replace(/[^0-9]/g, ''), 10);
+          return isNaN(num) ? -1 : num;
+        };
         withDesc.sort((a, b) => {
-          const aDate = a.date_debut ? new Date(a.date_debut) : new Date('9999-01-01');
-          const bDate = b.date_debut ? new Date(b.date_debut) : new Date('9999-01-01');
-          const aFuture = aDate >= now;
-          const bFuture = bDate >= now;
-          if (aFuture && !bFuture) return -1;
-          if (!aFuture && bFuture) return 1;
-          return aDate.getTime() - bDate.getTime();
+          const aAff = parseAffluence(a.affluence);
+          const bAff = parseAffluence(b.affluence);
+          return bAff - aAff; // Décroissant
         });
         setLinkedEvents(withDesc);
       }
