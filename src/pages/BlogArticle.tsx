@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin, ArrowRight, FileText, Users } from 'lucide-react';
+import BlogNewsletterCTA from '@/components/blog/BlogNewsletterCTA';
 
 interface LinkedEvent {
   id: string;
@@ -376,7 +377,10 @@ const BlogArticle = () => {
           </section>
         )}
 
-        {/* 8. Similar articles */}
+        {/* 8. Newsletter CTA */}
+        <BlogNewsletterCTA />
+
+        {/* 9. Similar articles */}
         {similarArticles && similarArticles.length > 0 && (
           <section className="mx-auto px-4 max-w-[800px] mb-14">
             <SectionTitle>Articles similaires</SectionTitle>
