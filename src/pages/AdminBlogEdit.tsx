@@ -95,6 +95,41 @@ const AdminBlogEdit = () => {
 
   const selectedEventIds = selectedEventLinks.map(l => l.event_id);
 
+  // Sanitize event_ids: handle both proper {event_id, description} objects and raw strings (from N8N)
+  const sanitizeEventIds = useCallback(async (rawIds: any[]): Promise<BlogEventLink[]> => {
+    if (!Array.isArray(rawIds) || rawIds.length === 0) return [];
+    
+    const validLinks: BlogEventLink[] = [];
+    const namesToResolve: string[] = [];
+    
+    for (const item of rawIds) {
+      if (typeof item === 'object' && item !== null && typeof item.event_id === 'string') {
+        // Proper {event_id, description} object
+        validLinks.push(item as BlogEventLink);
+      } else if (typeof item === 'string' && item.trim()) {
+        // Raw event name from N8N — try to resolve
+        namesToResolve.push(item.trim());
+      }
+    }
+    
+    // Resolve raw names to UUIDs
+    if (namesToResolve.length > 0) {
+      const { data } = await supabase
+        .from('events')
+        .select('id, nom_event')
+        .in('nom_event', namesToResolve);
+      if (data) {
+        for (const event of data) {
+          if (!validLinks.some(l => l.event_id === event.id)) {
+            validLinks.push({ event_id: event.id, description: '' });
+          }
+        }
+      }
+    }
+    
+    return validLinks;
+  }, []);
+
   // Load existing article
   useEffect(() => {
     if (existingArticle) {
@@ -109,10 +144,14 @@ const AdminBlogEdit = () => {
       setHeaderImageUrl(existingArticle.header_image_url || '');
       setStatus(existingArticle.status);
       setPublishedAt(existingArticle.published_at ? existingArticle.published_at.slice(0, 16) : '');
-      setSelectedEventLinks(existingArticle.event_ids || []);
       setFaqItems(existingArticle.faq || []);
+      
+      // Sanitize event_ids (handles N8N raw strings)
+      sanitizeEventIds(existingArticle.event_ids || []).then(links => {
+        setSelectedEventLinks(links);
+      });
     }
-  }, [existingArticle]);
+  }, [existingArticle, sanitizeEventIds]);
 
   // Auto-generate slug from title
   useEffect(() => {
@@ -127,13 +166,18 @@ const AdminBlogEdit = () => {
       setSelectedEvents([]);
       return;
     }
+    const validIds = selectedEventIds.filter(id => id && typeof id === 'string');
+    if (validIds.length === 0) {
+      setSelectedEvents([]);
+      return;
+    }
     const loadSelectedEvents = async () => {
       const { data } = await supabase
         .from('events')
         .select('id, id_event, nom_event, date_debut, date_fin, ville, url_image, slug, secteur, code_postal')
-        .in('id', selectedEventIds);
+        .in('id', validIds);
       if (data) {
-        const ordered = selectedEventIds
+        const ordered = validIds
           .map(eid => data.find(e => e.id === eid))
           .filter(Boolean) as EventRow[];
         setSelectedEvents(ordered);
