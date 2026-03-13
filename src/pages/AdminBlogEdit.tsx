@@ -226,7 +226,7 @@ const AdminBlogEdit = () => {
     }
 
     setEventsLoading(false);
-  }, [eventSearch, eventSectorFilter, eventMonthFilter, eventRegionFilter, eventPage]);
+  }, [eventSearch, eventSectorFilter, eventMonthFilter, eventRegionFilter, eventPage, sectors]);
 
   useEffect(() => {
     loadEvents();
