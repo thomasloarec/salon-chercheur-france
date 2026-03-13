@@ -155,16 +155,14 @@ const AdminBlogEdit = () => {
       regionDeptCodes = new Set((depts || []).map(d => d.code));
     }
 
-    let sectorEventIds: Set<string> | null = null;
-    if (eventSectorFilter !== 'all') {
-      const { data: esRows } = await supabase
-        .from('event_sectors')
-        .select('event_id')
-        .eq('sector_id', eventSectorFilter);
-      sectorEventIds = new Set((esRows || []).map(r => r.event_id));
+    // Récupérer le nom du secteur sélectionné pour filtrer via JSONB
+    let sectorName: string | null = null;
+    if (eventSectorFilter !== 'all' && sectors) {
+      const found = sectors.find(s => s.id === eventSectorFilter);
+      sectorName = found?.name || null;
     }
 
-    const needsClientFilter = regionDeptCodes !== null || sectorEventIds !== null;
+    const needsClientFilter = regionDeptCodes !== null || sectorName !== null;
     const fetchLimit = needsClientFilter ? 1000 : PAGE_SIZE;
     const fetchOffset = needsClientFilter ? 0 : eventPage * PAGE_SIZE;
 
@@ -199,8 +197,22 @@ const AdminBlogEdit = () => {
       });
     }
 
-    if (sectorEventIds) {
-      filtered = filtered.filter(e => sectorEventIds!.has(e.id_event));
+    if (sectorName) {
+      filtered = filtered.filter(e => {
+        if (!e.secteur) return false;
+        const secteurArr = Array.isArray(e.secteur) ? e.secteur : [];
+        // Handle nested arrays and flat arrays in JSONB
+        const flatten = (arr: any[]): string[] => {
+          const result: string[] = [];
+          for (const item of arr) {
+            if (typeof item === 'string') result.push(item);
+            else if (Array.isArray(item)) result.push(...flatten(item));
+          }
+          return result;
+        };
+        const allNames = flatten(secteurArr);
+        return allNames.some(name => name === sectorName);
+      });
     }
 
     if (needsClientFilter) {
@@ -215,7 +227,7 @@ const AdminBlogEdit = () => {
     }
 
     setEventsLoading(false);
-  }, [eventSearch, eventSectorFilter, eventMonthFilter, eventRegionFilter, eventPage]);
+  }, [eventSearch, eventSectorFilter, eventMonthFilter, eventRegionFilter, eventPage, sectors]);
 
   useEffect(() => {
     loadEvents();
