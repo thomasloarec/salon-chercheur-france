@@ -125,7 +125,6 @@ const AdminBlogEdit = () => {
           validLinks.push({ event_id: data[0].id, description: '' });
         }
       }
-      }
     }
     
     return validLinks;
