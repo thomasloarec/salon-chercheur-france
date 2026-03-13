@@ -162,7 +162,7 @@ const AdminBlogEdit = () => {
       sectorName = found?.name || null;
     }
 
-    const needsClientFilter = regionDeptCodes !== null || sectorEventIds !== null;
+    const needsClientFilter = regionDeptCodes !== null || sectorName !== null;
     const fetchLimit = needsClientFilter ? 1000 : PAGE_SIZE;
     const fetchOffset = needsClientFilter ? 0 : eventPage * PAGE_SIZE;
 
