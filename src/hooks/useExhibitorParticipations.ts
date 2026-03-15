@@ -146,7 +146,9 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
 
       // Filtrer uniquement les événements à venir
       const today = new Date().toISOString().split('T')[0];
-      return allParticipations.filter(p => p.event.date_debut >= today);
+      return allParticipations
+        .filter(p => p.event.date_debut >= today)
+        .sort((a, b) => a.event.date_debut.localeCompare(b.event.date_debut));
     },
     enabled: !!(exhibitorId || exhibitorName),
     staleTime: 300_000, // 5 minutes
