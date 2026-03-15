@@ -150,17 +150,27 @@ export default function ImagesUploader({
                 className="relative group aspect-[4/5] rounded-lg overflow-hidden border"
               >
                 {src ? (
-                  <img
-                    src={src}
-                    alt={`Preview ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    onLoad={() => {
-                      // Only revoke object URLs created for Files
-                      if (item instanceof File) {
-                        URL.revokeObjectURL(src);
-                      }
-                    }}
-                  />
+                  <>
+                    {/* Blurred background */}
+                    <img
+                      src={src}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
+                    />
+                    <div className="absolute inset-0 bg-black/20" />
+                    {/* Main image */}
+                    <img
+                      src={src}
+                      alt={`Preview ${index + 1}`}
+                      className="relative z-10 w-full h-full object-cover"
+                      onLoad={() => {
+                        if (item instanceof File) {
+                          URL.revokeObjectURL(src);
+                        }
+                      }}
+                    />
+                  </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <ImageIcon className="h-8 w-8 text-muted-foreground" />

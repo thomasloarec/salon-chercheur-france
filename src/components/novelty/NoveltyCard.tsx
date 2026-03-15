@@ -226,15 +226,25 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
       {images.length > 0 && (
         <div 
           ref={carouselRef}
-          className="relative rounded-lg overflow-hidden bg-muted -mx-5"
+          className="relative rounded-lg overflow-hidden -mx-5"
           tabIndex={0}
           data-suppress-global-arrows="true"
         >
-          <div className="aspect-[4/5] relative flex items-center justify-center bg-muted">
+          <div className="aspect-[4/5] relative overflow-hidden">
+            {/* Blurred background layer */}
+            <img
+              src={images[currentImageIndex]}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
+            />
+            {/* Dark overlay for contrast */}
+            <div className="absolute inset-0 bg-black/20" />
+            {/* Main image */}
             <img
               src={images[currentImageIndex]}
               alt={`${novelty.title} - Image ${currentImageIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
+              className="relative z-10 w-full h-full object-cover"
             />
               
               {hasMultipleImages && (
@@ -242,21 +252,21 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
                   {/* Navigation Arrows */}
                   <button
                     onClick={prevImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+                    className="absolute z-20 left-2 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
                     aria-label="Image précédente"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+                    className="absolute z-20 right-2 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
                     aria-label="Image suivante"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
 
                   {/* Dots Indicator */}
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  <div className="absolute z-20 bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                     {images.map((_, index) => (
                       <button
                         key={index}
