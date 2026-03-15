@@ -82,22 +82,30 @@ export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
     <Card className={cn("group overflow-hidden hover:shadow-xl transition-all duration-300", className)}>
       <Link to={`/events/${novelty.events.slug}`} className="block">
         {/* Image Header avec format 4:5 (portrait léger, standard social media) */}
-        <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+        <div className="relative aspect-[4/5] overflow-hidden">
           {mainImage ? (
             <>
-              <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                <img
-                  src={mainImage}
-                  alt={novelty.title}
-                  className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-              </div>
+              {/* Blurred background */}
+              <img
+                src={mainImage}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/20" />
+              {/* Main image */}
+              <img
+                src={mainImage}
+                alt={novelty.title}
+                className="relative z-10 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
               {/* Gradient overlay pour meilleure lisibilité des badges */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10 pointer-events-none" />
+              <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/40 via-transparent to-black/10 pointer-events-none" />
             </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center bg-muted">
               <Building2 className="h-16 w-16 text-muted-foreground/30" />
             </div>
           )}
