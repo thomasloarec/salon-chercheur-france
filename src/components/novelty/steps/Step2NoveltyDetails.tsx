@@ -168,6 +168,32 @@ export default function Step2NoveltyDetails({
         </div>
       </div>
 
+      {/* Carousel preview */}
+      {formData.images.length > 0 && (
+        <div>
+          <h4 className="font-medium mb-2">Aperçu du rendu</h4>
+          <p className="text-xs text-muted-foreground mb-3">
+            Voici comment votre image principale apparaîtra sur la page du salon.
+          </p>
+          <div className="max-w-xs mx-auto rounded-lg overflow-hidden border">
+            <div className="aspect-[4/5] relative overflow-hidden">
+              {(() => {
+                const src = formData.images[0] instanceof File
+                  ? URL.createObjectURL(formData.images[0])
+                  : (formData.images[0] as string);
+                return (
+                  <>
+                    <img src={src} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60" />
+                    <div className="absolute inset-0 bg-black/20" />
+                    <img src={src} alt="Aperçu" className="relative z-10 w-full h-full object-cover" />
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary card */}
       <div className="bg-muted/50 rounded-lg p-4">
         <h4 className="font-medium mb-2">Récapitulatif</h4>
