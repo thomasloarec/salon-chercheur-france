@@ -147,7 +147,7 @@ export default function ImagesUploader({
             return (
               <div
                 key={itemKey}
-                className="relative group aspect-square rounded-lg overflow-hidden border bg-muted"
+                className="relative group aspect-[4/5] rounded-lg overflow-hidden border"
               >
                 {src ? (
                   <img
