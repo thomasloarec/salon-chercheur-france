@@ -90,11 +90,20 @@ export default function NoveltyPreviewDialog({ novelty, open, onOpenChange }: No
                 <CarouselContent>
                   {novelty.media_urls.map((url, index) => (
                     <CarouselItem key={index}>
-                      <div className="aspect-video relative rounded-lg overflow-hidden bg-muted">
+                      <div className="aspect-[4/5] relative rounded-lg overflow-hidden">
+                        {/* Blurred background */}
+                        <img
+                          src={url}
+                          alt=""
+                          aria-hidden="true"
+                          className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
+                        />
+                        <div className="absolute inset-0 bg-black/20" />
+                        {/* Main image */}
                         <img
                           src={url}
                           alt={`${novelty.title} - Image ${index + 1}`}
-                          className="w-full h-full object-contain"
+                          className="relative z-10 w-full h-full object-cover"
                         />
                       </div>
                     </CarouselItem>
