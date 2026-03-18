@@ -32,8 +32,7 @@ const NOVELTY_TYPE_LABELS: Record<string, string> = {
 export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   const { user } = useAuth();
   const { isLiked, toggleLike, isPending } = useNoveltyLike(novelty.id);
-  // Utiliser le likes_count de la nouveauté au lieu de faire une requête séparée
-  const likesCount = novelty.likes_count ?? 0;
+  const { data: likesCount = 0 } = useNoveltyLikesCount(novelty.id);
   const { data: standInfo } = useNoveltyStand({
     id: novelty.id,
     event_id: novelty.event_id,

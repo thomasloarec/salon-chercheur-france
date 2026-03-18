@@ -125,7 +125,7 @@ export default function CommentInput({ onSubmit, isPending }: CommentInputProps)
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Ajouter un commentaire..."
-            className="w-full px-4 py-2 pr-20 rounded-full border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-4 py-2 pr-28 rounded-full border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             maxLength={500}
             disabled={isPending || isUploading}
           />
