@@ -14,10 +14,12 @@ import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
+import PrepareVisitWizard from '@/components/event/PrepareVisitWizard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, Sparkles } from 'lucide-react';
+import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import type { Event } from '@/types/event';
 
 interface EventPageContentProps {
@@ -36,7 +38,17 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
-  
+  const [prepareVisitOpen, setPrepareVisitOpen] = useState(false);
+
+  // Get exhibitor count to conditionally show "Préparer ma visite" button
+  const { data: exhibitorsData } = useExhibitorsByEvent(
+    event.slug || '',
+    undefined,
+    1,
+    0,
+    event.id_event
+  );
+  const exhibitorCount = exhibitorsData?.total || 0;
   const isEventPast = useMemo(() => {
     const endDate = event.date_fin || event.date_debut;
     if (!endDate) return false;
@@ -174,6 +186,27 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
             
+            {/* Préparer ma visite - shown when >= 80 exhibitors and event not past */}
+            {exhibitorCount >= 80 && !isEventPast && (
+              <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Préparez votre visite avec l'IA</p>
+                    <p className="text-xs text-muted-foreground">
+                      Notre assistant analyse les {exhibitorCount} exposants pour créer votre parcours personnalisé
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={() => setPrepareVisitOpen(true)} className="gap-2 whitespace-nowrap">
+                  <Sparkles className="w-4 h-4" />
+                  Préparer ma visite
+                </Button>
+              </div>
+            )}
+
             <div className="grid grid-cols-12 gap-6">
               {/* Colonne gauche - Nouveautés */}
               <div className="col-span-12 lg:col-span-8">
@@ -199,6 +232,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
         <Footer />
       </div>
+
+      {/* Prepare Visit Wizard */}
+      <PrepareVisitWizard
+        open={prepareVisitOpen}
+        onOpenChange={setPrepareVisitOpen}
+        event={event}
+        exhibitorCount={exhibitorCount}
+      />
     </>
   );
 };

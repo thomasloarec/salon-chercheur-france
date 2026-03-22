@@ -70,3 +70,6 @@ verify_jwt = false
 
 [functions.sitemap]
 verify_jwt = false
+
+[functions.prepare-visit]
+verify_jwt = false
