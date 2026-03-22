@@ -369,7 +369,8 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           id_exposant: ex.id,
           exhibitor_name: ex.name,
           stand_exposant: ex.stand,
-          website_exposant: undefined,
+          website_exposant: ex.website_exposant || ex.website,
+          logo_url: ex.logo_url,
         })) || []}
         loading={allExhibitors === null}
         onSelect={async (ex) => {
