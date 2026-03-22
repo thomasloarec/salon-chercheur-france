@@ -81,7 +81,6 @@ const Auth = () => {
 
               // Show toast after navigation
               setTimeout(() => {
-                const { toast } = require('@/hooks/use-toast');
                 toast({ title: 'Votre liste a bien été enregistrée dans Mon Agenda ✓' });
               }, 500);
             } catch (err) {
