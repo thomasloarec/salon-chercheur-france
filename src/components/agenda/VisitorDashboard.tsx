@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SectorTag } from '@/components/ui/sector-tag';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useVisitPlansForUser, VisitPlan } from '@/hooks/useVisitPlan';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { cn } from '@/lib/utils';
 
 const NOVELTY_TYPE_LABELS = {
   Launch: 'Lancement',
@@ -26,8 +29,16 @@ interface VisitorDashboardProps {
 
 export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorDashboardProps) {
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+  const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
+  const { data: visitPlans = [] } = useVisitPlansForUser();
 
-  // Grouper les nouveautés likées par événement
+  // Index visit plans by event_id
+  const plansByEvent = visitPlans.reduce((acc, plan) => {
+    acc[plan.event_id] = plan;
+    return acc;
+  }, {} as Record<string, VisitPlan>);
+
+  // Group liked novelties by event
   const noveltiesByEvent = likedNovelties.reduce((acc, novelty) => {
     const eventId = novelty.event_id;
     if (!acc[eventId]) acc[eventId] = [];
@@ -36,6 +47,24 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
   }, {} as Record<string, any[]>);
 
   const toggleExpand = (eventId: string) => {
+    setExpandedEvents(prev => {
+      const next = new Set(prev);
+      if (next.has(eventId)) next.delete(eventId);
+      else next.add(eventId);
+      return next;
+    });
+  };
+
+  const togglePlanExpand = (eventId: string) => {
+    setExpandedPlans(prev => {
+      const next = new Set(prev);
+      if (next.has(eventId)) next.delete(eventId);
+      else next.add(eventId);
+      return next;
+    });
+  };
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -55,7 +84,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
 
   return (
     <div className="space-y-6">
-      {/* Banner explicatif */}
+      {/* Banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <Ticket className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -70,7 +99,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
         </div>
       </div>
 
-      {/* Liste des événements */}
+      {/* Events list */}
       {events.length > 0 ? (
         <div className="space-y-6">
           {events.map((event) => {
@@ -79,6 +108,11 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
             const displayedNovelties = isExpanded 
               ? eventNovelties 
               : eventNovelties.slice(0, 3);
+            const visitPlan = plansByEvent[event.id];
+            const isPlanExpanded = expandedPlans.has(event.id);
+            const today = new Date();
+            const eventEnd = new Date(event.date_fin || event.date_debut);
+            const isPast = eventEnd < today;
 
             return (
               <div key={event.id} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
@@ -92,9 +126,17 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <Link to={`/events/${event.slug}`} className="hover:text-primary transition-colors">
-                      <h3 className="text-lg sm:text-xl font-semibold line-clamp-2">{event.nom_event}</h3>
-                    </Link>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link to={`/events/${event.slug}`} className="hover:text-primary transition-colors">
+                        <h3 className="text-lg sm:text-xl font-semibold line-clamp-2">{event.nom_event}</h3>
+                      </Link>
+                      {visitPlan && (
+                        <Badge className="bg-green-100 text-green-700 border-green-200 text-xs gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Liste prête
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       {format(new Date(event.date_debut), 'dd MMM', { locale: fr })}
                       {event.date_fin !== event.date_debut && 
@@ -112,17 +154,86 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                   </div>
                 </div>
 
-                {/* Event Description */}
-                {event.description_event && (
-                  <div className="mt-4">
-                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                      {event.description_event}
-                    </p>
+                {/* Visit Plan Section */}
+                {visitPlan && (
+                  <div className="mt-4 pt-4 border-t">
+                    <button
+                      onClick={() => togglePlanExpand(event.id)}
+                      className="flex items-center justify-between w-full text-left group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        <h4 className="font-semibold">Mes exposants à voir</h4>
+                        <Badge variant="secondary" className="text-xs">
+                          {(visitPlan.prioritaires?.length || 0) + (visitPlan.optionnels?.length || 0)}
+                        </Badge>
+                      </div>
+                      {isPlanExpanded ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+
+                    {isPlanExpanded && (
+                      <div className="mt-4 space-y-4">
+                        {/* Prioritaires */}
+                        {visitPlan.prioritaires && visitPlan.prioritaires.length > 0 && (
+                          <div>
+                            <p className="text-sm font-semibold mb-2 flex items-center gap-1">
+                              ⭐ Incontournables
+                            </p>
+                            <div className="space-y-2">
+                              {visitPlan.prioritaires.map((rec: any) => (
+                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Optionnels */}
+                        {visitPlan.optionnels && visitPlan.optionnels.length > 0 && (
+                          <div>
+                            <p className="text-sm font-semibold mb-2 text-muted-foreground flex items-center gap-1">
+                              💡 À voir si le temps le permet
+                            </p>
+                            <div className="space-y-2">
+                              {visitPlan.optionnels.map((rec: any) => (
+                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Update button */}
+                        <div className="pt-2">
+                          <Link to={`/events/${event.slug}?prepare=1`}>
+                            <Button variant="outline" size="sm" className="gap-2">
+                              <Sparkles className="w-4 h-4" />
+                              Mettre à jour ma liste →
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Section Mon Parcours */}
-                {eventNovelties.length > 0 ? (
+                {/* Prompt for events without visit plan */}
+                {!visitPlan && !isPast && (event as any)._exhibitorCount >= 80 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <Link
+                      to={`/events/${event.slug}?prepare=1`}
+                      className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Préparez votre visite avec l'IA →
+                    </Link>
+                  </div>
+                )}
+
+                {/* Liked novelties section */}
+                {eventNovelties.length > 0 && (
                   <div className="mt-4 pt-4 border-t">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -152,7 +263,6 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       )}
                     </div>
 
-                    {/* Liste compacte des nouveautés likées */}
                     <div className="space-y-2">
                       {displayedNovelties.map((novelty: any) => (
                         <Link
@@ -160,7 +270,6 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                           to={`/events/${event.slug}`}
                           className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group"
                         >
-                          {/* Miniature */}
                           {novelty.media_urls && novelty.media_urls[0] && (
                             <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                               <img
@@ -170,8 +279,6 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                               />
                             </div>
                           )}
-
-                          {/* Infos */}
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                               {novelty.title}
@@ -181,8 +288,6 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                               {novelty.stand_info && ` - Stand ${novelty.stand_info}`}
                             </p>
                           </div>
-
-                          {/* Badge type */}
                           <Badge variant="outline" className="text-xs flex-shrink-0">
                             {NOVELTY_TYPE_LABELS[novelty.type as keyof typeof NOVELTY_TYPE_LABELS] || novelty.type}
                           </Badge>
@@ -190,9 +295,9 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       ))}
                     </div>
                   </div>
-                ) : null}
+                )}
 
-                {/* Bouton Voir le salon - toujours affiché */}
+                {/* View event button */}
                 <div className="mt-4 pt-4">
                   <Link to={`/events/${event.slug}`}>
                     <Button variant="outline" size="sm" className="w-full sm:w-auto">
@@ -218,6 +323,27 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+// Compact exhibitor row for visit plan display
+function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string; eventId: string }) {
+  const logoUrl = getExhibitorLogoUrl(rec.logo_url || null, rec.website || null);
+
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+      <div className="w-8 h-8 rounded-md bg-background flex-shrink-0 flex items-center justify-center overflow-hidden border">
+        {logoUrl ? (
+          <img src={logoUrl} alt={rec.name} className="w-full h-full object-contain" />
+        ) : (
+          <Building2 className="w-4 h-4 text-muted-foreground" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm leading-tight">{rec.name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.raison}</p>
+      </div>
     </div>
   );
 }

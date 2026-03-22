@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { useAuth } from '@/contexts/AuthContext';
+import { useVisitPlan, useSaveVisitPlan, storePendingVisitPlan } from '@/hooks/useVisitPlan';
+import { toggleFavorite } from '@/utils/toggleFavorite';
+import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
+import { toast } from '@/hooks/use-toast';
 import type { Event } from '@/types/event';
 import { cn } from '@/lib/utils';
 
@@ -66,13 +72,22 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { data: existingPlan } = useVisitPlan(event.id);
+  const { data: favoriteEvents = [] } = useFavoriteEvents();
+  const saveVisitPlan = useSaveVisitPlan();
+
+  const isFavorited = favoriteEvents.some((e: any) => e.id === event.id);
 
   // Fetch keyword suggestions from exhibitor_ai
   useEffect(() => {
     if (step !== 3 || !event.id) return;
     const fetchSuggestions = async () => {
       try {
-        // Get exhibitor IDs for this event
         const { data: eventData } = await supabase
           .from('events')
           .select('id_event')
@@ -97,7 +112,6 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
         if (!aiRows) return;
 
-        // Count keyword frequencies
         const freq: Record<string, number> = {};
         aiRows.forEach(row => {
           const kws = row.mots_cles_metier as string[] | null;
@@ -144,6 +158,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const handleSubmit = async () => {
     setStep('loading');
     setError(null);
+    setBannerDismissed(false);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('prepare-visit', {
@@ -183,10 +198,113 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setDuration('');
     setResults(null);
     setError(null);
+    setBannerDismissed(false);
+  };
+
+  const handleSave = async (replace = false) => {
+    if (!results) return;
+    setSaving(true);
+
+    try {
+      if (!user) {
+        // Scenario 4: Not logged in - store in localStorage
+        storePendingVisitPlan({
+          event_id: event.id,
+          event_slug: event.slug || '',
+          role,
+          objectif: objective,
+          keywords,
+          duration,
+          prioritaires: results.prioritaires,
+          optionnels: results.optionnels,
+        });
+        navigate('/auth?tab=signup');
+        return;
+      }
+
+      // Add to favorites if not already
+      if (!isFavorited) {
+        await toggleFavorite(event.id);
+      }
+
+      // Save visit plan
+      await saveVisitPlan.mutateAsync({
+        event_id: event.id,
+        role,
+        objectif: objective,
+        keywords,
+        duration,
+        prioritaires: results.prioritaires,
+        optionnels: results.optionnels,
+      });
+
+      toast({
+        title: replace ? 'Liste mise à jour ✓' : 'Salon ajouté à votre agenda avec votre liste personnalisée ✓',
+      });
+      setBannerDismissed(true);
+    } catch (err: any) {
+      console.error('Save visit plan error:', err);
+      toast({
+        title: 'Erreur',
+        description: err.message || 'Impossible de sauvegarder',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const canProceedStep1 = !!role;
   const canProceedStep2 = !!objective;
+
+  // Determine banner scenario
+  const getBannerConfig = () => {
+    if (!results || error || bannerDismissed) return null;
+
+    if (!user) {
+      // Scenario 4
+      return {
+        message: 'Créez un compte gratuit pour retrouver cette liste dans Mon Agenda',
+        primaryLabel: 'Enregistrer ma liste →',
+        primaryAction: () => handleSave(),
+        secondaryLabel: null as string | null,
+        secondaryAction: null as (() => void) | null,
+      };
+    }
+
+    if (existingPlan) {
+      // Scenario 3
+      return {
+        message: 'Vous avez déjà une liste enregistrée pour ce salon',
+        primaryLabel: 'Remplacer ma liste',
+        primaryAction: () => handleSave(true),
+        secondaryLabel: "Garder l'ancienne",
+        secondaryAction: () => setBannerDismissed(true),
+      };
+    }
+
+    if (isFavorited) {
+      // Scenario 2
+      return {
+        message: 'Cet événement est dans votre agenda — enregistrez votre liste',
+        primaryLabel: 'Enregistrer ma liste →',
+        primaryAction: () => handleSave(),
+        secondaryLabel: null,
+        secondaryAction: null,
+      };
+    }
+
+    // Scenario 1
+    return {
+      message: 'Enregistrez votre liste pour la retrouver dans Mon Agenda',
+      primaryLabel: 'Ajouter à mon agenda →',
+      primaryAction: () => handleSave(),
+      secondaryLabel: null,
+      secondaryAction: null,
+    };
+  };
+
+  const bannerConfig = getBannerConfig();
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleReset(); onOpenChange(v); }}>
@@ -293,7 +411,6 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 <p className="text-sm text-muted-foreground">Ajoutez des mots-clés pour affiner les recommandations</p>
               </div>
 
-              {/* Keyword input */}
               <div>
                 <Input
                   placeholder="Tapez un mot-clé puis Entrée..."
@@ -315,7 +432,6 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 )}
               </div>
 
-              {/* Suggestions */}
               {suggestions.length > 0 && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Suggestions basées sur les exposants :</p>
@@ -336,7 +452,6 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 </div>
               )}
 
-              {/* Duration */}
               <div>
                 <p className="font-medium text-sm mb-2 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
@@ -395,7 +510,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
           {/* RESULTS */}
           {step === 'results' && (
-            <div className="space-y-6">
+            <div className="space-y-6 pb-24">
               {error ? (
                 <div className="text-center py-12 space-y-4">
                   <p className="text-destructive font-medium">{error}</p>
@@ -459,6 +574,33 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
             </div>
           )}
         </div>
+
+        {/* Sticky Save Banner */}
+        {bannerConfig && step === 'results' && (
+          <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-sm border-t px-6 py-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Bookmark className="w-5 h-5 text-primary flex-shrink-0" />
+                <p className="text-sm font-medium truncate">{bannerConfig.message}</p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                {bannerConfig.secondaryLabel && bannerConfig.secondaryAction && (
+                  <Button variant="ghost" size="sm" onClick={bannerConfig.secondaryAction}>
+                    {bannerConfig.secondaryLabel}
+                  </Button>
+                )}
+                <Button size="sm" onClick={bannerConfig.primaryAction} disabled={saving} className="gap-2">
+                  {saving ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CalendarPlus className="w-4 h-4" />
+                  )}
+                  {bannerConfig.primaryLabel}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -484,7 +626,6 @@ function RecommendationCard({
       )}
     >
       <div className="flex items-start gap-3">
-        {/* Logo */}
         <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
           {logoUrl ? (
             <img src={logoUrl} alt={rec.name} className="w-full h-full object-contain" />
@@ -500,7 +641,6 @@ function RecommendationCard({
         </div>
       </div>
 
-      {/* Raison */}
       <div className={cn(
         'text-xs rounded-lg p-3 leading-relaxed',
         variant === 'primary'
