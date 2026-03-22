@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 
 serve(async (req) => {
   if (req.method === "OPTIONS")
@@ -23,8 +23,8 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -185,22 +185,19 @@ Règles strictes :
 - Si un exposant n'a pas de resume_court, base-toi sur secteur_principal et produits_services uniquement`;
 
     // 9. Call AI Gateway
-    const aiResponse = await fetch(AI_GATEWAY, {
+    const aiResponse = await fetch(ANTHROPIC_API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5",
+        model: "claude-sonnet-4-6",
+        max_tokens: 2000,
         messages: [
-          {
-            role: "system",
-            content: "Tu es un assistant expert qui retourne uniquement du JSON valide. Pas de markdown, pas de backtick, pas de texte avant ou après le JSON.",
-          },
           { role: "user", content: prompt },
         ],
-        max_tokens: 2000,
       }),
     });
 
@@ -224,7 +221,7 @@ Règles strictes :
     }
 
     const aiResult = await aiResponse.json();
-    const rawContent = aiResult.choices?.[0]?.message?.content || "";
+    const rawContent = aiResult.content?.[0]?.text || "";
 
     // 10. Parse JSON response
     let recommendations;
