@@ -313,15 +313,18 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                   className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
-                    {exhibitor.logo_url ? (
-                      <img 
-                        src={exhibitor.logo_url} 
-                        alt={`${exhibitor.name} logo`}
-                        className="w-full h-full object-contain rounded"
-                      />
-                    ) : (
-                      <Building2 className="w-4 h-4 text-gray-400" />
-                    )}
+                    {(() => {
+                      const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website || exhibitor.website_exposant);
+                      return resolvedLogo ? (
+                        <img 
+                          src={resolvedLogo} 
+                          alt={`${exhibitor.name} logo`}
+                          className="w-full h-full object-contain rounded"
+                        />
+                      ) : (
+                        <Building2 className="w-4 h-4 text-gray-400" />
+                      );
+                    })()}
                   </div>
                   
                   <div className="flex-1 min-w-0">
