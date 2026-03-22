@@ -221,7 +221,7 @@ Règles strictes :
     }
 
     const aiResult = await aiResponse.json();
-    const rawContent = aiResult.choices?.[0]?.message?.content || "";
+    const rawContent = aiResult.content?.[0]?.text || "";
 
     // 10. Parse JSON response
     let recommendations;
