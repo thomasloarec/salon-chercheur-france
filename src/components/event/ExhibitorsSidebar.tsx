@@ -12,6 +12,7 @@ import { ExhibitorDialog } from './ExhibitorDialog';
 import type { Event } from '@/types/event';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeStandNumber } from '@/utils/standUtils';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 
 interface ExhibitorsSidebarProps {
   event: Event;

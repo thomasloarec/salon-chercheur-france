@@ -176,7 +176,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
               className="flex items-center gap-3 hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
             >
               {(() => {
-                const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website);
+                const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, (exhibitor as any).website);
                 return resolvedLogo ? (
                   <div className="w-8 h-8 rounded bg-white flex items-center justify-center flex-shrink-0 border">
                     <img

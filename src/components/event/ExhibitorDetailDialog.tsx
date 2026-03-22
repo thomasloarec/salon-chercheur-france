@@ -8,6 +8,7 @@ import { ExternalLink, Building2, MapPin, Globe, Calendar } from 'lucide-react';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeExternalUrl } from '@/lib/url';
 import { normalizeStandNumber } from '@/utils/standUtils';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
