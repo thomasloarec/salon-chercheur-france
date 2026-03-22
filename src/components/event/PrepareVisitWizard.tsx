@@ -1,0 +1,514 @@
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import type { Event } from '@/types/event';
+import { cn } from '@/lib/utils';
+
+interface PrepareVisitWizardProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  event: Event;
+  exhibitorCount: number;
+}
+
+const ROLES = [
+  'Achats / Approvisionnement',
+  'R&D / Ingénierie',
+  'Commercial / Business Development',
+  'Direction / Management',
+  'Production / Industrialisation',
+  'Marketing / Innovation',
+  'Autre',
+];
+
+const OBJECTIVES = [
+  'Trouver de nouveaux fournisseurs',
+  'Découvrir les innovations du marché',
+  'Rencontrer mes clients et prospects',
+  'Faire de la veille concurrentielle',
+  'Identifier des partenaires',
+  'Comparer des solutions',
+];
+
+const DURATIONS = ['2h', 'Demi-journée', 'Journée complète'];
+
+type Step = 1 | 2 | 3 | 'loading' | 'results';
+
+interface Recommendation {
+  exhibitor_id: string;
+  raison: string;
+  name: string;
+  logo_url: string | null;
+  website: string | null;
+  secteur_principal: string | null;
+}
+
+interface Results {
+  prioritaires: Recommendation[];
+  optionnels: Recommendation[];
+  totalExhibitors: number;
+  analyzedExhibitors: number;
+}
+
+export default function PrepareVisitWizard({ open, onOpenChange, event, exhibitorCount }: PrepareVisitWizardProps) {
+  const [step, setStep] = useState<Step>(1);
+  const [role, setRole] = useState('');
+  const [objective, setObjective] = useState('');
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywordInput, setKeywordInput] = useState('');
+  const [duration, setDuration] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [results, setResults] = useState<Results | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch keyword suggestions from exhibitor_ai
+  useEffect(() => {
+    if (step !== 3 || !event.id) return;
+    const fetchSuggestions = async () => {
+      try {
+        // Get exhibitor IDs for this event
+        const { data: eventData } = await supabase
+          .from('events')
+          .select('id_event')
+          .eq('id', event.id)
+          .single();
+
+        if (!eventData) return;
+
+        const { data: participations } = await supabase
+          .from('participation')
+          .select('exhibitor_id')
+          .eq('id_event_text', eventData.id_event)
+          .not('exhibitor_id', 'is', null);
+
+        const ids = (participations || []).map(p => p.exhibitor_id).filter(Boolean) as string[];
+        if (ids.length === 0) return;
+
+        const { data: aiRows } = await supabase
+          .from('exhibitor_ai')
+          .select('mots_cles_metier')
+          .in('exhibitor_id', ids);
+
+        if (!aiRows) return;
+
+        // Count keyword frequencies
+        const freq: Record<string, number> = {};
+        aiRows.forEach(row => {
+          const kws = row.mots_cles_metier as string[] | null;
+          if (Array.isArray(kws)) {
+            kws.forEach((k: string) => {
+              const normalized = k.trim().toLowerCase();
+              if (normalized) freq[normalized] = (freq[normalized] || 0) + 1;
+            });
+          }
+        });
+
+        const sorted = Object.entries(freq)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 12)
+          .map(([k]) => k.charAt(0).toUpperCase() + k.slice(1));
+
+        setSuggestions(sorted);
+      } catch (err) {
+        console.error('Error fetching suggestions:', err);
+      }
+    };
+    fetchSuggestions();
+  }, [step, event.id]);
+
+  const addKeyword = (kw: string) => {
+    const trimmed = kw.trim();
+    if (trimmed && !keywords.includes(trimmed)) {
+      setKeywords(prev => [...prev, trimmed]);
+    }
+  };
+
+  const removeKeyword = (kw: string) => {
+    setKeywords(prev => prev.filter(k => k !== kw));
+  };
+
+  const handleKeywordInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && keywordInput.trim()) {
+      e.preventDefault();
+      addKeyword(keywordInput);
+      setKeywordInput('');
+    }
+  };
+
+  const handleSubmit = async () => {
+    setStep('loading');
+    setError(null);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('prepare-visit', {
+        body: {
+          eventId: event.id,
+          role,
+          objective,
+          keywords,
+          duration,
+        },
+      });
+
+      if (fnError) throw new Error(fnError.message);
+      if (data?.error) throw new Error(data.error);
+
+      setResults(data);
+      setStep('results');
+    } catch (err: any) {
+      console.error('Prepare visit error:', err);
+      setError(err.message || 'Une erreur est survenue');
+      setStep('results');
+    }
+  };
+
+  const handleRetry = () => {
+    setResults(null);
+    setError(null);
+    handleSubmit();
+  };
+
+  const handleReset = () => {
+    setStep(1);
+    setRole('');
+    setObjective('');
+    setKeywords([]);
+    setKeywordInput('');
+    setDuration('');
+    setResults(null);
+    setError(null);
+  };
+
+  const canProceedStep1 = !!role;
+  const canProceedStep2 = !!objective;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleReset(); onOpenChange(v); }}>
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Préparer ma visite avec l'IA</h2>
+              <p className="text-sm text-muted-foreground">{event.nom_event}</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          {typeof step === 'number' && (
+            <div className="flex gap-2 mt-4">
+              {[1, 2, 3].map(s => (
+                <div
+                  key={s}
+                  className={cn(
+                    'h-1 flex-1 rounded-full transition-colors',
+                    s <= step ? 'bg-primary' : 'bg-muted'
+                  )}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-6">
+          {/* STEP 1 - Role */}
+          {step === 1 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-1">Quel est votre rôle ?</h3>
+                <p className="text-sm text-muted-foreground">Sélectionnez le profil qui correspond le mieux à votre fonction</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {ROLES.map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setRole(r)}
+                    className={cn(
+                      'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
+                      role === r
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border hover:border-primary/40'
+                    )}
+                  >
+                    <span className="font-medium text-sm">{r}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button onClick={() => setStep(2)} disabled={!canProceedStep1}>
+                  Continuer <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2 - Objective */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-1">Quel est votre objectif principal ?</h3>
+                <p className="text-sm text-muted-foreground">Choisissez l'objectif qui décrit le mieux votre visite</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {OBJECTIVES.map(o => (
+                  <button
+                    key={o}
+                    onClick={() => setObjective(o)}
+                    className={cn(
+                      'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
+                      objective === o
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border hover:border-primary/40'
+                    )}
+                  >
+                    <span className="font-medium text-sm">{o}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-between pt-2">
+                <Button variant="ghost" onClick={() => setStep(1)}>
+                  <ArrowLeft className="mr-2 w-4 h-4" /> Retour
+                </Button>
+                <Button onClick={() => setStep(3)} disabled={!canProceedStep2}>
+                  Continuer <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 - Keywords + Duration */}
+          {step === 3 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-1">Quels thèmes vous intéressent ?</h3>
+                <p className="text-sm text-muted-foreground">Ajoutez des mots-clés pour affiner les recommandations</p>
+              </div>
+
+              {/* Keyword input */}
+              <div>
+                <Input
+                  placeholder="Tapez un mot-clé puis Entrée..."
+                  value={keywordInput}
+                  onChange={e => setKeywordInput(e.target.value)}
+                  onKeyDown={handleKeywordInputKeyDown}
+                />
+                {keywords.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {keywords.map(kw => (
+                      <Badge key={kw} variant="secondary" className="gap-1 pr-1">
+                        {kw}
+                        <button onClick={() => removeKeyword(kw)} className="ml-1 hover:text-destructive">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Suggestions */}
+              {suggestions.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Suggestions basées sur les exposants :</p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions
+                      .filter(s => !keywords.includes(s))
+                      .slice(0, 6)
+                      .map(s => (
+                        <button
+                          key={s}
+                          onClick={() => addKeyword(s)}
+                          className="text-xs px-3 py-1.5 rounded-full border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors"
+                        >
+                          + {s}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Duration */}
+              <div>
+                <p className="font-medium text-sm mb-2 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  Combien de temps avez-vous sur le salon ?
+                </p>
+                <div className="flex gap-2">
+                  {DURATIONS.map(d => (
+                    <button
+                      key={d}
+                      onClick={() => setDuration(d)}
+                      className={cn(
+                        'px-4 py-2 rounded-full text-sm font-medium border transition-all',
+                        duration === d
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'border-border hover:border-primary/40'
+                      )}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-2">
+                <Button variant="ghost" onClick={() => setStep(2)}>
+                  <ArrowLeft className="mr-2 w-4 h-4" /> Retour
+                </Button>
+                <Button onClick={handleSubmit} className="gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Lancer l'analyse
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* LOADING */}
+          {step === 'loading' && (
+            <div className="flex flex-col items-center justify-center py-16 gap-6">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+                  <Sparkles className="w-8 h-8 text-primary animate-spin" style={{ animationDuration: '3s' }} />
+                </div>
+              </div>
+              <div className="text-center space-y-2">
+                <p className="font-semibold text-lg">Analyse en cours…</p>
+                <p className="text-sm text-muted-foreground">
+                  Notre assistant IA analyse les {exhibitorCount} exposants du salon pour votre profil…
+                </p>
+              </div>
+              <div className="w-48 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full animate-[loading_2s_ease-in-out_infinite]" 
+                  style={{ width: '60%', animation: 'loading 2s ease-in-out infinite' }} />
+              </div>
+            </div>
+          )}
+
+          {/* RESULTS */}
+          {step === 'results' && (
+            <div className="space-y-6">
+              {error ? (
+                <div className="text-center py-12 space-y-4">
+                  <p className="text-destructive font-medium">{error}</p>
+                  <p className="text-sm text-muted-foreground">
+                    L'analyse n'a pas pu aboutir. Vous pouvez réessayer.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline" onClick={handleReset}>Modifier mes critères</Button>
+                    <Button onClick={handleRetry} className="gap-2">
+                      <RefreshCw className="w-4 h-4" /> Réessayer
+                    </Button>
+                  </div>
+                </div>
+              ) : results ? (
+                <>
+                  {/* Summary banner */}
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
+                    <p className="text-sm font-medium">
+                      Basé sur votre profil, voici les{' '}
+                      <span className="text-primary font-bold">{results.prioritaires.length + results.optionnels.length}</span>{' '}
+                      exposants à prioriser parmi les{' '}
+                      <span className="font-bold">{results.totalExhibitors}</span> présents.
+                    </p>
+                  </div>
+
+                  {/* Prioritaires */}
+                  {results.prioritaires.length > 0 && (
+                    <section>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        ⭐ Vos incontournables
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {results.prioritaires.map((rec) => (
+                          <RecommendationCard key={rec.exhibitor_id} rec={rec} variant="primary" eventId={event.id} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Optionnels */}
+                  {results.optionnels.length > 0 && (
+                    <section>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-muted-foreground">
+                        💡 À voir si vous avez le temps
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {results.optionnels.map((rec) => (
+                          <RecommendationCard key={rec.exhibitor_id} rec={rec} variant="secondary" eventId={event.id} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  <div className="flex justify-center pt-4">
+                    <Button variant="outline" onClick={handleReset}>
+                      Modifier mes critères
+                    </Button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// --- Recommendation Card ---
+function RecommendationCard({
+  rec,
+  variant,
+  eventId,
+}: {
+  rec: Recommendation;
+  variant: 'primary' | 'secondary';
+  eventId: string;
+}) {
+  const logoUrl = getExhibitorLogoUrl(rec.logo_url, rec.website);
+
+  return (
+    <div
+      className={cn(
+        'rounded-xl border p-4 flex flex-col gap-3 transition-shadow hover:shadow-md',
+        variant === 'primary' ? 'bg-background' : 'bg-muted/30'
+      )}
+    >
+      <div className="flex items-start gap-3">
+        {/* Logo */}
+        <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
+          {logoUrl ? (
+            <img src={logoUrl} alt={rec.name} className="w-full h-full object-contain" />
+          ) : (
+            <Building2 className="w-5 h-5 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm leading-tight">{rec.name}</p>
+          {rec.secteur_principal && (
+            <p className="text-xs text-muted-foreground mt-0.5">{rec.secteur_principal}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Raison */}
+      <div className={cn(
+        'text-xs rounded-lg p-3 leading-relaxed',
+        variant === 'primary'
+          ? 'bg-primary/5 text-foreground border border-primary/10'
+          : 'bg-muted/50 text-muted-foreground'
+      )}>
+        {rec.raison}
+      </div>
+    </div>
+  );
+}
