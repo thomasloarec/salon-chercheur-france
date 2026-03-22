@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
 
@@ -37,8 +37,16 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 }) => {
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
   const [prepareVisitOpen, setPrepareVisitOpen] = useState(false);
+
+  // Auto-open wizard from ?prepare=1 query param (e.g. from agenda page)
+  useEffect(() => {
+    if (searchParams.get('prepare') === '1' && exhibitorCount >= 80) {
+      setPrepareVisitOpen(true);
+    }
+  }, [searchParams]);
 
   // Get exhibitor count to conditionally show "Préparer ma visite" button
   const { data: exhibitorsData } = useExhibitorsByEvent(
