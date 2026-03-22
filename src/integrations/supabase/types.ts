@@ -690,6 +690,7 @@ export type Database = {
           profils_visiteurs: Json | null
           resume_court: string | null
           secteur_principal: string | null
+          source_table: string | null
           source_url: string | null
           sous_secteurs: Json | null
           type_interet: Json | null
@@ -703,6 +704,7 @@ export type Database = {
           profils_visiteurs?: Json | null
           resume_court?: string | null
           secteur_principal?: string | null
+          source_table?: string | null
           source_url?: string | null
           sous_secteurs?: Json | null
           type_interet?: Json | null
@@ -716,26 +718,12 @@ export type Database = {
           profils_visiteurs?: Json | null
           resume_court?: string | null
           secteur_principal?: string | null
+          source_table?: string | null
           source_url?: string | null
           sous_secteurs?: Json | null
           type_interet?: Json | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "exhibitor_ai_exhibitor_id_fkey"
-            columns: ["exhibitor_id"]
-            isOneToOne: true
-            referencedRelation: "exhibitors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "exhibitor_ai_exhibitor_id_fkey"
-            columns: ["exhibitor_id"]
-            isOneToOne: true
-            referencedRelation: "participations_with_exhibitors"
-            referencedColumns: ["exhibitor_uuid"]
-          },
-        ]
+        Relationships: []
       }
       exhibitor_claim_requests: {
         Row: {
@@ -2261,6 +2249,63 @@ export type Database = {
           },
         ]
       }
+      visit_plans: {
+        Row: {
+          created_at: string | null
+          duration: string | null
+          event_id: string
+          id: string
+          keywords: string[] | null
+          objectif: string | null
+          optionnels: Json | null
+          prioritaires: Json | null
+          role: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration?: string | null
+          event_id: string
+          id?: string
+          keywords?: string[] | null
+          objectif?: string | null
+          optionnels?: Json | null
+          prioritaires?: Json | null
+          role?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration?: string | null
+          event_id?: string
+          id?: string
+          keywords?: string[] | null
+          objectif?: string | null
+          optionnels?: Json | null
+          prioritaires?: Json | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_plans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_plans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       events_geo: {
@@ -2310,6 +2355,27 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      exposants_a_enrichir: {
+        Row: {
+          exposant_description: string | null
+          id: number | null
+          nom_exposant: string | null
+          website_exposant: string | null
+        }
+        Insert: {
+          exposant_description?: string | null
+          id?: number | null
+          nom_exposant?: string | null
+          website_exposant?: string | null
+        }
+        Update: {
+          exposant_description?: string | null
+          id?: number | null
+          nom_exposant?: string | null
+          website_exposant?: string | null
+        }
+        Relationships: []
       }
       participations_with_exhibitors: {
         Row: {
