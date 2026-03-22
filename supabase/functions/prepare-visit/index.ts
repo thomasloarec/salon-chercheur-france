@@ -185,22 +185,19 @@ Règles strictes :
 - Si un exposant n'a pas de resume_court, base-toi sur secteur_principal et produits_services uniquement`;
 
     // 9. Call AI Gateway
-    const aiResponse = await fetch(AI_GATEWAY, {
+    const aiResponse = await fetch(ANTHROPIC_API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5",
+        model: "claude-sonnet-4-6",
+        max_tokens: 2000,
         messages: [
-          {
-            role: "system",
-            content: "Tu es un assistant expert qui retourne uniquement du JSON valide. Pas de markdown, pas de backtick, pas de texte avant ou après le JSON.",
-          },
           { role: "user", content: prompt },
         ],
-        max_tokens: 2000,
       }),
     });
 
