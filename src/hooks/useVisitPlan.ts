@@ -33,7 +33,7 @@ export function useVisitPlan(eventId: string | undefined) {
         console.error('Error fetching visit plan:', error);
         return null;
       }
-      return data as VisitPlan | null;
+      return data as unknown as VisitPlan | null;
     },
     enabled: !!user && !!eventId,
   });
@@ -54,7 +54,7 @@ export function useVisitPlansForUser() {
         console.error('Error fetching visit plans:', error);
         return [];
       }
-      return (data || []) as VisitPlan[];
+      return (data || []) as unknown as VisitPlan[];
     },
     enabled: !!user,
   });
