@@ -31,7 +31,72 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      // Check for pending visit plan from unauthenticated wizard flow
+      const pendingRaw = localStorage.getItem('pending_visit_plan');
+      if (pendingRaw) {
+        try {
+          const pending = JSON.parse(pendingRaw);
+          // Save visit plan + add favorite in background, then redirect
+          const savePending = async () => {
+            try {
+              // Add to favorites
+              const { data: existingFav } = await supabase
+                .from('favorites')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('event_uuid', pending.event_id)
+                .maybeSingle();
+              
+              if (!existingFav) {
+                await supabase.from('favorites').insert({
+                  user_id: user.id,
+                  event_uuid: pending.event_id,
+                  event_id: pending.event_id,
+                } as any);
+              }
+
+              // Save visit plan
+              await supabase.from('visit_plans' as any).upsert({
+                user_id: user.id,
+                event_id: pending.event_id,
+                role: pending.role,
+                objectif: pending.objectif,
+                keywords: pending.keywords,
+                duration: pending.duration,
+                prioritaires: pending.prioritaires,
+                optionnels: pending.optionnels,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,event_id' });
+
+              localStorage.removeItem('pending_visit_plan');
+
+              // Redirect to event page
+              const slug = pending.event_slug;
+              if (slug) {
+                navigate(`/events/${slug}`, { replace: true });
+              } else {
+                navigate('/', { replace: true });
+              }
+
+              // Show toast after navigation
+              setTimeout(() => {
+                const { toast } = require('@/hooks/use-toast');
+                toast({ title: 'Votre liste a bien été enregistrée dans Mon Agenda ✓' });
+              }, 500);
+            } catch (err) {
+              console.error('Failed to save pending visit plan:', err);
+              localStorage.removeItem('pending_visit_plan');
+              navigate('/');
+            }
+          };
+          savePending();
+        } catch {
+          localStorage.removeItem('pending_visit_plan');
+          navigate('/');
+        }
+      } else {
+        navigate('/');
+      }
     }
   }, [user, navigate]);
 
