@@ -680,6 +680,63 @@ export type Database = {
           },
         ]
       }
+      exhibitor_ai: {
+        Row: {
+          enriched_at: string | null
+          exhibitor_id: string
+          id: string
+          mots_cles_metier: Json | null
+          produits_services: Json | null
+          profils_visiteurs: Json | null
+          resume_court: string | null
+          secteur_principal: string | null
+          source_url: string | null
+          sous_secteurs: Json | null
+          type_interet: Json | null
+        }
+        Insert: {
+          enriched_at?: string | null
+          exhibitor_id: string
+          id?: string
+          mots_cles_metier?: Json | null
+          produits_services?: Json | null
+          profils_visiteurs?: Json | null
+          resume_court?: string | null
+          secteur_principal?: string | null
+          source_url?: string | null
+          sous_secteurs?: Json | null
+          type_interet?: Json | null
+        }
+        Update: {
+          enriched_at?: string | null
+          exhibitor_id?: string
+          id?: string
+          mots_cles_metier?: Json | null
+          produits_services?: Json | null
+          profils_visiteurs?: Json | null
+          resume_court?: string | null
+          secteur_principal?: string | null
+          source_url?: string | null
+          sous_secteurs?: Json | null
+          type_interet?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_ai_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: true
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_ai_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: true
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       exhibitor_claim_requests: {
         Row: {
           created_at: string | null
