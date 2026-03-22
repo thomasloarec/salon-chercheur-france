@@ -8,6 +8,7 @@ import { ExternalLink, Building2, MapPin, Globe, Calendar } from 'lucide-react';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeExternalUrl } from '@/lib/url';
 import { normalizeStandNumber } from '@/utils/standUtils';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -122,19 +123,22 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             </div>
           )}
           <DialogTitle className="flex items-center gap-3">
-            {e.logo_url ? (
-              <div className="h-12 w-12 rounded bg-white border flex items-center justify-center flex-shrink-0 p-1">
-                <img
-                  src={e.logo_url}
-                  alt={displayName}
-                  className="max-w-full max-h-full object-contain"
-                />
-              </div>
-            ) : (
-              <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                <Building2 className="h-6 w-6 text-muted-foreground" />
-              </div>
-            )}
+            {(() => {
+              const resolvedLogo = getExhibitorLogoUrl(e.logo_url, e.website_exposant);
+              return resolvedLogo ? (
+                <div className="h-12 w-12 rounded bg-white border flex items-center justify-center flex-shrink-0 p-1">
+                  <img
+                    src={resolvedLogo}
+                    alt={displayName}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                  <Building2 className="h-6 w-6 text-muted-foreground" />
+                </div>
+              );
+            })()}
             <div className="flex-1 min-w-0">
               <div className="truncate">{displayName}</div>
               {e.stand_exposant && (

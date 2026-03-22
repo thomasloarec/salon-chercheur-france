@@ -13,6 +13,7 @@ import NoveltyComments from './NoveltyComments';
 import NoveltyInteractionBar from './NoveltyInteractionBar';
 import type { Novelty } from '@/hooks/useNovelties';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 
 interface NoveltyCardProps {
   novelty: Novelty;
@@ -174,21 +175,24 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
               }}
               className="flex items-center gap-3 hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
             >
-              {exhibitor.logo_url ? (
-                <div className="w-8 h-8 rounded bg-white flex items-center justify-center flex-shrink-0 border">
-                  <img
-                    src={exhibitor.logo_url}
-                    alt={exhibitor.name}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                  <span className="text-xs font-medium">
-                    {exhibitor.name.charAt(0)}
-                  </span>
-                </div>
-              )}
+              {(() => {
+                const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, (exhibitor as any).website);
+                return resolvedLogo ? (
+                  <div className="w-8 h-8 rounded bg-white flex items-center justify-center flex-shrink-0 border">
+                    <img
+                      src={resolvedLogo}
+                      alt={exhibitor.name}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                    <span className="text-xs font-medium">
+                      {exhibitor.name.charAt(0)}
+                    </span>
+                  </div>
+                );
+              })()}
               <div className="flex flex-col items-start">
                 <span className="font-medium text-sm hover:underline">
                   {exhibitor.name}

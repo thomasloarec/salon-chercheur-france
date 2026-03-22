@@ -8,6 +8,7 @@ import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -175,19 +176,22 @@ export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
           <div className="space-y-2">
             {/* Exposant avec logo */}
             <div className="flex items-center gap-2">
-              {exhibitor.logo_url ? (
-                <div className="w-6 h-6 rounded bg-white flex items-center justify-center flex-shrink-0 border">
-                  <img
-                    src={exhibitor.logo_url}
-                    alt={exhibitor.name}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
-                  <Building2 className="h-3 w-3 text-muted-foreground" />
-                </div>
-              )}
+              {(() => {
+                const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, (exhibitor as any).website);
+                return resolvedLogo ? (
+                  <div className="w-6 h-6 rounded bg-white flex items-center justify-center flex-shrink-0 border">
+                    <img
+                      src={resolvedLogo}
+                      alt={exhibitor.name}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
+                    <Building2 className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                );
+              })()}
               <span className="text-sm font-medium text-foreground truncate">
                 {exhibitor.name}
               </span>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Building2, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { normalizeStandNumber } from '@/utils/standUtils';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 
 interface Exhibitor {
   id_exposant: string;
@@ -225,19 +226,22 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                     onClick={() => onSelect(ex)}
                   >
                     <div className="flex items-center gap-3">
-                      {ex.logo_url ? (
-                        <div className="h-10 w-10 rounded bg-white border flex items-center justify-center flex-shrink-0 p-0.5">
-                          <img
-                            src={ex.logo_url}
-                            alt={displayName}
-                            className="max-w-full max-h-full object-contain"
-                          />
-                        </div>
-                      ) : (
-                        <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                          <Building2 className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      )}
+                      {(() => {
+                        const resolvedLogo = getExhibitorLogoUrl(ex.logo_url, ex.website_exposant);
+                        return resolvedLogo ? (
+                          <div className="h-10 w-10 rounded bg-white border flex items-center justify-center flex-shrink-0 p-0.5">
+                            <img
+                              src={resolvedLogo}
+                              alt={displayName}
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        );
+                      })()}
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">{displayName}</div>
                         {ex.stand_exposant && (

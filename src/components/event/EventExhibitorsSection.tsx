@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Building2, ExternalLink } from 'lucide-react';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExhibitorsModal } from './ExhibitorsModal';
@@ -15,6 +16,7 @@ interface Exhibitor {
   website_exposant?: string;
   exposant_description?: string;
   urlexpo_event?: string;
+  logo_url?: string;
 }
 
 interface EventExhibitorsSectionProps {
@@ -182,9 +184,22 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
                   onClick={() => setSelectedExhibitor(exhibitor)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
+                    {(() => {
+                      const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website_exposant);
+                      return resolvedLogo ? (
+                        <div className="h-10 w-10 rounded bg-white border flex items-center justify-center flex-shrink-0 p-0.5">
+                          <img
+                            src={resolvedLogo}
+                            alt={exhibitor.exhibitor_name}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      );
+                    })()}
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{exhibitor.exhibitor_name}</div>
                       {exhibitor.stand_exposant && (

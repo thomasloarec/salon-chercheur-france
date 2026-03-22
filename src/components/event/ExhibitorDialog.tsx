@@ -12,6 +12,7 @@ import { fr } from 'date-fns/locale';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
 import { normalizeExternalUrl } from '@/lib/url';
 import { normalizeStandNumber } from '@/utils/standUtils';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 
 interface ExhibitorDialogProps {
   exhibitor: {
@@ -61,19 +62,22 @@ export function ExhibitorDialog({
 
           {/* PARTIE HAUTE : En-tête avec logo et nom */}
           <div className="flex items-start gap-4">
-            {exhibitor.logo_url ? (
-              <div className="w-20 h-20 rounded-lg bg-white border flex items-center justify-center flex-shrink-0 p-1">
-                <img
-                  src={exhibitor.logo_url}
-                  alt={exhibitor.name}
-                  className="max-w-full max-h-full object-contain"
-                />
-              </div>
-            ) : (
-              <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                <Building2 className="h-10 w-10 text-muted-foreground" />
-              </div>
-            )}
+            {(() => {
+              const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website);
+              return resolvedLogo ? (
+                <div className="w-20 h-20 rounded-lg bg-white border flex items-center justify-center flex-shrink-0 p-1">
+                  <img
+                    src={resolvedLogo}
+                    alt={exhibitor.name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Building2 className="h-10 w-10 text-muted-foreground" />
+                </div>
+              );
+            })()}
             <div className="flex-1 min-w-0">
               <h2 className="text-2xl font-bold mb-1 break-words">
                 {exhibitor.name}
