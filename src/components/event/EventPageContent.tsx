@@ -186,6 +186,27 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
             
+            {/* Préparer ma visite - shown when >= 80 exhibitors and event not past */}
+            {exhibitorCount >= 80 && !isEventPast && (
+              <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Préparez votre visite avec l'IA</p>
+                    <p className="text-xs text-muted-foreground">
+                      Notre assistant analyse les {exhibitorCount} exposants pour créer votre parcours personnalisé
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={() => setPrepareVisitOpen(true)} className="gap-2 whitespace-nowrap">
+                  <Sparkles className="w-4 h-4" />
+                  Préparer ma visite
+                </Button>
+              </div>
+            )}
+
             <div className="grid grid-cols-12 gap-6">
               {/* Colonne gauche - Nouveautés */}
               <div className="col-span-12 lg:col-span-8">
@@ -211,6 +232,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
         <Footer />
       </div>
+
+      {/* Prepare Visit Wizard */}
+      <PrepareVisitWizard
+        open={prepareVisitOpen}
+        onOpenChange={setPrepareVisitOpen}
+        event={event}
+        exhibitorCount={exhibitorCount}
+      />
     </>
   );
 };
