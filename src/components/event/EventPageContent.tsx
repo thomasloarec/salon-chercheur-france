@@ -38,7 +38,17 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
-  
+  const [prepareVisitOpen, setPrepareVisitOpen] = useState(false);
+
+  // Get exhibitor count to conditionally show "Préparer ma visite" button
+  const { data: exhibitorsData } = useExhibitorsByEvent(
+    event.slug || '',
+    undefined,
+    1,
+    0,
+    event.id_event
+  );
+  const exhibitorCount = exhibitorsData?.total || 0;
   const isEventPast = useMemo(() => {
     const endDate = event.date_fin || event.date_debut;
     if (!endDate) return false;
