@@ -219,6 +219,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     try {
       if (!user) {
         // Scenario 4: Not logged in - store in localStorage
+        const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
+        const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
         storePendingVisitPlan({
           event_id: event.id,
           event_slug: event.slug || '',
@@ -226,8 +228,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
           objectif: objective,
           keywords,
           duration,
-          prioritaires: results.prioritaires,
-          optionnels: results.optionnels,
+          prioritaires: filteredPrioritaires,
+          optionnels: filteredOptionnels,
         });
         navigate('/auth?tab=signup');
         return;
