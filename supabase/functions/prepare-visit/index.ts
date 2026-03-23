@@ -76,6 +76,38 @@ function parseClaudeRecommendations(rawContent: string): { results: any[] } {
   }
 }
 
+async function fetchAiRowsInBatches(
+  supabase: ReturnType<typeof createClient>,
+  ids: string[],
+): Promise<Record<string, any>> {
+  const aiData: Record<string, any> = {};
+  if (ids.length === 0) return aiData;
+
+  const batchSize = 500;
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += batchSize) {
+    batches.push(ids.slice(i, i + batchSize));
+  }
+
+  const batchResults = await Promise.all(
+    batches.map((batch) =>
+      supabase
+        .from("exhibitor_ai")
+        .select("exhibitor_id, secteur_principal, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
+        .in("exhibitor_id", batch)
+        .range(0, 4999),
+    ),
+  );
+
+  batchResults.forEach(({ data: aiRows }) => {
+    aiRows?.forEach((row) => {
+      aiData[row.exhibitor_id] = row;
+    });
+  });
+
+  return aiData;
+}
+
 function scoreExhibitor(
   ex: any,
   userRole: string,
@@ -158,7 +190,7 @@ Deno.serve(async (req) => {
       .from("participation")
       .select("exhibitor_id, id_exposant")
       .eq("id_event_text", eventData.id_event)
-      .range(0, 4999);
+      .range(0, 1999);
 
     if (!participations || participations.length === 0) {
       return new Response(
@@ -176,56 +208,48 @@ Deno.serve(async (req) => {
       .map((p) => p.id_exposant) as string[];
 
     // --- FETCH EXHIBITORS (parallel) ---
-    let modernExhibitors: any[] = [];
-    let legacyExhibitors: any[] = [];
-
-    const fetchModern = async () => {
-      if (modernIds.length === 0) return;
+    const fetchModernExhibitors = async () => {
+      if (modernIds.length === 0) return [] as any[];
       const { data } = await supabase
         .from("exhibitors")
         .select("id, name, description, website, logo_url")
         .in("id", modernIds)
         .range(0, 4999);
-      modernExhibitors = data || [];
+      return data || [];
     };
 
-    const fetchLegacy = async () => {
-      if (legacyIds.length === 0) return;
+    const fetchLegacyExposants = async () => {
+      if (legacyIds.length === 0) return [] as any[];
       const batchSize = 500;
+      const batches: string[][] = [];
       for (let i = 0; i < legacyIds.length; i += batchSize) {
-        const batch = legacyIds.slice(i, i + batchSize);
-        const { data } = await supabase
-          .from("exposants")
-          .select("id, id_exposant, nom_exposant, exposant_description, website_exposant")
-          .in("id_exposant", batch)
-          .range(0, 4999);
-        if (data) legacyExhibitors.push(...data);
+        batches.push(legacyIds.slice(i, i + batchSize));
       }
+
+      const results = await Promise.all(
+        batches.map((batch) =>
+          supabase
+            .from("exposants")
+            .select("id, id_exposant, nom_exposant, exposant_description, website_exposant")
+            .in("id_exposant", batch)
+            .range(0, 4999),
+        ),
+      );
+
+      return results.flatMap(({ data }) => data || []);
     };
 
-    await Promise.all([fetchModern(), fetchLegacy()]);
+    const [modernExhibitors, legacyExhibitors, modernAiData] = await Promise.all([
+      fetchModernExhibitors(),
+      fetchLegacyExposants(),
+      fetchAiRowsInBatches(supabase, modernIds),
+    ]);
 
-    // --- FETCH AI ENRICHMENT ---
-    const aiLookupIds: string[] = [
-      ...modernExhibitors.map((e) => e.id),
-      ...legacyExhibitors.map((e) => String(e.id)),
-    ];
-
-    const aiData: Record<string, any> = {};
-    if (aiLookupIds.length > 0) {
-      const batchSize = 500;
-      for (let i = 0; i < aiLookupIds.length; i += batchSize) {
-        const batch = aiLookupIds.slice(i, i + batchSize);
-        const { data: aiRows } = await supabase
-          .from("exhibitor_ai")
-          .select("exhibitor_id, secteur_principal, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
-          .in("exhibitor_id", batch)
-          .range(0, 4999);
-        if (aiRows) {
-          aiRows.forEach((row) => { aiData[row.exhibitor_id] = row; });
-        }
-      }
-    }
+    const legacyAiData = await fetchAiRowsInBatches(
+      supabase,
+      legacyExhibitors.map((e) => String(e.id)),
+    );
+    const aiData = { ...modernAiData, ...legacyAiData };
 
     // --- MERGE INTO UNIFIED LIST ---
     const seenIds = new Set<string>();
@@ -327,7 +351,7 @@ Ne jamais inventer d'informations absentes des données fournies.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 6000,
         messages: [{ role: "user", content: prompt }],
       }),
