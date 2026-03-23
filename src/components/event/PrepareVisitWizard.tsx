@@ -657,21 +657,32 @@ function RecommendationCard({
   rec,
   variant,
   eventId,
+  checked,
+  onCheckedChange,
 }: {
   rec: Recommendation;
   variant: 'primary' | 'secondary';
   eventId: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
 }) {
   const logoUrl = getExhibitorLogoUrl(rec.logo_url, rec.website);
+  const standNumber = normalizeStandNumber(rec.stand);
 
   return (
     <div
       className={cn(
         'rounded-xl border p-4 flex flex-col gap-3 transition-shadow hover:shadow-md',
-        variant === 'primary' ? 'bg-background' : 'bg-muted/30'
+        variant === 'primary' ? 'bg-background' : 'bg-muted/30',
+        !checked && 'opacity-50'
       )}
     >
       <div className="flex items-start gap-3">
+        <Checkbox
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          className="mt-1 flex-shrink-0"
+        />
         <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
           {logoUrl ? (
             <img src={logoUrl} alt={rec.name} className="w-full h-full object-contain" />
@@ -683,6 +694,9 @@ function RecommendationCard({
           <p className="font-semibold text-sm leading-tight">{rec.name}</p>
           {rec.secteur_principal && (
             <p className="text-xs text-muted-foreground mt-0.5">{rec.secteur_principal}</p>
+          )}
+          {standNumber && (
+            <p className="text-xs text-muted-foreground mt-0.5">Stand {standNumber}</p>
           )}
         </div>
       </div>
