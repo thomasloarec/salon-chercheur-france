@@ -328,11 +328,107 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     };
   };
 
+  // After successful auth, auto-save the visit plan
+  useEffect(() => {
+    if (user && step === 'auth' && results) {
+      // User just authenticated — save automatically
+      const autoSave = async () => {
+        setSaving(true);
+        try {
+          if (!isFavorited) {
+            await toggleFavorite(event.id);
+          }
+          const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
+          const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
+          await saveVisitPlan.mutateAsync({
+            event_id: event.id,
+            role,
+            objectif: objective,
+            keywords,
+            duration,
+            prioritaires: filteredPrioritaires,
+            optionnels: filteredOptionnels,
+          });
+          toast({ title: 'Salon ajouté à votre agenda avec votre liste personnalisée ✓' });
+          setBannerDismissed(true);
+          setStep('results');
+        } catch (err: any) {
+          console.error('Auto-save after auth error:', err);
+          toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+          setStep('results');
+        } finally {
+          setSaving(false);
+        }
+      };
+      autoSave();
+    }
+  }, [user, step]);
+
+  const handleInlineSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    const { error } = await signIn(authEmail, authPassword);
+    if (error) {
+      setAuthError(error.message.includes('Invalid login credentials') ? 'Email ou mot de passe incorrect' : error.message);
+    }
+    setAuthLoading(false);
+  };
+
+  const handleInlineSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthMessage('');
+    if (authPassword !== authConfirmPassword) {
+      setAuthError('Les mots de passe ne correspondent pas');
+      setAuthLoading(false);
+      return;
+    }
+    if (authPassword.length < 6) {
+      setAuthError('Le mot de passe doit contenir au moins 6 caractères');
+      setAuthLoading(false);
+      return;
+    }
+    const { error } = await signUp(authEmail, authPassword);
+    if (error) {
+      setAuthError(error.message.includes('User already registered') ? 'Un compte avec cet email existe déjà' : error.message);
+    } else {
+      triggerOnboarding();
+      setAuthMessage('Compte créé ! Vérifiez votre email pour confirmer votre inscription.');
+    }
+    setAuthLoading(false);
+  };
+
+  const handleInlineGoogleSignIn = async () => {
+    // Store pending plan before OAuth redirect (Google requires page redirect)
+    if (results) {
+      const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
+      const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
+      storePendingVisitPlan({
+        event_id: event.id,
+        event_slug: event.slug || '',
+        role,
+        objectif: objective,
+        keywords,
+        duration,
+        prioritaires: filteredPrioritaires,
+        optionnels: filteredOptionnels,
+      });
+    }
+    triggerOnboarding();
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+  };
+
   const bannerConfig = getBannerConfig();
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleReset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0" aria-describedby={undefined}>
+        <VisuallyHidden><DialogTitle>Préparer ma visite</DialogTitle></VisuallyHidden>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
           <div className="flex items-center gap-3">
