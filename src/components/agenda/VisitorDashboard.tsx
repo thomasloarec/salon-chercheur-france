@@ -330,6 +330,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
 // Compact exhibitor row for visit plan display
 function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string; eventId: string }) {
   const logoUrl = getExhibitorLogoUrl(rec.logo_url || null, rec.website || null);
+  const standNumber = rec.stand ? normalizeStandNumber(rec.stand) : null;
 
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
@@ -342,6 +343,9 @@ function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm leading-tight">{rec.name}</p>
+        {standNumber && (
+          <p className="text-xs text-muted-foreground mt-0.5">Stand {standNumber}</p>
+        )}
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.raison}</p>
       </div>
     </div>
