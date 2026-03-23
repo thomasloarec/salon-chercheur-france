@@ -86,7 +86,17 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [loadingComplete, setLoadingComplete] = useState(false);
 
-  const { user } = useAuth();
+  // Inline auth state
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
+  const [authTab, setAuthTab] = useState<'signin' | 'signup'>('signup');
+  const [authShowPassword, setAuthShowPassword] = useState(false);
+  const [authShowConfirmPassword, setAuthShowConfirmPassword] = useState(false);
+
   const navigate = useNavigate();
   const { data: existingPlan } = useVisitPlan(event.id);
   const { data: favoriteEvents = [] } = useFavoriteEvents();
