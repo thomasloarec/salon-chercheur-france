@@ -52,7 +52,7 @@ const OBJECTIVES = [
 
 const DURATIONS = ['2h', 'Demi-journée', 'Journée complète'];
 
-type Step = 1 | 2 | 3 | 'loading' | 'results';
+type Step = 1 | 2 | 3 | 'loading' | 'results' | 'auth';
 
 interface Recommendation {
   exhibitor_id: string;
