@@ -507,7 +507,11 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
           {/* LOADING */}
           {step === 'loading' && (
-            <LoadingScreen exhibitorCount={exhibitorCount} />
+            <LoadingScreen
+              exhibitorCount={exhibitorCount}
+              complete={loadingComplete}
+              onComplete={() => setStep('results')}
+            />
           )}
 
           {/* RESULTS */}
