@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
     let exhibitorUUIDs: Record<string, string> = {}
     let exhibitorData: Record<string, { logo_url?: string; description?: string; website?: string }> = {}
     let legacyExposantData: Record<string, { website?: string; description?: string }> = {}
+    let aiData: Record<string, string> = {} // exhibitor_id (text) -> resume_court
 
     if (participationIds.length > 0) {
       // Récupérer les exhibitor_id depuis participation
@@ -151,6 +152,33 @@ Deno.serve(async (req) => {
             })
           }
         }
+
+        // Récupérer resume_court depuis exhibitor_ai pour tous les exposants
+        // exhibitor_ai.exhibitor_id peut être un UUID (modern) ou un integer casté en text (legacy)
+        const allAiIds = [
+          ...uuids,
+          ...legacyIds.map(id => id) // id_exposant are already text
+        ].filter(Boolean)
+
+        if (allAiIds.length > 0) {
+          // Fetch in batches of 200 to avoid URL length limits
+          for (let i = 0; i < allAiIds.length; i += 200) {
+            const batch = allAiIds.slice(i, i + 200)
+            const { data: aiRows } = await supabase
+              .from('exhibitor_ai')
+              .select('exhibitor_id, resume_court')
+              .in('exhibitor_id', batch)
+              .not('resume_court', 'is', null)
+
+            if (aiRows) {
+              aiRows.forEach(row => {
+                if (row.resume_court) {
+                  aiData[row.exhibitor_id] = row.resume_court
+                }
+              })
+            }
+          }
+        }
       }
     }
 
@@ -160,12 +188,19 @@ Deno.serve(async (req) => {
       const enrichedData = exhibitorUUID ? exhibitorData[exhibitorUUID] : undefined
       const legacyData = p.id_exposant ? legacyExposantData[p.id_exposant] : undefined
 
+      // Récupérer le resume_court de exhibitor_ai si disponible
+      const aiResumeId = exhibitorUUID || p.id_exposant || ''
+      const aiResumeCourt = aiData[aiResumeId] || null
+
       // ✅ CORRECTION CRITIQUE : Mapper vers noms LEGACY pour compatibilité frontend
       return {
         // Identifiants
         id_exposant: p.id_exposant || exhibitorUUID || String(p.exhibitor_uuid || ''),
         exhibitor_uuid: exhibitorUUID,
         exhibitor_name: p.exhibitor_name || p.name_final || '',
+        
+        // ✅ Description IA prioritaire
+        ai_resume_court: aiResumeCourt,
         
         // ✅ MAPPING MODERNE → LEGACY (avec cascade de fallback)
         exposant_description: enrichedData?.description       // exhibitors.description

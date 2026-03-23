@@ -27,6 +27,8 @@ interface Exhibitor {
   exhibitor_uuid?: string;
   description_final?: string;
   website_final?: string;
+  // AI enrichment
+  ai_resume_court?: string;
 }
 
 interface ExhibitorDetailDialogProps {
@@ -42,9 +44,9 @@ const getDisplayName = (exhibitor: Exhibitor): string => {
   return exhibitor.name_final || exhibitor.exhibitor_name || exhibitor.legacy_name || '';
 };
 
-// Récupère la description
+// Récupère la description — priorité : AI resume_court > description_final > exposant_description
 const getDescription = (exhibitor: Exhibitor): string | undefined => {
-  return exhibitor.description_final || exhibitor.exposant_description;
+  return exhibitor.ai_resume_court || exhibitor.description_final || exhibitor.exposant_description;
 };
 
 // Récupère le website
