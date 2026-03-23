@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useVisitPlansForUser, VisitPlan } from '@/hooks/useVisitPlan';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
 
 const NOVELTY_TYPE_LABELS = {
