@@ -77,7 +77,7 @@ function parseClaudeRecommendations(rawContent: string): { results: any[] } {
 }
 
 async function fetchAiRowsInBatches(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   ids: string[],
 ): Promise<Record<string, any>> {
   const aiData: Record<string, any> = {};
@@ -99,8 +99,8 @@ async function fetchAiRowsInBatches(
     ),
   );
 
-  batchResults.forEach(({ data: aiRows }) => {
-    aiRows?.forEach((row) => {
+  batchResults.forEach(({ data: aiRows }: { data: any[] | null }) => {
+    aiRows?.forEach((row: any) => {
       aiData[row.exhibitor_id] = row;
     });
   });
