@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2 } from 'lucide-react';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
@@ -78,6 +79,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [saving, setSaving] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [loadingComplete, setLoadingComplete] = useState(false);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -163,6 +165,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setStep('loading');
     setError(null);
     setBannerDismissed(false);
+    setLoadingComplete(false);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('prepare-visit', {
@@ -179,13 +182,13 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
       if (data?.error) throw new Error(data.error);
 
       setResults(data);
-      // Check all exhibitors by default
       const allIds = new Set([
         ...(data.prioritaires || []).map((r: Recommendation) => r.exhibitor_id),
         ...(data.optionnels || []).map((r: Recommendation) => r.exhibitor_id),
       ]);
       setCheckedIds(allIds);
-      setStep('results');
+      // Signal completion → LoadingScreen animates to 100%, then we transition
+      setLoadingComplete(true);
     } catch (err: any) {
       console.error('Prepare visit error:', err);
       setError(err.message || 'Une erreur est survenue');
@@ -210,6 +213,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setError(null);
     setBannerDismissed(false);
     setCheckedIds(new Set());
+    setLoadingComplete(false);
   };
 
   const handleSave = async (replace = false) => {
@@ -504,23 +508,11 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
           {/* LOADING */}
           {step === 'loading' && (
-            <div className="flex flex-col items-center justify-center py-16 gap-6">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-                  <Sparkles className="w-8 h-8 text-primary animate-spin" style={{ animationDuration: '3s' }} />
-                </div>
-              </div>
-              <div className="text-center space-y-2">
-                <p className="font-semibold text-lg">Analyse en cours…</p>
-                <p className="text-sm text-muted-foreground">
-                  Notre assistant IA analyse les {exhibitorCount} exposants du salon pour votre profil…
-                </p>
-              </div>
-              <div className="w-48 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full animate-[loading_2s_ease-in-out_infinite]" 
-                  style={{ width: '60%', animation: 'loading 2s ease-in-out infinite' }} />
-              </div>
-            </div>
+            <LoadingScreen
+              exhibitorCount={exhibitorCount}
+              complete={loadingComplete}
+              onComplete={() => setStep('results')}
+            />
           )}
 
           {/* RESULTS */}
@@ -649,6 +641,91 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+// --- Loading Screen ---
+const LOADING_STEPS = [
+  { threshold: 0, message: 'Analyse du salon…', icon: Search },
+  { threshold: 20, message: 'Identification des exposants les plus pertinents…', icon: Users },
+  { threshold: 45, message: 'Évaluation de la pertinence selon votre profil…', icon: BarChart3 },
+  { threshold: 70, message: 'Priorisation des exposants recommandés…', icon: Sparkles },
+  { threshold: 88, message: 'Finalisation de votre sélection personnalisée…', icon: CheckCircle2 },
+];
+
+function LoadingScreen({ exhibitorCount, complete, onComplete }: { exhibitorCount: number; complete: boolean; onComplete: () => void }) {
+  const [progress, setProgress] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completeRef = useRef(false);
+
+  // Simulated progression
+  useEffect(() => {
+    let elapsed = 0;
+    intervalRef.current = setInterval(() => {
+      elapsed += 200;
+      setProgress((prev) => {
+        if (completeRef.current) return prev; // handled by completion effect
+        if (prev >= 93) return prev;
+        const seconds = elapsed / 1000;
+        if (seconds < 2) return Math.min(seconds * 12, 24);
+        if (seconds < 5) return 24 + (seconds - 2) * 8;
+        if (seconds < 10) return 48 + (seconds - 5) * 5.6;
+        if (seconds < 15) return 76 + (seconds - 10) * 2.4;
+        if (seconds < 25) return 88 + (seconds - 15) * 0.5;
+        return 93;
+      });
+    }, 200);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  // When backend responds → animate to 100% then transition
+  useEffect(() => {
+    if (!complete) return;
+    completeRef.current = true;
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    // Quick ramp to 100%
+    setProgress(100);
+    const timer = setTimeout(() => onComplete(), 500);
+    return () => clearTimeout(timer);
+  }, [complete, onComplete]);
+
+  const currentStep = [...LOADING_STEPS].reverse().find((s) => progress >= s.threshold) || LOADING_STEPS[0];
+  const StepIcon = currentStep.icon;
+
+  return (
+    <div className="flex flex-col items-center justify-center py-14 gap-8 px-4">
+      <div className="relative">
+        <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Sparkles className="w-9 h-9 text-primary animate-pulse" />
+        </div>
+        <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg">
+          <span className="text-[10px] font-bold text-primary-foreground">{Math.round(progress)}%</span>
+        </div>
+      </div>
+
+      <div className="text-center space-y-2 max-w-sm">
+        <h3 className="text-lg font-semibold">Préparation de votre visite en cours</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Nous analysons les {exhibitorCount} exposants du salon pour vous proposer une sélection personnalisée.
+        </p>
+      </div>
+
+      <div className="w-full max-w-xs space-y-3">
+        <Progress value={progress} className="h-2.5" />
+        <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium min-h-[1.5rem]">
+          <StepIcon className="w-4 h-4 flex-shrink-0" />
+          <span className="text-center">{currentStep.message}</span>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground/70 text-center max-w-xs">
+        Les grands salons peuvent demander quelques secondes supplémentaires.
+      </p>
+    </div>
   );
 }
 
