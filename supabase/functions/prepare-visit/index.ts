@@ -16,6 +16,66 @@ const OBJECTIVE_KEYWORDS: Record<string, string> = {
   "Découvrir les innovations du marché": "veille_techno",
 };
 
+function stripCodeFences(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("```")) return trimmed;
+
+  return trimmed
+    .replace(/^```(?:json)?\n?/, "")
+    .replace(/\n?```$/, "")
+    .trim();
+}
+
+function salvageClaudeResults(rawContent: string): { results: any[] } | null {
+  const jsonStr = stripCodeFences(rawContent);
+  const resultsKeyIndex = jsonStr.indexOf('"results"');
+  const arrayStartIndex = resultsKeyIndex >= 0 ? jsonStr.indexOf("[", resultsKeyIndex) : -1;
+  const lastCompleteObjectIndex = jsonStr.lastIndexOf("}");
+
+  if (arrayStartIndex >= 0 && lastCompleteObjectIndex > arrayStartIndex) {
+    const objectsChunk = jsonStr
+      .slice(arrayStartIndex + 1, lastCompleteObjectIndex + 1)
+      .replace(/,\s*$/, "")
+      .trim();
+
+    if (objectsChunk) {
+      const repairedJson = `{"results":[${objectsChunk}]}`;
+      try {
+        return JSON.parse(repairedJson);
+      } catch {
+        // Continue with object-level salvage below.
+      }
+    }
+  }
+
+  const objectMatches = jsonStr.match(/\{\s*"exhibitor_id"\s*:\s*"(?:\\.|[^"\\])+"\s*,\s*"raison"\s*:\s*"(?:\\.|[^"\\])*"\s*,\s*"priority"\s*:\s*"(?:high|medium)"\s*\}/g) || [];
+  const recoveredResults = objectMatches.flatMap((match) => {
+    try {
+      return [JSON.parse(match)];
+    } catch {
+      return [];
+    }
+  });
+
+  return recoveredResults.length > 0 ? { results: recoveredResults } : null;
+}
+
+function parseClaudeRecommendations(rawContent: string): { results: any[] } {
+  const jsonStr = stripCodeFences(rawContent);
+
+  try {
+    return JSON.parse(jsonStr);
+  } catch {
+    const salvaged = salvageClaudeResults(rawContent);
+    if (salvaged) {
+      console.warn(`prepare-visit: Claude JSON repaired with ${salvaged.results.length} result(s)`);
+      return salvaged;
+    }
+
+    throw new Error("Failed to parse AI response");
+  }
+}
+
 function scoreExhibitor(
   ex: any,
   userRole: string,
@@ -230,8 +290,6 @@ Deno.serve(async (req) => {
     const exhibitorsForPrompt = top30.map((ex) => ({
       id: ex.id, name: ex.name,
       secteur_principal: ex.secteur_principal,
-      produits_services: ex.produits_services,
-      mots_cles_metier: ex.mots_cles_metier,
       resume_court: ex.resume_court || ex.description || null,
     }));
 
@@ -270,7 +328,7 @@ Ne jamais inventer d'informations absentes des données fournies.`;
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 3000,
+        max_tokens: 6000,
         messages: [{ role: "user", content: prompt }],
       }),
       signal: controller.signal,
@@ -303,11 +361,7 @@ Ne jamais inventer d'informations absentes des données fournies.`;
     // --- PARSE RESPONSE ---
     let recommendations;
     try {
-      let jsonStr = rawContent.trim();
-      if (jsonStr.startsWith("```")) {
-        jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-      }
-      recommendations = JSON.parse(jsonStr);
+      recommendations = parseClaudeRecommendations(rawContent);
     } catch {
       console.error("Failed to parse AI response:", rawContent.slice(0, 500));
       return new Response(
