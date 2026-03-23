@@ -97,7 +97,8 @@ Deno.serve(async (req) => {
     const { data: participations } = await supabase
       .from("participation")
       .select("exhibitor_id, id_exposant")
-      .eq("id_event_text", eventData.id_event);
+      .eq("id_event_text", eventData.id_event)
+      .range(0, 4999);
 
     if (!participations || participations.length === 0) {
       return new Response(
@@ -123,7 +124,8 @@ Deno.serve(async (req) => {
       const { data } = await supabase
         .from("exhibitors")
         .select("id, name, description, website, logo_url")
-        .in("id", modernIds);
+        .in("id", modernIds)
+        .range(0, 4999);
       modernExhibitors = data || [];
     };
 
@@ -135,7 +137,8 @@ Deno.serve(async (req) => {
         const { data } = await supabase
           .from("exposants")
           .select("id, id_exposant, nom_exposant, exposant_description, website_exposant")
-          .in("id_exposant", batch);
+          .in("id_exposant", batch)
+          .range(0, 4999);
         if (data) legacyExhibitors.push(...data);
       }
     };
@@ -156,7 +159,8 @@ Deno.serve(async (req) => {
         const { data: aiRows } = await supabase
           .from("exhibitor_ai")
           .select("exhibitor_id, secteur_principal, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
-          .in("exhibitor_id", batch);
+          .in("exhibitor_id", batch)
+          .range(0, 4999);
         if (aiRows) {
           aiRows.forEach((row) => { aiData[row.exhibitor_id] = row; });
         }
@@ -255,7 +259,7 @@ Marque "high" les 12 meilleurs, "medium" les autres.
 Ne jamais inventer d'informations absentes des données fournies.`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
+    const timeout = setTimeout(() => controller.abort(), 55000);
 
     const aiResponse = await fetch(ANTHROPIC_API_URL, {
       method: "POST",
