@@ -193,7 +193,7 @@ Deno.serve(async (req) => {
       });
 
       scored.sort((a, b) => b._score - a._score);
-      enrichedExhibitors = scored.slice(0, 100).map(({ _score, ...rest }) => rest);
+      enrichedExhibitors = scored.slice(0, 60).map(({ _score, ...rest }) => rest);
     }
 
     // --- BUILD PROMPT ---
