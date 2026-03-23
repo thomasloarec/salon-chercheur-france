@@ -542,12 +542,15 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
               ) : results ? (
                 <>
                   {/* Summary banner */}
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-1">
                     <p className="text-sm font-medium">
                       Basé sur votre profil, voici les{' '}
                       <span className="text-primary font-bold">{results.prioritaires.length + results.optionnels.length}</span>{' '}
                       exposants à prioriser parmi les{' '}
                       <span className="font-bold">{results.totalExhibitors}</span> présents.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {checkedIds.size} exposant{checkedIds.size > 1 ? 's' : ''} sélectionné{checkedIds.size > 1 ? 's' : ''}
                     </p>
                   </div>
 
@@ -559,7 +562,21 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {results.prioritaires.map((rec) => (
-                          <RecommendationCard key={rec.exhibitor_id} rec={rec} variant="primary" eventId={event.id} />
+                          <RecommendationCard
+                            key={rec.exhibitor_id}
+                            rec={rec}
+                            variant="primary"
+                            eventId={event.id}
+                            checked={checkedIds.has(rec.exhibitor_id)}
+                            onCheckedChange={(checked) => {
+                              setCheckedIds(prev => {
+                                const next = new Set(prev);
+                                if (checked) next.add(rec.exhibitor_id);
+                                else next.delete(rec.exhibitor_id);
+                                return next;
+                              });
+                            }}
+                          />
                         ))}
                       </div>
                     </section>
@@ -573,7 +590,21 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {results.optionnels.map((rec) => (
-                          <RecommendationCard key={rec.exhibitor_id} rec={rec} variant="secondary" eventId={event.id} />
+                          <RecommendationCard
+                            key={rec.exhibitor_id}
+                            rec={rec}
+                            variant="secondary"
+                            eventId={event.id}
+                            checked={checkedIds.has(rec.exhibitor_id)}
+                            onCheckedChange={(checked) => {
+                              setCheckedIds(prev => {
+                                const next = new Set(prev);
+                                if (checked) next.add(rec.exhibitor_id);
+                                else next.delete(rec.exhibitor_id);
+                                return next;
+                              });
+                            }}
+                          />
                         ))}
                       </div>
                     </section>
