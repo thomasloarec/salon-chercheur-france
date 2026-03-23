@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
@@ -16,6 +20,7 @@ import { useVisitPlan, useSaveVisitPlan, storePendingVisitPlan } from '@/hooks/u
 import { toggleFavorite } from '@/utils/toggleFavorite';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { toast } from '@/hooks/use-toast';
+import { triggerOnboarding } from '@/hooks/useOnboarding';
 import type { Event } from '@/types/event';
 import { cn } from '@/lib/utils';
 
