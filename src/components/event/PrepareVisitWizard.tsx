@@ -165,6 +165,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setStep('loading');
     setError(null);
     setBannerDismissed(false);
+    setLoadingComplete(false);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('prepare-visit', {
@@ -181,13 +182,13 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
       if (data?.error) throw new Error(data.error);
 
       setResults(data);
-      // Check all exhibitors by default
       const allIds = new Set([
         ...(data.prioritaires || []).map((r: Recommendation) => r.exhibitor_id),
         ...(data.optionnels || []).map((r: Recommendation) => r.exhibitor_id),
       ]);
       setCheckedIds(allIds);
-      setStep('results');
+      // Signal completion → LoadingScreen animates to 100%, then we transition
+      setLoadingComplete(true);
     } catch (err: any) {
       console.error('Prepare visit error:', err);
       setError(err.message || 'Une erreur est survenue');
