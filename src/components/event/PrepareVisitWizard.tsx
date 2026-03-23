@@ -652,23 +652,25 @@ const LOADING_STEPS = [
   { threshold: 88, message: 'Finalisation de votre sélection personnalisée…', icon: CheckCircle2 },
 ];
 
-function LoadingScreen({ exhibitorCount }: { exhibitorCount: number }) {
+function LoadingScreen({ exhibitorCount, complete, onComplete }: { exhibitorCount: number; complete: boolean; onComplete: () => void }) {
   const [progress, setProgress] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completeRef = useRef(false);
 
+  // Simulated progression
   useEffect(() => {
     let elapsed = 0;
     intervalRef.current = setInterval(() => {
       elapsed += 200;
       setProgress((prev) => {
-        if (prev >= 93) return prev; // cap at 93 until real response
-        // Non-linear curve: fast start, gradual slowdown
+        if (completeRef.current) return prev; // handled by completion effect
+        if (prev >= 93) return prev;
         const seconds = elapsed / 1000;
-        if (seconds < 2) return Math.min(seconds * 12, 24); // 0→24 in 2s
-        if (seconds < 5) return 24 + (seconds - 2) * 8; // 24→48 in 3s
-        if (seconds < 10) return 48 + (seconds - 5) * 5.6; // 48→76 in 5s
-        if (seconds < 15) return 76 + (seconds - 10) * 2.4; // 76→88 in 5s
-        if (seconds < 25) return 88 + (seconds - 15) * 0.5; // 88→93 in 10s
+        if (seconds < 2) return Math.min(seconds * 12, 24);
+        if (seconds < 5) return 24 + (seconds - 2) * 8;
+        if (seconds < 10) return 48 + (seconds - 5) * 5.6;
+        if (seconds < 15) return 76 + (seconds - 10) * 2.4;
+        if (seconds < 25) return 88 + (seconds - 15) * 0.5;
         return 93;
       });
     }, 200);
@@ -678,12 +680,23 @@ function LoadingScreen({ exhibitorCount }: { exhibitorCount: number }) {
     };
   }, []);
 
+  // When backend responds → animate to 100% then transition
+  useEffect(() => {
+    if (!complete) return;
+    completeRef.current = true;
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    // Quick ramp to 100%
+    setProgress(100);
+    const timer = setTimeout(() => onComplete(), 500);
+    return () => clearTimeout(timer);
+  }, [complete, onComplete]);
+
   const currentStep = [...LOADING_STEPS].reverse().find((s) => progress >= s.threshold) || LOADING_STEPS[0];
   const StepIcon = currentStep.icon;
 
   return (
     <div className="flex flex-col items-center justify-center py-14 gap-8 px-4">
-      {/* Animated icon */}
       <div className="relative">
         <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
           <Sparkles className="w-9 h-9 text-primary animate-pulse" />
@@ -693,7 +706,6 @@ function LoadingScreen({ exhibitorCount }: { exhibitorCount: number }) {
         </div>
       </div>
 
-      {/* Title */}
       <div className="text-center space-y-2 max-w-sm">
         <h3 className="text-lg font-semibold">Préparation de votre visite en cours</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
@@ -701,7 +713,6 @@ function LoadingScreen({ exhibitorCount }: { exhibitorCount: number }) {
         </p>
       </div>
 
-      {/* Progress bar + percentage */}
       <div className="w-full max-w-xs space-y-3">
         <Progress value={progress} className="h-2.5" />
         <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium min-h-[1.5rem]">
@@ -710,7 +721,6 @@ function LoadingScreen({ exhibitorCount }: { exhibitorCount: number }) {
         </div>
       </div>
 
-      {/* Reassuring text */}
       <p className="text-xs text-muted-foreground/70 text-center max-w-xs">
         Les grands salons peuvent demander quelques secondes supplémentaires.
       </p>
