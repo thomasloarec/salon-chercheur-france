@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
@@ -16,6 +20,7 @@ import { useVisitPlan, useSaveVisitPlan, storePendingVisitPlan } from '@/hooks/u
 import { toggleFavorite } from '@/utils/toggleFavorite';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { toast } from '@/hooks/use-toast';
+import { triggerOnboarding } from '@/hooks/useOnboarding';
 import type { Event } from '@/types/event';
 import { cn } from '@/lib/utils';
 
@@ -47,7 +52,7 @@ const OBJECTIVES = [
 
 const DURATIONS = ['2h', 'Demi-journée', 'Journée complète'];
 
-type Step = 1 | 2 | 3 | 'loading' | 'results';
+type Step = 1 | 2 | 3 | 'loading' | 'results' | 'auth';
 
 interface Recommendation {
   exhibitor_id: string;
@@ -81,7 +86,18 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [loadingComplete, setLoadingComplete] = useState(false);
 
-  const { user } = useAuth();
+  // Inline auth state
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
+  const [authTab, setAuthTab] = useState<'signin' | 'signup'>('signup');
+  const [authShowPassword, setAuthShowPassword] = useState(false);
+  const [authShowConfirmPassword, setAuthShowConfirmPassword] = useState(false);
+
+  const { user, signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { data: existingPlan } = useVisitPlan(event.id);
   const { data: favoriteEvents = [] } = useFavoriteEvents();
@@ -222,20 +238,9 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
     try {
       if (!user) {
-        // Scenario 4: Not logged in - store in localStorage
-        const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
-        const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
-        storePendingVisitPlan({
-          event_id: event.id,
-          event_slug: event.slug || '',
-          role,
-          objectif: objective,
-          keywords,
-          duration,
-          prioritaires: filteredPrioritaires,
-          optionnels: filteredOptionnels,
-        });
-        navigate('/auth?tab=signup');
+        // Scenario 4: Not logged in — show inline auth step
+        setStep('auth');
+        setSaving(false);
         return;
       }
 
@@ -323,11 +328,107 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     };
   };
 
+  // After successful auth, auto-save the visit plan
+  useEffect(() => {
+    if (user && step === 'auth' && results) {
+      // User just authenticated — save automatically
+      const autoSave = async () => {
+        setSaving(true);
+        try {
+          if (!isFavorited) {
+            await toggleFavorite(event.id);
+          }
+          const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
+          const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
+          await saveVisitPlan.mutateAsync({
+            event_id: event.id,
+            role,
+            objectif: objective,
+            keywords,
+            duration,
+            prioritaires: filteredPrioritaires,
+            optionnels: filteredOptionnels,
+          });
+          toast({ title: 'Salon ajouté à votre agenda avec votre liste personnalisée ✓' });
+          setBannerDismissed(true);
+          setStep('results');
+        } catch (err: any) {
+          console.error('Auto-save after auth error:', err);
+          toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+          setStep('results');
+        } finally {
+          setSaving(false);
+        }
+      };
+      autoSave();
+    }
+  }, [user, step]);
+
+  const handleInlineSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    const { error } = await signIn(authEmail, authPassword);
+    if (error) {
+      setAuthError(error.message.includes('Invalid login credentials') ? 'Email ou mot de passe incorrect' : error.message);
+    }
+    setAuthLoading(false);
+  };
+
+  const handleInlineSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthMessage('');
+    if (authPassword !== authConfirmPassword) {
+      setAuthError('Les mots de passe ne correspondent pas');
+      setAuthLoading(false);
+      return;
+    }
+    if (authPassword.length < 6) {
+      setAuthError('Le mot de passe doit contenir au moins 6 caractères');
+      setAuthLoading(false);
+      return;
+    }
+    const { error } = await signUp(authEmail, authPassword);
+    if (error) {
+      setAuthError(error.message.includes('User already registered') ? 'Un compte avec cet email existe déjà' : error.message);
+    } else {
+      triggerOnboarding();
+      setAuthMessage('Compte créé ! Vérifiez votre email pour confirmer votre inscription.');
+    }
+    setAuthLoading(false);
+  };
+
+  const handleInlineGoogleSignIn = async () => {
+    // Store pending plan before OAuth redirect (Google requires page redirect)
+    if (results) {
+      const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
+      const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
+      storePendingVisitPlan({
+        event_id: event.id,
+        event_slug: event.slug || '',
+        role,
+        objectif: objective,
+        keywords,
+        duration,
+        prioritaires: filteredPrioritaires,
+        optionnels: filteredOptionnels,
+      });
+    }
+    triggerOnboarding();
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+  };
+
   const bannerConfig = getBannerConfig();
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleReset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0" aria-describedby={undefined}>
+        <VisuallyHidden><DialogTitle>Préparer ma visite</DialogTitle></VisuallyHidden>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
           <div className="flex items-center gap-3">
@@ -609,6 +710,122 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   </div>
                 </>
               ) : null}
+            </div>
+           )}
+
+          {/* AUTH STEP — inline login/signup */}
+          {step === 'auth' && (
+            <div className="space-y-6 max-w-md mx-auto">
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-semibold">Créez un compte pour sauvegarder votre liste</h3>
+                <p className="text-sm text-muted-foreground">
+                  Votre sélection personnalisée sera enregistrée dans votre agenda.
+                </p>
+              </div>
+
+              {/* Google button */}
+              <Button onClick={handleInlineGoogleSignIn} variant="outline" className="w-full flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Continuer avec Google
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                </div>
+              </div>
+
+              <Tabs value={authTab} onValueChange={(v) => { setAuthTab(v as 'signin' | 'signup'); setAuthError(''); setAuthMessage(''); }}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signin">Connexion</TabsTrigger>
+                  <TabsTrigger value="signup">Inscription</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="signin">
+                  <form onSubmit={handleInlineSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="wizard-signin-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input id="wizard-signin-email" type="email" placeholder="votre@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="pl-10" required />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="wizard-signin-password">Mot de passe</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input id="wizard-signin-password" type={authShowPassword ? 'text' : 'password'} placeholder="••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="pl-10 pr-10" required />
+                        <button type="button" onClick={() => setAuthShowPassword(!authShowPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground">
+                          {authShowPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={authLoading}>
+                      {authLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Se connecter
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="signup">
+                  <form onSubmit={handleInlineSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="wizard-signup-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input id="wizard-signup-email" type="email" placeholder="votre@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="pl-10" required />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="wizard-signup-password">Mot de passe</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input id="wizard-signup-password" type={authShowPassword ? 'text' : 'password'} placeholder="••••••••" value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="pl-10 pr-10" required />
+                        <button type="button" onClick={() => setAuthShowPassword(!authShowPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground">
+                          {authShowPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="wizard-signup-confirm">Confirmer le mot de passe</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input id="wizard-signup-confirm" type={authShowConfirmPassword ? 'text' : 'password'} placeholder="••••••••" value={authConfirmPassword} onChange={e => setAuthConfirmPassword(e.target.value)} className="pl-10 pr-10" required />
+                        <button type="button" onClick={() => setAuthShowConfirmPassword(!authShowConfirmPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground">
+                          {authShowConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={authLoading}>
+                      {authLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Créer un compte
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+
+              {authError && (
+                <Alert className="border-destructive/50 bg-destructive/5">
+                  <AlertDescription className="text-destructive">{authError}</AlertDescription>
+                </Alert>
+              )}
+              {authMessage && (
+                <Alert className="border-green-200 bg-green-50">
+                  <AlertDescription className="text-green-700">{authMessage}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex justify-center">
+                <Button variant="ghost" size="sm" onClick={() => setStep('results')}>
+                  <ArrowLeft className="mr-2 w-4 h-4" /> Retour aux résultats
+                </Button>
+              </div>
             </div>
           )}
         </div>
