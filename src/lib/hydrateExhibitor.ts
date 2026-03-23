@@ -25,9 +25,27 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
   });
 
   // Si toutes les données sont déjà présentes, pas besoin d'hydratation
-  if (light.exposant_description && light.website_exposant && light.logo_url) {
+  if (light.exposant_description && light.website_exposant && light.logo_url && light.ai_resume_court) {
     console.log('✅ Données déjà complètes, skip hydratation');
     return light;
+  }
+
+  // ============================================================================
+  // STRATÉGIE 0 : Chercher resume_court dans exhibitor_ai si manquant
+  // ============================================================================
+  if (!light.ai_resume_court) {
+    const aiLookupId = light.exhibitor_uuid || light.id_exposant;
+    if (aiLookupId) {
+      const { data: aiRow } = await supabase
+        .from('exhibitor_ai')
+        .select('resume_court')
+        .eq('exhibitor_id', aiLookupId)
+        .maybeSingle();
+      
+      if (aiRow?.resume_court) {
+        light = { ...light, ai_resume_court: aiRow.resume_court };
+      }
+    }
   }
 
   // ============================================================================
