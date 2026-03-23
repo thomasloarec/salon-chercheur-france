@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -9,7 +8,7 @@ const corsHeaders = {
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS")
     return new Response(null, { headers: corsHeaders });
 
@@ -44,7 +43,7 @@ serve(async (req) => {
       );
     }
 
-    // 2. Get participations for this event
+    // 2. Get ALL participations for this event
     const { data: participations } = await supabase
       .from("participation")
       .select("exhibitor_id, id_exposant")
@@ -57,43 +56,79 @@ serve(async (req) => {
       );
     }
 
-    // 3. Get exhibitor UUIDs
-    const exhibitorIds = participations
+    // Split into modern (exhibitor_id) and legacy (id_exposant only)
+    const modernIds = participations
       .map((p) => p.exhibitor_id)
       .filter(Boolean) as string[];
 
-    // 4. Fetch exhibitors data
-    let exhibitorsData: any[] = [];
-    if (exhibitorIds.length > 0) {
-      const { data: exhibitors } = await supabase
+    const legacyIds = participations
+      .filter((p) => !p.exhibitor_id && p.id_exposant)
+      .map((p) => p.id_exposant) as string[];
+
+    // --- GROUP A: Modern exhibitors ---
+    let modernExhibitors: any[] = [];
+    if (modernIds.length > 0) {
+      const { data } = await supabase
         .from("exhibitors")
         .select("id, name, description, website, logo_url")
-        .in("id", exhibitorIds);
-      exhibitorsData = exhibitors || [];
+        .in("id", modernIds);
+      modernExhibitors = data || [];
     }
 
-    // 5. Fetch AI data for exhibitors
-    let aiData: Record<string, any> = {};
-    if (exhibitorIds.length > 0) {
-      const { data: aiRows } = await supabase
-        .from("exhibitor_ai")
-        .select("exhibitor_id, secteur_principal, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
-        .in("exhibitor_id", exhibitorIds);
-
-      if (aiRows) {
-        aiRows.forEach((row) => {
-          aiData[row.exhibitor_id] = row;
-        });
+    // --- GROUP B: Legacy exhibitors ---
+    let legacyExhibitors: any[] = [];
+    if (legacyIds.length > 0) {
+      // Fetch in batches if needed (Supabase limit)
+      const batchSize = 500;
+      for (let i = 0; i < legacyIds.length; i += batchSize) {
+        const batch = legacyIds.slice(i, i + batchSize);
+        const { data } = await supabase
+          .from("exposants")
+          .select("id, id_exposant, nom_exposant, exposant_description, website_exposant")
+          .in("id_exposant", batch);
+        if (data) legacyExhibitors.push(...data);
       }
     }
 
-    // 6. Merge exhibitors with AI data
-    let enrichedExhibitors = exhibitorsData.map((ex) => {
-      const ai = aiData[ex.id] || {};
-      return {
-        id: ex.id,
+    // --- AI ENRICHMENT ---
+    // Collect all IDs to query exhibitor_ai
+    // Modern: exhibitor_id (uuid as text), Legacy: exposants.id (integer as text)
+    const aiLookupIds: string[] = [
+      ...modernExhibitors.map((e) => e.id),
+      ...legacyExhibitors.map((e) => String(e.id)),
+    ];
+
+    let aiData: Record<string, any> = {};
+    if (aiLookupIds.length > 0) {
+      const batchSize = 500;
+      for (let i = 0; i < aiLookupIds.length; i += batchSize) {
+        const batch = aiLookupIds.slice(i, i + batchSize);
+        const { data: aiRows } = await supabase
+          .from("exhibitor_ai")
+          .select("exhibitor_id, secteur_principal, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
+          .in("exhibitor_id", batch);
+        if (aiRows) {
+          aiRows.forEach((row) => {
+            aiData[row.exhibitor_id] = row;
+          });
+        }
+      }
+    }
+
+    // --- MERGE into unified list ---
+    const seenIds = new Set<string>();
+    let enrichedExhibitors: any[] = [];
+
+    // Add modern exhibitors
+    for (const ex of modernExhibitors) {
+      const key = ex.id;
+      if (seenIds.has(key)) continue;
+      seenIds.add(key);
+      const ai = aiData[key] || {};
+      enrichedExhibitors.push({
+        id: key,
         name: ex.name,
-        description: ex.description,
+        description: ex.description || "",
         website: ex.website,
         logo_url: ex.logo_url,
         secteur_principal: ai.secteur_principal || null,
@@ -102,24 +137,49 @@ serve(async (req) => {
         profils_visiteurs: ai.profils_visiteurs || [],
         type_interet: ai.type_interet || [],
         resume_court: ai.resume_court || null,
-      };
-    });
+      });
+    }
+
+    // Add legacy exhibitors (deduplicate by name against modern ones)
+    const modernNames = new Set(modernExhibitors.map((e) => (e.name || "").toLowerCase().trim()));
+    for (const ex of legacyExhibitors) {
+      const name = (ex.nom_exposant || "").trim();
+      if (!name) continue;
+      if (modernNames.has(name.toLowerCase())) continue;
+      const key = `legacy_${ex.id}`;
+      if (seenIds.has(key)) continue;
+      seenIds.add(key);
+      const ai = aiData[String(ex.id)] || {};
+      enrichedExhibitors.push({
+        id: ex.id_exposant || String(ex.id),
+        name,
+        description: ex.exposant_description || "",
+        website: ex.website_exposant,
+        logo_url: null,
+        secteur_principal: ai.secteur_principal || null,
+        produits_services: ai.produits_services || [],
+        mots_cles_metier: ai.mots_cles_metier || [],
+        profils_visiteurs: ai.profils_visiteurs || [],
+        type_interet: ai.type_interet || [],
+        resume_court: ai.resume_court || null,
+      });
+    }
 
     const totalExhibitors = enrichedExhibitors.length;
 
-    // 7. Pre-filter if > 150 exhibitors
+    console.log(`📊 prepare-visit: ${totalExhibitors} exhibitors total (${modernExhibitors.length} modern, ${legacyExhibitors.length} legacy)`);
+
+    // --- PRE-FILTER if > 150 exhibitors ---
     if (enrichedExhibitors.length > 150) {
       const userKeywords = (keywords || []).map((k: string) => k.toLowerCase());
       const userRole = role.toLowerCase();
 
       const scored = enrichedExhibitors.map((ex) => {
         let score = 0;
-        // Match profils_visiteurs with role
         const profils = (ex.profils_visiteurs || []).map((p: string) => p.toLowerCase());
         if (profils.some((p: string) => p.includes(userRole) || userRole.includes(p))) {
           score += 3;
         }
-        // Match keywords
         const motsCles = (ex.mots_cles_metier || []).map((m: string) => m.toLowerCase());
         const produits = (ex.produits_services || []).map((p: string) => p.toLowerCase());
         const allTerms = [...motsCles, ...produits];
@@ -128,7 +188,6 @@ serve(async (req) => {
             score += 2;
           }
         }
-        // Has AI data at all
         if (ex.resume_court || ex.secteur_principal) score += 1;
         return { ...ex, _score: score };
       });
@@ -137,7 +196,7 @@ serve(async (req) => {
       enrichedExhibitors = scored.slice(0, 100).map(({ _score, ...rest }) => rest);
     }
 
-    // 8. Build prompt for Claude
+    // --- BUILD PROMPT ---
     const exhibitorsForPrompt = enrichedExhibitors.map((ex) => ({
       id: ex.id,
       name: ex.name,
@@ -184,7 +243,7 @@ Règles strictes :
 - Ne jamais inventer d'informations absentes des données fournies
 - Si un exposant n'a pas de resume_court, base-toi sur secteur_principal et produits_services uniquement`;
 
-    // 9. Call AI Gateway
+    // --- CALL ANTHROPIC ---
     const aiResponse = await fetch(ANTHROPIC_API_URL, {
       method: "POST",
       headers: {
@@ -195,9 +254,7 @@ Règles strictes :
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 2000,
-        messages: [
-          { role: "user", content: prompt },
-        ],
+        messages: [{ role: "user", content: prompt }],
       }),
     });
 
@@ -223,10 +280,9 @@ Règles strictes :
     const aiResult = await aiResponse.json();
     const rawContent = aiResult.content?.[0]?.text || "";
 
-    // 10. Parse JSON response
+    // --- PARSE RESPONSE ---
     let recommendations;
     try {
-      // Try to extract JSON from the response (handle potential markdown wrapping)
       let jsonStr = rawContent.trim();
       if (jsonStr.startsWith("```")) {
         jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
@@ -240,13 +296,13 @@ Règles strictes :
       );
     }
 
-    // 11. Enrich recommendations with exhibitor details
+    // --- ENRICH RESULTS ---
     const exhibitorMap = new Map(
-      enrichedExhibitors.map((ex) => [ex.id, ex])
+      enrichedExhibitors.map((ex) => [String(ex.id), ex])
     );
 
     const enrichRecommendation = (rec: any) => {
-      const ex = exhibitorMap.get(rec.exhibitor_id);
+      const ex = exhibitorMap.get(String(rec.exhibitor_id));
       return {
         ...rec,
         name: ex?.name || "Inconnu",
