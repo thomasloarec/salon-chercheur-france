@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
     // --- GET ALL PARTICIPATIONS ---
     const { data: participations } = await supabase
       .from("participation")
-      .select("exhibitor_id, id_exposant")
+      .select("exhibitor_id, id_exposant, stand_exposant")
       .eq("id_event_text", eventData.id_event)
       .range(0, 1999);
 
@@ -197,6 +197,16 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "No exhibitors found", exhibitorCount: 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Build stand lookup from participation
+    const standByExhibitorId: Record<string, string> = {};
+    const standByIdExposant: Record<string, string> = {};
+    for (const p of participations) {
+      if (p.stand_exposant) {
+        if (p.exhibitor_id) standByExhibitorId[p.exhibitor_id] = p.stand_exposant;
+        if (p.id_exposant) standByIdExposant[p.id_exposant] = p.stand_exposant;
+      }
     }
 
     // Split modern vs legacy
@@ -262,6 +272,7 @@ Deno.serve(async (req) => {
       allExhibitors.push({
         id: ex.id, name: ex.name, description: ex.description || "",
         website: ex.website, logo_url: ex.logo_url,
+        stand: standByExhibitorId[ex.id] || null,
         secteur_principal: ai.secteur_principal || null,
         produits_services: ai.produits_services || [],
         mots_cles_metier: ai.mots_cles_metier || [],
@@ -283,6 +294,7 @@ Deno.serve(async (req) => {
         id: ex.id_exposant || String(ex.id), name,
         description: ex.exposant_description || "",
         website: ex.website_exposant, logo_url: null,
+        stand: standByIdExposant[ex.id_exposant] || null,
         secteur_principal: ai.secteur_principal || null,
         produits_services: ai.produits_services || [],
         mots_cles_metier: ai.mots_cles_metier || [],
@@ -405,16 +417,23 @@ Ne jamais inventer d'informations absentes des données fournies.`;
         name: ex?.name || "Inconnu",
         logo_url: ex?.logo_url || null,
         website: ex?.website || null,
+        stand: ex?.stand || null,
         secteur_principal: ex?.secteur_principal || null,
       };
     };
 
     const results = recommendations.results || [];
+
+    // Match by exhibitor_id strictly, then deduplicate
+    const highIds = new Set(
+      results.filter((r: any) => r.priority === "high").map((r: any) => String(r.exhibitor_id))
+    );
+
     const prioritaires = results
-      .filter((r: any) => r.priority === "high")
+      .filter((r: any) => r.priority === "high" && exhibitorMap.has(String(r.exhibitor_id)))
       .map(enrichItem);
     const optionnels = results
-      .filter((r: any) => r.priority === "medium")
+      .filter((r: any) => r.priority === "medium" && exhibitorMap.has(String(r.exhibitor_id)) && !highIds.has(String(r.exhibitor_id)))
       .map(enrichItem);
 
     const result = {
