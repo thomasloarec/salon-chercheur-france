@@ -505,23 +505,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
           {/* LOADING */}
           {step === 'loading' && (
-            <div className="flex flex-col items-center justify-center py-16 gap-6">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-                  <Sparkles className="w-8 h-8 text-primary animate-spin" style={{ animationDuration: '3s' }} />
-                </div>
-              </div>
-              <div className="text-center space-y-2">
-                <p className="font-semibold text-lg">Analyse en cours…</p>
-                <p className="text-sm text-muted-foreground">
-                  Notre assistant IA analyse les {exhibitorCount} exposants du salon pour votre profil…
-                </p>
-              </div>
-              <div className="w-48 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full animate-[loading_2s_ease-in-out_infinite]" 
-                  style={{ width: '60%', animation: 'loading 2s ease-in-out infinite' }} />
-              </div>
-            </div>
+            <LoadingScreen exhibitorCount={exhibitorCount} />
           )}
 
           {/* RESULTS */}
