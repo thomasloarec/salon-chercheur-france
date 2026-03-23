@@ -79,6 +79,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [saving, setSaving] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [loadingComplete, setLoadingComplete] = useState(false);
 
   const { user } = useAuth();
   const navigate = useNavigate();
