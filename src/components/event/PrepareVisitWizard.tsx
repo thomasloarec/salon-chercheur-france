@@ -77,6 +77,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -178,6 +179,12 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
       if (data?.error) throw new Error(data.error);
 
       setResults(data);
+      // Check all exhibitors by default
+      const allIds = new Set([
+        ...(data.prioritaires || []).map((r: Recommendation) => r.exhibitor_id),
+        ...(data.optionnels || []).map((r: Recommendation) => r.exhibitor_id),
+      ]);
+      setCheckedIds(allIds);
       setStep('results');
     } catch (err: any) {
       console.error('Prepare visit error:', err);
@@ -202,6 +209,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setResults(null);
     setError(null);
     setBannerDismissed(false);
+    setCheckedIds(new Set());
   };
 
   const handleSave = async (replace = false) => {
