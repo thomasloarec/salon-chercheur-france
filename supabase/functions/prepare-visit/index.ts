@@ -16,10 +16,11 @@ const OBJECTIVE_KEYWORDS: Record<string, string> = {
   "Découvrir les innovations du marché": "veille_techno",
 };
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
 function stripCodeFences(value: string): string {
   const trimmed = value.trim();
   if (!trimmed.startsWith("```")) return trimmed;
-
   return trimmed
     .replace(/^```(?:json)?\n?/, "")
     .replace(/\n?```$/, "")
@@ -37,44 +38,68 @@ function salvageClaudeResults(rawContent: string): { results: any[] } | null {
       .slice(arrayStartIndex + 1, lastCompleteObjectIndex + 1)
       .replace(/,\s*$/, "")
       .trim();
-
     if (objectsChunk) {
       const repairedJson = `{"results":[${objectsChunk}]}`;
-      try {
-        return JSON.parse(repairedJson);
-      } catch {
-        // Continue with object-level salvage below.
-      }
+      try { return JSON.parse(repairedJson); } catch { /* continue */ }
     }
   }
 
-  const objectMatches = jsonStr.match(/\{\s*"exhibitor_id"\s*:\s*"(?:\\.|[^"\\])+"\s*,\s*"raison"\s*:\s*"(?:\\.|[^"\\])*"\s*,\s*"priority"\s*:\s*"(?:high|medium)"\s*\}/g) || [];
+  const objectMatches = jsonStr.match(
+    /\{\s*"exhibitor_id"\s*:\s*"(?:\\.|[^"\\])+"\s*,\s*"raison"\s*:\s*"(?:\\.|[^"\\])*"\s*,\s*"priority"\s*:\s*"(?:high|medium)"\s*\}/g
+  ) || [];
   const recoveredResults = objectMatches.flatMap((match) => {
-    try {
-      return [JSON.parse(match)];
-    } catch {
-      return [];
-    }
+    try { return [JSON.parse(match)]; } catch { return []; }
   });
-
   return recoveredResults.length > 0 ? { results: recoveredResults } : null;
 }
 
 function parseClaudeRecommendations(rawContent: string): { results: any[] } {
   const jsonStr = stripCodeFences(rawContent);
-
-  try {
-    return JSON.parse(jsonStr);
-  } catch {
-    const salvaged = salvageClaudeResults(rawContent);
-    if (salvaged) {
-      console.warn(`prepare-visit: Claude JSON repaired with ${salvaged.results.length} result(s)`);
-      return salvaged;
-    }
-
-    throw new Error("Failed to parse AI response");
+  try { return JSON.parse(jsonStr); } catch { /* continue */ }
+  const salvaged = salvageClaudeResults(rawContent);
+  if (salvaged) {
+    console.warn(`prepare-visit: Claude JSON repaired with ${salvaged.results.length} result(s)`);
+    return salvaged;
   }
+  throw new Error("Failed to parse AI response");
 }
+
+/** Normalize a company name for deduplication: lowercase, trim, collapse whitespace */
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/**
+ * Tokenize user keywords: split by comma, "et", spaces for multi-word expressions.
+ * Returns deduplicated lowercase tokens ≥ 3 chars plus original expressions.
+ */
+function tokenizeKeywords(keywords: string[]): string[] {
+  const tokens = new Set<string>();
+
+  for (const raw of keywords) {
+    const lower = raw.trim().toLowerCase();
+    if (!lower) continue;
+
+    // Keep the full expression
+    tokens.add(lower);
+
+    // Split on separators: comma, " et ", " and ", slash
+    const parts = lower.split(/[,\/]|\bet\b|\band\b/i);
+    for (const part of parts) {
+      const cleaned = part.trim();
+      if (cleaned.length >= 3) tokens.add(cleaned);
+
+      // Also split individual words ≥ 3 chars
+      for (const word of cleaned.split(/\s+/)) {
+        if (word.length >= 3) tokens.add(word);
+      }
+    }
+  }
+
+  return [...tokens];
+}
+
+// ── AI data fetching ─────────────────────────────────────────────────────────
 
 async function fetchAiRowsInBatches(
   supabase: any,
@@ -108,11 +133,24 @@ async function fetchAiRowsInBatches(
   return aiData;
 }
 
+// ── Scoring ──────────────────────────────────────────────────────────────────
+
+/**
+ * Score an exhibitor for relevance to visitor profile.
+ *
+ * Max theoretical score: ~14
+ *   +3  profils_visiteurs matches role
+ *   +6  keyword token matches (cap raised from +4)
+ *   +1  type_interet matches objective
+ *   +2  keyword token found in secteur_principal or produits_services or resume_court
+ *   +1  resume_court non-empty
+ *   +1  secteur_principal meaningful
+ */
 function scoreExhibitor(
   ex: any,
   userRole: string,
-  userKeywords: string[],
-  objectiveKeyword: string | undefined
+  userTokens: string[],
+  objectiveKeyword: string | undefined,
 ): number {
   let score = 0;
 
@@ -122,16 +160,31 @@ function scoreExhibitor(
     score += 3;
   }
 
-  // +2 per keyword match, cap at +4
+  // +2 per keyword token match against mots_cles_metier, cap at +6
   const motsCles = (ex.mots_cles_metier || []).map((m: string) => m.toLowerCase());
   let kwScore = 0;
-  for (const kw of userKeywords) {
-    if (motsCles.some((m: string) => m.includes(kw) || kw.includes(m))) {
+  for (const token of userTokens) {
+    if (motsCles.some((m: string) => m.includes(token) || token.includes(m))) {
       kwScore += 2;
-      if (kwScore >= 4) break;
+      if (kwScore >= 6) break;
     }
   }
   score += kwScore;
+
+  // +2 bonus: keyword token found in secteur_principal, produits_services or resume_court
+  const textFields = [
+    (ex.secteur_principal || "").toLowerCase(),
+    ((ex.produits_services || []) as string[]).join(" ").toLowerCase(),
+    (ex.resume_court || "").toLowerCase(),
+  ].join(" ");
+  let textBonus = 0;
+  for (const token of userTokens) {
+    if (token.length >= 4 && textFields.includes(token)) {
+      textBonus += 1;
+      if (textBonus >= 2) break;
+    }
+  }
+  score += textBonus;
 
   // +1 if type_interet matches objective
   if (objectiveKeyword) {
@@ -150,6 +203,8 @@ function scoreExhibitor(
   return score;
 }
 
+// ── Main handler ─────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS")
     return new Response(null, { headers: corsHeaders });
@@ -160,7 +215,7 @@ Deno.serve(async (req) => {
     if (!eventId || !role || !objective) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -171,7 +226,7 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // --- GET EVENT ---
+    // ── GET EVENT ────────────────────────────────────────────────────────────
     const { data: eventData, error: eventError } = await supabase
       .from("events")
       .select("id, id_event, nom_event")
@@ -181,11 +236,11 @@ Deno.serve(async (req) => {
     if (eventError || !eventData) {
       return new Response(
         JSON.stringify({ error: "Event not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // --- GET ALL PARTICIPATIONS ---
+    // ── GET ALL PARTICIPATIONS ───────────────────────────────────────────────
     const { data: participations } = await supabase
       .from("participation")
       .select("exhibitor_id, id_exposant, stand_exposant")
@@ -195,9 +250,12 @@ Deno.serve(async (req) => {
     if (!participations || participations.length === 0) {
       return new Response(
         JSON.stringify({ error: "No exhibitors found", exhibitorCount: 0 }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
+    // ★ The real total = number of participation rows for this event
+    const totalParticipations = participations.length;
 
     // Build stand lookup from participation
     const standByExhibitorId: Record<string, string> = {};
@@ -217,7 +275,7 @@ Deno.serve(async (req) => {
       .filter((p) => !p.exhibitor_id && p.id_exposant)
       .map((p) => p.id_exposant) as string[];
 
-    // --- FETCH EXHIBITORS (parallel) ---
+    // ── FETCH EXHIBITORS (parallel) ──────────────────────────────────────────
     const fetchModernExhibitors = async () => {
       if (modernIds.length === 0) return [] as any[];
       const { data } = await supabase
@@ -235,7 +293,6 @@ Deno.serve(async (req) => {
       for (let i = 0; i < legacyIds.length; i += batchSize) {
         batches.push(legacyIds.slice(i, i + batchSize));
       }
-
       const results = await Promise.all(
         batches.map((batch) =>
           supabase
@@ -245,7 +302,6 @@ Deno.serve(async (req) => {
             .range(0, 4999),
         ),
       );
-
       return results.flatMap(({ data }) => data || []);
     };
 
@@ -261,13 +317,17 @@ Deno.serve(async (req) => {
     );
     const aiData = { ...modernAiData, ...legacyAiData };
 
-    // --- MERGE INTO UNIFIED LIST ---
+    // ── MERGE INTO UNIFIED LIST (with intra-legacy dedup by name) ────────────
     const seenIds = new Set<string>();
+    const seenNames = new Set<string>(); // ★ tracks ALL seen normalized names
     const allExhibitors: any[] = [];
 
+    // Modern exhibitors first (priority)
     for (const ex of modernExhibitors) {
       if (seenIds.has(ex.id)) continue;
       seenIds.add(ex.id);
+      const normalizedName = normalizeName(ex.name || "");
+      seenNames.add(normalizedName);
       const ai = aiData[ex.id] || {};
       allExhibitors.push({
         id: ex.id, name: ex.name, description: ex.description || "",
@@ -282,13 +342,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    const modernNames = new Set(modernExhibitors.map((e) => (e.name || "").toLowerCase().trim()));
+    // Legacy exhibitors — deduplicate by normalized name (vs modern AND vs other legacy)
+    const legacyBeforeDedup = legacyExhibitors.length;
+    let legacySkippedDuplicates = 0;
+
     for (const ex of legacyExhibitors) {
       const name = (ex.nom_exposant || "").trim();
-      if (!name || modernNames.has(name.toLowerCase())) continue;
+      if (!name) continue;
+
+      const normalizedName = normalizeName(name);
+
+      // ★ Skip if name already seen (from modern OR from a previous legacy)
+      if (seenNames.has(normalizedName)) {
+        legacySkippedDuplicates++;
+        continue;
+      }
+
       const key = `legacy_${ex.id}`;
       if (seenIds.has(key)) continue;
+
       seenIds.add(key);
+      seenNames.add(normalizedName);
+
       const ai = aiData[String(ex.id)] || {};
       allExhibitors.push({
         id: ex.id_exposant || String(ex.id), name,
@@ -304,53 +379,68 @@ Deno.serve(async (req) => {
       });
     }
 
-    const totalExhibitors = allExhibitors.length;
-    console.log(`📊 prepare-visit: ${totalExhibitors} exhibitors total (${modernExhibitors.length} modern, ${legacyExhibitors.length} legacy)`);
+    const totalAnalyzed = allExhibitors.length;
+    console.log(
+      `📊 prepare-visit: ${totalParticipations} participations, ` +
+      `${modernExhibitors.length} modern, ${legacyBeforeDedup} legacy raw, ` +
+      `${legacySkippedDuplicates} legacy duplicates removed, ` +
+      `${totalAnalyzed} unique exhibitors to score`,
+    );
 
-    // ===== STEP 1: ALGORITHMIC PRE-SCORING =====
+    // ══════ STEP 1: ALGORITHMIC PRE-SCORING ══════════════════════════════════
     const userRole = role.toLowerCase();
-    const userKeywords = (keywords || []).map((k: string) => k.toLowerCase());
+    // ★ Tokenize keywords for broader matching
+    const userTokens = tokenizeKeywords(keywords || []);
     const objectiveKeyword = OBJECTIVE_KEYWORDS[objective]?.toLowerCase();
+
+    console.log(`🔑 prepare-visit: user tokens = [${userTokens.join(", ")}]`);
 
     const scored = allExhibitors.map((ex) => ({
       ...ex,
-      _score: scoreExhibitor(ex, userRole, userKeywords, objectiveKeyword),
+      _score: scoreExhibitor(ex, userRole, userTokens, objectiveKeyword),
     }));
 
     scored.sort((a, b) => b._score - a._score);
     const top30 = scored.slice(0, 30).map(({ _score, ...rest }) => rest);
 
-    console.log(`🎯 prepare-visit: top 30 scores — highest=${scored[0]?._score ?? 0}, lowest of top30=${scored[Math.min(29, scored.length - 1)]?._score ?? 0}`);
+    console.log(
+      `🎯 prepare-visit: top 30 scores — highest=${scored[0]?._score ?? 0}, ` +
+      `lowest of top30=${scored[Math.min(29, scored.length - 1)]?._score ?? 0}`,
+    );
 
-    // ===== STEP 2: CLAUDE WRITES REASONS ONLY =====
+    // ══════ STEP 2: CLAUDE WRITES REASONS ONLY ═══════════════════════════════
     const exhibitorsForPrompt = top30.map((ex) => ({
       id: ex.id, name: ex.name,
       secteur_principal: ex.secteur_principal,
       resume_court: ex.resume_court || ex.description || null,
     }));
 
+    // ★ Enhanced prompt: stronger emphasis on user keywords
+    const keywordsDisplay = (keywords || []).join(", ") || "Non précisé";
     const prompt = `Tu es un assistant expert en salons professionnels B2B.
 
 Profil visiteur :
 - Rôle : ${role}
 - Objectif : ${objective}
-- Centres d'intérêt : ${(keywords || []).join(", ") || "Non précisé"}
+- Centres d'intérêt prioritaires : ${keywordsDisplay}
 - Temps disponible : ${duration || "Non précisé"}
 
 Voici les 30 exposants présélectionnés pour ce visiteur :
 ${JSON.stringify(exhibitorsForPrompt)}
 
-Pour chacun, rédige une raison personnalisée en 1 phrase qui commence par "Pour un profil ${role}..." et mentionne un bénéfice concret lié à l'objectif du visiteur.
+Consignes :
+1. Pour chacun, rédige une raison personnalisée en 1 phrase qui commence par "Pour un profil ${role}..." et mentionne un bénéfice concret lié à l'objectif du visiteur.
+2. Les exposants dont l'activité est directement liée aux centres d'intérêt prioritaires du visiteur (${keywordsDisplay}) doivent être marqués "high" en priorité.
+3. Marque "high" les 12 meilleurs, "medium" les autres.
+4. Ne jamais inventer d'informations absentes des données fournies.
+5. Chaque raison doit être unique et spécifique à l'exposant concerné — ne jamais mélanger les informations entre exposants.
 
 Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avant ou après :
 {
   "results": [
     {"exhibitor_id": "...", "raison": "...", "priority": "high" ou "medium"}
   ]
-}
-
-Marque "high" les 12 meilleurs, "medium" les autres.
-Ne jamais inventer d'informations absentes des données fournies.`;
+}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000);
@@ -377,13 +467,13 @@ Ne jamais inventer d'informations absentes des données fournies.`;
       if (status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded, please retry in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       if (status === 402) {
         return new Response(
           JSON.stringify({ error: "AI credits exhausted." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       const errText = await aiResponse.text();
@@ -394,7 +484,7 @@ Ne jamais inventer d'informations absentes des données fournies.`;
     const aiResult = await aiResponse.json();
     const rawContent = aiResult.content?.[0]?.text || "";
 
-    // --- PARSE RESPONSE ---
+    // ── PARSE RESPONSE ───────────────────────────────────────────────────────
     let recommendations;
     try {
       recommendations = parseClaudeRecommendations(rawContent);
@@ -402,11 +492,11 @@ Ne jamais inventer d'informations absentes des données fournies.`;
       console.error("Failed to parse AI response:", rawContent.slice(0, 500));
       return new Response(
         JSON.stringify({ error: "Failed to parse AI response", raw: rawContent.slice(0, 200) }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // ===== STEP 3: ENRICH & SPLIT RESULTS =====
+    // ══════ STEP 3: ENRICH & SPLIT RESULTS ═══════════════════════════════════
     const exhibitorMap = new Map(top30.map((ex) => [String(ex.id), ex]));
 
     const enrichItem = (item: any) => {
@@ -426,7 +516,7 @@ Ne jamais inventer d'informations absentes des données fournies.`;
 
     // Match by exhibitor_id strictly, then deduplicate
     const highIds = new Set(
-      results.filter((r: any) => r.priority === "high").map((r: any) => String(r.exhibitor_id))
+      results.filter((r: any) => r.priority === "high").map((r: any) => String(r.exhibitor_id)),
     );
 
     const prioritaires = results
@@ -439,8 +529,10 @@ Ne jamais inventer d'informations absentes des données fournies.`;
     const result = {
       prioritaires,
       optionnels,
-      totalExhibitors,
-      analyzedExhibitors: top30.length,
+      // ★ totalExhibitors = real participation count (visible to user)
+      totalExhibitors: totalParticipations,
+      // analyzedExhibitors = unique exhibitors actually scored (for debug)
+      analyzedExhibitors: totalAnalyzed,
     };
 
     return new Response(JSON.stringify(result), {
@@ -450,7 +542,7 @@ Ne jamais inventer d'informations absentes des données fournies.`;
     console.error("prepare-visit error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
