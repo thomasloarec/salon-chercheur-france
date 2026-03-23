@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark } from 'lucide-react';
+import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,6 +54,7 @@ interface Recommendation {
   name: string;
   logo_url: string | null;
   website: string | null;
+  stand: string | null;
   secteur_principal: string | null;
 }
 
@@ -74,6 +77,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -175,6 +179,12 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
       if (data?.error) throw new Error(data.error);
 
       setResults(data);
+      // Check all exhibitors by default
+      const allIds = new Set([
+        ...(data.prioritaires || []).map((r: Recommendation) => r.exhibitor_id),
+        ...(data.optionnels || []).map((r: Recommendation) => r.exhibitor_id),
+      ]);
+      setCheckedIds(allIds);
       setStep('results');
     } catch (err: any) {
       console.error('Prepare visit error:', err);
@@ -199,6 +209,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setResults(null);
     setError(null);
     setBannerDismissed(false);
+    setCheckedIds(new Set());
   };
 
   const handleSave = async (replace = false) => {
@@ -208,6 +219,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     try {
       if (!user) {
         // Scenario 4: Not logged in - store in localStorage
+        const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
+        const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
         storePendingVisitPlan({
           event_id: event.id,
           event_slug: event.slug || '',
@@ -215,8 +228,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
           objectif: objective,
           keywords,
           duration,
-          prioritaires: results.prioritaires,
-          optionnels: results.optionnels,
+          prioritaires: filteredPrioritaires,
+          optionnels: filteredOptionnels,
         });
         navigate('/auth?tab=signup');
         return;
@@ -227,15 +240,17 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         await toggleFavorite(event.id);
       }
 
-      // Save visit plan
+      // Save visit plan - only checked exhibitors
+      const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
+      const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
       await saveVisitPlan.mutateAsync({
         event_id: event.id,
         role,
         objectif: objective,
         keywords,
         duration,
-        prioritaires: results.prioritaires,
-        optionnels: results.optionnels,
+        prioritaires: filteredPrioritaires,
+        optionnels: filteredOptionnels,
       });
 
       toast({
@@ -527,12 +542,15 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
               ) : results ? (
                 <>
                   {/* Summary banner */}
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-1">
                     <p className="text-sm font-medium">
                       Basé sur votre profil, voici les{' '}
                       <span className="text-primary font-bold">{results.prioritaires.length + results.optionnels.length}</span>{' '}
                       exposants à prioriser parmi les{' '}
                       <span className="font-bold">{results.totalExhibitors}</span> présents.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {checkedIds.size} exposant{checkedIds.size > 1 ? 's' : ''} sélectionné{checkedIds.size > 1 ? 's' : ''}
                     </p>
                   </div>
 
@@ -544,7 +562,21 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {results.prioritaires.map((rec) => (
-                          <RecommendationCard key={rec.exhibitor_id} rec={rec} variant="primary" eventId={event.id} />
+                          <RecommendationCard
+                            key={rec.exhibitor_id}
+                            rec={rec}
+                            variant="primary"
+                            eventId={event.id}
+                            checked={checkedIds.has(rec.exhibitor_id)}
+                            onCheckedChange={(checked) => {
+                              setCheckedIds(prev => {
+                                const next = new Set(prev);
+                                if (checked) next.add(rec.exhibitor_id);
+                                else next.delete(rec.exhibitor_id);
+                                return next;
+                              });
+                            }}
+                          />
                         ))}
                       </div>
                     </section>
@@ -558,7 +590,21 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {results.optionnels.map((rec) => (
-                          <RecommendationCard key={rec.exhibitor_id} rec={rec} variant="secondary" eventId={event.id} />
+                          <RecommendationCard
+                            key={rec.exhibitor_id}
+                            rec={rec}
+                            variant="secondary"
+                            eventId={event.id}
+                            checked={checkedIds.has(rec.exhibitor_id)}
+                            onCheckedChange={(checked) => {
+                              setCheckedIds(prev => {
+                                const next = new Set(prev);
+                                if (checked) next.add(rec.exhibitor_id);
+                                else next.delete(rec.exhibitor_id);
+                                return next;
+                              });
+                            }}
+                          />
                         ))}
                       </div>
                     </section>
@@ -611,21 +657,32 @@ function RecommendationCard({
   rec,
   variant,
   eventId,
+  checked,
+  onCheckedChange,
 }: {
   rec: Recommendation;
   variant: 'primary' | 'secondary';
   eventId: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
 }) {
   const logoUrl = getExhibitorLogoUrl(rec.logo_url, rec.website);
+  const standNumber = normalizeStandNumber(rec.stand);
 
   return (
     <div
       className={cn(
         'rounded-xl border p-4 flex flex-col gap-3 transition-shadow hover:shadow-md',
-        variant === 'primary' ? 'bg-background' : 'bg-muted/30'
+        variant === 'primary' ? 'bg-background' : 'bg-muted/30',
+        !checked && 'opacity-50'
       )}
     >
       <div className="flex items-start gap-3">
+        <Checkbox
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          className="mt-1 flex-shrink-0"
+        />
         <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
           {logoUrl ? (
             <img src={logoUrl} alt={rec.name} className="w-full h-full object-contain" />
@@ -637,6 +694,9 @@ function RecommendationCard({
           <p className="font-semibold text-sm leading-tight">{rec.name}</p>
           {rec.secteur_principal && (
             <p className="text-xs text-muted-foreground mt-0.5">{rec.secteur_principal}</p>
+          )}
+          {standNumber && (
+            <p className="text-xs text-muted-foreground mt-0.5">Stand {standNumber}</p>
           )}
         </div>
       </div>
