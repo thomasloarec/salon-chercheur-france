@@ -240,15 +240,17 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         await toggleFavorite(event.id);
       }
 
-      // Save visit plan
+      // Save visit plan - only checked exhibitors
+      const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
+      const filteredOptionnels = results.optionnels.filter(r => checkedIds.has(r.exhibitor_id));
       await saveVisitPlan.mutateAsync({
         event_id: event.id,
         role,
         objectif: objective,
         keywords,
         duration,
-        prioritaires: results.prioritaires,
-        optionnels: results.optionnels,
+        prioritaires: filteredPrioritaires,
+        optionnels: filteredOptionnels,
       });
 
       toast({
