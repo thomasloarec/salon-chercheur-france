@@ -243,7 +243,10 @@ Règles strictes :
 - Ne jamais inventer d'informations absentes des données fournies
 - Si un exposant n'a pas de resume_court, base-toi sur secteur_principal et produits_services uniquement`;
 
-    // --- CALL ANTHROPIC ---
+    // --- CALL ANTHROPIC (with 25s timeout) ---
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+
     const aiResponse = await fetch(ANTHROPIC_API_URL, {
       method: "POST",
       headers: {
@@ -253,10 +256,13 @@ Règles strictes :
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [{ role: "user", content: prompt }],
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
