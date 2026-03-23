@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark } from 'lucide-react';
+import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,6 +54,7 @@ interface Recommendation {
   name: string;
   logo_url: string | null;
   website: string | null;
+  stand: string | null;
   secteur_principal: string | null;
 }
 
