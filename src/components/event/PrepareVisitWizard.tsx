@@ -637,6 +637,81 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   );
 }
 
+// --- Loading Screen ---
+const LOADING_STEPS = [
+  { threshold: 0, message: 'Analyse du salon…', icon: Search },
+  { threshold: 20, message: 'Identification des exposants les plus pertinents…', icon: Users },
+  { threshold: 45, message: 'Évaluation de la pertinence selon votre profil…', icon: BarChart3 },
+  { threshold: 70, message: 'Priorisation des exposants recommandés…', icon: Sparkles },
+  { threshold: 88, message: 'Finalisation de votre sélection personnalisée…', icon: CheckCircle2 },
+];
+
+function LoadingScreen({ exhibitorCount }: { exhibitorCount: number }) {
+  const [progress, setProgress] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    let elapsed = 0;
+    intervalRef.current = setInterval(() => {
+      elapsed += 200;
+      setProgress((prev) => {
+        if (prev >= 93) return prev; // cap at 93 until real response
+        // Non-linear curve: fast start, gradual slowdown
+        const seconds = elapsed / 1000;
+        if (seconds < 2) return Math.min(seconds * 12, 24); // 0→24 in 2s
+        if (seconds < 5) return 24 + (seconds - 2) * 8; // 24→48 in 3s
+        if (seconds < 10) return 48 + (seconds - 5) * 5.6; // 48→76 in 5s
+        if (seconds < 15) return 76 + (seconds - 10) * 2.4; // 76→88 in 5s
+        if (seconds < 25) return 88 + (seconds - 15) * 0.5; // 88→93 in 10s
+        return 93;
+      });
+    }, 200);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  const currentStep = [...LOADING_STEPS].reverse().find((s) => progress >= s.threshold) || LOADING_STEPS[0];
+  const StepIcon = currentStep.icon;
+
+  return (
+    <div className="flex flex-col items-center justify-center py-14 gap-8 px-4">
+      {/* Animated icon */}
+      <div className="relative">
+        <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Sparkles className="w-9 h-9 text-primary animate-pulse" />
+        </div>
+        <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg">
+          <span className="text-[10px] font-bold text-primary-foreground">{Math.round(progress)}%</span>
+        </div>
+      </div>
+
+      {/* Title */}
+      <div className="text-center space-y-2 max-w-sm">
+        <h3 className="text-lg font-semibold">Préparation de votre visite en cours</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Nous analysons les {exhibitorCount} exposants du salon pour vous proposer une sélection personnalisée.
+        </p>
+      </div>
+
+      {/* Progress bar + percentage */}
+      <div className="w-full max-w-xs space-y-3">
+        <Progress value={progress} className="h-2.5" />
+        <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium min-h-[1.5rem]">
+          <StepIcon className="w-4 h-4 flex-shrink-0" />
+          <span className="text-center">{currentStep.message}</span>
+        </div>
+      </div>
+
+      {/* Reassuring text */}
+      <p className="text-xs text-muted-foreground/70 text-center max-w-xs">
+        Les grands salons peuvent demander quelques secondes supplémentaires.
+      </p>
+    </div>
+  );
+}
+
 // --- Recommendation Card ---
 function RecommendationCard({
   rec,
