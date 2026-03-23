@@ -97,6 +97,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [authShowPassword, setAuthShowPassword] = useState(false);
   const [authShowConfirmPassword, setAuthShowConfirmPassword] = useState(false);
 
+  const { user, signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { data: existingPlan } = useVisitPlan(event.id);
   const { data: favoriteEvents = [] } = useFavoriteEvents();
