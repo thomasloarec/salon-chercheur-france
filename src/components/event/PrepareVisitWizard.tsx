@@ -213,6 +213,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setError(null);
     setBannerDismissed(false);
     setCheckedIds(new Set());
+    setLoadingComplete(false);
   };
 
   const handleSave = async (replace = false) => {
