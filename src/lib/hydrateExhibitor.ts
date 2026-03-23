@@ -9,6 +9,7 @@ export type LightExhibitor = {
   urlexpo_event?: string | null;
   logo_url?: string | null;
   exhibitor_uuid?: string | null;
+  ai_resume_court?: string | null;
 };
 
 /**
