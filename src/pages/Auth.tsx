@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { triggerOnboarding } from '@/hooks/useOnboarding';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
