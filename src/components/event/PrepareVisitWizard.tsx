@@ -427,18 +427,25 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleReset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0" aria-describedby={undefined}>
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0 w-[calc(100vw-1rem)] sm:w-auto" aria-describedby={undefined}>
         <VisuallyHidden><DialogTitle>Préparer ma visite</DialogTitle></VisuallyHidden>
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">Préparer ma visite avec l'IA</h2>
-              <p className="text-sm text-muted-foreground">{event.nom_event}</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base sm:text-lg font-semibold truncate">Préparer ma visite avec l'IA</h2>
+              <p className="text-sm text-muted-foreground truncate">{event.nom_event}</p>
             </div>
+            <button
+              onClick={() => { handleReset(); onOpenChange(false); }}
+              className="flex-shrink-0 w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center transition-colors"
+              aria-label="Fermer"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
           </div>
 
           {/* Progress bar */}
@@ -457,7 +464,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
           )}
         </div>
 
-        <div className="px-6 py-6">
+        <div className="px-4 sm:px-6 py-6">
           {/* STEP 1 - Role */}
           {step === 1 && (
             <div className="space-y-6">
@@ -635,8 +642,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
               ) : results ? (
                 <>
                   {/* Summary banner */}
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-1">
-                    <p className="text-sm font-medium">
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 text-center space-y-1">
+                    <p className="text-xs sm:text-sm font-medium leading-relaxed">
                       Basé sur votre profil, voici les{' '}
                       <span className="text-primary font-bold">{results.prioritaires.length + results.optionnels.length}</span>{' '}
                       exposants à prioriser parmi les{' '}
@@ -832,7 +839,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
         {/* Sticky Save Banner */}
         {bannerConfig && step === 'results' && (
-          <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-sm border-t px-6 py-4">
+          <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-sm border-t px-4 sm:px-6 py-4">
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Bookmark className="w-5 h-5 text-primary flex-shrink-0" />
@@ -996,7 +1003,7 @@ function RecommendationCard({
       </div>
 
       <div className={cn(
-        'text-xs rounded-lg p-3 leading-relaxed',
+        'text-xs rounded-lg p-3 leading-relaxed break-words overflow-hidden',
         variant === 'primary'
           ? 'bg-primary/5 text-foreground border border-primary/10'
           : 'bg-muted/50 text-muted-foreground'
