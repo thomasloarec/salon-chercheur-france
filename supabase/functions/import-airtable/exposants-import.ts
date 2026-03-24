@@ -80,6 +80,40 @@ async function batchUpsert(
   return { inserted: totalInserted, errors };
 }
 
+// Sites génériques bloqués — un exposant avec un de ces websites est exclu
+// SAUF si le nom normalisé de l'exposant correspond au propriétaire du site
+const BLOCKED_GENERIC_SITES: Record<string, string[]> = {
+  'google.com': ['google'],
+  'linkedin.com': ['linkedin'],
+  'facebook.com': ['facebook', 'meta'],
+  'instagram.com': ['instagram', 'meta'],
+  'twitter.com': ['twitter'],
+  'x.com': ['x', 'twitter'],
+  'pinterest.com': ['pinterest'],
+  'youtube.com': ['youtube', 'google'],
+  'tiktok.com': ['tiktok', 'bytedance'],
+  'snapchat.com': ['snapchat', 'snap'],
+  'reddit.com': ['reddit'],
+  'wikipedia.org': ['wikipedia', 'wikimedia'],
+  'amazon.com': ['amazon', 'aws'],
+  'apple.com': ['apple'],
+  'whatsapp.com': ['whatsapp', 'meta'],
+};
+
+function isBlockedGenericSite(normalizedWebsite: string, nomExposant: string): boolean {
+  const nomNorm = nomExposant.trim().toLowerCase().replace(/\s+/g, ' ');
+  for (const [blockedDomain, ownerNames] of Object.entries(BLOCKED_GENERIC_SITES)) {
+    if (normalizedWebsite === blockedDomain) {
+      // Exception : le propriétaire légitime du site n'est pas bloqué
+      if (ownerNames.some(owner => nomNorm.includes(owner))) {
+        return false;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function importExposants(supabaseClient: any, airtableConfig: AirtableConfig): Promise<ExposantImportResult> {
   console.log('[EXPOSANTS] Début import...');
   
@@ -92,17 +126,28 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
     s = s.replace(/\.$/, '').replace(/:\d+$/, '');
     return s || null;
   }
+
+  // Récupérer tous les websites d'événements pour le blocage dynamique
+  const { data: eventRows } = await supabaseClient
+    .from('events')
+    .select('url_site_officiel')
+    .not('url_site_officiel', 'is', null);
+
+  const eventWebsites = new Set<string>();
+  for (const row of eventRows || []) {
+    const norm = normalizeDomain(row.url_site_officiel);
+    if (norm) eventWebsites.add(norm);
+  }
+  console.log(`[FILTER] ${eventWebsites.size} websites d'événements chargés pour blocage dynamique`);
   
   const allExposants = await fetchAllExposants(airtableConfig);
   const exposantErrors: Array<{ record_id: string; reason: string }> = [];
 
-  // Filtrer uniquement les exposants de test Lovable (pas les vrais exposants comme TEST-OK)
-  // On filtre seulement les entrées qui sont clairement des tests internes
+  // Filtrer les tests internes
   const exposantsRaw = allExposants.filter((r: any) => {
     const nom = (r.fields.nom_exposant || '').toLowerCase().trim();
     const website = (r.fields.website_exposant || '').toLowerCase().trim();
     
-    // Exclure uniquement les tests internes évidents (ex: "Test special", "Zasp Test", entrées avec google.com comme site de test)
     const isInternalTest = 
       (nom === 'test' || nom === 'test special' || nom.endsWith(' test')) &&
       (website === 'google.com' || website === 'example.com' || !website);
@@ -111,6 +156,7 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
   });
 
   const exposantsToUpsert = [];
+  let skippedInvalidWebsite = 0;
   
   for (const r of exposantsRaw) {
     const f = r.fields;
@@ -126,16 +172,38 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
     }
     
     const normalizedWebsite = normalizeDomain(f['website_exposant']);
+    const nomExposant = f['nom_exposant'].trim();
+
+    // Exclure les exposants sans website
+    if (!normalizedWebsite) {
+      skippedInvalidWebsite++;
+      console.warn(`[SKIP] ${nomExposant}: website vide`);
+      continue;
+    }
+
+    // Exclure les sites génériques (sauf propriétaire légitime)
+    if (isBlockedGenericSite(normalizedWebsite, nomExposant)) {
+      skippedInvalidWebsite++;
+      console.warn(`[SKIP] ${nomExposant}: site générique bloqué (${normalizedWebsite})`);
+      continue;
+    }
+
+    // Exclure les websites correspondant au site d'un événement
+    if (eventWebsites.has(normalizedWebsite)) {
+      skippedInvalidWebsite++;
+      console.warn(`[SKIP] ${nomExposant}: website = site événement (${normalizedWebsite})`);
+      continue;
+    }
     
     exposantsToUpsert.push({
       id_exposant: f['id_exposant'].trim(),
-      nom_exposant: f['nom_exposant'].trim(),
+      nom_exposant: nomExposant,
       website_exposant: normalizedWebsite,
       exposant_description: f['exposant_description']?.trim() || null
     });
   }
 
-  console.log(`[PREP] ${exposantsToUpsert.length} exposants à insérer (${exposantErrors.length} erreurs)`);
+  console.log(`[PREP] ${exposantsToUpsert.length} exposants à insérer, ${skippedInvalidWebsite} exclus (website invalide), ${exposantErrors.length} erreurs`);
   
   let exposantsImported = 0;
   
@@ -150,7 +218,7 @@ export async function importExposants(supabaseClient: any, airtableConfig: Airta
     errors.forEach(err => exposantErrors.push({ record_id: 'BATCH', reason: err }));
   }
 
-  console.log(`[DONE] ${exposantsImported} exposants importés`);
+  console.log(`[DONE] Import terminé: ${exposantsImported} insérés/mis à jour, ${skippedInvalidWebsite} exclus (website invalide), ${exposantErrors.length} erreurs`);
   
   return { exposantsImported, exposantErrors };
 }
