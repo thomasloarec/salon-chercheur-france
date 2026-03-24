@@ -431,7 +431,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         <VisuallyHidden><DialogTitle>Préparer ma visite</DialogTitle></VisuallyHidden>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
@@ -464,7 +464,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
           )}
         </div>
 
-        <div className="px-4 sm:px-6 py-6">
+        <div className="px-4 sm:px-6 py-6 overflow-x-hidden">
           {/* STEP 1 - Role */}
           {step === 1 && (
             <div className="space-y-6">
@@ -625,7 +625,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
           {/* RESULTS */}
           {step === 'results' && (
-            <div className="space-y-6 pb-24">
+            <div className="space-y-6 pb-24 min-w-0 overflow-x-hidden">
               {error ? (
                 <div className="text-center py-12 space-y-4">
                   <p className="text-destructive font-medium">{error}</p>
@@ -642,25 +642,25 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
               ) : results ? (
                 <>
                   {/* Summary banner */}
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 text-center space-y-1">
-                    <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                  <div className="max-w-full overflow-hidden bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 text-center space-y-1">
+                    <p className="text-xs sm:text-sm font-medium leading-relaxed break-words text-balance">
                       Basé sur votre profil, voici les{' '}
                       <span className="text-primary font-bold">{results.prioritaires.length + results.optionnels.length}</span>{' '}
                       exposants à prioriser{duration ? ` pour une visite de ${duration}` : ''} parmi les{' '}
                       <span className="font-bold">{results.totalExhibitors}</span> présents.
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground break-words">
                       {checkedIds.size} exposant{checkedIds.size > 1 ? 's' : ''} sélectionné{checkedIds.size > 1 ? 's' : ''}
                     </p>
                   </div>
 
                   {/* Prioritaires */}
                   {results.prioritaires.length > 0 && (
-                    <section>
-                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <section className="min-w-0 overflow-x-hidden">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 break-words">
                         ⭐ Vos incontournables
                       </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                         {results.prioritaires.map((rec) => (
                           <RecommendationCard
                             key={rec.exhibitor_id}
@@ -684,11 +684,11 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
                   {/* Optionnels */}
                   {results.optionnels.length > 0 && (
-                    <section>
-                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-muted-foreground">
+                    <section className="min-w-0 overflow-x-hidden">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-muted-foreground break-words">
                         💡 À voir si vous avez le temps
                       </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                         {results.optionnels.map((rec) => (
                           <RecommendationCard
                             key={rec.exhibitor_id}
@@ -839,19 +839,19 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
         {/* Sticky Save Banner */}
         {bannerConfig && step === 'results' && (
-          <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-sm border-t px-4 sm:px-6 py-4">
-            <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-sm border-t px-4 sm:px-6 py-4 overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-0">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Bookmark className="w-5 h-5 text-primary flex-shrink-0" />
-                <p className="text-sm font-medium truncate">{bannerConfig.message}</p>
+                <p className="text-sm font-medium break-words sm:truncate leading-snug">{bannerConfig.message}</p>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
                 {bannerConfig.secondaryLabel && bannerConfig.secondaryAction && (
-                  <Button variant="ghost" size="sm" onClick={bannerConfig.secondaryAction}>
+                  <Button variant="ghost" size="sm" onClick={bannerConfig.secondaryAction} className="w-full sm:w-auto">
                     {bannerConfig.secondaryLabel}
                   </Button>
                 )}
-                <Button size="sm" onClick={bannerConfig.primaryAction} disabled={saving} className="gap-2">
+                <Button size="sm" onClick={bannerConfig.primaryAction} disabled={saving} className="gap-2 w-full sm:w-auto">
                   {saving ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
@@ -973,12 +973,12 @@ function RecommendationCard({
   return (
     <div
       className={cn(
-        'rounded-xl border p-4 flex flex-col gap-3 transition-shadow hover:shadow-md',
+        'min-w-0 max-w-full overflow-hidden rounded-xl border p-4 flex flex-col gap-3 transition-shadow hover:shadow-md',
         variant === 'primary' ? 'bg-background' : 'bg-muted/30',
         !checked && 'opacity-50'
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 min-w-0">
         <Checkbox
           checked={checked}
           onCheckedChange={onCheckedChange}
@@ -991,19 +991,19 @@ function RecommendationCard({
             <Building2 className="w-5 h-5 text-muted-foreground" />
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm leading-tight">{rec.name}</p>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <p className="font-semibold text-sm leading-tight break-words">{rec.name}</p>
           {rec.secteur_principal && (
-            <p className="text-xs text-muted-foreground mt-0.5">{rec.secteur_principal}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 break-words">{rec.secteur_principal}</p>
           )}
           {standNumber && (
-            <p className="text-xs text-muted-foreground mt-0.5">Stand {standNumber}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 break-words">Stand {standNumber}</p>
           )}
         </div>
       </div>
 
       <div className={cn(
-        'text-xs rounded-lg p-3 leading-relaxed break-words overflow-hidden',
+        'max-w-full min-w-0 text-xs rounded-lg p-3 leading-relaxed break-words overflow-hidden',
         variant === 'primary'
           ? 'bg-primary/5 text-foreground border border-primary/10'
           : 'bg-muted/50 text-muted-foreground'
