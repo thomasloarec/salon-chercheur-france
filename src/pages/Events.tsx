@@ -122,7 +122,7 @@ const Events = () => {
 
       {/* Sector Icon Bar - Horizontal carousel */}
       <div className="sticky top-[calc(4rem+3.5rem)] z-30 bg-background border-b">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           {sectorsLoading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="h-5 w-5 animate-spin" />
