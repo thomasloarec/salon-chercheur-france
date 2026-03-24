@@ -427,7 +427,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleReset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0 w-[calc(100vw-1rem)] sm:w-auto" aria-describedby={undefined}>
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto overflow-x-hidden p-0 gap-0 w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:w-auto sm:max-w-3xl" aria-describedby={undefined}>
         <VisuallyHidden><DialogTitle>Préparer ma visite</DialogTitle></VisuallyHidden>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 py-4">
