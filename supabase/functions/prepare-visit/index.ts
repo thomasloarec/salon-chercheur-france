@@ -8,6 +8,13 @@ const corsHeaders = {
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 
+// Duration → exhibitor caps
+const DURATION_CAPS: Record<string, { total: number; high: number; medium: number }> = {
+  "2h": { total: 10, high: 6, medium: 4 },
+  "Demi-journée": { total: 20, high: 12, medium: 8 },
+  "Journée complète": { total: 30, high: 18, medium: 12 },
+};
+
 // Objective → keyword mapping for type_interet scoring
 const OBJECTIVE_KEYWORDS: Record<string, string> = {
   "Trouver de nouveaux fournisseurs": "fournisseur",
@@ -401,21 +408,25 @@ Deno.serve(async (req) => {
     }));
 
     scored.sort((a, b) => b._score - a._score);
-    const top30 = scored.slice(0, 30).map(({ _score, ...rest }) => rest);
+
+    // ★ Apply duration-based cap
+    const cap = DURATION_CAPS[duration] || DURATION_CAPS["Journée complète"];
+    const topN = scored.slice(0, cap.total).map(({ _score, ...rest }) => rest);
 
     console.log(
-      `🎯 prepare-visit: top 30 scores — highest=${scored[0]?._score ?? 0}, ` +
-      `lowest of top30=${scored[Math.min(29, scored.length - 1)]?._score ?? 0}`,
+      `🎯 prepare-visit: duration="${duration}", cap=${cap.total} (high=${cap.high}, medium=${cap.medium}), ` +
+      `top scores — highest=${scored[0]?._score ?? 0}, ` +
+      `lowest of topN=${scored[Math.min(cap.total - 1, scored.length - 1)]?._score ?? 0}`,
     );
 
     // ══════ STEP 2: CLAUDE WRITES REASONS ONLY ═══════════════════════════════
-    const exhibitorsForPrompt = top30.map((ex) => ({
+    const exhibitorsForPrompt = topN.map((ex) => ({
       id: ex.id, name: ex.name,
       secteur_principal: ex.secteur_principal,
       resume_court: ex.resume_court || ex.description || null,
     }));
 
-    // ★ Enhanced prompt: stronger emphasis on user keywords
+    // ★ Enhanced prompt: duration-aware caps
     const keywordsDisplay = (keywords || []).join(", ") || "Non précisé";
     const prompt = `Tu es un assistant expert en salons professionnels B2B.
 
@@ -425,13 +436,13 @@ Profil visiteur :
 - Centres d'intérêt prioritaires : ${keywordsDisplay}
 - Temps disponible : ${duration || "Non précisé"}
 
-Voici les 30 exposants présélectionnés pour ce visiteur :
+Voici les ${cap.total} exposants présélectionnés pour ce visiteur :
 ${JSON.stringify(exhibitorsForPrompt)}
 
 Consignes :
 1. Pour chacun, rédige une raison personnalisée en 1 phrase qui commence par "Pour un profil ${role}..." et mentionne un bénéfice concret lié à l'objectif du visiteur.
 2. Les exposants dont l'activité est directement liée aux centres d'intérêt prioritaires du visiteur (${keywordsDisplay}) doivent être marqués "high" en priorité.
-3. Marque "high" les 12 meilleurs, "medium" les autres.
+3. Marque "high" les ${cap.high} meilleurs, "medium" les ${cap.medium} autres.
 4. Ne jamais inventer d'informations absentes des données fournies.
 5. Chaque raison doit être unique et spécifique à l'exposant concerné — ne jamais mélanger les informations entre exposants.
 
@@ -497,7 +508,7 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
     }
 
     // ══════ STEP 3: ENRICH & SPLIT RESULTS ═══════════════════════════════════
-    const exhibitorMap = new Map(top30.map((ex) => [String(ex.id), ex]));
+    const exhibitorMap = new Map(topN.map((ex) => [String(ex.id), ex]));
 
     const enrichItem = (item: any) => {
       const ex = exhibitorMap.get(String(item.exhibitor_id));
