@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { triggerOnboarding } from '@/hooks/useOnboarding';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -70,6 +71,12 @@ const Auth = () => {
               }, { onConflict: 'user_id,event_id' });
 
               localStorage.removeItem('pending_visit_plan');
+
+              // Invalidate React Query caches so Mon Agenda shows fresh data
+              await queryClient.invalidateQueries({ queryKey: ['favorites', user.id] });
+              await queryClient.invalidateQueries({ queryKey: ['favorite-events', user.id] });
+              await queryClient.invalidateQueries({ queryKey: ['visit-plans', user.id] });
+              await queryClient.invalidateQueries({ queryKey: ['visit-plan', pending.event_id, user.id] });
 
               // Redirect to event page
               const slug = pending.event_slug;
