@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, HelpCircle } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, User, Bell, CalendarRange, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import UserMenu from './UserMenu';
@@ -11,7 +11,7 @@ import logoLotexpo from '@/assets/logo-lotexpo.png';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, session } = useAuth();
+  const { user, session, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
