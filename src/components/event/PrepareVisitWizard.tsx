@@ -646,7 +646,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                     <p className="text-xs sm:text-sm font-medium leading-relaxed">
                       Basé sur votre profil, voici les{' '}
                       <span className="text-primary font-bold">{results.prioritaires.length + results.optionnels.length}</span>{' '}
-                      exposants à prioriser parmi les{' '}
+                      exposants à prioriser{duration ? ` pour une visite de ${duration}` : ''} parmi les{' '}
                       <span className="font-bold">{results.totalExhibitors}</span> présents.
                     </p>
                     <p className="text-xs text-muted-foreground">
