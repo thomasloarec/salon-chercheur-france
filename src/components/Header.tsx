@@ -175,9 +175,53 @@ const Header = () => {
               )}
               <div className="border-t pt-2">
                 {user ? (
-                  <div className="px-3 py-2">
-                    <p className="text-sm text-gray-600 mb-2">{user.email}</p>
-                    <UserMenu />
+                  <div className="space-y-1">
+                    <p className="px-3 py-2 text-sm text-muted-foreground">{user.email}</p>
+                    <NavLink
+                      to="/profile"
+                      className={({ isActive }) =>
+                        `block px-3 py-2 pl-6 text-gray-700 hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
+                      }
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Mon profil
+                      </span>
+                    </NavLink>
+                    <NavLink
+                      to="/notifications"
+                      className={({ isActive }) =>
+                        `block px-3 py-2 pl-6 text-gray-700 hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
+                      }
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        Notifications
+                      </span>
+                    </NavLink>
+                    <NavLink
+                      to="/agenda"
+                      className={({ isActive }) =>
+                        `block px-3 py-2 pl-6 text-gray-700 hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
+                      }
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="flex items-center gap-2">
+                        <CalendarRange className="h-4 w-4" />
+                        Mon agenda
+                      </span>
+                    </NavLink>
+                    <button
+                      onClick={() => { setIsMenuOpen(false); signOut(); }}
+                      className="block w-full text-left px-3 py-2 pl-6 text-gray-700 hover:text-red-600 transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <LogOut className="h-4 w-4" />
+                        Se déconnecter
+                      </span>
+                    </button>
                   </div>
                 ) : (
                   <div className="px-3 py-2 flex flex-col gap-2">
