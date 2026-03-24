@@ -1,7 +1,8 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { queryClient } from '@/lib/queryClient';
 
 interface AuthContextType {
   user: User | null;
@@ -19,13 +20,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const pendingPlanProcessed = useRef(false);
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Process pending visit plan on any sign-in (email or OAuth)
+        if (event === 'SIGNED_IN' && session?.user && !pendingPlanProcessed.current) {
+          const pendingRaw = localStorage.getItem('pending_visit_plan');
+          if (pendingRaw) {
+            pendingPlanProcessed.current = true;
+            try {
+              const pending = JSON.parse(pendingRaw);
+              const userId = session.user.id;
+
+              // Add to favorites
+              const { data: existingFav } = await supabase
+                .from('favorites')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('event_uuid', pending.event_id)
+                .maybeSingle();
+
+              if (!existingFav) {
+                await supabase.from('favorites').insert({
+                  user_id: userId,
+                  event_uuid: pending.event_id,
+                  event_id: pending.event_id,
+                } as any);
+              }
+
+              // Save visit plan
+              await supabase.from('visit_plans' as any).upsert({
+                user_id: userId,
+                event_id: pending.event_id,
+                role: pending.role,
+                objectif: pending.objectif,
+                keywords: pending.keywords,
+                duration: pending.duration,
+                prioritaires: pending.prioritaires,
+                optionnels: pending.optionnels,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,event_id' });
+
+              localStorage.removeItem('pending_visit_plan');
+
+              // Invalidate caches
+              await queryClient.invalidateQueries({ queryKey: ['favorites', userId] });
+              await queryClient.invalidateQueries({ queryKey: ['favorite-events', userId] });
+              await queryClient.invalidateQueries({ queryKey: ['visit-plans', userId] });
+              await queryClient.invalidateQueries({ queryKey: ['visit-plan', pending.event_id, userId] });
+
+              // Navigate to event page via custom event (picked up by App)
+              window.dispatchEvent(new CustomEvent('pending-visit-saved', { detail: { slug: pending.event_slug } }));
+            } catch (err) {
+              console.error('Failed to save pending visit plan:', err);
+              localStorage.removeItem('pending_visit_plan');
+            }
+          }
+        }
       }
     );
 

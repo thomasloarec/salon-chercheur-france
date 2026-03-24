@@ -51,8 +51,8 @@ const STEPS = [
           <div className="w-48 h-28 rounded-xl bg-muted/50 border border-border flex items-center justify-center">
             <span className="text-sm text-muted-foreground">Carte d'événement</span>
           </div>
-          <div className="absolute -top-2 -right-2 w-9 h-9 rounded-full bg-accent flex items-center justify-center shadow-lg animate-bounce">
-            <CalendarCheck className="h-5 w-5 text-accent-foreground" />
+          <div className="absolute -top-2 -right-2 w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shadow-lg animate-bounce">
+            <CalendarCheck className="h-5 w-5 text-white" />
           </div>
         </div>
         <p className="text-xs text-muted-foreground text-center max-w-[240px]">
