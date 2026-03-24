@@ -1,9 +1,10 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { Toaster } from '@/components/ui/toaster';
+import { toast } from '@/hooks/use-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import SiteGuard from '@/components/auth/SiteGuard';
@@ -40,6 +41,27 @@ import BlogArticle from '@/pages/BlogArticle';
 import NotFound from '@/pages/NotFound';
 import './App.css';
 
+// Global listener for pending visit plan redirect after OAuth
+function PendingVisitRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const slug = (e as CustomEvent).detail?.slug;
+      if (slug) {
+        navigate(`/events/${slug}`, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+      setTimeout(() => {
+        toast({ title: 'Votre liste a bien été enregistrée dans Mon Agenda ✓' });
+      }, 500);
+    };
+    window.addEventListener('pending-visit-saved', handler);
+    return () => window.removeEventListener('pending-visit-saved', handler);
+  }, [navigate]);
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -47,6 +69,7 @@ function App() {
         <SiteGuard>
           <Router>
             <ScrollToTop />
+              <PendingVisitRedirect />
             <div className="App">
               <Routes>
               <Route path="/" element={<Events />} />
