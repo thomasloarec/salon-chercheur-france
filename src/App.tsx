@@ -20,6 +20,7 @@ import AdminEventDetail from '@/pages/AdminEventDetail';
 import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
 import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
 import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
+import AdminSeoAudit from '@/pages/AdminSeoAudit';
 import CrmIntegrations from '@/pages/CrmIntegrations';
 import { OAuthCallback } from '@/pages/OAuthCallback';
 import OAuthHubspotTest from '@/pages/OAuthHubspotTest';
@@ -85,6 +86,7 @@ function App() {
               <Route path="/admin/events/:id" element={<AdminEventDetail />} />
               <Route path="/admin/events/by-text/:id_event_text" element={<AdminEventByText />} />
               <Route path="/admin/import-diagnostics" element={<AdminImportDiagnostics />} />
+              <Route path="/admin/seo-audit" element={<AdminSeoAudit />} />
               <Route path="/admin/blog" element={<AdminBlog />} />
               <Route path="/admin/blog/new" element={<AdminBlogEdit />} />
               <Route path="/admin/blog/edit/:id" element={<AdminBlogEdit />} />
