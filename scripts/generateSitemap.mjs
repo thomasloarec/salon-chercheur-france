@@ -103,7 +103,7 @@ for (const page of staticPages) {
 const [{ data: events, error: eventsError }, { data: blogArticles, error: blogError }] = await Promise.all([
   supabase
     .from('events')
-    .select('slug, updated_at, date_debut')
+    .select('slug, updated_at, date_debut, secteur, ville')
     .eq('visible', true)
     .eq('is_test', false)
     .not('slug', 'is', null)
@@ -149,6 +149,47 @@ for (const article of blogArticles ?? []) {
     priority: '0.8',
   });
   counters.blog += 1;
+}
+
+// --- Sector hub pages ---
+const CANONICAL_SECTORS = [
+  "agroalimentaire-boissons", "automobile-mobilite", "btp-construction",
+  "commerce-distribution", "cosmetique-bien-etre", "education-formation",
+  "energie-environnement", "industrie-production", "mode-textile",
+  "sante-medical", "technologie-innovation", "tourisme-evenementiel",
+  "finance-assurance-immobilier", "services-entreprises-rh", "secteur-public-collectivites",
+];
+
+for (const sectorSlug of CANONICAL_SECTORS) {
+  addUrl(urls, {
+    loc: `${SITE_URL}/secteur/${sectorSlug}`,
+    lastmod: now,
+    changefreq: 'weekly',
+    priority: '0.7',
+  });
+  counters.hubs += 1;
+}
+
+// --- City hub pages (cities with >= 3 events) ---
+const cityCount = {};
+for (const event of events ?? []) {
+  if (event.ville) {
+    const slug = event.ville.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!cityCount[slug]) cityCount[slug] = { slug, count: 0 };
+    cityCount[slug].count += 1;
+  }
+}
+
+for (const entry of Object.values(cityCount)) {
+  if (entry.count >= 3) {
+    addUrl(urls, {
+      loc: `${SITE_URL}/ville/${entry.slug}`,
+      lastmod: now,
+      changefreq: 'weekly',
+      priority: '0.7',
+    });
+    counters.hubs += 1;
+  }
 }
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
