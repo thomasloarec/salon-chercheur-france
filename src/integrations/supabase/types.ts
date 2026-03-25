@@ -2011,6 +2011,135 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_checklist: {
+        Row: {
+          checked: boolean
+          checked_at: string | null
+          checked_by: string | null
+          created_at: string
+          id: string
+          item_key: string
+          label: string
+        }
+        Insert: {
+          checked?: boolean
+          checked_at?: string | null
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          item_key: string
+          label: string
+        }
+        Update: {
+          checked?: boolean
+          checked_at?: string | null
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          item_key?: string
+          label?: string
+        }
+        Relationships: []
+      }
+      seo_keywords: {
+        Row: {
+          created_at: string
+          current_position: number | null
+          id: string
+          keyword: string
+          notes: string | null
+          previous_position: number | null
+          serp_features: string | null
+          target_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_position?: number | null
+          id?: string
+          keyword: string
+          notes?: string | null
+          previous_position?: number | null
+          serp_features?: string | null
+          target_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_position?: number | null
+          id?: string
+          keyword?: string
+          notes?: string | null
+          previous_position?: number | null
+          serp_features?: string | null
+          target_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seo_quick_wins: {
+        Row: {
+          category: string
+          completed_at: string | null
+          created_at: string
+          effort: string
+          id: string
+          impact: string
+          status: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          effort?: string
+          id?: string
+          impact?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          effort?: string
+          id?: string
+          impact?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      seo_scans: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          phase: string | null
+          results: Json
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          phase?: string | null
+          results?: Json
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          phase?: string | null
+          results?: Json
+          status?: string
+        }
+        Relationships: []
+      }
       staging_events_import: {
         Row: {
           affluence: string | null

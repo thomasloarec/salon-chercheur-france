@@ -61,23 +61,41 @@ const Admin = () => {
           <p className="text-gray-600">Gestion des événements, nouveautés et modération</p>
         </div>
 
-        {/* Lien rapide vers le Blog */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Blog SEO</h3>
-                <p className="text-sm text-muted-foreground">Gérer les articles du blog</p>
+        {/* Liens rapides */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Blog SEO</h3>
+                  <p className="text-sm text-muted-foreground">Gérer les articles du blog</p>
+                </div>
+                <Button asChild>
+                  <Link to="/admin/blog">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Blog
+                  </Link>
+                </Button>
               </div>
-              <Button asChild>
-                <Link to="/admin/blog">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Gestion du Blog
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Audit SEO</h3>
+                  <p className="text-sm text-muted-foreground">Monitoring SEO complet</p>
+                </div>
+                <Button asChild>
+                  <Link to="/admin/seo-audit">
+                    <Search className="h-4 w-4 mr-2" />
+                    Dashboard SEO
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <Tabs defaultValue="novelties" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
