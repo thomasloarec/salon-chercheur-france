@@ -34,7 +34,7 @@ export function useSameCityEvents(event: Pick<Event, 'id' | 'ville'> | null) {
         return [];
       }
 
-      return (data || []) as Array<{
+      const rows = (data || []) as Array<{
         id: string;
         nom_event: string;
         slug: string;
@@ -43,7 +43,20 @@ export function useSameCityEvents(event: Pick<Event, 'id' | 'ville'> | null) {
         ville: string | null;
         url_image: string | null;
         secteur: any;
+        affluence: string | null;
       }>;
+
+      // Parse affluence to number for sorting (higher first)
+      const parseAffluence = (a: string | null): number => {
+        if (!a) return 0;
+        const cleaned = String(a).replace(/\./g, '').replace(/\s/g, '').trim();
+        const n = parseInt(cleaned, 10);
+        return !isNaN(n) && isFinite(n) && n > 0 ? n : 0;
+      };
+
+      return rows
+        .sort((a, b) => parseAffluence(b.affluence) - parseAffluence(a.affluence))
+        .slice(0, 4);
     },
   });
 }
