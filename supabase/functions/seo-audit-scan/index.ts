@@ -124,13 +124,19 @@ async function analyzeCrawlability(supabase: ReturnType<typeof createClient>) {
     sitemapExists = true;
     const content = await sitemapRes.text();
     const urlMatches = content.match(/<loc>(.*?)<\/loc>/g) || [];
-    sitemapUrls.push(...urlMatches.map(m => m.replace(/<\/?loc>/g, '')).slice(0, 200));
-    sitemapUrlCount = urlMatches.length;
+    const allParsedUrls = urlMatches.map(m => m.replace(/<\/?loc>/g, ''));
+    sitemapUrls.push(...allParsedUrls.slice(0, 200));
+    sitemapUrlCount = allParsedUrls.length;
 
-    const hasEvents = sitemapUrls.some(u => u.includes('/events/'));
-    const hasBlog = sitemapUrls.some(u => u.includes('/blog/'));
+    // Check against ALL parsed URLs, not just the truncated preview list
+    const hasEvents = allParsedUrls.some(u => u.includes('/events/'));
+    const hasBlog = allParsedUrls.some(u => u.includes('/blog/'));
+    const hasSectorHubs = allParsedUrls.some(u => u.includes('/secteur/'));
+    const hasCityHubs = allParsedUrls.some(u => u.includes('/ville/'));
     if (!hasEvents) sitemapIssues.push('Aucune page salon dans le sitemap');
     if (!hasBlog) sitemapIssues.push('Aucun article blog dans le sitemap');
+    if (!hasSectorHubs) sitemapIssues.push('Aucune page hub secteur dans le sitemap');
+    if (!hasCityHubs) sitemapIssues.push('Aucune page hub ville dans le sitemap');
   } else {
     sitemapIssues.push('sitemap.xml introuvable');
   }
@@ -304,9 +310,11 @@ async function analyzeUrls(supabase: ReturnType<typeof createClient>) {
     },
     contentGaps: {
       sectors: (sectors || []).map((s: Record<string, unknown>) => ({ name: s.name, slug: s.slug })),
-      hasSectorPages: false,
+      hasSectorPages: true,
       hasYearPages: false,
-      hasCityPages: false,
+      hasCityPages: true,
+      sectorHubRoute: '/secteur/:slug',
+      cityHubRoute: '/ville/:slug',
     },
     thinContent,
   };
@@ -326,7 +334,20 @@ async function analyzeLinking(supabase: ReturnType<typeof createClient>) {
 
   const withInternalLinks = (articles || []).filter((a: Record<string, unknown>) => {
     const body = (a.body_text as string) || '';
-    return body.includes('/events/') || body.includes('/blog/') || body.includes('lotexpo.com');
+    // Check for internal links in HTML href attributes and raw text
+    const internalPatterns = [
+      /href="[^"]*\/events\//i,
+      /href="[^"]*\/blog\//i,
+      /href="[^"]*\/secteur\//i,
+      /href="[^"]*\/ville\//i,
+      /href="[^"]*lotexpo\.com/i,
+      /\/events\//,
+      /\/blog\//,
+      /\/secteur\//,
+      /\/ville\//,
+      /lotexpo\.com/,
+    ];
+    return internalPatterns.some(p => p.test(body));
   });
 
   const totalArticles = (articles || []).length;
