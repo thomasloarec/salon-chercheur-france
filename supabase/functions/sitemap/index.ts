@@ -114,17 +114,21 @@ Deno.serve(async (req) => {
   </url>
 `;
 
+    let countStatic = 8; // home + events listing + nouveautes + exposants + how-it-works + mentions + privacy + cgu
+    let countEvents = 0;
+    let countBlog = 0;
+
     // Add event pages
     if (events && events.length > 0) {
       xml += '\n  <!-- Event pages -->\n';
       for (const event of events) {
         if (!event.slug) continue;
+        countEvents++;
         
         const lastmod = event.updated_at 
           ? new Date(event.updated_at).toISOString().split('T')[0]
           : now;
         
-        // Determine priority based on event date
         const eventDate = event.date_debut ? new Date(event.date_debut) : null;
         const isUpcoming = eventDate && eventDate >= new Date();
         const priority = isUpcoming ? '0.8' : '0.5';
@@ -153,6 +157,7 @@ Deno.serve(async (req) => {
 
     if (blogArticles && blogArticles.length > 0) {
       xml += '\n  <!-- Blog articles -->\n';
+      countStatic++; // blog index page
       xml += `  <url>
     <loc>${SITE_URL}/blog</loc>
     <lastmod>${now}</lastmod>
@@ -162,6 +167,7 @@ Deno.serve(async (req) => {
 `;
       for (const article of blogArticles) {
         if (!article.slug) continue;
+        countBlog++;
         const lastmod = article.updated_at
           ? new Date(article.updated_at).toISOString().split('T')[0]
           : now;
@@ -177,7 +183,8 @@ Deno.serve(async (req) => {
 
     xml += '</urlset>';
 
-    console.log('[sitemap] Sitemap generated successfully');
+    const totalUrls = countStatic + countEvents + countBlog;
+    console.log(`[sitemap] ✅ Generated ${totalUrls} URLs — static: ${countStatic}, events: ${countEvents}, blog: ${countBlog}`);
 
     return new Response(xml, {
       status: 200,
