@@ -1,13 +1,28 @@
 
+import { Link } from 'react-router-dom';
 import logoLotexpo from '@/assets/logo-lotexpo.png';
+import { CANONICAL_SECTORS } from '@/lib/taxonomy';
+
+const FOOTER_SECTORS = CANONICAL_SECTORS.slice(0, 8);
+
+const FOOTER_CITIES = [
+  { name: 'Paris', slug: 'paris' },
+  { name: 'Lyon', slug: 'lyon' },
+  { name: 'Bordeaux', slug: 'bordeaux' },
+  { name: 'Nantes', slug: 'nantes' },
+  { name: 'Toulouse', slug: 'toulouse' },
+  { name: 'Marseille', slug: 'marseille' },
+  { name: 'Lille', slug: 'lille' },
+  { name: 'Strasbourg', slug: 'strasbourg' },
+];
 
 const Footer = () => {
   return (
     <footer className="bg-primary text-white py-16">
       <div className="w-full px-6 mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
           {/* Company Info */}
-          <div className="md:col-span-1">
+          <div className="lg:col-span-1">
             <img src={logoLotexpo} alt="LotExpo" className="h-8 mb-4 brightness-0 invert" />
             <p className="text-gray-300 mb-4">
               La plateforme de référence pour découvrir tous les salons professionnels en France.
@@ -18,19 +33,47 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Navigation</h4>
             <ul className="space-y-2">
-              <li><a href="/" className="text-gray-300 hover:text-accent transition-colors">Accueil</a></li>
-              <li><a href="/nouveautes" className="text-gray-300 hover:text-accent transition-colors">Nouveautés</a></li>
-              <li><a href="/exposants" className="text-gray-300 hover:text-accent transition-colors">Exposants</a></li>
-              <li><a href="/comment-ca-marche" className="text-gray-300 hover:text-accent transition-colors">Comment ça marche</a></li>
-              <li><a href="/blog" className="text-gray-300 hover:text-accent transition-colors">Blog</a></li>
+              <li><Link to="/" className="text-gray-300 hover:text-accent transition-colors">Accueil</Link></li>
+              <li><Link to="/nouveautes" className="text-gray-300 hover:text-accent transition-colors">Nouveautés</Link></li>
+              <li><Link to="/exposants" className="text-gray-300 hover:text-accent transition-colors">Exposants</Link></li>
+              <li><Link to="/comment-ca-marche" className="text-gray-300 hover:text-accent transition-colors">Comment ça marche</Link></li>
+              <li><Link to="/blog" className="text-gray-300 hover:text-accent transition-colors">Blog</Link></li>
             </ul>
           </div>
 
-        {/* Contact */}
+          {/* Sectors */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">Salons par secteur</h4>
+            <ul className="space-y-2">
+              {FOOTER_SECTORS.map(s => (
+                <li key={s.value}>
+                  <Link to={`/secteur/${s.value}`} className="text-gray-300 hover:text-accent transition-colors text-sm">
+                    {s.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Cities */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">Salons par ville</h4>
+            <ul className="space-y-2">
+              {FOOTER_CITIES.map(c => (
+                <li key={c.slug}>
+                  <Link to={`/ville/${c.slug}`} className="text-gray-300 hover:text-accent transition-colors text-sm">
+                    Salons à {c.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
           <div>
             <h4 className="text-lg font-semibold mb-4">Contact</h4>
             <ul className="space-y-2">
-              <li><a href="/contact" className="text-gray-300 hover:text-accent transition-colors">Nous contacter</a></li>
+              <li><Link to="/contact" className="text-gray-300 hover:text-accent transition-colors">Nous contacter</Link></li>
             </ul>
           </div>
         </div>
@@ -42,15 +85,15 @@ const Footer = () => {
               © {new Date().getFullYear()} Lotexpo. Tous droits réservés.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="/mentions-legales" className="text-gray-300 hover:text-accent text-sm transition-colors">
+              <Link to="/mentions-legales" className="text-gray-300 hover:text-accent text-sm transition-colors">
                 Mentions légales
-              </a>
-              <a href="/politique-confidentialite" className="text-gray-300 hover:text-accent text-sm transition-colors">
+              </Link>
+              <Link to="/politique-confidentialite" className="text-gray-300 hover:text-accent text-sm transition-colors">
                 Politique de confidentialité
-              </a>
-              <a href="/cgu" className="text-gray-300 hover:text-accent text-sm transition-colors">
+              </Link>
+              <Link to="/cgu" className="text-gray-300 hover:text-accent text-sm transition-colors">
                 CGU
-              </a>
+              </Link>
             </div>
           </div>
         </div>

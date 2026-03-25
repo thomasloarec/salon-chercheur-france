@@ -40,6 +40,8 @@ import AdminBlogEdit from '@/pages/AdminBlogEdit';
 import Blog from '@/pages/Blog';
 import BlogArticle from '@/pages/BlogArticle';
 import NotFound from '@/pages/NotFound';
+import SectorHub from '@/pages/SectorHub';
+import CityHub from '@/pages/CityHub';
 import './App.css';
 
 // Global listener for pending visit plan redirect after OAuth
@@ -105,7 +107,9 @@ function App() {
               <Route path="/oauth/hubspot/callback" element={<OAuthCallback />} />
               <Route path="/oauth/hubspot/test" element={<OAuthHubspotTest />} />
               <Route path="/api/oauth/hubspot/callback" element={<LegacyHubspotApiCallback />} />
-              <Route path="*" element={<NotFound />} />
+               <Route path="/secteur/:slug" element={<SectorHub />} />
+               <Route path="/ville/:slug" element={<CityHub />} />
+               <Route path="*" element={<NotFound />} />
               </Routes>
               <OnboardingTour />
               <Toaster />
