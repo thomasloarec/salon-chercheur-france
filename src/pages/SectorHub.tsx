@@ -193,8 +193,8 @@ const SectorHub = () => {
                       <h3 className="font-medium text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors mb-2">
                         {article.title}
                       </h3>
-                      {article.meta_description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">{article.meta_description}</p>
+                      {article.intro_text && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">{article.intro_text}</p>
                       )}
                     </Card>
                   </Link>
