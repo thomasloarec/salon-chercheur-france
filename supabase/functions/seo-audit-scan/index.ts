@@ -354,37 +354,55 @@ async function analyzeUrls(supabase: ReturnType<typeof createClient>) {
 
 async function analyzeLinking(supabase: ReturnType<typeof createClient>) {
   const { data: articles } = await supabase.from('blog_articles')
-    .select('id, slug, title, body_text, event_ids')
-    .in('status', ['published', 'ready']).limit(30);
+    .select('id, slug, title, event_ids')
+    .in('status', ['published', 'ready'])
+    .not('slug', 'is', null)
+    .limit(30);
 
   const { count: eventsCount } = await supabase.from('events').select('id', { count: 'exact', head: true }).eq('visible', true).eq('is_test', false);
 
-  const withEventLinks = (articles || []).filter((a: Record<string, unknown>) => {
+  const articleRows = (articles || []) as Record<string, unknown>[];
+
+  const withEventLinks = articleRows.filter((a) => {
     const ids = a.event_ids as unknown[];
     return Array.isArray(ids) && ids.length > 0;
   });
 
-  const withInternalLinks = (articles || []).filter((a: Record<string, unknown>) => {
-    const body = (a.body_text as string) || '';
-    // Check for internal links in HTML href attributes and raw text
-    const internalPatterns = [
-      /href="[^"]*\/events\//i,
-      /href="[^"]*\/blog\//i,
-      /href="[^"]*\/secteur\//i,
-      /href="[^"]*\/ville\//i,
-      /href="[^"]*lotexpo\.com/i,
-      /\/events\//,
-      /\/blog\//,
-      /\/secteur\//,
-      /\/ville\//,
-      /lotexpo\.com/,
-    ];
-    return internalPatterns.some(p => p.test(body));
-  });
+  // Important: blog_articles.body_text is no longer used by the frontend.
+  // Internal links are rendered dynamically in the final HTML from event_ids and related article blocks.
+  const articleHtmlChecks = await Promise.all(articleRows.map(async (a) => {
+    const slug = a.slug as string | null;
+    if (!slug) {
+      return { slug: null, hasInternalLinks: false, matchedPatterns: [] as string[] };
+    }
 
-  const totalArticles = (articles || []).length;
+    const res = await safeFetch(`${SITE_URL}/blog/${slug}`, 15000);
+    if (!res?.ok) {
+      return { slug, hasInternalLinks: false, matchedPatterns: [] as string[] };
+    }
+
+    const html = await res.text();
+    const checks = [
+      { name: 'eventLinks', pattern: /href=["'][^"']*\/events\/[^"']+["']/i },
+      { name: 'blogLinks', pattern: /href=["'][^"']*\/blog\/[^"']+["']/i },
+      { name: 'sectorHubLinks', pattern: /href=["'][^"']*\/secteur\/[^"']+["']/i },
+      { name: 'cityHubLinks', pattern: /href=["'][^"']*\/ville\/[^"']+["']/i },
+      { name: 'absoluteInternalLinks', pattern: /href=["']https:\/\/lotexpo\.com\/[^"]+["']/i },
+    ];
+
+    const matchedPatterns = checks.filter(check => check.pattern.test(html)).map(check => check.name);
+    return {
+      slug,
+      hasInternalLinks: matchedPatterns.length > 0,
+      matchedPatterns,
+    };
+  }));
+
+  const withInternalLinks = articleHtmlChecks.filter((a) => a.hasInternalLinks);
+  const totalArticles = articleRows.length;
 
   return {
+    articles: articleHtmlChecks,
     summary: {
       totalEvents: eventsCount || 0,
       totalArticles,
