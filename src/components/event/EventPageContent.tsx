@@ -10,6 +10,10 @@ import { EventPageHeader } from '@/components/event/EventPageHeader';
 import { EventWhyVisit } from '@/components/event/EventWhyVisit';
 import { RelatedEvents } from '@/components/event/RelatedEvents';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
+import { EventSeriesBlock } from '@/components/event/EventSeriesBlock';
+import { SameCityEventsBlock } from '@/components/event/SameCityEventsBlock';
+import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
+import { EventBreadcrumb } from '@/components/event/EventBreadcrumb';
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
 import { SEOHead } from '@/components/event/SEOHead';
@@ -66,10 +70,10 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
   const sectorLink = useMemo(() => {
     const secteur = event.secteur;
-    if (!secteur) return '/';
+    if (!secteur) return '/events';
     const first = Array.isArray(secteur) ? secteur[0] : secteur;
-    if (!first) return '/';
-    return `/?sector=${encodeURIComponent(first)}`;
+    if (!first) return '/events';
+    return `/events?sectors=${encodeURIComponent(first)}`;
   }, [event.secteur]);
 
   const invalidateEvents = useInvalidateEvents();
