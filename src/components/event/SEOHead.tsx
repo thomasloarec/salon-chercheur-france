@@ -76,7 +76,7 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://lotexpo.com" },
-      { "@type": "ListItem", "position": 2, "name": "Salons professionnels", "item": "https://lotexpo.com" },
+      { "@type": "ListItem", "position": 2, "name": "Salons professionnels", "item": "https://lotexpo.com/events" },
       { "@type": "ListItem", "position": 3, "name": event.nom_event, "item": canonicalUrl }
     ]
   };

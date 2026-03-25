@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRelatedEvents } from "@/hooks/useRelatedEvents";
 import type { Event } from "@/types/event";
+import { getSectorUrl } from "@/lib/sectorUrl";
 
 interface RelatedEventsProps {
   event: Pick<Event, "id_event" | "secteur" | "ville">;
@@ -100,7 +101,7 @@ export const RelatedEvents = ({ event, limit = 4 }: RelatedEventsProps) => {
       {event.secteur && Array.isArray(event.secteur) && event.secteur.length > 0 && (
         <div className="mt-4 text-center">
           <Link
-            to={`/events?sectors=${encodeURIComponent(event.secteur[0])}`}
+            to={getSectorUrl(event.secteur[0])}
             className="text-sm text-primary hover:underline inline-flex items-center gap-1"
           >
             Voir tous les événements {event.secteur[0]}
