@@ -16,16 +16,18 @@ export function useSameCityEvents(event: Pick<Event, 'id' | 'ville'> | null) {
       if (!ville || !event) return [];
 
       const today = new Date().toISOString().split('T')[0];
+      const in30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
       const { data, error } = await supabase
         .from('events')
-        .select('id, nom_event, slug, date_debut, date_fin, ville, url_image, secteur')
+        .select('id, nom_event, slug, date_debut, date_fin, ville, url_image, secteur, affluence')
         .eq('ville', ville)
         .eq('visible', true)
         .neq('id', event.id)
         .gte('date_fin', today)
+        .lte('date_debut', in30)
         .order('date_debut', { ascending: true })
-        .limit(4);
+        .limit(20);
 
       if (error) {
         console.error('[useSameCityEvents] error:', error);
