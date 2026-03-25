@@ -1,10 +1,35 @@
 import { createClient } from '@supabase/supabase-js';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
 const SITE_URL = 'https://lotexpo.com';
 const OUTPUT_PATH = path.resolve('public', 'sitemap.xml');
+const ENV_PATH = path.resolve('.env');
+
+async function loadEnvFile() {
+  try {
+    const content = await readFile(ENV_PATH, 'utf8');
+    for (const rawLine of content.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      const separatorIndex = line.indexOf('=');
+      if (separatorIndex === -1) continue;
+      const key = line.slice(0, separatorIndex).trim();
+      let value = line.slice(separatorIndex + 1).trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  } catch {
+    // Ignore missing .env and rely on runtime environment variables.
+  }
+}
+
+await loadEnvFile();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -32,13 +57,8 @@ const escapeXml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 
-const addUrl = (items, { loc, lastmod, changefreq, priority }) => {
-  items.push({
-    loc,
-    lastmod,
-    changefreq,
-    priority,
-  });
+const addUrl = (items, entry) => {
+  items.push(entry);
 };
 
 const now = new Date().toISOString().split('T')[0];
