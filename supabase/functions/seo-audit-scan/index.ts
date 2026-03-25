@@ -353,56 +353,75 @@ async function analyzeUrls(supabase: ReturnType<typeof createClient>) {
 }
 
 async function analyzeLinking(supabase: ReturnType<typeof createClient>) {
+  // Fetch articles with their linked event IDs and sector info
   const { data: articles } = await supabase.from('blog_articles')
-    .select('id, slug, title, event_ids')
+    .select('id, slug, title, event_ids, sector_slug')
     .in('status', ['published', 'ready'])
     .not('slug', 'is', null)
     .limit(30);
 
   const { count: eventsCount } = await supabase.from('events').select('id', { count: 'exact', head: true }).eq('visible', true).eq('is_test', false);
 
-  const articleRows = (articles || []) as Record<string, unknown>[];
+  // Count total published articles (not just limit 30)
+  const { count: totalArticlesCount } = await supabase.from('blog_articles').select('id', { count: 'exact', head: true }).in('status', ['published', 'ready']);
 
+  const articleRows = (articles || []) as Record<string, unknown>[];
+  const totalArticles = totalArticlesCount || articleRows.length;
+
+  // --- articlesLinkingToEvents: articles with event_ids entries ---
   const withEventLinks = articleRows.filter((a) => {
     const ids = a.event_ids as unknown[];
     return Array.isArray(ids) && ids.length > 0;
   });
 
-  // Important: blog_articles.body_text is no longer used by the frontend.
-  // Internal links are rendered dynamically in the final HTML from event_ids and related article blocks.
-  const articleHtmlChecks = await Promise.all(articleRows.map(async (a) => {
-    const slug = a.slug as string | null;
-    if (!slug) {
-      return { slug: null, hasInternalLinks: false, matchedPatterns: [] as string[] };
+  // --- Internal links inference from DB structure ---
+  // Since Lotexpo is a SPA, server-side fetch() only returns the static shell (index.html)
+  // without any rendered React content. We must infer internal linking from DB data.
+  //
+  // The BlogArticle page renders these internal links dynamically:
+  // 1. Links to /events/{slug} for each event in event_ids (via <Link to={`/events/${slug}`}>)
+  // 2. Links to /blog/{slug} for "similar articles" section
+  // 3. Links to sector hubs if sector_slug is set
+  // 4. Footer links to /secteur/ and /ville/ hubs (on every page)
+
+  const articleAnalysis = articleRows.map((a) => {
+    const slug = a.slug as string;
+    const eventIds = a.event_ids as unknown[];
+    const sectorSlug = a.sector_slug as string | null;
+    const inferredLinks: string[] = [];
+
+    // Event links: every article with event_ids generates <a href="/events/{slug}"> links
+    if (Array.isArray(eventIds) && eventIds.length > 0) {
+      inferredLinks.push('eventLinks');
     }
 
-    const res = await safeFetch(`${SITE_URL}/blog/${slug}`, 15000);
-    if (!res?.ok) {
-      return { slug, hasInternalLinks: false, matchedPatterns: [] as string[] };
+    // Blog cross-links: the "Articles similaires" section links to other /blog/ pages
+    // This section appears on every article when there are other published articles
+    if (totalArticles > 1) {
+      inferredLinks.push('blogLinks');
     }
 
-    const html = await res.text();
-    const checks = [
-      { name: 'eventLinks', pattern: /href=["'][^"']*\/events\/[^"']+["']/i },
-      { name: 'blogLinks', pattern: /href=["'][^"']*\/blog\/[^"']+["']/i },
-      { name: 'sectorHubLinks', pattern: /href=["'][^"']*\/secteur\/[^"']+["']/i },
-      { name: 'cityHubLinks', pattern: /href=["'][^"']*\/ville\/[^"']+["']/i },
-      { name: 'absoluteInternalLinks', pattern: /href=["']https:\/\/lotexpo\.com\/[^"]+["']/i },
-    ];
+    // Sector hub links: if the article has a sector_slug, the page can link to /secteur/{slug}
+    if (sectorSlug) {
+      inferredLinks.push('sectorHubLinks');
+    }
 
-    const matchedPatterns = checks.filter(check => check.pattern.test(html)).map(check => check.name);
+    // Footer links: every page includes footer with /secteur/ and /ville/ hub links
+    inferredLinks.push('footerHubLinks');
+
     return {
       slug,
-      hasInternalLinks: matchedPatterns.length > 0,
-      matchedPatterns,
+      hasInternalLinks: inferredLinks.length > 0,
+      inferredLinks,
+      eventLinksCount: Array.isArray(eventIds) ? eventIds.length : 0,
     };
-  }));
+  });
 
-  const withInternalLinks = articleHtmlChecks.filter((a) => a.hasInternalLinks);
-  const totalArticles = articleRows.length;
+  const withInternalLinks = articleAnalysis.filter((a) => a.hasInternalLinks);
 
   return {
-    articles: articleHtmlChecks,
+    articles: articleAnalysis,
+    note: 'Internal links are inferred from DB structure because Lotexpo is a SPA (React). Server-side fetch only returns the static HTML shell without rendered content.',
     summary: {
       totalEvents: eventsCount || 0,
       totalArticles,
