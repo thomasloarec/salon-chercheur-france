@@ -261,7 +261,7 @@ async function analyzeSchema(supabase: ReturnType<typeof createClient>) {
 
 async function analyzeUrls(supabase: ReturnType<typeof createClient>) {
   const { data: events } = await supabase.from('events')
-    .select('slug, nom_event').eq('visible', true).eq('is_test', false).limit(50);
+    .select('slug, nom_event, ville').eq('visible', true).eq('is_test', false).limit(50);
 
   const { data: articles } = await supabase.from('blog_articles')
     .select('slug, title').in('status', ['published', 'ready']).limit(20);
@@ -300,6 +300,35 @@ async function analyzeUrls(supabase: ReturnType<typeof createClient>) {
     }))
     .sort((a: { wordCount: number }, b: { wordCount: number }) => a.wordCount - b.wordCount);
 
+  // Dynamically detect hub pages by checking sitemap
+  let hasSectorPages = false;
+  let hasCityPages = false;
+  const sectorHubCount = { total: 0 };
+  const cityHubCount = { total: 0 };
+
+  try {
+    const sitemapRes = await safeFetch(`${SITE_URL}/sitemap.xml`);
+    if (sitemapRes?.ok) {
+      const content = await sitemapRes.text();
+      const locMatches = content.match(/<loc>(.*?)<\/loc>/g) || [];
+      const urls = locMatches.map(m => m.replace(/<\/?loc>/g, ''));
+      const sectorUrls = urls.filter(u => u.includes('/secteur/'));
+      const cityUrls = urls.filter(u => u.includes('/ville/'));
+      hasSectorPages = sectorUrls.length > 0;
+      hasCityPages = cityUrls.length > 0;
+      sectorHubCount.total = sectorUrls.length;
+      cityHubCount.total = cityUrls.length;
+    }
+  } catch { /* ignore */ }
+
+  // Count unique cities with enough events
+  const cityCount: Record<string, number> = {};
+  for (const e of (events || []) as Record<string, unknown>[]) {
+    const v = e.ville as string;
+    if (v) cityCount[v] = (cityCount[v] || 0) + 1;
+  }
+  const eligibleCities = Object.entries(cityCount).filter(([, c]) => c >= 3).length;
+
   return {
     urls: urlAudit,
     summary: {
@@ -310,11 +339,14 @@ async function analyzeUrls(supabase: ReturnType<typeof createClient>) {
     },
     contentGaps: {
       sectors: (sectors || []).map((s: Record<string, unknown>) => ({ name: s.name, slug: s.slug })),
-      hasSectorPages: true,
+      hasSectorPages,
       hasYearPages: false,
-      hasCityPages: true,
+      hasCityPages,
       sectorHubRoute: '/secteur/:slug',
       cityHubRoute: '/ville/:slug',
+      sectorHubsInSitemap: sectorHubCount.total,
+      cityHubsInSitemap: cityHubCount.total,
+      eligibleCities,
     },
     thinContent,
   };
