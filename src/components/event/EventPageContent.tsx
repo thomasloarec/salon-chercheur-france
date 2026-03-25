@@ -166,7 +166,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 </div>
               </div>
             )}
-            
+
+            {/* Visible breadcrumb */}
+            <EventBreadcrumb event={event} />
 
             {/* Admin Menu */}
             <section className="flex items-center justify-between">
@@ -234,11 +236,20 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </aside>
             </div>
 
-            {/* ✅ Événements similaires pour le maillage interne SEO */}
+            {/* Autres éditions de ce salon (séries) */}
+            <EventSeriesBlock event={event} />
+
+            {/* Salons dans la même ville */}
+            <SameCityEventsBlock event={event} />
+
+            {/* Événements similaires pour le maillage interne SEO */}
             <RelatedEvents event={event} limit={4} />
 
-            {/* ✅ Bloc "Pourquoi visiter" en bas de page */}
+            {/* Bloc "Pourquoi visiter" en bas de page */}
             <EventWhyVisit event={event} />
+
+            {/* Articles de blog liés au secteur */}
+            <SectorArticlesBlock event={event} />
           </div>
         </main>
 
