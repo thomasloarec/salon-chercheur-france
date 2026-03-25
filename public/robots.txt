@@ -1,4 +1,4 @@
-# Lotexpo - robots.txt optimisé pour SEO
+# Lotexpo - robots.txt optimise pour SEO
 
 # Googlebot (search)
 User-agent: Googlebot
