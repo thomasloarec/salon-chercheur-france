@@ -16,23 +16,25 @@ export function useSameCityEvents(event: Pick<Event, 'id' | 'ville'> | null) {
       if (!ville || !event) return [];
 
       const today = new Date().toISOString().split('T')[0];
+      const in30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
       const { data, error } = await supabase
         .from('events')
-        .select('id, nom_event, slug, date_debut, date_fin, ville, url_image, secteur')
+        .select('id, nom_event, slug, date_debut, date_fin, ville, url_image, secteur, affluence')
         .eq('ville', ville)
         .eq('visible', true)
         .neq('id', event.id)
         .gte('date_fin', today)
+        .lte('date_debut', in30)
         .order('date_debut', { ascending: true })
-        .limit(4);
+        .limit(20);
 
       if (error) {
         console.error('[useSameCityEvents] error:', error);
         return [];
       }
 
-      return (data || []) as Array<{
+      const rows = (data || []) as Array<{
         id: string;
         nom_event: string;
         slug: string;
@@ -41,7 +43,20 @@ export function useSameCityEvents(event: Pick<Event, 'id' | 'ville'> | null) {
         ville: string | null;
         url_image: string | null;
         secteur: any;
+        affluence: string | null;
       }>;
+
+      // Parse affluence to number for sorting (higher first)
+      const parseAffluence = (a: string | null): number => {
+        if (!a) return 0;
+        const cleaned = String(a).replace(/\./g, '').replace(/\s/g, '').trim();
+        const n = parseInt(cleaned, 10);
+        return !isNaN(n) && isFinite(n) && n > 0 ? n : 0;
+      };
+
+      return rows
+        .sort((a, b) => parseAffluence(b.affluence) - parseAffluence(a.affluence))
+        .slice(0, 4);
     },
   });
 }
