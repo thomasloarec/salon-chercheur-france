@@ -29,16 +29,19 @@ export function useSectorHub(slug: string | undefined) {
       const dbLabels = sectorSlugToDbLabels(normalized);
       if (dbLabels.length === 0) return null;
 
-      // Query events matching this sector via JSONB contains
+      // Use filter with explicit JSON string to avoid encoding issues with '&' in PostgREST
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('visible', true)
         .eq('is_test', false)
-        .contains('secteur', [dbLabels[0]])
+        .filter('secteur', 'cs', JSON.stringify([dbLabels[0]]))
         .order('date_debut', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useSectorHub] query error:', error);
+        throw error;
+      }
 
       const events = (data ?? []).map(normalizeEventRow);
       const todayStr = new Date().toISOString().slice(0, 10);

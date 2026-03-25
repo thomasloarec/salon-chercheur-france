@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ChevronRight, Loader2, Calendar, MapPin, ArrowRight } from 'lucide-react';
@@ -7,9 +8,9 @@ import EventCard from '@/components/EventCard';
 import { useSectorHub } from '@/hooks/useSectorHub';
 import { useSectorArticles } from '@/hooks/useSectorArticles';
 import { getCityUrl } from '@/lib/cityUrl';
-import { getSectorConfig } from '@/constants/sectors';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { groupEventsByMonth } from '@/utils/eventGrouping';
 import type { Event } from '@/types/event';
 
 function canonicalToEvent(e: any): Event {
@@ -36,6 +37,13 @@ const SectorHub = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: hub, isLoading, error } = useSectorHub(slug);
   const { data: articles = [] } = useSectorArticles(hub?.sectorLabel ? [hub.sectorLabel] : []);
+
+  // Group upcoming events by month
+  const groupedUpcoming = useMemo(() => {
+    if (!hub?.upcomingEvents?.length) return [];
+    const events = hub.upcomingEvents.map(canonicalToEvent);
+    return groupEventsByMonth(events);
+  }, [hub?.upcomingEvents]);
 
   if (isLoading) {
     return (
@@ -64,7 +72,6 @@ const SectorHub = () => {
   }
 
   const canonicalUrl = `https://lotexpo.com/secteur/${hub.sectorSlug}`;
-  const sectorConfig = getSectorConfig(hub.sectorLabel);
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -140,15 +147,24 @@ const SectorHub = () => {
             </div>
           )}
 
-          {/* Upcoming events */}
-          {hub.upcomingEvents.length > 0 && (
+          {/* Upcoming events grouped by month */}
+          {groupedUpcoming.length > 0 && (
             <section className="mb-12">
               <h2 className="text-2xl font-semibold text-foreground mb-6">
                 Salons {hub.sectorLabel} à venir
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
-                {hub.upcomingEvents.map(e => (
-                  <EventCard key={e.id} event={canonicalToEvent(e)} view="grid" />
+              <div className="space-y-10">
+                {groupedUpcoming.map(({ monthLabel, events: monthEvents }) => (
+                  <div key={monthLabel} className="border-t border-border pt-8 first:border-t-0 first:pt-0">
+                    <h3 className="text-2xl font-semibold text-foreground mb-6 capitalize">
+                      {monthLabel}
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+                      {monthEvents.map(e => (
+                        <EventCard key={e.id} event={e} view="grid" />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>
@@ -164,7 +180,7 @@ const SectorHub = () => {
             </div>
           )}
 
-          {/* Past events (show up to 8) */}
+          {/* Past events */}
           {hub.pastEvents.length > 0 && (
             <section className="mb-12">
               <h2 className="text-2xl font-semibold text-foreground mb-2">
