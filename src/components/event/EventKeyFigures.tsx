@@ -72,11 +72,7 @@ export const EventKeyFigures = ({ event, exhibitorCount, noveltyCount }: EventKe
       {figures.map((fig, i) => (
         <div
           key={i}
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border ${
-            fig.highlight
-              ? 'border-primary/30 bg-primary/5 text-primary font-medium'
-              : 'border-border bg-muted/40 text-muted-foreground'
-          }`}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-border bg-muted/40 text-muted-foreground"
         >
           <span className="flex-shrink-0">{fig.icon}</span>
           <span>{fig.value}</span>
