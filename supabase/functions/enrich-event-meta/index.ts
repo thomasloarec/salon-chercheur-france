@@ -436,8 +436,180 @@ async function markError(supabase: ReturnType<typeof createClient>, eventId: str
     .eq('id', eventId);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   DESCRIPTION ENRICHIE — Pilot phase
+   ═══════════════════════════════════════════════════════════════ */
+
+const PILOT_SLUGS = [
+  'fip-solution-plastique',
+  'carrefour-international-du-bois',
+  'sepem-brest',
+  'in-cosmetics-global',
+  'food-hotel-tech',
+  'medfel',
+];
+
+const DESC_ENRICHIE_SYSTEM_PROMPT = `Tu es un rédacteur expert en événements professionnels B2B français.
+
+Tu rédiges des descriptions enrichies pour des fiches de salons professionnels
+sur Lotexpo, la plateforme de référence des événements pro en France.
+
+Ton objectif : produire un texte utile pour deux audiences simultanément.
+
+1. Un professionnel qui évalue si ce salon vaut son déplacement.
+2. Google, qui doit comprendre de quoi parle cette page et la classer
+   sur des requêtes comme "[nom du salon] [année]" ou
+   "salon [secteur] [ville] [année]".
+
+RÈGLES ABSOLUES :
+- Tu n'inventes AUCUNE information. Tu travailles uniquement avec
+  les données fournies dans le prompt utilisateur.
+- Si une donnée est absente ou marquée "non communiqué",
+  tu ne la mentionnes pas. Tu ne la devines pas.
+- Tu ne répètes pas mot pour mot la description existante.
+  Tu l'enrichis, la restructures, l'approfondis.
+- Longueur cible : 350 à 500 mots.
+- Structure attendue (sans titres visibles dans le texte) :
+    § 1 — Contexte et positionnement du salon (2-3 phrases)
+    § 2 — Ce qu'on y trouve : exposants, secteurs, thématiques (3-4 phrases)
+    § 3 — À qui s'adresse cet événement, pourquoi y aller (3-4 phrases)
+    § 4 — Informations pratiques clés : lieu, dates, accès, tarif (2-3 phrases)
+- Ton : professionnel, factuel, direct. Pas de superlatifs.
+  Pas de "incontournable", "unique", "exceptionnel".
+- Tu retournes uniquement le texte rédigé, sans titre,
+  sans balise, sans commentaire.`;
+
+function buildDescEnrichiePrompt(event: EventData): string {
+  const parts: string[] = ['Voici les données de l\'événement à traiter :\n'];
+  parts.push(`NOM : ${event.nom_event}`);
+
+  const secteurs = extractSectors(event.secteur);
+  parts.push(`SECTEUR(S) : ${secteurs || 'non communiqué'}`);
+  parts.push(`TYPE D'ÉVÉNEMENT : ${event.type_event || 'non communiqué'}`);
+  parts.push(`VILLE : ${event.ville || 'non communiqué'}`);
+  parts.push(`LIEU : ${event.nom_lieu || 'non communiqué'}`);
+  parts.push(`ADRESSE : ${event.rue || 'non communiqué'}`);
+
+  const dateRange = formatDateRangeFr(event.date_debut, event.date_fin);
+  parts.push(`DATES : ${dateRange || 'non communiqué'}`);
+  parts.push(`AFFLUENCE ATTENDUE : ${event.affluence || 'non communiqué'}`);
+  parts.push(`TARIF : ${event.tarif || 'non communiqué'}`);
+  parts.push(`SITE OFFICIEL : ${event.url_site_officiel || 'non communiqué'}`);
+
+  if (event.description_event) {
+    const desc = event.description_event.replace(/<[^>]*>/g, '').slice(0, 2000);
+    parts.push(`\nDESCRIPTION ACTUELLE (à enrichir, ne pas copier) :\n${desc}`);
+  } else {
+    parts.push(`\nDESCRIPTION ACTUELLE : non communiqué`);
+  }
+
+  parts.push('\nRédige la description enrichie.');
+  return parts.join('\n');
+}
+
+/** Check if an event is eligible for description_enrichie generation */
+function isEligibleForDescEnrichie(event: EventData): { eligible: boolean; reason?: string } {
+  // Must be a pilot slug
+  if (!event.slug || !PILOT_SLUGS.includes(event.slug)) {
+    return { eligible: false, reason: 'Slug non inclus dans le pilote' };
+  }
+  // Must be premium
+  if (event.enrichissement_niveau !== 'premium') {
+    return { eligible: false, reason: `Niveau "${event.enrichissement_niveau}" (premium requis)` };
+  }
+  // Must not already have a description_enrichie
+  if (event.description_enrichie && event.description_enrichie.trim() !== '') {
+    return { eligible: false, reason: 'description_enrichie déjà remplie' };
+  }
+  // Must be non_traite (for this specific flow)
+  if (event.enrichissement_statut && event.enrichissement_statut !== 'non_traite' && event.enrichissement_statut !== 'done') {
+    return { eligible: false, reason: `Statut "${event.enrichissement_statut}" (non_traite requis)` };
+  }
+  // Must be a future event
+  const today = new Date().toISOString().slice(0, 10);
+  if (!event.date_debut || event.date_debut.slice(0, 10) <= today) {
+    return { eligible: false, reason: 'Événement passé ou sans date' };
+  }
+  return { eligible: true };
+}
+
+/** Generate description_enrichie for a single event */
+async function enrichDescription(
+  supabase: ReturnType<typeof createClient>,
+  event: EventData,
+  anthropicKey: string,
+): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string }> {
+  const eligibility = isEligibleForDescEnrichie(event);
+  if (!eligibility.eligible) {
+    return { status: 'skipped', reason: eligibility.reason };
+  }
+
+  console.log(`📝 [Desc enrichie] Appel Claude pour : ${event.nom_event}`);
+
+  const userMessage = buildDescEnrichiePrompt(event);
+
+  try {
+    const response = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: {
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: userMessage }],
+        system: DESC_ENRICHIE_SYSTEM_PROMPT,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ [Desc enrichie] Claude API ${response.status}: ${errorText.slice(0, 200)}`);
+      return { status: 'error', reason: `Claude API ${response.status}` };
+    }
+
+    const result = await response.json();
+    const text = result?.content?.[0]?.text?.trim() ?? '';
+
+    // ─── Garde-fous ───
+    if (text.length < 300) {
+      console.error(`❌ [Desc enrichie] Texte trop court (${text.length} car.) pour ${event.nom_event}`);
+      return { status: 'error', reason: `Texte trop court: ${text.length} caractères (min 300)` };
+    }
+
+    if (text.includes('[NON RENSEIGNÉ]')) {
+      console.error(`❌ [Desc enrichie] Contient "[NON RENSEIGNÉ]" pour ${event.nom_event}`);
+      return { status: 'error', reason: 'Contient "[NON RENSEIGNÉ]"' };
+    }
+
+    // ─── Écriture en DB ───
+    const { error: updateError } = await supabase
+      .from('events')
+      .update({
+        description_enrichie: text,
+        enrichissement_statut: 'en_attente',
+        enrichissement_date: new Date().toISOString(),
+      })
+      .eq('id', event.id);
+
+    if (updateError) {
+      console.error(`❌ [Desc enrichie] Erreur sauvegarde:`, updateError.message);
+      return { status: 'error', reason: `Erreur DB: ${updateError.message}` };
+    }
+
+    console.log(`✅ [Desc enrichie] OK pour ${event.nom_event} (${text.length} car.)`);
+    return { status: 'done' };
+
+  } catch (err) {
+    console.error(`❌ [Desc enrichie] Erreur pour ${event.nom_event}:`, err);
+    return { status: 'error', reason: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /* ─── SELECT FIELDS ─── */
-const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, date_debut, date_fin, description_event, affluence, meta_description_gen';
+const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, rue, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut';
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin');
