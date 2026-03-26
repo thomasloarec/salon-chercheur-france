@@ -88,6 +88,7 @@ export const SeoEnrichmentPanel = () => {
           ? 'Aucun événement éligible trouvé.'
           : `${d.done} OK, ${d.skipped} ignoré(s), ${d.errors} erreur(s)${d.retried ? `, ${d.retried} retry(s)` : ''}`,
       });
+      fetchMissingCount();
     } catch (err) {
       console.error('Batch enrichment error:', err);
       toast({
