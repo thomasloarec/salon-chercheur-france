@@ -21,6 +21,7 @@ interface EventData {
   id: string;
   id_event: string | null;
   nom_event: string;
+  slug: string | null;
   type_event: string | null;
   secteur: unknown;
   ville: string | null;
@@ -36,6 +37,7 @@ interface EnrichResult {
   id: string;
   id_event: string | null;
   nom_event: string;
+  slug: string | null;
   status: 'done' | 'skipped' | 'error';
   reason?: string;
   meta_description_gen?: string;
@@ -225,7 +227,7 @@ Deno.serve(async (req) => {
       // Fetch eligible events: visible, upcoming, no meta
       const { data: events, error: fetchErr } = await supabase
         .from('events')
-        .select('id, id_event, nom_event, type_event, secteur, ville, nom_lieu, date_debut, date_fin, description_event, affluence, meta_description_gen')
+        .select('id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, date_debut, date_fin, description_event, affluence, meta_description_gen')
         .eq('visible', true)
         .eq('is_test', false)
         .gte('date_debut', today)
