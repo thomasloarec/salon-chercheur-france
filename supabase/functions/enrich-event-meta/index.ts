@@ -30,11 +30,17 @@ interface EventData {
   secteur: unknown;
   ville: string | null;
   nom_lieu: string | null;
+  rue: string | null;
   date_debut: string | null;
   date_fin: string | null;
   description_event: string | null;
   affluence: string | null;
+  tarif: string | null;
+  url_site_officiel: string | null;
   meta_description_gen: string | null;
+  description_enrichie: string | null;
+  enrichissement_niveau: string | null;
+  enrichissement_statut: string | null;
 }
 
 interface EnrichResult {
