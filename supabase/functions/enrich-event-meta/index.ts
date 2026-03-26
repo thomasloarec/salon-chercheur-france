@@ -91,7 +91,7 @@ async function enrichSingleEvent(
   event: EventData,
   anthropicKey: string,
 ): Promise<EnrichResult> {
-  const base = { id: event.id, id_event: event.id_event, nom_event: event.nom_event };
+  const base = { id: event.id, id_event: event.id_event, nom_event: event.nom_event, slug: event.slug };
 
   // Guard: already has meta
   if (event.meta_description_gen && event.meta_description_gen.trim() !== '') {
@@ -278,7 +278,7 @@ Deno.serve(async (req) => {
 
     const { data: event, error: fetchError } = await supabase
       .from('events')
-      .select('id, id_event, nom_event, type_event, secteur, ville, nom_lieu, date_debut, date_fin, description_event, affluence, meta_description_gen')
+      .select('id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, date_debut, date_fin, description_event, affluence, meta_description_gen')
       .eq('id', event_id)
       .maybeSingle();
 
