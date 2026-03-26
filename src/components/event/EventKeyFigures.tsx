@@ -13,7 +13,6 @@ interface FigureItem {
   icon: React.ReactNode;
   label: string;
   value: string;
-  highlight?: boolean;
 }
 
 export const EventKeyFigures = ({ event, exhibitorCount, noveltyCount }: EventKeyFiguresProps) => {
@@ -44,7 +43,6 @@ export const EventKeyFigures = ({ event, exhibitorCount, noveltyCount }: EventKe
         icon: <Wand2 className="h-4 w-4" />,
         label: 'Visite IA',
         value: 'Parcours IA disponible',
-        highlight: true,
       });
     }
 
@@ -56,7 +54,6 @@ export const EventKeyFigures = ({ event, exhibitorCount, noveltyCount }: EventKe
           icon: <Clock className="h-4 w-4" />,
           label: 'Compte à rebours',
           value: daysUntil === 1 ? 'Demain !' : `Dans ${daysUntil} jours`,
-          highlight: daysUntil <= 7,
         });
       }
     }
