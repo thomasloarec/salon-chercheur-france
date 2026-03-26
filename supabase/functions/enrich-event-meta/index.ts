@@ -55,6 +55,8 @@ interface EnrichResult {
   enrichissement_date?: string;
   retried?: boolean;
   retry_reason?: string;
+  description_enrichie_status?: 'done' | 'skipped' | 'error';
+  description_enrichie_reason?: string;
 }
 
 /* ─── DATE FORMATTING (natural French) ─── */
