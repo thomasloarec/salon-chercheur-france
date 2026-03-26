@@ -719,6 +719,10 @@ Deno.serve(async (req) => {
     }
 
     const result = await enrichSingleEvent(supabase, event as EventData, ANTHROPIC_API_KEY);
+    // Also attempt description_enrichie
+    const descResult = await enrichDescription(supabase, event as EventData, ANTHROPIC_API_KEY);
+    result.description_enrichie_status = descResult.status;
+    result.description_enrichie_reason = descResult.reason;
 
     const statusCode = result.status === 'error' ? 500 : 200;
     return new Response(JSON.stringify(result), { status: statusCode, headers: jsonHeaders });
