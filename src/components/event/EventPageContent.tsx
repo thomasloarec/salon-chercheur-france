@@ -138,6 +138,24 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                     </span>
                   )}
                 </p>
+                {/* Enrichment status */}
+                <div className="flex flex-wrap gap-2 mt-1">
+                  <span className={`text-xs px-2 py-0.5 rounded ${event.meta_description_gen ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                    Meta: {event.meta_description_gen ? '✓' : '—'}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded ${Array.isArray(event.faq_json) && event.faq_json.length > 0 ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                    FAQ: {Array.isArray(event.faq_json) && event.faq_json.length > 0 ? `✓ (${event.faq_json.length})` : '—'}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600">
+                    Score: {event.enrichissement_score ?? '—'}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600">
+                    Statut: {event.enrichissement_statut || '—'}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600">
+                    Enrichi: {event.enrichissement_date ? new Date(event.enrichissement_date).toLocaleDateString('fr-FR') : '—'}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
