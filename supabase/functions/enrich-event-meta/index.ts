@@ -11,11 +11,15 @@ import { buildCorsHeaders, handleCors } from '../_shared/cors.ts'
  *   { event_id: string }           → enrichit un seul événement
  *   { batch: true, limit: number } → enrichit un lot d'événements éligibles
  * 
- * Sécurité : fire-and-forget, ne bloque jamais la publication.
- * En cas d'erreur, enrichissement_statut = 'error'.
+ * V2 — Prompt renforcé, garde-fous qualité, retry automatique.
  */
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
+
+const MIN_LENGTH = 135;
+const MAX_LENGTH = 160;
+const IDEAL_MIN = 140;
+const IDEAL_MAX = 155;
 
 interface EventData {
   id: string;
@@ -43,49 +47,198 @@ interface EnrichResult {
   meta_description_gen?: string;
   length?: number;
   enrichissement_date?: string;
+  retried?: boolean;
+  retry_reason?: string;
 }
 
+/* ─── DATE FORMATTING ─── */
+function formatDateFr(dateStr: string | null): string {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+/* ─── EXTRACT SECTORS ─── */
+function extractSectors(secteur: unknown): string {
+  if (!secteur) return '';
+  if (Array.isArray(secteur)) {
+    const flat = secteur.flatMap((s: unknown) => Array.isArray(s) ? s : [s]).filter(Boolean);
+    return flat.join(', ');
+  }
+  const str = String(secteur);
+  if (str === '[]' || str === 'null') return '';
+  return str;
+}
+
+/* ─── BUILD PROMPT (ordered data priority) ─── */
 function buildPrompt(event: EventData): string {
   const parts: string[] = [];
 
-  parts.push(`Nom : ${event.nom_event}`);
-  if (event.type_event) parts.push(`Type : ${event.type_event}`);
+  // Priority 1: nom_event (always present)
+  parts.push(`Nom de l'événement : ${event.nom_event}`);
+
+  // Priority 2: ville
   if (event.ville) parts.push(`Ville : ${event.ville}`);
+
+  // Priority 3: dates
+  if (event.date_debut) parts.push(`Date début : ${formatDateFr(event.date_debut)}`);
+  if (event.date_fin) parts.push(`Date fin : ${formatDateFr(event.date_fin)}`);
+
+  // Priority 4: type_event
+  if (event.type_event) parts.push(`Type : ${event.type_event}`);
+
+  // Priority 5: secteur
+  const secteurs = extractSectors(event.secteur);
+  if (secteurs) parts.push(`Secteur(s) : ${secteurs}`);
+
+  // Priority 6: nom_lieu
   if (event.nom_lieu) parts.push(`Lieu : ${event.nom_lieu}`);
-  if (event.date_debut) parts.push(`Date début : ${event.date_debut}`);
-  if (event.date_fin) parts.push(`Date fin : ${event.date_fin}`);
 
-  if (event.secteur) {
-    const secteurs = Array.isArray(event.secteur) 
-      ? event.secteur.join(', ')
-      : String(event.secteur);
-    if (secteurs && secteurs !== '[]') parts.push(`Secteurs : ${secteurs}`);
-  }
+  // Priority 7: affluence (optional)
+  if (event.affluence) parts.push(`Affluence estimée : ${event.affluence} visiteurs`);
 
-  if (event.affluence) parts.push(`Affluence : ${event.affluence} visiteurs`);
-
+  // Priority 8: description (aide de reformulation uniquement)
   if (event.description_event) {
-    const desc = event.description_event.replace(/<[^>]*>/g, '').slice(0, 500);
-    parts.push(`Description : ${desc}`);
+    const desc = event.description_event.replace(/<[^>]*>/g, '').slice(0, 400);
+    parts.push(`Description (à utiliser uniquement pour reformulation factuelle, ne rien inventer à partir de ce texte) : ${desc}`);
   }
 
   return parts.join('\n');
 }
 
-const SYSTEM_PROMPT = `Tu es un rédacteur SEO spécialisé dans les salons et événements professionnels en France.
+/* ─── SYSTEM PROMPT V2 — RENFORCÉ ─── */
+const SYSTEM_PROMPT = `Tu es un rédacteur de meta descriptions pour des pages de salons professionnels en France.
 
-RÈGLES STRICTES :
-- Génère UNE SEULE meta description entre 140 et 155 caractères exactement.
-- Utilise UNIQUEMENT les informations fournies. N'invente RIEN.
-- Si une information n'est pas fournie, ne la mentionne pas.
-- Style factuel, clair et naturel. Pas de superlatifs. Pas de formulations marketing.
+OBJECTIF : Produire UNE meta description factuelle, sobre et complète.
+
+RÈGLES ABSOLUES :
+1. Utilise UNIQUEMENT les informations fournies. N'invente RIEN.
+2. Ne déduis AUCUN positionnement métier qui n'est pas explicitement présent dans les données.
+3. Aucun superlatif. Aucun ton marketing. Aucune promesse.
+4. N'utilise PAS de formulations comme :
+   - "pour améliorer…"
+   - "rendez-vous des professionnels de…"
+   - "pour découvrir…"
+   - "incontournable"
+   - "à ne pas manquer"
+   sauf si ces termes sont strictement présents dans les données fournies.
+5. Préfère une phrase simple et exacte plutôt qu'une phrase plus riche mais incertaine.
+6. La description_event fournie sert uniquement d'aide à la reformulation factuelle. Ne l'utilise pas pour inventer ou enrichir librement.
+
+FORMAT :
+- Longueur : entre 140 et 155 caractères exactement.
+- La phrase DOIT être complète, lisible et terminée par un point.
+- JAMAIS de phrase tronquée ou coupée.
 - Pas de guillemets autour du résultat.
-- Pas de préfixe type "Meta description :" ou "Voici la meta description".
-- Inclus si possible : nom de l'événement, ville, dates ou année, et secteur principal.
-- La phrase doit donner envie de cliquer tout en restant informative et honnête.
-- Réponds UNIQUEMENT avec la meta description, rien d'autre.`;
+- Pas de préfixe comme "Meta description :" ou "Voici :".
 
-/** Enrich a single event. Returns the result object. */
+STRUCTURES À PRIVILÉGIER (varier légèrement mais rester homogène) :
+- "{nom_event} à {ville} du {date_debut} au {date_fin} : {type_event} dédié à {secteur}, organisé à {nom_lieu}."
+- "{nom_event}, {type_event} à {ville} du {date_debut} au {date_fin}, consacré à {secteur}."
+- "{nom_event} se tient à {ville} du {date_debut} au {date_fin} pour les professionnels du secteur {secteur}."
+
+Si certaines données sont absentes, produis une meta plus simple. Ne compense JAMAIS par une supposition.
+
+Réponds UNIQUEMENT avec la meta description, rien d'autre.`;
+
+/* ─── RETRY PROMPT ─── */
+const RETRY_PROMPT = `La meta description précédente ne respecte pas les critères de qualité.
+
+Réécris-la en respectant strictement ces règles :
+- Entre 140 et 155 caractères exactement.
+- Phrase complète terminée par un point.
+- Strictement factuelle, sans rien inventer.
+- Pas de phrase tronquée.
+- Sobre, sans ton marketing ni superlatif.
+
+Réponds UNIQUEMENT avec la meta description corrigée, rien d'autre.`;
+
+/* ─── QUALITY VALIDATION ─── */
+interface ValidationResult {
+  valid: boolean;
+  reason?: string;
+}
+
+function validateMeta(meta: string): ValidationResult {
+  if (!meta || meta.trim() === '') {
+    return { valid: false, reason: 'Meta vide' };
+  }
+
+  const trimmed = meta.trim();
+  const len = trimmed.length;
+
+  // Too short
+  if (len < MIN_LENGTH) {
+    return { valid: false, reason: `Trop courte (${len} car., min ${MIN_LENGTH})` };
+  }
+
+  // Too long
+  if (len > MAX_LENGTH) {
+    return { valid: false, reason: `Trop longue (${len} car., max ${MAX_LENGTH})` };
+  }
+
+  // Truncated: ends without proper punctuation and looks cut
+  const lastChar = trimmed[trimmed.length - 1];
+  const properEndings = ['.', '!', '?', '…'];
+  if (!properEndings.includes(lastChar)) {
+    // Check if it looks like a complete thought anyway (e.g., ends with a word)
+    // But if it ends mid-word or with comma/colon, it's truncated
+    if ([',', ':', ';', '-', '–'].includes(lastChar)) {
+      return { valid: false, reason: 'Phrase coupée (ponctuation incomplète)' };
+    }
+    // No final punctuation — likely truncated
+    return { valid: false, reason: 'Phrase sans ponctuation finale' };
+  }
+
+  // Starts with unwanted prefix
+  const lowerMeta = trimmed.toLowerCase();
+  if (lowerMeta.startsWith('meta description') || lowerMeta.startsWith('voici')) {
+    return { valid: false, reason: 'Contient un préfixe non désiré' };
+  }
+
+  return { valid: true };
+}
+
+/* ─── CALL CLAUDE ─── */
+async function callClaude(
+  anthropicKey: string,
+  systemPrompt: string,
+  userMessage: string,
+): Promise<{ text: string | null; error?: string }> {
+  try {
+    const response = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: {
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: userMessage }],
+        system: systemPrompt,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { text: null, error: `Claude API ${response.status}: ${errorText.slice(0, 200)}` };
+    }
+
+    const result = await response.json();
+    const text = result?.content?.[0]?.text?.trim() ?? null;
+    return { text };
+  } catch (err) {
+    return { text: null, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/* ─── ENRICH SINGLE EVENT (with retry) ─── */
 async function enrichSingleEvent(
   supabase: ReturnType<typeof createClient>,
   event: EventData,
@@ -107,7 +260,7 @@ async function enrichSingleEvent(
 
   // Guard: missing data
   if (!event.nom_event || event.nom_event.trim() === '') {
-    return { ...base, status: 'skipped', reason: 'Données insuffisantes' };
+    return { ...base, status: 'skipped', reason: 'Données insuffisantes (nom manquant)' };
   }
 
   // Mark pending
@@ -117,52 +270,75 @@ async function enrichSingleEvent(
     .eq('id', event.id);
 
   try {
-    console.log(`🤖 Appel Claude pour : ${event.nom_event}`);
     const userMessage = buildPrompt(event);
 
-    const anthropicResponse = await fetch(ANTHROPIC_API_URL, {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        messages: [{ role: 'user', content: userMessage }],
-        system: SYSTEM_PROMPT,
-      }),
-    });
+    // ─── Attempt 1 ───
+    console.log(`🤖 [Attempt 1] Appel Claude pour : ${event.nom_event}`);
+    const attempt1 = await callClaude(anthropicKey, SYSTEM_PROMPT, userMessage);
 
-    if (!anthropicResponse.ok) {
-      const errorText = await anthropicResponse.text();
-      console.error(`❌ Claude API error ${anthropicResponse.status}:`, errorText.slice(0, 300));
+    if (attempt1.error) {
+      console.error(`❌ Claude error attempt 1:`, attempt1.error);
+      await markError(supabase, event.id);
+      return { ...base, status: 'error', reason: attempt1.error };
+    }
+
+    let meta = attempt1.text ?? '';
+    // Remove quotes if wrapped
+    if ((meta.startsWith('"') && meta.endsWith('"')) || (meta.startsWith('«') && meta.endsWith('»'))) {
+      meta = meta.slice(1, -1).trim();
+    }
+
+    let validation = validateMeta(meta);
+    let retried = false;
+    let retryReason: string | undefined;
+
+    // ─── Attempt 2 (retry) if validation fails ───
+    if (!validation.valid) {
+      retried = true;
+      retryReason = validation.reason;
+      console.log(`🔄 [Retry] ${event.nom_event} — raison: ${validation.reason}`);
+
+      const retryMessage = `Données de l'événement :\n${userMessage}\n\nMeta description précédente (non valide) :\n"${meta}"\n\nProblème : ${validation.reason}`;
+      const attempt2 = await callClaude(anthropicKey, RETRY_PROMPT, retryMessage);
+
+      if (attempt2.error) {
+        console.error(`❌ Claude error attempt 2:`, attempt2.error);
+        await markError(supabase, event.id);
+        return { ...base, status: 'error', reason: `Retry échoué: ${attempt2.error}`, retried: true, retry_reason: retryReason };
+      }
+
+      meta = attempt2.text ?? '';
+      if ((meta.startsWith('"') && meta.endsWith('"')) || (meta.startsWith('«') && meta.endsWith('»'))) {
+        meta = meta.slice(1, -1).trim();
+      }
+
+      validation = validateMeta(meta);
+    }
+
+    // ─── Final validation ───
+    if (!validation.valid) {
+      console.error(`❌ Validation échouée après retry pour ${event.nom_event}: ${validation.reason}`);
       await supabase
         .from('events')
         .update({ enrichissement_statut: 'error', enrichissement_date: new Date().toISOString() })
         .eq('id', event.id);
-      return { ...base, status: 'error', reason: `Claude API ${anthropicResponse.status}` };
+      return {
+        ...base,
+        status: 'error',
+        reason: `Qualité insuffisante après retry: ${validation.reason}`,
+        meta_description_gen: meta,
+        length: meta.length,
+        retried: true,
+        retry_reason: retryReason,
+      };
     }
 
-    const result = await anthropicResponse.json();
-    const metaDescription = result?.content?.[0]?.text?.trim();
-
-    if (!metaDescription || metaDescription.length < 50) {
-      await supabase
-        .from('events')
-        .update({ enrichissement_statut: 'error', enrichissement_date: new Date().toISOString() })
-        .eq('id', event.id);
-      return { ...base, status: 'error', reason: 'Meta générée invalide ou trop courte' };
-    }
-
-    const truncated = metaDescription.slice(0, 160);
+    // ─── Save ───
     const now = new Date().toISOString();
-
     const { error: updateError } = await supabase
       .from('events')
       .update({
-        meta_description_gen: truncated,
+        meta_description_gen: meta,
         enrichissement_statut: 'done',
         enrichissement_date: now,
       })
@@ -173,23 +349,34 @@ async function enrichSingleEvent(
       return { ...base, status: 'error', reason: 'Erreur sauvegarde DB' };
     }
 
-    console.log(`✅ Meta OK pour ${event.nom_event}: "${truncated}"`);
+    const inIdealRange = meta.length >= IDEAL_MIN && meta.length <= IDEAL_MAX;
+    console.log(`✅ Meta OK pour ${event.nom_event} (${meta.length} car.${retried ? ', après retry' : ''}${inIdealRange ? '' : ', hors cible idéale'}): "${meta}"`);
+
     return {
       ...base,
       status: 'done',
-      meta_description_gen: truncated,
-      length: truncated.length,
+      meta_description_gen: meta,
+      length: meta.length,
       enrichissement_date: now,
+      retried,
+      retry_reason: retryReason,
     };
   } catch (err) {
     console.error(`❌ Erreur enrichissement ${event.nom_event}:`, err);
-    await supabase
-      .from('events')
-      .update({ enrichissement_statut: 'error', enrichissement_date: new Date().toISOString() })
-      .eq('id', event.id);
+    await markError(supabase, event.id);
     return { ...base, status: 'error', reason: err instanceof Error ? err.message : String(err) };
   }
 }
+
+async function markError(supabase: ReturnType<typeof createClient>, eventId: string) {
+  await supabase
+    .from('events')
+    .update({ enrichissement_statut: 'error', enrichissement_date: new Date().toISOString() })
+    .eq('id', eventId);
+}
+
+/* ─── SELECT FIELDS ─── */
+const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, date_debut, date_fin, description_event, affluence, meta_description_gen';
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -222,12 +409,11 @@ Deno.serve(async (req) => {
       const limit = Math.min(Math.max(Number(body.limit) || 10, 1), 50);
       const today = new Date().toISOString().slice(0, 10);
 
-      console.log(`📦 Batch enrichissement — limit: ${limit}`);
+      console.log(`📦 Batch enrichissement V2 — limit: ${limit}`);
 
-      // Fetch eligible events: visible, upcoming, no meta
       const { data: events, error: fetchErr } = await supabase
         .from('events')
-        .select('id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, date_debut, date_fin, description_event, affluence, meta_description_gen')
+        .select(SELECT_FIELDS)
         .eq('visible', true)
         .eq('is_test', false)
         .gte('date_debut', today)
@@ -248,7 +434,6 @@ Deno.serve(async (req) => {
 
       const results: EnrichResult[] = [];
       for (const ev of events) {
-        // Sequential to avoid rate limits on Claude API
         const result = await enrichSingleEvent(supabase, ev as EventData, ANTHROPIC_API_KEY);
         results.push(result);
       }
@@ -256,8 +441,9 @@ Deno.serve(async (req) => {
       const done = results.filter(r => r.status === 'done').length;
       const skipped = results.filter(r => r.status === 'skipped').length;
       const errors = results.filter(r => r.status === 'error').length;
+      const retried = results.filter(r => r.retried).length;
 
-      console.log(`📦 Batch terminé — done: ${done}, skipped: ${skipped}, errors: ${errors}`);
+      console.log(`📦 Batch V2 terminé — done: ${done}, skipped: ${skipped}, errors: ${errors}, retried: ${retried}`);
 
       return new Response(JSON.stringify({
         batch: true,
@@ -265,6 +451,7 @@ Deno.serve(async (req) => {
         done,
         skipped,
         errors,
+        retried,
         results,
       }), { status: 200, headers: jsonHeaders });
     }
@@ -278,7 +465,7 @@ Deno.serve(async (req) => {
 
     const { data: event, error: fetchError } = await supabase
       .from('events')
-      .select('id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, date_debut, date_fin, description_event, affluence, meta_description_gen')
+      .select(SELECT_FIELDS)
       .eq('id', event_id)
       .maybeSingle();
 
