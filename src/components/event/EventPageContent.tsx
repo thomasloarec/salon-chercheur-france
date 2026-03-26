@@ -63,6 +63,22 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
     event.id_event
   );
   const exhibitorCount = exhibitorsData?.total || 0;
+
+  // Novelty count for KeyFigures
+  const { data: noveltyCountData } = useQuery({
+    queryKey: ['novelty-count', event.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('novelties')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id)
+        .eq('status', 'approved');
+      return count ?? 0;
+    },
+    enabled: !!event.id,
+  });
+  const noveltyCount = noveltyCountData ?? 0;
+
   const isEventPast = useMemo(() => {
     const endDate = event.date_fin || event.date_debut;
     if (!endDate) return false;
