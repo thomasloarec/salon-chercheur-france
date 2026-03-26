@@ -10,9 +10,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { SafeSelect } from '@/components/ui/SafeSelect';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +23,8 @@ import { convertSecteurToString } from '@/utils/sectorUtils';
 import { useSectors } from '@/hooks/useSectors';
 import type { Event } from '@/types/event';
 import type { Sector } from '@/types/sector';
+import { Check, AlertTriangle, Info } from 'lucide-react';
+
 const EVENT_TYPES = [
   { value: 'salon', label: 'Salon' },
   { value: 'conference', label: 'Conférence' },
@@ -30,6 +34,19 @@ const EVENT_TYPES = [
   { value: 'forum', label: 'Forum' },
   { value: 'autre', label: 'Autre' },
 ];
+
+const PUBLISHED_DOMAIN = 'https://lotexpo.lovable.app';
+
+/** Normalize a string into a valid URL slug */
+const sanitizeSlug = (input: string): string => {
+  return input
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove accents
+    .replace(/[^a-z0-9-]/g, '-')    // replace invalid chars with dash
+    .replace(/-{2,}/g, '-')         // collapse multiple dashes
+    .replace(/^-|-$/g, '');         // trim leading/trailing dashes
+};
 
 interface EventEditModalProps {
   event: Event;
@@ -56,10 +73,18 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     visible: true,
   });
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
+  const [sectorsLoaded, setSectorsLoaded] = useState(false);
+
+  // SEO fields
+  const [seoSlug, setSeoSlug] = useState('');
+  const [seoMetaDescription, setSeoMetaDescription] = useState('');
+  const [slugError, setSlugError] = useState('');
+  const [slugChecking, setSlugChecking] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: allSectors = [] } = useSectors();
+  const { data: allSectors = [], isSuccess: sectorsReady } = useSectors();
 
   // Options pour le MultiSelect des secteurs
   const sectorOptions = allSectors.map((s: Sector) => ({
@@ -67,49 +92,44 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     label: s.name,
   }));
 
-  // Charger les secteurs depuis la DB quand le modal s'ouvre
+  // Charger les secteurs depuis la DB quand le modal s'ouvre ET que allSectors est chargé
   useEffect(() => {
     const loadEventSectors = async () => {
-      if (event && open) {
-        // IMPORTANT: utiliser id_event (ex: "Event_84") pour la table event_sectors
-        // La foreign key event_sectors.event_id -> events.id_event (text)
-        const eventIdForSectors = event.id_event;
-        
-        console.log('Loading sectors for event:', { 
-          eventId: event.id, 
-          id_event: event.id_event,
-          eventIdForSectors 
-        });
-        
-        if (!eventIdForSectors) {
-          console.warn('No id_event found, cannot load sectors from event_sectors table');
-          setSelectedSectorIds([]);
-          return;
-        }
-        
-        const { data, error } = await supabase
-          .from('event_sectors')
-          .select('sector_id')
-          .eq('event_id', eventIdForSectors);
-        
-        console.log('Loaded sectors:', { data, error });
-        
-        if (!error && data) {
-          const sectorIds = data.map(row => row.sector_id);
-          console.log('Setting selectedSectorIds:', sectorIds);
-          setSelectedSectorIds(sectorIds);
-        } else {
-          console.error('Error loading event sectors:', error);
-          setSelectedSectorIds([]);
-        }
-      }
-    };
-    
-    loadEventSectors();
-  }, [event, open]);
+      if (!event || !open || !sectorsReady) return;
 
+      const eventIdForSectors = event.id_event;
+
+      if (!eventIdForSectors) {
+        setSelectedSectorIds([]);
+        setSectorsLoaded(true);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('event_sectors')
+        .select('sector_id')
+        .eq('event_id', eventIdForSectors);
+
+      if (!error && data) {
+        // Only keep IDs that exist in allSectors to avoid phantom selections
+        const validIds = new Set(allSectors.map(s => s.id));
+        const sectorIds = data.map(row => row.sector_id).filter(id => validIds.has(id));
+        setSelectedSectorIds(sectorIds);
+      } else {
+        setSelectedSectorIds([]);
+      }
+      setSectorsLoaded(true);
+    };
+
+    if (open) {
+      setSectorsLoaded(false);
+      loadEventSectors();
+    }
+  }, [event?.id, open, sectorsReady, allSectors]);
+
+  // Load form data + SEO fields when modal opens
   useEffect(() => {
-    if (event) {
+    if (event && open) {
       setFormData({
         nom_event: event.nom_event || '',
         description_event: event.description_event || '',
@@ -126,8 +146,13 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         tarif: event.tarif || '',
         visible: event.visible ?? true,
       });
+
+      // SEO fields
+      setSeoSlug(event.slug || '');
+      setSeoMetaDescription(event.meta_description_gen || '');
+      setSlugError('');
     }
-  }, [event]);
+  }, [event?.id, open]);
 
   // Handler pour la sélection de secteurs avec limite à 3
   const handleSectorChange = (newSelected: string[]) => {
@@ -142,42 +167,66 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     }
   };
 
+  // Slug change handler with sanitization
+  const handleSlugChange = (raw: string) => {
+    const sanitized = sanitizeSlug(raw);
+    setSeoSlug(sanitized);
+    setSlugError('');
+  };
+
+  // Check slug uniqueness
+  const checkSlugUniqueness = async (slug: string): Promise<boolean> => {
+    if (!slug) {
+      setSlugError('Le slug ne peut pas être vide.');
+      return false;
+    }
+    setSlugChecking(true);
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id')
+        .eq('slug', slug)
+        .neq('id', event.id)
+        .limit(1);
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setSlugError('Ce slug est déjà utilisé par un autre événement.');
+        return false;
+      }
+      return true;
+    } catch {
+      setSlugError('Erreur lors de la vérification du slug.');
+      return false;
+    } finally {
+      setSlugChecking(false);
+    }
+  };
+
+  // Meta description length helpers
+  const metaLen = seoMetaDescription.length;
+  const metaStatus = metaLen === 0 ? 'empty' : metaLen < 140 ? 'short' : metaLen <= 155 ? 'good' : 'long';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Determine if we're updating events or staging_events_import table
       const isEventsImport = event.slug?.startsWith('pending-');
-      
-      console.log('Updating event:', { 
-        eventId: event.id, 
-        isEventsImport, 
-        slug: event.slug, 
-        visible: event.visible 
-      });
 
-      // Generate slug if name or city changed for published events
-      const nameChanged = formData.nom_event !== event.nom_event;
-      const cityChanged = formData.ville !== event.ville;
-      const shouldRegenerateSlug = nameChanged || cityChanged;
-      
-      let newSlug = event.slug;
-      if (shouldRegenerateSlug && !isEventsImport) {
-        // Create a temporary event object for slug generation
-        const tempEvent: Event = {
-          ...event,
-          nom_event: formData.nom_event,
-          ville: formData.ville,
-          date_debut: formData.date_debut,
-        };
-        newSlug = generateEventSlug(tempEvent);
+      // Validate slug if changed (only for published events)
+      const slugChanged = !isEventsImport && seoSlug !== event.slug;
+      if (slugChanged) {
+        const isUnique = await checkSlugUniqueness(seoSlug);
+        if (!isUnique) {
+          setIsLoading(false);
+          return;
+        }
       }
 
       let data, error;
 
       if (isEventsImport) {
-        // Update events_import table - use only fields that exist in this table
         const updateData = {
           nom_event: formData.nom_event,
           description_event: formData.description_event || null,
@@ -190,11 +239,9 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           url_image: formData.url_image || null,
           url_site_officiel: formData.url_site_officiel || null,
           type_event: formData.type_event,
-          tarif: formData.tarif || null, // events_import uses 'tarif' not 'tarifs'
+          tarif: formData.tarif || null,
           updated_at: new Date().toISOString(),
         };
-
-        console.log('Updating events_import with data:', updateData);
 
         const result = await supabase
           .from('staging_events_import')
@@ -205,17 +252,12 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
         data = result.data;
         error = result.error;
-        
-        if (error) {
-          console.error('Error updating staging_events_import:', error);
-        }
       } else {
         // Récupérer les noms des secteurs sélectionnés pour la colonne legacy "secteur"
         const selectedSectorNames = allSectors
           .filter(s => selectedSectorIds.includes(s.id))
           .map(s => s.name);
 
-        // Update events table
         const updateData = {
           nom_event: formData.nom_event,
           description_event: formData.description_event || null,
@@ -231,13 +273,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           type_event: formData.type_event,
           tarif: formData.tarif || null,
           visible: formData.visible,
-          slug: newSlug,
-          // Mettre à jour la colonne secteur legacy avec les noms des secteurs
+          slug: seoSlug || event.slug,
+          meta_description_gen: seoMetaDescription || null,
           secteur: selectedSectorNames.length > 0 ? selectedSectorNames : null,
           updated_at: new Date().toISOString(),
         };
-
-        console.log('Updating events with data:', updateData);
 
         const result = await supabase
           .from('events')
@@ -248,23 +288,12 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
         data = result.data;
         error = result.error;
-        
-        if (error) {
-          console.error('Error updating events:', error);
-        }
 
-        // Mettre à jour les secteurs dans event_sectors (seulement pour events, pas staging)
-        if (!error && data) {
-          // IMPORTANT: utiliser id_event (ex: "Event_84"), pas id (UUID)
+        // Mettre à jour les secteurs dans event_sectors
+        if (!error && data && sectorsLoaded) {
           const eventIdForSectors = event.id_event;
-          
+
           if (eventIdForSectors) {
-            console.log('Updating sectors for event:', { 
-              eventIdForSectors, 
-              selectedSectorIds 
-            });
-            
-            // Supprimer les anciens secteurs
             const { error: deleteError } = await supabase
               .from('event_sectors')
               .delete()
@@ -272,18 +301,13 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
             if (deleteError) {
               console.error('Error deleting old sectors:', deleteError);
-            } else {
-              console.log('Old sectors deleted successfully');
             }
 
-            // Ajouter les nouveaux secteurs
             if (selectedSectorIds.length > 0) {
               const sectorInserts = selectedSectorIds.map(sectorId => ({
                 event_id: eventIdForSectors,
                 sector_id: sectorId,
               }));
-
-              console.log('Inserting new sectors:', sectorInserts);
 
               const { error: insertError } = await supabase
                 .from('event_sectors')
@@ -291,12 +315,8 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
               if (insertError) {
                 console.error('Error inserting new sectors:', insertError);
-              } else {
-                console.log('New sectors inserted successfully');
               }
             }
-          } else {
-            console.warn('No id_event found, skipping event_sectors update');
           }
         }
       }
@@ -305,24 +325,23 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
       toast({
         title: "Événement mis à jour",
-        description: "Les modifications ont été sauvegardées avec succès.",
+        description: slugChanged
+          ? "Modifications sauvegardées. ⚠️ Le slug a changé — vérifiez les redirections SEO si nécessaire."
+          : "Les modifications ont été sauvegardées avec succès.",
       });
 
-      // Invalider les requêtes pour forcer le rechargement des données
+      // Invalider les caches
       if (isEventsImport) {
-        // Pour les événements en attente, invalider la requête admin-event-detail
         queryClient.invalidateQueries({ queryKey: ['admin-event-detail', event.id] });
       } else {
-        // Pour les événements publiés, invalider les requêtes event et related
         queryClient.invalidateQueries({ queryKey: ['event', event.slug] });
+        if (slugChanged) {
+          queryClient.invalidateQueries({ queryKey: ['event', seoSlug] });
+        }
         queryClient.invalidateQueries({ queryKey: ['event-by-id', event.id] });
       }
-
-      // Invalider aussi les requêtes globales des événements
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['admin-events'] });
-      
-      // Invalider les secteurs de l'événement
       const eventIdForSectors = event.id_event || event.id;
       queryClient.invalidateQueries({ queryKey: ['event-sectors', eventIdForSectors] });
 
@@ -331,11 +350,9 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         .filter(s => selectedSectorIds.includes(s.id))
         .map(s => ({ id: s.id, name: s.name, created_at: '' }));
 
-      // Transform the response to match our Event interface
       const transformedEvent: Event = isEventsImport ? {
-        // For staging_events_import, transform the data
         id: data.id,
-        id_event: event.id_event, // Préserver id_event
+        id_event: event.id_event,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
@@ -363,9 +380,8 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         sectors: updatedSectors,
         is_favorite: event.is_favorite
       } : {
-        // For events table, use actual DB column names
         id: data.id,
-        id_event: data.id_event || event.id_event, // Préserver id_event
+        id_event: data.id_event || event.id_event,
         nom_event: data.nom_event || '',
         description_event: data.description_event,
         date_debut: data.date_debut,
@@ -390,11 +406,14 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         code_postal: data.code_postal,
         visible: data.visible,
         slug: data.slug,
+        meta_description_gen: data.meta_description_gen,
+        enrichissement_statut: data.enrichissement_statut,
+        enrichissement_date: data.enrichissement_date,
         sectors: updatedSectors,
         is_favorite: event.is_favorite
       };
 
-      onEventUpdated(transformedEvent, shouldRegenerateSlug);
+      onEventUpdated(transformedEvent, slugChanged);
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating event:', error);
@@ -407,6 +426,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       setIsLoading(false);
     }
   };
+
+  const isEventsImport = event.slug?.startsWith('pending-');
+  const canonicalUrl = seoSlug ? `${PUBLISHED_DOMAIN}/events/${seoSlug}` : '';
+  const enrichStatus = event.enrichissement_statut;
+  const enrichDate = event.enrichissement_date;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -529,10 +553,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 options={sectorOptions}
                 selected={selectedSectorIds}
                 onChange={handleSectorChange}
-                placeholder="Sélectionnez les secteurs..."
+                placeholder={!sectorsLoaded ? "Chargement des secteurs..." : "Sélectionnez les secteurs..."}
                 className="mt-1"
+                disabled={!sectorsLoaded}
               />
-              {selectedSectorIds.length === 0 && (
+              {selectedSectorIds.length === 0 && sectorsLoaded && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Aucun secteur sélectionné
                 </p>
@@ -574,11 +599,105 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             </div>
           </div>
 
+          {/* ────────────── SECTION SEO ────────────── */}
+          {!isEventsImport && (
+            <>
+              <Separator className="my-2" />
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+                  Paramètres SEO
+                </h3>
+
+                {/* Slug */}
+                <div>
+                  <Label htmlFor="seo-slug">Slug</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Identifiant utilisé dans l'URL de la page événement.
+                  </p>
+                  <Input
+                    id="seo-slug"
+                    value={seoSlug}
+                    onChange={(e) => handleSlugChange(e.target.value)}
+                    placeholder="mon-evenement"
+                  />
+                  {slugError && (
+                    <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> {slugError}
+                    </p>
+                  )}
+                  {slugChecking && (
+                    <p className="text-xs text-muted-foreground mt-1">Vérification…</p>
+                  )}
+                </div>
+
+                {/* Meta description */}
+                <div>
+                  <Label htmlFor="seo-meta">Meta description</Label>
+                  <Textarea
+                    id="seo-meta"
+                    value={seoMetaDescription}
+                    onChange={(e) => setSeoMetaDescription(e.target.value)}
+                    placeholder="Description SEO de l'événement (140-155 caractères recommandés)"
+                    rows={3}
+                    className="mt-1"
+                  />
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {metaLen} caractère{metaLen !== 1 ? 's' : ''}
+                    </span>
+                    {metaLen > 0 && (
+                      <span className={`text-xs flex items-center gap-1 ${
+                        metaStatus === 'good'
+                          ? 'text-green-600'
+                          : metaStatus === 'short'
+                            ? 'text-amber-600'
+                            : 'text-destructive'
+                      }`}>
+                        {metaStatus === 'good' && <><Check className="h-3 w-3" /> Longueur idéale</>}
+                        {metaStatus === 'short' && <><AlertTriangle className="h-3 w-3" /> Trop court (cible : 140-155)</>}
+                        {metaStatus === 'long' && <><AlertTriangle className="h-3 w-3" /> Trop long (cible : 140-155)</>}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Aperçu URL / Canonical */}
+                <div>
+                  <Label>Aperçu URL finale / Canonical</Label>
+                  <div className="mt-1 px-3 py-2 rounded-md border border-border bg-muted/40 text-sm text-muted-foreground break-all select-all">
+                    {canonicalUrl || <span className="italic">Aucun slug défini</span>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <Info className="h-3 w-3" /> Canonical calculée automatiquement à partir du slug.
+                  </p>
+                </div>
+
+                {/* État enrichissement */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Statut enrichissement</Label>
+                    <div className="mt-1 px-3 py-2 rounded-md border border-border bg-muted/40 text-sm text-muted-foreground">
+                      {enrichStatus || '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Date enrichissement</Label>
+                    <div className="mt-1 px-3 py-2 rounded-md border border-border bg-muted/40 text-sm text-muted-foreground">
+                      {enrichDate
+                        ? new Date(enrichDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : '—'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || !!slugError}>
               {isLoading ? 'Sauvegarde...' : 'Sauvegarder'}
             </Button>
           </DialogFooter>
