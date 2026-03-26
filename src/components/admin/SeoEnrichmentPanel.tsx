@@ -108,7 +108,17 @@ export const SeoEnrichmentPanel = () => {
           <Sparkles className="h-5 w-5" />
           Enrichissement SEO (meta description) — V2
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="flex items-center gap-3 flex-wrap">
+          <span>
+            Génère les meta descriptions manquantes via Claude avec prompt renforcé, validation qualité et retry automatique.
+            Ne touche jamais aux metas existantes ni aux événements passés.
+          </span>
+          {missingCount !== null && (
+            <Badge variant={missingCount === 0 ? 'outline' : 'destructive'} className="whitespace-nowrap">
+              {missingCount === 0 ? '✓ Tous enrichis' : `${missingCount} sans meta`}
+            </Badge>
+          )}
+        </CardDescription>
           Génère les meta descriptions manquantes via Claude avec prompt renforcé, validation qualité et retry automatique.
           Ne touche jamais aux metas existantes ni aux événements passés.
         </CardDescription>
