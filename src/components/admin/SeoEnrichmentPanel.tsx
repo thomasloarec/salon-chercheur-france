@@ -51,7 +51,22 @@ export const SeoEnrichmentPanel = () => {
   const [batchSize, setBatchSize] = useState('10');
   const [isRunning, setIsRunning] = useState(false);
   const [response, setResponse] = useState<BatchResponse | null>(null);
+  const [missingCount, setMissingCount] = useState<number | null>(null);
   const { toast } = useToast();
+
+  const fetchMissingCount = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const { count, error } = await supabase
+      .from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('visible', true)
+      .eq('is_test', false)
+      .gte('date_debut', today)
+      .is('meta_description_gen', null);
+    if (!error) setMissingCount(count ?? 0);
+  };
+
+  useEffect(() => { fetchMissingCount(); }, []);
 
   const runBatch = async () => {
     setIsRunning(true);
