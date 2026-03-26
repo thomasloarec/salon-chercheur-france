@@ -673,6 +673,10 @@ Deno.serve(async (req) => {
       const results: EnrichResult[] = [];
       for (const ev of events) {
         const result = await enrichSingleEvent(supabase, ev as EventData, ANTHROPIC_API_KEY);
+        // After meta enrichment, attempt description_enrichie for eligible events
+        const descResult = await enrichDescription(supabase, ev as EventData, ANTHROPIC_API_KEY);
+        result.description_enrichie_status = descResult.status;
+        result.description_enrichie_reason = descResult.reason;
         results.push(result);
       }
 
@@ -680,8 +684,9 @@ Deno.serve(async (req) => {
       const skipped = results.filter(r => r.status === 'skipped').length;
       const errors = results.filter(r => r.status === 'error').length;
       const retried = results.filter(r => r.retried).length;
+      const descDone = results.filter(r => r.description_enrichie_status === 'done').length;
 
-      console.log(`📦 Batch V2 terminé — done: ${done}, skipped: ${skipped}, errors: ${errors}, retried: ${retried}`);
+      console.log(`📦 Batch V2 terminé — meta: done=${done}, skipped=${skipped}, errors=${errors}, retried=${retried} | desc_enrichie: done=${descDone}`);
 
       return new Response(JSON.stringify({
         batch: true,
@@ -690,6 +695,7 @@ Deno.serve(async (req) => {
         skipped,
         errors,
         retried,
+        description_enrichie_done: descDone,
         results,
       }), { status: 200, headers: jsonHeaders });
     }
