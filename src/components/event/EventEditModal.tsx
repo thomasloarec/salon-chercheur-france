@@ -128,7 +128,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   }, [event?.id, open, sectorsReady, allSectors]);
 
   // Track previous open state to only populate form on open transition
-  const prevOpenRef = React.useRef(false);
+  const prevOpenRef = useRef(false);
 
   // Load form data + SEO fields ONLY when modal transitions from closed to open
   useEffect(() => {
