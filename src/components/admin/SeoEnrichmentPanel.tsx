@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +51,22 @@ export const SeoEnrichmentPanel = () => {
   const [batchSize, setBatchSize] = useState('10');
   const [isRunning, setIsRunning] = useState(false);
   const [response, setResponse] = useState<BatchResponse | null>(null);
+  const [missingCount, setMissingCount] = useState<number | null>(null);
   const { toast } = useToast();
+
+  const fetchMissingCount = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const { count, error } = await supabase
+      .from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('visible', true)
+      .eq('is_test', false)
+      .gte('date_debut', today)
+      .is('meta_description_gen', null);
+    if (!error) setMissingCount(count ?? 0);
+  };
+
+  useEffect(() => { fetchMissingCount(); }, []);
 
   const runBatch = async () => {
     setIsRunning(true);
@@ -73,6 +88,7 @@ export const SeoEnrichmentPanel = () => {
           ? 'Aucun événement éligible trouvé.'
           : `${d.done} OK, ${d.skipped} ignoré(s), ${d.errors} erreur(s)${d.retried ? `, ${d.retried} retry(s)` : ''}`,
       });
+      fetchMissingCount();
     } catch (err) {
       console.error('Batch enrichment error:', err);
       toast({
@@ -92,9 +108,16 @@ export const SeoEnrichmentPanel = () => {
           <Sparkles className="h-5 w-5" />
           Enrichissement SEO (meta description) — V2
         </CardTitle>
-        <CardDescription>
-          Génère les meta descriptions manquantes via Claude avec prompt renforcé, validation qualité et retry automatique.
-          Ne touche jamais aux metas existantes ni aux événements passés.
+        <CardDescription className="flex items-center gap-3 flex-wrap">
+          <span>
+            Génère les meta descriptions manquantes via Claude avec prompt renforcé, validation qualité et retry automatique.
+            Ne touche jamais aux metas existantes ni aux événements passés.
+          </span>
+          {missingCount !== null && (
+            <Badge variant={missingCount === 0 ? 'outline' : 'destructive'} className="whitespace-nowrap">
+              {missingCount === 0 ? '✓ Tous enrichis' : `${missingCount} sans meta`}
+            </Badge>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
