@@ -70,9 +70,19 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const defaultDescription = `Découvrez ${event.nom_event}, un événement incontournable du secteur ${secteurText}. 
     Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`;
 
-  const description = (event.enrichissement_statut === 'valide' && event.description_enrichie)
-    ? event.description_enrichie
+  const isEnriched = event.enrichissement_statut === 'valide' && !!event.description_enrichie;
+  const rawDescription = isEnriched
+    ? event.description_enrichie!
     : (event.description_event || defaultDescription);
+
+  // Convert plain-text newlines to <p> tags for enriched descriptions
+  const description = isEnriched
+    ? rawDescription
+        .split(/\n\n+/)
+        .filter(p => p.trim())
+        .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+        .join('')
+    : rawDescription;
 
   return (
     <section className={cn(
