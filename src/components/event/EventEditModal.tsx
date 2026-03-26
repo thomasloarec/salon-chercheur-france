@@ -463,7 +463,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Input
                 id="nom_event"
                 value={formData.nom_event}
-                onChange={(e) => setFormData({ ...formData, nom_event: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, nom_event: e.target.value }))}
                 required
               />
             </div>
@@ -472,7 +472,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Label htmlFor="description_event">Description</Label>
               <RichTextEditor
                 value={formData.description_event}
-                onChange={(value) => setFormData({ ...formData, description_event: value })}
+                onChange={(value) => setFormData((prev) => ({ ...prev, description_event: value }))}
                 placeholder="Décrivez l'événement..."
                 className="mt-2"
               />
@@ -484,7 +484,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 id="date_debut"
                 type="date"
                 value={formData.date_debut}
-                onChange={(e) => setFormData({ ...formData, date_debut: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, date_debut: e.target.value }))}
                 required
               />
             </div>
@@ -495,7 +495,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 id="date_fin"
                 type="date"
                 value={formData.date_fin}
-                onChange={(e) => setFormData({ ...formData, date_fin: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, date_fin: e.target.value }))}
               />
             </div>
 
@@ -504,7 +504,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Input
                 id="ville"
                 value={formData.ville}
-                onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, ville: e.target.value }))}
                 required
               />
             </div>
@@ -514,7 +514,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Input
                 id="code_postal"
                 value={formData.code_postal}
-                onChange={(e) => setFormData({ ...formData, code_postal: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, code_postal: e.target.value }))}
               />
             </div>
 
@@ -523,7 +523,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Input
                 id="nom_lieu"
                 value={formData.nom_lieu}
-                onChange={(e) => setFormData({ ...formData, nom_lieu: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, nom_lieu: e.target.value }))}
               />
             </div>
 
@@ -532,7 +532,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Input
                 id="rue"
                 value={formData.rue}
-                onChange={(e) => setFormData({ ...formData, rue: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, rue: e.target.value }))}
               />
             </div>
 
@@ -544,7 +544,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 value={formData.type_event}
                 onChange={(value) => {
                   if (value) {
-                    setFormData({ ...formData, type_event: value as Event['type_event'] });
+                    setFormData((prev) => ({ ...prev, type_event: value as Event['type_event'] }));
                   }
                 }}
                 options={EVENT_TYPES.map(type => ({ value: type.value, label: type.label }))}
@@ -557,7 +557,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Input
                 id="country"
                 value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, country: e.target.value }))}
               />
             </div>
 
@@ -577,7 +577,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 </p>
               )}
               {selectedSectorIds.length === 3 && (
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Limite de 3 secteurs atteinte
                 </p>
               )}
@@ -589,7 +589,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 id="url_image"
                 type="url"
                 value={formData.url_image}
-                onChange={(e) => setFormData({ ...formData, url_image: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, url_image: e.target.value }))}
               />
             </div>
 
@@ -599,7 +599,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 id="url_site_officiel"
                 type="url"
                 value={formData.url_site_officiel}
-                onChange={(e) => setFormData({ ...formData, url_site_officiel: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, url_site_officiel: e.target.value }))}
               />
             </div>
 
@@ -608,7 +608,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Input
                 id="tarif"
                 value={formData.tarif}
-                onChange={(e) => setFormData({ ...formData, tarif: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, tarif: e.target.value }))}
               />
             </div>
           </div>
