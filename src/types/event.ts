@@ -39,6 +39,7 @@ export interface Event {
   enrichissement_score?: number;
   enrichissement_statut?: string;
   enrichissement_date?: string;
+  description_enrichie?: string;
 }
 
 // Export EventType for backwards compatibility
