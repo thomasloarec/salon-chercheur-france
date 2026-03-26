@@ -35,7 +35,7 @@ const EVENT_TYPES = [
   { value: 'autre', label: 'Autre' },
 ];
 
-const PUBLISHED_DOMAIN = 'https://lotexpo.lovable.app';
+const PUBLISHED_DOMAIN = 'https://lotexpo.com';
 
 /** Normalize a string into a valid URL slug */
 const sanitizeSlug = (input: string): string => {
