@@ -13,7 +13,7 @@ import NoveltiesSection from '@/components/event/NoveltiesSection';
 import { EventSeriesBlock } from '@/components/event/EventSeriesBlock';
 import { SameCityEventsBlock } from '@/components/event/SameCityEventsBlock';
 import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
-import { EventBreadcrumb } from '@/components/event/EventBreadcrumb';
+
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
 import { SEOHead } from '@/components/event/SEOHead';
@@ -166,9 +166,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 </div>
               </div>
             )}
-
-            {/* Visible breadcrumb */}
-            <EventBreadcrumb event={event} />
 
             {/* Admin Menu */}
             <section className="flex items-center justify-between">

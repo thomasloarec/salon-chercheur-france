@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight, Loader2, Calendar, MapPin, ArrowRight } from 'lucide-react';
+import { Loader2, Calendar, MapPin, ArrowRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EventCard from '@/components/EventCard';
@@ -103,14 +103,6 @@ const SectorHub = () => {
 
       <main className="py-8">
         <div className="w-full px-6 mx-auto max-w-[1600px]">
-          {/* Breadcrumb */}
-          <nav aria-label="Fil d'Ariane" className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap mb-6">
-            <Link to="/" className="hover:text-foreground transition-colors">Accueil</Link>
-            <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
-            <Link to="/events" className="hover:text-foreground transition-colors">Salons professionnels</Link>
-            <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="text-foreground font-medium">Salons {hub.sectorLabel}</span>
-          </nav>
 
           {/* Header */}
           <div className="mb-8">
