@@ -377,11 +377,16 @@ export type Database = {
           date_debut: string | null
           date_fin: string | null
           description_event: string | null
+          enrichissement_date: string | null
+          enrichissement_score: number | null
+          enrichissement_statut: string | null
+          faq_json: Json | null
           id: string
           id_event: string
           is_b2b: boolean
           is_test: boolean
           location: string | null
+          meta_description_gen: string | null
           nom_event: string
           nom_lieu: string | null
           pays: string | null
@@ -405,11 +410,16 @@ export type Database = {
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
+          enrichissement_date?: string | null
+          enrichissement_score?: number | null
+          enrichissement_statut?: string | null
+          faq_json?: Json | null
           id?: string
           id_event: string
           is_b2b?: boolean
           is_test?: boolean
           location?: string | null
+          meta_description_gen?: string | null
           nom_event: string
           nom_lieu?: string | null
           pays?: string | null
@@ -433,11 +443,16 @@ export type Database = {
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
+          enrichissement_date?: string | null
+          enrichissement_score?: number | null
+          enrichissement_statut?: string | null
+          faq_json?: Json | null
           id?: string
           id_event?: string
           is_b2b?: boolean
           is_test?: boolean
           location?: string | null
+          meta_description_gen?: string | null
           nom_event?: string
           nom_lieu?: string | null
           pays?: string | null
