@@ -148,6 +148,28 @@ Deno.serve(async (req) => {
 
     console.log('✅ Événement publié avec succès');
 
+    // 3b. Fire-and-forget : enrichissement SEO (meta_description_gen)
+    // Récupérer l'UUID de l'événement publié pour l'enrichissement
+    const publishedUuid = publishedEvent?.id;
+    if (publishedUuid) {
+      const enrichUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/enrich-event-meta`;
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+      
+      // Fire-and-forget : on n'attend pas la réponse
+      fetch(enrichUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ event_id: publishedUuid }),
+      }).then(res => {
+        console.log(`🤖 Enrichissement SEO déclenché pour ${eventImport.nom_event} → status ${res.status}`);
+      }).catch(err => {
+        console.warn('⚠️ Enrichissement SEO non déclenché (non bloquant):', err.message);
+      });
+    }
+
     // 4. Vérifier que les relations participation sont maintenues
     const { data: participationCount, error: participationError } = await supabase
       .from('participation')
