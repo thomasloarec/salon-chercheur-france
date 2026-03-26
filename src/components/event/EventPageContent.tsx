@@ -13,6 +13,8 @@ import NoveltiesSection from '@/components/event/NoveltiesSection';
 import { EventSeriesBlock } from '@/components/event/EventSeriesBlock';
 import { SameCityEventsBlock } from '@/components/event/SameCityEventsBlock';
 import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
+import { EventKeyFigures } from '@/components/event/EventKeyFigures';
+import { EventFaqBlock } from '@/components/event/EventFaqBlock';
 
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
