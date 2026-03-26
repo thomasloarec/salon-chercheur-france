@@ -1,0 +1,1 @@
+UPDATE events SET enrichissement_statut = 'valide' WHERE slug = 'sepem-brest';
