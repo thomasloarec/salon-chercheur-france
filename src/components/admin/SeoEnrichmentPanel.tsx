@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ interface EnrichResult {
   id: string;
   id_event: string | null;
   nom_event: string;
+  slug: string | null;
   status: 'done' | 'skipped' | 'error';
   reason?: string;
   meta_description_gen?: string;
@@ -152,7 +154,13 @@ export const SeoEnrichmentPanel = () => {
                   {response.results.map((r) => (
                     <tr key={r.id} className="hover:bg-muted/30">
                       <td className="px-3 py-2">
-                        <div className="font-medium">{r.nom_event}</div>
+                        {r.slug ? (
+                          <Link to={`/events/${r.slug}`} className="font-medium text-primary hover:underline">
+                            {r.nom_event}
+                          </Link>
+                        ) : (
+                          <div className="font-medium">{r.nom_event}</div>
+                        )}
                         {r.id_event && (
                           <div className="text-xs text-muted-foreground">{r.id_event}</div>
                         )}
