@@ -72,7 +72,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
         .from('novelties')
         .select('*', { count: 'exact', head: true })
         .eq('event_id', event.id)
-        .eq('status', 'approved');
+        .in('status', ['published', 'approved']);
       return count ?? 0;
     },
     enabled: !!event.id,
