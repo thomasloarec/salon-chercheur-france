@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { SafeSelect } from '@/components/ui/SafeSelect';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Sparkles, Loader2, CheckCircle, XCircle, SkipForward } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, XCircle, SkipForward, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface EnrichResult {
   id: string;
@@ -18,6 +18,8 @@ interface EnrichResult {
   meta_description_gen?: string;
   length?: number;
   enrichissement_date?: string;
+  retried?: boolean;
+  retry_reason?: string;
 }
 
 interface BatchResponse {
@@ -26,6 +28,7 @@ interface BatchResponse {
   done: number;
   skipped: number;
   errors: number;
+  retried?: number;
   results: EnrichResult[];
   message?: string;
 }
@@ -36,6 +39,13 @@ const BATCH_SIZES = [
   { value: '20', label: '20 événements' },
   { value: '50', label: '50 événements (max)' },
 ];
+
+function getLengthColor(len: number | undefined): string {
+  if (!len) return 'text-muted-foreground';
+  if (len >= 140 && len <= 155) return 'text-green-700';
+  if (len >= 135 && len <= 160) return 'text-amber-700';
+  return 'text-destructive';
+}
 
 export const SeoEnrichmentPanel = () => {
   const [batchSize, setBatchSize] = useState('10');
@@ -61,7 +71,7 @@ export const SeoEnrichmentPanel = () => {
         title: `Batch terminé — ${d.done} enrichi(s)`,
         description: d.total === 0
           ? 'Aucun événement éligible trouvé.'
-          : `${d.done} OK, ${d.skipped} ignoré(s), ${d.errors} erreur(s)`,
+          : `${d.done} OK, ${d.skipped} ignoré(s), ${d.errors} erreur(s)${d.retried ? `, ${d.retried} retry(s)` : ''}`,
       });
     } catch (err) {
       console.error('Batch enrichment error:', err);
@@ -80,10 +90,10 @@ export const SeoEnrichmentPanel = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="h-5 w-5" />
-          Enrichissement SEO (meta description)
+          Enrichissement SEO (meta description) — V2
         </CardTitle>
         <CardDescription>
-          Génère automatiquement les meta descriptions manquantes pour les événements à venir visibles, via l'API Claude.
+          Génère les meta descriptions manquantes via Claude avec prompt renforcé, validation qualité et retry automatique.
           Ne touche jamais aux metas existantes ni aux événements passés.
         </CardDescription>
       </CardHeader>
@@ -134,6 +144,11 @@ export const SeoEnrichmentPanel = () => {
                 {response.errors} erreur(s)
               </Badge>
             )}
+            {(response.retried ?? 0) > 0 && (
+              <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                {response.retried} retry(s)
+              </Badge>
+            )}
           </div>
         )}
 
@@ -148,6 +163,7 @@ export const SeoEnrichmentPanel = () => {
                     <th className="text-left px-3 py-2 font-medium">Statut</th>
                     <th className="text-left px-3 py-2 font-medium">Meta générée</th>
                     <th className="text-right px-3 py-2 font-medium">Car.</th>
+                    <th className="text-center px-3 py-2 font-medium">Détail</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -166,34 +182,51 @@ export const SeoEnrichmentPanel = () => {
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        {r.status === 'done' && (
-                          <span className="inline-flex items-center gap-1 text-green-700">
-                            <CheckCircle className="h-3.5 w-3.5" /> OK
-                          </span>
-                        )}
-                        {r.status === 'skipped' && (
-                          <span className="inline-flex items-center gap-1 text-amber-700">
-                            <SkipForward className="h-3.5 w-3.5" /> Ignoré
-                          </span>
-                        )}
-                        {r.status === 'error' && (
-                          <span className="inline-flex items-center gap-1 text-destructive">
-                            <XCircle className="h-3.5 w-3.5" /> Erreur
-                          </span>
-                        )}
-                        {r.reason && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{r.reason}</div>
-                        )}
+                        <div className="flex flex-col gap-0.5">
+                          {r.status === 'done' && (
+                            <span className="inline-flex items-center gap-1 text-green-700">
+                              <CheckCircle className="h-3.5 w-3.5" /> OK
+                            </span>
+                          )}
+                          {r.status === 'skipped' && (
+                            <span className="inline-flex items-center gap-1 text-amber-700">
+                              <SkipForward className="h-3.5 w-3.5" /> Ignoré
+                            </span>
+                          )}
+                          {r.status === 'error' && (
+                            <span className="inline-flex items-center gap-1 text-destructive">
+                              <XCircle className="h-3.5 w-3.5" /> Erreur
+                            </span>
+                          )}
+                          {r.retried && (
+                            <span className="inline-flex items-center gap-1 text-blue-700 text-xs">
+                              <RefreshCw className="h-3 w-3" /> Retry
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2 max-w-xs">
                         {r.meta_description_gen ? (
-                          <p className="text-xs leading-relaxed line-clamp-2">{r.meta_description_gen}</p>
+                          <p className="text-xs leading-relaxed line-clamp-3">{r.meta_description_gen}</p>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                      <td className={`px-3 py-2 text-right tabular-nums font-medium ${getLengthColor(r.length)}`}>
                         {r.length ?? '—'}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        {r.reason && (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground" title={r.reason}>
+                            <AlertTriangle className="h-3 w-3" />
+                            <span className="max-w-[120px] truncate">{r.reason}</span>
+                          </span>
+                        )}
+                        {r.retry_reason && !r.reason && (
+                          <span className="text-xs text-blue-600" title={r.retry_reason}>
+                            1ère tentative : {r.retry_reason}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
