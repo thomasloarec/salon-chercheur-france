@@ -152,6 +152,7 @@ const EventPage = () => {
           enrichissement_score: eventData.enrichissement_score,
           enrichissement_statut: eventData.enrichissement_statut,
           enrichissement_date: eventData.enrichissement_date,
+          description_enrichie: eventData.description_enrichie,
         };
         
         setEvent(typedEvent);
