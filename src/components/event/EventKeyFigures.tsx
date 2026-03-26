@@ -1,9 +1,6 @@
 import { useMemo } from 'react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { CalendarDays, MapPin, Building, Users, Tag, Store, Sparkles } from 'lucide-react';
-import { getEventTypeLabel } from '@/constants/eventTypes';
-import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
+import { differenceInCalendarDays } from 'date-fns';
+import { Store, Sparkles, Clock, Wand2 } from 'lucide-react';
 import type { Event } from '@/types/event';
 
 interface EventKeyFiguresProps {
@@ -16,111 +13,75 @@ interface FigureItem {
   icon: React.ReactNode;
   label: string;
   value: string;
+  highlight?: boolean;
 }
 
 export const EventKeyFigures = ({ event, exhibitorCount, noveltyCount }: EventKeyFiguresProps) => {
   const figures = useMemo(() => {
     const items: FigureItem[] = [];
 
-    // Dates
-    if (event.date_debut) {
-      const start = format(new Date(event.date_debut), 'dd MMM yyyy', { locale: fr });
-      const end = event.date_fin && event.date_fin !== event.date_debut
-        ? format(new Date(event.date_fin), 'dd MMM yyyy', { locale: fr })
-        : null;
-      items.push({
-        icon: <CalendarDays className="h-4 w-4" />,
-        label: 'Dates',
-        value: end ? `${start} – ${end}` : start,
-      });
-    }
-
-    // Ville
-    if (event.ville) {
-      items.push({
-        icon: <MapPin className="h-4 w-4" />,
-        label: 'Ville',
-        value: event.ville,
-      });
-    }
-
-    // Lieu
-    if (event.nom_lieu) {
-      items.push({
-        icon: <Building className="h-4 w-4" />,
-        label: 'Lieu',
-        value: event.nom_lieu,
-      });
-    }
-
-    // Type
-    if (event.type_event) {
-      items.push({
-        icon: <Tag className="h-4 w-4" />,
-        label: 'Type',
-        value: getEventTypeLabel(event.type_event),
-      });
-    }
-
-    // Affluence
-    if (event.affluence) {
-      const formatted = formatAffluenceWithSuffix(event.affluence);
-      if (formatted) {
-        items.push({
-          icon: <Users className="h-4 w-4" />,
-          label: 'Visiteurs',
-          value: formatted,
-        });
-      }
-    }
-
-    // Exhibitors
+    // Exposants — value-add info not in Hero
     if (exhibitorCount && exhibitorCount > 0) {
       items.push({
         icon: <Store className="h-4 w-4" />,
         label: 'Exposants',
-        value: `${exhibitorCount}`,
+        value: `${exhibitorCount} exposants`,
       });
     }
 
-    // Novelties
+    // Nouveautés — value-add info not in Hero
     if (noveltyCount && noveltyCount > 0) {
       items.push({
         icon: <Sparkles className="h-4 w-4" />,
         label: 'Nouveautés',
-        value: `${noveltyCount}`,
+        value: `${noveltyCount} nouveautés`,
       });
     }
 
-    // Secteur principal
-    const sector = Array.isArray(event.secteur) ? event.secteur[0] : event.secteur;
-    if (sector) {
+    // Préparation visite IA — shown when >= 80 exhibitors
+    if (exhibitorCount && exhibitorCount >= 80) {
       items.push({
-        icon: <Tag className="h-4 w-4" />,
-        label: 'Secteur',
-        value: sector,
+        icon: <Wand2 className="h-4 w-4" />,
+        label: 'Visite IA',
+        value: 'Parcours IA disponible',
+        highlight: true,
       });
     }
 
-    return items;
+    // Countdown — days until event
+    if (event.date_debut) {
+      const daysUntil = differenceInCalendarDays(new Date(event.date_debut), new Date());
+      if (daysUntil > 0 && daysUntil <= 90) {
+        items.push({
+          icon: <Clock className="h-4 w-4" />,
+          label: 'Compte à rebours',
+          value: daysUntil === 1 ? 'Demain !' : `Dans ${daysUntil} jours`,
+          highlight: daysUntil <= 7,
+        });
+      }
+    }
+
+    return items.slice(0, 4);
   }, [event, exhibitorCount, noveltyCount]);
 
-  if (figures.length === 0) return null;
+  // Don't render unless at least 2 useful items
+  if (figures.length < 2) return null;
 
   return (
-    <section className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-lg font-semibold text-foreground mb-4">Chiffres clés</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {figures.map((fig, i) => (
-          <div key={i} className="flex items-start gap-3 p-3 rounded-md bg-muted/50">
-            <div className="text-primary mt-0.5 flex-shrink-0">{fig.icon}</div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">{fig.label}</p>
-              <p className="text-sm font-medium text-foreground truncate">{fig.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
+    <div className="flex flex-wrap items-center gap-3">
+      {figures.map((fig, i) => (
+        <div
+          key={i}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border ${
+            fig.highlight
+              ? 'border-primary/30 bg-primary/5 text-primary font-medium'
+              : 'border-border bg-muted/40 text-muted-foreground'
+          }`}
+        >
+          <span className="flex-shrink-0">{fig.icon}</span>
+          <span>{fig.value}</span>
+        </div>
+      ))}
+    </div>
   );
 };

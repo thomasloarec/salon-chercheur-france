@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useInvalidateEvents } from '@/hooks/useEvents';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
@@ -63,6 +63,22 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
     event.id_event
   );
   const exhibitorCount = exhibitorsData?.total || 0;
+
+  // Novelty count for KeyFigures
+  const { data: noveltyCountData } = useQuery({
+    queryKey: ['novelty-count', event.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('novelties')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id)
+        .eq('status', 'approved');
+      return count ?? 0;
+    },
+    enabled: !!event.id,
+  });
+  const noveltyCount = noveltyCountData ?? 0;
+
   const isEventPast = useMemo(() => {
     const endDate = event.date_fin || event.date_debut;
     if (!endDate) return false;
@@ -202,11 +218,12 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             
             <EventPageHeader event={event} />
 
-            {/* Chiffres clés — uniquement événements à venir */}
+            {/* Indicateurs utiles — uniquement événements à venir */}
             {!isEventPast && (
               <EventKeyFigures
                 event={event}
                 exhibitorCount={exhibitorCount}
+                noveltyCount={noveltyCount}
               />
             )}
 
