@@ -459,7 +459,12 @@ Deno.serve(async (req) => {
 
     // ─── BATCH MODE ───
     if (body.batch === true) {
-      const limit = Math.min(Math.max(Number(body.limit) || 10, 1), 50);
+      const MAX_BATCH = 20;
+      const rawLimit = Number(body.limit) || 10;
+      const limit = Math.min(Math.max(rawLimit, 1), MAX_BATCH);
+      if (rawLimit > MAX_BATCH) {
+        console.warn(`⚠️ Limite demandée (${rawLimit}) ramenée à ${MAX_BATCH}`);
+      }
       const today = new Date().toISOString().slice(0, 10);
 
       console.log(`📦 Batch enrichissement V2 — limit: ${limit}`);
