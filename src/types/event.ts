@@ -34,7 +34,8 @@ export interface Event {
   is_favorite?: boolean;
   // SEO enrichment fields (MVP)
   meta_description_gen?: string;
-  faq_json?: { question: string; answer: string }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  faq_json?: any;
   enrichissement_score?: number;
   enrichissement_statut?: string;
   enrichissement_date?: string;
