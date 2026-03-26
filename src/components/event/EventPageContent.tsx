@@ -184,6 +184,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             
             <EventPageHeader event={event} />
 
+            {/* Chiffres clés — uniquement événements à venir */}
+            {!isEventPast && (
+              <EventKeyFigures
+                event={event}
+                exhibitorCount={exhibitorCount}
+              />
+            )}
+
             {/* Past event banner */}
             {isEventPast && (
               <div className="rounded-r-lg border-l-4 border-orange-400 bg-orange-50 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
@@ -246,6 +254,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
             {/* Bloc "Pourquoi visiter" en bas de page */}
             <EventWhyVisit event={event} />
+
+            {/* FAQ — uniquement si faq_json rempli et événement à venir */}
+            {!isEventPast && Array.isArray(event.faq_json) && event.faq_json.length > 0 && (
+              <EventFaqBlock faq={event.faq_json} eventName={event.nom_event} />
+            )}
 
             {/* Articles de blog liés au secteur */}
             <SectorArticlesBlock event={event} />
