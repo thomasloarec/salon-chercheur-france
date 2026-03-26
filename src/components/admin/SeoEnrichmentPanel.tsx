@@ -119,9 +119,6 @@ export const SeoEnrichmentPanel = () => {
             </Badge>
           )}
         </CardDescription>
-          Génère les meta descriptions manquantes via Claude avec prompt renforcé, validation qualité et retry automatique.
-          Ne touche jamais aux metas existantes ni aux événements passés.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Controls */}
