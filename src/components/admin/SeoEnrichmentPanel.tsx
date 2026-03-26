@@ -36,8 +36,7 @@ interface BatchResponse {
 const BATCH_SIZES = [
   { value: '5', label: '5 événements' },
   { value: '10', label: '10 événements' },
-  { value: '20', label: '20 événements' },
-  { value: '50', label: '50 événements (max)' },
+  { value: '20', label: '20 événements (max)' },
 ];
 
 function getLengthColor(len: number | undefined): string {
@@ -132,8 +131,8 @@ export const SeoEnrichmentPanel = () => {
               options={BATCH_SIZES}
               includeAllOption={false}
             />
-          </div>
-          <Button onClick={runBatch} disabled={isRunning}>
+        </div>
+          <Button onClick={runBatch} disabled={isRunning || missingCount === 0}>
             {isRunning ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -147,6 +146,10 @@ export const SeoEnrichmentPanel = () => {
             )}
           </Button>
         </div>
+
+        <p className="text-xs text-muted-foreground">
+          Pour garantir la fiabilité du traitement, les enrichissements sont limités à 20 événements par lancement.
+        </p>
 
         {/* Summary */}
         {response && (
