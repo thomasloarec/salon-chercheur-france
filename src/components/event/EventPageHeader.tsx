@@ -70,7 +70,9 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const defaultDescription = `Découvrez ${event.nom_event}, un événement incontournable du secteur ${secteurText}. 
     Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`;
 
-  const description = event.description_event || defaultDescription;
+  const description = (event.enrichissement_statut === 'valide' && event.description_enrichie)
+    ? event.description_enrichie
+    : (event.description_event || defaultDescription);
 
   return (
     <section className={cn(
