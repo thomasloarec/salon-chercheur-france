@@ -128,8 +128,15 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   }, [event?.id, open, sectorsReady, allSectors]);
 
   // Load form data + SEO fields when modal opens
+  // Use event + open as deps to ensure form is always populated with latest data
   useEffect(() => {
     if (event && open) {
+      console.log('[EventEditModal] Populating form from event:', {
+        nom_event: event.nom_event,
+        ville: event.ville,
+        date_debut: event.date_debut,
+        slug: event.slug,
+      });
       setFormData({
         nom_event: event.nom_event || '',
         description_event: event.description_event || '',
@@ -152,7 +159,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       setSeoMetaDescription(event.meta_description_gen || '');
       setSlugError('');
     }
-  }, [event?.id, open]);
+  }, [event, open]);
 
   // Handler pour la sélection de secteurs avec limite à 3
   const handleSectorChange = (newSelected: string[]) => {
