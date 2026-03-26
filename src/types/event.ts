@@ -32,6 +32,13 @@ export interface Event {
     created_at: string;
   }[];
   is_favorite?: boolean;
+  // SEO enrichment fields (MVP)
+  meta_description_gen?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  faq_json?: any;
+  enrichissement_score?: number;
+  enrichissement_statut?: string;
+  enrichissement_date?: string;
 }
 
 // Export EventType for backwards compatibility

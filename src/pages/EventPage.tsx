@@ -113,8 +113,8 @@ const EventPage = () => {
       }
       
       const typedEvent: Event = {
-        id: eventData.id,  // ✅ UUID directement
-        id_event: eventData.id_event, // ✅ AJOUT : Clé métier pour les participations
+        id: eventData.id,
+        id_event: eventData.id_event,
         nom_event: eventData.nom_event || '',
         description_event: eventData.description_event,
         date_debut: eventData.date_debut,
@@ -140,7 +140,13 @@ const EventPage = () => {
         visible: eventData.visible,
         slug: eventData.slug,
         sectors: [],
-        is_favorite: isFavorite
+        is_favorite: isFavorite,
+        // SEO enrichment fields
+        meta_description_gen: eventData.meta_description_gen,
+        faq_json: eventData.faq_json,
+        enrichissement_score: eventData.enrichissement_score,
+        enrichissement_statut: eventData.enrichissement_statut,
+        enrichissement_date: eventData.enrichissement_date,
       };
       
       setEvent(typedEvent);

@@ -28,8 +28,10 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
   const baseTitle = `${event.nom_event} ${eventYear} | Salon professionnel à ${event.ville || 'France'} – Lotexpo`.slice(0, 60);
   const title = isEventPast ? `[Terminé] ${baseTitle}`.slice(0, 60) : baseTitle;
 
-  // Optimized description: max 160 chars, action-oriented
-  const description = `${event.nom_event} à ${event.ville || 'France'} : dates, exposants, secteurs représentés et informations pratiques pour préparer votre visite professionnelle.`.slice(0, 160);
+  // Optimized description: prefer generated meta if available, otherwise fallback
+  const description = (event.meta_description_gen || 
+    `${event.nom_event} à ${event.ville || 'France'} : dates, exposants, secteurs représentés et informations pratiques pour préparer votre visite professionnelle.`
+  ).slice(0, 160);
 
   // Canonical URL
   const canonicalUrl = `https://lotexpo.com/events/${event.slug}`;
