@@ -11,7 +11,7 @@ import { buildCorsHeaders, handleCors } from '../_shared/cors.ts'
  *   { event_id: string }           → enrichit un seul événement
  *   { batch: true, limit: number } → enrichit un lot d'événements éligibles
  * 
- * V2 — Prompt renforcé, garde-fous qualité, retry automatique.
+ * V2.1 — Polish final : prompt affiné, secteurs humanisés, dates naturelles.
  */
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
@@ -51,15 +51,67 @@ interface EnrichResult {
   retry_reason?: string;
 }
 
-/* ─── DATE FORMATTING ─── */
+/* ─── DATE FORMATTING (natural French) ─── */
 function formatDateFr(dateStr: string | null): string {
   if (!dateStr) return '';
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const day = d.getDate();
+    const month = d.toLocaleDateString('fr-FR', { month: 'long' });
+    const year = d.getFullYear();
+    return `${day === 1 ? '1er' : day} ${month} ${year}`;
   } catch {
     return dateStr;
   }
+}
+
+/** Format a date range naturally: "du 1er au 3 avril 2026" or "du 28 mars au 2 avril 2026" */
+function formatDateRangeFr(debut: string | null, fin: string | null): string {
+  if (!debut) return '';
+  if (!fin || debut === fin) return `le ${formatDateFr(debut)}`;
+  try {
+    const dStart = new Date(debut);
+    const dEnd = new Date(fin);
+    const sameMonth = dStart.getMonth() === dEnd.getMonth() && dStart.getFullYear() === dEnd.getFullYear();
+    const dayStart = dStart.getDate();
+    const dayEnd = dEnd.getDate();
+    if (sameMonth) {
+      const month = dStart.toLocaleDateString('fr-FR', { month: 'long' });
+      const year = dStart.getFullYear();
+      return `du ${dayStart === 1 ? '1er' : dayStart} au ${dayEnd === 1 ? '1er' : dayEnd} ${month} ${year}`;
+    }
+    return `du ${formatDateFr(debut)} au ${formatDateFr(fin)}`;
+  } catch {
+    return `du ${formatDateFr(debut)} au ${formatDateFr(fin)}`;
+  }
+}
+
+/* ─── HUMANIZE SECTOR NAMES ─── */
+const SECTOR_REWRITES: Record<string, string> = {
+  'Santé & Médical': 'la santé',
+  'Commerce & Distribution': 'le commerce et la distribution',
+  'Industrie & Production': "l'industrie et la production",
+  'BTP & Construction': 'le BTP et la construction',
+  'Technologie & Innovation': "la technologie et l'innovation",
+  'Mode & Textile': 'la mode et le textile',
+  'Art & Culture': "l'art et la culture",
+  'Agroalimentaire & Agriculture': "l'agroalimentaire et l'agriculture",
+  'Énergie & Environnement': "l'énergie et l'environnement",
+  'Transport & Logistique': 'le transport et la logistique',
+  'Éducation & Formation': "l'éducation et la formation",
+  'Tourisme & Hôtellerie': "le tourisme et l'hôtellerie",
+  'Sport & Loisirs': 'le sport et les loisirs',
+  'Défense & Sécurité': 'la défense et la sécurité',
+  'Immobilier & Habitat': "l'immobilier et l'habitat",
+  'Luxe & Horlogerie': "le luxe et l'horlogerie",
+  'Numérique & Digital': 'le numérique',
+  'Automobile & Mobilité': "l'automobile et la mobilité",
+  'Aéronautique & Spatial': "l'aéronautique et le spatial",
+};
+
+function humanizeSector(raw: string): string {
+  const trimmed = raw.trim();
+  return SECTOR_REWRITES[trimmed] ?? trimmed.toLowerCase();
 }
 
 /* ─── EXTRACT SECTORS ─── */
@@ -67,41 +119,31 @@ function extractSectors(secteur: unknown): string {
   if (!secteur) return '';
   if (Array.isArray(secteur)) {
     const flat = secteur.flatMap((s: unknown) => Array.isArray(s) ? s : [s]).filter(Boolean);
-    return flat.join(', ');
+    return flat.map(s => humanizeSector(String(s))).join(', ');
   }
   const str = String(secteur);
   if (str === '[]' || str === 'null') return '';
-  return str;
+  return humanizeSector(str);
 }
 
 /* ─── BUILD PROMPT (ordered data priority) ─── */
 function buildPrompt(event: EventData): string {
   const parts: string[] = [];
 
-  // Priority 1: nom_event (always present)
   parts.push(`Nom de l'événement : ${event.nom_event}`);
-
-  // Priority 2: ville
   if (event.ville) parts.push(`Ville : ${event.ville}`);
 
-  // Priority 3: dates
-  if (event.date_debut) parts.push(`Date début : ${formatDateFr(event.date_debut)}`);
-  if (event.date_fin) parts.push(`Date fin : ${formatDateFr(event.date_fin)}`);
+  const dateRange = formatDateRangeFr(event.date_debut, event.date_fin);
+  if (dateRange) parts.push(`Dates : ${dateRange}`);
 
-  // Priority 4: type_event
   if (event.type_event) parts.push(`Type : ${event.type_event}`);
 
-  // Priority 5: secteur
   const secteurs = extractSectors(event.secteur);
   if (secteurs) parts.push(`Secteur(s) : ${secteurs}`);
 
-  // Priority 6: nom_lieu
   if (event.nom_lieu) parts.push(`Lieu : ${event.nom_lieu}`);
-
-  // Priority 7: affluence (optional)
   if (event.affluence) parts.push(`Affluence estimée : ${event.affluence} visiteurs`);
 
-  // Priority 8: description (aide de reformulation uniquement)
   if (event.description_event) {
     const desc = event.description_event.replace(/<[^>]*>/g, '').slice(0, 400);
     parts.push(`Description (à utiliser uniquement pour reformulation factuelle, ne rien inventer à partir de ce texte) : ${desc}`);
@@ -110,36 +152,45 @@ function buildPrompt(event: EventData): string {
   return parts.join('\n');
 }
 
-/* ─── SYSTEM PROMPT V2 — RENFORCÉ ─── */
+/* ─── SYSTEM PROMPT V2.1 — POLISH FINAL ─── */
 const SYSTEM_PROMPT = `Tu es un rédacteur de meta descriptions pour des pages de salons professionnels en France.
 
-OBJECTIF : Produire UNE meta description factuelle, sobre et complète.
+OBJECTIF : Produire UNE meta description factuelle, sobre, naturelle et complète.
+
+STYLE :
+- Ton strictement factuel et naturel.
+- Phrases fluides, lisibles, en bon français.
+- Sobre : pas de ton promotionnel, pas de superlatifs, pas de formulation commerciale.
+- Pas de bénéfice implicite ni de promesse.
+
+FORMULATIONS À ÉVITER (sauf si strictement fondé dans les données) :
+- "propose", "réunit", "rassemble", "permet de"
+- "découvrez", "rendez-vous de/des", "pour les professionnels de"
+- "incontournable", "à ne pas manquer", "unique"
+
+INTÉGRATION DES SECTEURS :
+- Les noms de secteurs fournis sont déjà reformulés en français naturel.
+- Intègre-les naturellement dans la phrase, par exemple :
+  "consacré à la santé", "dédié au BTP et à la construction", "centré sur le numérique".
+- N'utilise JAMAIS les noms de secteurs bruts avec "&" ou majuscules.
 
 RÈGLES ABSOLUES :
 1. Utilise UNIQUEMENT les informations fournies. N'invente RIEN.
-2. Ne déduis AUCUN positionnement métier qui n'est pas explicitement présent dans les données.
-3. Aucun superlatif. Aucun ton marketing. Aucune promesse.
-4. N'utilise PAS de formulations comme :
-   - "pour améliorer…"
-   - "rendez-vous des professionnels de…"
-   - "pour découvrir…"
-   - "incontournable"
-   - "à ne pas manquer"
-   sauf si ces termes sont strictement présents dans les données fournies.
-5. Préfère une phrase simple et exacte plutôt qu'une phrase plus riche mais incertaine.
-6. La description_event fournie sert uniquement d'aide à la reformulation factuelle. Ne l'utilise pas pour inventer ou enrichir librement.
+2. Ne déduis AUCUN positionnement métier qui n'est pas explicitement présent.
+3. La description_event sert uniquement d'aide à la reformulation factuelle. Ne l'utilise pas pour inventer ou enrichir librement.
+4. Préfère une phrase simple et exacte plutôt qu'une phrase plus riche mais incertaine.
 
 FORMAT :
-- Longueur : entre 140 et 155 caractères exactement.
+- Longueur : entre 140 et 155 caractères exactement. Vise 145-150 si possible.
 - La phrase DOIT être complète, lisible et terminée par un point.
 - JAMAIS de phrase tronquée ou coupée.
 - Pas de guillemets autour du résultat.
 - Pas de préfixe comme "Meta description :" ou "Voici :".
 
-STRUCTURES À PRIVILÉGIER (varier légèrement mais rester homogène) :
-- "{nom_event} à {ville} du {date_debut} au {date_fin} : {type_event} dédié à {secteur}, organisé à {nom_lieu}."
-- "{nom_event}, {type_event} à {ville} du {date_debut} au {date_fin}, consacré à {secteur}."
-- "{nom_event} se tient à {ville} du {date_debut} au {date_fin} pour les professionnels du secteur {secteur}."
+STRUCTURES EXEMPLES (varier légèrement, rester homogène) :
+- "{nom_event} à {ville} {dates} : {type_event} consacré à {secteur}, à {nom_lieu}."
+- "{nom_event}, {type_event} à {ville} {dates}, dédié à {secteur}."
+- "{nom_event} se tient à {ville} {dates}. Ce {type_event} est consacré à {secteur}."
 
 Si certaines données sont absentes, produis une meta plus simple. Ne compense JAMAIS par une supposition.
 
@@ -149,11 +200,13 @@ Réponds UNIQUEMENT avec la meta description, rien d'autre.`;
 const RETRY_PROMPT = `La meta description précédente ne respecte pas les critères de qualité.
 
 Réécris-la en respectant strictement ces règles :
-- Entre 140 et 155 caractères exactement.
+- Entre 140 et 155 caractères exactement (vise 145-150).
 - Phrase complète terminée par un point.
 - Strictement factuelle, sans rien inventer.
 - Pas de phrase tronquée.
 - Sobre, sans ton marketing ni superlatif.
+- Pas de formulations comme "propose", "réunit", "rassemble", "permet de", "découvrez".
+- Intègre les secteurs naturellement (pas de "&" ou majuscules brutes).
 
 Réponds UNIQUEMENT avec la meta description corrigée, rien d'autre.`;
 
