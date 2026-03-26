@@ -1,0 +1,1 @@
+UPDATE events SET description_enrichie = NULL, enrichissement_statut = 'non_traite' WHERE slug IN ('food-hotel-tech','in-cosmetics-global','carrefour-international-du-bois','fip-solution-plastique');
