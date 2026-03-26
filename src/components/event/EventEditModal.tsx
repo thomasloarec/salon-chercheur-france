@@ -93,15 +93,30 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   }));
 
   // Charger les secteurs depuis la DB quand le modal s'ouvre ET que allSectors est chargé
-  useEffect(() => {
-    const loadEventSectors = async () => {
-      if (!event || !open || !sectorsReady) return;
+  // Use a ref to avoid reloading when allSectors reference changes
+  const sectorsLoadedOnceRef = useRef(false);
 
+  useEffect(() => {
+    // Reset the flag when dialog closes
+    if (!open) {
+      sectorsLoadedOnceRef.current = false;
+      setSectorsLoaded(false);
+      return;
+    }
+
+    // Don't reload if already loaded for this opening
+    if (sectorsLoadedOnceRef.current) return;
+
+    // Wait for sectors data to be ready
+    if (!sectorsReady || !event) return;
+
+    const loadEventSectors = async () => {
       const eventIdForSectors = event.id_event;
 
       if (!eventIdForSectors) {
         setSelectedSectorIds([]);
         setSectorsLoaded(true);
+        sectorsLoadedOnceRef.current = true;
         return;
       }
 
@@ -119,12 +134,10 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         setSelectedSectorIds([]);
       }
       setSectorsLoaded(true);
+      sectorsLoadedOnceRef.current = true;
     };
 
-    if (open) {
-      setSectorsLoaded(false);
-      loadEventSectors();
-    }
+    loadEventSectors();
   }, [event?.id, open, sectorsReady, allSectors]);
 
   // Track previous open state to only populate form on open transition
