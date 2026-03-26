@@ -376,8 +376,10 @@ export type Database = {
           created_at: string | null
           date_debut: string | null
           date_fin: string | null
+          description_enrichie: string | null
           description_event: string | null
           enrichissement_date: string | null
+          enrichissement_niveau: string | null
           enrichissement_score: number | null
           enrichissement_statut: string | null
           faq_json: Json | null
@@ -409,8 +411,10 @@ export type Database = {
           created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
+          description_enrichie?: string | null
           description_event?: string | null
           enrichissement_date?: string | null
+          enrichissement_niveau?: string | null
           enrichissement_score?: number | null
           enrichissement_statut?: string | null
           faq_json?: Json | null
@@ -442,8 +446,10 @@ export type Database = {
           created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
+          description_enrichie?: string | null
           description_event?: string | null
           enrichissement_date?: string | null
+          enrichissement_niveau?: string | null
           enrichissement_score?: number | null
           enrichissement_statut?: string | null
           faq_json?: Json | null
