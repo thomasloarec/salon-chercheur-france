@@ -8,6 +8,7 @@ import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicate
 import NoveltyModeration from '@/components/admin/NoveltyModeration';
 
 import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
+import { SeoEnrichmentPanel } from '@/components/admin/SeoEnrichmentPanel';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import TestModeManager from '@/components/admin/TestModeManager';
 import MainLayout from '@/components/layout/MainLayout';
@@ -141,6 +142,9 @@ const Admin = () => {
             
             {/* Événements passés */}
             <AdminPastEvents />
+
+            {/* Enrichissement SEO batch */}
+            <SeoEnrichmentPanel />
 
             {/* Statistiques rapides */}
             <div className="bg-card rounded-lg border p-6">
