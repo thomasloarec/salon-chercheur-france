@@ -127,38 +127,45 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     }
   }, [event?.id, open, sectorsReady, allSectors]);
 
-  // Load form data + SEO fields when modal opens
-  // Use event + open as deps to ensure form is always populated with latest data
-  useEffect(() => {
-    if (event && open) {
-      console.log('[EventEditModal] Populating form from event:', {
-        nom_event: event.nom_event,
-        ville: event.ville,
-        date_debut: event.date_debut,
-        slug: event.slug,
-      });
-      setFormData({
-        nom_event: event.nom_event || '',
-        description_event: event.description_event || '',
-        date_debut: event.date_debut || '',
-        date_fin: event.date_fin || '',
-        nom_lieu: event.nom_lieu || '',
-        ville: event.ville || '',
-        rue: event.rue || '',
-        code_postal: event.code_postal || '',
-        country: event.country || 'France',
-        url_image: event.url_image || '',
-        url_site_officiel: event.url_site_officiel || '',
-        type_event: (event.type_event as Event['type_event']) || 'salon',
-        tarif: event.tarif || '',
-        visible: event.visible ?? true,
-      });
+  // Track previous open state to only populate form on open transition
+  const prevOpenRef = React.useRef(false);
 
-      // SEO fields
-      setSeoSlug(event.slug || '');
-      setSeoMetaDescription(event.meta_description_gen || '');
-      setSlugError('');
-    }
+  // Load form data + SEO fields ONLY when modal transitions from closed to open
+  useEffect(() => {
+    const wasOpen = prevOpenRef.current;
+    prevOpenRef.current = open;
+
+    // Only populate on open transition (false → true), not on every event change
+    if (!open || wasOpen) return;
+    if (!event) return;
+
+    console.log('[EventEditModal] Populating form from event:', {
+      nom_event: event.nom_event,
+      ville: event.ville,
+      date_debut: event.date_debut,
+      slug: event.slug,
+    });
+    setFormData({
+      nom_event: event.nom_event || '',
+      description_event: event.description_event || '',
+      date_debut: event.date_debut || '',
+      date_fin: event.date_fin || '',
+      nom_lieu: event.nom_lieu || '',
+      ville: event.ville || '',
+      rue: event.rue || '',
+      code_postal: event.code_postal || '',
+      country: event.country || 'France',
+      url_image: event.url_image || '',
+      url_site_officiel: event.url_site_officiel || '',
+      type_event: (event.type_event as Event['type_event']) || 'salon',
+      tarif: event.tarif || '',
+      visible: event.visible ?? true,
+    });
+
+    // SEO fields
+    setSeoSlug(event.slug || '');
+    setSeoMetaDescription(event.meta_description_gen || '');
+    setSlugError('');
   }, [event, open]);
 
   // Handler pour la sélection de secteurs avec limite à 3
