@@ -218,11 +218,12 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             
             <EventPageHeader event={event} />
 
-            {/* Chiffres clés — uniquement événements à venir */}
+            {/* Indicateurs utiles — uniquement événements à venir */}
             {!isEventPast && (
               <EventKeyFigures
                 event={event}
                 exhibitorCount={exhibitorCount}
+                noveltyCount={noveltyCount}
               />
             )}
 
