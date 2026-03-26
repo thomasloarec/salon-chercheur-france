@@ -476,6 +476,18 @@ RÈGLES ABSOLUES :
     § 4 — Informations pratiques clés : lieu, dates, accès, tarif (2-3 phrases)
 - Ton : professionnel, factuel, direct. Pas de superlatifs.
   Pas de "incontournable", "unique", "exceptionnel".
+- Ne mentionne JAMAIS un nombre d'exposants,
+  un nombre de halls ou un numéro d'édition
+  s'il n'apparaît pas mot pour mot dans les données fournies.
+- Ne mentionne JAMAIS un nom d'espace thématique,
+  de zone ou de programme (ex: 'FIP Materials',
+  'espace innovation') s'il ne figure pas dans
+  les données fournies.
+- Ne déduis jamais d'informations spécifiques
+  à partir du secteur ou du type d'événement.
+- En cas de doute sur une information, l'omettre
+  complètement. Une formulation générale exacte
+  vaut mieux qu'un détail plausible inventé.
 - Tu retournes uniquement le texte rédigé, sans titre,
   sans balise, sans commentaire.`;
 
