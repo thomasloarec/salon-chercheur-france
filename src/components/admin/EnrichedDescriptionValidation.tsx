@@ -43,6 +43,7 @@ export function EnrichedDescriptionValidation() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [waveLoading, setWaveLoading] = useState(false);
+  const [enrichLoading, setEnrichLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
@@ -171,6 +172,27 @@ export function EnrichedDescriptionValidation() {
       toast({ title: 'Erreur', description: msg, variant: 'destructive' });
     } finally {
       setWaveLoading(false);
+    }
+  };
+
+  const launchEnrichment = async () => {
+    setEnrichLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-event-meta', {
+        body: { batch: true, limit: 10 },
+      });
+      if (error) throw error;
+      const results = data as { total?: number; done?: number; skipped?: number; errors?: number; description_enrichie_done?: number };
+      toast({
+        title: '⚡ Enrichissement lancé',
+        description: `Meta : ${results.done ?? 0} générées, ${results.skipped ?? 0} ignorées, ${results.errors ?? 0} erreurs. Desc enrichies : ${results.description_enrichie_done ?? 0}.`,
+      });
+      fetchData();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erreur inconnue';
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+    } finally {
+      setEnrichLoading(false);
     }
   };
 
@@ -352,6 +374,29 @@ export function EnrichedDescriptionValidation() {
             {waveLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
             Lancer la prochaine vague ({stats.eligibleUntreated} éligibles)
           </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="secondary" disabled={enrichLoading}>
+                {enrichLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
+                Enrichir nouveaux événements (meta + desc)
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Lancer l'enrichissement complet ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action va générer les meta descriptions et descriptions enrichies
+                  pour un lot de 10 événements futurs qui n'ont pas encore été traités.
+                  Cela consomme des crédits API Claude.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={launchEnrichment}>Lancer</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>
