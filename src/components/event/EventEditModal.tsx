@@ -509,7 +509,14 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             </div>
 
             <div className="md:col-span-2">
-              <Label htmlFor="description_event">Description</Label>
+              <Label htmlFor="description_event">
+                Description
+                {event.enrichissement_statut === 'valide' && event.description_enrichie && (
+                  <span className="ml-2 text-xs font-normal text-green-600">
+                    (description enrichie validée)
+                  </span>
+                )}
+              </Label>
               <RichTextEditor
                 value={formData.description_event}
                 onChange={(value) => setFormData((prev) => ({ ...prev, description_event: value }))}
