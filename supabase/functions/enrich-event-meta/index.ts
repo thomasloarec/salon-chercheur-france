@@ -642,10 +642,12 @@ Deno.serve(async (req) => {
     // ─── BATCH DESC ENRICHIE MODE ───
     if (body.batch_desc_enrichie === true) {
       const today = new Date().toISOString().slice(0, 10);
+      const MAX_DESC_BATCH = 5;
+      const rawLimit = Number(body.limit) || MAX_DESC_BATCH;
+      const limit = Math.min(Math.max(rawLimit, 1), MAX_DESC_BATCH);
 
-      console.log(`📝 Batch description_enrichie — score >= ${MIN_ENRICHISSEMENT_SCORE}`);
+      console.log(`📝 Batch description_enrichie — score >= ${MIN_ENRICHISSEMENT_SCORE}, limit: ${limit}`);
 
-      // Fetch all eligible events (no arbitrary limit — process all matching)
       const { data: events, error: fetchErr } = await supabase
         .from('events')
         .select(SELECT_FIELDS)
@@ -655,7 +657,8 @@ Deno.serve(async (req) => {
         .gte('enrichissement_score', MIN_ENRICHISSEMENT_SCORE)
         .is('description_enrichie', null)
         .in('enrichissement_statut', ['non_traite', 'done'])
-        .order('enrichissement_score', { ascending: false });
+        .order('enrichissement_score', { ascending: false })
+        .limit(limit);
 
       if (fetchErr) {
         console.error('❌ Fetch desc_enrichie events error:', fetchErr.message);
