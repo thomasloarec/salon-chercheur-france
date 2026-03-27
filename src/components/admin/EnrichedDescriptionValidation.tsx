@@ -43,6 +43,7 @@ export function EnrichedDescriptionValidation() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [waveLoading, setWaveLoading] = useState(false);
+  const [enrichLoading, setEnrichLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
