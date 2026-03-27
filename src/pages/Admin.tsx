@@ -9,6 +9,7 @@ import NoveltyModeration from '@/components/admin/NoveltyModeration';
 
 import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
 import { SeoEnrichmentPanel } from '@/components/admin/SeoEnrichmentPanel';
+import { EnrichedDescriptionValidation } from '@/components/admin/EnrichedDescriptionValidation';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import TestModeManager from '@/components/admin/TestModeManager';
 import MainLayout from '@/components/layout/MainLayout';
