@@ -304,9 +304,12 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           .filter(s => selectedSectorIds.includes(s.id))
           .map(s => s.name);
 
-        const updateData = {
+        // If enriched description is validated, update description_enrichie too
+        const isEnrichedActive = event.enrichissement_statut === 'valide' && event.description_enrichie;
+
+        const updateData: Record<string, any> = {
           nom_event: formData.nom_event,
-          description_event: formData.description_event || null,
+          description_event: isEnrichedActive ? event.description_event : (formData.description_event || null),
           date_debut: formData.date_debut,
           date_fin: formData.date_fin || formData.date_debut,
           nom_lieu: formData.nom_lieu || null,
@@ -324,6 +327,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           secteur: selectedSectorNames.length > 0 ? selectedSectorNames : null,
           updated_at: new Date().toISOString(),
         };
+
+        // When enriched description is active, save edits to description_enrichie
+        if (isEnrichedActive) {
+          updateData.description_enrichie = formData.description_event || null;
+        }
 
         const result = await supabase
           .from('events')
