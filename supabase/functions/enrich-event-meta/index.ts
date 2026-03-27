@@ -642,7 +642,7 @@ Deno.serve(async (req) => {
     // ─── BATCH DESC ENRICHIE MODE ───
     if (body.batch_desc_enrichie === true) {
       const today = new Date().toISOString().slice(0, 10);
-      const MAX_DESC_BATCH = 3;
+      const MAX_DESC_BATCH = 10;
       const rawLimit = Number(body.limit) || MAX_DESC_BATCH;
       const limit = Math.min(Math.max(rawLimit, 1), MAX_DESC_BATCH);
 
