@@ -153,27 +153,6 @@ export function EnrichedDescriptionValidation() {
     }
   };
 
-  const launchWave = async () => {
-    setWaveLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('enrich-event-meta', {
-        body: { batch_desc_enrichie: true, limit: 10 },
-      });
-      if (error) throw error;
-      const results = data as { total?: number; done?: number; errors?: number };
-      toast({
-        title: '🚀 Vague lancée',
-        description: `${results.done ?? 0} traités, ${results.errors ?? 0} erreurs sur ${results.total ?? 0} éligibles`,
-      });
-      fetchData();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Erreur inconnue';
-      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
-    } finally {
-      setWaveLoading(false);
-    }
-  };
-
   const launchEnrichment = async () => {
     setEnrichLoading(true);
     try {
