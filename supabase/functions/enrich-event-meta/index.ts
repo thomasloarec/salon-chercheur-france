@@ -638,7 +638,85 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // ─── BATCH MODE ───
+    // ─── BATCH DESC ENRICHIE MODE ───
+    if (body.batch_desc_enrichie === true) {
+      const today = new Date().toISOString().slice(0, 10);
+
+      console.log(`📝 Batch description_enrichie — score >= ${MIN_ENRICHISSEMENT_SCORE}`);
+
+      // Fetch all eligible events (no arbitrary limit — process all matching)
+      const { data: events, error: fetchErr } = await supabase
+        .from('events')
+        .select(SELECT_FIELDS)
+        .eq('visible', true)
+        .eq('is_test', false)
+        .gt('date_debut', today)
+        .gte('enrichissement_score', MIN_ENRICHISSEMENT_SCORE)
+        .is('description_enrichie', null)
+        .eq('enrichissement_statut', 'non_traite')
+        .order('enrichissement_score', { ascending: false });
+
+      if (fetchErr) {
+        console.error('❌ Fetch desc_enrichie events error:', fetchErr.message);
+        return new Response(JSON.stringify({ error: 'Erreur récupération événements', details: fetchErr.message }), { status: 500, headers: jsonHeaders });
+      }
+
+      if (!events || events.length === 0) {
+        return new Response(JSON.stringify({ batch_desc_enrichie: true, total: 0, done: 0, errors: 0, results: [], message: 'Aucun événement éligible trouvé' }), { status: 200, headers: jsonHeaders });
+      }
+
+      console.log(`📋 ${events.length} événements éligibles pour description_enrichie`);
+
+      interface DescEnrichieResult {
+        slug: string | null;
+        nom_event: string;
+        status: 'done' | 'skipped' | 'error';
+        reason?: string;
+        char_count?: number;
+      }
+
+      const results: DescEnrichieResult[] = [];
+      for (const ev of events) {
+        const eventData = ev as EventData & { enrichissement_score?: number | null };
+        const descResult = await enrichDescription(supabase, eventData, ANTHROPIC_API_KEY);
+        
+        // If done, fetch the saved text length
+        let charCount: number | undefined;
+        if (descResult.status === 'done') {
+          const { data: updated } = await supabase
+            .from('events')
+            .select('description_enrichie')
+            .eq('id', ev.id)
+            .maybeSingle();
+          charCount = updated?.description_enrichie?.length ?? undefined;
+        }
+
+        results.push({
+          slug: ev.slug,
+          nom_event: ev.nom_event,
+          status: descResult.status,
+          reason: descResult.reason,
+          char_count: charCount,
+        });
+      }
+
+      const done = results.filter(r => r.status === 'done').length;
+      const errors = results.filter(r => r.status === 'error').length;
+      const skipped = results.filter(r => r.status === 'skipped').length;
+
+      console.log(`📝 Batch desc_enrichie terminé — done=${done}, errors=${errors}, skipped=${skipped}`);
+
+      return new Response(JSON.stringify({
+        batch_desc_enrichie: true,
+        total: results.length,
+        done,
+        errors,
+        skipped,
+        results,
+      }), { status: 200, headers: jsonHeaders });
+    }
+
+    // ─── BATCH MODE (meta_description_gen) ───
     if (body.batch === true) {
       const MAX_BATCH = 20;
       const rawLimit = Number(body.limit) || 10;
