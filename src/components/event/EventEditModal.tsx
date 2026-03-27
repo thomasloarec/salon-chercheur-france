@@ -463,6 +463,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         meta_description_gen: data.meta_description_gen,
         enrichissement_statut: data.enrichissement_statut,
         enrichissement_date: data.enrichissement_date,
+        description_enrichie: data.description_enrichie,
         sectors: updatedSectors,
         is_favorite: event.is_favorite
       };
