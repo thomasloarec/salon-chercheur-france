@@ -175,6 +175,27 @@ export function EnrichedDescriptionValidation() {
     }
   };
 
+  const launchEnrichment = async () => {
+    setEnrichLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-event-meta', {
+        body: { batch: true, limit: 10 },
+      });
+      if (error) throw error;
+      const results = data as { total?: number; done?: number; skipped?: number; errors?: number; description_enrichie_done?: number };
+      toast({
+        title: '⚡ Enrichissement lancé',
+        description: `Meta : ${results.done ?? 0} générées, ${results.skipped ?? 0} ignorées, ${results.errors ?? 0} erreurs. Desc enrichies : ${results.description_enrichie_done ?? 0}.`,
+      });
+      fetchData();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erreur inconnue';
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+    } finally {
+      setEnrichLoading(false);
+    }
+  };
+
   const scoreBadge = (score: number | null) => {
     if (score == null) return <Badge variant="outline">—</Badge>;
     if (score >= 65) return <Badge className="bg-green-100 text-green-800 border-green-300">{score}</Badge>;
