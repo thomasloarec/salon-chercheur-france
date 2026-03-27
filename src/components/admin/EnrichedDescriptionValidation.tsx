@@ -42,7 +42,6 @@ export function EnrichedDescriptionValidation() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [waveLoading, setWaveLoading] = useState(false);
   const [enrichLoading, setEnrichLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
@@ -154,38 +153,17 @@ export function EnrichedDescriptionValidation() {
     }
   };
 
-  const launchWave = async () => {
-    setWaveLoading(true);
+  const launchEnrichment = async () => {
+    setEnrichLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('enrich-event-meta', {
         body: { batch_desc_enrichie: true, limit: 10 },
       });
       if (error) throw error;
-      const results = data as { total?: number; done?: number; errors?: number };
+      const results = data as { total?: number; done?: number; errors?: number; skipped?: number };
       toast({
-        title: '🚀 Vague lancée',
-        description: `${results.done ?? 0} traités, ${results.errors ?? 0} erreurs sur ${results.total ?? 0} éligibles`,
-      });
-      fetchData();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Erreur inconnue';
-      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
-    } finally {
-      setWaveLoading(false);
-    }
-  };
-
-  const launchEnrichment = async () => {
-    setEnrichLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('enrich-event-meta', {
-        body: { batch: true, limit: 10 },
-      });
-      if (error) throw error;
-      const results = data as { total?: number; done?: number; skipped?: number; errors?: number; description_enrichie_done?: number };
-      toast({
-        title: '⚡ Enrichissement lancé',
-        description: `Meta : ${results.done ?? 0} générées, ${results.skipped ?? 0} ignorées, ${results.errors ?? 0} erreurs. Desc enrichies : ${results.description_enrichie_done ?? 0}.`,
+        title: '📝 Descriptions enrichies générées',
+        description: `${results.done ?? 0} générées, ${results.skipped ?? 0} ignorées, ${results.errors ?? 0} erreurs sur ${results.total ?? 0} éligibles.`,
       });
       fetchData();
     } catch (e: unknown) {
@@ -370,24 +348,19 @@ export function EnrichedDescriptionValidation() {
             </AlertDialogContent>
           </AlertDialog>
 
-          <Button variant="outline" onClick={launchWave} disabled={waveLoading || stats.eligibleUntreated === 0}>
-            {waveLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
-            Lancer la prochaine vague ({stats.eligibleUntreated} éligibles)
-          </Button>
-
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="secondary" disabled={enrichLoading}>
+              <Button variant="secondary" disabled={enrichLoading || stats.eligibleUntreated === 0}>
                 {enrichLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
-                Enrichir nouveaux événements (meta + desc)
+                Générer les descriptions enrichies ({stats.eligibleUntreated} éligibles)
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Lancer l'enrichissement complet ?</AlertDialogTitle>
+                <AlertDialogTitle>Générer les descriptions enrichies ?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Cette action va générer les meta descriptions et descriptions enrichies
-                  pour un lot de 10 événements futurs qui n'ont pas encore été traités.
+                  Cette action va générer les descriptions enrichies (texte long SEO)
+                  pour un lot de 10 événements éligibles (score ≥ 55) qui n'en ont pas encore.
                   Cela consomme des crédits API Claude.
                 </AlertDialogDescription>
               </AlertDialogHeader>
