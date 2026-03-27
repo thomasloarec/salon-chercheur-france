@@ -440,14 +440,7 @@ async function markError(supabase: ReturnType<typeof createClient>, eventId: str
    DESCRIPTION ENRICHIE — Pilot phase
    ═══════════════════════════════════════════════════════════════ */
 
-const PILOT_SLUGS = [
-  'fip-solution-plastique',
-  'carrefour-international-du-bois',
-  'sepem-brest',
-  'in-cosmetics-global',
-  'food-hotel-tech',
-  'medfel',
-];
+const MIN_ENRICHISSEMENT_SCORE = 55;
 
 const DESC_ENRICHIE_SYSTEM_PROMPT = `Tu es un rédacteur expert en événements professionnels B2B français.
 
@@ -520,27 +513,24 @@ function buildDescEnrichiePrompt(event: EventData): string {
 }
 
 /** Check if an event is eligible for description_enrichie generation */
-function isEligibleForDescEnrichie(event: EventData): { eligible: boolean; reason?: string } {
-  // Must be a pilot slug
-  if (!event.slug || !PILOT_SLUGS.includes(event.slug)) {
-    return { eligible: false, reason: 'Slug non inclus dans le pilote' };
+function isEligibleForDescEnrichie(event: EventData & { enrichissement_score?: number | null }): { eligible: boolean; reason?: string } {
+  // Must be a future event
+  const today = new Date().toISOString().slice(0, 10);
+  if (!event.date_debut || event.date_debut.slice(0, 10) <= today) {
+    return { eligible: false, reason: 'Événement passé ou sans date' };
   }
-  // Must be premium
-  if (event.enrichissement_niveau !== 'premium') {
-    return { eligible: false, reason: `Niveau "${event.enrichissement_niveau}" (premium requis)` };
+  // Must have enrichissement_score >= 55
+  if (!event.enrichissement_score || event.enrichissement_score < MIN_ENRICHISSEMENT_SCORE) {
+    return { eligible: false, reason: `Score ${event.enrichissement_score ?? 'null'} < ${MIN_ENRICHISSEMENT_SCORE}` };
   }
   // Must not already have a description_enrichie
   if (event.description_enrichie && event.description_enrichie.trim() !== '') {
     return { eligible: false, reason: 'description_enrichie déjà remplie' };
   }
-  // Must be non_traite (for this specific flow)
-  if (event.enrichissement_statut && event.enrichissement_statut !== 'non_traite' && event.enrichissement_statut !== 'done') {
-    return { eligible: false, reason: `Statut "${event.enrichissement_statut}" (non_traite requis)` };
-  }
-  // Must be a future event
-  const today = new Date().toISOString().slice(0, 10);
-  if (!event.date_debut || event.date_debut.slice(0, 10) <= today) {
-    return { eligible: false, reason: 'Événement passé ou sans date' };
+  // Must be non_traite or done (done = meta already generated, desc_enrichie not yet)
+  const allowedStatuses = ['non_traite', 'done'];
+  if (event.enrichissement_statut && !allowedStatuses.includes(event.enrichissement_statut)) {
+    return { eligible: false, reason: `Statut "${event.enrichissement_statut}" (non_traite ou done requis)` };
   }
   return { eligible: true };
 }
@@ -621,7 +611,7 @@ async function enrichDescription(
 }
 
 /* ─── SELECT FIELDS ─── */
-const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, rue, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut';
+const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, rue, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut, enrichissement_score';
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -649,7 +639,88 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // ─── BATCH MODE ───
+    // ─── BATCH DESC ENRICHIE MODE ───
+    if (body.batch_desc_enrichie === true) {
+      const today = new Date().toISOString().slice(0, 10);
+      const MAX_DESC_BATCH = 3;
+      const rawLimit = Number(body.limit) || MAX_DESC_BATCH;
+      const limit = Math.min(Math.max(rawLimit, 1), MAX_DESC_BATCH);
+
+      console.log(`📝 Batch description_enrichie — score >= ${MIN_ENRICHISSEMENT_SCORE}, limit: ${limit}`);
+
+      const { data: events, error: fetchErr } = await supabase
+        .from('events')
+        .select(SELECT_FIELDS)
+        .eq('visible', true)
+        .eq('is_test', false)
+        .gt('date_debut', today)
+        .gte('enrichissement_score', MIN_ENRICHISSEMENT_SCORE)
+        .is('description_enrichie', null)
+        .in('enrichissement_statut', ['non_traite', 'done'])
+        .order('enrichissement_score', { ascending: false })
+        .limit(limit);
+
+      if (fetchErr) {
+        console.error('❌ Fetch desc_enrichie events error:', fetchErr.message);
+        return new Response(JSON.stringify({ error: 'Erreur récupération événements', details: fetchErr.message }), { status: 500, headers: jsonHeaders });
+      }
+
+      if (!events || events.length === 0) {
+        return new Response(JSON.stringify({ batch_desc_enrichie: true, total: 0, done: 0, errors: 0, results: [], message: 'Aucun événement éligible trouvé' }), { status: 200, headers: jsonHeaders });
+      }
+
+      console.log(`📋 ${events.length} événements éligibles pour description_enrichie`);
+
+      interface DescEnrichieResult {
+        slug: string | null;
+        nom_event: string;
+        status: 'done' | 'skipped' | 'error';
+        reason?: string;
+        char_count?: number;
+      }
+
+      const results: DescEnrichieResult[] = [];
+      for (const ev of events) {
+        const eventData = ev as EventData & { enrichissement_score?: number | null };
+        const descResult = await enrichDescription(supabase, eventData, ANTHROPIC_API_KEY);
+        
+        // If done, fetch the saved text length
+        let charCount: number | undefined;
+        if (descResult.status === 'done') {
+          const { data: updated } = await supabase
+            .from('events')
+            .select('description_enrichie')
+            .eq('id', ev.id)
+            .maybeSingle();
+          charCount = updated?.description_enrichie?.length ?? undefined;
+        }
+
+        results.push({
+          slug: ev.slug,
+          nom_event: ev.nom_event,
+          status: descResult.status,
+          reason: descResult.reason,
+          char_count: charCount,
+        });
+      }
+
+      const done = results.filter(r => r.status === 'done').length;
+      const errors = results.filter(r => r.status === 'error').length;
+      const skipped = results.filter(r => r.status === 'skipped').length;
+
+      console.log(`📝 Batch desc_enrichie terminé — done=${done}, errors=${errors}, skipped=${skipped}`);
+
+      return new Response(JSON.stringify({
+        batch_desc_enrichie: true,
+        total: results.length,
+        done,
+        errors,
+        skipped,
+        results,
+      }), { status: 200, headers: jsonHeaders });
+    }
+
+    // ─── BATCH MODE (meta_description_gen) ───
     if (body.batch === true) {
       const MAX_BATCH = 20;
       const rawLimit = Number(body.limit) || 10;
