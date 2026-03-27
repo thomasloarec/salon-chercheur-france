@@ -527,9 +527,10 @@ function isEligibleForDescEnrichie(event: EventData & { enrichissement_score?: n
   if (event.description_enrichie && event.description_enrichie.trim() !== '') {
     return { eligible: false, reason: 'description_enrichie déjà remplie' };
   }
-  // Must be non_traite
-  if (event.enrichissement_statut && event.enrichissement_statut !== 'non_traite') {
-    return { eligible: false, reason: `Statut "${event.enrichissement_statut}" (non_traite requis)` };
+  // Must be non_traite or done (done = meta already generated, desc_enrichie not yet)
+  const allowedStatuses = ['non_traite', 'done'];
+  if (event.enrichissement_statut && !allowedStatuses.includes(event.enrichissement_statut)) {
+    return { eligible: false, reason: `Statut "${event.enrichissement_statut}" (non_traite ou done requis)` };
   }
   return { eligible: true };
 }
