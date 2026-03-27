@@ -440,14 +440,7 @@ async function markError(supabase: ReturnType<typeof createClient>, eventId: str
    DESCRIPTION ENRICHIE — Pilot phase
    ═══════════════════════════════════════════════════════════════ */
 
-const PILOT_SLUGS = [
-  'fip-solution-plastique',
-  'carrefour-international-du-bois',
-  'sepem-brest',
-  'in-cosmetics-global',
-  'food-hotel-tech',
-  'medfel',
-];
+const MIN_ENRICHISSEMENT_SCORE = 55;
 
 const DESC_ENRICHIE_SYSTEM_PROMPT = `Tu es un rédacteur expert en événements professionnels B2B français.
 
