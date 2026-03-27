@@ -513,27 +513,23 @@ function buildDescEnrichiePrompt(event: EventData): string {
 }
 
 /** Check if an event is eligible for description_enrichie generation */
-function isEligibleForDescEnrichie(event: EventData): { eligible: boolean; reason?: string } {
-  // Must be a pilot slug
-  if (!event.slug || !PILOT_SLUGS.includes(event.slug)) {
-    return { eligible: false, reason: 'Slug non inclus dans le pilote' };
+function isEligibleForDescEnrichie(event: EventData & { enrichissement_score?: number | null }): { eligible: boolean; reason?: string } {
+  // Must be a future event
+  const today = new Date().toISOString().slice(0, 10);
+  if (!event.date_debut || event.date_debut.slice(0, 10) <= today) {
+    return { eligible: false, reason: 'Événement passé ou sans date' };
   }
-  // Must be premium
-  if (event.enrichissement_niveau !== 'premium') {
-    return { eligible: false, reason: `Niveau "${event.enrichissement_niveau}" (premium requis)` };
+  // Must have enrichissement_score >= 55
+  if (!event.enrichissement_score || event.enrichissement_score < MIN_ENRICHISSEMENT_SCORE) {
+    return { eligible: false, reason: `Score ${event.enrichissement_score ?? 'null'} < ${MIN_ENRICHISSEMENT_SCORE}` };
   }
   // Must not already have a description_enrichie
   if (event.description_enrichie && event.description_enrichie.trim() !== '') {
     return { eligible: false, reason: 'description_enrichie déjà remplie' };
   }
-  // Must be non_traite (for this specific flow)
-  if (event.enrichissement_statut && event.enrichissement_statut !== 'non_traite' && event.enrichissement_statut !== 'done') {
+  // Must be non_traite
+  if (event.enrichissement_statut && event.enrichissement_statut !== 'non_traite') {
     return { eligible: false, reason: `Statut "${event.enrichissement_statut}" (non_traite requis)` };
-  }
-  // Must be a future event
-  const today = new Date().toISOString().slice(0, 10);
-  if (!event.date_debut || event.date_debut.slice(0, 10) <= today) {
-    return { eligible: false, reason: 'Événement passé ou sans date' };
   }
   return { eligible: true };
 }
