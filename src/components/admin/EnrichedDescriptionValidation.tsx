@@ -42,7 +42,6 @@ export function EnrichedDescriptionValidation() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [waveLoading, setWaveLoading] = useState(false);
   const [enrichLoading, setEnrichLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
