@@ -370,24 +370,19 @@ export function EnrichedDescriptionValidation() {
             </AlertDialogContent>
           </AlertDialog>
 
-          <Button variant="outline" onClick={launchWave} disabled={waveLoading || stats.eligibleUntreated === 0}>
-            {waveLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
-            Lancer la prochaine vague ({stats.eligibleUntreated} éligibles)
-          </Button>
-
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="secondary" disabled={enrichLoading}>
+              <Button variant="secondary" disabled={enrichLoading || stats.eligibleUntreated === 0}>
                 {enrichLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
-                Enrichir nouveaux événements (meta + desc)
+                Générer les descriptions enrichies ({stats.eligibleUntreated} éligibles)
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Lancer l'enrichissement complet ?</AlertDialogTitle>
+                <AlertDialogTitle>Générer les descriptions enrichies ?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Cette action va générer les meta descriptions et descriptions enrichies
-                  pour un lot de 10 événements futurs qui n'ont pas encore été traités.
+                  Cette action va générer les descriptions enrichies (texte long SEO)
+                  pour un lot de 10 événements éligibles (score ≥ 55) qui n'en ont pas encore.
                   Cela consomme des crédits API Claude.
                 </AlertDialogDescription>
               </AlertDialogHeader>
