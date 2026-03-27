@@ -58,8 +58,9 @@ export function EnrichedDescriptionValidation() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('enrichissement_statut', 'valide'),
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .eq('enrichissement_statut', 'non_traite')
+          .in('enrichissement_statut', ['non_traite', 'done'])
           .gte('enrichissement_score', 55)
+          .is('description_enrichie', null)
           .gt('date_debut', today),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .gt('date_debut', today),
