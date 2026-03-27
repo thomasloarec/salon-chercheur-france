@@ -179,13 +179,13 @@ export function EnrichedDescriptionValidation() {
     setEnrichLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('enrich-event-meta', {
-        body: { batch: true, limit: 10 },
+        body: { batch_desc_enrichie: true, limit: 10 },
       });
       if (error) throw error;
-      const results = data as { total?: number; done?: number; skipped?: number; errors?: number; description_enrichie_done?: number };
+      const results = data as { total?: number; done?: number; errors?: number; skipped?: number };
       toast({
-        title: '⚡ Enrichissement lancé',
-        description: `Meta : ${results.done ?? 0} générées, ${results.skipped ?? 0} ignorées, ${results.errors ?? 0} erreurs. Desc enrichies : ${results.description_enrichie_done ?? 0}.`,
+        title: '📝 Descriptions enrichies générées',
+        description: `${results.done ?? 0} générées, ${results.skipped ?? 0} ignorées, ${results.errors ?? 0} erreurs sur ${results.total ?? 0} éligibles.`,
       });
       fetchData();
     } catch (e: unknown) {
