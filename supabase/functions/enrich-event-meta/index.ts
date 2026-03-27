@@ -610,7 +610,7 @@ async function enrichDescription(
 }
 
 /* ─── SELECT FIELDS ─── */
-const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, rue, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut';
+const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, rue, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut, enrichissement_score';
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin');
