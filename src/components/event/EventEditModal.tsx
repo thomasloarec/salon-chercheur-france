@@ -125,13 +125,27 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
         .select('sector_id')
         .eq('event_id', eventIdForSectors);
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         // Only keep IDs that exist in allSectors to avoid phantom selections
         const validIds = new Set(allSectors.map(s => s.id));
         const sectorIds = data.map(row => row.sector_id).filter(id => validIds.has(id));
         setSelectedSectorIds(sectorIds);
       } else {
-        setSelectedSectorIds([]);
+        // Fallback: try to match from legacy event.secteur field
+        const secteurRaw = event.secteur;
+        const secteurNames: string[] = Array.isArray(secteurRaw)
+          ? secteurRaw
+          : typeof secteurRaw === 'string' && secteurRaw.trim()
+            ? secteurRaw.split(',').map(s => s.trim()).filter(Boolean)
+            : [];
+        if (secteurNames.length > 0) {
+          const matched = allSectors
+            .filter(s => secteurNames.some(name => s.name.toLowerCase() === name.toLowerCase()))
+            .map(s => s.id);
+          setSelectedSectorIds(matched);
+        } else {
+          setSelectedSectorIds([]);
+        }
       }
       setSectorsLoaded(true);
       sectorsLoadedOnceRef.current = true;
@@ -158,9 +172,14 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       date_debut: event.date_debut,
       slug: event.slug,
     });
+    // Use description_enrichie when validated, otherwise description_event
+    const displayDescription = (event.enrichissement_statut === 'valide' && event.description_enrichie)
+      ? event.description_enrichie
+      : (event.description_event || '');
+
     setFormData({
       nom_event: event.nom_event || '',
-      description_event: event.description_event || '',
+      description_event: displayDescription,
       date_debut: event.date_debut || '',
       date_fin: event.date_fin || '',
       nom_lieu: event.nom_lieu || '',
@@ -285,9 +304,12 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           .filter(s => selectedSectorIds.includes(s.id))
           .map(s => s.name);
 
-        const updateData = {
+        // If enriched description is validated, update description_enrichie too
+        const isEnrichedActive = event.enrichissement_statut === 'valide' && event.description_enrichie;
+
+        const updateData: Record<string, any> = {
           nom_event: formData.nom_event,
-          description_event: formData.description_event || null,
+          description_event: isEnrichedActive ? event.description_event : (formData.description_event || null),
           date_debut: formData.date_debut,
           date_fin: formData.date_fin || formData.date_debut,
           nom_lieu: formData.nom_lieu || null,
@@ -305,6 +327,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           secteur: selectedSectorNames.length > 0 ? selectedSectorNames : null,
           updated_at: new Date().toISOString(),
         };
+
+        // When enriched description is active, save edits to description_enrichie
+        if (isEnrichedActive) {
+          updateData.description_enrichie = formData.description_event || null;
+        }
 
         const result = await supabase
           .from('events')
@@ -482,7 +509,14 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
             </div>
 
             <div className="md:col-span-2">
-              <Label htmlFor="description_event">Description</Label>
+              <Label htmlFor="description_event">
+                Description
+                {event.enrichissement_statut === 'valide' && event.description_enrichie && (
+                  <span className="ml-2 text-xs font-normal text-green-600">
+                    (description enrichie validée)
+                  </span>
+                )}
+              </Label>
               <RichTextEditor
                 value={formData.description_event}
                 onChange={(value) => setFormData((prev) => ({ ...prev, description_event: value }))}
