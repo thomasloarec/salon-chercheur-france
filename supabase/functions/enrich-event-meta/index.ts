@@ -654,7 +654,7 @@ Deno.serve(async (req) => {
         .gt('date_debut', today)
         .gte('enrichissement_score', MIN_ENRICHISSEMENT_SCORE)
         .is('description_enrichie', null)
-        .eq('enrichissement_statut', 'non_traite')
+        .in('enrichissement_statut', ['non_traite', 'done'])
         .order('enrichissement_score', { ascending: false });
 
       if (fetchErr) {
