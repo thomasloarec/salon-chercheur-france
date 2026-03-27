@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle, XCircle, Loader2, RefreshCw, Rocket,
-  ChevronDown, ChevronUp, Clock, FileCheck, AlertTriangle, Calendar
+  ChevronDown, ChevronUp, Clock, FileCheck, AlertTriangle, Calendar,
+  Pencil, Save, X
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -41,6 +43,9 @@ export function EnrichedDescriptionValidation() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [waveLoading, setWaveLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -87,6 +92,33 @@ export function EnrichedDescriptionValidation() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const startEditing = (ev: PendingEvent) => {
+    setEditingId(ev.id);
+    setEditText(ev.description_enrichie ?? '');
+    setExpandedIds(prev => new Set(prev).add(ev.id));
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const saveEdit = async (id: string) => {
+    setSaveLoading(true);
+    const { error } = await supabase.from('events')
+      .update({ description_enrichie: editText })
+      .eq('id', id);
+    setSaveLoading(false);
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '💾 Description modifiée' });
+      setEvents(prev => prev.map(e => e.id === id ? { ...e, description_enrichie: editText } : e));
+      setEditingId(null);
+      setEditText('');
+    }
   };
 
   const updateStatus = async (id: string, status: 'valide' | 'rejete') => {
@@ -198,6 +230,7 @@ export function EnrichedDescriptionValidation() {
           <div className="space-y-3 max-h-[600px] overflow-y-auto">
             {events.map(ev => {
               const expanded = expandedIds.has(ev.id);
+              const isEditing = editingId === ev.id;
               const preview = ev.description_enrichie?.slice(0, 200) ?? '';
               const hasMore = (ev.description_enrichie?.length ?? 0) > 200;
               return (
@@ -217,17 +250,54 @@ export function EnrichedDescriptionValidation() {
                     {scoreBadge(ev.enrichissement_score)}
                   </div>
 
-                  <div className="text-sm text-muted-foreground whitespace-pre-line">
-                    {expanded ? ev.description_enrichie : preview}
-                    {hasMore && !expanded && '…'}
-                  </div>
-                  {hasMore && (
-                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => toggleExpand(ev.id)}>
-                      {expanded ? <><ChevronUp className="h-3 w-3 mr-1" /> Réduire</> : <><ChevronDown className="h-3 w-3 mr-1" /> Voir tout</>}
-                    </Button>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editText}
+                        onChange={e => setEditText(e.target.value)}
+                        rows={12}
+                        className="text-sm font-mono"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => saveEdit(ev.id)}
+                          disabled={saveLoading}
+                          className="text-xs"
+                        >
+                          {saveLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                          Enregistrer
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={cancelEditing} className="text-xs">
+                          <X className="h-3 w-3 mr-1" /> Annuler
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-sm text-muted-foreground whitespace-pre-line">
+                        {expanded ? ev.description_enrichie : preview}
+                        {hasMore && !expanded && '…'}
+                      </div>
+                      {hasMore && (
+                        <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => toggleExpand(ev.id)}>
+                          {expanded ? <><ChevronUp className="h-3 w-3 mr-1" /> Réduire</> : <><ChevronDown className="h-3 w-3 mr-1" /> Voir tout</>}
+                        </Button>
+                      )}
+                    </>
                   )}
 
                   <div className="flex gap-2 pt-1">
+                    {!isEditing && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-blue-700 border-blue-300 hover:bg-blue-50"
+                        onClick={() => startEditing(ev)}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" /> Modifier
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
