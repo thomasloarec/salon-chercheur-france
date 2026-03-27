@@ -374,6 +374,29 @@ export function EnrichedDescriptionValidation() {
             {waveLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
             Lancer la prochaine vague ({stats.eligibleUntreated} éligibles)
           </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="secondary" disabled={enrichLoading}>
+                {enrichLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
+                Enrichir nouveaux événements (meta + desc)
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Lancer l'enrichissement complet ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action va générer les meta descriptions et descriptions enrichies
+                  pour un lot de 10 événements futurs qui n'ont pas encore été traités.
+                  Cela consomme des crédits API Claude.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={launchEnrichment}>Lancer</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>
