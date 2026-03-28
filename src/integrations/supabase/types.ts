@@ -372,6 +372,7 @@ export type Database = {
         Row: {
           affluence: string | null
           airtable_id: string | null
+          campagne_active: boolean | null
           code_postal: string | null
           created_at: string | null
           date_debut: string | null
@@ -392,7 +393,9 @@ export type Database = {
           nom_event: string
           nom_lieu: string | null
           pays: string | null
+          rubrique_seeded: boolean | null
           rue: string | null
+          salon_priorite: number | null
           secteur: Json | null
           slug: string | null
           status_event: string | null
@@ -407,6 +410,7 @@ export type Database = {
         Insert: {
           affluence?: string | null
           airtable_id?: string | null
+          campagne_active?: boolean | null
           code_postal?: string | null
           created_at?: string | null
           date_debut?: string | null
@@ -427,7 +431,9 @@ export type Database = {
           nom_event: string
           nom_lieu?: string | null
           pays?: string | null
+          rubrique_seeded?: boolean | null
           rue?: string | null
+          salon_priorite?: number | null
           secteur?: Json | null
           slug?: string | null
           status_event?: string | null
@@ -442,6 +448,7 @@ export type Database = {
         Update: {
           affluence?: string | null
           airtable_id?: string | null
+          campagne_active?: boolean | null
           code_postal?: string | null
           created_at?: string | null
           date_debut?: string | null
@@ -462,7 +469,9 @@ export type Database = {
           nom_event?: string
           nom_lieu?: string | null
           pays?: string | null
+          rubrique_seeded?: boolean | null
           rue?: string | null
+          salon_priorite?: number | null
           secteur?: Json | null
           slug?: string | null
           status_event?: string | null
@@ -860,14 +869,36 @@ export type Database = {
       exhibitors: {
         Row: {
           approved: boolean | null
+          campaign_eligible: boolean | null
+          campaign_status: string | null
+          campaign_stop_reason: string | null
+          company_size_signal: string | null
+          company_tier: string | null
+          contact_email: string | null
+          contact_poste: string | null
+          contact_prenom: string | null
+          contact_score: number | null
           created_at: string | null
+          current_step: number | null
           description: string | null
+          email_source: string | null
+          hunter_search_done: boolean | null
+          hunter_verify_done: boolean | null
           id: string
+          is_generic_inbox: boolean | null
           is_test: boolean
+          last_sent_at: string | null
           logo_url: string | null
           name: string
+          next_send_date: string | null
+          opt_out: boolean | null
+          outlook_conv_id: string | null
+          outlook_message_id: string | null
           owner_user_id: string | null
           plan: string | null
+          pre_hunter_score: number | null
+          reply_date: string | null
+          reply_status: string | null
           slug: string | null
           stand_info: string | null
           updated_at: string | null
@@ -875,14 +906,36 @@ export type Database = {
         }
         Insert: {
           approved?: boolean | null
+          campaign_eligible?: boolean | null
+          campaign_status?: string | null
+          campaign_stop_reason?: string | null
+          company_size_signal?: string | null
+          company_tier?: string | null
+          contact_email?: string | null
+          contact_poste?: string | null
+          contact_prenom?: string | null
+          contact_score?: number | null
           created_at?: string | null
+          current_step?: number | null
           description?: string | null
+          email_source?: string | null
+          hunter_search_done?: boolean | null
+          hunter_verify_done?: boolean | null
           id?: string
+          is_generic_inbox?: boolean | null
           is_test?: boolean
+          last_sent_at?: string | null
           logo_url?: string | null
           name: string
+          next_send_date?: string | null
+          opt_out?: boolean | null
+          outlook_conv_id?: string | null
+          outlook_message_id?: string | null
           owner_user_id?: string | null
           plan?: string | null
+          pre_hunter_score?: number | null
+          reply_date?: string | null
+          reply_status?: string | null
           slug?: string | null
           stand_info?: string | null
           updated_at?: string | null
@@ -890,14 +943,36 @@ export type Database = {
         }
         Update: {
           approved?: boolean | null
+          campaign_eligible?: boolean | null
+          campaign_status?: string | null
+          campaign_stop_reason?: string | null
+          company_size_signal?: string | null
+          company_tier?: string | null
+          contact_email?: string | null
+          contact_poste?: string | null
+          contact_prenom?: string | null
+          contact_score?: number | null
           created_at?: string | null
+          current_step?: number | null
           description?: string | null
+          email_source?: string | null
+          hunter_search_done?: boolean | null
+          hunter_verify_done?: boolean | null
           id?: string
+          is_generic_inbox?: boolean | null
           is_test?: boolean
+          last_sent_at?: string | null
           logo_url?: string | null
           name?: string
+          next_send_date?: string | null
+          opt_out?: boolean | null
+          outlook_conv_id?: string | null
+          outlook_message_id?: string | null
           owner_user_id?: string | null
           plan?: string | null
+          pre_hunter_score?: number | null
+          reply_date?: string | null
+          reply_status?: string | null
           slug?: string | null
           stand_info?: string | null
           updated_at?: string | null
