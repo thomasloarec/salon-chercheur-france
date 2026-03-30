@@ -39,8 +39,6 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
       try {
         const eventIdText = event.id_event;
         
-        console.log('[SidebarExposants] eventId =', eventIdText ?? event.id);
-        console.log('🔍 EventExhibitorsSection - Fetching preview for', eventIdText);
         
         // Requête preview: 7 premiers + count total
         const { data: previewData, count, error } = await supabase
