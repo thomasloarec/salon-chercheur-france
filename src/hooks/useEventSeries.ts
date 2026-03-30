@@ -51,7 +51,14 @@ export function useEventSeries(event: Pick<Event, 'id' | 'nom_event'> | null) {
         return [];
       }
 
-      return (data || []) as Array<{
+      // Sort by affluence descending (highest first)
+      const sorted = (data || []).sort((a, b) => {
+        const aff_a = parseInt(String(a.affluence || '0').replace(/\D/g, ''), 10) || 0;
+        const aff_b = parseInt(String(b.affluence || '0').replace(/\D/g, ''), 10) || 0;
+        return aff_b - aff_a;
+      });
+
+      return sorted as Array<{
         id: string;
         nom_event: string;
         slug: string;
@@ -59,6 +66,7 @@ export function useEventSeries(event: Pick<Event, 'id' | 'nom_event'> | null) {
         date_fin: string | null;
         ville: string | null;
         url_image: string | null;
+        affluence: string | null;
       }>;
     },
   });
