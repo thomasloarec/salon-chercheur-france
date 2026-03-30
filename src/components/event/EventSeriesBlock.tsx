@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -21,14 +21,17 @@ export const EventSeriesBlock = ({ event, onSeriesIds }: EventSeriesBlockProps) 
   const { data: seriesEvents, isLoading } = useEventSeries(event);
 
   // Limit to 4 items (single row on desktop)
-  const displayEvents = seriesEvents?.slice(0, 4);
+  const displayEvents = useMemo(() => seriesEvents?.slice(0, 4), [seriesEvents]);
 
-  // Notify parent of series event IDs for deduplication
+  // Stabilize the IDs to avoid infinite re-render loops
+  const prevIdsRef = useRef<string>('');
   useEffect(() => {
-    if (onSeriesIds && displayEvents && displayEvents.length > 0) {
-      onSeriesIds(displayEvents.map(e => e.id));
-    } else if (onSeriesIds && !isLoading && (!displayEvents || displayEvents.length === 0)) {
-      onSeriesIds([]);
+    if (!onSeriesIds || isLoading) return;
+    const ids = displayEvents?.map(e => e.id) ?? [];
+    const key = ids.join(',');
+    if (key !== prevIdsRef.current) {
+      prevIdsRef.current = key;
+      onSeriesIds(ids);
     }
   }, [displayEvents, isLoading, onSeriesIds]);
 
