@@ -39,12 +39,12 @@ export function useEventSeries(event: Pick<Event, 'id' | 'nom_event'> | null) {
 
       const { data, error } = await supabase
         .from('events')
-        .select('id, nom_event, slug, date_debut, date_fin, ville, url_image, visible')
+        .select('id, nom_event, slug, date_debut, date_fin, ville, url_image, visible, affluence')
         .ilike('nom_event', searchPattern)
         .eq('visible', true)
         .neq('id', event.id)
         .order('date_debut', { ascending: true })
-        .limit(10);
+        .limit(20);
 
       if (error) {
         console.error('[useEventSeries] error:', error);
