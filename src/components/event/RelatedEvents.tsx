@@ -11,6 +11,7 @@ import { getSectorUrl } from "@/lib/sectorUrl";
 interface RelatedEventsProps {
   event: Pick<Event, "id_event" | "secteur" | "ville">;
   limit?: number;
+  excludeIds?: string[];
 }
 
 export const RelatedEvents = ({ event, limit = 4 }: RelatedEventsProps) => {
