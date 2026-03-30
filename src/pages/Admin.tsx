@@ -97,6 +97,22 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">IA Visite</h3>
+                  <p className="text-sm text-muted-foreground">Tracking "Préparer ma visite avec l'IA"</p>
+                </div>
+                <Button asChild>
+                  <Link to="/admin/ia-visite">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Dashboard IA
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="novelties" className="space-y-6">

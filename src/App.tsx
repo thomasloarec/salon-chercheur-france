@@ -90,6 +90,7 @@ function App() {
               <Route path="/admin/events/by-text/:id_event_text" element={<AdminEventByText />} />
               <Route path="/admin/import-diagnostics" element={<AdminImportDiagnostics />} />
               <Route path="/admin/seo-audit" element={<AdminSeoAudit />} />
+              <Route path="/admin/ia-visite" element={<AdminIaVisite />} />
               <Route path="/admin/blog" element={<AdminBlog />} />
               <Route path="/admin/blog/new" element={<AdminBlogEdit />} />
               <Route path="/admin/blog/edit/:id" element={<AdminBlogEdit />} />
