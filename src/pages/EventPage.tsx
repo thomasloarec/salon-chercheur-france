@@ -96,6 +96,22 @@ const EventPage = () => {
           return;
         }
 
+        // ✅ REDIRECT : Vérifier si l'ancien slug a été redirigé
+        if (!eventData && !fetchError) {
+          console.log('🔄 Checking slug_redirects for:', slug);
+          const { data: redirect } = await supabase
+            .from('slug_redirects')
+            .select('new_slug')
+            .eq('old_slug', slug)
+            .maybeSingle();
+
+          if (redirect?.new_slug) {
+            console.log('➡️ Redirecting to new slug:', redirect.new_slug);
+            navigate(`/events/${redirect.new_slug}`, { replace: true });
+            return;
+          }
+        }
+
         if (!eventData) {
           console.log('❌ Event not found with slug:', slug);
           setError('Événement introuvable');
