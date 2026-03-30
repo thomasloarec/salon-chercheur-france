@@ -313,8 +313,8 @@ export default function AdminIaVisite() {
               {roleData.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">Pas encore de données de rôles.</p>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                     <Pie
                       data={roleData}
                       dataKey="value"
