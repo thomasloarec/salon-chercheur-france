@@ -21,7 +21,7 @@ import { OAuthHubSpotDiagnostic } from '@/components/admin/OAuthHubSpotDiagnosti
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, BookOpen } from 'lucide-react';
+import { Search, BookOpen, Sparkles } from 'lucide-react';
 import {
   Accordion,
   AccordionItem,
