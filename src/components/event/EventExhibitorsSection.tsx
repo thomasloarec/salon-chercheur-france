@@ -137,7 +137,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
 
   const hasMore = totalExhibitors > MAX_SIDEBAR_EXHIBITORS;
   
-  console.log('[SidebarExposants] hasMore =', hasMore);
+  
 
   return (
     <>
