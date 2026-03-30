@@ -21,7 +21,7 @@ import { OAuthHubSpotDiagnostic } from '@/components/admin/OAuthHubSpotDiagnosti
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, BookOpen } from 'lucide-react';
+import { Search, BookOpen, Sparkles } from 'lucide-react';
 import {
   Accordion,
   AccordionItem,
@@ -64,7 +64,7 @@ const Admin = () => {
         </div>
 
         {/* Liens rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -92,6 +92,22 @@ const Admin = () => {
                   <Link to="/admin/seo-audit">
                     <Search className="h-4 w-4 mr-2" />
                     Dashboard SEO
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">IA Visite</h3>
+                  <p className="text-sm text-muted-foreground">Tracking "Préparer ma visite avec l'IA"</p>
+                </div>
+                <Button asChild>
+                  <Link to="/admin/ia-visite">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Dashboard IA
                   </Link>
                 </Button>
               </div>
