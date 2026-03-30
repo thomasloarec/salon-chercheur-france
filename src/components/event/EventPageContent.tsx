@@ -46,6 +46,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   const [searchParams] = useSearchParams();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
   const [prepareVisitOpen, setPrepareVisitOpen] = useState(false);
+  const [seriesEventIds, setSeriesEventIds] = useState<string[]>([]);
+
+  const handleSeriesIds = useCallback((ids: string[]) => {
+    setSeriesEventIds(ids);
+  }, []);
 
   // Auto-open wizard from ?prepare=1 query param (e.g. from agenda page)
   useEffect(() => {
