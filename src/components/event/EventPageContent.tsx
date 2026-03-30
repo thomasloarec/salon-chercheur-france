@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useInvalidateEvents } from '@/hooks/useEvents';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
@@ -46,6 +46,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   const [searchParams] = useSearchParams();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
   const [prepareVisitOpen, setPrepareVisitOpen] = useState(false);
+  const [seriesEventIds, setSeriesEventIds] = useState<string[]>([]);
+
+  const handleSeriesIds = useCallback((ids: string[]) => {
+    setSeriesEventIds(ids);
+  }, []);
 
   // Auto-open wizard from ?prepare=1 query param (e.g. from agenda page)
   useEffect(() => {
@@ -279,13 +284,13 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </div>
 
             {/* Autres éditions de ce salon (séries) */}
-            <EventSeriesBlock event={event} />
+            <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
 
             {/* Salons dans la même ville */}
             <SameCityEventsBlock event={event} />
 
             {/* Événements similaires pour le maillage interne SEO */}
-            <RelatedEvents event={event} limit={4} />
+            <RelatedEvents event={event} limit={4} excludeIds={seriesEventIds} />
 
             {/* Bloc "Pourquoi visiter" en bas de page */}
             <EventWhyVisit event={event} />

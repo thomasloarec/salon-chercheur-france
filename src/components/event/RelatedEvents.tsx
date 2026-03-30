@@ -11,10 +11,14 @@ import { getSectorUrl } from "@/lib/sectorUrl";
 interface RelatedEventsProps {
   event: Pick<Event, "id_event" | "secteur" | "ville">;
   limit?: number;
+  excludeIds?: string[];
 }
 
-export const RelatedEvents = ({ event, limit = 4 }: RelatedEventsProps) => {
-  const { data: relatedEvents, isLoading } = useRelatedEvents(event.id_event, limit);
+export const RelatedEvents = ({ event, limit = 4, excludeIds = [] }: RelatedEventsProps) => {
+  const { data: rawRelatedEvents, isLoading } = useRelatedEvents(event.id_event, limit + excludeIds.length);
+
+  // Filter out events already shown in series block
+  const relatedEvents = rawRelatedEvents?.filter(e => !excludeIds.includes(e.id)).slice(0, limit) ?? null;
 
   // Don't render if no related events
   if (!isLoading && (!relatedEvents || relatedEvents.length === 0)) {
