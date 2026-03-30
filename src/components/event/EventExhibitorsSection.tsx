@@ -92,7 +92,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
     
     try {
       const eventIdText = event.id_event;
-      console.log('🔍 Fetching all exhibitors for', eventIdText);
+      
       
       const { data: allData, error } = await supabase
         .from('participations_with_exhibitors')
