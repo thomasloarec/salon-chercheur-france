@@ -21,6 +21,7 @@ import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
 import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
 import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
 import AdminSeoAudit from '@/pages/AdminSeoAudit';
+import AdminIaVisite from '@/pages/AdminIaVisite';
 import CrmIntegrations from '@/pages/CrmIntegrations';
 import { OAuthCallback } from '@/pages/OAuthCallback';
 import OAuthHubspotTest from '@/pages/OAuthHubspotTest';
