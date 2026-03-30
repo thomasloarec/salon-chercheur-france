@@ -324,7 +324,10 @@ export default function AdminIaVisite() {
                       innerRadius={50}
                       outerRadius={85}
                       paddingAngle={2}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={false}
+                      startAngle={90}
+                      endAngle={-270}
                     >
                       {roleData.map((_, idx) => (
                         <Cell key={idx} fill={ROLE_COLORS[idx % ROLE_COLORS.length]} />
