@@ -35,6 +35,22 @@ const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
 
+  const { data: iaUses7d } = useQuery({
+    queryKey: ['ia-visite-7d-widget'],
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 7);
+      const { count, error } = await supabase
+        .from('wizard_sessions' as any)
+        .select('*', { count: 'exact', head: true })
+        .in('step_reached', ['results', 'saved'])
+        .gte('created_at', since.toISOString());
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: isAdmin === true,
+  });
+
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
