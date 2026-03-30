@@ -39,8 +39,6 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
       try {
         const eventIdText = event.id_event;
         
-        console.log('[SidebarExposants] eventId =', eventIdText ?? event.id);
-        console.log('🔍 EventExhibitorsSection - Fetching preview for', eventIdText);
         
         // Requête preview: 7 premiers + count total
         const { data: previewData, count, error } = await supabase
@@ -59,7 +57,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
 
         // Fallback vers id_event (UUID) si aucun résultat
         if (finalPreview.length === 0 && event.id) {
-          console.log('🔄 Fallback to UUID for event', event.slug);
+          
           const { data: fallbackData, count: fallbackCount } = await supabase
             .from('participations_with_exhibitors')
             .select('*', { count: 'exact' })
@@ -75,12 +73,8 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
           }
         }
 
-        console.log('✅ Loaded preview:', finalPreview.length, 'of', finalCount, 'exhibitors');
         setExhibitorsPreview(finalPreview);
         setTotalExhibitors(finalCount);
-        
-        console.log('[SidebarExposants] loadedCount =', finalCount);
-        console.log('[SidebarExposants] previewCount =', finalPreview.length);
       } catch (err) {
         console.error('[EventExhibitorsSection] Fetch error', err);
         setExhibitorsPreview([]);
@@ -98,7 +92,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
     
     try {
       const eventIdText = event.id_event;
-      console.log('🔍 Fetching all exhibitors for', eventIdText);
+      
       
       const { data: allData, error } = await supabase
         .from('participations_with_exhibitors')
@@ -122,7 +116,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
         finalAll = fallbackData ?? [];
       }
 
-      console.log('✅ Loaded all exhibitors:', finalAll.length);
+      
       setExhibitorsAll(finalAll);
     } catch (err) {
       console.error('[EventExhibitorsSection] Full list fetch error', err);
@@ -137,7 +131,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
 
   const hasMore = totalExhibitors > MAX_SIDEBAR_EXHIBITORS;
   
-  console.log('[SidebarExposants] hasMore =', hasMore);
+  
 
   return (
     <>

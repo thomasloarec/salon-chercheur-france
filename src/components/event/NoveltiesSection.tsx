@@ -64,16 +64,7 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const allNovelties = data?.pages.flatMap(page => page.data) ?? [];
   const total = data?.pages[0]?.total ?? 0;
 
-  console.log('🔍 NoveltiesSection debug:', {
-    event_id: event.id,
-    total,
-    displayed: allNovelties.length,
-    hasNextPage,
-    isLoading,
-    error,
-    daysUntilEvent,
-    isPreLaunch
-  });
+  // Debug logging removed to avoid console spam on every render
 
   if (isLoading) {
     return (
