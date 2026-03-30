@@ -73,6 +73,8 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
           }
         }
 
+        setExhibitorsPreview(finalPreview);
+        setTotalExhibitors(finalCount);
       } catch (err) {
         console.error('[EventExhibitorsSection] Fetch error', err);
         setExhibitorsPreview([]);
