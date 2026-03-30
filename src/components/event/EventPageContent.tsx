@@ -284,7 +284,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </div>
 
             {/* Autres éditions de ce salon (séries) */}
-            <EventSeriesBlock event={event} />
+            <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
 
             {/* Salons dans la même ville */}
             <SameCityEventsBlock event={event} />
