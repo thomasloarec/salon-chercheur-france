@@ -290,7 +290,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             <SameCityEventsBlock event={event} />
 
             {/* Événements similaires pour le maillage interne SEO */}
-            <RelatedEvents event={event} limit={4} />
+            <RelatedEvents event={event} limit={4} excludeIds={seriesEventIds} />
 
             {/* Bloc "Pourquoi visiter" en bas de page */}
             <EventWhyVisit event={event} />
