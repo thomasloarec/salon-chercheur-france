@@ -120,20 +120,37 @@ export default function AdminIaVisite() {
         .in('id', eventIds);
       const eventMap = new Map((events || []).map(e => [e.id, e.nom_event]));
 
-      // Fetch participation counts per event
+      // Fetch id_event for participation counts
       const { data: eventRows } = await supabase
         .from('events')
         .select('id, id_event')
         .in('id', eventIds);
       const idEventMap = new Map((eventRows || []).map(e => [e.id, e.id_event]));
 
-      const result = eventIds.map(eid => ({
-        event_id: eid,
-        nom_event: eventMap.get(eid) || 'Inconnu',
-        uses: byEvent[eid].uses,
-        saves: byEvent[eid].saves,
-        id_event: idEventMap.get(eid) || '',
-      }));
+      // Fetch participation counts per id_event
+      const idEvents = [...new Set((eventRows || []).map(e => e.id_event).filter(Boolean))];
+      const participationCounts: Record<string, number> = {};
+      if (idEvents.length > 0) {
+        const { data: partRows } = await supabase
+          .from('participation' as any)
+          .select('id_event')
+          .in('id_event', idEvents);
+        (partRows || []).forEach((p: any) => {
+          participationCounts[p.id_event] = (participationCounts[p.id_event] || 0) + 1;
+        });
+      }
+
+      const result = eventIds.map(eid => {
+        const idEvent = idEventMap.get(eid) || '';
+        return {
+          event_id: eid,
+          nom_event: eventMap.get(eid) || 'Inconnu',
+          uses: byEvent[eid].uses,
+          saves: byEvent[eid].saves,
+          id_event: idEvent,
+          nb_exposants: idEvent ? (participationCounts[idEvent] || 0) : 0,
+        };
+      });
 
       result.sort((a, b) => b.uses - a.uses);
       return result.slice(0, 10);
