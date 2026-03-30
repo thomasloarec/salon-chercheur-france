@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -69,6 +70,29 @@ interface Results {
   optionnels: Recommendation[];
   totalExhibitors: number;
   analyzedExhibitors: number;
+  ai_duration_ms?: number;
+}
+
+// ── Wizard Session Tracking ──────────────────────────────────────────────────
+async function createWizardSession(eventId: string, userId?: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('wizard_sessions' as any)
+      .insert({ event_id: eventId, user_id: userId || null, step_reached: 'opened' })
+      .select('id')
+      .single();
+    if (error) { console.error('wizard_sessions insert error:', error); return null; }
+    return (data as any)?.id || null;
+  } catch (e) { console.error('wizard_sessions insert exception:', e); return null; }
+}
+
+async function updateWizardSession(sessionId: string, updates: Record<string, any>) {
+  try {
+    await supabase
+      .from('wizard_sessions' as any)
+      .update(updates)
+      .eq('id', sessionId);
+  } catch (e) { console.error('wizard_sessions update exception:', e); }
 }
 
 export default function PrepareVisitWizard({ open, onOpenChange, event, exhibitorCount }: PrepareVisitWizardProps) {
@@ -104,6 +128,21 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const saveVisitPlan = useSaveVisitPlan();
 
   const isFavorited = favoriteEvents.some((e: any) => e.id === event.id);
+
+  // ── Tracking session ref ──
+  const wizardSessionId = useRef<string | null>(null);
+
+  // Create session on open
+  useEffect(() => {
+    if (open && !wizardSessionId.current) {
+      createWizardSession(event.id, user?.id).then(id => {
+        wizardSessionId.current = id;
+      });
+    }
+    if (!open) {
+      wizardSessionId.current = null;
+    }
+  }, [open, event.id, user?.id]);
 
   // Fetch keyword suggestions from exhibitor_ai
   useEffect(() => {
@@ -203,11 +242,31 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         ...(data.optionnels || []).map((r: Recommendation) => r.exhibitor_id),
       ]);
       setCheckedIds(allIds);
+
+      // Track results
+      if (wizardSessionId.current) {
+        updateWizardSession(wizardSessionId.current, {
+          step_reached: 'results',
+          nb_prioritaires: data.prioritaires?.length || 0,
+          nb_optionnels: data.optionnels?.length || 0,
+          ai_duration_ms: data.ai_duration_ms || null,
+          completed_at: new Date().toISOString(),
+        });
+      }
+
       // Signal completion → LoadingScreen animates to 100%, then we transition
       setLoadingComplete(true);
     } catch (err: any) {
       console.error('Prepare visit error:', err);
       setError(err.message || 'Une erreur est survenue');
+
+      // Track error
+      if (wizardSessionId.current) {
+        updateWizardSession(wizardSessionId.current, {
+          ai_error: err.message || 'Unknown error',
+        });
+      }
+
       setStep('results');
     }
   };
@@ -232,6 +291,21 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setLoadingComplete(false);
   };
 
+  // ── Step transitions with tracking ──
+  const goToStep2 = () => {
+    setStep(2);
+    if (wizardSessionId.current) {
+      updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role });
+    }
+  };
+
+  const goToStep3 = () => {
+    setStep(3);
+    if (wizardSessionId.current) {
+      updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: objective });
+    }
+  };
+
   const handleSave = async (replace = false) => {
     if (!results) return;
     setSaving(true);
@@ -240,6 +314,10 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
       if (!user) {
         // Scenario 4: Not logged in — show inline auth step
         setStep('auth');
+        // Track auth shown
+        if (wizardSessionId.current) {
+          updateWizardSession(wizardSessionId.current, { auth_shown: true });
+        }
         setSaving(false);
         return;
       }
@@ -261,6 +339,19 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         prioritaires: filteredPrioritaires,
         optionnels: filteredOptionnels,
       });
+
+      // Track saved
+      if (wizardSessionId.current) {
+        updateWizardSession(wizardSessionId.current, {
+          step_reached: 'saved',
+          saved: true,
+          role,
+          objectif: objective,
+          keywords,
+          duration,
+          user_id: user.id,
+        });
+      }
 
       toast({
         title: replace ? 'Liste mise à jour ✓' : 'Salon ajouté à votre agenda avec votre liste personnalisée ✓',
@@ -331,6 +422,15 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   // After successful auth, auto-save the visit plan
   useEffect(() => {
     if (user && step === 'auth' && results) {
+      // Track auth success
+      if (wizardSessionId.current) {
+        updateWizardSession(wizardSessionId.current, {
+          auth_success: true,
+          auth_method: 'email',
+          user_id: user.id,
+        });
+      }
+
       // User just authenticated — save automatically
       const autoSave = async () => {
         setSaving(true);
@@ -349,6 +449,19 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
             prioritaires: filteredPrioritaires,
             optionnels: filteredOptionnels,
           });
+
+          // Track saved after auth
+          if (wizardSessionId.current) {
+            updateWizardSession(wizardSessionId.current, {
+              step_reached: 'saved',
+              saved: true,
+              role,
+              objectif: objective,
+              keywords,
+              duration,
+            });
+          }
+
           toast({ title: 'Salon ajouté à votre agenda avec votre liste personnalisée ✓' });
           setBannerDismissed(true);
           setStep('results');
@@ -401,6 +514,10 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   };
 
   const handleInlineGoogleSignIn = async () => {
+    // Track auth shown for Google
+    if (wizardSessionId.current) {
+      updateWizardSession(wizardSessionId.current, { auth_shown: true, auth_method: 'google' });
+    }
     // Store pending plan before OAuth redirect (Google requires page redirect)
     if (results) {
       const filteredPrioritaires = results.prioritaires.filter(r => checkedIds.has(r.exhibitor_id));
@@ -489,7 +606,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 ))}
               </div>
               <div className="flex justify-end pt-2">
-                <Button onClick={() => setStep(2)} disabled={!canProceedStep1}>
+                <Button onClick={goToStep2} disabled={!canProceedStep1}>
                   Continuer <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
@@ -523,7 +640,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 <Button variant="ghost" onClick={() => setStep(1)}>
                   <ArrowLeft className="mr-2 w-4 h-4" /> Retour
                 </Button>
-                <Button onClick={() => setStep(3)} disabled={!canProceedStep2}>
+                <Button onClick={goToStep3} disabled={!canProceedStep2}>
                   Continuer <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>

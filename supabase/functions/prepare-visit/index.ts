@@ -142,17 +142,6 @@ async function fetchAiRowsInBatches(
 
 // ── Scoring ──────────────────────────────────────────────────────────────────
 
-/**
- * Score an exhibitor for relevance to visitor profile.
- *
- * Max theoretical score: ~14
- *   +3  profils_visiteurs matches role
- *   +6  keyword token matches (cap raised from +4)
- *   +1  type_interet matches objective
- *   +2  keyword token found in secteur_principal or produits_services or resume_court
- *   +1  resume_court non-empty
- *   +1  secteur_principal meaningful
- */
 function scoreExhibitor(
   ex: any,
   userRole: string,
@@ -161,13 +150,11 @@ function scoreExhibitor(
 ): number {
   let score = 0;
 
-  // +3 if profils_visiteurs matches role
   const profils = (ex.profils_visiteurs || []).map((p: string) => p.toLowerCase());
   if (profils.some((p: string) => p.includes(userRole) || userRole.includes(p))) {
     score += 3;
   }
 
-  // +2 per keyword token match against mots_cles_metier, cap at +6
   const motsCles = (ex.mots_cles_metier || []).map((m: string) => m.toLowerCase());
   let kwScore = 0;
   for (const token of userTokens) {
@@ -178,7 +165,6 @@ function scoreExhibitor(
   }
   score += kwScore;
 
-  // +2 bonus: keyword token found in secteur_principal, produits_services or resume_court
   const textFields = [
     (ex.secteur_principal || "").toLowerCase(),
     ((ex.produits_services || []) as string[]).join(" ").toLowerCase(),
@@ -193,7 +179,6 @@ function scoreExhibitor(
   }
   score += textBonus;
 
-  // +1 if type_interet matches objective
   if (objectiveKeyword) {
     const types = (ex.type_interet || []).map((t: string) => t.toLowerCase());
     if (types.some((t: string) => t.includes(objectiveKeyword))) {
@@ -201,10 +186,7 @@ function scoreExhibitor(
     }
   }
 
-  // +1 if resume_court is not empty
   if (ex.resume_court && ex.resume_court.trim()) score += 1;
-
-  // +1 if secteur_principal is meaningful
   if (ex.secteur_principal && ex.secteur_principal !== "Non déterminé") score += 1;
 
   return score;
@@ -261,7 +243,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ★ The real total = number of participation rows for this event
     const totalParticipations = participations.length;
 
     // Build stand lookup from participation
@@ -326,10 +307,9 @@ Deno.serve(async (req) => {
 
     // ── MERGE INTO UNIFIED LIST (with intra-legacy dedup by name) ────────────
     const seenIds = new Set<string>();
-    const seenNames = new Set<string>(); // ★ tracks ALL seen normalized names
+    const seenNames = new Set<string>();
     const allExhibitors: any[] = [];
 
-    // Modern exhibitors first (priority)
     for (const ex of modernExhibitors) {
       if (seenIds.has(ex.id)) continue;
       seenIds.add(ex.id);
@@ -349,7 +329,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Legacy exhibitors — deduplicate by normalized name (vs modern AND vs other legacy)
     const legacyBeforeDedup = legacyExhibitors.length;
     let legacySkippedDuplicates = 0;
 
@@ -359,7 +338,6 @@ Deno.serve(async (req) => {
 
       const normalizedName = normalizeName(name);
 
-      // ★ Skip if name already seen (from modern OR from a previous legacy)
       if (seenNames.has(normalizedName)) {
         legacySkippedDuplicates++;
         continue;
@@ -396,7 +374,6 @@ Deno.serve(async (req) => {
 
     // ══════ STEP 1: ALGORITHMIC PRE-SCORING ══════════════════════════════════
     const userRole = role.toLowerCase();
-    // ★ Tokenize keywords for broader matching
     const userTokens = tokenizeKeywords(keywords || []);
     const objectiveKeyword = OBJECTIVE_KEYWORDS[objective]?.toLowerCase();
 
@@ -409,7 +386,6 @@ Deno.serve(async (req) => {
 
     scored.sort((a, b) => b._score - a._score);
 
-    // ★ Apply duration-based cap
     const cap = DURATION_CAPS[duration] || DURATION_CAPS["Journée complète"];
     const topN = scored.slice(0, cap.total).map(({ _score, ...rest }) => rest);
 
@@ -426,7 +402,6 @@ Deno.serve(async (req) => {
       resume_court: ex.resume_court || ex.description || null,
     }));
 
-    // ★ Enhanced prompt: duration-aware caps
     const keywordsDisplay = (keywords || []).join(", ") || "Non précisé";
     const prompt = `Tu es un assistant expert en salons professionnels B2B.
 
@@ -456,6 +431,9 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000);
 
+    // ★ Track AI duration
+    const aiStart = Date.now();
+
     const aiResponse = await fetch(ANTHROPIC_API_URL, {
       method: "POST",
       headers: {
@@ -472,6 +450,9 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
     });
 
     clearTimeout(timeout);
+
+    const aiDurationMs = Date.now() - aiStart;
+    console.log(`⏱️ prepare-visit: AI call took ${aiDurationMs}ms`);
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
@@ -525,7 +506,6 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
 
     const results = recommendations.results || [];
 
-    // Match by exhibitor_id strictly, then deduplicate
     const highIds = new Set(
       results.filter((r: any) => r.priority === "high").map((r: any) => String(r.exhibitor_id)),
     );
@@ -540,10 +520,9 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
     const result = {
       prioritaires,
       optionnels,
-      // ★ totalExhibitors = real participation count (visible to user)
       totalExhibitors: totalParticipations,
-      // analyzedExhibitors = unique exhibitors actually scored (for debug)
       analyzedExhibitors: totalAnalyzed,
+      ai_duration_ms: aiDurationMs,
     };
 
     return new Response(JSON.stringify(result), {
