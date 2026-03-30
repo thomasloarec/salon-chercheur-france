@@ -9,6 +9,7 @@ import type { Event } from '@/types/event';
 
 interface EventSeriesBlockProps {
   event: Pick<Event, 'id' | 'nom_event'>;
+  onSeriesIds?: (ids: string[]) => void;
 }
 
 /**
