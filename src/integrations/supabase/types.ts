@@ -708,13 +708,6 @@ export type Database = {
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
           },
-          {
-            foreignKeyName: "exhibitor_admin_claims_exhibitor_id_fkey"
-            columns: ["exhibitor_id"]
-            isOneToOne: false
-            referencedRelation: "v_exposants_eligibles"
-            referencedColumns: ["exhibitor_id"]
-          },
         ]
       }
       exhibitor_ai: {
@@ -798,13 +791,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
-          },
-          {
-            foreignKeyName: "exhibitor_claim_requests_exhibitor_id_fkey"
-            columns: ["exhibitor_id"]
-            isOneToOne: false
-            referencedRelation: "v_exposants_eligibles"
-            referencedColumns: ["exhibitor_id"]
           },
         ]
       }
@@ -1297,13 +1283,6 @@ export type Database = {
             referencedColumns: ["exhibitor_uuid"]
           },
           {
-            foreignKeyName: "leads_exhibitor_id_fkey"
-            columns: ["exhibitor_id"]
-            isOneToOne: false
-            referencedRelation: "v_exposants_eligibles"
-            referencedColumns: ["exhibitor_id"]
-          },
-          {
             foreignKeyName: "leads_novelty_id_fkey"
             columns: ["novelty_id"]
             isOneToOne: false
@@ -1465,13 +1444,6 @@ export type Database = {
             referencedColumns: ["exhibitor_uuid"]
           },
           {
-            foreignKeyName: "notifications_exhibitor_id_fkey"
-            columns: ["exhibitor_id"]
-            isOneToOne: false
-            referencedRelation: "v_exposants_eligibles"
-            referencedColumns: ["exhibitor_id"]
-          },
-          {
             foreignKeyName: "notifications_novelty_id_fkey"
             columns: ["novelty_id"]
             isOneToOne: false
@@ -1592,13 +1564,6 @@ export type Database = {
             referencedColumns: ["exhibitor_uuid"]
           },
           {
-            foreignKeyName: "novelties_exhibitor_id_fkey"
-            columns: ["exhibitor_id"]
-            isOneToOne: false
-            referencedRelation: "v_exposants_eligibles"
-            referencedColumns: ["exhibitor_id"]
-          },
-          {
             foreignKeyName: "novelties_pending_exhibitor_id_fkey"
             columns: ["pending_exhibitor_id"]
             isOneToOne: false
@@ -1611,13 +1576,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
-          },
-          {
-            foreignKeyName: "novelties_pending_exhibitor_id_fkey"
-            columns: ["pending_exhibitor_id"]
-            isOneToOne: false
-            referencedRelation: "v_exposants_eligibles"
-            referencedColumns: ["exhibitor_id"]
           },
         ]
       }
@@ -1752,6 +1710,134 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "novelties"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_campaigns: {
+        Row: {
+          campaign_status: string | null
+          company_name: string | null
+          contact_email: string | null
+          created_at: string | null
+          current_step: number | null
+          email_source: string | null
+          event_id: string
+          exhibitor_id: string | null
+          hunter_poste: string | null
+          hunter_prenom: string | null
+          hunter_score: number | null
+          hunter_status: string | null
+          id: string
+          id_exposant_legacy: string | null
+          last_sent_at: string | null
+          next_send_at: string | null
+          novelty_id: string | null
+          opt_out: boolean | null
+          participation_id: string | null
+          reply_status: string | null
+          stop_reason: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          campaign_status?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          email_source?: string | null
+          event_id: string
+          exhibitor_id?: string | null
+          hunter_poste?: string | null
+          hunter_prenom?: string | null
+          hunter_score?: number | null
+          hunter_status?: string | null
+          id?: string
+          id_exposant_legacy?: string | null
+          last_sent_at?: string | null
+          next_send_at?: string | null
+          novelty_id?: string | null
+          opt_out?: boolean | null
+          participation_id?: string | null
+          reply_status?: string | null
+          stop_reason?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          campaign_status?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          email_source?: string | null
+          event_id?: string
+          exhibitor_id?: string | null
+          hunter_poste?: string | null
+          hunter_prenom?: string | null
+          hunter_score?: number | null
+          hunter_status?: string | null
+          id?: string
+          id_exposant_legacy?: string | null
+          last_sent_at?: string | null
+          next_send_at?: string | null
+          novelty_id?: string | null
+          opt_out?: boolean | null
+          participation_id?: string | null
+          reply_status?: string | null
+          stop_reason?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: true
+            referencedRelation: "participation"
+            referencedColumns: ["id_participation"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: true
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["id_participation"]
           },
         ]
       }
@@ -1955,13 +2041,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
-          },
-          {
-            foreignKeyName: "premium_entitlements_exhibitor_id_fkey"
-            columns: ["exhibitor_id"]
-            isOneToOne: false
-            referencedRelation: "v_exposants_eligibles"
-            referencedColumns: ["exhibitor_id"]
           },
         ]
       }
@@ -2695,46 +2774,131 @@ export type Database = {
           },
         ]
       }
-      v_exposants_eligibles: {
+      v_a_enrichir: {
         Row: {
-          campaign_eligible: boolean | null
-          campaign_status: string | null
-          company_tier: string | null
-          contact_email: string | null
-          contact_prenom: string | null
-          current_step: number | null
+          company_name: string | null
           date_debut: string | null
-          date_fin: string | null
           days_before_event: number | null
-          description: string | null
           event_id: string | null
-          exhibitor_id: string | null
-          hunter_search_done: boolean | null
-          last_sent_at: string | null
-          next_send_date: string | null
-          nom_entreprise: string | null
-          nom_salon: string | null
-          opt_out: boolean | null
+          event_slug: string | null
+          hunter_status: string | null
+          id: string | null
+          nom_event: string | null
           participation_id: string | null
-          pre_hunter_score: number | null
-          site_web: string | null
-          stand_exposant: string | null
-          url_fiche_salon: string | null
+          ville: string | null
+          website: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_participation_event"
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_participation_event"
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events_geo"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: true
+            referencedRelation: "participation"
+            referencedColumns: ["id_participation"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: true
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["id_participation"]
+          },
+        ]
+      }
+      v_exposants_eligibles: {
+        Row: {
+          campaign_status: string | null
+          company_name: string | null
+          contact_email: string | null
+          created_at: string | null
+          current_step: number | null
+          date_debut: string | null
+          days_before_event: number | null
+          email_source: string | null
+          event_id: string | null
+          event_slug: string | null
+          exhibitor_id: string | null
+          hunter_poste: string | null
+          hunter_prenom: string | null
+          hunter_score: number | null
+          hunter_status: string | null
+          id: string | null
+          id_exposant_legacy: string | null
+          last_sent_at: string | null
+          next_send_at: string | null
+          nom_event: string | null
+          novelty_id: string | null
+          opt_out: boolean | null
+          participation_id: string | null
+          reply_status: string | null
+          stop_reason: string | null
+          updated_at: string | null
+          ville: string | null
+          website: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: true
+            referencedRelation: "participation"
+            referencedColumns: ["id_participation"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: true
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["id_participation"]
           },
         ]
       }
