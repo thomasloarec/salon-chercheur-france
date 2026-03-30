@@ -16,11 +16,23 @@ interface EventSeriesBlockProps {
  * Shows other editions of the same event series.
  * Uses the same card style as RelatedEvents for visual consistency.
  */
-export const EventSeriesBlock = ({ event }: EventSeriesBlockProps) => {
+export const EventSeriesBlock = ({ event, onSeriesIds }: EventSeriesBlockProps) => {
   const { data: seriesEvents, isLoading } = useEventSeries(event);
 
+  // Limit to 4 items (single row on desktop)
+  const displayEvents = seriesEvents?.slice(0, 4);
+
+  // Notify parent of series event IDs for deduplication
+  useEffect(() => {
+    if (onSeriesIds && displayEvents && displayEvents.length > 0) {
+      onSeriesIds(displayEvents.map(e => e.id));
+    } else if (onSeriesIds && !isLoading && (!displayEvents || displayEvents.length === 0)) {
+      onSeriesIds([]);
+    }
+  }, [displayEvents, isLoading, onSeriesIds]);
+
   // Don't render if fewer than 2 results
-  if (!isLoading && (!seriesEvents || seriesEvents.length < 2)) {
+  if (!isLoading && (!displayEvents || displayEvents.length < 2)) {
     return null;
   }
 
