@@ -22,6 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Search, BookOpen, Sparkles } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Accordion,
   AccordionItem,
@@ -32,6 +34,22 @@ import {
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+
+  const { data: iaUses7d } = useQuery({
+    queryKey: ['ia-visite-7d-widget'],
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 7);
+      const { count, error } = await supabase
+        .from('wizard_sessions' as any)
+        .select('*', { count: 'exact', head: true })
+        .in('step_reached', ['results', 'saved'])
+        .gte('created_at', since.toISOString());
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: isAdmin === true,
+  });
 
   if (authLoading || adminLoading) {
     return (
@@ -103,6 +121,7 @@ const Admin = () => {
                 <div>
                   <h3 className="font-medium">IA Visite</h3>
                   <p className="text-sm text-muted-foreground">Tracking "Préparer ma visite avec l'IA"</p>
+                  <p className="text-2xl font-bold mt-2">{iaUses7d ?? '–'} <span className="text-sm font-normal text-muted-foreground">utilisations (7j)</span></p>
                 </div>
                 <Button asChild>
                   <Link to="/admin/ia-visite">
