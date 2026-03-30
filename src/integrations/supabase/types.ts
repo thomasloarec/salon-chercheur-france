@@ -2659,6 +2659,84 @@ export type Database = {
           },
         ]
       }
+      wizard_sessions: {
+        Row: {
+          ai_duration_ms: number | null
+          ai_error: string | null
+          auth_method: string | null
+          auth_shown: boolean | null
+          auth_success: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          duration: string | null
+          event_id: string | null
+          id: string
+          keywords: string[] | null
+          nb_optionnels: number | null
+          nb_prioritaires: number | null
+          objectif: string | null
+          role: string | null
+          saved: boolean | null
+          step_reached: string
+          user_id: string | null
+        }
+        Insert: {
+          ai_duration_ms?: number | null
+          ai_error?: string | null
+          auth_method?: string | null
+          auth_shown?: boolean | null
+          auth_success?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration?: string | null
+          event_id?: string | null
+          id?: string
+          keywords?: string[] | null
+          nb_optionnels?: number | null
+          nb_prioritaires?: number | null
+          objectif?: string | null
+          role?: string | null
+          saved?: boolean | null
+          step_reached?: string
+          user_id?: string | null
+        }
+        Update: {
+          ai_duration_ms?: number | null
+          ai_error?: string | null
+          auth_method?: string | null
+          auth_shown?: boolean | null
+          auth_success?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration?: string | null
+          event_id?: string | null
+          id?: string
+          keywords?: string[] | null
+          nb_optionnels?: number | null
+          nb_prioritaires?: number | null
+          objectif?: string | null
+          role?: string | null
+          saved?: boolean | null
+          step_reached?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wizard_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wizard_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       events_geo: {
