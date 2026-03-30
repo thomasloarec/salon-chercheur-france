@@ -116,7 +116,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
         finalAll = fallbackData ?? [];
       }
 
-      console.log('✅ Loaded all exhibitors:', finalAll.length);
+      
       setExhibitorsAll(finalAll);
     } catch (err) {
       console.error('[EventExhibitorsSection] Full list fetch error', err);
