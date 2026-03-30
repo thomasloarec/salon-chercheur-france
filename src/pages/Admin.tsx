@@ -121,6 +121,7 @@ const Admin = () => {
                 <div>
                   <h3 className="font-medium">IA Visite</h3>
                   <p className="text-sm text-muted-foreground">Tracking "Préparer ma visite avec l'IA"</p>
+                  <p className="text-2xl font-bold mt-2">{iaUses7d ?? '–'} <span className="text-sm font-normal text-muted-foreground">utilisations (7j)</span></p>
                 </div>
                 <Button asChild>
                   <Link to="/admin/ia-visite">

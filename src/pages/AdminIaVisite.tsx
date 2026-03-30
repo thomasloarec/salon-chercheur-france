@@ -370,8 +370,9 @@ export default function AdminIaVisite() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b">
+                     <tr className="border-b">
                       <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Événement</th>
+                      <th className="text-right py-2 px-4 font-medium text-muted-foreground">Nb exposants</th>
                       <th className="text-right py-2 px-4 font-medium text-muted-foreground">Utilisations</th>
                       <th className="text-right py-2 px-4 font-medium text-muted-foreground">Plans sauvegardés</th>
                     </tr>
@@ -380,6 +381,7 @@ export default function AdminIaVisite() {
                     {topEvents.map((ev: any) => (
                       <tr key={ev.event_id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="py-2 pr-4 font-medium">{ev.nom_event}</td>
+                        <td className="text-right py-2 px-4">{ev.nb_exposants}</td>
                         <td className="text-right py-2 px-4">{ev.uses}</td>
                         <td className="text-right py-2 px-4">{ev.saves}</td>
                       </tr>
