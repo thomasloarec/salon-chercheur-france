@@ -2364,6 +2364,24 @@ export type Database = {
         }
         Relationships: []
       }
+      slug_redirects: {
+        Row: {
+          created_at: string | null
+          new_slug: string
+          old_slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          new_slug: string
+          old_slug: string
+        }
+        Update: {
+          created_at?: string | null
+          new_slug?: string
+          old_slug?: string
+        }
+        Relationships: []
+      }
       staging_events_import: {
         Row: {
           affluence: string | null
