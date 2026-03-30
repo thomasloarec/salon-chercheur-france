@@ -57,7 +57,7 @@ export const EventExhibitorsSection: React.FC<EventExhibitorsSectionProps> = ({ 
 
         // Fallback vers id_event (UUID) si aucun résultat
         if (finalPreview.length === 0 && event.id) {
-          console.log('🔄 Fallback to UUID for event', event.slug);
+          
           const { data: fallbackData, count: fallbackCount } = await supabase
             .from('participations_with_exhibitors')
             .select('*', { count: 'exact' })
