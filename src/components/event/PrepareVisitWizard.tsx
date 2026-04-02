@@ -593,7 +593,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 {ROLES.map(r => (
                   <button
                     key={r}
-                    onClick={() => setRole(r)}
+                    onClick={() => { setRole(r); setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200); }}
                     className={cn(
                       'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
                       role === r
@@ -604,11 +604,6 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                     <span className="font-medium text-sm">{r}</span>
                   </button>
                 ))}
-              </div>
-              <div className="flex justify-end pt-2">
-                <Button onClick={goToStep2} disabled={!canProceedStep1}>
-                  Continuer <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
               </div>
             </div>
           )}
@@ -624,7 +619,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 {OBJECTIVES.map(o => (
                   <button
                     key={o}
-                    onClick={() => setObjective(o)}
+                    onClick={() => { setObjective(o); setTimeout(() => { setStep(3); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: o }); }, 200); }}
                     className={cn(
                       'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
                       objective === o
@@ -636,12 +631,9 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   </button>
                 ))}
               </div>
-              <div className="flex justify-between pt-2">
+              <div className="flex justify-start pt-2">
                 <Button variant="ghost" onClick={() => setStep(1)}>
                   <ArrowLeft className="mr-2 w-4 h-4" /> Retour
-                </Button>
-                <Button onClick={goToStep3} disabled={!canProceedStep2}>
-                  Continuer <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
             </div>
