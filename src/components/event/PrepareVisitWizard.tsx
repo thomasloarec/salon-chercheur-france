@@ -624,7 +624,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 {OBJECTIVES.map(o => (
                   <button
                     key={o}
-                    onClick={() => setObjective(o)}
+                    onClick={() => { setObjective(o); setTimeout(() => { setStep(3); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: o }); }, 200); }}
                     className={cn(
                       'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
                       objective === o
