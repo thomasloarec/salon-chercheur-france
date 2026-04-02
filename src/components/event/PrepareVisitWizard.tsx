@@ -631,12 +631,9 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   </button>
                 ))}
               </div>
-              <div className="flex justify-between pt-2">
+              <div className="flex justify-start pt-2">
                 <Button variant="ghost" onClick={() => setStep(1)}>
                   <ArrowLeft className="mr-2 w-4 h-4" /> Retour
-                </Button>
-                <Button onClick={goToStep3} disabled={!canProceedStep2}>
-                  Continuer <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </div>
             </div>
