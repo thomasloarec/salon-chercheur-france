@@ -605,11 +605,6 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   </button>
                 ))}
               </div>
-              <div className="flex justify-end pt-2">
-                <Button onClick={goToStep2} disabled={!canProceedStep1}>
-                  Continuer <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              </div>
             </div>
           )}
 
