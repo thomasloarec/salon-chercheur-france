@@ -57,23 +57,22 @@ serve(async (req) => {
       );
     }
 
-    const token = authHeader.replace("Bearer ", "");
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
-      console.error("[novelties-create] JWT validation failed:", claimsError?.message);
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      console.error("[novelties-create] JWT validation failed:", userError?.message);
       return new Response(
         JSON.stringify({ error: "Unauthorized: invalid or expired token" }),
         { status: 401, headers: corsHeaders() }
       );
     }
 
-    // Extract the authenticated user_id from the JWT — never trust the client payload
-    const authenticatedUserId = claimsData.claims.sub as string;
+    // Extract the authenticated user_id from the verified JWT — never trust the client payload
+    const authenticatedUserId = user.id;
 
     const body = await req.json();
     console.log("[novelties-create] Received payload:", JSON.stringify({
