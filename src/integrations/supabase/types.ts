@@ -705,6 +705,13 @@ export type Database = {
             foreignKeyName: "exhibitor_admin_claims_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_admin_claims_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
           },
@@ -783,6 +790,13 @@ export type Database = {
             columns: ["exhibitor_id"]
             isOneToOne: false
             referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
             referencedColumns: ["id"]
           },
           {
@@ -1279,6 +1293,13 @@ export type Database = {
             foreignKeyName: "leads_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
           },
@@ -1440,6 +1461,13 @@ export type Database = {
             foreignKeyName: "notifications_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
           },
@@ -1560,6 +1588,13 @@ export type Database = {
             foreignKeyName: "novelties_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
           },
@@ -1568,6 +1603,13 @@ export type Database = {
             columns: ["pending_exhibitor_id"]
             isOneToOne: false
             referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_pending_exhibitor_id_fkey"
+            columns: ["pending_exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
             referencedColumns: ["id"]
           },
           {
@@ -1815,6 +1857,13 @@ export type Database = {
             foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
           },
@@ -2033,6 +2082,13 @@ export type Database = {
             columns: ["exhibitor_id"]
             isOneToOne: false
             referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_entitlements_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
             referencedColumns: ["id"]
           },
           {
@@ -2805,6 +2861,54 @@ export type Database = {
           },
         ]
       }
+      exhibitors_public: {
+        Row: {
+          approved: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_test: boolean | null
+          logo_url: string | null
+          name: string | null
+          owner_user_id: string | null
+          plan: string | null
+          slug: string | null
+          stand_info: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          approved?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_test?: boolean | null
+          logo_url?: string | null
+          name?: string | null
+          owner_user_id?: string | null
+          plan?: string | null
+          slug?: string | null
+          stand_info?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          approved?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_test?: boolean | null
+          logo_url?: string | null
+          name?: string | null
+          owner_user_id?: string | null
+          plan?: string | null
+          slug?: string | null
+          stand_info?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       exposants_a_enrichir: {
         Row: {
           exposant_description: string | null
@@ -2966,6 +3070,13 @@ export type Database = {
             columns: ["exhibitor_id"]
             isOneToOne: false
             referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
             referencedColumns: ["id"]
           },
           {
