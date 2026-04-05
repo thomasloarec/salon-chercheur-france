@@ -689,7 +689,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         images: imageUrls,
         brochure_pdf: brochureUrl,
         stand_info: 'stand_info' in step1.exhibitor ? step1.exhibitor.stand_info?.trim() || null : null,
-        created_by: user!.id,
+        // created_by is now extracted from JWT server-side — no longer sent in payload
         // ✅ NOUVEAU: Tracker l'exposant en attente pour l'approuver à la publication
         pending_exhibitor_id: pendingExhibitorId
       };
