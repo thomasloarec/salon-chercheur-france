@@ -89,7 +89,7 @@ export default function Dashboard() {
       // Load user's exhibitor
       const { data: exhibitorData, error: exhibitorError } = await supabase
         .from('exhibitors')
-        .select('*')
+        .select('id, name, slug, website, logo_url, description, stand_info, plan, approved, owner_user_id, is_test, created_at, updated_at')
         .eq('owner_user_id', user.id)
         .single()
 
