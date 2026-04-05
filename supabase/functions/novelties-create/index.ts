@@ -8,7 +8,7 @@ const url = z.string().url();
 const schema = z.object({
   event_id: uuid,
   exhibitor_id: uuid,
-  created_by: uuid,
+  // created_by is intentionally NOT accepted from the payload — extracted from JWT
   title: z.string().min(3).max(200),
   novelty_type: z.string().min(1),
   reason: z.string().min(10).max(1000),
@@ -37,7 +37,8 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !serviceKey) {
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!supabaseUrl || !serviceKey || !anonKey) {
       console.error("[novelties-create] Missing env vars");
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
@@ -45,11 +46,41 @@ serve(async (req) => {
       );
     }
 
+    // ==========================================
+    // AUTHENTICATION: Validate JWT token
+    // ==========================================
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid Authorization header" }),
+        { status: 401, headers: corsHeaders() }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const supabaseAuth = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("[novelties-create] JWT validation failed:", claimsError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: invalid or expired token" }),
+        { status: 401, headers: corsHeaders() }
+      );
+    }
+
+    // Extract the authenticated user_id from the JWT — never trust the client payload
+    const authenticatedUserId = claimsData.claims.sub as string;
+
     const body = await req.json();
     console.log("[novelties-create] Received payload:", JSON.stringify({
       images_count: body.images?.length,
       has_brochure: !!body.brochure_pdf,
-      has_pending_exhibitor: !!body.pending_exhibitor_id
+      has_pending_exhibitor: !!body.pending_exhibitor_id,
+      authenticated_user: authenticatedUserId,
     }));
 
     const parsed = schema.safeParse(body);
@@ -112,11 +143,12 @@ serve(async (req) => {
     // ==========================================
     // CRÉATION ATOMIQUE AVEC VÉRIFICATION QUOTA
     // Utilise pg_advisory_xact_lock pour empêcher les race conditions
+    // created_by comes from the verified JWT, not the client payload
     // ==========================================
     const { data: result, error: rpcErr } = await admin.rpc("create_novelty_atomic", {
       p_event_id: data.event_id,
       p_exhibitor_id: data.exhibitor_id,
-      p_created_by: data.created_by,
+      p_created_by: authenticatedUserId,
       p_title: data.title,
       p_type: noveltyType,
       p_reason: data.reason,
@@ -183,7 +215,7 @@ serve(async (req) => {
           }]
         };
 
-        console.log("[novelties-create] Sending to Airtable:", JSON.stringify(airtablePayload));
+        console.log("[novelties-create] Sending to Airtable (non-blocking)");
 
         const airtableResponse = await fetch(airtableUrl, {
           method: "POST",
