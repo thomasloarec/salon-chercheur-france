@@ -10,8 +10,9 @@ import { normalizeExternalUrl } from '@/lib/url';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
-import { useExhibitorVerified } from '@/hooks/useExhibitorVerified';
+import { useExhibitorGovernance } from '@/hooks/useExhibitorGovernance';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
+import ExhibitorGovernanceBanner from '@/components/exhibitor/ExhibitorGovernanceBanner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -73,8 +74,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
     exhibitorId,
     exhibitorName
   );
-
-  const { data: isVerified } = useExhibitorVerified(exhibitorId || undefined);
+  const governance = useExhibitorGovernance(exhibitorId || undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,7 +148,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="truncate">{displayName}</span>
-                {isVerified && <VerifiedBadge />}
+                {governance.isVerified && <VerifiedBadge />}
               </div>
               {e.stand_exposant && (
                 <Badge variant="secondary" className="mt-1">
@@ -191,7 +191,13 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             )}
           </div>
 
-          {/* Chargement des participations */}
+          {/* Gouvernance / Claim CTA */}
+          <ExhibitorGovernanceBanner
+            governance={governance}
+            exhibitorId={exhibitorId}
+            exhibitorName={displayName}
+          />
+
           {loadingParticipations && (
             <div className="flex items-center justify-center gap-2 py-4">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
