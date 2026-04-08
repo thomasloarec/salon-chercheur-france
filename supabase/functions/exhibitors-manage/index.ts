@@ -5,42 +5,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface ClaimExhibitorRequest {
-  exhibitor_id: string
-}
-
-interface CreateExhibitorRequest {
-  proposed_name: string
-  website?: string
-}
-
-interface UpdateExhibitorRequest {
-  description?: string
-  logo_url?: string
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const supabase = createClient(
+    // ── Auth client: used ONLY to verify the caller's identity ──
+    const authClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        },
+        auth: { autoRefreshToken: false, persistSession: false },
         global: {
           headers: { Authorization: req.headers.get('Authorization')! }
         }
       }
     )
 
-    // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await authClient.auth.getUser()
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: 'Authentication required' }),
@@ -48,410 +31,436 @@ Deno.serve(async (req) => {
       )
     }
 
-    const url = new URL(req.url)
-    const pathSegments = url.pathname.split('/').filter(segment => segment)
+    // ── Service client: used for all DB writes (bypasses RLS) ──
+    // All authorization checks are done explicitly in code below.
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: { autoRefreshToken: false, persistSession: false }
+      }
+    )
+
+    // Check admin status once (reused across actions)
+    const { data: isAdmin } = await authClient.rpc('is_admin')
 
     const requestData = await req.json()
     const { action } = requestData
 
-    // Handle different endpoints
-    if (req.method === 'POST') {
-      if (action === 'list') {
-        // GET exhibitors list (via POST for consistency)
-        const { event_id, search } = requestData
+    if (req.method !== 'POST') {
+      // GET handler for exhibitor lists (read-only, uses auth client for RLS)
+      if (req.method === 'GET') {
+        const url = new URL(req.url)
+        const eventId = url.searchParams.get('event_id')
+        const search = url.searchParams.get('q')
 
-        if (!event_id) {
-          return new Response(
-            JSON.stringify({ error: 'event_id is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
+        if (!eventId) {
+          return jsonError('event_id is required', 400)
         }
 
-        // Get exhibitors participating in this event
-        let query = supabase
-          .from('participation')
-          .select(`
-            exhibitors!inner(
-              id,
-              name,
-              website,
-              logo_url,
-              approved,
-              stand_info
-            )
-          `)
-          .eq('id_event', event_id)
-
-        const { data: participations, error } = await query
-
-        if (error) {
-          return new Response(
-            JSON.stringify({ error: 'Failed to fetch exhibitors' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        // Extract and filter exhibitors
-        let exhibitors = (participations || [])
-          .map(p => p.exhibitors)
-          .filter(Boolean)
-          .flat()
-
-        // Apply search filter if provided
-        if (search && search.trim()) {
-          const searchLower = search.toLowerCase()
-          exhibitors = exhibitors.filter(exhibitor => 
-            exhibitor.name.toLowerCase().includes(searchLower) ||
-            (exhibitor.website && exhibitor.website.toLowerCase().includes(searchLower))
-          )
-        }
-
-        // Sort alphabetically
-        exhibitors.sort((a, b) => a.name.localeCompare(b.name))
-
-        return new Response(
-          JSON.stringify(exhibitors),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-
-      } else if (action === 'create') {
-        // Create new exhibitor
-        // ✅ defer_participation: si true, ne pas créer la participation immédiatement
-        // (utilisé quand un exposant est créé avec une nouveauté en attente de validation)
-        const { name, website, description, stand_info, logo_url, event_id, defer_participation } = requestData
-
-        if (!name || !event_id) {
-          return new Response(
-            JSON.stringify({ error: 'name and event_id are required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        // ÉTAPE 1 : Créer l'exposant moderne
-        const { data: newExhibitor, error: createError } = await supabase
+        let query = authClient
           .from('exhibitors')
-          .insert({
-            name,
-            website: website || null,
-            description: description || null,
-            stand_info: stand_info || null,
-            logo_url: logo_url || null,
-            approved: false,
-            owner_user_id: user.id
-          })
-          .select()
+          .select(`id, name, slug, logo_url, participation!inner(stand_exposant, urlexpo_event)`)
+          .eq('participation.id_event', eventId)
+
+        if (search) {
+          query = query.ilike('name', `%${search}%`)
+        }
+        query = query.order('name')
+
+        const { data: exhibitors, error } = await query
+        if (error) {
+          console.error('Error fetching exhibitors:', error)
+          return jsonError('Failed to fetch exhibitors', 500)
+        }
+
+        return jsonOk(exhibitors || [])
+      }
+
+      return jsonError('Method not allowed', 405)
+    }
+
+    // ── POST actions ──
+
+    // ────────────────────────────────────────────────────
+    // ACTION: list
+    // ────────────────────────────────────────────────────
+    if (action === 'list') {
+      const { event_id, search } = requestData
+
+      if (!event_id) {
+        return jsonError('event_id is required', 400)
+      }
+
+      const { data: participations, error } = await authClient
+        .from('participation')
+        .select(`
+          exhibitors!inner(
+            id, name, website, logo_url, approved, stand_info
+          )
+        `)
+        .eq('id_event', event_id)
+
+      if (error) {
+        return jsonError('Failed to fetch exhibitors', 500)
+      }
+
+      let exhibitors = (participations || [])
+        .map((p: any) => p.exhibitors)
+        .filter(Boolean)
+        .flat()
+
+      if (search && search.trim()) {
+        const searchLower = search.toLowerCase()
+        exhibitors = exhibitors.filter((e: any) =>
+          e.name.toLowerCase().includes(searchLower) ||
+          (e.website && e.website.toLowerCase().includes(searchLower))
+        )
+      }
+
+      exhibitors.sort((a: any, b: any) => a.name.localeCompare(b.name))
+      return jsonOk(exhibitors)
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: create
+    // Uses serviceClient to bypass RLS (auth already verified above)
+    // ────────────────────────────────────────────────────
+    if (action === 'create') {
+      const { name, website, description, stand_info, logo_url, event_id, defer_participation } = requestData
+
+      if (!name || !event_id) {
+        return jsonError('name and event_id are required', 400)
+      }
+
+      // STEP 1: Create modern exhibitor
+      const { data: newExhibitor, error: createError } = await serviceClient
+        .from('exhibitors')
+        .insert({
+          name,
+          website: website || null,
+          description: description || null,
+          stand_info: stand_info || null,
+          logo_url: logo_url || null,
+          approved: false,
+          owner_user_id: user.id
+        })
+        .select()
+        .single()
+
+      if (createError || !newExhibitor) {
+        console.error('❌ Failed to create exhibitor:', createError)
+        return jsonError('Failed to create exhibitor', 500, createError)
+      }
+
+      console.log('✅ Exhibitor created:', newExhibitor.id)
+
+      // STEP 2: Create legacy entry in exposants
+      const { error: legacyError } = await serviceClient
+        .from('exposants')
+        .insert({
+          id_exposant: newExhibitor.id,
+          nom_exposant: name,
+          website_exposant: website || null,
+          exposant_description: description || null
+        })
+
+      if (legacyError) {
+        console.error('⚠️ Failed to create legacy exposant:', legacyError)
+      } else {
+        console.log('✅ Legacy exposant created with id:', newExhibitor.id)
+      }
+
+      // STEP 3: Create participation (unless deferred)
+      if (!defer_participation) {
+        const { data: eventData } = await serviceClient
+          .from('events')
+          .select('id_event')
+          .eq('id', event_id)
           .single()
 
-        if (createError || !newExhibitor) {
-          console.error('❌ Failed to create exhibitor:', createError)
-          return new Response(
-            JSON.stringify({ 
-              error: 'Failed to create exhibitor',
-              details: createError 
-            }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        console.log('✅ Exhibitor created:', newExhibitor.id)
-
-        // ÉTAPE 2 : Créer l'entrée legacy dans exposants (avec UUID comme id_exposant)
-        const { error: legacyError } = await supabase
-          .from('exposants')
+        const { error: participationError } = await serviceClient
+          .from('participation')
           .insert({
-            id_exposant: newExhibitor.id, // ✅ UUID directement au lieu de timestamp
-            nom_exposant: name,
+            id_exposant: newExhibitor.id,
+            exhibitor_id: newExhibitor.id,
+            id_event: event_id,
+            id_event_text: eventData?.id_event || null,
             website_exposant: website || null,
-            exposant_description: description || null
+            stand_exposant: stand_info || null,
+            urlexpo_event: null
           })
 
-        if (legacyError) {
-          console.error('⚠️ Failed to create legacy exposant:', legacyError)
-          // Ne pas échouer, mais logger pour investigation
-        } else {
-          console.log('✅ Legacy exposant created with id:', newExhibitor.id)
+        if (participationError) {
+          console.error('❌ Failed to create participation:', participationError)
+          return jsonError('Exhibitor created but participation failed', 500, participationError)
         }
 
-        // ✅ ÉTAPE 3 : Créer la participation SEULEMENT si defer_participation n'est pas true
-        // Si defer_participation est true, la participation sera créée quand la nouveauté sera publiée
-        if (!defer_participation) {
-          // Récupérer l'id_event_text depuis events
-          const { data: eventData } = await supabase
-            .from('events')
-            .select('id_event')
-            .eq('id', event_id)
-            .single()
+        console.log('✅ Participation created for event:', event_id)
+      } else {
+        console.log('⏸️ Participation deferred')
+      }
 
-          if (!eventData?.id_event) {
-            console.error('❌ Event id_event not found for UUID:', event_id)
-          }
-
-          // Créer la participation avec LES DEUX IDs + id_event_text
-          const { error: participationError } = await supabase
-            .from('participation')
-            .insert({
-              id_exposant: newExhibitor.id,      // ✅ UUID (compatible TEXT)
-              exhibitor_id: newExhibitor.id,     // ✅ UUID (natif)
-              id_event: event_id,                // ✅ UUID (natif)
-              id_event_text: eventData?.id_event || null, // ✅ TEXT pour la vue
-              website_exposant: website || null,
-              stand_exposant: stand_info || null,
-              urlexpo_event: null
-            })
-          
-          if (participationError) {
-            console.error('❌ Failed to create participation:', participationError)
-            return new Response(
-              JSON.stringify({ 
-                error: 'Exhibitor created but participation failed',
-                exhibitor_id: newExhibitor.id,
-                details: participationError
-              }),
-              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-          }
-
-          console.log('✅ Participation created for event:', event_id)
-        } else {
-          console.log('⏸️ Participation deferred - will be created when novelty is published')
-        }
-
-        // Auto-approve claim if email domain matches website domain
-        let claimStatus = 'pending'
-        if (website && user.email) {
-          const userDomain = user.email.split('@')[1]?.toLowerCase()
-          const websiteDomain = website.replace(/^https?:\/\/(www\.)?/, '').split('/')[0].toLowerCase()
-          
-          if (userDomain && websiteDomain && websiteDomain.includes(userDomain)) {
+      // STEP 4: Auto-approve claim if email domain matches website domain
+      let claimStatus = 'pending'
+      if (website && user.email) {
+        const userDomain = user.email.split('@')[1]?.toLowerCase()
+        try {
+          const websiteDomain = new URL(website.startsWith('http') ? website : `https://${website}`).hostname.replace(/^www\./, '').toLowerCase()
+          if (userDomain && websiteDomain && userDomain === websiteDomain) {
             claimStatus = 'approved'
-            // Update exhibitor as approved
-            await supabase
+            await serviceClient
               .from('exhibitors')
               .update({ approved: true })
               .eq('id', newExhibitor.id)
           }
+        } catch {
+          // Invalid URL, skip auto-approve
         }
+      }
 
-        // Create claim request
-        await supabase
-          .from('exhibitor_claim_requests')
-          .insert({
-            exhibitor_id: newExhibitor.id,
-            requester_user_id: user.id,
-            status: claimStatus
-          })
+      // Create claim request
+      await serviceClient
+        .from('exhibitor_claim_requests')
+        .insert({
+          exhibitor_id: newExhibitor.id,
+          requester_user_id: user.id,
+          status: claimStatus
+        })
 
-        return new Response(
-          JSON.stringify({ 
-            ...newExhibitor,
-            approved: claimStatus === 'approved',
-            participation_deferred: !!defer_participation
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+      return jsonOk({
+        ...newExhibitor,
+        approved: claimStatus === 'approved',
+        participation_deferred: !!defer_participation
+      })
+    }
 
-      } else if (pathSegments.includes('claim')) {
-        // POST /exhibitors/claim
-        const { exhibitor_id }: ClaimExhibitorRequest = await req.json()
+    // ────────────────────────────────────────────────────
+    // ACTION: approve_claim (admin only)
+    // ────────────────────────────────────────────────────
+    if (action === 'approve_claim') {
+      if (!isAdmin) {
+        return jsonError('Admin access required', 403)
+      }
 
-        if (!exhibitor_id) {
-          return new Response(
-            JSON.stringify({ error: 'exhibitor_id is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
+      const { request_id } = requestData
+      if (!request_id) {
+        return jsonError('request_id is required', 400)
+      }
 
-        // Check if exhibitor exists
-        const { data: exhibitor } = await supabase
+      // Fetch the claim request
+      const { data: claimRequest, error: fetchError } = await serviceClient
+        .from('exhibitor_claim_requests')
+        .select('id, exhibitor_id, requester_user_id, status')
+        .eq('id', request_id)
+        .single()
+
+      if (fetchError || !claimRequest) {
+        return jsonError('Claim request not found', 404)
+      }
+
+      if (claimRequest.status !== 'pending') {
+        return jsonError(`Claim already processed (status: ${claimRequest.status})`, 400)
+      }
+
+      // Update claim status to approved
+      const { error: updateClaimError } = await serviceClient
+        .from('exhibitor_claim_requests')
+        .update({ status: 'approved' })
+        .eq('id', request_id)
+
+      if (updateClaimError) {
+        console.error('❌ Failed to update claim status:', updateClaimError)
+        return jsonError('Failed to approve claim', 500)
+      }
+
+      // Set owner_user_id and approved on the exhibitor
+      const { error: updateExhibitorError } = await serviceClient
+        .from('exhibitors')
+        .update({
+          owner_user_id: claimRequest.requester_user_id,
+          approved: true
+        })
+        .eq('id', claimRequest.exhibitor_id)
+
+      if (updateExhibitorError) {
+        console.error('❌ Failed to update exhibitor owner:', updateExhibitorError)
+        return jsonError('Claim approved but exhibitor update failed', 500)
+      }
+
+      console.log('✅ Claim approved:', request_id, '→ exhibitor:', claimRequest.exhibitor_id, '→ owner:', claimRequest.requester_user_id)
+
+      return jsonOk({
+        status: 'approved',
+        exhibitor_id: claimRequest.exhibitor_id,
+        owner_user_id: claimRequest.requester_user_id
+      })
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: reject_claim (admin only)
+    // ────────────────────────────────────────────────────
+    if (action === 'reject_claim') {
+      if (!isAdmin) {
+        return jsonError('Admin access required', 403)
+      }
+
+      const { request_id } = requestData
+      if (!request_id) {
+        return jsonError('request_id is required', 400)
+      }
+
+      // Fetch the claim request
+      const { data: claimRequest, error: fetchError } = await serviceClient
+        .from('exhibitor_claim_requests')
+        .select('id, status')
+        .eq('id', request_id)
+        .single()
+
+      if (fetchError || !claimRequest) {
+        return jsonError('Claim request not found', 404)
+      }
+
+      if (claimRequest.status !== 'pending') {
+        return jsonError(`Claim already processed (status: ${claimRequest.status})`, 400)
+      }
+
+      // Update claim status to rejected
+      const { error: updateError } = await serviceClient
+        .from('exhibitor_claim_requests')
+        .update({ status: 'rejected' })
+        .eq('id', request_id)
+
+      if (updateError) {
+        console.error('❌ Failed to reject claim:', updateError)
+        return jsonError('Failed to reject claim', 500)
+      }
+
+      console.log('✅ Claim rejected:', request_id)
+
+      return jsonOk({ status: 'rejected' })
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: update (owner or admin)
+    // ────────────────────────────────────────────────────
+    if (action === 'update') {
+      const { exhibitor_id, description, logo_url } = requestData
+
+      if (!exhibitor_id) {
+        return jsonError('exhibitor_id is required', 400)
+      }
+
+      if (!isAdmin) {
+        const { data: exhibitor } = await serviceClient
           .from('exhibitors')
-          .select('id, name, owner_user_id')
+          .select('owner_user_id')
           .eq('id', exhibitor_id)
           .single()
 
-        if (!exhibitor) {
-          return new Response(
-            JSON.stringify({ error: 'Exhibitor not found' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
+        if (!exhibitor || exhibitor.owner_user_id !== user.id) {
+          return jsonError('Not authorized to update this exhibitor', 403)
         }
-
-        if (exhibitor.owner_user_id) {
-          return new Response(
-            JSON.stringify({ error: 'Exhibitor already has an owner' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        // Create claim request
-        const { data: claimRequest, error: claimError } = await supabase
-          .from('exhibitor_claim_requests')
-          .insert({
-            exhibitor_id,
-            requester_user_id: user.id
-          })
-          .select()
-          .single()
-
-        if (claimError) {
-          if (claimError.code === '23505') {
-            return new Response(
-              JSON.stringify({ error: 'Claim request already exists' }),
-              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-          }
-          console.error('Error creating claim request:', claimError)
-          return new Response(
-            JSON.stringify({ error: 'Failed to create claim request' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        return new Response(
-          JSON.stringify(claimRequest),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-
-      } else if (pathSegments.includes('create-request')) {
-        // POST /exhibitors/create-request
-        const { proposed_name, website }: CreateExhibitorRequest = await req.json()
-
-        if (!proposed_name) {
-          return new Response(
-            JSON.stringify({ error: 'proposed_name is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        // Create exhibitor creation request
-        const { data: createRequest, error: createError } = await supabase
-          .from('exhibitor_create_requests')
-          .insert({
-            proposed_name,
-            website,
-            requester_user_id: user.id
-          })
-          .select()
-          .single()
-
-        if (createError) {
-          console.error('Error creating exhibitor request:', createError)
-          return new Response(
-            JSON.stringify({ error: 'Failed to create exhibitor request' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        return new Response(
-          JSON.stringify(createRequest),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-
-      } else {
-        // POST /exhibitors/:id/update
-        const exhibitorId = pathSegments[pathSegments.length - 2] // Get ID before 'update'
-        const { description, logo_url }: UpdateExhibitorRequest = await req.json()
-
-        if (!exhibitorId) {
-          return new Response(
-            JSON.stringify({ error: 'Exhibitor ID is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        // Check if user is admin via server-side RPC
-        const { data: isAdmin } = await supabase.rpc('is_admin')
-
-        if (!isAdmin) {
-          const { data: exhibitor } = await supabase
-            .from('exhibitors')
-            .select('owner_user_id')
-            .eq('id', exhibitorId)
-            .single()
-
-          if (!exhibitor || exhibitor.owner_user_id !== user.id) {
-            return new Response(
-              JSON.stringify({ error: 'Not authorized to update this exhibitor' }),
-              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
-          }
-        }
-
-        // Update exhibitor
-        const updateData: any = {}
-        if (description !== undefined) updateData.description = description
-        if (logo_url !== undefined) updateData.logo_url = logo_url
-
-        const { data: updatedExhibitor, error: updateError } = await supabase
-          .from('exhibitors')
-          .update(updateData)
-          .eq('id', exhibitorId)
-          .select()
-          .single()
-
-        if (updateError) {
-          console.error('Error updating exhibitor:', updateError)
-          return new Response(
-            JSON.stringify({ error: 'Failed to update exhibitor' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        return new Response(
-          JSON.stringify(updatedExhibitor),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-    }
-
-    // GET /exhibitors (for event exhibitors list)
-    if (req.method === 'GET') {
-      const eventId = url.searchParams.get('event_id')
-      const search = url.searchParams.get('q')
-
-      if (!eventId) {
-        return new Response(
-          JSON.stringify({ error: 'event_id is required' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
       }
 
-      let query = supabase
+      const updateData: Record<string, unknown> = {}
+      if (description !== undefined) updateData.description = description
+      if (logo_url !== undefined) updateData.logo_url = logo_url
+
+      if (Object.keys(updateData).length === 0) {
+        return jsonError('No fields to update', 400)
+      }
+
+      const { data: updatedExhibitor, error: updateError } = await serviceClient
         .from('exhibitors')
-        .select(`
-          id,
-          name,
-          slug,
-          logo_url,
-          participation!inner(stand_exposant, urlexpo_event)
-        `)
-        .eq('participation.id_event', eventId)
+        .update(updateData)
+        .eq('id', exhibitor_id)
+        .select()
+        .single()
 
-      if (search) {
-        query = query.ilike('name', `%${search}%`)
+      if (updateError) {
+        console.error('Error updating exhibitor:', updateError)
+        return jsonError('Failed to update exhibitor', 500)
       }
 
-      query = query.order('name')
-
-      const { data: exhibitors, error } = await query
-
-      if (error) {
-        console.error('Error fetching exhibitors:', error)
-        return new Response(
-          JSON.stringify({ error: 'Failed to fetch exhibitors' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      return new Response(
-        JSON.stringify(exhibitors || []),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return jsonOk(updatedExhibitor)
     }
 
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    // ────────────────────────────────────────────────────
+    // ACTION: claim (any authenticated user)
+    // ────────────────────────────────────────────────────
+    if (action === 'claim') {
+      const { exhibitor_id } = requestData
+
+      if (!exhibitor_id) {
+        return jsonError('exhibitor_id is required', 400)
+      }
+
+      // Check if exhibitor exists and has no owner
+      const { data: exhibitor } = await serviceClient
+        .from('exhibitors')
+        .select('id, name, owner_user_id')
+        .eq('id', exhibitor_id)
+        .single()
+
+      if (!exhibitor) {
+        return jsonError('Exhibitor not found', 404)
+      }
+
+      if (exhibitor.owner_user_id) {
+        return jsonError('Exhibitor already has an owner', 400)
+      }
+
+      // Create claim request
+      const { data: claimRequest, error: claimError } = await serviceClient
+        .from('exhibitor_claim_requests')
+        .insert({
+          exhibitor_id,
+          requester_user_id: user.id
+        })
+        .select()
+        .single()
+
+      if (claimError) {
+        if (claimError.code === '23505') {
+          return jsonError('Claim request already exists', 400)
+        }
+        console.error('Error creating claim request:', claimError)
+        return jsonError('Failed to create claim request', 500)
+      }
+
+      return jsonOk(claimRequest)
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: create-request (any authenticated user)
+    // ────────────────────────────────────────────────────
+    if (action === 'create-request') {
+      const { proposed_name, website } = requestData
+
+      if (!proposed_name) {
+        return jsonError('proposed_name is required', 400)
+      }
+
+      const { data: createRequest, error: createError } = await serviceClient
+        .from('exhibitor_create_requests')
+        .insert({
+          proposed_name,
+          website,
+          requester_user_id: user.id
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error('Error creating exhibitor request:', createError)
+        return jsonError('Failed to create exhibitor request', 500)
+      }
+
+      return jsonOk(createRequest)
+    }
+
+    return jsonError('Unknown action: ' + action, 400)
 
   } catch (error) {
     console.error('Exhibitor management error:', error)
@@ -461,3 +470,19 @@ Deno.serve(async (req) => {
     )
   }
 })
+
+// ── Helper functions ──
+
+function jsonOk(data: unknown) {
+  return new Response(
+    JSON.stringify(data),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+function jsonError(message: string, status: number, details?: unknown) {
+  return new Response(
+    JSON.stringify({ error: message, ...(details ? { details } : {}) }),
+    { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
