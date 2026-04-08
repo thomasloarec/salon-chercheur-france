@@ -31,6 +31,7 @@ import DeleteAccountModal from '@/components/profile/DeleteAccountModal';
 import ProfileSkeleton from '@/components/profile/ProfileSkeleton';
 import EmptyProfileState from '@/components/profile/EmptyProfileState';
 import AvatarUpload from '@/components/profile/AvatarUpload';
+import MyExhibitorsSection from '@/components/profile/MyExhibitorsSection';
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -262,6 +263,9 @@ const Profile = () => {
                 </Button>
               </div>
             </Card>
+
+            {/* Bloc Entreprises que je gère */}
+            <MyExhibitorsSection />
 
             {/* Bloc Newsletters */}
             <Card className="p-6 rounded-2xl shadow-sm">
