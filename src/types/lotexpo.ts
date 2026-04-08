@@ -100,6 +100,7 @@ export interface EventExhibitorDTO {
   logo_url?: string | null;
   description?: string | null;
   exposant_description?: string | null;
+  ai_resume_court?: string | null;
   website?: string | null;
   website_exposant?: string | null;
   
