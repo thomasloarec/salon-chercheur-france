@@ -140,6 +140,54 @@ serve(async (req) => {
     }
 
     // ==========================================
+    // TEAM MEMBERSHIP GUARD (Phase 3)
+    // - Unmanaged exhibitor (no active owner) → anyone can submit
+    // - Managed exhibitor (has active owner) → only team members or admins
+    // ==========================================
+    const { data: activeOwner } = await admin
+      .from("exhibitor_team_members")
+      .select("id")
+      .eq("exhibitor_id", data.exhibitor_id)
+      .eq("role", "owner")
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (activeOwner) {
+      // Exhibitor is managed → check if user is a team member or admin
+      const { data: membership } = await admin
+        .from("exhibitor_team_members")
+        .select("id")
+        .eq("exhibitor_id", data.exhibitor_id)
+        .eq("user_id", authenticatedUserId)
+        .in("role", ["owner", "admin"])
+        .eq("status", "active")
+        .maybeSingle();
+
+      // Check admin role
+      const { data: adminRole } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", authenticatedUserId)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!membership && !adminRole) {
+        console.log("[novelties-create] REJECTED: user", authenticatedUserId, "is not a team member of managed exhibitor", data.exhibitor_id);
+        return new Response(
+          JSON.stringify({ 
+            error: "Cette entreprise est déjà gérée. Seuls les membres de l'équipe peuvent publier des nouveautés.",
+            code: "TEAM_MEMBERSHIP_REQUIRED"
+          }),
+          { status: 403, headers: corsHeaders() }
+        );
+      }
+
+      console.log("[novelties-create] Access granted:", membership ? "team_member" : "admin");
+    } else {
+      console.log("[novelties-create] Unmanaged exhibitor, open access for:", authenticatedUserId);
+    }
+
+    // ==========================================
     // CRÉATION ATOMIQUE AVEC VÉRIFICATION QUOTA
     // Utilise pg_advisory_xact_lock pour empêcher les race conditions
     // created_by comes from the verified JWT, not the client payload
