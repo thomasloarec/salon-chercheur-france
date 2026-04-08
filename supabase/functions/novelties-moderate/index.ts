@@ -277,6 +277,8 @@ serve(async (req) => {
         status: next_status,
         exhibitor_approved: exhibitorApproved,
         participation_created: participationCreated,
+        team_promoted: teamPromoted,
+        verified_at_set: verifiedAtSet,
         pending_exhibitor_id: novelty.pending_exhibitor_id
       }),
       { status: 200, headers: corsHeaders() }
