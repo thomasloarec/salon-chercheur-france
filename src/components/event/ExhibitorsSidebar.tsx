@@ -310,6 +310,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                       website_final: full.website_exposant,
                       exposant_description: full.exposant_description,
                       description_final: full.exposant_description,
+                      ai_resume_court: full.ai_resume_court || exhibitor.ai_resume_court,
                       urlexpo_event: full.urlexpo_event,
                       logo_url: full.logo_url || null,
                     });
@@ -407,6 +408,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
             website_final: full.website_exposant,
             exposant_description: full.exposant_description,
             description_final: full.exposant_description,
+            ai_resume_court: full.ai_resume_court,
             urlexpo_event: fullEx?.urlexpo_event,
             logo_url: full.logo_url || null,
           });
