@@ -105,7 +105,7 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
       <ExhibitorClaimModal
         open={claimOpen}
         onOpenChange={setClaimOpen}
-        exhibitorId={exhibitorId}
+        exhibitorId={resolvedId}
         exhibitorName={exhibitorName}
       />
     </>
