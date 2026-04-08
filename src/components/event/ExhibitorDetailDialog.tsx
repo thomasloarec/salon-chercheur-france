@@ -74,8 +74,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
     exhibitorId,
     exhibitorName
   );
-
-  const { data: isVerified } = useExhibitorVerified(exhibitorId || undefined);
+  const governance = useExhibitorGovernance(exhibitorId || undefined);
 
   useEffect(() => {
     let cancelled = false;
