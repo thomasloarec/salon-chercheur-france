@@ -10,6 +10,8 @@ import { normalizeExternalUrl } from '@/lib/url';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
+import { useExhibitorVerified } from '@/hooks/useExhibitorVerified';
+import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -142,7 +144,14 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
               );
             })()}
             <div className="flex-1 min-w-0">
-              <div className="truncate">{displayName}</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="truncate">{displayName}</span>
+                {(() => {
+                  const exId = e.exhibitor_uuid || e.id_exposant;
+                  const { data: isVerified } = useExhibitorVerified(exId);
+                  return isVerified ? <VerifiedBadge /> : null;
+                })()}
+              </div>
               {e.stand_exposant && (
                 <Badge variant="secondary" className="mt-1">
                   <MapPin className="h-3 w-3 mr-1" />
