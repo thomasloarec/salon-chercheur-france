@@ -138,6 +138,8 @@ serve(async (req) => {
     // ============================================
     let exhibitorApproved = false;
     let participationCreated = false;
+    let teamPromoted = false;
+    let verifiedAtSet = false;
     
     if (next_status === 'published' && novelty.pending_exhibitor_id) {
       console.log(`[novelties-moderate] Approving pending exhibitor: ${novelty.pending_exhibitor_id}`);
@@ -156,6 +158,48 @@ serve(async (req) => {
       } else {
         exhibitorApproved = true;
         console.log(`[novelties-moderate] Exhibitor ${novelty.pending_exhibitor_id} approved`);
+        
+        // ── BLOC B: Auto-promote novelty creator as owner if no active owner ──
+        if (novelty.created_by) {
+          const { data: existingOwner } = await supabaseAdmin
+            .from('exhibitor_team_members')
+            .select('id')
+            .eq('exhibitor_id', novelty.pending_exhibitor_id)
+            .eq('role', 'owner')
+            .eq('status', 'active')
+            .maybeSingle();
+
+          if (!existingOwner) {
+            const { error: teamError } = await supabaseAdmin
+              .from('exhibitor_team_members')
+              .insert({
+                exhibitor_id: novelty.pending_exhibitor_id,
+                user_id: novelty.created_by,
+                role: 'owner',
+                status: 'active',
+                invited_by: user.id // admin who moderated
+              });
+
+            if (teamError) {
+              console.error("[novelties-moderate] Failed to insert team member:", teamError);
+            } else {
+              teamPromoted = true;
+              console.log(`[novelties-moderate] Team owner created: ${novelty.created_by}`);
+
+              // Set verified_at only when promotion actually happened
+              const { error: verifyError } = await supabaseAdmin
+                .from('exhibitors')
+                .update({ verified_at: new Date().toISOString() })
+                .eq('id', novelty.pending_exhibitor_id);
+
+              if (!verifyError) {
+                verifiedAtSet = true;
+              }
+            }
+          } else {
+            console.log(`[novelties-moderate] Active owner already exists for exhibitor: ${novelty.pending_exhibitor_id} → skipping auto-promotion`);
+          }
+        }
         
         // ✅ CRÉER LA PARTICIPATION maintenant que la nouveauté est publiée
         // Récupérer les infos de l'exposant et de l'événement
