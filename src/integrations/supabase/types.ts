@@ -3262,6 +3262,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      has_active_owner: { Args: { _exhibitor_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3274,6 +3275,7 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      is_team_member: { Args: { _exhibitor_id: string }; Returns: boolean }
       log_application_event: {
         Args: {
           p_details?: Json
