@@ -8,10 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ShieldCheck, Loader2 } from 'lucide-react';
@@ -19,8 +16,13 @@ import { ShieldCheck, Loader2 } from 'lucide-react';
 interface ExhibitorClaimModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** UUID if modern exhibitor exists, or legacy text id */
   exhibitorId: string;
   exhibitorName: string;
+  /** Optional website for legacy→modern bridging */
+  exhibitorWebsite?: string;
+  /** Optional legacy id_exposant for participation linking */
+  idExposant?: string;
 }
 
 const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
@@ -28,43 +30,44 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
   onOpenChange,
   exhibitorId,
   exhibitorName,
+  exhibitorWebsite,
+  idExposant,
 }) => {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
-  const [reason, setReason] = useState('');
 
   const handleSubmit = async () => {
-    if (!user) return;
     setSubmitting(true);
 
     try {
-      // Double-check no pending request exists
-      const { data: existing } = await supabase
-        .from('exhibitor_claim_requests')
-        .select('id')
-        .eq('exhibitor_id', exhibitorId)
-        .eq('requester_user_id', user.id)
-        .eq('status', 'pending')
-        .maybeSingle();
-
-      if (existing) {
-        toast.info('Vous avez déjà une demande en cours pour cette entreprise.');
-        onOpenChange(false);
-        return;
-      }
-
-      const { error } = await supabase.from('exhibitor_claim_requests').insert({
-        exhibitor_id: exhibitorId,
-        requester_user_id: user.id,
+      // Use the server-side bridge function for both modern and legacy cases
+      const { data, error } = await supabase.functions.invoke('exhibitor-claim-bridge', {
+        body: {
+          exhibitor_uuid: exhibitorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(exhibitorId)
+            ? exhibitorId
+            : undefined,
+          id_exposant: idExposant || undefined,
+          name: exhibitorName,
+          website: exhibitorWebsite || undefined,
+        },
       });
 
       if (error) throw error;
 
-      toast.success('Votre demande a bien été envoyée. Elle sera vérifiée par l\'équipe Lotexpo.');
-      queryClient.invalidateQueries({ queryKey: ['exhibitor-governance', exhibitorId] });
+      if (data?.error) {
+        toast.error(data.message || 'Une erreur est survenue.');
+        return;
+      }
+
+      if (data?.already_pending) {
+        toast.info('Vous avez déjà une demande en cours pour cette entreprise.');
+      } else {
+        toast.success('Votre demande a bien été envoyée. Elle sera vérifiée par l\'équipe Lotexpo.');
+      }
+
+      // Invalidate governance queries to refresh UI
+      queryClient.invalidateQueries({ queryKey: ['exhibitor-governance'] });
       onOpenChange(false);
-      setReason('');
     } catch (err: any) {
       console.error('Claim submission error:', err);
       toast.error('Une erreur est survenue. Veuillez réessayer.');

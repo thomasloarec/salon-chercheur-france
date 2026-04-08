@@ -10,12 +10,21 @@ interface ExhibitorGovernanceBannerProps {
   governance: ExhibitorGovernanceState;
   exhibitorId: string;
   exhibitorName: string;
+  /** Website for legacy→modern bridging */
+  exhibitorWebsite?: string;
+  /** Legacy id_exposant for participation linking */
+  idExposant?: string;
+  /** Whether this is a legacy-only exhibitor (no modern exhibitor row yet) */
+  isLegacyOnly?: boolean;
 }
 
 const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
   governance,
   exhibitorId,
   exhibitorName,
+  exhibitorWebsite,
+  idExposant,
+  isLegacyOnly = false,
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -26,14 +35,15 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
 
   if (governance.isLoading) return null;
 
-  // No exhibitor found in exhibitors table — can't show governance
-  if (!governance.resolvedExhibitorId) return null;
+  // For legacy-only exhibitors (no modern exhibitor exists yet), we still show the CTA
+  // The bridge function will handle creation server-side
+  const hasModernExhibitor = !!governance.resolvedExhibitorId;
 
   // Case: user is already a team member — don't show anything
-  if (governance.isTeamMember) return null;
+  if (hasModernExhibitor && governance.isTeamMember) return null;
 
-  // Case 2: enterprise already managed
-  if (governance.hasActiveOwner) {
+  // Case: enterprise already managed (only if modern exhibitor exists)
+  if (hasModernExhibitor && governance.hasActiveOwner) {
     return (
       <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-3">
         <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
@@ -44,8 +54,8 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
     );
   }
 
-  // Case 3: user already has a pending claim
-  if (governance.hasPendingClaim) {
+  // Case: user already has a pending claim
+  if (hasModernExhibitor && governance.hasPendingClaim) {
     return (
       <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex items-start gap-3">
         <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -59,7 +69,7 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
     );
   }
 
-  // Case 4: user not logged in
+  // Case: user not logged in
   if (!user) {
     return (
       <div className="rounded-lg bg-muted/50 border p-3 flex items-start gap-3">
@@ -82,7 +92,7 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
     );
   }
 
-  // Case 1: enterprise not managed, user logged in → CTA
+  // Case: enterprise not managed (or legacy-only), user logged in → CTA
   return (
     <>
       <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 flex items-start gap-3">
@@ -107,6 +117,8 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
         onOpenChange={setClaimOpen}
         exhibitorId={resolvedId}
         exhibitorName={exhibitorName}
+        exhibitorWebsite={exhibitorWebsite}
+        idExposant={idExposant}
       />
     </>
   );
