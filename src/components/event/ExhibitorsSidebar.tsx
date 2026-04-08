@@ -8,7 +8,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { supabase } from '@/integrations/supabase/client';
 import { ExhibitorsModal } from './ExhibitorsModal';
-import { ExhibitorDialog } from './ExhibitorDialog';
+import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
 import type { Event } from '@/types/event';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeStandNumber } from '@/utils/standUtils';
@@ -299,15 +299,19 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                       description_length: full.exposant_description?.length || 0
                     });
 
-                    // Convertir au format du nouveau ExhibitorDialog
-                    // Utiliser id_exposant ET le nom pour le hook de participations
+                    // Format for ExhibitorDetailDialog
                     setSelectedExhibitor({
-                      id: exhibitor.exhibitor_uuid || exhibitor.id_exposant || exhibitor.id,
-                      name: full.exhibitor_name,
-                      slug: exhibitor.slug,
+                      id_exposant: exhibitor.id_exposant || exhibitor.id,
+                      exhibitor_uuid: exhibitor.exhibitor_uuid,
+                      exhibitor_name: full.exhibitor_name,
+                      name_final: full.exhibitor_name,
+                      stand_exposant: exhibitor.stand_exposant || exhibitor.stand,
+                      website_exposant: full.website_exposant,
+                      website_final: full.website_exposant,
+                      exposant_description: full.exposant_description,
+                      description_final: full.exposant_description,
+                      urlexpo_event: full.urlexpo_event,
                       logo_url: full.logo_url || null,
-                      description: full.exposant_description,
-                      website: full.website_exposant,
                     });
                     setOpenedFromModal(false);
                   }}
@@ -392,25 +396,30 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           
           const full = await hydrateExhibitor(exhibitorForDialog);
           
-          // Convertir au format du nouveau ExhibitorDialog
-          // Utiliser exhibitor_uuid en priorité pour le lien avec participations
+          // Format for ExhibitorDetailDialog
           setSelectedExhibitor({
-            id: fullEx?.exhibitor_uuid || ex.id_exposant,
-            name: full.exhibitor_name,
-            slug: ex.id_exposant,
+            id_exposant: ex.id_exposant,
+            exhibitor_uuid: fullEx?.exhibitor_uuid,
+            exhibitor_name: full.exhibitor_name,
+            name_final: full.exhibitor_name,
+            stand_exposant: ex.stand_exposant,
+            website_exposant: full.website_exposant,
+            website_final: full.website_exposant,
+            exposant_description: full.exposant_description,
+            description_final: full.exposant_description,
+            urlexpo_event: fullEx?.urlexpo_event,
             logo_url: full.logo_url || null,
-            description: full.exposant_description,
-            website: full.website_exposant,
           });
           setOpenedFromModal(true);
         }}
       />
 
       {/* Fiche exposant */}
-      <ExhibitorDialog
+      <ExhibitorDetailDialog
         open={!!selectedExhibitor}
         onOpenChange={(open) => !open && setSelectedExhibitor(null)}
         exhibitor={selectedExhibitor}
+        event={event}
         onBackToAll={openedFromModal ? () => {
           setSelectedExhibitor(null);
           setShowAllModal(true);
