@@ -203,6 +203,7 @@ Deno.serve(async (req) => {
 
       // STEP 4: Auto-approve claim if email domain matches website domain
       let claimStatus = 'pending'
+      let teamPromoted = false
       if (website && user.email) {
         const userDomain = user.email.split('@')[1]?.toLowerCase()
         try {
@@ -213,6 +214,33 @@ Deno.serve(async (req) => {
               .from('exhibitors')
               .update({ approved: true })
               .eq('id', newExhibitor.id)
+
+            // Auto-promote as owner (guard: no existing active owner)
+            const { data: existingOwner } = await serviceClient
+              .from('exhibitor_team_members')
+              .select('id')
+              .eq('exhibitor_id', newExhibitor.id)
+              .eq('role', 'owner')
+              .eq('status', 'active')
+              .maybeSingle()
+
+            if (!existingOwner) {
+              const { error: teamError } = await serviceClient
+                .from('exhibitor_team_members')
+                .insert({
+                  exhibitor_id: newExhibitor.id,
+                  user_id: user.id,
+                  role: 'owner',
+                  status: 'active'
+                })
+              if (!teamError) {
+                teamPromoted = true
+                await serviceClient
+                  .from('exhibitors')
+                  .update({ verified_at: new Date().toISOString() })
+                  .eq('id', newExhibitor.id)
+              }
+            }
           }
         } catch {
           // Invalid URL, skip auto-approve
@@ -231,6 +259,7 @@ Deno.serve(async (req) => {
       return jsonOk({
         ...newExhibitor,
         approved: claimStatus === 'approved',
+        team_promoted: teamPromoted,
         participation_deferred: !!defer_participation
       })
     }
@@ -288,12 +317,59 @@ Deno.serve(async (req) => {
         return jsonError('Claim approved but exhibitor update failed', 500)
       }
 
-      console.log('✅ Claim approved:', request_id, '→ exhibitor:', claimRequest.exhibitor_id, '→ owner:', claimRequest.requester_user_id)
+      // ── BLOC A: Team auto-promotion with has_active_owner guard ──
+      let teamPromoted = false
+      let verifiedAtSet = false
+
+      // Check if an active owner already exists
+      const { data: existingOwner } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('id')
+        .eq('exhibitor_id', claimRequest.exhibitor_id)
+        .eq('role', 'owner')
+        .eq('status', 'active')
+        .maybeSingle()
+
+      if (!existingOwner) {
+        // No active owner → promote requester as owner
+        const { error: teamError } = await serviceClient
+          .from('exhibitor_team_members')
+          .insert({
+            exhibitor_id: claimRequest.exhibitor_id,
+            user_id: claimRequest.requester_user_id,
+            role: 'owner',
+            status: 'active',
+            invited_by: user.id
+          })
+
+        if (teamError) {
+          console.error('⚠️ Failed to insert team member:', teamError)
+        } else {
+          teamPromoted = true
+          console.log('✅ Team owner created:', claimRequest.requester_user_id)
+
+          // Set verified_at only when promotion actually happened
+          const { error: verifyError } = await serviceClient
+            .from('exhibitors')
+            .update({ verified_at: new Date().toISOString() })
+            .eq('id', claimRequest.exhibitor_id)
+
+          if (!verifyError) {
+            verifiedAtSet = true
+          }
+        }
+      } else {
+        console.log('⚠️ Active owner already exists for exhibitor:', claimRequest.exhibitor_id, '→ skipping auto-promotion')
+      }
+
+      console.log('✅ Claim approved:', request_id, '→ exhibitor:', claimRequest.exhibitor_id, '→ owner:', claimRequest.requester_user_id, '→ teamPromoted:', teamPromoted)
 
       return jsonOk({
         status: 'approved',
         exhibitor_id: claimRequest.exhibitor_id,
-        owner_user_id: claimRequest.requester_user_id
+        owner_user_id: claimRequest.requester_user_id,
+        team_promoted: teamPromoted,
+        verified_at_set: verifiedAtSet
       })
     }
 
