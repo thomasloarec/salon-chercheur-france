@@ -148,7 +148,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="truncate">{displayName}</span>
-                {isVerified && <VerifiedBadge />}
+                {governance.isVerified && <VerifiedBadge />}
               </div>
               {e.stand_exposant && (
                 <Badge variant="secondary" className="mt-1">
