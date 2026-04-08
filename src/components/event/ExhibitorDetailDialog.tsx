@@ -196,6 +196,9 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             governance={governance}
             exhibitorId={exhibitorId}
             exhibitorName={displayName}
+            exhibitorWebsite={getWebsite(e)}
+            idExposant={e.id_exposant}
+            isLegacyOnly={!e.exhibitor_uuid && !governance.resolvedExhibitorId}
           />
 
           {loadingParticipations && (
