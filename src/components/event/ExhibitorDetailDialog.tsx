@@ -47,9 +47,25 @@ const getDisplayName = (exhibitor: Exhibitor): string => {
   return exhibitor.name_final || exhibitor.exhibitor_name || exhibitor.legacy_name || '';
 };
 
+// Nettoie les descriptions bilingues (FR + EN concaténés) en ne gardant que le français
+const cleanBilingualDescription = (text: string): string => {
+  // Détecte un bloc anglais après un double saut de ligne
+  const parts = text.split(/\n\s*\n\s*\n/);
+  if (parts.length >= 2) {
+    // Vérifie si la 2e partie ressemble à de l'anglais
+    const secondPart = parts.slice(1).join('\n').trim();
+    const englishIndicators = /\b(is a|based in|the company|specializ|founded in|its range|the brand)\b/i;
+    if (englishIndicators.test(secondPart)) {
+      return parts[0].trim();
+    }
+  }
+  return text;
+};
+
 // Récupère la description — priorité : AI resume_court > description_final > exposant_description
 const getDescription = (exhibitor: Exhibitor): string | undefined => {
-  return exhibitor.ai_resume_court || exhibitor.description_final || exhibitor.exposant_description;
+  const raw = exhibitor.ai_resume_court || exhibitor.description_final || exhibitor.exposant_description;
+  return raw ? cleanBilingualDescription(raw) : undefined;
 };
 
 // Récupère le website
@@ -109,7 +125,10 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
   const displayName = getDisplayName(e);
   const description = getDescription(e);
   const websiteHref = normalizeExternalUrl(getWebsite(e));
-  const expoPageHref = normalizeExternalUrl(e?.urlexpo_event);
+  // Valider que urlexpo_event est une vraie URL (pas un identifiant composite)
+  const rawExpoUrl = e?.urlexpo_event;
+  const isValidUrl = rawExpoUrl && /^https?:\/\//.test(rawExpoUrl);
+  const expoPageHref = isValidUrl ? normalizeExternalUrl(rawExpoUrl) : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
