@@ -880,6 +880,61 @@ export type Database = {
           },
         ]
       }
+      exhibitor_team_members: {
+        Row: {
+          created_at: string
+          exhibitor_id: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["exhibitor_team_role"]
+          status: Database["public"]["Enums"]["exhibitor_team_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exhibitor_id: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["exhibitor_team_role"]
+          status?: Database["public"]["Enums"]["exhibitor_team_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exhibitor_id?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["exhibitor_team_role"]
+          status?: Database["public"]["Enums"]["exhibitor_team_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_team_members_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_team_members_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_team_members_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       exhibitors: {
         Row: {
           approved: boolean | null
@@ -916,6 +971,7 @@ export type Database = {
           slug: string | null
           stand_info: string | null
           updated_at: string | null
+          verified_at: string | null
           website: string | null
         }
         Insert: {
@@ -953,6 +1009,7 @@ export type Database = {
           slug?: string | null
           stand_info?: string | null
           updated_at?: string | null
+          verified_at?: string | null
           website?: string | null
         }
         Update: {
@@ -990,6 +1047,7 @@ export type Database = {
           slug?: string | null
           stand_info?: string | null
           updated_at?: string | null
+          verified_at?: string | null
           website?: string | null
         }
         Relationships: []
@@ -3304,6 +3362,8 @@ export type Database = {
         | "congres"
         | "conference"
         | "ceremonie"
+      exhibitor_team_role: "owner" | "admin"
+      exhibitor_team_status: "active" | "invited" | "removed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3439,6 +3499,8 @@ export const Constants = {
         "conference",
         "ceremonie",
       ],
+      exhibitor_team_role: ["owner", "admin"],
+      exhibitor_team_status: ["active", "invited", "removed"],
     },
   },
 } as const
