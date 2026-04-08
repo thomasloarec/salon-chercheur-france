@@ -21,7 +21,13 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
   const navigate = useNavigate();
   const [claimOpen, setClaimOpen] = useState(false);
 
+  // Use the resolved UUID for claims; fall back to passed exhibitorId
+  const resolvedId = governance.resolvedExhibitorId || exhibitorId;
+
   if (governance.isLoading) return null;
+
+  // No exhibitor found in exhibitors table — can't show governance
+  if (!governance.resolvedExhibitorId) return null;
 
   // Case: user is already a team member — don't show anything
   if (governance.isTeamMember) return null;
@@ -99,7 +105,7 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
       <ExhibitorClaimModal
         open={claimOpen}
         onOpenChange={setClaimOpen}
-        exhibitorId={exhibitorId}
+        exhibitorId={resolvedId}
         exhibitorName={exhibitorName}
       />
     </>
