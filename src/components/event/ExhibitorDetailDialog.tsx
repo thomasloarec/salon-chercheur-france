@@ -10,8 +10,9 @@ import { normalizeExternalUrl } from '@/lib/url';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
-import { useExhibitorVerified } from '@/hooks/useExhibitorVerified';
+import { useExhibitorGovernance } from '@/hooks/useExhibitorGovernance';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
+import ExhibitorGovernanceBanner from '@/components/exhibitor/ExhibitorGovernanceBanner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
