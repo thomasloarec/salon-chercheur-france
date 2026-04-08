@@ -26,6 +26,9 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
 
   if (governance.isLoading) return null;
 
+  // No exhibitor found in exhibitors table — can't show governance
+  if (!governance.resolvedExhibitorId) return null;
+
   // Case: user is already a team member — don't show anything
   if (governance.isTeamMember) return null;
 
