@@ -1072,6 +1072,12 @@ Deno.serve(async (req) => {
       // Resolve user by email via RPC (scalable, no 1000-user limit)
       const { data: targetUserId } = await serviceClient.rpc('get_user_id_by_email', { p_email: user_email })
 
+      console.log('👤 admin_add_member resolve user result:', {
+        exhibitor_id,
+        user_email,
+        foundUser: !!targetUserId,
+      })
+
       if (!targetUserId) {
         // User doesn't exist → create invitation
         const { data: existingInvite } = await serviceClient
