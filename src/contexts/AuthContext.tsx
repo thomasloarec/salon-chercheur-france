@@ -32,9 +32,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Process pending visit plan on any sign-in (email or OAuth)
         if (event === 'SIGNED_IN' && session?.user && !pendingPlanProcessed.current) {
+          pendingPlanProcessed.current = true;
+
+          // ── Process pending exhibitor invitation ──
+          const inviteToken = localStorage.getItem('pending_exhibitor_invite');
+          if (inviteToken) {
+            try {
+              await supabase.functions.invoke('exhibitors-manage', {
+                body: { action: 'accept_invite', token: inviteToken },
+              });
+              localStorage.removeItem('pending_exhibitor_invite');
+              await queryClient.invalidateQueries({ queryKey: ['my-exhibitors'] });
+            } catch (err) {
+              console.error('Failed to accept exhibitor invitation:', err);
+            }
+          }
+
+          // ── Process pending visit plan ──
           const pendingRaw = localStorage.getItem('pending_visit_plan');
           if (pendingRaw) {
-            pendingPlanProcessed.current = true;
             try {
               const pending = JSON.parse(pendingRaw);
               const userId = session.user.id;
