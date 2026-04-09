@@ -550,6 +550,7 @@ Deno.serve(async (req) => {
     // ACTION: owner_add_member (owner of the exhibitor)
     // ────────────────────────────────────────────────────
     if (action === 'owner_add_member') {
+      console.log('🏠 owner_add_member handler entered', { exhibitor_id: requestData.exhibitor_id, user_email: requestData.user_email })
       const { exhibitor_id, user_email } = requestData
       if (!exhibitor_id || !user_email) return jsonError('exhibitor_id and user_email required', 400)
 
@@ -1270,9 +1271,10 @@ Deno.serve(async (req) => {
     return jsonError('Unknown action: ' + action, 400)
 
   } catch (error) {
-    console.error('Exhibitor management error:', error)
+    console.error('❌ Exhibitor management UNHANDLED error:', error)
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'no stack')
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', message: String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
