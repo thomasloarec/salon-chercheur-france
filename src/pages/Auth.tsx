@@ -16,9 +16,11 @@ import { queryClient } from '@/lib/queryClient';
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+  const inviteToken = searchParams.get('invite');
+  const inviteEmail = searchParams.get('email');
+  const initialTab = inviteToken ? 'signup' : (searchParams.get('tab') === 'signup' ? 'signup' : 'signin');
   
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(inviteEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,18 +33,25 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
+  // Store invite token for post-signup processing
+  useEffect(() => {
+    if (inviteToken) {
+      localStorage.setItem('pending_exhibitor_invite', inviteToken);
+    }
+  }, [inviteToken]);
+
   useEffect(() => {
     if (user) {
-      // Pending visit plan is now handled globally in AuthContext
-      // Just redirect
       navigate('/');
     }
   }, [user, navigate]);
 
   useEffect(() => {
-    const tab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
-    setActiveTab(tab);
-    resetForm();
+    if (!inviteToken) {
+      const tab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+      setActiveTab(tab);
+      resetForm();
+    }
   }, [searchParams]);
 
   const handleGoogleSignIn = async () => {

@@ -86,8 +86,12 @@ const ExhibitorPanel = ({ membership }: { membership: MyExhibitorMembership }) =
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast({ title: 'Collaborateur ajouté' });
+    onSuccess: (data: any) => {
+      if (data?.status === 'invited') {
+        toast({ title: `Invitation envoyée à ${data.email}`, description: 'Un email d\'invitation a été envoyé.' });
+      } else {
+        toast({ title: 'Collaborateur ajouté' });
+      }
       setAddEmail('');
       refetchTeam();
     },
