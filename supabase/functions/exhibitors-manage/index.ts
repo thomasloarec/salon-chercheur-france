@@ -716,7 +716,70 @@ Deno.serve(async (req) => {
     }
 
     // ────────────────────────────────────────────────────
-    // ACTION: owner_remove_member (owner of the exhibitor)
+    // ACTION: accept_invite (called after signup/login)
+    // ────────────────────────────────────────────────────
+    if (action === 'accept_invite') {
+      const { token } = requestData
+      if (!token) return jsonError('token required', 400)
+
+      // Find pending invitation
+      const { data: invitation, error: invFindErr } = await serviceClient
+        .from('exhibitor_invitations')
+        .select('*')
+        .eq('token', token)
+        .eq('status', 'pending')
+        .maybeSingle()
+
+      if (invFindErr || !invitation) {
+        return jsonOk({ status: 'no_invitation' }) // silent fail — token might be expired or already used
+      }
+
+      // Check if invitation is expired
+      if (new Date(invitation.expires_at) < new Date()) {
+        await serviceClient
+          .from('exhibitor_invitations')
+          .update({ status: 'expired' })
+          .eq('id', invitation.id)
+        return jsonOk({ status: 'expired' })
+      }
+
+      // Check user email matches invitation
+      const userEmail = user.email?.toLowerCase()
+      if (userEmail !== invitation.email.toLowerCase()) {
+        return jsonOk({ status: 'email_mismatch' })
+      }
+
+      // Check for existing membership
+      const { data: existingMember } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('id')
+        .eq('exhibitor_id', invitation.exhibitor_id)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle()
+
+      if (!existingMember) {
+        // Add user to team
+        await serviceClient
+          .from('exhibitor_team_members')
+          .insert({
+            exhibitor_id: invitation.exhibitor_id,
+            user_id: user.id,
+            role: invitation.role || 'admin',
+            status: 'active',
+            invited_by: invitation.invited_by,
+          })
+      }
+
+      // Mark invitation as accepted
+      await serviceClient
+        .from('exhibitor_invitations')
+        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+        .eq('id', invitation.id)
+
+      return jsonOk({ status: 'accepted', exhibitor_id: invitation.exhibitor_id })
+    }
+
     // ────────────────────────────────────────────────────
     if (action === 'owner_remove_member') {
       const { exhibitor_id, membership_id } = requestData
