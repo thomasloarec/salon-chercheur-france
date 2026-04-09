@@ -18,6 +18,7 @@ import Auth from '@/pages/Auth';
 import Admin from '@/pages/Admin';
 import AdminEventDetail from '@/pages/AdminEventDetail';
 import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
+import AdminExhibitors from '@/pages/AdminExhibitors';
 import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
 import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
 import AdminSeoAudit from '@/pages/AdminSeoAudit';
@@ -82,6 +83,7 @@ function App() {
             <Route path="/nouveautes" element={<Nouveautes />} />
             <Route path="/exposants" element={<Exposants />} />
             <Route path="/premium" element={<Exposants />} />
+            <Route path="/admin/exhibitors" element={<AdminExhibitors />} />
             <Route path="/admin/exhibitors/claims" element={<AdminExhibitorClaims />} />
             <Route path="/admin/exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />
               <Route path="/auth" element={<Auth />} />

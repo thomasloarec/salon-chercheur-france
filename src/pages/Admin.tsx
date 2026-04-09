@@ -21,7 +21,7 @@ import { OAuthHubSpotDiagnostic } from '@/components/admin/OAuthHubSpotDiagnosti
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, BookOpen, Sparkles } from 'lucide-react';
+import { Search, BookOpen, Sparkles, Building2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -82,7 +82,7 @@ const Admin = () => {
         </div>
 
         {/* Liens rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -127,6 +127,22 @@ const Admin = () => {
                   <Link to="/admin/ia-visite">
                     <Sparkles className="h-4 w-4 mr-2" />
                     Dashboard IA
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Exposants</h3>
+                  <p className="text-sm text-muted-foreground">Entreprises & gouvernance</p>
+                </div>
+                <Button asChild>
+                  <Link to="/admin/exhibitors">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Gérer
                   </Link>
                 </Button>
               </div>
