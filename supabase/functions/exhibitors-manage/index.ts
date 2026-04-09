@@ -458,7 +458,7 @@ Deno.serve(async (req) => {
     }
 
     // ────────────────────────────────────────────────────
-    // ACTION: update (owner or admin)
+    // ACTION: update (any active team member or site admin)
     // ────────────────────────────────────────────────────
     if (action === 'update') {
       const { exhibitor_id, description, logo_url } = requestData
@@ -468,13 +468,16 @@ Deno.serve(async (req) => {
       }
 
       if (!isAdmin) {
-        const { data: exhibitor } = await serviceClient
-          .from('exhibitors')
-          .select('owner_user_id')
-          .eq('id', exhibitor_id)
-          .single()
+        // Allow any active team member to update description
+        const { data: membership } = await serviceClient
+          .from('exhibitor_team_members')
+          .select('id, role')
+          .eq('exhibitor_id', exhibitor_id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle()
 
-        if (!exhibitor || exhibitor.owner_user_id !== user.id) {
+        if (!membership) {
           return jsonError('Not authorized to update this exhibitor', 403)
         }
       }
@@ -500,6 +503,156 @@ Deno.serve(async (req) => {
       }
 
       return jsonOk(updatedExhibitor)
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: owner_add_member (owner of the exhibitor)
+    // ────────────────────────────────────────────────────
+    if (action === 'owner_add_member') {
+      const { exhibitor_id, user_email } = requestData
+      if (!exhibitor_id || !user_email) return jsonError('exhibitor_id and user_email required', 400)
+
+      // Verify caller is owner of this exhibitor
+      if (!isAdmin) {
+        const { data: callerMembership } = await serviceClient
+          .from('exhibitor_team_members')
+          .select('id, role')
+          .eq('exhibitor_id', exhibitor_id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .eq('role', 'owner')
+          .maybeSingle()
+
+        if (!callerMembership) {
+          return jsonError('Seul le propriétaire peut ajouter des collaborateurs', 403)
+        }
+      }
+
+      // Find user by email
+      let targetUserId: string | null = null
+      const { data: authUsers } = await serviceClient.auth.admin.listUsers({ perPage: 1000 })
+      const matchedUser = authUsers?.users?.find((u: any) => u.email?.toLowerCase() === user_email.toLowerCase())
+      if (matchedUser) targetUserId = matchedUser.id
+
+      if (!targetUserId) return jsonError('Utilisateur non trouvé avec cet email', 404)
+
+      // Check for existing active membership
+      const { data: existing } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('id')
+        .eq('exhibitor_id', exhibitor_id)
+        .eq('user_id', targetUserId)
+        .eq('status', 'active')
+        .maybeSingle()
+
+      if (existing) return jsonError('Cet utilisateur est déjà membre', 400)
+
+      const { error } = await serviceClient
+        .from('exhibitor_team_members')
+        .insert({
+          exhibitor_id,
+          user_id: targetUserId,
+          role: 'admin',
+          status: 'active',
+          invited_by: user.id,
+        })
+
+      if (error) return jsonError('Failed to add member', 500)
+      return jsonOk({ status: 'added', user_id: targetUserId })
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: owner_remove_member (owner of the exhibitor)
+    // ────────────────────────────────────────────────────
+    if (action === 'owner_remove_member') {
+      const { exhibitor_id, membership_id } = requestData
+      if (!exhibitor_id || !membership_id) return jsonError('exhibitor_id and membership_id required', 400)
+
+      // Verify caller is owner
+      if (!isAdmin) {
+        const { data: callerMembership } = await serviceClient
+          .from('exhibitor_team_members')
+          .select('id, role')
+          .eq('exhibitor_id', exhibitor_id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .eq('role', 'owner')
+          .maybeSingle()
+
+        if (!callerMembership) {
+          return jsonError('Seul le propriétaire peut retirer des collaborateurs', 403)
+        }
+      }
+
+      // Don't allow removing yourself as owner
+      const { data: targetMember } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('id, user_id, role')
+        .eq('id', membership_id)
+        .single()
+
+      if (!targetMember) return jsonError('Membre non trouvé', 404)
+      if (targetMember.role === 'owner') return jsonError('Impossible de retirer le propriétaire', 400)
+
+      const { error } = await serviceClient
+        .from('exhibitor_team_members')
+        .update({ status: 'removed', updated_at: new Date().toISOString() })
+        .eq('id', membership_id)
+
+      if (error) return jsonError('Failed to remove member', 500)
+      return jsonOk({ status: 'removed' })
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: owner_get_team (owner or admin team member)
+    // ────────────────────────────────────────────────────
+    if (action === 'owner_get_team') {
+      const { exhibitor_id } = requestData
+      if (!exhibitor_id) return jsonError('exhibitor_id required', 400)
+
+      // Verify caller is an active team member
+      if (!isAdmin) {
+        const { data: callerMembership } = await serviceClient
+          .from('exhibitor_team_members')
+          .select('id')
+          .eq('exhibitor_id', exhibitor_id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle()
+
+        if (!callerMembership) {
+          return jsonError('Not authorized', 403)
+        }
+      }
+
+      const { data: members, error } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('id, user_id, role, status, created_at')
+        .eq('exhibitor_id', exhibitor_id)
+        .eq('status', 'active')
+        .order('created_at')
+
+      if (error) return jsonError('Failed to fetch team', 500)
+
+      // Enrich with profile data
+      const enriched = await Promise.all((members || []).map(async (m: any) => {
+        const { data: profile } = await serviceClient
+          .from('profiles')
+          .select('first_name, last_name, avatar_url, job_title, company')
+          .eq('user_id', m.user_id)
+          .maybeSingle()
+
+        // Get email from auth
+        const { data: authData } = await serviceClient.auth.admin.getUserById(m.user_id)
+
+        return {
+          ...m,
+          email: authData?.user?.email || null,
+          profile: profile || null,
+        }
+      }))
+
+      return jsonOk(enriched)
     }
 
     // ────────────────────────────────────────────────────
