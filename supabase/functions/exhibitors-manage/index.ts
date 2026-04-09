@@ -555,6 +555,16 @@ Deno.serve(async (req) => {
 
       // Verify caller is owner of this exhibitor
       if (!isAdmin) {
+        const { data: isMember } = await serviceClient.rpc('is_team_member', {
+          _exhibitor_id: exhibitor_id,
+        })
+
+        console.log('👥 owner_add_member is_team_member result:', {
+          exhibitor_id,
+          userId: user.id,
+          isMember: !!isMember,
+        })
+
         const { data: callerMembership } = await serviceClient
           .from('exhibitor_team_members')
           .select('id, role')
