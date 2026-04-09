@@ -11,6 +11,27 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')
+    let requestData: Record<string, any> = {}
+
+    if (req.method === 'POST') {
+      try {
+        requestData = await req.json()
+      } catch (parseError) {
+        console.error('❌ Failed to parse request body:', parseError)
+        return jsonError('Invalid JSON body', 400)
+      }
+    }
+
+    const action = typeof requestData?.action === 'string' ? requestData.action : undefined
+
+    console.log('🟢 exhibitors-manage called', {
+      method: req.method,
+      action: action ?? 'NO_ACTION',
+      hasAuth: !!authHeader,
+      timestamp: new Date().toISOString(),
+    })
+
     // ── Auth client: used ONLY to verify the caller's identity ──
     const authClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -18,7 +39,7 @@ Deno.serve(async (req) => {
       {
         auth: { autoRefreshToken: false, persistSession: false },
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! }
+          headers: authHeader ? { Authorization: authHeader } : {}
         }
       }
     )
@@ -31,6 +52,11 @@ Deno.serve(async (req) => {
       )
     }
 
+    console.log('🔑 JWT verified', {
+      userId: user?.id ?? 'NONE',
+      action,
+    })
+
     // ── Service client: used for all DB writes (bypasses RLS) ──
     // All authorization checks are done explicitly in code below.
     const serviceClient = createClient(
@@ -41,11 +67,26 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Check admin status once (reused across actions)
-    const { data: isAdmin } = await authClient.rpc('is_admin')
+    let isAdmin = false
+    try {
+      const { data: isAdminData, error: isAdminError } = await serviceClient.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin',
+      })
+      if (isAdminError) {
+        console.error('❌ is_admin RPC error:', isAdminError)
+      }
+      isAdmin = !!isAdminData
+    } catch (err) {
+      console.error('❌ is_admin RPC exception:', err)
+      isAdmin = false
+    }
 
-    const requestData = await req.json()
-    const { action } = requestData
+    console.log('🔐 is_admin result', {
+      isAdmin,
+      userId: user?.id,
+      action,
+    })
 
     if (req.method !== 'POST') {
       // GET handler for exhibitor lists (read-only, uses auth client for RLS)
@@ -514,6 +555,16 @@ Deno.serve(async (req) => {
 
       // Verify caller is owner of this exhibitor
       if (!isAdmin) {
+        const { data: isMember } = await serviceClient.rpc('is_team_member', {
+          _exhibitor_id: exhibitor_id,
+        })
+
+        console.log('👥 owner_add_member is_team_member result:', {
+          exhibitor_id,
+          userId: user.id,
+          isMember: !!isMember,
+        })
+
         const { data: callerMembership } = await serviceClient
           .from('exhibitor_team_members')
           .select('id, role')
@@ -551,9 +602,6 @@ Deno.serve(async (req) => {
       const { data: resolvedUserId } = await serviceClient.rpc('get_user_id_by_email', { p_email: user_email })
       if (resolvedUserId) targetUserId = resolvedUserId
 
-      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
-      const RESEND_GATEWAY = 'https://connector-gateway.lovable.dev/resend'
       const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
 
       if (targetUserId) {
@@ -581,62 +629,53 @@ Deno.serve(async (req) => {
         if (error) return jsonError('Failed to add member', 500)
 
         // Send notification email to existing user
-        if (RESEND_API_KEY && LOVABLE_API_KEY) {
-          try {
-            console.log('📧 Sending notification email to existing user:', user_email)
-            const emailRes = await fetch(`${RESEND_GATEWAY}/emails`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-                'X-Connection-Api-Key': RESEND_API_KEY,
-              },
-              body: JSON.stringify({
-                from: 'Lotexpo <admin@lotexpo.com>',
-                to: [user_email],
-                subject: `Vous êtes maintenant gestionnaire de ${exhibitorName} sur Lotexpo`,
-                html: `
-                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="text-align: center; margin-bottom: 30px;">
-                      <h1 style="color: #1a1a1a; font-size: 24px;">🎉 Bienvenue dans l'équipe !</h1>
-                    </div>
-                    <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                      Bonjour,
-                    </p>
-                    <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                      <strong>${inviterName}</strong> vous a ajouté comme collaborateur de la page entreprise 
-                      <strong>${exhibitorName}</strong> sur Lotexpo.
-                    </p>
-                    <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                      En tant que collaborateur, vous pouvez :
-                    </p>
-                    <ul style="color: #333; font-size: 16px; line-height: 1.8;">
-                      <li>✏️ Modifier la description de l'entreprise</li>
-                      <li>🆕 Ajouter et gérer les nouveautés produits</li>
-                    </ul>
-                    <div style="text-align: center; margin: 30px 0;">
-                      <a href="${siteUrl}/profil" 
-                         style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                        Accéder à mon espace
-                      </a>
-                    </div>
-                    <p style="color: #888; font-size: 13px; margin-top: 30px;">
-                      — L'équipe Lotexpo
-                    </p>
-                  </div>
-                `,
-              }),
-            })
-            const emailResult = await emailRes.text()
-            console.log('📧 Email send result:', emailRes.status, emailResult)
-          } catch (emailErr) {
-            console.error('❌ Failed to send notification email:', emailErr)
-          }
-        } else {
-          console.warn('⚠️ Missing RESEND_API_KEY or LOVABLE_API_KEY, skipping email')
-        }
+        const emailResult = await sendExhibitorEmail({
+          to: user_email,
+          subject: `Vous êtes maintenant gestionnaire de ${exhibitorName} sur Lotexpo`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #1a1a1a; font-size: 24px;">🎉 Bienvenue dans l'équipe !</h1>
+              </div>
+              <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                Bonjour,
+              </p>
+              <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                <strong>${inviterName}</strong> vous a ajouté comme collaborateur de la page entreprise 
+                <strong>${exhibitorName}</strong> sur Lotexpo.
+              </p>
+              <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                En tant que collaborateur, vous pouvez :
+              </p>
+              <ul style="color: #333; font-size: 16px; line-height: 1.8;">
+                <li>✏️ Modifier la description de l'entreprise</li>
+                <li>🆕 Ajouter et gérer les nouveautés produits</li>
+              </ul>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${siteUrl}/profil" 
+                   style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                  Accéder à mon espace
+                </a>
+              </div>
+              <p style="color: #888; font-size: 13px; margin-top: 30px;">
+                — L'équipe Lotexpo
+              </p>
+            </div>
+          `,
+        })
 
-        return jsonOk({ status: 'added', user_id: targetUserId })
+        console.log('📧 owner_add_member email result:', {
+          success: emailResult.success,
+          status: emailResult.status,
+          error: emailResult.error,
+        })
+
+        return jsonOk({
+          status: 'added',
+          user_id: targetUserId,
+          email_sent: emailResult.success,
+          ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+        })
 
       } else {
         // ── Non-existing user: create invitation ──
@@ -665,66 +704,57 @@ Deno.serve(async (req) => {
         if (invErr || !invitation) return jsonError('Failed to create invitation', 500)
 
         // Send invitation email to non-existing user
-        if (RESEND_API_KEY && LOVABLE_API_KEY) {
-          try {
-            const signupUrl = `${siteUrl}/auth?invite=${invitation.token}&email=${encodeURIComponent(user_email)}`
-            console.log('📧 Sending invitation email to new user:', user_email)
-            const emailRes = await fetch(`${RESEND_GATEWAY}/emails`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-                'X-Connection-Api-Key': RESEND_API_KEY,
-              },
-              body: JSON.stringify({
-                from: 'Lotexpo <admin@lotexpo.com>',
-                to: [user_email],
-                subject: `${inviterName} vous invite à gérer ${exhibitorName} sur Lotexpo`,
-                html: `
-                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <div style="text-align: center; margin-bottom: 30px;">
-                      <h1 style="color: #1a1a1a; font-size: 24px;">📩 Vous êtes invité(e) !</h1>
-                    </div>
-                    <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                      Bonjour,
-                    </p>
-                    <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                      <strong>${inviterName}</strong> vous invite à rejoindre l'équipe de gestion de 
-                      <strong>${exhibitorName}</strong> sur <strong>Lotexpo</strong>, la plateforme de référence 
-                      des salons professionnels en France.
-                    </p>
-                    <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                      En créant votre compte, vous pourrez :
-                    </p>
-                    <ul style="color: #333; font-size: 16px; line-height: 1.8;">
-                      <li>✏️ Gérer la page de votre entreprise</li>
-                      <li>🆕 Publier des nouveautés produits</li>
-                      <li>📊 Suivre les leads et interactions</li>
-                    </ul>
-                    <div style="text-align: center; margin: 30px 0;">
-                      <a href="${signupUrl}" 
-                         style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                        Créer mon compte et rejoindre l'équipe
-                      </a>
-                    </div>
-                    <p style="color: #888; font-size: 13px; margin-top: 30px;">
-                      Cette invitation expire dans 30 jours.<br/>
-                      — L'équipe Lotexpo
-                    </p>
-                  </div>
-                `,
-              }),
-            })
-            const emailResult = await emailRes.text()
-            console.log('📧 Invitation email result:', emailRes.status, emailResult)
-          } catch (emailErr) {
-            console.error('❌ Failed to send invitation email:', emailErr)
-          }
-        } else {
-          console.warn('⚠️ Missing RESEND_API_KEY or LOVABLE_API_KEY, skipping invitation email')
-        }
+        const signupUrl = `${siteUrl}/auth?invite=${invitation.token}&email=${encodeURIComponent(user_email)}`
+        const emailResult = await sendExhibitorEmail({
+          to: user_email,
+          subject: `${inviterName} vous invite à gérer ${exhibitorName} sur Lotexpo`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #1a1a1a; font-size: 24px;">📩 Vous êtes invité(e) !</h1>
+              </div>
+              <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                Bonjour,
+              </p>
+              <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                <strong>${inviterName}</strong> vous invite à rejoindre l'équipe de gestion de 
+                <strong>${exhibitorName}</strong> sur <strong>Lotexpo</strong>, la plateforme de référence 
+                des salons professionnels en France.
+              </p>
+              <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                En créant votre compte, vous pourrez :
+              </p>
+              <ul style="color: #333; font-size: 16px; line-height: 1.8;">
+                <li>✏️ Gérer la page de votre entreprise</li>
+                <li>🆕 Publier des nouveautés produits</li>
+                <li>📊 Suivre les leads et interactions</li>
+              </ul>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${signupUrl}" 
+                   style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                  Créer mon compte et rejoindre l'équipe
+                </a>
+              </div>
+              <p style="color: #888; font-size: 13px; margin-top: 30px;">
+                Cette invitation expire dans 30 jours.<br/>
+                — L'équipe Lotexpo
+              </p>
+            </div>
+          `,
+        })
 
-        return jsonOk({ status: 'invited', email: user_email })
+        console.log('📧 owner_add_member email result:', {
+          success: emailResult.success,
+          status: emailResult.status,
+          error: emailResult.error,
+        })
+
+        return jsonOk({
+          status: 'invited',
+          email: user_email,
+          email_sent: emailResult.success,
+          ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+        })
       }
     }
 
@@ -1042,6 +1072,12 @@ Deno.serve(async (req) => {
       // Resolve user by email via RPC (scalable, no 1000-user limit)
       const { data: targetUserId } = await serviceClient.rpc('get_user_id_by_email', { p_email: user_email })
 
+      console.log('👤 admin_add_member resolve user result:', {
+        exhibitor_id,
+        user_email,
+        foundUser: !!targetUserId,
+      })
+
       if (!targetUserId) {
         // User doesn't exist → create invitation
         const { data: existingInvite } = await serviceClient
@@ -1250,6 +1286,16 @@ async function sendExhibitorEmail(params: {
   html: string;
 }): Promise<{ success: boolean; status?: number; error?: string }> {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+  const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'Lotexpo <admin@lotexpo.com>'
+
+  console.log('📧 Sending email', {
+    to: params.to,
+    subject: params.subject,
+    from: resendFromEmail,
+    hasApiKey: !!RESEND_API_KEY,
+    apiKeyPrefix: RESEND_API_KEY?.substring(0, 8) ?? 'MISSING',
+  })
+
   if (!RESEND_API_KEY) {
     console.error('❌ RESEND_API_KEY is not set')
     return { success: false, error: 'RESEND_API_KEY missing' }
@@ -1263,7 +1309,7 @@ async function sendExhibitorEmail(params: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Lotexpo <admin@lotexpo.com>',
+        from: resendFromEmail,
         to: [params.to],
         subject: params.subject,
         html: params.html,
