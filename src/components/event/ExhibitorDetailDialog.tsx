@@ -237,43 +237,54 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
 
               <div className="space-y-2">
                 {participations.map((participation) => (
-                  <div
+                  <Link
                     key={participation.id}
-                    className="rounded-lg bg-muted/50 border p-3 space-y-2"
+                    to={`/events/${participation.event.slug}`}
+                    onClick={() => onOpenChange(false)}
+                    className="flex items-center gap-3 rounded-lg border p-2 hover:border-primary/40 hover:shadow-sm transition-all group"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="font-medium text-sm flex-1 break-words">
-                        <Link 
-                          to={`/events/${participation.event.slug}`}
-                          className="hover:text-primary hover:underline transition-colors"
-                          onClick={() => onOpenChange(false)}
-                        >
-                          {participation.event.nom_event}
-                        </Link>
+                    {/* Event image */}
+                    <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-muted">
+                      {participation.event.url_image ? (
+                        <img
+                          src={participation.event.url_image}
+                          alt={participation.event.nom_event}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Calendar className="h-6 w-6 text-muted-foreground/50" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Event info */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <p className="font-medium text-sm leading-tight truncate group-hover:text-primary transition-colors">
+                        {participation.event.nom_event}
                       </p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3 flex-shrink-0" />
+                          {format(new Date(participation.event.date_debut), 'dd MMM yyyy', { locale: fr })}
+                          {participation.event.date_fin !== participation.event.date_debut && (
+                            <> – {format(new Date(participation.event.date_fin), 'dd MMM', { locale: fr })}</>
+                          )}
+                        </span>
+                        {participation.event.ville && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3 flex-shrink-0" />
+                            {participation.event.ville}
+                          </span>
+                        )}
+                      </div>
                       {participation.stand && (
-                        <Badge variant="secondary" className="flex-shrink-0 whitespace-nowrap">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
                           Stand {normalizeStandNumber(participation.stand)}
                         </Badge>
                       )}
                     </div>
-                    
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1 whitespace-nowrap">
-                        <Calendar className="h-3 w-3 flex-shrink-0" />
-                        {format(new Date(participation.event.date_debut), 'dd MMM yyyy', { locale: fr })}
-                        {participation.event.date_fin !== participation.event.date_debut && (
-                          <> - {format(new Date(participation.event.date_fin), 'dd MMM', { locale: fr })}</>
-                        )}
-                      </span>
-                      {participation.event.ville && (
-                        <span className="flex items-center gap-1 whitespace-nowrap">
-                          <MapPin className="h-3 w-3 flex-shrink-0" />
-                          {participation.event.ville}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
