@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ArrowLeft, Building2, Shield, ShieldCheck, Globe, User, Users, Clock,
-  Plus, Trash2, Crown, ExternalLink, AlertCircle, CheckCircle, Pencil, Save, X,
+  Plus, Trash2, Crown, ExternalLink, AlertCircle, CheckCircle, Pencil, Save, X, ClipboardList,
 } from 'lucide-react';
 import { useAdminExhibitorDetail } from '@/hooks/useAdminExhibitors';
 import { supabase } from '@/integrations/supabase/client';
