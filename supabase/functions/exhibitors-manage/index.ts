@@ -553,6 +553,8 @@ Deno.serve(async (req) => {
       if (matchedUser) targetUserId = matchedUser.id
 
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
+      const RESEND_GATEWAY = 'https://connector-gateway.lovable.dev/resend'
       const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
 
       if (targetUserId) {
