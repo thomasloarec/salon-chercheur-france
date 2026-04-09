@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
         return jsonError('Claim approved but exhibitor update failed', 500)
       }
 
-      // ── BLOC A: Team auto-promotion with has_active_owner guard ──
+      // ── BLOC A: Team auto-promotion ──
       let teamPromoted = false
       let verifiedAtSet = false
 
@@ -331,22 +331,42 @@ Deno.serve(async (req) => {
         .maybeSingle()
 
       if (!existingOwner) {
-        // No active owner → promote requester as owner
-        const { error: teamError } = await serviceClient
+        // Check if requester already has a team membership (any role/status)
+        const { data: existingMembership } = await serviceClient
           .from('exhibitor_team_members')
-          .insert({
-            exhibitor_id: claimRequest.exhibitor_id,
-            user_id: claimRequest.requester_user_id,
-            role: 'owner',
-            status: 'active',
-            invited_by: user.id
-          })
+          .select('id')
+          .eq('exhibitor_id', claimRequest.exhibitor_id)
+          .eq('user_id', claimRequest.requester_user_id)
+          .maybeSingle()
+
+        let teamError = null
+
+        if (existingMembership) {
+          // Update existing membership to owner + active
+          const res = await serviceClient
+            .from('exhibitor_team_members')
+            .update({ role: 'owner', status: 'active', invited_by: user.id, updated_at: new Date().toISOString() })
+            .eq('id', existingMembership.id)
+          teamError = res.error
+        } else {
+          // Insert new team member as owner
+          const res = await serviceClient
+            .from('exhibitor_team_members')
+            .insert({
+              exhibitor_id: claimRequest.exhibitor_id,
+              user_id: claimRequest.requester_user_id,
+              role: 'owner',
+              status: 'active',
+              invited_by: user.id
+            })
+          teamError = res.error
+        }
 
         if (teamError) {
-          console.error('⚠️ Failed to insert team member:', teamError)
+          console.error('⚠️ Failed to upsert team member:', teamError)
         } else {
           teamPromoted = true
-          console.log('✅ Team owner created:', claimRequest.requester_user_id)
+          console.log('✅ Team owner created/updated:', claimRequest.requester_user_id)
 
           // Set verified_at only when promotion actually happened
           const { error: verifyError } = await serviceClient
@@ -359,7 +379,27 @@ Deno.serve(async (req) => {
           }
         }
       } else {
-        console.log('⚠️ Active owner already exists for exhibitor:', claimRequest.exhibitor_id, '→ skipping auto-promotion')
+        // Owner exists, but still add requester as admin team member
+        const { data: existingMembership } = await serviceClient
+          .from('exhibitor_team_members')
+          .select('id')
+          .eq('exhibitor_id', claimRequest.exhibitor_id)
+          .eq('user_id', claimRequest.requester_user_id)
+          .maybeSingle()
+
+        if (!existingMembership) {
+          await serviceClient
+            .from('exhibitor_team_members')
+            .insert({
+              exhibitor_id: claimRequest.exhibitor_id,
+              user_id: claimRequest.requester_user_id,
+              role: 'admin',
+              status: 'active',
+              invited_by: user.id
+            })
+          console.log('✅ Requester added as admin (owner already exists):', claimRequest.requester_user_id)
+        }
+        teamPromoted = true
       }
 
       console.log('✅ Claim approved:', request_id, '→ exhibitor:', claimRequest.exhibitor_id, '→ owner:', claimRequest.requester_user_id, '→ teamPromoted:', teamPromoted)
