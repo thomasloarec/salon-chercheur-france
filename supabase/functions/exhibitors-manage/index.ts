@@ -546,11 +546,10 @@ Deno.serve(async (req) => {
         ? `${inviterProfile.first_name || ''} ${inviterProfile.last_name || ''}`.trim() || 'Un gestionnaire'
         : 'Un gestionnaire'
 
-      // Find user by email
+      // Find user by email via RPC (scalable)
       let targetUserId: string | null = null
-      const { data: authUsers } = await serviceClient.auth.admin.listUsers({ perPage: 1000 })
-      const matchedUser = authUsers?.users?.find((u: any) => u.email?.toLowerCase() === user_email.toLowerCase())
-      if (matchedUser) targetUserId = matchedUser.id
+      const { data: resolvedUserId } = await serviceClient.rpc('get_user_id_by_email', { p_email: user_email })
+      if (resolvedUserId) targetUserId = resolvedUserId
 
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
       const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
