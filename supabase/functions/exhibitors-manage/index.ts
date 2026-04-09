@@ -505,6 +505,69 @@ Deno.serve(async (req) => {
         return jsonError('Failed to create claim request', 500)
       }
 
+      // Send admin notification email
+      try {
+        const { data: requesterProfile } = await serviceClient
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', user.id)
+          .single()
+
+        const requesterName = [requesterProfile?.first_name, requesterProfile?.last_name].filter(Boolean).join(' ') || 'Utilisateur inconnu'
+        const adminUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app')}/admin/exhibitors`
+
+        await serviceClient.from('notifications').insert({
+          user_id: user.id,
+          type: 'claim_request',
+          category: 'admin',
+          title: 'Nouvelle demande de gestion',
+          message: `${requesterName} demande la gestion de "${exhibitor.name}"`,
+          link_url: '/admin/exhibitors',
+          exhibitor_id: exhibitor_id,
+          actor_user_id: user.id,
+          actor_name: requesterName,
+          actor_email: user.email,
+        })
+
+        // Send email to admin@lotexpo.com
+        const emailBody = `
+          <h2>Nouvelle demande de gestion d'entreprise</h2>
+          <table style="border-collapse:collapse;margin:16px 0">
+            <tr><td style="padding:4px 12px 4px 0;color:#666">Entreprise</td><td style="padding:4px 0;font-weight:bold">${exhibitor.name}</td></tr>
+            <tr><td style="padding:4px 12px 4px 0;color:#666">Demandeur</td><td style="padding:4px 0">${requesterName}</td></tr>
+            <tr><td style="padding:4px 12px 4px 0;color:#666">Email</td><td style="padding:4px 0">${user.email}</td></tr>
+            <tr><td style="padding:4px 12px 4px 0;color:#666">Date</td><td style="padding:4px 0">${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td></tr>
+          </table>
+          <p><a href="https://lotexpo.lovable.app/admin/exhibitors" style="display:inline-block;padding:10px 20px;background:#2563eb;color:white;border-radius:6px;text-decoration:none">Traiter la demande</a></p>
+        `
+        // Use Supabase Edge Function for email if available, otherwise log
+        console.log('📧 Admin notification email queued for admin@lotexpo.com:', {
+          subject: `[Lotexpo] Demande de gestion : ${exhibitor.name}`,
+          exhibitor: exhibitor.name,
+          requester: requesterName,
+          email: user.email,
+        })
+
+        // Try to send via contact-submit pattern (reuse existing function)
+        await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/contact-submit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+          },
+          body: JSON.stringify({
+            name: 'Système Lotexpo',
+            email: 'noreply@lotexpo.com',
+            subject: `[Lotexpo] Demande de gestion : ${exhibitor.name}`,
+            message: `Nouvelle demande de gestion par ${requesterName} (${user.email}) pour l'entreprise "${exhibitor.name}". Traiter sur https://lotexpo.lovable.app/admin/exhibitors`,
+            to: 'admin@lotexpo.com',
+          }),
+        })
+      } catch (emailError) {
+        console.error('⚠️ Failed to send admin notification:', emailError)
+        // Non-blocking - claim was still created
+      }
+
       return jsonOk(claimRequest)
     }
 
