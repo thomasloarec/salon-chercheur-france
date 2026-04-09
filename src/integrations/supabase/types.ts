@@ -3323,6 +3323,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_id_by_email: { Args: { p_email: string }; Returns: string }
       has_active_owner: { Args: { _exhibitor_id: string }; Returns: boolean }
       has_role: {
         Args: {
