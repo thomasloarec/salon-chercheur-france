@@ -660,7 +660,12 @@ Deno.serve(async (req) => {
           error: emailResult.error,
         })
 
-        return jsonOk({ status: 'added', user_id: targetUserId })
+        return jsonOk({
+          status: 'added',
+          user_id: targetUserId,
+          email_sent: emailResult.success,
+          ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+        })
 
       } else {
         // ── Non-existing user: create invitation ──
@@ -734,7 +739,12 @@ Deno.serve(async (req) => {
           error: emailResult.error,
         })
 
-        return jsonOk({ status: 'invited', email: user_email })
+        return jsonOk({
+          status: 'invited',
+          email: user_email,
+          email_sent: emailResult.success,
+          ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+        })
       }
     }
 
