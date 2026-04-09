@@ -1271,9 +1271,10 @@ Deno.serve(async (req) => {
     return jsonError('Unknown action: ' + action, 400)
 
   } catch (error) {
-    console.error('Exhibitor management error:', error)
+    console.error('❌ Exhibitor management UNHANDLED error:', error)
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'no stack')
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', message: String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
