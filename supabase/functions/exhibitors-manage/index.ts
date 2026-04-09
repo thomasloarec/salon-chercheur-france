@@ -546,121 +546,201 @@ Deno.serve(async (req) => {
       return jsonOk(updatedExhibitor)
     }
 
+    const resolveUserByEmail = async (
+      serviceClient: any,
+      userEmail: string,
+    ): Promise<{ id: string; email: string } | null> => {
+      const normalizedEmail = userEmail.trim().toLowerCase()
+      const { data, error } = await serviceClient.rpc('get_user_id_by_email', {
+        p_email: normalizedEmail,
+      })
+
+      if (error) {
+        console.error('❌ resolveUserByEmail rpc error', {
+          user_email: normalizedEmail,
+          message: error.message,
+          code: error.code,
+        })
+        throw error
+      }
+
+      if (!data) return null
+      return { id: data, email: normalizedEmail }
+    }
+
     // ────────────────────────────────────────────────────
     // ACTION: owner_add_member (owner of the exhibitor)
     // ────────────────────────────────────────────────────
     if (action === 'owner_add_member') {
-      console.log('🏠 owner_add_member handler entered', { exhibitor_id: requestData.exhibitor_id, user_email: requestData.user_email })
-      const { exhibitor_id, user_email } = requestData
-      if (!exhibitor_id || !user_email) return jsonError('exhibitor_id and user_email required', 400)
+      console.log('🏠 owner_add_member handler entered', {
+        exhibitor_id: requestData?.exhibitor_id,
+        user_email: requestData?.user_email,
+        callerId: user?.id,
+      })
 
-      // Verify caller is owner of this exhibitor
-      if (!isAdmin) {
-        const { data: isMember } = await serviceClient.rpc('is_team_member', {
-          _exhibitor_id: exhibitor_id,
-        })
+      const { exhibitor_id, user_email, role = 'admin' } = requestData
 
-        console.log('👥 owner_add_member is_team_member result:', {
-          exhibitor_id,
-          userId: user.id,
-          isMember: !!isMember,
-        })
-
-        const { data: callerMembership } = await serviceClient
-          .from('exhibitor_team_members')
-          .select('id, role')
-          .eq('exhibitor_id', exhibitor_id)
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .eq('role', 'owner')
-          .maybeSingle()
-
-        if (!callerMembership) {
-          return jsonError('Seul le propriétaire peut ajouter des collaborateurs', 403)
-        }
+      if (!exhibitor_id || !user_email) {
+        return jsonError('Missing exhibitor_id or user_email', 400)
       }
 
-      // Get exhibitor name for email
-      const { data: exhibitorData } = await serviceClient
-        .from('exhibitors')
-        .select('name')
-        .eq('id', exhibitor_id)
-        .single()
-      const exhibitorName = exhibitorData?.name || 'une entreprise'
+      let callerIsOwner = false
+      try {
+        if (!isAdmin) {
+          const { data: ownerCheck, error: ownerError } = await serviceClient
+            .from('exhibitor_team_members')
+            .select('id')
+            .eq('exhibitor_id', exhibitor_id)
+            .eq('user_id', user.id)
+            .eq('role', 'owner')
+            .eq('status', 'active')
+            .maybeSingle()
 
-      // Get inviter name
-      const { data: inviterProfile } = await serviceClient
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('user_id', user.id)
-        .single()
-      const inviterName = inviterProfile
-        ? `${inviterProfile.first_name || ''} ${inviterProfile.last_name || ''}`.trim() || 'Un gestionnaire'
-        : 'Un gestionnaire'
+          if (ownerError) {
+            console.error('❌ owner_add_member: owner check error', ownerError)
+            return jsonError('Authorization check failed', 500)
+          }
 
-      // Find user by email via RPC (scalable)
-      let targetUserId: string | null = null
-      const { data: resolvedUserId } = await serviceClient.rpc('get_user_id_by_email', { p_email: user_email })
-      if (resolvedUserId) targetUserId = resolvedUserId
+          callerIsOwner = !!ownerCheck
+        } else {
+          callerIsOwner = true
+        }
+
+        console.log('✅ owner_add_member: auth check done', { callerIsOwner, isAdmin })
+      } catch (err) {
+        console.error('❌ owner_add_member: auth check exception', err)
+        return jsonError('Authorization check failed', 500)
+      }
+
+      if (!callerIsOwner) {
+        return jsonError('Unauthorized: must be owner of this exhibitor', 403)
+      }
+
+      let exhibitorName = 'votre entreprise'
+      try {
+        const { data: exhibitor, error: exError } = await serviceClient
+          .from('exhibitors')
+          .select('name')
+          .eq('id', exhibitor_id)
+          .single()
+
+        if (exError) {
+          console.error('❌ owner_add_member: exhibitor fetch error', exError)
+        } else {
+          exhibitorName = exhibitor?.name ?? exhibitorName
+        }
+
+        console.log('✅ owner_add_member: exhibitor fetched', { exhibitorName })
+      } catch (err) {
+        console.error('❌ owner_add_member: exhibitor fetch exception', err)
+      }
+
+      let inviterName = 'Un gestionnaire'
+      try {
+        const { data: inviterProfile, error: inviterError } = await serviceClient
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', user.id)
+          .single()
+
+        if (inviterError) {
+          console.error('❌ owner_add_member: inviter fetch error', inviterError)
+        } else if (inviterProfile) {
+          inviterName = `${inviterProfile.first_name || ''} ${inviterProfile.last_name || ''}`.trim() || inviterName
+        }
+      } catch (err) {
+        console.error('❌ owner_add_member: inviter fetch exception', err)
+      }
+
+      let matchedUser: { id: string; email: string } | null = null
+      try {
+        console.log('🔍 owner_add_member: resolving user by email', { user_email })
+        matchedUser = await resolveUserByEmail(serviceClient, user_email)
+        console.log('🔍 owner_add_member: user resolved', {
+          found: !!matchedUser,
+          userId: matchedUser?.id ?? null,
+        })
+      } catch (err) {
+        console.error('❌ owner_add_member: resolveUserByEmail exception', err)
+        return jsonError('User lookup failed', 500)
+      }
 
       const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
 
-      if (targetUserId) {
-        // ── Existing user: add to team directly ──
-        const { data: existing } = await serviceClient
-          .from('exhibitor_team_members')
-          .select('id')
-          .eq('exhibitor_id', exhibitor_id)
-          .eq('user_id', targetUserId)
-          .eq('status', 'active')
-          .maybeSingle()
+      if (matchedUser) {
+        try {
+          const { data: existingMembership, error: membershipLookupError } = await serviceClient
+            .from('exhibitor_team_members')
+            .select('id, status')
+            .eq('exhibitor_id', exhibitor_id)
+            .eq('user_id', matchedUser.id)
+            .maybeSingle()
 
-        if (existing) return jsonError('Cet utilisateur est déjà membre', 400)
+          if (membershipLookupError) {
+            console.error('❌ owner_add_member: membership lookup error', membershipLookupError)
+            return jsonError('Failed to inspect team member', 500)
+          }
 
-        const { error } = await serviceClient
-          .from('exhibitor_team_members')
-          .insert({
-            exhibitor_id,
-            user_id: targetUserId,
-            role: 'admin',
-            status: 'active',
-            invited_by: user.id,
+          if (existingMembership?.status === 'active') {
+            return jsonError('Cet utilisateur est déjà membre', 400)
+          }
+
+          if (existingMembership) {
+            const { error: updateError } = await serviceClient
+              .from('exhibitor_team_members')
+              .update({
+                role,
+                status: 'active',
+                invited_by: user.id,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingMembership.id)
+
+            if (updateError) {
+              console.error('❌ owner_add_member: update team member error', updateError)
+              return jsonError('Failed to add team member', 500)
+            }
+          } else {
+            const { error: insertError } = await serviceClient
+              .from('exhibitor_team_members')
+              .insert({
+                exhibitor_id,
+                user_id: matchedUser.id,
+                role,
+                status: 'active',
+                invited_by: user.id,
+              })
+
+            if (insertError) {
+              console.error('❌ owner_add_member: insert team member error', insertError)
+              return jsonError('Failed to add team member', 500)
+            }
+          }
+
+          console.log('✅ owner_add_member: team member inserted', {
+            userId: matchedUser.id,
+            role,
           })
+        } catch (err) {
+          console.error('❌ owner_add_member: insert team member exception', err)
+          return jsonError('Failed to add team member', 500)
+        }
 
-        if (error) return jsonError('Failed to add member', 500)
-
-        // Send notification email to existing user
         const emailResult = await sendExhibitorEmail({
           to: user_email,
-          subject: `Vous êtes maintenant gestionnaire de ${exhibitorName} sur Lotexpo`,
+          subject: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #1a1a1a; font-size: 24px;">🎉 Bienvenue dans l'équipe !</h1>
-              </div>
+              <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">Bienvenue dans l'équipe ${exhibitorName}</h1>
               <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                Bonjour,
+                <strong>${inviterName}</strong> vous a ajouté comme ${role} de la société <strong>${exhibitorName}</strong> sur Lotexpo.
               </p>
               <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                <strong>${inviterName}</strong> vous a ajouté comme collaborateur de la page entreprise 
-                <strong>${exhibitorName}</strong> sur Lotexpo.
+                Retrouvez vos entreprises depuis votre espace profil.
               </p>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                En tant que collaborateur, vous pouvez :
-              </p>
-              <ul style="color: #333; font-size: 16px; line-height: 1.8;">
-                <li>✏️ Modifier la description de l'entreprise</li>
-                <li>🆕 Ajouter et gérer les nouveautés produits</li>
-              </ul>
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${siteUrl}/profil" 
-                   style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                  Accéder à mon espace
-                </a>
+                <a href="${siteUrl}/profil" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
               </div>
-              <p style="color: #888; font-size: 13px; margin-top: 30px;">
-                — L'équipe Lotexpo
-              </p>
             </div>
           `,
         })
@@ -673,15 +753,14 @@ Deno.serve(async (req) => {
 
         return jsonOk({
           status: 'added',
-          user_id: targetUserId,
+          user_id: matchedUser.id,
           email_sent: emailResult.success,
-          ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+          ...(emailResult.success ? {} : { email_warning: emailResult.error }),
         })
+      }
 
-      } else {
-        // ── Non-existing user: create invitation ──
-        // Check for existing pending invitation
-        const { data: existingInvite } = await serviceClient
+      try {
+        const { data: existingInvite, error: existingInviteError } = await serviceClient
           .from('exhibitor_invitations')
           .select('id')
           .eq('email', user_email.toLowerCase())
@@ -689,57 +768,51 @@ Deno.serve(async (req) => {
           .eq('status', 'pending')
           .maybeSingle()
 
-        if (existingInvite) return jsonError('Une invitation est déjà en attente pour cet email', 400)
+        if (existingInviteError) {
+          console.error('❌ owner_add_member: existing invitation lookup error', existingInviteError)
+          return jsonError('Failed to inspect invitation', 500)
+        }
 
-        const { data: invitation, error: invErr } = await serviceClient
+        if (existingInvite) {
+          return jsonError('Une invitation est déjà en attente pour cet email', 400)
+        }
+
+        const token = crypto.randomUUID()
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
+        const { error: inviteError } = await serviceClient
           .from('exhibitor_invitations')
           .insert({
             email: user_email.toLowerCase(),
             exhibitor_id,
             invited_by: user.id,
-            role: 'admin',
+            role,
+            token,
+            status: 'pending',
+            expires_at: expiresAt,
           })
-          .select('id, token')
-          .single()
 
-        if (invErr || !invitation) return jsonError('Failed to create invitation', 500)
+        if (inviteError) {
+          console.error('❌ owner_add_member: insert invitation error', inviteError)
+          return jsonError('Failed to create invitation', 500)
+        }
 
-        // Send invitation email to non-existing user
-        const signupUrl = `${siteUrl}/auth?invite=${invitation.token}&email=${encodeURIComponent(user_email)}`
+        console.log('✅ owner_add_member: invitation inserted', { token })
+
+        const inviteUrl = `${siteUrl}/auth?invite=${token}&email=${encodeURIComponent(user_email)}`
         const emailResult = await sendExhibitorEmail({
           to: user_email,
-          subject: `${inviterName} vous invite à gérer ${exhibitorName} sur Lotexpo`,
+          subject: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #1a1a1a; font-size: 24px;">📩 Vous êtes invité(e) !</h1>
-              </div>
+              <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">Vous avez été invité sur Lotexpo</h1>
               <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                Bonjour,
+                <strong>${inviterName}</strong> vous a invité à devenir ${role} de <strong>${exhibitorName}</strong>.
               </p>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                <strong>${inviterName}</strong> vous invite à rejoindre l'équipe de gestion de 
-                <strong>${exhibitorName}</strong> sur <strong>Lotexpo</strong>, la plateforme de référence 
-                des salons professionnels en France.
-              </p>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                En créant votre compte, vous pourrez :
-              </p>
-              <ul style="color: #333; font-size: 16px; line-height: 1.8;">
-                <li>✏️ Gérer la page de votre entreprise</li>
-                <li>🆕 Publier des nouveautés produits</li>
-                <li>📊 Suivre les leads et interactions</li>
-              </ul>
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${signupUrl}" 
-                   style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                  Créer mon compte et rejoindre l'équipe
-                </a>
+                <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Créer mon compte et rejoindre l'équipe</a>
               </div>
-              <p style="color: #888; font-size: 13px; margin-top: 30px;">
-                Cette invitation expire dans 30 jours.<br/>
-                — L'équipe Lotexpo
-              </p>
+              <p style="color: #888; font-size: 13px;">Lien valable 7 jours.</p>
             </div>
           `,
         })
@@ -754,8 +827,11 @@ Deno.serve(async (req) => {
           status: 'invited',
           email: user_email,
           email_sent: emailResult.success,
-          ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+          ...(emailResult.success ? {} : { email_warning: emailResult.error }),
         })
+      } catch (err) {
+        console.error('❌ owner_add_member: invitation flow exception', err)
+        return jsonError('Failed to create invitation', 500)
       }
     }
 
