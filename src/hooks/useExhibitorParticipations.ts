@@ -12,6 +12,7 @@ export interface ExhibitorParticipation {
     date_debut: string;
     date_fin: string;
     ville: string;
+    url_image: string | null;
   };
 }
 
@@ -112,7 +113,7 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
 
       const { data: events, error: eventsError } = await supabase
         .from('events')
-        .select('id, nom_event, slug, date_debut, date_fin, ville')
+        .select('id, nom_event, slug, date_debut, date_fin, ville, url_image')
         .in('id', eventIds)
         .eq('visible', true)
         .order('date_debut', { ascending: true });
@@ -139,6 +140,7 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
               date_debut: event.date_debut,
               date_fin: event.date_fin,
               ville: event.ville,
+              url_image: event.url_image ?? null,
             },
           };
         })
