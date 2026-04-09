@@ -226,10 +226,12 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
 
       return {
         exhibitor,
-        team_members: (teamRes.data || []).map((t: any) => ({
-          ...t,
-          profile: enrichProfile(t.user_id),
-        })),
+        team_members: (teamRes.data || [])
+          .filter((t: any) => t.status === 'active')
+          .map((t: any) => ({
+            ...t,
+            profile: enrichProfile(t.user_id),
+          })),
         claims: (claimsRes.data || []).map((c: any) => ({
           ...c,
           profile: enrichProfile(c.requester_user_id),
