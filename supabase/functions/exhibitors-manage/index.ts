@@ -550,6 +550,7 @@ Deno.serve(async (req) => {
     // ACTION: owner_add_member (owner of the exhibitor)
     // ────────────────────────────────────────────────────
     if (action === 'owner_add_member') {
+      console.log('🏠 owner_add_member handler entered', { exhibitor_id: requestData.exhibitor_id, user_email: requestData.user_email })
       const { exhibitor_id, user_email } = requestData
       if (!exhibitor_id || !user_email) return jsonError('exhibitor_id and user_email required', 400)
 
