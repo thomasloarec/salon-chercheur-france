@@ -599,6 +599,146 @@ Deno.serve(async (req) => {
       return jsonOk(createRequest)
     }
 
+    // ────────────────────────────────────────────────────
+    // ACTION: admin_add_member (admin only)
+    // ────────────────────────────────────────────────────
+    if (action === 'admin_add_member') {
+      if (!isAdmin) return jsonError('Admin access required', 403)
+
+      const { exhibitor_id, user_email, role } = requestData
+      if (!exhibitor_id || !user_email) return jsonError('exhibitor_id and user_email required', 400)
+
+      // Resolve user by email
+      const { data: users } = await serviceClient.rpc('get_user_emails_for_moderation', {
+        user_ids: [],
+      })
+
+      // Alternative: find user by email in profiles or auth
+      const { data: profileMatch } = await serviceClient
+        .from('profiles')
+        .select('user_id')
+        .limit(100)
+
+      // Use auth admin to find user
+      let targetUserId: string | null = null
+      // Search in auth.users via service client
+      const { data: authUsers } = await serviceClient.auth.admin.listUsers({ perPage: 1000 })
+      const matchedUser = authUsers?.users?.find((u: any) => u.email?.toLowerCase() === user_email.toLowerCase())
+      if (matchedUser) targetUserId = matchedUser.id
+
+      if (!targetUserId) return jsonError('Utilisateur non trouvé avec cet email', 404)
+
+      // Check for existing membership
+      const { data: existing } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('id')
+        .eq('exhibitor_id', exhibitor_id)
+        .eq('user_id', targetUserId)
+        .eq('status', 'active')
+        .maybeSingle()
+
+      if (existing) return jsonError('Cet utilisateur est déjà membre', 400)
+
+      const { error } = await serviceClient
+        .from('exhibitor_team_members')
+        .insert({
+          exhibitor_id,
+          user_id: targetUserId,
+          role: role || 'admin',
+          status: 'active',
+          invited_by: user.id,
+        })
+
+      if (error) return jsonError('Failed to add member', 500)
+      return jsonOk({ status: 'added', user_id: targetUserId })
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: admin_remove_member (admin only)
+    // ────────────────────────────────────────────────────
+    if (action === 'admin_remove_member') {
+      if (!isAdmin) return jsonError('Admin access required', 403)
+
+      const { membership_id } = requestData
+      if (!membership_id) return jsonError('membership_id required', 400)
+
+      const { error } = await serviceClient
+        .from('exhibitor_team_members')
+        .update({ status: 'removed', updated_at: new Date().toISOString() })
+        .eq('id', membership_id)
+
+      if (error) return jsonError('Failed to remove member', 500)
+      return jsonOk({ status: 'removed' })
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: admin_promote_owner (admin only)
+    // ────────────────────────────────────────────────────
+    if (action === 'admin_promote_owner') {
+      if (!isAdmin) return jsonError('Admin access required', 403)
+
+      const { membership_id, exhibitor_id } = requestData
+      if (!membership_id || !exhibitor_id) return jsonError('membership_id and exhibitor_id required', 400)
+
+      // Get the member to promote
+      const { data: member } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('user_id')
+        .eq('id', membership_id)
+        .single()
+
+      if (!member) return jsonError('Member not found', 404)
+
+      // Demote current owner(s) to admin
+      await serviceClient
+        .from('exhibitor_team_members')
+        .update({ role: 'admin' })
+        .eq('exhibitor_id', exhibitor_id)
+        .eq('role', 'owner')
+        .eq('status', 'active')
+
+      // Promote new owner
+      const { error } = await serviceClient
+        .from('exhibitor_team_members')
+        .update({ role: 'owner' })
+        .eq('id', membership_id)
+
+      if (error) return jsonError('Failed to promote owner', 500)
+
+      // Update exhibitors.owner_user_id
+      await serviceClient
+        .from('exhibitors')
+        .update({ owner_user_id: member.user_id })
+        .eq('id', exhibitor_id)
+
+      return jsonOk({ status: 'promoted', new_owner: member.user_id })
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: admin_revoke_governance (admin only)
+    // ────────────────────────────────────────────────────
+    if (action === 'admin_revoke_governance') {
+      if (!isAdmin) return jsonError('Admin access required', 403)
+
+      const { exhibitor_id } = requestData
+      if (!exhibitor_id) return jsonError('exhibitor_id required', 400)
+
+      // Remove all active team members
+      await serviceClient
+        .from('exhibitor_team_members')
+        .update({ status: 'removed', updated_at: new Date().toISOString() })
+        .eq('exhibitor_id', exhibitor_id)
+        .eq('status', 'active')
+
+      // Clear owner
+      await serviceClient
+        .from('exhibitors')
+        .update({ owner_user_id: null, verified_at: null })
+        .eq('id', exhibitor_id)
+
+      return jsonOk({ status: 'revoked' })
+    }
+
     return jsonError('Unknown action: ' + action, 400)
 
   } catch (error) {
