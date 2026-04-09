@@ -49,10 +49,12 @@ const AdminClaimRequests = () => {
 
       // Fetch profiles + emails
       const userIds = [...new Set(data.map(r => r.requester_user_id))];
-      const [profilesRes, emailsRes] = await Promise.all([
-        supabase.from('profiles').select('user_id, first_name, last_name').in('user_id', userIds),
-        supabase.rpc('get_user_emails_for_moderation', { user_ids: userIds }).then(res => res).catch(() => ({ data: [] as any[] })) as any,
-      ]);
+      const profilesRes = await supabase.from('profiles').select('user_id, first_name, last_name').in('user_id', userIds);
+      let emailsRes: { data: any[] } = { data: [] };
+      try {
+        const res = await supabase.rpc('get_user_emails_for_moderation', { user_ids: userIds });
+        emailsRes = { data: res.data || [] };
+      } catch { /* non-critical */ }
 
       const profilesMap: Record<string, any> = {};
       (profilesRes.data || []).forEach((p: any) => { profilesMap[p.user_id] = p; });
