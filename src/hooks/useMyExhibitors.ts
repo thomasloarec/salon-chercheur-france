@@ -14,6 +14,7 @@ export interface MyExhibitorMembership {
     slug: string | null;
     logo_url: string | null;
     verified_at: string | null;
+    description: string | null;
   };
 }
 
@@ -38,7 +39,8 @@ export const useMyExhibitors = () => {
             name,
             slug,
             logo_url,
-            verified_at
+            verified_at,
+            description
           )
         `)
         .eq('user_id', user.id)
