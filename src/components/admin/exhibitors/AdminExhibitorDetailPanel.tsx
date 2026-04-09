@@ -55,17 +55,31 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
   // Add team member
   const addMemberMutation = useMutation({
     mutationFn: async (email: string) => {
-      const { error } = await supabase.functions.invoke('exhibitors-manage', {
+      const { data, error } = await supabase.functions.invoke('exhibitors-manage', {
         body: { action: 'admin_add_member', exhibitor_id: exhibitorId, user_email: email, role: 'admin' },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
     },
-    onSuccess: () => {
-      toast({ title: 'Membre ajouté' });
+    onSuccess: (data) => {
+      if (data?.email_sent === false) {
+        toast({
+          title: data?.status === 'invited' ? 'Invitation créée' : 'Membre ajouté',
+          description: "⚠️ L'email de notification n'a pas pu être envoyé. Le membre a bien été ajouté en base.",
+        });
+      } else {
+        toast({
+          title: data?.status === 'invited' ? 'Invitation envoyée' : 'Membre ajouté et notifié',
+          description: data?.status === 'invited'
+            ? `Un email d'invitation a été envoyé à ${data?.email}.`
+            : 'Un email de notification a été envoyé au nouveau gestionnaire.',
+        });
+      }
       setAddUserId('');
       invalidate();
     },
-    onError: () => toast({ title: 'Erreur lors de l\'ajout', variant: 'destructive' }),
+    onError: (err: any) => toast({ title: 'Erreur lors de l\'ajout', description: err?.message || 'Erreur inattendue', variant: 'destructive' }),
   });
 
   // Remove team member

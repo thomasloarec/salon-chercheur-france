@@ -1032,27 +1032,72 @@ Deno.serve(async (req) => {
       const { exhibitor_id, user_email, role } = requestData
       if (!exhibitor_id || !user_email) return jsonError('exhibitor_id and user_email required', 400)
 
-      // Resolve user by email
-      const { data: users } = await serviceClient.rpc('get_user_emails_for_moderation', {
-        user_ids: [],
-      })
+      // Get exhibitor name
+      const { data: exhibitorData } = await serviceClient
+        .from('exhibitors')
+        .select('name')
+        .eq('id', exhibitor_id)
+        .single()
+      const exhibitorName = exhibitorData?.name || 'une entreprise'
 
-      // Alternative: find user by email in profiles or auth
-      const { data: profileMatch } = await serviceClient
-        .from('profiles')
-        .select('user_id')
-        .limit(100)
+      // Resolve user by email via RPC (scalable, no 1000-user limit)
+      const { data: targetUserId } = await serviceClient.rpc('get_user_id_by_email', { p_email: user_email })
 
-      // Use auth admin to find user
-      let targetUserId: string | null = null
-      // Search in auth.users via service client
-      const { data: authUsers } = await serviceClient.auth.admin.listUsers({ perPage: 1000 })
-      const matchedUser = authUsers?.users?.find((u: any) => u.email?.toLowerCase() === user_email.toLowerCase())
-      if (matchedUser) targetUserId = matchedUser.id
+      if (!targetUserId) {
+        // User doesn't exist → create invitation
+        const { data: existingInvite } = await serviceClient
+          .from('exhibitor_invitations')
+          .select('id')
+          .eq('email', user_email.toLowerCase())
+          .eq('exhibitor_id', exhibitor_id)
+          .eq('status', 'pending')
+          .maybeSingle()
 
-      if (!targetUserId) return jsonError('Utilisateur non trouvé avec cet email', 404)
+        if (existingInvite) return jsonError('Une invitation est déjà en attente pour cet email', 400)
 
-      // Check for existing membership
+        const { data: invitation, error: invErr } = await serviceClient
+          .from('exhibitor_invitations')
+          .insert({
+            email: user_email.toLowerCase(),
+            exhibitor_id,
+            invited_by: user.id,
+            role: role || 'admin',
+          })
+          .select('id, token')
+          .single()
+
+        if (invErr || !invitation) return jsonError('Failed to create invitation', 500)
+
+        const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
+        const signupUrl = `${siteUrl}/auth?invite=${invitation.token}&email=${encodeURIComponent(user_email)}`
+
+        const emailResult = await sendExhibitorEmail({
+          to: user_email,
+          subject: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">📩 Vous êtes invité(e) !</h1>
+              <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                Vous avez été invité à devenir gestionnaire de <strong>${exhibitorName}</strong> sur <strong>Lotexpo</strong>.
+              </p>
+              <p style="color: #333; font-size: 16px; line-height: 1.6;">Créez votre compte pour accepter l'invitation :</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${signupUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Créer mon compte</a>
+              </div>
+              <p style="color: #888; font-size: 13px;">Cette invitation expire dans 30 jours. — L'équipe Lotexpo</p>
+            </div>
+          `,
+        })
+
+        return jsonOk({
+          status: 'invited',
+          email: user_email,
+          email_sent: emailResult.success,
+          ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+        })
+      }
+
+      // User exists → add directly
       const { data: existing } = await serviceClient
         .from('exhibitor_team_members')
         .select('id')
@@ -1074,7 +1119,31 @@ Deno.serve(async (req) => {
         })
 
       if (error) return jsonError('Failed to add member', 500)
-      return jsonOk({ status: 'added', user_id: targetUserId })
+
+      const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
+      const emailResult = await sendExhibitorEmail({
+        to: user_email,
+        subject: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">🎉 Bienvenue dans l'équipe !</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              Vous avez été ajouté comme gestionnaire de <strong>${exhibitorName}</strong> sur Lotexpo.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${siteUrl}/profil" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
+            </div>
+            <p style="color: #888; font-size: 13px;">— L'équipe Lotexpo</p>
+          </div>
+        `,
+      })
+
+      return jsonOk({
+        status: 'added',
+        user_id: targetUserId,
+        email_sent: emailResult.success,
+        ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+      })
     }
 
     // ────────────────────────────────────────────────────
@@ -1175,6 +1244,47 @@ Deno.serve(async (req) => {
 })
 
 // ── Helper functions ──
+
+async function sendExhibitorEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ success: boolean; status?: number; error?: string }> {
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+  if (!RESEND_API_KEY) {
+    console.error('❌ RESEND_API_KEY is not set')
+    return { success: false, error: 'RESEND_API_KEY missing' }
+  }
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'Lotexpo <admin@lotexpo.com>',
+        to: [params.to],
+        subject: params.subject,
+        html: params.html,
+      }),
+    })
+
+    const body = await res.text()
+
+    if (!res.ok) {
+      console.error(`❌ Email send failed [${res.status}]:`, body)
+      return { success: false, status: res.status, error: body }
+    }
+
+    console.log(`📧 Email sent successfully to ${params.to} [${res.status}]`)
+    return { success: true, status: res.status }
+  } catch (err) {
+    console.error('❌ Email send exception:', err)
+    return { success: false, error: String(err) }
+  }
+}
 
 function jsonOk(data: unknown) {
   return new Response(
