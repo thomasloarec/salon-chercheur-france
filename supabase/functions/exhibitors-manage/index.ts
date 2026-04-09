@@ -553,6 +553,8 @@ Deno.serve(async (req) => {
       if (matchedUser) targetUserId = matchedUser.id
 
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
+      const RESEND_GATEWAY = 'https://connector-gateway.lovable.dev/resend'
       const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
 
       if (targetUserId) {
@@ -580,13 +582,15 @@ Deno.serve(async (req) => {
         if (error) return jsonError('Failed to add member', 500)
 
         // Send notification email to existing user
-        if (RESEND_API_KEY) {
+        if (RESEND_API_KEY && LOVABLE_API_KEY) {
           try {
-            await fetch('https://api.resend.com/emails', {
+            console.log('📧 Sending notification email to existing user:', user_email)
+            const emailRes = await fetch(`${RESEND_GATEWAY}/emails`, {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+                'X-Connection-Api-Key': RESEND_API_KEY,
               },
               body: JSON.stringify({
                 from: 'Lotexpo <admin@lotexpo.com>',
@@ -624,9 +628,13 @@ Deno.serve(async (req) => {
                 `,
               }),
             })
+            const emailResult = await emailRes.text()
+            console.log('📧 Email send result:', emailRes.status, emailResult)
           } catch (emailErr) {
-            console.error('Failed to send notification email:', emailErr)
+            console.error('❌ Failed to send notification email:', emailErr)
           }
+        } else {
+          console.warn('⚠️ Missing RESEND_API_KEY or LOVABLE_API_KEY, skipping email')
         }
 
         return jsonOk({ status: 'added', user_id: targetUserId })
@@ -658,14 +666,16 @@ Deno.serve(async (req) => {
         if (invErr || !invitation) return jsonError('Failed to create invitation', 500)
 
         // Send invitation email to non-existing user
-        if (RESEND_API_KEY) {
+        if (RESEND_API_KEY && LOVABLE_API_KEY) {
           try {
             const signupUrl = `${siteUrl}/auth?invite=${invitation.token}&email=${encodeURIComponent(user_email)}`
-            await fetch('https://api.resend.com/emails', {
+            console.log('📧 Sending invitation email to new user:', user_email)
+            const emailRes = await fetch(`${RESEND_GATEWAY}/emails`, {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+                'X-Connection-Api-Key': RESEND_API_KEY,
               },
               body: JSON.stringify({
                 from: 'Lotexpo <admin@lotexpo.com>',
@@ -706,9 +716,13 @@ Deno.serve(async (req) => {
                 `,
               }),
             })
+            const emailResult = await emailRes.text()
+            console.log('📧 Invitation email result:', emailRes.status, emailResult)
           } catch (emailErr) {
-            console.error('Failed to send invitation email:', emailErr)
+            console.error('❌ Failed to send invitation email:', emailErr)
           }
+        } else {
+          console.warn('⚠️ Missing RESEND_API_KEY or LOVABLE_API_KEY, skipping invitation email')
         }
 
         return jsonOk({ status: 'invited', email: user_email })
