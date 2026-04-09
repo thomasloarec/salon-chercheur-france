@@ -67,7 +67,7 @@ const AdminClaimRequests = ({ onSelectExhibitor }: Props) => {
       const userIds = [...new Set(data.map(r => r.requester_user_id))];
       const [profilesRes, emailsRes, sectorsRes] = await Promise.all([
         supabase.from('profiles').select('user_id, first_name, last_name, avatar_url, job_title, company, primary_sector').in('user_id', userIds),
-        supabase.rpc('get_user_emails_for_moderation', { user_ids: userIds }).then(r => ({ data: r.data || [] })).catch(() => ({ data: [] })),
+        supabase.rpc('get_user_emails_for_moderation', { user_ids: userIds }).then(r => ({ data: r.data || [] as any[] }), () => ({ data: [] as any[] })),
         supabase.from('sectors').select('id, name'),
       ]);
 
