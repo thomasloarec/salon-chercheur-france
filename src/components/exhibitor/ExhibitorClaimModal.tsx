@@ -8,20 +8,20 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useProfileComplete } from '@/hooks/useProfileComplete';
 import { toast } from 'sonner';
-import { ShieldCheck, Loader2 } from 'lucide-react';
+import { ShieldCheck, Loader2, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ExhibitorClaimModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** UUID if modern exhibitor exists, or legacy text id */
   exhibitorId: string;
   exhibitorName: string;
-  /** Optional website for legacy→modern bridging */
   exhibitorWebsite?: string;
-  /** Optional legacy id_exposant for participation linking */
   idExposant?: string;
 }
 
@@ -35,12 +35,15 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
+  const { data: profileData, isLoading: profileLoading } = useProfileComplete();
+
+  const profileIncomplete = profileData && !profileData.isComplete;
 
   const handleSubmit = async () => {
+    if (profileIncomplete) return;
     setSubmitting(true);
 
     try {
-      // Use the server-side bridge function for both modern and legacy cases
       const { data, error } = await supabase.functions.invoke('exhibitor-claim-bridge', {
         body: {
           exhibitor_uuid: exhibitorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(exhibitorId)
@@ -65,7 +68,6 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
         toast.success('Votre demande a bien été envoyée. Elle sera vérifiée par l\'équipe Lotexpo.');
       }
 
-      // Invalidate governance queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ['exhibitor-governance'] });
       onOpenChange(false);
     } catch (err: any) {
@@ -90,22 +92,41 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 py-2">
-          <p className="text-sm text-muted-foreground">
-            En tant que gestionnaire officiel, vous pourrez :
-          </p>
-          <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
-            <li>Publier des nouveautés au nom de l'entreprise</li>
-            <li>Gérer les leads et demandes de contact</li>
-            <li>Afficher le badge « Profil vérifié »</li>
-          </ul>
-        </div>
+        {profileLoading ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : profileIncomplete ? (
+          <Alert variant="destructive" className="my-2">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="space-y-2">
+              <p>Votre profil doit être complété à 100% avant de pouvoir faire une demande de gestion.</p>
+              <p className="text-sm font-medium">Champs manquants : {profileData.missingFields.join(', ')}</p>
+              <Button variant="outline" size="sm" asChild className="mt-2">
+                <Link to="/profile" onClick={() => onOpenChange(false)}>
+                  Compléter mon profil
+                </Link>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              En tant que gestionnaire officiel, vous pourrez :
+            </p>
+            <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+              <li>Publier des nouveautés au nom de l'entreprise</li>
+              <li>Gérer les leads et demandes de contact</li>
+              <li>Afficher le badge « Profil vérifié »</li>
+            </ul>
+          </div>
+        )}
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
+          <Button onClick={handleSubmit} disabled={submitting || profileIncomplete || profileLoading}>
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

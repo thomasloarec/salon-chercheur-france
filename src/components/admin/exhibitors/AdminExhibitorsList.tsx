@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Building2, Shield, Clock, AlertCircle, ExternalLink, RefreshCw, FlaskConical } from 'lucide-react';
 import { useAdminExhibitors, type AdminExhibitorsFilters, type GovernanceStatus } from '@/hooks/useAdminExhibitors';
 import { useDebounce } from '@/hooks/useDebounce';
-import AdminExhibitorDetailPanel from './AdminExhibitorDetailPanel';
 
 const statusLabels: Record<GovernanceStatus, string> = {
   unmanaged: 'Non gérée',
@@ -30,13 +29,16 @@ const statusIcons: Record<GovernanceStatus, React.ReactNode> = {
   test: <FlaskConical className="h-3.5 w-3.5" />,
 };
 
-const AdminExhibitorsList = () => {
+interface Props {
+  onSelectExhibitor?: (id: string) => void;
+}
+
+const AdminExhibitorsList = ({ onSelectExhibitor }: Props) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<GovernanceStatus | 'all'>('all');
   const [verifiedFilter, setVerifiedFilter] = useState<'all' | 'verified' | 'unverified'>('all');
   const [testFilter, setTestFilter] = useState<'all' | 'test' | 'production'>('production');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filters: AdminExhibitorsFilters = {
     search: debouncedSearch,
@@ -46,15 +48,6 @@ const AdminExhibitorsList = () => {
   };
 
   const { data: exhibitors, isLoading, refetch } = useAdminExhibitors(filters);
-
-  if (selectedId) {
-    return (
-      <AdminExhibitorDetailPanel
-        exhibitorId={selectedId}
-        onBack={() => setSelectedId(null)}
-      />
-    );
-  }
 
   return (
     <Card>
@@ -133,7 +126,7 @@ const AdminExhibitorsList = () => {
             {exhibitors.map(ex => (
               <button
                 key={ex.id}
-                onClick={() => setSelectedId(ex.id)}
+                onClick={() => onSelectExhibitor?.(ex.id)}
                 className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors text-left"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">

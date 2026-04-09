@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ArrowLeft, Building2, Shield, ShieldCheck, Globe, User, Users, Clock,
   Plus, Trash2, Crown, ExternalLink, AlertCircle, CheckCircle, Pencil, Save, X, ClipboardList,
+  Briefcase, Mail,
 } from 'lucide-react';
 import { useAdminExhibitorDetail } from '@/hooks/useAdminExhibitors';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,6 +33,7 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-exhibitor-detail', exhibitorId] });
     queryClient.invalidateQueries({ queryKey: ['admin-exhibitors'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-claim-requests'] });
   };
 
   // Update description
@@ -52,11 +55,6 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
   // Add team member
   const addMemberMutation = useMutation({
     mutationFn: async (email: string) => {
-      // Resolve user by email
-      const { data: emails } = await supabase.rpc('get_user_emails_for_moderation', {
-        user_ids: [], // unused for this - need another approach
-      });
-      // Use service function instead
       const { error } = await supabase.functions.invoke('exhibitors-manage', {
         body: { action: 'admin_add_member', exhibitor_id: exhibitorId, user_email: email, role: 'admin' },
       });
@@ -128,6 +126,9 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
   if (!data) return null;
 
   const { exhibitor: ex, team_members, claims } = data;
+  // Only show pending claims in the "active" section
+  const pendingClaims = claims.filter(c => c.status === 'pending');
+  const processedClaims = claims.filter(c => c.status !== 'pending');
 
   return (
     <div className="space-y-6">
@@ -274,23 +275,33 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
                   {team_members.map(m => (
                     <div key={m.id} className="flex items-center justify-between py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                          {m.role === 'owner' ? (
-                            <Crown className="h-4 w-4 text-amber-600" />
-                          ) : (
-                            <User className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </div>
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={m.profile?.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {m.role === 'owner' ? (
+                              <Crown className="h-4 w-4 text-amber-600" />
+                            ) : (
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
-                          <div className="text-sm font-medium">
+                          <div className="text-sm font-medium flex items-center gap-1.5">
                             {m.profile?.first_name} {m.profile?.last_name}
                             {m.role === 'owner' && (
-                              <Badge variant="outline" className="ml-2 text-xs bg-amber-50 text-amber-700 border-amber-200">Owner</Badge>
+                              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">Owner</Badge>
                             )}
                             {m.role === 'admin' && (
-                              <Badge variant="outline" className="ml-2 text-xs">Admin</Badge>
+                              <Badge variant="outline" className="text-xs">Admin</Badge>
                             )}
                           </div>
+                          {m.profile?.job_title && (
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Briefcase className="h-3 w-3" />
+                              {m.profile.job_title}
+                              {m.profile.company && <span>— {m.profile.company}</span>}
+                            </div>
+                          )}
                           <div className="text-xs text-muted-foreground">
                             {m.profile?.email || m.user_id}
                             {m.status !== 'active' && ` — ${m.status}`}
@@ -400,31 +411,76 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
             </CardContent>
           </Card>
 
-          {/* Claim requests */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <ClipboardList className="h-4 w-4" />
-                Demandes ({claims.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {claims.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Aucune demande</p>
-              ) : (
+          {/* Pending claims */}
+          {pendingClaims.length > 0 && (
+            <Card className="border-amber-300">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2 text-amber-700">
+                  <Clock className="h-4 w-4" />
+                  Demandes en attente ({pendingClaims.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-3">
-                  {claims.map(c => (
+                  {pendingClaims.map(c => (
+                    <div key={c.id} className="text-sm border rounded-lg p-3 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage src={c.profile?.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {(c.profile?.first_name?.[0] || '') + (c.profile?.last_name?.[0] || '')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="font-medium">
+                          {c.profile?.first_name} {c.profile?.last_name}
+                        </div>
+                      </div>
+                      {c.profile?.job_title && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Briefcase className="h-3 w-3" />
+                          {c.profile.job_title}
+                          {c.profile.company && <span>— {c.profile.company}</span>}
+                        </div>
+                      )}
+                      <div className="text-xs text-muted-foreground">{c.profile?.email}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(c.created_at).toLocaleDateString('fr-FR')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Processed claims (history) */}
+          {processedClaims.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Historique des demandes ({processedClaims.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {processedClaims.map(c => (
                     <div key={c.id} className="text-sm border rounded-lg p-3">
-                      <div className="font-medium">
-                        {c.profile?.first_name} {c.profile?.last_name}
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={c.profile?.avatar_url || undefined} />
+                          <AvatarFallback className="text-[10px]">
+                            {(c.profile?.first_name?.[0] || '') + (c.profile?.last_name?.[0] || '')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">
+                          {c.profile?.first_name} {c.profile?.last_name}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground">{c.profile?.email}</div>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={
-                          c.status === 'pending' ? 'default' :
-                          c.status === 'approved' ? 'secondary' : 'destructive'
-                        } className="text-xs">
-                          {c.status === 'pending' ? 'En attente' : c.status === 'approved' ? 'Approuvée' : 'Rejetée'}
+                        <Badge variant={c.status === 'approved' ? 'secondary' : 'destructive'} className="text-xs">
+                          {c.status === 'approved' ? 'Approuvée' : 'Rejetée'}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {new Date(c.created_at).toLocaleDateString('fr-FR')}
@@ -433,9 +489,9 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Dates */}
           <Card>

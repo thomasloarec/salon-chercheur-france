@@ -7,10 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, ClipboardList } from 'lucide-react';
 import AdminExhibitorsList from '@/components/admin/exhibitors/AdminExhibitorsList';
 import AdminClaimRequests from '@/components/admin/exhibitors/AdminClaimRequests';
+import AdminExhibitorDetailPanel from '@/components/admin/exhibitors/AdminExhibitorDetailPanel';
 
 const AdminExhibitors = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const [selectedExhibitorId, setSelectedExhibitorId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('exhibitors');
 
   if (authLoading || adminLoading) {
     return (
@@ -22,6 +25,27 @@ const AdminExhibitors = () => {
 
   if (!user || !isAdmin) {
     return <Navigate to="/" replace />;
+  }
+
+  // If an exhibitor is selected (from either tab), show detail panel
+  if (selectedExhibitorId) {
+    return (
+      <MainLayout title="Exposants — Administration">
+        <div className="container mx-auto py-8 space-y-6">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <Link to="/admin" className="hover:underline">Administration</Link>
+              <span>/</span>
+              <span>Exposants & Entreprises</span>
+            </div>
+          </div>
+          <AdminExhibitorDetailPanel
+            exhibitorId={selectedExhibitorId}
+            onBack={() => setSelectedExhibitorId(null)}
+          />
+        </div>
+      </MainLayout>
+    );
   }
 
   return (
@@ -39,7 +63,7 @@ const AdminExhibitors = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="exhibitors" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="exhibitors" className="gap-2">
               <Building2 className="h-4 w-4" />
@@ -52,11 +76,11 @@ const AdminExhibitors = () => {
           </TabsList>
 
           <TabsContent value="exhibitors">
-            <AdminExhibitorsList />
+            <AdminExhibitorsList onSelectExhibitor={setSelectedExhibitorId} />
           </TabsContent>
 
           <TabsContent value="claims">
-            <AdminClaimRequests />
+            <AdminClaimRequests onSelectExhibitor={setSelectedExhibitorId} />
           </TabsContent>
         </Tabs>
       </div>

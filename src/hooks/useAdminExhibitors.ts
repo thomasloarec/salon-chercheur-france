@@ -34,7 +34,6 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
   return useQuery({
     queryKey: ['admin-exhibitors', filters],
     queryFn: async (): Promise<AdminExhibitor[]> => {
-      // Fetch exhibitors
       let query = supabase
         .from('exhibitors')
         .select('id, name, slug, website, description, logo_url, approved, owner_user_id, verified_at, is_test, created_at, updated_at, plan')
@@ -61,7 +60,6 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
 
       const ids = exhibitors.map(e => e.id);
 
-      // Batch: team counts + pending claims
       const [teamRes, claimRes] = await Promise.all([
         supabase
           .from('exhibitor_team_members')
@@ -100,7 +98,6 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
         };
       });
 
-      // Client-side status filter
       if (filters.status !== 'all') {
         return result.filter(e => e.governance_status === filters.status);
       }
@@ -123,6 +120,9 @@ export interface AdminExhibitorDetail {
       first_name: string | null;
       last_name: string | null;
       email?: string;
+      avatar_url?: string | null;
+      job_title?: string | null;
+      company?: string | null;
       phone?: string | null;
     };
   }[];
@@ -135,6 +135,9 @@ export interface AdminExhibitorDetail {
       first_name: string | null;
       last_name: string | null;
       email?: string;
+      avatar_url?: string | null;
+      job_title?: string | null;
+      company?: string | null;
     };
   }[];
 }
@@ -165,7 +168,6 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
 
       if (exRes.error) throw exRes.error;
 
-      // Fetch profiles for team + claims users
       const userIds = new Set<string>();
       (teamRes.data || []).forEach((t: any) => userIds.add(t.user_id));
       (claimsRes.data || []).forEach((c: any) => userIds.add(c.requester_user_id));
@@ -177,14 +179,13 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
         const ids = Array.from(userIds);
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('user_id, first_name, last_name, phone')
+          .select('user_id, first_name, last_name, avatar_url, job_title, company')
           .in('user_id', ids);
 
         (profiles || []).forEach((p: any) => {
           profilesMap[p.user_id] = p;
         });
 
-        // Try to get emails via admin RPC
         try {
           const { data: emails } = await supabase.rpc('get_user_emails_for_moderation', {
             user_ids: ids,
@@ -203,7 +204,10 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
           first_name: p?.first_name || null,
           last_name: p?.last_name || null,
           email: emailsMap[userId],
-          phone: p?.phone || null,
+          avatar_url: p?.avatar_url || null,
+          job_title: p?.job_title || null,
+          company: p?.company || null,
+          phone: null,
         };
       };
 
