@@ -1134,129 +1134,226 @@ Deno.serve(async (req) => {
     // ACTION: admin_add_member (admin only)
     // ────────────────────────────────────────────────────
     if (action === 'admin_add_member') {
+      const log = (step: string, data?: Record<string, unknown>) =>
+        console.log(`[exhibitors-manage][${requestId}] step=${step}`, data ?? '')
+
+      log('admin_add_member.start')
       if (!isAdmin) return jsonError('Admin access required', 403)
 
       const { exhibitor_id, user_email, role } = requestData
       if (!exhibitor_id || !user_email) return jsonError('exhibitor_id and user_email required', 400)
+      log('admin_add_member.inputs_valid', { exhibitor_id, user_email, role })
 
-      // Get exhibitor name
-      const { data: exhibitorData } = await serviceClient
-        .from('exhibitors')
-        .select('name')
-        .eq('id', exhibitor_id)
-        .single()
-      const exhibitorName = exhibitorData?.name || 'une entreprise'
+      // ── Step 1: Get exhibitor name ──
+      let exhibitorName = 'une entreprise'
+      try {
+        log('admin_add_member.fetch_exhibitor.begin')
+        const { data: exhibitorData, error: exErr } = await serviceClient
+          .from('exhibitors')
+          .select('name')
+          .eq('id', exhibitor_id)
+          .maybeSingle()
+        if (exErr) {
+          log('admin_add_member.fetch_exhibitor.error', { message: exErr.message, code: exErr.code })
+        } else {
+          exhibitorName = exhibitorData?.name || exhibitorName
+        }
+        log('admin_add_member.fetch_exhibitor.done', { exhibitorName })
+      } catch (err: any) {
+        console.error(`[exhibitors-manage][${requestId}] step=admin_add_member.fetch_exhibitor.exception`, {
+          name: err?.name, message: err?.message, stack: err?.stack,
+        })
+        // non-blocking — continue with default name
+      }
 
-      // Resolve user by email via RPC (scalable, no 1000-user limit)
-      const { data: targetUserId } = await serviceClient.rpc('get_user_id_by_email', { p_email: user_email })
-
-      console.log('👤 admin_add_member resolve user result:', {
-        exhibitor_id,
-        user_email,
-        foundUser: !!targetUserId,
-      })
+      // ── Step 2: Resolve user by email ──
+      let targetUserId: string | null = null
+      try {
+        log('admin_add_member.resolve_user.begin', { user_email })
+        const { data: rpcData, error: rpcError } = await serviceClient.rpc('get_user_id_by_email', { p_email: user_email })
+        if (rpcError) {
+          log('admin_add_member.resolve_user.rpc_error', { message: rpcError.message, code: rpcError.code })
+          return jsonError('User lookup failed', 500)
+        }
+        targetUserId = rpcData ?? null
+        log('admin_add_member.resolve_user.done', { foundUser: !!targetUserId, targetUserId })
+      } catch (err: any) {
+        console.error(`[exhibitors-manage][${requestId}] step=admin_add_member.resolve_user.exception`, {
+          name: err?.name, message: err?.message, stack: err?.stack,
+        })
+        return new Response(
+          JSON.stringify({ ok: false, stage: 'admin_add_member.resolve_user', requestId, error: err?.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
 
       if (!targetUserId) {
-        // User doesn't exist → create invitation
-        const { data: existingInvite } = await serviceClient
-          .from('exhibitor_invitations')
+        // ── User doesn't exist → create invitation ──
+        try {
+          log('admin_add_member.invite_flow.begin')
+          const { data: existingInvite, error: eiErr } = await serviceClient
+            .from('exhibitor_invitations')
+            .select('id')
+            .eq('email', user_email.toLowerCase())
+            .eq('exhibitor_id', exhibitor_id)
+            .eq('status', 'pending')
+            .maybeSingle()
+
+          if (eiErr) log('admin_add_member.invite_flow.existing_check_error', { message: eiErr.message })
+          if (existingInvite) return jsonError('Une invitation est déjà en attente pour cet email', 400)
+
+          const { data: invitation, error: invErr } = await serviceClient
+            .from('exhibitor_invitations')
+            .insert({
+              email: user_email.toLowerCase(),
+              exhibitor_id,
+              invited_by: user.id,
+              role: role || 'admin',
+            })
+            .select('id, token')
+            .single()
+
+          if (invErr || !invitation) {
+            log('admin_add_member.invite_flow.insert_error', { message: invErr?.message, code: invErr?.code })
+            return jsonError('Failed to create invitation', 500)
+          }
+
+          log('admin_add_member.invite_flow.inserted', { invitationId: invitation.id })
+
+          const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
+          const signupUrl = `${siteUrl}/auth?invite=${invitation.token}&email=${encodeURIComponent(user_email)}`
+
+          let emailResult = { success: false, error: 'not_attempted' } as any
+          try {
+            log('admin_add_member.invite_flow.send_email.begin', { to: user_email })
+            emailResult = await sendExhibitorEmail({
+              to: user_email,
+              subject: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">📩 Vous êtes invité(e) !</h1>
+                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                    Vous avez été invité à devenir gestionnaire de <strong>${exhibitorName}</strong> sur <strong>Lotexpo</strong>.
+                  </p>
+                  <p style="color: #333; font-size: 16px; line-height: 1.6;">Créez votre compte pour accepter l'invitation :</p>
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${signupUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Créer mon compte</a>
+                  </div>
+                  <p style="color: #888; font-size: 13px;">Cette invitation expire dans 30 jours. — L'équipe Lotexpo</p>
+                </div>
+              `,
+            })
+            log('admin_add_member.invite_flow.send_email.done', { success: emailResult.success, status: emailResult.status })
+          } catch (emailErr: any) {
+            console.error(`[exhibitors-manage][${requestId}] step=admin_add_member.invite_flow.send_email.exception`, {
+              name: emailErr?.name, message: emailErr?.message, stack: emailErr?.stack,
+            })
+            emailResult = { success: false, error: emailErr?.message }
+          }
+
+          log('admin_add_member.invite_flow.return_success')
+          return jsonOk({
+            status: 'invited',
+            email: user_email,
+            email_sent: emailResult.success,
+            ...(emailResult.error ? { email_warning: emailResult.error } : {}),
+          })
+        } catch (err: any) {
+          console.error(`[exhibitors-manage][${requestId}] step=admin_add_member.invite_flow.exception`, {
+            name: err?.name, message: err?.message, stack: err?.stack,
+          })
+          return new Response(
+            JSON.stringify({ ok: false, stage: 'admin_add_member.invite_flow', requestId, error: err?.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+      }
+
+      // ── User exists → add directly ──
+      try {
+        log('admin_add_member.direct_add.begin', { targetUserId })
+
+        // Check existing membership
+        log('admin_add_member.direct_add.check_existing.begin')
+        const { data: existing, error: existErr } = await serviceClient
+          .from('exhibitor_team_members')
           .select('id')
-          .eq('email', user_email.toLowerCase())
           .eq('exhibitor_id', exhibitor_id)
-          .eq('status', 'pending')
+          .eq('user_id', targetUserId)
+          .eq('status', 'active')
           .maybeSingle()
 
-        if (existingInvite) return jsonError('Une invitation est déjà en attente pour cet email', 400)
+        if (existErr) {
+          log('admin_add_member.direct_add.check_existing.error', { message: existErr.message, code: existErr.code })
+        }
+        log('admin_add_member.direct_add.check_existing.done', { alreadyMember: !!existing })
 
-        const { data: invitation, error: invErr } = await serviceClient
-          .from('exhibitor_invitations')
+        if (existing) return jsonError('Cet utilisateur est déjà membre', 400)
+
+        // Upsert team member
+        log('admin_add_member.direct_add.upsert.begin', { exhibitor_id, targetUserId, role: role || 'admin' })
+        const { error: insertErr } = await serviceClient
+          .from('exhibitor_team_members')
           .insert({
-            email: user_email.toLowerCase(),
             exhibitor_id,
-            invited_by: user.id,
+            user_id: targetUserId,
             role: role || 'admin',
+            status: 'active',
+            invited_by: user.id,
           })
-          .select('id, token')
-          .single()
 
-        if (invErr || !invitation) return jsonError('Failed to create invitation', 500)
+        if (insertErr) {
+          log('admin_add_member.direct_add.upsert.error', { message: insertErr.message, code: insertErr.code, details: insertErr.details })
+          return jsonError('Failed to add member', 500)
+        }
+        log('admin_add_member.direct_add.upsert.done')
 
+        // Send email (non-blocking for business logic)
         const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
-        const signupUrl = `${siteUrl}/auth?invite=${invitation.token}&email=${encodeURIComponent(user_email)}`
-
-        const emailResult = await sendExhibitorEmail({
-          to: user_email,
-          subject: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">📩 Vous êtes invité(e) !</h1>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                Vous avez été invité à devenir gestionnaire de <strong>${exhibitorName}</strong> sur <strong>Lotexpo</strong>.
-              </p>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">Créez votre compte pour accepter l'invitation :</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${signupUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Créer mon compte</a>
+        let emailResult = { success: false, error: 'not_attempted' } as any
+        try {
+          log('admin_add_member.direct_add.send_email.begin', { to: user_email, exhibitorName })
+          emailResult = await sendExhibitorEmail({
+            to: user_email,
+            subject: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">🎉 Bienvenue dans l'équipe !</h1>
+                <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                  Vous avez été ajouté comme gestionnaire de <strong>${exhibitorName}</strong> sur Lotexpo.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${siteUrl}/profil" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
+                </div>
+                <p style="color: #888; font-size: 13px;">— L'équipe Lotexpo</p>
               </div>
-              <p style="color: #888; font-size: 13px;">Cette invitation expire dans 30 jours. — L'équipe Lotexpo</p>
-            </div>
-          `,
-        })
+            `,
+          })
+          log('admin_add_member.direct_add.send_email.done', { success: emailResult.success, status: emailResult.status, error: emailResult.error })
+        } catch (emailErr: any) {
+          console.error(`[exhibitors-manage][${requestId}] step=admin_add_member.direct_add.send_email.exception`, {
+            name: emailErr?.name, message: emailErr?.message, stack: emailErr?.stack,
+          })
+          emailResult = { success: false, error: emailErr?.message }
+        }
 
+        log('admin_add_member.direct_add.return_success')
         return jsonOk({
-          status: 'invited',
-          email: user_email,
+          status: 'added',
+          user_id: targetUserId,
           email_sent: emailResult.success,
           ...(emailResult.error ? { email_warning: emailResult.error } : {}),
         })
-      }
-
-      // User exists → add directly
-      const { data: existing } = await serviceClient
-        .from('exhibitor_team_members')
-        .select('id')
-        .eq('exhibitor_id', exhibitor_id)
-        .eq('user_id', targetUserId)
-        .eq('status', 'active')
-        .maybeSingle()
-
-      if (existing) return jsonError('Cet utilisateur est déjà membre', 400)
-
-      const { error } = await serviceClient
-        .from('exhibitor_team_members')
-        .insert({
-          exhibitor_id,
-          user_id: targetUserId,
-          role: role || 'admin',
-          status: 'active',
-          invited_by: user.id,
+      } catch (err: any) {
+        console.error(`[exhibitors-manage][${requestId}] step=admin_add_member.direct_add.exception`, {
+          name: err?.name, message: err?.message, stack: err?.stack,
+          exhibitor_id, user_email, targetUserId,
         })
-
-      if (error) return jsonError('Failed to add member', 500)
-
-      const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
-      const emailResult = await sendExhibitorEmail({
-        to: user_email,
-        subject: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">🎉 Bienvenue dans l'équipe !</h1>
-            <p style="color: #333; font-size: 16px; line-height: 1.6;">
-              Vous avez été ajouté comme gestionnaire de <strong>${exhibitorName}</strong> sur Lotexpo.
-            </p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${siteUrl}/profil" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
-            </div>
-            <p style="color: #888; font-size: 13px;">— L'équipe Lotexpo</p>
-          </div>
-        `,
-      })
-
-      return jsonOk({
-        status: 'added',
-        user_id: targetUserId,
-        email_sent: emailResult.success,
-        ...(emailResult.error ? { email_warning: emailResult.error } : {}),
-      })
+        return new Response(
+          JSON.stringify({ ok: false, stage: 'admin_add_member.direct_add', requestId, error: err?.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
 
     // ────────────────────────────────────────────────────
@@ -1348,10 +1445,15 @@ Deno.serve(async (req) => {
     return jsonError('Unknown action: ' + action, 400)
 
   } catch (error) {
-    console.error('❌ Exhibitor management UNHANDLED error:', error)
-    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'no stack')
+    const errObj = error instanceof Error ? error : new Error(String(error))
+    console.error(`[exhibitors-manage][${requestId}] UNHANDLED`, {
+      name: errObj.name,
+      message: errObj.message,
+      stack: errObj.stack,
+      cause: (errObj as any).cause,
+    })
     return new Response(
-      JSON.stringify({ error: 'Internal server error', message: String(error) }),
+      JSON.stringify({ ok: false, stage: 'unhandled_handler_error', requestId, error: errObj.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
