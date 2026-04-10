@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  const requestId = crypto.randomUUID().slice(0, 8)
   try {
     const authHeader = req.headers.get('Authorization')
     let requestData: Record<string, any> = {}
