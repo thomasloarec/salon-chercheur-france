@@ -223,6 +223,9 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="system" className="space-y-6">
+            {/* Enrichissement IA exposants */}
+            <ExhibitorAiEnrichment />
+
             {/* Gestion du mode test */}
             <TestModeManager />
             
