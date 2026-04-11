@@ -666,7 +666,7 @@ Deno.serve(async (req) => {
         return jsonError('User lookup failed', 500)
       }
 
-      const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
+      const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.com'
 
       if (matchedUser) {
         try {
@@ -1121,7 +1121,7 @@ Deno.serve(async (req) => {
             <tr><td style="padding:4px 12px 4px 0;color:#666">Email</td><td style="padding:4px 0">${user.email}</td></tr>
             <tr><td style="padding:4px 12px 4px 0;color:#666">Date</td><td style="padding:4px 0">${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td></tr>
           </table>
-          <p><a href="https://lotexpo.lovable.app/admin/exhibitors" style="display:inline-block;padding:10px 20px;background:#2563eb;color:white;border-radius:6px;text-decoration:none">Traiter la demande</a></p>
+          <p><a href="https://lotexpo.com/admin/exhibitors" style="display:inline-block;padding:10px 20px;background:#2563eb;color:white;border-radius:6px;text-decoration:none">Traiter la demande</a></p>
         `
         // Use Supabase Edge Function for email if available, otherwise log
         console.log('📧 Admin notification email queued for admin@lotexpo.com:', {
@@ -1142,7 +1142,7 @@ Deno.serve(async (req) => {
             name: 'Système Lotexpo',
             email: 'noreply@lotexpo.com',
             subject: `[Lotexpo] Demande de gestion : ${exhibitor.name}`,
-            message: `Nouvelle demande de gestion par ${requesterName} (${user.email}) pour l'entreprise "${exhibitor.name}". Traiter sur https://lotexpo.lovable.app/admin/exhibitors`,
+            message: `Nouvelle demande de gestion par ${requesterName} (${user.email}) pour l'entreprise "${exhibitor.name}". Traiter sur https://lotexpo.com/admin/exhibitors`,
             to: 'admin@lotexpo.com',
           }),
         })
@@ -1272,7 +1272,7 @@ Deno.serve(async (req) => {
 
           log('admin_add_member.invite_flow.inserted', { invitationId: invitation.id })
 
-          const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
+          const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.com'
           const signupUrl = `${siteUrl}/auth?invite=${invitation.token}&email=${encodeURIComponent(user_email)}`
 
           let emailResult = { success: false, error: 'not_attempted' } as any
@@ -1361,7 +1361,7 @@ Deno.serve(async (req) => {
         log('admin_add_member.direct_add.upsert.done')
 
         // Send email (non-blocking for business logic)
-        const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.lovable.app'
+        const siteUrl = Deno.env.get('SITE_URL') || 'https://lotexpo.com'
         let emailResult = { success: false, error: 'not_attempted' } as any
         try {
           log('admin_add_member.direct_add.send_email.begin', { to: user_email, exhibitorName })
