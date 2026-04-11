@@ -12,6 +12,7 @@ import { SeoEnrichmentPanel } from '@/components/admin/SeoEnrichmentPanel';
 import { EnrichedDescriptionValidation } from '@/components/admin/EnrichedDescriptionValidation';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
 import TestModeManager from '@/components/admin/TestModeManager';
+import ExhibitorAiEnrichment from '@/components/admin/ExhibitorAiEnrichment';
 import MainLayout from '@/components/layout/MainLayout';
 import AirtableStatusWidget from '@/components/admin/AirtableStatusWidget';
 import AirtableDiagnostic from '@/components/admin/AirtableDiagnostic';
