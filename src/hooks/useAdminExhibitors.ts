@@ -158,7 +158,7 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
     queryFn: async (): Promise<AdminExhibitorDetail | null> => {
       if (!exhibitorId) return null;
 
-      const [exRes, teamRes, claimsRes] = await Promise.all([
+      const [exRes, teamRes, claimsRes, invitesRes] = await Promise.all([
         supabase
           .from('exhibitors')
           .select('id, name, slug, website, description, logo_url, approved, owner_user_id, verified_at, is_test, created_at, updated_at, plan')
@@ -174,6 +174,12 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
           .select('id, requester_user_id, status, created_at')
           .eq('exhibitor_id', exhibitorId)
           .order('created_at', { ascending: false }),
+        supabase
+          .from('exhibitor_invitations')
+          .select('id, email, role, status, created_at, expires_at, invited_by')
+          .eq('exhibitor_id', exhibitorId)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false }),
       ]);
 
       if (exRes.error) throw exRes.error;
@@ -181,6 +187,7 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
       const userIds = new Set<string>();
       (teamRes.data || []).forEach((t: any) => userIds.add(t.user_id));
       (claimsRes.data || []).forEach((c: any) => userIds.add(c.requester_user_id));
+      (invitesRes.data || []).forEach((i: any) => { if (i.invited_by) userIds.add(i.invited_by); });
 
       let profilesMap: Record<string, any> = {};
       let emailsMap: Record<string, string> = {};
@@ -221,6 +228,12 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
         };
       };
 
+      const getInviterName = (userId: string) => {
+        const p = profilesMap[userId];
+        if (p?.first_name || p?.last_name) return `${p.first_name || ''} ${p.last_name || ''}`.trim();
+        return emailsMap[userId] || userId;
+      };
+
       const exhibitor: AdminExhibitor = {
         ...exRes.data,
         team_count: (teamRes.data || []).filter((t: any) => t.status === 'active').length,
@@ -242,6 +255,10 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
             ...t,
             profile: enrichProfile(t.user_id),
           })),
+        pending_invitations: (invitesRes.data || []).map((i: any) => ({
+          ...i,
+          inviter_name: i.invited_by ? getInviterName(i.invited_by) : undefined,
+        })),
         claims: (claimsRes.data || []).map((c: any) => ({
           ...c,
           profile: enrichProfile(c.requester_user_id),
