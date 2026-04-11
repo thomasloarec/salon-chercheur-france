@@ -132,7 +132,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           {typeof onBackToAll === 'function' && (
             <div className="mb-2">
@@ -241,7 +241,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
                     key={participation.id}
                     to={`/events/${participation.event.slug}`}
                     onClick={() => onOpenChange(false)}
-                    className="flex items-center gap-3 rounded-lg border p-2 hover:border-primary/40 hover:shadow-sm transition-all group"
+                    className="flex items-start gap-3 rounded-lg border p-2 hover:border-primary/40 hover:shadow-sm transition-all group overflow-hidden"
                   >
                     {/* Event image */}
                     <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-muted">
@@ -260,8 +260,9 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
 
                     {/* Event info */}
                     <div className="flex-1 min-w-0 space-y-1">
-                      <p className="font-medium text-sm leading-tight truncate group-hover:text-primary transition-colors">
+                      <p className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
                         {participation.event.nom_event}
+                      </p>
                       </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
