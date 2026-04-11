@@ -902,7 +902,58 @@ Deno.serve(async (req) => {
     }
 
     // ────────────────────────────────────────────────────
-    if (action === 'owner_remove_member') {
+    // ACTION: check_pending_invites (called on login, matches by email)
+    // ────────────────────────────────────────────────────
+    if (action === 'check_pending_invites') {
+      const userEmail = user.email?.toLowerCase()
+      if (!userEmail) return jsonOk({ accepted: 0 })
+
+      const { data: pendingInvites, error: pendingErr } = await serviceClient
+        .from('exhibitor_invitations')
+        .select('id, exhibitor_id, role, invited_by, expires_at')
+        .eq('email', userEmail)
+        .eq('status', 'pending')
+
+      if (pendingErr || !pendingInvites?.length) {
+        return jsonOk({ accepted: 0 })
+      }
+
+      let accepted = 0
+      for (const inv of pendingInvites) {
+        if (new Date(inv.expires_at) < new Date()) {
+          await serviceClient.from('exhibitor_invitations').update({ status: 'expired' }).eq('id', inv.id)
+          continue
+        }
+
+        const { data: existing } = await serviceClient
+          .from('exhibitor_team_members')
+          .select('id')
+          .eq('exhibitor_id', inv.exhibitor_id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle()
+
+        if (!existing) {
+          await serviceClient.from('exhibitor_team_members').insert({
+            exhibitor_id: inv.exhibitor_id,
+            user_id: user.id,
+            role: inv.role || 'admin',
+            status: 'active',
+            invited_by: inv.invited_by,
+          })
+        }
+
+        await serviceClient.from('exhibitor_invitations')
+          .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+          .eq('id', inv.id)
+        accepted++
+      }
+
+      console.log(`✅ check_pending_invites: accepted ${accepted} invitations for ${userEmail}`)
+      return jsonOk({ accepted })
+    }
+
+
       const { exhibitor_id, membership_id } = requestData
       if (!exhibitor_id || !membership_id) return jsonError('exhibitor_id and membership_id required', 400)
 
