@@ -953,7 +953,8 @@ Deno.serve(async (req) => {
       return jsonOk({ accepted })
     }
 
-
+    // ────────────────────────────────────────────────────
+    if (action === 'owner_remove_member') {
       const { exhibitor_id, membership_id } = requestData
       if (!exhibitor_id || !membership_id) return jsonError('exhibitor_id and membership_id required', 400)
 
