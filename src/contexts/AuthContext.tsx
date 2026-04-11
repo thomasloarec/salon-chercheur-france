@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN' && session?.user && !pendingPlanProcessed.current) {
           pendingPlanProcessed.current = true;
 
-          // ── Process pending exhibitor invitation ──
+          // ── Process pending exhibitor invitation (token from URL) ──
           const inviteToken = localStorage.getItem('pending_exhibitor_invite');
           if (inviteToken) {
             try {
@@ -46,6 +46,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (err) {
               console.error('Failed to accept exhibitor invitation:', err);
             }
+          }
+
+          // ── Auto-accept any pending invitations by email ──
+          try {
+            const { data: checkResult } = await supabase.functions.invoke('exhibitors-manage', {
+              body: { action: 'check_pending_invites' },
+            });
+            if (checkResult?.accepted > 0) {
+              console.log(`Auto-accepted ${checkResult.accepted} exhibitor invitation(s)`);
+              await queryClient.invalidateQueries({ queryKey: ['my-exhibitors'] });
+            }
+          } catch (err) {
+            console.error('Failed to check pending invitations:', err);
           }
 
           // ── Process pending visit plan ──
