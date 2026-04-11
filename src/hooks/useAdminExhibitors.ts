@@ -126,6 +126,16 @@ export interface AdminExhibitorDetail {
       phone?: string | null;
     };
   }[];
+  pending_invitations: {
+    id: string;
+    email: string;
+    role: string;
+    status: string;
+    created_at: string;
+    expires_at: string;
+    invited_by: string;
+    inviter_name?: string;
+  }[];
   claims: {
     id: string;
     requester_user_id: string;
