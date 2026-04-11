@@ -389,6 +389,45 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Pending invitations */}
+          {pending_invitations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Invitations en attente ({pending_invitations.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="divide-y">
+                  {pending_invitations.map(inv => (
+                    <div key={inv.id} className="flex items-center justify-between py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="text-xs">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="text-sm font-medium flex items-center gap-1.5">
+                            {inv.email}
+                            <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">En attente</Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Rôle : {inv.role} — Invité par {inv.inviter_name || 'Admin'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Envoyée le {new Date(inv.created_at).toLocaleDateString('fr-FR')} — Expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right sidebar */}
