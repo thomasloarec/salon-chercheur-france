@@ -139,7 +139,7 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
 
   if (!data) return null;
 
-  const { exhibitor: ex, team_members, claims } = data;
+  const { exhibitor: ex, team_members, pending_invitations = [], claims } = data;
   // Only show pending claims in the "active" section
   const pendingClaims = claims.filter(c => c.status === 'pending');
   const processedClaims = claims.filter(c => c.status !== 'pending');
