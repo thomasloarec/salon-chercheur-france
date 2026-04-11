@@ -252,6 +252,22 @@ serve(async (req) => {
 
       console.log('Import completed:', summary);
 
+      // Fire-and-forget : enrichissement IA des nouveaux exposants
+      // Non-bloquant : une erreur ici n'affecte pas la réponse d'import
+      try {
+        const enrichUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/enrich-exposants-ai`
+        fetch(enrichUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ triggered_by: 'import-airtable' })
+        }).catch(() => {}) // Silence total — l'import ne doit jamais échouer à cause de ça
+      } catch (_) {
+        // Silence total
+      }
+
       return new Response(JSON.stringify(summary), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
