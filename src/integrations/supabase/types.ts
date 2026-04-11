@@ -1877,6 +1877,7 @@ export type Database = {
       outreach_campaigns: {
         Row: {
           campaign_status: string | null
+          claude_classification: string | null
           company_name: string | null
           contact_email: string | null
           created_at: string | null
@@ -1902,6 +1903,7 @@ export type Database = {
         }
         Insert: {
           campaign_status?: string | null
+          claude_classification?: string | null
           company_name?: string | null
           contact_email?: string | null
           created_at?: string | null
@@ -1927,6 +1929,7 @@ export type Database = {
         }
         Update: {
           campaign_status?: string | null
+          claude_classification?: string | null
           company_name?: string | null
           contact_email?: string | null
           created_at?: string | null
@@ -2006,6 +2009,98 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["id_participation"]
+          },
+        ]
+      }
+      outreach_contacts: {
+        Row: {
+          contact_email: string
+          contact_status: string
+          created_at: string
+          department_guess: string | null
+          email_sent_count: number
+          first_name: string | null
+          full_name: string | null
+          hunter_confidence: number | null
+          hunter_score: number
+          id: string
+          is_primary: boolean
+          job_title: string | null
+          last_name: string | null
+          last_reply_at: string | null
+          last_sent_at: string | null
+          outreach_campaign_id: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          contact_email: string
+          contact_status?: string
+          created_at?: string
+          department_guess?: string | null
+          email_sent_count?: number
+          first_name?: string | null
+          full_name?: string | null
+          hunter_confidence?: number | null
+          hunter_score?: number
+          id?: string
+          is_primary?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          last_reply_at?: string | null
+          last_sent_at?: string | null
+          outreach_campaign_id: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string
+          contact_status?: string
+          created_at?: string
+          department_guess?: string | null
+          email_sent_count?: number
+          first_name?: string | null
+          full_name?: string | null
+          hunter_confidence?: number | null
+          hunter_score?: number
+          id?: string
+          is_primary?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          last_reply_at?: string | null
+          last_sent_at?: string | null
+          outreach_campaign_id?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_contacts_outreach_campaign_id_fkey"
+            columns: ["outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_contacts_outreach_campaign_id_fkey"
+            columns: ["outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_a_enrichir"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_contacts_outreach_campaign_id_fkey"
+            columns: ["outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_a_enrichir_test"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_contacts_outreach_campaign_id_fkey"
+            columns: ["outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_exposants_eligibles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3137,6 +3232,18 @@ export type Database = {
             referencedColumns: ["id_participation"]
           },
         ]
+      }
+      v_a_enrichir_test: {
+        Row: {
+          company_name: string | null
+          date_debut: string | null
+          days_before_event: number | null
+          hunter_status: string | null
+          id: string | null
+          nom_event: string | null
+          website: string | null
+        }
+        Relationships: []
       }
       v_exposants_eligibles: {
         Row: {
