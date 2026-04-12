@@ -740,7 +740,7 @@ Deno.serve(async (req) => {
                 Retrouvez vos entreprises depuis votre espace profil.
               </p>
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${siteUrl}/profil" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
+                <a href="${siteUrl}/profile" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
               </div>
             </div>
           `,
@@ -1375,7 +1375,7 @@ Deno.serve(async (req) => {
                   Vous avez été ajouté comme gestionnaire de <strong>${exhibitorName}</strong> sur Lotexpo.
                 </p>
                 <div style="text-align: center; margin: 30px 0;">
-                  <a href="${siteUrl}/profil" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
+                  <a href="${siteUrl}/profile" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
                 </div>
                 <p style="color: #888; font-size: 13px;">— L'équipe Lotexpo</p>
               </div>
