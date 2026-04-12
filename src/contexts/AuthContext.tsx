@@ -14,6 +14,24 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const SUPABASE_AUTH_STORAGE_PREFIX = 'sb-vxivdvzzhebobveedxbj-auth-token';
+
+const clearStaleAuthStorage = () => {
+  try {
+    const keysToRemove: string[] = [];
+
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(SUPABASE_AUTH_STORAGE_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  } catch (error) {
+    console.error('Failed to clear stale auth storage:', error);
+  }
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -23,112 +41,150 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pendingPlanProcessed = useRef(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    const processPostSignInTasks = async (currentSession: Session) => {
+      if (pendingPlanProcessed.current) return;
+      pendingPlanProcessed.current = true;
+
+      const inviteToken = localStorage.getItem('pending_exhibitor_invite');
+      if (inviteToken) {
+        try {
+          await supabase.functions.invoke('exhibitors-manage', {
+            body: { action: 'accept_invite', token: inviteToken },
+          });
+          localStorage.removeItem('pending_exhibitor_invite');
+          await queryClient.invalidateQueries({ queryKey: ['my-exhibitors'] });
+        } catch (err) {
+          console.error('Failed to accept exhibitor invitation:', err);
+        }
+      }
+
+      try {
+        const { data: checkResult } = await supabase.functions.invoke('exhibitors-manage', {
+          body: { action: 'check_pending_invites' },
+        });
+        if (checkResult?.accepted > 0) {
+          console.log(`Auto-accepted ${checkResult.accepted} exhibitor invitation(s)`);
+          await queryClient.invalidateQueries({ queryKey: ['my-exhibitors'] });
+        }
+      } catch (err) {
+        console.error('Failed to check pending invitations:', err);
+      }
+
+      const pendingRaw = localStorage.getItem('pending_visit_plan');
+      if (pendingRaw) {
+        try {
+          const pending = JSON.parse(pendingRaw);
+          const userId = currentSession.user.id;
+
+          const { data: existingFav } = await supabase
+            .from('favorites')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('event_uuid', pending.event_id)
+            .maybeSingle();
+
+          if (!existingFav) {
+            await supabase.from('favorites').insert({
+              user_id: userId,
+              event_uuid: pending.event_id,
+              event_id: pending.event_id,
+            } as any);
+          }
+
+          await supabase.from('visit_plans' as any).upsert({
+            user_id: userId,
+            event_id: pending.event_id,
+            role: pending.role,
+            objectif: pending.objectif,
+            keywords: pending.keywords,
+            duration: pending.duration,
+            prioritaires: pending.prioritaires,
+            optionnels: pending.optionnels,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id,event_id' });
+
+          localStorage.removeItem('pending_visit_plan');
+
+          await queryClient.invalidateQueries({ queryKey: ['favorites', userId] });
+          await queryClient.invalidateQueries({ queryKey: ['favorite-events', userId] });
+          await queryClient.invalidateQueries({ queryKey: ['visit-plans', userId] });
+          await queryClient.invalidateQueries({ queryKey: ['visit-plan', pending.event_id, userId] });
+
+          window.dispatchEvent(new CustomEvent('pending-visit-saved', { detail: { slug: pending.event_slug } }));
+        } catch (err) {
+          console.error('Failed to save pending visit plan:', err);
+          localStorage.removeItem('pending_visit_plan');
+        }
+      }
+    };
+
+    const resetAuthState = () => {
+      pendingPlanProcessed.current = false;
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+    };
+
+    const handleInvalidSession = async (error: unknown) => {
+      console.error('Invalid Supabase session detected:', error);
+      clearStaleAuthStorage();
+      await supabase.auth.signOut({ scope: 'local' });
+      resetAuthState();
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      async (event, nextSession) => {
+        if (event === 'SIGNED_OUT') {
+          resetAuthState();
+          return;
+        }
+
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
         setLoading(false);
 
-        // Process pending visit plan on any sign-in (email or OAuth)
-        if (event === 'SIGNED_IN' && session?.user && !pendingPlanProcessed.current) {
-          pendingPlanProcessed.current = true;
+        if (!nextSession?.user) {
+          pendingPlanProcessed.current = false;
+          return;
+        }
 
-          // ── Process pending exhibitor invitation (token from URL) ──
-          const inviteToken = localStorage.getItem('pending_exhibitor_invite');
-          if (inviteToken) {
-            try {
-              await supabase.functions.invoke('exhibitors-manage', {
-                body: { action: 'accept_invite', token: inviteToken },
-              });
-              localStorage.removeItem('pending_exhibitor_invite');
-              await queryClient.invalidateQueries({ queryKey: ['my-exhibitors'] });
-            } catch (err) {
-              console.error('Failed to accept exhibitor invitation:', err);
-            }
-          }
-
-          // ── Auto-accept any pending invitations by email ──
-          try {
-            const { data: checkResult } = await supabase.functions.invoke('exhibitors-manage', {
-              body: { action: 'check_pending_invites' },
-            });
-            if (checkResult?.accepted > 0) {
-              console.log(`Auto-accepted ${checkResult.accepted} exhibitor invitation(s)`);
-              await queryClient.invalidateQueries({ queryKey: ['my-exhibitors'] });
-            }
-          } catch (err) {
-            console.error('Failed to check pending invitations:', err);
-          }
-
-          // ── Process pending visit plan ──
-          const pendingRaw = localStorage.getItem('pending_visit_plan');
-          if (pendingRaw) {
-            try {
-              const pending = JSON.parse(pendingRaw);
-              const userId = session.user.id;
-
-              // Add to favorites
-              const { data: existingFav } = await supabase
-                .from('favorites')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('event_uuid', pending.event_id)
-                .maybeSingle();
-
-              if (!existingFav) {
-                await supabase.from('favorites').insert({
-                  user_id: userId,
-                  event_uuid: pending.event_id,
-                  event_id: pending.event_id,
-                } as any);
-              }
-
-              // Save visit plan
-              await supabase.from('visit_plans' as any).upsert({
-                user_id: userId,
-                event_id: pending.event_id,
-                role: pending.role,
-                objectif: pending.objectif,
-                keywords: pending.keywords,
-                duration: pending.duration,
-                prioritaires: pending.prioritaires,
-                optionnels: pending.optionnels,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'user_id,event_id' });
-
-              localStorage.removeItem('pending_visit_plan');
-
-              // Invalidate caches
-              await queryClient.invalidateQueries({ queryKey: ['favorites', userId] });
-              await queryClient.invalidateQueries({ queryKey: ['favorite-events', userId] });
-              await queryClient.invalidateQueries({ queryKey: ['visit-plans', userId] });
-              await queryClient.invalidateQueries({ queryKey: ['visit-plan', pending.event_id, userId] });
-
-              // Navigate to event page via custom event (picked up by App)
-              window.dispatchEvent(new CustomEvent('pending-visit-saved', { detail: { slug: pending.event_slug } }));
-            } catch (err) {
-              console.error('Failed to save pending visit plan:', err);
-              localStorage.removeItem('pending_visit_plan');
-            }
-          }
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+          await processPostSignInTasks(nextSession);
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const bootstrapAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          const message = error.message.toLowerCase();
+          if (message.includes('refresh token') || message.includes('invalid')) {
+            await handleInvalidSession(error);
+            return;
+          }
+          throw error;
+        }
+
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+      } catch (error) {
+        await handleInvalidSession(error);
+        return;
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    bootstrapAuth();
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -154,10 +210,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: null };
     } catch (error) {
       console.error('Logout error:', error);
-      // Fallback: manual cleanup if server logout fails
-      localStorage.removeItem('supabase.auth.token');
+      clearStaleAuthStorage();
       sessionStorage.clear();
-      // Force page reload to clear all state
       window.location.href = '/';
       return { error: null };
     }
