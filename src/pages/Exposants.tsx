@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { Check, Crown, Zap, TrendingUp, Users, Calendar, X, BarChart3, Search, Megaphone, LineChart, Quote } from 'lucide-react';
+import { Check, Crown, Zap, TrendingUp, Users, Calendar, X, BarChart3, Search, Megaphone, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +42,7 @@ export default function Exposants() {
         <div className="container max-w-6xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center space-y-6 max-w-3xl mx-auto">
 
-            {/* Headline - Bénéfice principal */}
+            {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
               Ne laissez plus votre{' '}
               <span className="text-primary">emplacement</span>
@@ -50,23 +50,34 @@ export default function Exposants() {
               décider de votre succès
             </h1>
 
-            {/* Sous-titre - Promesse */}
+            {/* Sous-titre - Gratuité */}
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Arrivez au salon avec <strong className="text-foreground">votre planning déjà rempli</strong>.
-              <br />
-              Transformez vos innovations en rendez-vous qualifiés 
-              <strong className="text-foreground"> avant l'ouverture des portes</strong>.
+              Publiez <strong className="text-foreground">gratuitement votre première nouveauté</strong> et commencez
+              <br className="hidden md:block" />
+              à attirer des visiteurs qualifiés{' '}
+              <strong className="text-foreground">avant l'ouverture du salon</strong>.
             </p>
 
-            {/* CTA principal */}
+            {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button 
                 size="lg" 
                 className="text-lg px-8 gap-2 shadow-lg"
-                onClick={() => setIsDialogOpen(true)}
+                onClick={() => navigate('/publier-nouveaute')}
               >
-                <Zap className="h-5 w-5" />
-                Passer au Premium - 99€
+                <Megaphone className="h-5 w-5" />
+                Publier ma nouveauté
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 gap-2"
+                onClick={() => {
+                  document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <Crown className="h-5 w-5" />
+                Découvrir le Premium
               </Button>
             </div>
 
@@ -74,17 +85,17 @@ export default function Exposants() {
             <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
                 <Check className="h-4 w-4 text-green-600" />
-                Sans engagement
+                1 nouveauté gratuite
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Check className="h-4 w-4 text-green-600" />
-                Activation immédiate
+                Sans carte bancaire
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Check className="h-4 w-4 text-green-600" />
-                Paiement sécurisé
+                Publication en quelques minutes
               </span>
             </p>
           </div>
@@ -145,7 +156,7 @@ export default function Exposants() {
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
                 <Check className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-semibold text-green-900 dark:text-green-100">La solution Premium</span>
+                <span className="text-sm font-semibold text-green-900 dark:text-green-100">La solution Lotexpo</span>
               </div>
               
               <h2 className="text-3xl font-bold leading-tight">
@@ -300,7 +311,7 @@ export default function Exposants() {
       </section>
 
       {/* Pricing Comparison */}
-      <section className="py-20">
+      <section id="pricing" className="py-20">
         <div className="container max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">
@@ -312,14 +323,19 @@ export default function Exposants() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Plan Gratuit */}
-            <Card className="relative">
+            {/* Plan Gratuit - Point d'entrée */}
+            <Card className="relative border-primary shadow-2xl scale-105">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <Badge className="bg-primary text-primary-foreground px-4 py-1">
+                  🚀 Commencez ici
+                </Badge>
+              </div>
               <CardContent className="p-8">
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-xl font-bold mb-2">Plan Gratuit</h3>
                     <p className="text-sm text-muted-foreground">
-                      Pour tester la plateforme
+                      Idéal pour publier une première nouveauté et tester Lotexpo
                     </p>
                   </div>
 
@@ -337,35 +353,34 @@ export default function Exposants() {
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                       <span className="text-sm">3 premiers leads gratuits</span>
                     </div>
+                    <div className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">Sans carte bancaire</span>
+                    </div>
                     <div className="flex items-start gap-2 opacity-50">
                       <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Leads illimités</span>
                     </div>
                     <div className="flex items-start gap-2 opacity-50">
                       <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Export CSV</span>
-                    </div>
-                    <div className="flex items-start gap-2 opacity-50">
-                      <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Statistiques avancées</span>
+                      <span className="text-sm">Export CSV / Statistiques avancées</span>
                     </div>
                   </div>
 
-                  <Button variant="outline" className="w-full">
-                    Plan actuel
+                  <Button 
+                    className="w-full"
+                    onClick={() => navigate('/publier-nouveaute')}
+                  >
+                    <Megaphone className="h-4 w-4 mr-2" />
+                    Publier ma nouveauté gratuitement
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
             {/* Plan Premium */}
-            <Card className="relative border-primary shadow-2xl scale-105">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <Badge className="bg-primary text-primary-foreground px-4 py-1">
-                  ⭐ Recommandé
-                </Badge>
-              </div>
-
+            {/* Plan Premium - Upgrade */}
+            <Card className="relative">
               <CardContent className="p-8">
                 <div className="space-y-6">
                   <div>
@@ -374,7 +389,7 @@ export default function Exposants() {
                       <Crown className="h-5 w-5 text-primary" />
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Pour maximiser votre ROI
+                      Pour amplifier vos résultats et accéder à tout le potentiel de la plateforme
                     </p>
                   </div>
 
@@ -390,7 +405,7 @@ export default function Exposants() {
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm"><strong>Leads illimités</strong> - Collectez tous les contacts</span>
+                      <span className="text-sm"><strong>Leads illimités</strong> – Collectez tous les contacts</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -407,7 +422,8 @@ export default function Exposants() {
                   </div>
 
                   <Button 
-                    className="w-full bg-primary hover:bg-primary/90"
+                    variant="outline"
+                    className="w-full"
                     onClick={() => setIsDialogOpen(true)}
                   >
                     <Zap className="h-4 w-4 mr-2" />
@@ -558,32 +574,32 @@ export default function Exposants() {
       <section className="py-20 bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="container max-w-4xl mx-auto px-4 text-center space-y-8">
           <h2 className="text-4xl md:text-5xl font-bold">
-            Prêt à maximiser votre ROI salon ?
+            Prêt à attirer vos premiers visiteurs qualifiés ?
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Rejoignez les exposants qui capitalisent leur participation 
-            avant même l'ouverture des portes
+            Publiez gratuitement votre première nouveauté et commencez à générer des leads avant le salon.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
               size="lg"
               className="text-lg px-8 gap-2"
-              onClick={() => setIsDialogOpen(true)}
+              onClick={() => navigate('/publier-nouveaute')}
             >
-              <Zap className="h-5 w-5" />
-              Passer au Premium - 99€
+              <Megaphone className="h-5 w-5" />
+              Publier ma nouveauté
             </Button>
             <Button 
               size="lg"
               variant="outline"
-              className="text-lg px-8"
-              onClick={() => navigate('/')}
+              className="text-lg px-8 gap-2"
+              onClick={() => setIsDialogOpen(true)}
             >
-              Voir les événements
+              <Crown className="h-5 w-5" />
+              Découvrir le Premium
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            Sans engagement • Activation immédiate • Paiement sécurisé
+            1 nouveauté gratuite • Sans carte bancaire • Publication en quelques minutes
           </p>
         </div>
       </section>
