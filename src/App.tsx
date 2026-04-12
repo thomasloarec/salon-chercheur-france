@@ -32,6 +32,7 @@ import Agenda from '@/pages/Agenda';
 import Nouveautes from '@/pages/Nouveautes';
 import Notifications from '@/pages/Notifications';
 import Exposants from '@/pages/Exposants';
+import PublierNouveaute from '@/pages/PublierNouveaute';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
@@ -83,6 +84,7 @@ function App() {
             <Route path="/nouveautes" element={<Nouveautes />} />
             <Route path="/exposants" element={<Exposants />} />
             <Route path="/premium" element={<Exposants />} />
+            <Route path="/publier-nouveaute" element={<PublierNouveaute />} />
             <Route path="/admin/exhibitors" element={<AdminExhibitors />} />
             <Route path="/admin/exhibitors/claims" element={<AdminExhibitorClaims />} />
             <Route path="/admin/exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />

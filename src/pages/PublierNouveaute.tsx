@@ -13,7 +13,8 @@ import { fr } from 'date-fns/locale';
 export default function PublierNouveaute() {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
-  const { data: events, isLoading } = useEventsList();
+  const emptyFilters = useMemo(() => ({} as any), []);
+  const { data: events, isLoading } = useEventsList(emptyFilters);
 
   const filteredEvents = useMemo(() => {
     if (!events) return [];
