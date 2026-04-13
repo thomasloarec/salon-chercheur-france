@@ -46,6 +46,7 @@ const REGION_OPTIONS = Object.values(REGIONS)
 const AdminBlogEdit = () => {
   const { id } = useParams<{ id: string }>();
   const isNew = !id;
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { data: existingArticle, isLoading: articleLoading } = useBlogArticle(id);
   const saveMutation = useSaveBlogArticle();
