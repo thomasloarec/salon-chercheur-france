@@ -14,14 +14,43 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
     
-    <!-- WebSite Schema for Google site name -->
+    <!-- Schemas statiques — WebSite + Organization -->
     <script type="application/ld+json">
+    [
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "Lotexpo",
-        "url": "https://lotexpo.com"
+        "url": "https://lotexpo.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://lotexpo.com/events?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Lotexpo",
+        "url": "https://lotexpo.com",
+        "logo": "https://lotexpo.com/favicon.png",
+        "description": "Plateforme de référence des salons professionnels en France. Plus de 350 salons référencés, 15 000 exposants, nouveautés produit avant chaque salon.",
+        "areaServed": {
+          "@type": "Country",
+          "name": "France"
+        },
+        "knowsAbout": [
+          "Salons professionnels",
+          "Expositions B2B",
+          "Foires professionnelles",
+          "Exposants",
+          "Nouveautés produit"
+        ]
       }
+    ]
     </script>
   </head>
 
