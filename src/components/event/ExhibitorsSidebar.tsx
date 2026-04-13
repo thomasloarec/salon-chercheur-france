@@ -182,8 +182,9 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                                   (p.id_exposant && legacyExposantData[p.id_exposant]?.name) ||
                                   p.id_exposant || '';
 
-            // AI resume_court has highest priority for descriptions
-            const aiDesc = exhibitorUUID ? exhibitorAiDescriptions[exhibitorUUID] : undefined;
+            // AI resume_court has highest priority — check both UUID and legacy id_exposant
+            const lookupKey = exhibitorUUID || p.id_exposant;
+            const aiDesc = lookupKey ? exhibitorAiDescriptions[lookupKey] : undefined;
 
             return {
               id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
