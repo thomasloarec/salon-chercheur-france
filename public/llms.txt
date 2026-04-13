@@ -49,8 +49,7 @@ Articles sur les tendances des salons professionnels, guides sectoriels, conseil
 ## API de données publiques
 
 Les données des salons sont disponibles en JSON via une API publique :
-- Endpoint : https://lotexpo.com/api/v1/events
-- Endpoint direct : https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/events-public
+- Endpoint : https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/events-public
 - Paramètres : sector, ville, upcoming=true, limit (max 50), offset
 - Format : JSON, mise à jour quotidienne
 - Accès : libre, sans authentification
