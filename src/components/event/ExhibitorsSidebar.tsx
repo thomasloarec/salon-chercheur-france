@@ -95,11 +95,26 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
 
               // Récupérer les logos, descriptions et websites depuis exhibitors (modern)
               const uuids = Object.values(exhibitorUUIDs).filter(Boolean);
+              let exhibitorAiDescriptions: Record<string, string> = {};
               if (uuids.length > 0) {
-                const { data: exhibitors } = await supabase
-                  .from('exhibitors')
-                  .select('id, logo_url, description, website')
-                  .in('id', uuids);
+                // Fetch exhibitor data + AI resume_court in parallel
+                const [{ data: exhibitors }, { data: aiRows }] = await Promise.all([
+                  supabase
+                    .from('exhibitors')
+                    .select('id, logo_url, description, website')
+                    .in('id', uuids),
+                  supabase
+                    .from('exhibitor_ai')
+                    .select('exhibitor_id, resume_court')
+                    .in('exhibitor_id', uuids)
+                    .not('resume_court', 'is', null),
+                ]);
+
+                if (aiRows) {
+                  aiRows.forEach(ai => {
+                    if (ai.resume_court) exhibitorAiDescriptions[ai.exhibitor_id] = ai.resume_court;
+                  });
+                }
 
                 if (exhibitors) {
                   exhibitors.forEach(e => {
@@ -152,6 +167,9 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                                   (p.id_exposant && legacyExposantData[p.id_exposant]?.name) ||
                                   p.id_exposant || '';
 
+            // AI resume_court has highest priority for descriptions
+            const aiDesc = exhibitorUUID ? exhibitorAiDescriptions[exhibitorUUID] : undefined;
+
             return {
               id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
               id_exposant: p.id_exposant,
@@ -160,8 +178,9 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
               exhibitor_name: exhibitorName,
               slug: p.id_exposant || String(p.exhibitor_uuid || ''),
               logo_url: logoUrl,
-              description: description,
+              description: aiDesc || description,
               exposant_description: description,
+              ai_resume_court: aiDesc,
               website: website,
               website_exposant: website,
               stand: p.stand_exposant || null,
