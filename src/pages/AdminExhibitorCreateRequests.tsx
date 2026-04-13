@@ -228,6 +228,9 @@ export default function AdminExhibitorCreateRequests() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
           </Card>
     </div>
   );
