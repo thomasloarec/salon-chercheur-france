@@ -96,7 +96,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
 
               // Récupérer les logos, descriptions et websites depuis exhibitors (modern)
               const uuids = Object.values(exhibitorUUIDs).filter(Boolean);
-              let exhibitorAiDescriptions: Record<string, string> = {};
+              
               if (uuids.length > 0) {
                 // Fetch exhibitor data + AI resume_court in parallel
                 const [{ data: exhibitors }, { data: aiRows }] = await Promise.all([
