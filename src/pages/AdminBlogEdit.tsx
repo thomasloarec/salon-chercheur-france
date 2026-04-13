@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { useBlogArticle, useSaveBlogArticle, generateSlug, BlogArticle, BlogEventLink, BlogFaqItem } from '@/hooks/useBlogArticles';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
