@@ -132,10 +132,24 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                 .map(p => p.id_exposant);
 
               if (legacyIds.length > 0) {
-                const { data: legacyExposants } = await supabase
-                  .from('exposants')
-                  .select('id_exposant, nom_exposant, website_exposant, exposant_description')
-                  .in('id_exposant', legacyIds);
+                // Fetch legacy exhibitor data + AI descriptions in parallel
+                const [{ data: legacyExposants }, { data: legacyAiRows }] = await Promise.all([
+                  supabase
+                    .from('exposants')
+                    .select('id_exposant, nom_exposant, website_exposant, exposant_description')
+                    .in('id_exposant', legacyIds),
+                  supabase
+                    .from('exhibitor_ai')
+                    .select('exhibitor_id, resume_court')
+                    .in('exhibitor_id', legacyIds)
+                    .not('resume_court', 'is', null),
+                ]);
+
+                if (legacyAiRows) {
+                  legacyAiRows.forEach(ai => {
+                    if (ai.resume_court) exhibitorAiDescriptions[ai.exhibitor_id] = ai.resume_court;
+                  });
+                }
 
                 if (legacyExposants) {
                   legacyExposants.forEach(ex => {
