@@ -1,14 +1,50 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { BookOpen, Search, Sparkles, Building2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+
+const fmt = (v: number | null | undefined) => (v != null ? v.toLocaleString('fr-FR') : '–');
+
+const DeltaBadge = ({ delta }: { delta: number | null | undefined }) => {
+  if (delta == null) return null;
+  const color = delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-600' : 'text-muted-foreground';
+  const Icon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
+  return (
+    <span className={`inline-flex items-center gap-1 text-sm font-medium ${color}`}>
+      <Icon className="h-3.5 w-3.5" />
+      {delta > 0 ? '+' : ''}{delta}
+    </span>
+  );
+};
+
+const MetricCard = ({
+  title,
+  value,
+  subtitle,
+  delta,
+}: {
+  title: string;
+  value: string;
+  subtitle: string;
+  delta?: number | null;
+}) => (
+  <Card>
+    <CardContent className="pt-6">
+      <p className="text-sm text-muted-foreground">{title}</p>
+      <div className="flex items-baseline gap-2 mt-1">
+        <span className="text-3xl font-bold">{value}</span>
+        {delta !== undefined && <DeltaBadge delta={delta} />}
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+    </CardContent>
+  </Card>
+);
 
 const AdminOverview = () => {
+  // IA Visite 7d — reuse existing wizard_sessions query
   const { data: iaUses7d } = useQuery({
-    queryKey: ['ia-visite-7d-widget'],
+    queryKey: ['overview-ia-7d'],
     queryFn: async () => {
       const since = new Date();
       since.setDate(since.getDate() - 7);
@@ -17,108 +53,169 @@ const AdminOverview = () => {
         .select('*', { count: 'exact', head: true })
         .in('step_reached', ['results', 'saved'])
         .gte('created_at', since.toISOString());
-      if (error) return 0;
-      return count || 0;
+      if (error) return null;
+      return count ?? 0;
     },
   });
 
+  // Novelties published last 7d + previous 7d for delta
+  const { data: novelties7d } = useQuery({
+    queryKey: ['overview-novelties-7d'],
+    queryFn: async () => {
+      const now = new Date();
+      const d7 = new Date(now);
+      d7.setDate(d7.getDate() - 7);
+      const d14 = new Date(now);
+      d14.setDate(d14.getDate() - 14);
+
+      const [curr, prev] = await Promise.all([
+        supabase
+          .from('novelties')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'published')
+          .eq('is_test', false)
+          .gte('created_at', d7.toISOString()),
+        supabase
+          .from('novelties')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'published')
+          .eq('is_test', false)
+          .gte('created_at', d14.toISOString())
+          .lt('created_at', d7.toISOString()),
+      ]);
+
+      if (curr.error || prev.error) return null;
+      return { current: curr.count ?? 0, previous: prev.count ?? 0 };
+    },
+  });
+
+  // Upcoming visible events
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ['overview-upcoming-events'],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { count, error } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .gte('date_debut', today)
+        .eq('visible', true)
+        .eq('is_test', false);
+      if (error) return null;
+      return count ?? 0;
+    },
+  });
+
+  // Exposants count (legacy table)
+  const { data: exposantsCount } = useQuery({
+    queryKey: ['overview-exposants-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('exposants')
+        .select('*', { count: 'exact', head: true });
+      if (error) return null;
+      return count ?? 0;
+    },
+  });
+
+  // Outreach campaigns this month
+  const { data: outreachData } = useQuery({
+    queryKey: ['overview-outreach'],
+    queryFn: async () => {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const { data, error } = await supabase
+        .from('outreach_campaigns')
+        .select('campaign_status')
+        .neq('campaign_status', 'not_started')
+        .gte('created_at', monthStart.toISOString());
+
+      if (error) return null;
+      if (!data || data.length === 0) return { contacted: 0, converted: 0, rate: null, empty: true };
+
+      const contacted = data.length;
+      const converted = data.filter((r: any) => r.campaign_status === 'converted').length;
+      const rate = contacted > 0 ? Math.round((converted / contacted) * 100) : 0;
+      return { contacted, converted, rate, empty: false };
+    },
+  });
+
+  const noveltiesDelta =
+    novelties7d ? novelties7d.current - novelties7d.previous : null;
+
+  const outreachEmpty = !outreachData || outreachData.empty;
+
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">Administration</h1>
-        <p className="text-muted-foreground">Gestion des événements, nouveautés et modération</p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold">Vue d'ensemble</h1>
+        <p className="text-muted-foreground text-sm">Métriques clés de la plateforme</p>
       </div>
 
-      {/* Liens rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Blog SEO</h3>
-                <p className="text-sm text-muted-foreground">Gérer les articles du blog</p>
-              </div>
-              <Button asChild>
-                <Link to="/admin/blog">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Blog
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Audit SEO</h3>
-                <p className="text-sm text-muted-foreground">Monitoring SEO complet</p>
-              </div>
-              <Button asChild>
-                <Link to="/admin/seo-audit">
-                  <Search className="h-4 w-4 mr-2" />
-                  Dashboard SEO
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">IA Visite</h3>
-                <p className="text-sm text-muted-foreground">Tracking "Préparer ma visite avec l'IA"</p>
-                <p className="text-2xl font-bold mt-2">
-                  {iaUses7d ?? '–'}{' '}
-                  <span className="text-sm font-normal text-muted-foreground">utilisations (7j)</span>
-                </p>
-              </div>
-              <Button asChild>
-                <Link to="/admin/ia-visite">
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Dashboard IA
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Exposants</h3>
-                <p className="text-sm text-muted-foreground">Entreprises & gouvernance</p>
-              </div>
-              <Button asChild>
-                <Link to="/admin/exhibitors">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Gérer
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Statistiques rapides */}
-      <div className="bg-card rounded-lg border p-6">
-        <h3 className="text-lg font-semibold mb-4">Statistiques rapides</h3>
+      {/* Bloc 1 — Activité 7j */}
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Activité des 7 derniers jours</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">0</div>
-            <div className="text-sm text-gray-600">Événements publiés ce mois</div>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-600">0</div>
-            <div className="text-sm text-gray-600">Événements en attente</div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">0</div>
-            <div className="text-sm text-gray-600">Total événements visibles</div>
-          </div>
+          <MetricCard
+            title="Visiteurs uniques"
+            value="–"
+            subtitle="Non disponible"
+          />
+          <MetricCard
+            title="Nouveautés publiées"
+            value={fmt(novelties7d?.current)}
+            subtitle="7 derniers jours"
+            delta={noveltiesDelta}
+          />
+          <MetricCard
+            title="Utilisations IA Visite"
+            value={fmt(iaUses7d)}
+            subtitle="7 derniers jours"
+          />
         </div>
-      </div>
+      </section>
+
+      {/* Bloc 2 — Catalogue */}
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Catalogue</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MetricCard
+            title="Salons publiés à venir"
+            value={fmt(upcomingEvents)}
+            subtitle="date_debut ≥ aujourd'hui, visibles"
+          />
+          <MetricCard
+            title="Exposants référencés"
+            value={fmt(exposantsCount)}
+            subtitle="Table exposants (legacy)"
+          />
+        </div>
+      </section>
+
+      {/* Bloc 3 — Campagnes email */}
+      <section className={outreachEmpty ? 'opacity-60' : ''}>
+        <div className="flex items-center gap-3 mb-3">
+          <h2 className="text-lg font-semibold">Campagnes email</h2>
+          {outreachEmpty && (
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
+              Disponible bientôt
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MetricCard
+            title="Entreprises contactées ce mois"
+            value={outreachEmpty ? '–' : fmt(outreachData?.contacted)}
+            subtitle="campaign_status ≠ not_started"
+          />
+          <MetricCard
+            title="Taux de conversion → Nouveauté"
+            value={outreachEmpty ? '–' : `${outreachData?.rate ?? 0} %`}
+            subtitle="converted / contactées"
+          />
+        </div>
+      </section>
     </div>
   );
 };
