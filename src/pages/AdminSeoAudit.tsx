@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useSeoAudit } from '@/hooks/useSeoAudit';
-import { useSeoAudit } from '@/hooks/useSeoAudit';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
