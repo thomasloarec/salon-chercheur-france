@@ -77,6 +77,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           let exhibitorLogos: Record<string, string> = {};
           let exhibitorDescriptions: Record<string, string> = {};
           let exhibitorWebsites: Record<string, string> = {};
+          let exhibitorAiDescriptions: Record<string, string> = {};
           let legacyExposantData: Record<string, any> = {};
 
           if (participationIds.length > 0) {
