@@ -299,22 +299,11 @@ const AdminBlogEdit = () => {
     }
   };
 
-  if (authLoading || adminLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-      </div>
-    );
-  }
-
-  if (!user || !isAdmin) return <Navigate to="/" replace />;
   if (!isNew && articleLoading) {
     return (
-      <MainLayout title="Chargement...">
-        <div className="flex justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </MainLayout>
+      <div className="flex justify-center py-16">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
     );
   }
 
@@ -456,7 +445,7 @@ const AdminBlogEdit = () => {
   };
 
   return (
-    <MainLayout title={isNew ? 'Nouvel article' : 'Éditer l\'article'}>
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div className="container mx-auto py-8 space-y-6 max-w-4xl">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin/blog')}>
@@ -800,7 +789,7 @@ const AdminBlogEdit = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </div>
   );
 };
 
