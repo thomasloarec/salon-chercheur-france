@@ -15,7 +15,15 @@ import EventPage from '@/pages/EventPage';
 import Favorites from '@/pages/Favorites';
 import Profile from '@/pages/Profile';
 import Auth from '@/pages/Auth';
-import Admin from '@/pages/Admin';
+import AdminLayout from '@/components/admin/AdminLayout';
+import AdminOverview from '@/pages/admin/AdminOverview';
+import AdminEventsPage from '@/pages/admin/AdminEventsPage';
+import AdminEventsSeoPage from '@/pages/admin/AdminEventsSeoPage';
+import AdminEventsDiagnosticsPage from '@/pages/admin/AdminEventsDiagnosticsPage';
+import AdminNoveltiesPage from '@/pages/admin/AdminNoveltiesPage';
+import AdminSystemAiPage from '@/pages/admin/AdminSystemAiPage';
+import AdminSystemTestPage from '@/pages/admin/AdminSystemTestPage';
+import AdminSystemToolsPage from '@/pages/admin/AdminSystemToolsPage';
 import AdminEventDetail from '@/pages/AdminEventDetail';
 import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
 import AdminExhibitors from '@/pages/AdminExhibitors';
@@ -85,19 +93,31 @@ function App() {
             <Route path="/exposants" element={<Exposants />} />
             <Route path="/premium" element={<Exposants />} />
             <Route path="/publier-nouveaute" element={<PublierNouveaute />} />
-            <Route path="/admin/exhibitors" element={<AdminExhibitors />} />
-            <Route path="/admin/exhibitors/claims" element={<AdminExhibitorClaims />} />
-            <Route path="/admin/exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />
+
+            {/* Admin routes with sidebar layout */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverview />} />
+              <Route path="events" element={<AdminEventsPage />} />
+              <Route path="events/seo" element={<AdminEventsSeoPage />} />
+              <Route path="events/diagnostics" element={<AdminEventsDiagnosticsPage />} />
+              <Route path="events/:id" element={<AdminEventDetail />} />
+              <Route path="events/by-text/:id_event_text" element={<AdminEventByText />} />
+              <Route path="novelties" element={<AdminNoveltiesPage />} />
+              <Route path="blog" element={<AdminBlog />} />
+              <Route path="blog/new" element={<AdminBlogEdit />} />
+              <Route path="blog/edit/:id" element={<AdminBlogEdit />} />
+              <Route path="exhibitors" element={<AdminExhibitors />} />
+              <Route path="exhibitors/claims" element={<AdminExhibitorClaims />} />
+              <Route path="exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />
+              <Route path="import-diagnostics" element={<AdminImportDiagnostics />} />
+              <Route path="seo-audit" element={<AdminSeoAudit />} />
+              <Route path="ia-visite" element={<AdminIaVisite />} />
+              <Route path="system/ai" element={<AdminSystemAiPage />} />
+              <Route path="system/test" element={<AdminSystemTestPage />} />
+              <Route path="system/tools" element={<AdminSystemToolsPage />} />
+            </Route>
+
               <Route path="/auth" element={<Auth />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/events/:id" element={<AdminEventDetail />} />
-              <Route path="/admin/events/by-text/:id_event_text" element={<AdminEventByText />} />
-              <Route path="/admin/import-diagnostics" element={<AdminImportDiagnostics />} />
-              <Route path="/admin/seo-audit" element={<AdminSeoAudit />} />
-              <Route path="/admin/ia-visite" element={<AdminIaVisite />} />
-              <Route path="/admin/blog" element={<AdminBlog />} />
-              <Route path="/admin/blog/new" element={<AdminBlogEdit />} />
-              <Route path="/admin/blog/edit/:id" element={<AdminBlogEdit />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogArticle />} />
               <Route path="/profile" element={<Profile />} />
