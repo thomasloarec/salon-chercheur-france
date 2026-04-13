@@ -9,8 +9,6 @@ import { Search, Check, X, Plus, Building, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 interface CreateRequest {
   id: string;
@@ -108,17 +106,13 @@ export default function AdminExhibitorCreateRequests() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <main className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Demandes de création d'exposants</h1>
-            <p className="text-muted-foreground">
-              Gestion des demandes de création de nouveaux profils exposants
-            </p>
-          </div>
+    <div className="space-y-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-2">Demandes de création d'exposants</h1>
+        <p className="text-muted-foreground">
+          Gestion des demandes de création de nouveaux profils exposants
+        </p>
+      </div>
 
           <Card>
             <CardHeader>
@@ -236,10 +230,6 @@ export default function AdminExhibitorCreateRequests() {
               )}
             </CardContent>
           </Card>
-        </div>
-      </main>
-      
-      <Footer />
     </div>
   );
 }

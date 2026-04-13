@@ -2,9 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Navigate } from 'react-router-dom';
-import MainLayout from '@/components/layout/MainLayout';
 import { useBlogArticle, useSaveBlogArticle, generateSlug, BlogArticle, BlogEventLink, BlogFaqItem } from '@/hooks/useBlogArticles';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -49,9 +46,8 @@ const REGION_OPTIONS = Object.values(REGIONS)
 const AdminBlogEdit = () => {
   const { id } = useParams<{ id: string }>();
   const isNew = !id;
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { data: existingArticle, isLoading: articleLoading } = useBlogArticle(id);
   const saveMutation = useSaveBlogArticle();
   const { toast } = useToast();
@@ -299,22 +295,11 @@ const AdminBlogEdit = () => {
     }
   };
 
-  if (authLoading || adminLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-      </div>
-    );
-  }
-
-  if (!user || !isAdmin) return <Navigate to="/" replace />;
   if (!isNew && articleLoading) {
     return (
-      <MainLayout title="Chargement...">
-        <div className="flex justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </MainLayout>
+      <div className="flex justify-center py-16">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
     );
   }
 
@@ -456,7 +441,7 @@ const AdminBlogEdit = () => {
   };
 
   return (
-    <MainLayout title={isNew ? 'Nouvel article' : 'Éditer l\'article'}>
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div className="container mx-auto py-8 space-y-6 max-w-4xl">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin/blog')}>
@@ -800,7 +785,7 @@ const AdminBlogEdit = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </div>
   );
 };
 

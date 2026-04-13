@@ -1,10 +1,6 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Navigate } from 'react-router-dom';
-import MainLayout from '@/components/layout/MainLayout';
 import { useBlogArticles, useDeleteBlogArticle } from '@/hooks/useBlogArticles';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,23 +26,11 @@ const statusColors: Record<string, string> = {
 };
 
 const AdminBlog = () => {
-  const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [statusFilter, setStatusFilter] = useState('all');
   const { data: articles, isLoading } = useBlogArticles(statusFilter);
   const deleteMutation = useDeleteBlogArticle();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  if (authLoading || adminLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-      </div>
-    );
-  }
-
-  if (!user || !isAdmin) return <Navigate to="/" replace />;
 
   const handleDelete = async (id: string) => {
     try {
@@ -58,8 +42,7 @@ const AdminBlog = () => {
   };
 
   return (
-    <MainLayout title="Blog - Administration">
-      <div className="container mx-auto py-8 space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
             <ArrowLeft className="h-5 w-5" />
@@ -170,8 +153,7 @@ const AdminBlog = () => {
             )}
           </CardContent>
         </Card>
-      </div>
-    </MainLayout>
+    </div>
   );
 };
 

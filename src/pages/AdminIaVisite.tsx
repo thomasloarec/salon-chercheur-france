@@ -219,19 +219,8 @@ export default function AdminIaVisite() {
       .sort((a, b) => b.value - a.value);
   }, [allPlans]);
 
-  if (authLoading || adminLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-      </div>
-    );
-  }
-
-  if (!user || !isAdmin) return <Navigate to="/" replace />;
-
   return (
-    <MainLayout title="Dashboard IA Visite">
-      <div className="container mx-auto py-8 space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
@@ -392,8 +381,7 @@ export default function AdminIaVisite() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </MainLayout>
+    </div>
   );
 }
 

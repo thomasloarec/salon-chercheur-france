@@ -1,8 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Navigate } from 'react-router-dom';
-import MainLayout from '@/components/layout/MainLayout';
 import { useSeoAudit } from '@/hooks/useSeoAudit';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -36,25 +32,13 @@ const SECTIONS = [
 ];
 
 const AdminSeoAudit = () => {
-  const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const audit = useSeoAudit();
   const [activeSection, setActiveSection] = useState('crawlability');
-
-  if (authLoading || adminLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-      </div>
-    );
-  }
-
-  if (!user || !isAdmin) return <Navigate to="/" replace />;
 
   const results = audit.lastScan?.results;
 
   return (
-    <MainLayout title="Audit SEO">
+    <div>
       <div className="flex min-h-[calc(100vh-64px)]">
         {/* Sidebar */}
         <nav className="hidden lg:block w-56 border-r bg-card p-4 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto">
@@ -183,7 +167,7 @@ const AdminSeoAudit = () => {
           <section id="section-quickwins"><QuickWinsSection /></section>
         </main>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

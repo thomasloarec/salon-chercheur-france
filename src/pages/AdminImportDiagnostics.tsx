@@ -181,9 +181,8 @@ export default function AdminImportDiagnostics() {
   };
 
   return (
-    <MainLayout>
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-foreground mb-2">
               Diagnostic Import Participations
@@ -431,8 +430,7 @@ export default function AdminImportDiagnostics() {
               </Card>
             </div>
           )}
-        </div>
       </div>
-    </MainLayout>
+    </div>
   );
 }
