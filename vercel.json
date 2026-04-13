@@ -10,6 +10,10 @@
       "destination": "https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/events-public"
     },
     {
+      "source": "/api/v1/events/:query*",
+      "destination": "https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/events-public/:query*"
+    },
+    {
       "source": "/((?!assets|favicon|logos|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt).*)",
       "destination": "/index.html"
     }
