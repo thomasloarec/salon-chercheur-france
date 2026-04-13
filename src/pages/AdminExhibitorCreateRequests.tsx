@@ -9,8 +9,6 @@ import { Search, Check, X, Plus, Building, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 interface CreateRequest {
   id: string;

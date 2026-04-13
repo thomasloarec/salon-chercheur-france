@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
-import MainLayout from '@/components/layout/MainLayout';
+import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, ClipboardList } from 'lucide-react';
 import AdminExhibitorsList from '@/components/admin/exhibitors/AdminExhibitorsList';

@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Navigate } from 'react-router-dom';
-import MainLayout from '@/components/layout/MainLayout';
+import { useSeoAudit } from '@/hooks/useSeoAudit';
 import { useSeoAudit } from '@/hooks/useSeoAudit';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
