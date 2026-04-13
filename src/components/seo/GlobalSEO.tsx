@@ -82,6 +82,9 @@ export const GlobalSEO = ({
       <script type="application/ld+json">
         {JSON.stringify(websiteSchema)}
       </script>
+      <script type="application/ld+json">
+        {JSON.stringify(organizationSchema)}
+      </script>
     </Helmet>
   );
 };
