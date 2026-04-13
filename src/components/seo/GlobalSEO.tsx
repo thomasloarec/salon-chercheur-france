@@ -29,6 +29,31 @@ export const GlobalSEO = ({
     "url": "https://lotexpo.com"
   };
 
+  // Organization schema for brand knowledge panel
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Lotexpo",
+    "url": "https://lotexpo.com",
+    "logo": "https://lotexpo.com/logos/lotexpo-logo.png",
+    "description": "Plateforme de référence des salons professionnels en France. Plus de 350 salons référencés, 15 000 exposants, nouveautés produit avant chaque salon.",
+    "foundingLocation": {
+      "@type": "Place",
+      "addressCountry": "FR"
+    },
+    "areaServed": {
+      "@type": "Country",
+      "name": "France"
+    },
+    "knowsAbout": [
+      "Salons professionnels",
+      "Expositions B2B",
+      "Foires professionnelles",
+      "Exposants",
+      "Nouveautés produit"
+    ]
+  };
+
   return (
     <Helmet>
       <title>{title}</title>
@@ -56,6 +81,9 @@ export const GlobalSEO = ({
       {/* WebSite Schema for Google site name */}
       <script type="application/ld+json">
         {JSON.stringify(websiteSchema)}
+      </script>
+      <script type="application/ld+json">
+        {JSON.stringify(organizationSchema)}
       </script>
     </Helmet>
   );
