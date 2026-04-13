@@ -119,11 +119,13 @@ export default function AdminExhibitorClaims() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <main className="py-8">
-        <div className="container mx-auto px-4">
+    <div className="space-y-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-2">Demandes de co-administration</h1>
+        <p className="text-muted-foreground">
+          Gestion des demandes d'accès aux profils exposants
+        </p>
+      </div>
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Demandes de co-administration</h1>
             <p className="text-muted-foreground">
@@ -242,10 +244,6 @@ export default function AdminExhibitorClaims() {
               )}
             </CardContent>
           </Card>
-        </div>
-      </main>
-      
-      <Footer />
     </div>
   );
 }
