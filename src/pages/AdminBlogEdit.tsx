@@ -46,8 +46,6 @@ const AdminBlogEdit = () => {
   const { id } = useParams<{ id: string }>();
   const isNew = !id;
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { data: existingArticle, isLoading: articleLoading } = useBlogArticle(id);
   const saveMutation = useSaveBlogArticle();
   const { toast } = useToast();
