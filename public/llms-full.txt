@@ -32,6 +32,7 @@ Paris (Île-de-France), Lyon (Auvergne-Rhône-Alpes), Marseille (PACA), Bordeaux
 ## Comment interroger les données
 
 API JSON publique disponible à https://lotexpo.com/api/v1/events
+Endpoint direct : https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/events-public
 
 Exemples :
 - Prochains salons : GET /api/v1/events?upcoming=true&limit=10
