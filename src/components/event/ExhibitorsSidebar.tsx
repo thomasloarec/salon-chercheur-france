@@ -77,6 +77,7 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           let exhibitorLogos: Record<string, string> = {};
           let exhibitorDescriptions: Record<string, string> = {};
           let exhibitorWebsites: Record<string, string> = {};
+          let exhibitorAiDescriptions: Record<string, string> = {};
           let legacyExposantData: Record<string, any> = {};
 
           if (participationIds.length > 0) {
@@ -95,11 +96,26 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
 
               // Récupérer les logos, descriptions et websites depuis exhibitors (modern)
               const uuids = Object.values(exhibitorUUIDs).filter(Boolean);
+              
               if (uuids.length > 0) {
-                const { data: exhibitors } = await supabase
-                  .from('exhibitors')
-                  .select('id, logo_url, description, website')
-                  .in('id', uuids);
+                // Fetch exhibitor data + AI resume_court in parallel
+                const [{ data: exhibitors }, { data: aiRows }] = await Promise.all([
+                  supabase
+                    .from('exhibitors')
+                    .select('id, logo_url, description, website')
+                    .in('id', uuids),
+                  supabase
+                    .from('exhibitor_ai')
+                    .select('exhibitor_id, resume_court')
+                    .in('exhibitor_id', uuids)
+                    .not('resume_court', 'is', null),
+                ]);
+
+                if (aiRows) {
+                  aiRows.forEach(ai => {
+                    if (ai.resume_court) exhibitorAiDescriptions[ai.exhibitor_id] = ai.resume_court;
+                  });
+                }
 
                 if (exhibitors) {
                   exhibitors.forEach(e => {
@@ -116,10 +132,24 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                 .map(p => p.id_exposant);
 
               if (legacyIds.length > 0) {
-                const { data: legacyExposants } = await supabase
-                  .from('exposants')
-                  .select('id_exposant, nom_exposant, website_exposant, exposant_description')
-                  .in('id_exposant', legacyIds);
+                // Fetch legacy exhibitor data + AI descriptions in parallel
+                const [{ data: legacyExposants }, { data: legacyAiRows }] = await Promise.all([
+                  supabase
+                    .from('exposants')
+                    .select('id_exposant, nom_exposant, website_exposant, exposant_description')
+                    .in('id_exposant', legacyIds),
+                  supabase
+                    .from('exhibitor_ai')
+                    .select('exhibitor_id, resume_court')
+                    .in('exhibitor_id', legacyIds)
+                    .not('resume_court', 'is', null),
+                ]);
+
+                if (legacyAiRows) {
+                  legacyAiRows.forEach(ai => {
+                    if (ai.resume_court) exhibitorAiDescriptions[ai.exhibitor_id] = ai.resume_court;
+                  });
+                }
 
                 if (legacyExposants) {
                   legacyExposants.forEach(ex => {
@@ -152,6 +182,10 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
                                   (p.id_exposant && legacyExposantData[p.id_exposant]?.name) ||
                                   p.id_exposant || '';
 
+            // AI resume_court has highest priority — check both UUID and legacy id_exposant
+            const lookupKey = exhibitorUUID || p.id_exposant;
+            const aiDesc = lookupKey ? exhibitorAiDescriptions[lookupKey] : undefined;
+
             return {
               id: exhibitorUUID || p.id_exposant || String(p.exhibitor_uuid || ''),
               id_exposant: p.id_exposant,
@@ -160,8 +194,9 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
               exhibitor_name: exhibitorName,
               slug: p.id_exposant || String(p.exhibitor_uuid || ''),
               logo_url: logoUrl,
-              description: description,
+              description: aiDesc || description,
               exposant_description: description,
+              ai_resume_court: aiDesc,
               website: website,
               website_exposant: website,
               stand: p.stand_exposant || null,

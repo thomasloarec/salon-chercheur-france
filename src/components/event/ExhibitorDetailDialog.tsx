@@ -99,16 +99,18 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
         setDetails(null);
         return;
       }
-      // Hydrater si les champs website/description manquent
-      const hasDescription = getDescription(exhibitor);
-      const hasWebsite = getWebsite(exhibitor);
+      // Always hydrate to ensure ai_resume_court is fetched
+      const needsHydration = !exhibitor.ai_resume_court || !getWebsite(exhibitor);
       
-      if (!hasWebsite && !hasDescription) {
+      if (needsHydration) {
         const full = await hydrateExhibitor(exhibitor as any);
-        // Préserver le stand_exposant de l'exhibitor original
         if (!cancelled) setDetails({ 
+          ...exhibitor,
           ...full as any,
-          stand_exposant: exhibitor.stand_exposant || (full as any).stand_exposant 
+          // Preserve original stand
+          stand_exposant: exhibitor.stand_exposant || (full as any).stand_exposant,
+          // Ensure ai_resume_court propagates
+          ai_resume_court: (full as any).ai_resume_court || exhibitor.ai_resume_court,
         });
       } else {
         setDetails(exhibitor);
