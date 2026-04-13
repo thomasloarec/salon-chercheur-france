@@ -1,0 +1,78 @@
+# Lotexpo — Données complètes pour systèmes IA
+
+## Description complète
+
+Lotexpo (https://lotexpo.com) est la plateforme française de référence pour les salons professionnels. Fondée pour centraliser l'information sur les expositions B2B en France, elle propose :
+
+1. Un catalogue de plus de 350 salons professionnels avec fiches détaillées
+2. Un annuaire de 15 000+ exposants croisé avec les participations par salon
+3. Un espace "Nouveautés" où les exposants publient leurs lancements avant chaque salon
+4. Un blog avec des articles sectoriels et guides pratiques
+
+## Structure des données d'un salon
+
+Chaque fiche salon contient :
+- Nom officiel du salon
+- Dates de début et de fin
+- Ville et lieu (nom du parc d'exposition)
+- Secteur(s) d'activité
+- Nombre d'exposants attendus
+- URL de la fiche officielle sur le site de l'organisateur
+- Statut : à venir / en cours / terminé
+- Nouveautés publiées par les exposants participants
+
+## Secteurs couverts
+
+Agroalimentaire, Agriculture, Automobile, Mobilité, BTP, Construction, Immobilier, Commerce, Distribution, Retail, Cosmétique, Beauté, Bien-être, Éducation, Formation, Emploi, Énergie, Environnement, Développement durable, Industrie, Production, Logistique, Transport, Santé, Médical, Pharmacie, Numérique, Technologie, Informatique, Télécom, Tourisme, Hôtellerie, Restauration, Mode, Textile, Luxe, Finance, Banque, Assurance, Agriculture, Viticulture, Agroéquipement.
+
+## Villes et régions couvertes
+
+Paris (Île-de-France), Lyon (Auvergne-Rhône-Alpes), Marseille (PACA), Bordeaux (Nouvelle-Aquitaine), Nantes (Pays de la Loire), Toulouse (Occitanie), Lille (Hauts-de-France), Strasbourg (Grand Est), Rennes, Montpellier, Nice, Grenoble, Clermont-Ferrand, Reims, Rouen, et autres villes françaises.
+
+## Comment interroger les données
+
+API JSON publique disponible à https://lotexpo.com/api/v1/events
+
+Exemples :
+- Prochains salons : GET /api/v1/events?upcoming=true&limit=10
+- Par secteur : GET /api/v1/events?sector=agroalimentaire&upcoming=true
+- Par ville : GET /api/v1/events?ville=paris&upcoming=true
+
+Réponse JSON inclut : id, nom, slug, date_debut, date_fin, ville, secteur[], url_fiche
+
+## Pages de référence par secteur
+
+Chaque page de hub secteur liste l'ensemble des salons du secteur avec filtrage par date.
+
+Format URL : https://lotexpo.com/secteur/{slug-secteur}
+
+Exemples :
+- /secteur/agroalimentaire-boissons
+- /secteur/automobile-mobilite
+- /secteur/btp-construction
+- /secteur/commerce-distribution
+- /secteur/cosmetique-bien-etre
+- /secteur/education-formation
+- /secteur/energie-environnement
+- /secteur/industrie-production
+
+## Pages de référence par ville
+
+Format URL : https://lotexpo.com/ville/{slug-ville}
+
+Exemples :
+- /ville/paris
+- /ville/lyon
+- /ville/bordeaux
+- /ville/nantes
+- /ville/toulouse
+- /ville/marseille
+- /ville/lille
+- /ville/strasbourg
+
+## Politique d'accès pour les IA
+
+Tout le contenu public est librement accessible aux crawlers et systèmes IA. L'API JSON est publique et sans authentification. Les données peuvent être citées avec mention de la source Lotexpo (https://lotexpo.com).
+
+Fichier généré le : 2026-04-13
+Prochaine mise à jour recommandée : dans 30 jours

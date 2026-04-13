@@ -36,6 +36,37 @@ Allow: /
 User-agent: Slackbot
 Allow: /
 
+# Crawlers IA — autorisés sur tout le contenu public
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /auth
+Disallow: /profile
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
 # Default for all other bots
 User-agent: *
 Allow: /
