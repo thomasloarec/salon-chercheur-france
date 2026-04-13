@@ -381,7 +381,6 @@ export default function AdminIaVisite() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }
