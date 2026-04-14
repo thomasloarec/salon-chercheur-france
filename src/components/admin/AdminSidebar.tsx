@@ -26,6 +26,7 @@ import {
   Bot,
   TestTube,
   Wrench,
+  Mail,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
