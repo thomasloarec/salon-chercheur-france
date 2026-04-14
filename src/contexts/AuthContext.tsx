@@ -149,7 +149,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-          await processPostSignInTasks(nextSession);
+          // Fire-and-forget: never await Supabase calls inside onAuthStateChange
+          // to avoid deadlocking the auth event processing pipeline
+          processPostSignInTasks(nextSession).catch((err) =>
+            console.error('processPostSignInTasks failed:', err)
+          );
         }
       }
     );
