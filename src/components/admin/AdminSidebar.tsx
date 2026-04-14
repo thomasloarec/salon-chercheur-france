@@ -26,6 +26,7 @@ import {
   Bot,
   TestTube,
   Wrench,
+  Mail,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -51,6 +52,7 @@ const navSections = [
     items: [
       { title: 'Entreprises exposantes', url: '/admin/exhibitors', icon: Building2 },
       { title: 'Demandes de gestion', url: '/admin/exhibitors/claims', icon: ClipboardList },
+      { title: 'Campagnes', url: '/admin/campaigns', icon: Mail },
     ],
   },
   {

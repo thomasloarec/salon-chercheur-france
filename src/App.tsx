@@ -24,6 +24,7 @@ import AdminNoveltiesPage from '@/pages/admin/AdminNoveltiesPage';
 import AdminSystemAiPage from '@/pages/admin/AdminSystemAiPage';
 import AdminSystemTestPage from '@/pages/admin/AdminSystemTestPage';
 import AdminSystemToolsPage from '@/pages/admin/AdminSystemToolsPage';
+import AdminCampaignsPage from '@/pages/admin/AdminCampaignsPage';
 import AdminEventDetail from '@/pages/AdminEventDetail';
 import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
 import AdminExhibitors from '@/pages/AdminExhibitors';
@@ -115,6 +116,7 @@ function App() {
               <Route path="system/ai" element={<AdminSystemAiPage />} />
               <Route path="system/test" element={<AdminSystemTestPage />} />
               <Route path="system/tools" element={<AdminSystemToolsPage />} />
+              <Route path="campaigns" element={<AdminCampaignsPage />} />
             </Route>
 
               <Route path="/auth" element={<Auth />} />
