@@ -115,6 +115,7 @@ function App() {
               <Route path="system/ai" element={<AdminSystemAiPage />} />
               <Route path="system/test" element={<AdminSystemTestPage />} />
               <Route path="system/tools" element={<AdminSystemToolsPage />} />
+              <Route path="campaigns" element={<AdminCampaignsPage />} />
             </Route>
 
               <Route path="/auth" element={<Auth />} />
