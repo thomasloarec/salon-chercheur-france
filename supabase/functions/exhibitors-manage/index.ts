@@ -175,27 +175,64 @@ Deno.serve(async (req) => {
         return jsonError('name and event_id are required', 400)
       }
 
-      // STEP 1: Create modern exhibitor
-      const { data: newExhibitor, error: createError } = await serviceClient
-        .from('exhibitors')
-        .insert({
-          name,
-          website: website || null,
-          description: description || null,
-          stand_info: stand_info || null,
-          logo_url: logo_url || null,
-          approved: false,
-          owner_user_id: user.id
-        })
-        .select()
-        .single()
-
-      if (createError || !newExhibitor) {
-        console.error('❌ Failed to create exhibitor:', createError)
-        return jsonError('Failed to create exhibitor', 500, createError)
+      // ── Helper: normalise un site web pour comparaison stricte de domaine ──
+      const normaliseWebsite = (raw: string | null | undefined): string | null => {
+        if (!raw) return null
+        try {
+          const trimmed = String(raw).trim()
+          if (!trimmed) return null
+          const withProtocol = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`
+          return new URL(withProtocol).hostname.replace(/^www\./, '').toLowerCase()
+        } catch {
+          return null
+        }
       }
 
-      console.log('✅ Exhibitor created:', newExhibitor.id)
+      // ── DEDUP : si le site web fourni correspond à un exposant déjà existant,
+      //   on réutilise cet exposant au lieu d'en créer un doublon. ──
+      const submittedDomain = normaliseWebsite(website)
+      let newExhibitor: any = null
+
+      if (submittedDomain) {
+        const { data: candidates } = await serviceClient
+          .from('exhibitors')
+          .select('id, name, website, logo_url, approved, stand_info, owner_user_id')
+          .not('website', 'is', null)
+
+        const match = (candidates || []).find(
+          (e: any) => normaliseWebsite(e.website) === submittedDomain
+        )
+        if (match) {
+          console.log('♻️ Exposant déjà existant pour ce domaine, réutilisation:', match.id)
+          newExhibitor = match
+        }
+      }
+
+      // STEP 1: Create modern exhibitor (uniquement si aucun doublon trouvé)
+      if (!newExhibitor) {
+        const { data: created, error: createError } = await serviceClient
+          .from('exhibitors')
+          .insert({
+            name,
+            website: website || null,
+            description: description || null,
+            stand_info: stand_info || null,
+            logo_url: logo_url || null,
+            approved: false,
+            owner_user_id: user.id
+          })
+          .select()
+          .single()
+
+        if (createError || !created) {
+          console.error('❌ Failed to create exhibitor:', createError)
+          return jsonError('Failed to create exhibitor', 500, createError)
+        }
+
+        newExhibitor = created
+        console.log('✅ Exhibitor created:', newExhibitor.id)
+      }
+
 
       // STEP 2: Create legacy entry in exposants
       const { error: legacyError } = await serviceClient
