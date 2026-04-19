@@ -192,6 +192,7 @@ Deno.serve(async (req) => {
       //   on réutilise cet exposant au lieu d'en créer un doublon. ──
       const submittedDomain = normaliseWebsite(website)
       let newExhibitor: any = null
+      let reusedExisting = false
 
       if (submittedDomain) {
         const { data: candidates } = await serviceClient
