@@ -291,11 +291,12 @@ export default function NoveltyDetailDialog({
             )}
 
             {/* Résumé court (summary) si différent et présent */}
-            {novelty.summary && novelty.summary !== description && (
-              <div className="text-sm text-foreground/80 leading-relaxed border-l-2 border-primary/30 pl-3">
-                {novelty.summary}
-              </div>
-            )}
+            {(novelty as any).summary &&
+              (novelty as any).summary !== description && (
+                <div className="text-sm text-foreground/80 leading-relaxed border-l-2 border-primary/30 pl-3">
+                  {(novelty as any).summary}
+                </div>
+              )}
 
             {/* Détails additionnels */}
             {(novelty as any).details && (
