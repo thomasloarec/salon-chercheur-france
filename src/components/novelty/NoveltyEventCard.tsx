@@ -5,7 +5,7 @@ import {
   MapPin,
   FileText,
   Building2,
-  ArrowRight,
+  
   Clock,
   Bookmark,
   Download,
@@ -246,12 +246,6 @@ export default function NoveltyEventCard({
 
             {/* CTA */}
             <div className="flex items-center gap-2 pt-1 mt-auto flex-wrap">
-              <Button asChild size="sm" className="gap-1">
-                <Link to={detailHref}>
-                  Voir le détail
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              </Button>
 
               <Button
                 onClick={handleInterestToggle}
