@@ -5,10 +5,11 @@ import {
   MapPin,
   FileText,
   Building2,
-  
   Clock,
   Bookmark,
   Download,
+  Images,
+  Maximize2,
 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ import {
 } from '@/hooks/useNoveltyLike';
 import LeadForm from './LeadForm';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
+import NoveltyDetailDialog from './NoveltyDetailDialog';
 import type { Novelty } from '@/hooks/useNovelties';
 
 const TYPE_LABELS: Record<string, string> = {
