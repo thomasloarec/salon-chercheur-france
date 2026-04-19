@@ -236,23 +236,35 @@ Deno.serve(async (req) => {
       }
 
 
-      // STEP 2: Create legacy entry in exposants
-      const { error: legacyError } = await serviceClient
-        .from('exposants')
-        .insert({
-          id_exposant: newExhibitor.id,
-          nom_exposant: name,
-          website_exposant: website || null,
-          exposant_description: description || null
-        })
+      // STEP 2: Create legacy entry in exposants (idempotent)
+      {
+        const { data: existingLegacy } = await serviceClient
+          .from('exposants')
+          .select('id_exposant')
+          .eq('id_exposant', newExhibitor.id)
+          .maybeSingle()
 
-      if (legacyError) {
-        console.error('⚠️ Failed to create legacy exposant:', legacyError)
-      } else {
-        console.log('✅ Legacy exposant created with id:', newExhibitor.id)
+        if (!existingLegacy) {
+          const { error: legacyError } = await serviceClient
+            .from('exposants')
+            .insert({
+              id_exposant: newExhibitor.id,
+              nom_exposant: newExhibitor.name || name,
+              website_exposant: newExhibitor.website || website || null,
+              exposant_description: description || null
+            })
+
+          if (legacyError) {
+            console.error('⚠️ Failed to create legacy exposant:', legacyError)
+          } else {
+            console.log('✅ Legacy exposant created with id:', newExhibitor.id)
+          }
+        } else {
+          console.log('↪️ Legacy exposant already present, skip insert')
+        }
       }
 
-      // STEP 3: Create participation (unless deferred)
+      // STEP 3: Create participation (unless deferred) — idempotent par (event_id, id_exposant)
       if (!defer_participation) {
         const { data: eventData } = await serviceClient
           .from('events')
@@ -260,24 +272,36 @@ Deno.serve(async (req) => {
           .eq('id', event_id)
           .single()
 
-        const { error: participationError } = await serviceClient
+        // Vérifier si une participation existe déjà pour cet exposant + événement
+        const { data: existingParticipation } = await serviceClient
           .from('participation')
-          .insert({
-            id_exposant: newExhibitor.id,
-            exhibitor_id: newExhibitor.id,
-            id_event: event_id,
-            id_event_text: eventData?.id_event || null,
-            website_exposant: website || null,
-            stand_exposant: stand_info || null,
-            urlexpo_event: null
-          })
+          .select('id_participation')
+          .eq('id_exposant', newExhibitor.id)
+          .eq('id_event', event_id)
+          .maybeSingle()
 
-        if (participationError) {
-          console.error('❌ Failed to create participation:', participationError)
-          return jsonError('Exhibitor created but participation failed', 500, participationError)
+        if (!existingParticipation) {
+          const { error: participationError } = await serviceClient
+            .from('participation')
+            .insert({
+              id_exposant: newExhibitor.id,
+              exhibitor_id: newExhibitor.id,
+              id_event: event_id,
+              id_event_text: eventData?.id_event || null,
+              website_exposant: newExhibitor.website || website || null,
+              stand_exposant: stand_info || newExhibitor.stand_info || null,
+              urlexpo_event: null
+            })
+
+          if (participationError) {
+            console.error('❌ Failed to create participation:', participationError)
+            return jsonError('Exhibitor created but participation failed', 500, participationError)
+          }
+
+          console.log('✅ Participation created for event:', event_id)
+        } else {
+          console.log('↪️ Participation already exists for this event, skip insert')
         }
-
-        console.log('✅ Participation created for event:', event_id)
       } else {
         console.log('⏸️ Participation deferred')
       }
