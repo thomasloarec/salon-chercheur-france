@@ -325,7 +325,7 @@ export default function Nouveautes() {
             </p>
             <div className="mt-5">
               <Button asChild>
-                <Link to="/events">Trouver mon salon et publier</Link>
+                <Link to="/publier-nouveaute">Trouver mon salon et publier</Link>
               </Button>
             </div>
           </section>
