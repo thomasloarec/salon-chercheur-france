@@ -3261,6 +3261,7 @@ export type Database = {
           last_name: string | null
           next_send_at: string | null
           nom_event: string | null
+          novelties_count: number | null
           website: string | null
         }
         Relationships: [

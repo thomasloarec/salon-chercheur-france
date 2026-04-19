@@ -182,7 +182,11 @@ const EventPage = () => {
     };
 
     fetchEvent();
-  }, [slug, user, isAdmin, isPreview]);
+    // ⚠️ Use user?.id (stable string) instead of user (object) to avoid
+    // refetching every time Supabase refreshes the token (e.g. when user
+    // returns to the tab), which would unmount any open modal like the
+    // novelty creation stepper and lose form state.
+  }, [slug, user?.id, isAdmin, isPreview]);
 
   const handleEventUpdated = async (refreshedEvent: Event, slugChanged?: boolean) => {
     console.log('🔄 Event updated:', refreshedEvent);
