@@ -96,7 +96,7 @@ export default function NoveltyWatchCard({
 
         {/* Zone texte */}
         <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-2.5">
-          {/* Méta haute : type + countdown bien visible */}
+          {/* Méta haute : type + countdown — hiérarchie sobre */}
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary" className="font-medium">
               {typeLabel}
@@ -104,10 +104,10 @@ export default function NoveltyWatchCard({
             {countdownLabel && (
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border",
-                  isUrgent
-                    ? "bg-primary/10 text-primary border-primary/20"
-                    : "bg-muted text-foreground/80 border-border"
+                  "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border tabular-nums",
+                  isImminent
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-background text-foreground/80 border-border"
                 )}
               >
                 <Clock className="h-3 w-3" />
