@@ -209,20 +209,20 @@ export default function Nouveautes() {
           {/* BLOC 2 — À surveiller maintenant (masqué si filtres actifs) */}
           {!hasActiveFilters && (
             <section className="relative">
-              {/* Bloc éditorial mis en avant via fond + accent gauche */}
-              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.04] via-background to-background p-5 md:p-7 relative overflow-hidden">
-                <div className="absolute top-0 left-0 h-full w-1 bg-primary/60" aria-hidden />
-                <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
-                  <div>
-                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary mb-2">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Sélection éditoriale
-                    </div>
-                    <h2 className="text-xl md:text-2xl font-bold">À surveiller maintenant</h2>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-                      Les nouveautés des salons les plus proches, à ne pas manquer avant votre visite.
-                    </p>
+              {/* Bloc éditorial : fond très léger, accent gauche, hiérarchie typographique forte */}
+              <div className="rounded-2xl border bg-card p-5 md:p-7 relative overflow-hidden">
+                <div className="absolute top-0 left-0 h-full w-1 bg-primary" aria-hidden />
+                <div className="mb-6 max-w-2xl">
+                  <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary mb-2">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Sélection éditoriale
                   </div>
+                  <h2 className="text-xl md:text-2xl font-bold tracking-tight">
+                    À surveiller maintenant
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1.5">
+                    Les nouveautés des salons les plus proches, classées par échéance.
+                  </p>
                 </div>
                 {isLoading ? (
                   <SkeletonGrid count={3} />
@@ -231,7 +231,7 @@ export default function Nouveautes() {
                     Aucune nouveauté à surveiller pour le moment.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
                     {watchNow.map((n) => (
                       <NoveltyWatchCard key={n.id} novelty={n} variant="compact" />
                     ))}
