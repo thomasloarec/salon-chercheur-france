@@ -49,6 +49,8 @@ export default function Step1ExhibitorAndUser({
   const [selectedExhibitor, setSelectedExhibitor] = useState<DbExhibitor | null>(null);
   const [selectedExhibitorLogo, setSelectedExhibitorLogo] = useState<File | null>(null);
   const [selectedExhibitorStandInfo, setSelectedExhibitorStandInfo] = useState<string>('');
+  // ✅ Track whether the event has any exhibitor at all (independent of search filter)
+  const [eventHasAnyExhibitor, setEventHasAnyExhibitor] = useState<boolean | null>(null);
   
   // Vérifier le quota pour l'exposant sélectionné
   const { data: quota } = useNoveltyQuota(
