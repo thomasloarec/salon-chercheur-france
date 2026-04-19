@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, Rocket } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import NoveltyCard from '@/components/novelty/NoveltyCard';
+import NoveltyEventCard from '@/components/novelty/NoveltyEventCard';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
 import { NoveltiesPreLaunchBanner } from './NoveltiesPreLaunchBanner';
 import { NoveltyNotificationDialog } from './NoveltyNotificationDialog';
@@ -13,6 +12,8 @@ import { Button } from '@/components/ui/button';
 
 type SortBy = 'awaited' | 'recent';
 
+const INITIAL_VISIBLE = 4;
+
 interface NoveltiesSectionProps {
   event: Event;
 }
@@ -20,39 +21,44 @@ interface NoveltiesSectionProps {
 export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('awaited');
+  const [showAll, setShowAll] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const targetNoveltyId = searchParams.get('novelty');
   const handledTargetRef = useRef<string | null>(null);
-  
+
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-    error
+    error,
   } = useInfiniteNovelties({
     event_id: event.id,
     sort: sortBy,
     pageSize: 10,
-    enabled: !!event.id
+    enabled: !!event.id,
   });
 
-  // Intersection Observer pour le scroll infini
-  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
-    const target = entries[0];
-    if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  // Intersection Observer pour le scroll infini (uniquement quand "Tout afficher")
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const target = entries[0];
+      if (
+        target.isIntersecting &&
+        hasNextPage &&
+        !isFetchingNextPage &&
+        showAll
+      ) {
+        fetchNextPage();
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage, showAll],
+  );
 
   useEffect(() => {
-    const option = {
-      root: null,
-      rootMargin: '100px',
-      threshold: 0.1
-    };
+    const option = { root: null, rootMargin: '100px', threshold: 0.1 };
     const observer = new IntersectionObserver(handleObserver, option);
     if (loaderRef.current) {
       observer.observe(loaderRef.current);
@@ -60,16 +66,17 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     return () => observer.disconnect();
   }, [handleObserver]);
 
-  // Calculer si on est en phase de pré-lancement (plus de 60 jours avant l'événement)
-  const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
+  const daysUntilEvent = differenceInDays(
+    new Date(event.date_debut),
+    new Date(),
+  );
   const isPreLaunch = daysUntilEvent > 60;
 
-  // Flatten all pages into a single array
-  const allNovelties = data?.pages.flatMap(page => page.data) ?? [];
+  const allNovelties = data?.pages.flatMap((page) => page.data) ?? [];
   const total = data?.pages[0]?.total ?? 0;
 
-  // 🎯 Deep-link : si ?novelty=<id> est présent, charger les pages suivantes
-  // jusqu'à trouver la card, puis scroller + highlight une seule fois.
+  // Deep-link : si ?novelty=<id> est présent, charger les pages suivantes
+  // jusqu'à trouver la card, scroll + highlight, puis nettoyer l'URL.
   useEffect(() => {
     if (!targetNoveltyId || isLoading) return;
     if (handledTargetRef.current === targetNoveltyId) return;
@@ -77,19 +84,20 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     const found = allNovelties.some((n) => n.id === targetNoveltyId);
 
     if (!found) {
-      // Pas encore dans la liste : charger la page suivante si possible
       if (hasNextPage && !isFetchingNextPage) {
+        // Forcer l'expansion pour rendre la nouveauté ciblée visible
+        setShowAll(true);
         fetchNextPage();
       } else if (!hasNextPage) {
-        // Plus rien à charger, on abandonne pour ne pas reboucler
         handledTargetRef.current = targetNoveltyId;
       }
       return;
     }
 
+    // S'assurer que la card est rendue (sortir du repli si nécessaire)
+    setShowAll(true);
     handledTargetRef.current = targetNoveltyId;
 
-    // Attendre un tick pour que le DOM soit peint
     const rafId = requestAnimationFrame(() => {
       const el = document.getElementById(`novelty-${targetNoveltyId}`);
       if (!el) return;
@@ -97,7 +105,6 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
       el.classList.add('novelty-deeplink-highlight');
       window.setTimeout(() => {
         el.classList.remove('novelty-deeplink-highlight');
-        // Nettoyer le param d'URL pour ne pas rejouer au refresh / nav arrière
         const next = new URLSearchParams(searchParams);
         next.delete('novelty');
         setSearchParams(next, { replace: true });
@@ -116,23 +123,22 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     setSearchParams,
   ]);
 
-
   if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="h-7 w-32 bg-muted animate-pulse rounded" />
-          <div className="h-5 w-24 bg-muted animate-pulse rounded" />
+          <div className="h-7 w-40 bg-muted animate-pulse rounded" />
+          <div className="h-9 w-28 bg-muted animate-pulse rounded" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="h-40 bg-muted animate-pulse rounded-2xl" />
-          <div className="h-40 bg-muted animate-pulse rounded-2xl" />
+        <div className="space-y-3">
+          <div className="h-32 bg-muted animate-pulse rounded-2xl" />
+          <div className="h-32 bg-muted animate-pulse rounded-2xl" />
         </div>
       </div>
     );
   }
 
-  // Empty state - Si pré-lancement ET aucune nouveauté, afficher le banner spécial
+  // ÉTAT A — Aucune nouveauté
   if (!error && total === 0) {
     if (isPreLaunch) {
       return (
@@ -141,7 +147,7 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Nouveautés</h2>
             </div>
-            
+
             <NoveltiesPreLaunchBanner
               eventDate={event.date_debut}
               eventName={event.nom_event}
@@ -149,7 +155,6 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
             />
           </div>
 
-          {/* Dialog de notification */}
           <NoveltyNotificationDialog
             open={notificationDialogOpen}
             onOpenChange={setNotificationDialogOpen}
@@ -162,98 +167,142 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
       );
     }
 
-    // Cas normal : événement proche mais pas de nouveautés
+    // Cas normal : pas de nouveautés, message sobre + CTA exposant discret
     return (
-      <div className="rounded-2xl border border-[#ffe8d9] p-6 sm:p-8 text-center bg-[#ffe8d9]/40 overflow-hidden">
-        <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 rounded-full bg-[#ff751f]/10 flex items-center justify-center">
-            <Rocket className="h-6 w-6 text-[#ff751f]" />
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="text-xl font-semibold">Nouveautés</h2>
+        </div>
+        <div className="rounded-2xl border bg-card p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Rocket className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm">
+                Aucune nouveauté publiée pour l'instant.
+              </p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Vous exposez ? Soyez le premier à annoncer votre présence.
+              </p>
+            </div>
+            <AddNoveltyButton
+              event={event}
+              variant="outline"
+              size="sm"
+              label="Exposant : publier une nouveauté"
+              className="shrink-0"
+            />
           </div>
         </div>
-        <h3 className="text-xl font-semibold mb-2">Soyez parmi les premiers à vous démarquer sur cet événement</h3>
-        <p className="text-muted-foreground mb-5 max-w-lg mx-auto">
-          Les exposants peuvent publier ici leurs nouveautés, lancements produits ou annonces clés, visibles par les visiteurs de l'événement.
-        </p>
-        <div className="flex justify-center">
-          <AddNoveltyButton 
-            event={event} 
-            variant="outline" 
-            className="max-w-full text-sm sm:text-base whitespace-normal h-auto py-2 border-[#ff751f]/30 hover:bg-[#ff751f]/5" 
-            label="👤 Exposant : publier une nouveauté"
-          />
-        </div>
-      </div>
+      </section>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <div className="rounded-2xl border p-8 text-center">
-        <p className="text-destructive mb-4">Erreur lors du chargement des nouveautés</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="text-sm text-primary hover:underline"
-        >
-          Réessayer
-        </button>
-      </div>
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Nouveautés</h2>
+        <div className="rounded-2xl border p-6 text-center">
+          <p className="text-destructive mb-3 text-sm">
+            Erreur lors du chargement des nouveautés
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-sm text-primary hover:underline"
+          >
+            Réessayer
+          </button>
+        </div>
+      </section>
     );
   }
 
+  // ÉTATS B & C — au moins une nouveauté
+  const sectionTitle = total <= 3 ? 'Nouveautés à repérer' : 'Nouveautés';
+  const visibleNovelties =
+    showAll || total <= INITIAL_VISIBLE
+      ? allNovelties
+      : allNovelties.slice(0, INITIAL_VISIBLE);
+  const hasMoreToShow =
+    !showAll &&
+    total > INITIAL_VISIBLE &&
+    allNovelties.length > INITIAL_VISIBLE;
+
   return (
-    <div className="flex justify-end">
-      {/* Container aligné à droite style LinkedIn - proche de la sidebar */}
-      <div className="w-full max-w-xl space-y-6">
-        {/* Header with title, info, and add button */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Nouveautés</h2>
-            </div>
-            <AddNoveltyButton event={event} label="Ajouter" className="w-full sm:w-auto" />
+    <section className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold">{sectionTitle}</h2>
+            <span className="text-sm text-muted-foreground tabular-nums">
+              ({total})
+            </span>
           </div>
-          
-          {/* Explanatory text */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Les exposants partagent ici leurs nouveautés qui seront présentées sur le salon : repérez les stands à ne pas manquer.
+          <p className="text-sm text-muted-foreground mt-1">
+            Repérez les annonces des exposants pour préparer votre visite.
           </p>
-
-          {/* Filter buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant={sortBy === 'awaited' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortBy('awaited')}
-              aria-pressed={sortBy === 'awaited'}
-            >
-              Les plus attendues
-            </Button>
-            <Button
-              variant={sortBy === 'recent' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSortBy('recent')}
-              aria-pressed={sortBy === 'recent'}
-            >
-              Récentes
-            </Button>
-          </div>
         </div>
-
-        {/* Novelties list */}
-        <div className="space-y-6">
-          {allNovelties.map((novelty) => (
-            <NoveltyCard key={novelty.id} novelty={novelty} />
-          ))}
-        </div>
-
-        {/* Infinite scroll loader */}
-        <div ref={loaderRef} className="flex justify-center py-4">
-          {isFetchingNextPage && (
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          )}
-        </div>
+        <AddNoveltyButton
+          event={event}
+          label="Publier"
+          size="sm"
+          variant="outline"
+          className="shrink-0"
+        />
       </div>
-    </div>
+
+      {/* Tri — uniquement si 4+ nouveautés */}
+      {total > 3 && (
+        <div className="flex gap-2">
+          <Button
+            variant={sortBy === 'awaited' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('awaited')}
+            aria-pressed={sortBy === 'awaited'}
+          >
+            Les plus attendues
+          </Button>
+          <Button
+            variant={sortBy === 'recent' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('recent')}
+            aria-pressed={sortBy === 'recent'}
+          >
+            Récentes
+          </Button>
+        </div>
+      )}
+
+      {/* Liste compacte */}
+      <div className="space-y-3">
+        {visibleNovelties.map((novelty) => (
+          <NoveltyEventCard
+            key={novelty.id}
+            novelty={novelty}
+            eventSlug={event.slug}
+            eventDateDebut={event.date_debut}
+          />
+        ))}
+      </div>
+
+      {/* Révélation progressive : afficher le reste */}
+      {hasMoreToShow && (
+        <div className="flex justify-center pt-1">
+          <Button variant="outline" size="sm" onClick={() => setShowAll(true)}>
+            Afficher les {total - INITIAL_VISIBLE} autres nouveautés
+          </Button>
+        </div>
+      )}
+
+      {/* Loader scroll infini (actif seulement après "Tout afficher") */}
+      <div ref={loaderRef} className="flex justify-center py-2">
+        {isFetchingNextPage && (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        )}
+      </div>
+    </section>
   );
 }
