@@ -206,6 +206,7 @@ Deno.serve(async (req) => {
         if (match) {
           console.log('♻️ Exposant déjà existant pour ce domaine, réutilisation:', match.id)
           newExhibitor = match
+          reusedExisting = true
         }
       }
 
