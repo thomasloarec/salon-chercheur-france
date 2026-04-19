@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Rocket } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
@@ -20,6 +21,9 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('awaited');
   const loaderRef = useRef<HTMLDivElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const targetNoveltyId = searchParams.get('novelty');
+  const handledTargetRef = useRef<string | null>(null);
   
   const {
     data,
@@ -64,7 +68,54 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const allNovelties = data?.pages.flatMap(page => page.data) ?? [];
   const total = data?.pages[0]?.total ?? 0;
 
-  // Debug logging removed to avoid console spam on every render
+  // 🎯 Deep-link : si ?novelty=<id> est présent, charger les pages suivantes
+  // jusqu'à trouver la card, puis scroller + highlight une seule fois.
+  useEffect(() => {
+    if (!targetNoveltyId || isLoading) return;
+    if (handledTargetRef.current === targetNoveltyId) return;
+
+    const found = allNovelties.some((n) => n.id === targetNoveltyId);
+
+    if (!found) {
+      // Pas encore dans la liste : charger la page suivante si possible
+      if (hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      } else if (!hasNextPage) {
+        // Plus rien à charger, on abandonne pour ne pas reboucler
+        handledTargetRef.current = targetNoveltyId;
+      }
+      return;
+    }
+
+    handledTargetRef.current = targetNoveltyId;
+
+    // Attendre un tick pour que le DOM soit peint
+    const rafId = requestAnimationFrame(() => {
+      const el = document.getElementById(`novelty-${targetNoveltyId}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.add('novelty-deeplink-highlight');
+      window.setTimeout(() => {
+        el.classList.remove('novelty-deeplink-highlight');
+        // Nettoyer le param d'URL pour ne pas rejouer au refresh / nav arrière
+        const next = new URLSearchParams(searchParams);
+        next.delete('novelty');
+        setSearchParams(next, { replace: true });
+      }, 3000);
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [
+    targetNoveltyId,
+    isLoading,
+    allNovelties,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    searchParams,
+    setSearchParams,
+  ]);
+
 
   if (isLoading) {
     return (

@@ -52,7 +52,7 @@ export default function NoveltyWatchCard({
       ? "J-1"
       : `J-${daysUntil}`;
 
-  const eventHref = `/events/${event.slug}#nouveautes`;
+  const eventHref = `/events/${event.slug}?novelty=${novelty.id}`;
 
   // Image plus large et ratio plus proche du vertical (type post LinkedIn)
   const imageSize =
