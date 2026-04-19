@@ -54,11 +54,11 @@ export default function NoveltyWatchCard({
 
   const eventHref = `/events/${event.slug}#nouveautes`;
 
-  // Dimensions image volontairement plus petites en variant "compact"
+  // Image plus large et ratio plus proche du vertical (type post LinkedIn)
   const imageSize =
     variant === "compact"
-      ? "w-full sm:w-32 md:w-36 aspect-[4/3] sm:aspect-square"
-      : "w-full sm:w-40 md:w-44 aspect-[4/3] sm:aspect-square";
+      ? "w-full sm:w-48 md:w-52 aspect-[4/3] sm:aspect-[4/5]"
+      : "w-full sm:w-56 md:w-60 aspect-[4/3] sm:aspect-[4/5]";
 
   return (
     <Card
