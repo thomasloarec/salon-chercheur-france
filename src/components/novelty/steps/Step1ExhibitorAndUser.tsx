@@ -154,7 +154,24 @@ export default function Step1ExhibitorAndUser({
       if (!eventId) {
         console.warn('[Step1ExhibitorAndUser] Aucun id_event défini');
         setExhibitors([]);
+        setEventHasAnyExhibitor(false);
         return;
+      }
+
+      // ✅ Vérifier (une seule fois) si l'événement a au moins un exposant,
+      // indépendamment du filtre de recherche.
+      if (eventHasAnyExhibitor === null) {
+        const { count } = await supabase
+          .from('participations_with_exhibitors')
+          .select('id_exposant', { count: 'exact', head: true })
+          .eq('id_event_text', eventId);
+        const hasAny = (count ?? 0) > 0;
+        setEventHasAnyExhibitor(hasAny);
+        // Si aucun exposant n'existe sur cet événement, on passe directement
+        // au formulaire de création (la recherche ne sert à rien).
+        if (!hasAny) {
+          setShowNewExhibitorForm(true);
+        }
       }
 
       // Charger directement depuis la vue participations_with_exhibitors
