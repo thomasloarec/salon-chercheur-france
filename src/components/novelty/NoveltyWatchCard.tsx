@@ -42,15 +42,15 @@ export default function NoveltyWatchCard({
     ? differenceInDays(new Date(event.date_debut), new Date())
     : null;
 
-  const isUrgent = daysUntil !== null && daysUntil >= 0 && daysUntil <= 14;
+  const isImminent = daysUntil !== null && daysUntil >= 0 && daysUntil <= 14;
   const countdownLabel =
     daysUntil === null
       ? null
       : daysUntil <= 0
       ? "En cours"
       : daysUntil === 1
-      ? "Dans 1 jour"
-      : `Dans ${daysUntil} jours`;
+      ? "J-1"
+      : `J-${daysUntil}`;
 
   const eventHref = `/events/${event.slug}#nouveautes`;
 
