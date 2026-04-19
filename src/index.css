@@ -330,3 +330,24 @@ h1.event-title {
   50% { transform: translateX(60%); }
   100% { transform: translateX(-100%); }
 }
+
+/* Highlight sobre & premium pour la card de nouveauté ciblée par deep-link */
+@keyframes novelty-highlight {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    border-color: hsl(var(--border));
+  }
+  15% {
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.18);
+    border-color: hsl(var(--primary) / 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    border-color: hsl(var(--border));
+  }
+}
+.novelty-deeplink-highlight {
+  animation: novelty-highlight 2.8s ease-out 1;
+  border-color: hsl(var(--primary) / 0.5);
+}
+

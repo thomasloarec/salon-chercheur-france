@@ -139,7 +139,14 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
   }, [hasMultipleImages]);
 
   return (
-    <div className={cn("rounded-2xl border shadow-sm p-5 space-y-4 bg-card w-full max-w-xl mx-auto", className)}>
+    <div
+      id={`novelty-${novelty.id}`}
+      data-novelty-id={novelty.id}
+      className={cn(
+        "rounded-2xl border shadow-sm p-5 space-y-4 bg-card w-full max-w-xl mx-auto scroll-mt-24 transition-shadow",
+        className
+      )}
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
