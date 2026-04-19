@@ -284,6 +284,8 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
             novelty={novelty}
             eventSlug={event.slug}
             eventDateDebut={event.date_debut}
+            eventName={event.nom_event}
+            eventVille={event.ville}
           />
         ))}
       </div>
