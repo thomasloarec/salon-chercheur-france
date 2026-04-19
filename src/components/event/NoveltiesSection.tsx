@@ -21,6 +21,9 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('awaited');
   const loaderRef = useRef<HTMLDivElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const targetNoveltyId = searchParams.get('novelty');
+  const handledTargetRef = useRef<string | null>(null);
   
   const {
     data,
