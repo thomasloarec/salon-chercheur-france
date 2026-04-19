@@ -147,19 +147,39 @@ export default function NoveltyEventCard({
         )}
       >
         <div className="flex flex-col sm:flex-row">
-          {/* Visuel compact, jamais dominant */}
-          <Link
-            to={detailHref}
-            className="relative shrink-0 bg-muted overflow-hidden w-full sm:w-44 md:w-48 aspect-[4/3] sm:aspect-[4/5]"
-            aria-label={`Voir ${novelty.title}`}
+          {/* Visuel compact, jamais dominant — clic = popup détaillé */}
+          <button
+            type="button"
+            onClick={() => setShowDetailDialog(true)}
+            className="relative shrink-0 bg-muted overflow-hidden w-full sm:w-44 md:w-48 aspect-[4/3] sm:aspect-[4/5] group/img cursor-zoom-in"
+            aria-label={
+              imageCount > 1
+                ? `Voir les ${imageCount} images de ${novelty.title}`
+                : `Voir le détail de ${novelty.title}`
+            }
           >
             {image ? (
-              <img
-                src={image}
-                alt={novelty.title}
-                loading="lazy"
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-              />
+              <>
+                <img
+                  src={image}
+                  alt={novelty.title}
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover group-hover/img:scale-[1.03] transition-transform duration-500"
+                />
+                {/* Overlay zoom au hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/img:opacity-100">
+                  <div className="bg-white/90 text-foreground rounded-full p-2 shadow-md">
+                    <Maximize2 className="h-4 w-4" />
+                  </div>
+                </div>
+                {/* Badge nombre d'images si plusieurs */}
+                {imageCount > 1 && (
+                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1 tabular-nums">
+                    <Images className="h-3 w-3" />
+                    {imageCount}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-muted to-muted/40">
                 <Building2 className="h-7 w-7 text-muted-foreground/40" />
@@ -168,7 +188,7 @@ export default function NoveltyEventCard({
                 </span>
               </div>
             )}
-          </Link>
+          </button>
 
           {/* Zone texte */}
           <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-2.5">
