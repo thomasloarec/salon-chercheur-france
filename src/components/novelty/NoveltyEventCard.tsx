@@ -41,6 +41,8 @@ interface NoveltyEventCardProps {
   novelty: Novelty;
   eventSlug?: string | null;
   eventDateDebut?: string | null;
+  eventName?: string | null;
+  eventVille?: string | null;
   className?: string;
 }
 
@@ -56,6 +58,8 @@ export default function NoveltyEventCard({
   novelty,
   eventSlug,
   eventDateDebut,
+  eventName,
+  eventVille,
   className,
 }: NoveltyEventCardProps) {
   const { user } = useAuth();
@@ -72,6 +76,7 @@ export default function NoveltyEventCard({
   const [leadFormType, setLeadFormType] =
     useState<'brochure_download' | 'meeting_request'>('brochure_download');
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   const exhibitor = novelty.exhibitors ?? {
     id: novelty.exhibitor_id,
@@ -81,9 +86,12 @@ export default function NoveltyEventCard({
   };
 
   const typeLabel = TYPE_LABELS[novelty.type] || novelty.type;
-  const image = novelty.media_urls?.find((url) =>
-    /\.(jpg|jpeg|png|gif|webp)$/i.test(url),
-  );
+  const images =
+    novelty.media_urls?.filter((url) =>
+      /\.(jpg|jpeg|png|gif|webp)$/i.test(url),
+    ) ?? [];
+  const image = images[0];
+  const imageCount = images.length;
   const logo = getExhibitorLogoUrl(
     (exhibitor as any).logo_url,
     (exhibitor as any).website,
