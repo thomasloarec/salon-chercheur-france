@@ -453,8 +453,17 @@ export default function Step1ExhibitorAndUser({
           /* New exhibitor form */
           <Card>
             <CardContent className="p-6 space-y-4">
-              <h4 className="font-medium">Créer une nouvelle entreprise</h4>
-              
+              <h4 className="font-medium">
+                {noExhibitorsForEvent
+                  ? 'Renseignez votre entreprise'
+                  : 'Créer une nouvelle entreprise'}
+              </h4>
+              {noExhibitorsForEvent && (
+                <p className="text-sm text-muted-foreground -mt-2">
+                  Aucun exposant n'est encore référencé sur cet événement. Renseignez votre entreprise pour publier votre nouveauté. Si une entreprise existe déjà sur Lotexpo avec ce site web, elle sera automatiquement réutilisée (pas de doublon).
+                </p>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="company-name">Nom de l'entreprise *</Label>
