@@ -205,100 +205,125 @@ export default function Nouveautes() {
           </div>
         </section>
 
-        <div className="container mx-auto px-4 py-8 md:py-10 max-w-6xl space-y-12">
+        <div className="container mx-auto px-4 py-8 md:py-10 max-w-6xl space-y-14">
           {/* BLOC 2 — À surveiller maintenant (masqué si filtres actifs) */}
           {!hasActiveFilters && (
-            <section>
-              <div className="flex items-end justify-between mb-4 gap-4">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-semibold">À surveiller maintenant</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Les nouveautés des salons les plus proches.
+            <section className="relative">
+              {/* Bloc éditorial mis en avant via fond + accent gauche */}
+              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.04] via-background to-background p-5 md:p-7 relative overflow-hidden">
+                <div className="absolute top-0 left-0 h-full w-1 bg-primary/60" aria-hidden />
+                <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary mb-2">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Sélection éditoriale
+                    </div>
+                    <h2 className="text-xl md:text-2xl font-bold">À surveiller maintenant</h2>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+                      Les nouveautés des salons les plus proches, à ne pas manquer avant votre visite.
+                    </p>
+                  </div>
+                </div>
+                {isLoading ? (
+                  <SkeletonGrid count={3} />
+                ) : watchNow.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Aucune nouveauté à surveiller pour le moment.
                   </p>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {watchNow.map((n) => (
+                      <NoveltyWatchCard key={n.id} novelty={n} variant="compact" />
+                    ))}
+                  </div>
+                )}
               </div>
-              {isLoading ? (
-                <SkeletonGrid count={3} />
-              ) : watchNow.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Aucune nouveauté à surveiller pour le moment.
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {watchNow.map((n) => (
-                    <NoveltyWatchCard key={n.id} novelty={n} />
-                  ))}
-                </div>
-              )}
             </section>
           )}
 
-          {/* BLOC 3 — Filtres */}
-          <section>
-            <div className="rounded-xl border bg-card p-4 md:p-5">
-              <div className="flex flex-col md:flex-row md:items-center md:flex-wrap gap-3">
-                <FilterField label="Secteur">
-                  <SafeSelect
-                    ariaLabel="Filtrer par secteur"
-                    className="w-full md:w-56"
-                    placeholder="Tous les secteurs"
-                    value={sectorSlug}
-                    onChange={(v) => updateParam("sectors", v)}
-                    options={CANONICAL_SECTORS.map((s) => ({ value: s.value, label: s.label }))}
-                    allLabel="Tous les secteurs"
-                  />
-                </FilterField>
-                <FilterField label="Horizon">
-                  <SafeSelect
-                    ariaLabel="Filtrer par horizon temporel"
-                    className="w-full md:w-48"
-                    placeholder="Toutes dates"
-                    value={horizonFilter ? String(horizonFilter) : null}
-                    onChange={(v) => updateParam("horizon", v)}
-                    options={HORIZON_OPTIONS}
-                    allLabel="Toutes dates"
-                  />
-                </FilterField>
-                <FilterField label="Type de nouveauté">
-                  <SafeSelect
-                    ariaLabel="Filtrer par type de nouveauté"
-                    className="w-full md:w-48"
-                    placeholder="Tous les types"
-                    value={typeFilter}
-                    onChange={(v) => updateParam("novelty_type", v)}
-                    options={NOVELTY_TYPES_OPTIONS}
-                    allLabel="Tous les types"
-                  />
-                </FilterField>
-                <FilterField label="Région">
-                  <SafeSelect
-                    ariaLabel="Filtrer par région"
-                    className="w-full md:w-48"
-                    placeholder="Toutes régions"
-                    value={regionFilter}
-                    onChange={(v) => updateParam("region", v)}
-                    options={regions}
-                    allLabel="Toutes régions"
-                  />
-                </FilterField>
+          {/* BLOC 3 — Filtres (sticky + plus structurants) */}
+          <section className="sticky top-16 z-20 -mx-4 px-4 py-3 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-y">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Affiner la veille
+              </span>
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="text-[10px] h-5">
+                  filtres actifs
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-col md:flex-row md:items-end md:flex-wrap gap-3">
+              <FilterField label="Secteur">
+                <SafeSelect
+                  ariaLabel="Filtrer par secteur"
+                  className="w-full md:w-56"
+                  placeholder="Tous les secteurs"
+                  value={sectorSlug}
+                  onChange={(v) => updateParam("sectors", v)}
+                  options={CANONICAL_SECTORS.map((s) => ({ value: s.value, label: s.label }))}
+                  allLabel="Tous les secteurs"
+                />
+              </FilterField>
+              <FilterField label="Horizon">
+                <SafeSelect
+                  ariaLabel="Filtrer par horizon temporel"
+                  className="w-full md:w-48"
+                  placeholder="Toutes dates"
+                  value={horizonFilter ? String(horizonFilter) : null}
+                  onChange={(v) => updateParam("horizon", v)}
+                  options={HORIZON_OPTIONS}
+                  allLabel="Toutes dates"
+                />
+              </FilterField>
+              <FilterField label="Type de nouveauté">
+                <SafeSelect
+                  ariaLabel="Filtrer par type de nouveauté"
+                  className="w-full md:w-48"
+                  placeholder="Tous les types"
+                  value={typeFilter}
+                  onChange={(v) => updateParam("novelty_type", v)}
+                  options={NOVELTY_TYPES_OPTIONS}
+                  allLabel="Tous les types"
+                />
+              </FilterField>
+              <FilterField label="Région">
+                <SafeSelect
+                  ariaLabel="Filtrer par région"
+                  className="w-full md:w-48"
+                  placeholder="Toutes régions"
+                  value={regionFilter}
+                  onChange={(v) => updateParam("region", v)}
+                  options={regions}
+                  allLabel="Toutes régions"
+                />
+              </FilterField>
 
-                {hasActiveFilters && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearAll}
-                    className="md:ml-auto gap-1"
-                  >
-                    <X className="h-4 w-4" />
-                    Réinitialiser
-                  </Button>
-                )}
-              </div>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAll}
+                  className="md:ml-auto gap-1 self-end"
+                >
+                  <X className="h-4 w-4" />
+                  Réinitialiser
+                </Button>
+              )}
             </div>
           </section>
 
           {/* BLOC 4 — Veille par secteur */}
-          <section className="space-y-10">
+          <section className="space-y-12">
+            {!hasActiveFilters && bySector.length > 0 && (
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Explorer par secteur
+                </span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+            )}
             {isLoading && bySector.length === 0 ? (
               <SkeletonGrid count={4} />
             ) : error ? (
@@ -308,8 +333,8 @@ export default function Nouveautes() {
             ) : bySector.length === 0 ? (
               <EmptyState onReset={hasActiveFilters ? clearAll : undefined} />
             ) : (
-              bySector.map((group) => (
-                <SectorGroup key={group.sector} group={group} />
+              bySector.map((group, idx) => (
+                <SectorGroup key={group.sector} group={group} index={idx} />
               ))
             )}
           </section>
@@ -403,22 +428,34 @@ const INITIAL_VISIBLE = 4;
 
 function SectorGroup({
   group,
+  index = 0,
 }: {
   group: { sector: string; items: NoveltyWatchRow[]; eventCount: number };
+  index?: number;
 }) {
   const visible = group.items.slice(0, INITIAL_VISIBLE);
   const hasMore = group.items.length > INITIAL_VISIBLE;
 
   return (
-    <div>
-      <div className="flex items-end justify-between gap-3 mb-4 flex-wrap">
-        <div>
-          <h2 className="text-lg md:text-xl font-semibold">{group.sector}</h2>
-          <p className="text-xs md:text-sm text-muted-foreground mt-1">
-            {group.items.length} nouveauté{group.items.length > 1 ? "s" : ""} ·{" "}
-            {group.eventCount} salon{group.eventCount > 1 ? "s" : ""} concerné
-            {group.eventCount > 1 ? "s" : ""}
-          </p>
+    <div className="scroll-mt-32">
+      {/* En-tête de section avec accent visuel */}
+      <div className="flex items-end justify-between gap-3 mb-5 flex-wrap pb-3 border-b border-border/60">
+        <div className="flex items-center gap-3">
+          <div
+            className="h-9 w-1 rounded-full bg-primary/70"
+            aria-hidden
+          />
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Secteur {String(index + 1).padStart(2, "0")}
+            </div>
+            <h2 className="text-lg md:text-xl font-bold leading-tight">{group.sector}</h2>
+            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+              {group.items.length} nouveauté{group.items.length > 1 ? "s" : ""} ·{" "}
+              {group.eventCount} salon{group.eventCount > 1 ? "s" : ""} concerné
+              {group.eventCount > 1 ? "s" : ""}
+            </p>
+          </div>
         </div>
         {hasMore && (
           <Badge variant="secondary" className="font-normal">
