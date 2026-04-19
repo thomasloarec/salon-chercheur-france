@@ -212,12 +212,16 @@ export default function NoveltyEventCard({
               )}
             </div>
 
-            {/* Titre */}
-            <Link to={detailHref} className="block">
-              <h3 className="font-semibold text-base sm:text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+            {/* Titre — clic = popup détaillé */}
+            <button
+              type="button"
+              onClick={() => setShowDetailDialog(true)}
+              className="block text-left"
+            >
+              <h3 className="font-semibold text-base sm:text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors hover:text-primary">
                 {novelty.title}
               </h3>
-            </Link>
+            </button>
 
             {/* Résumé / description longue avec Voir plus / Voir moins */}
             {description && (
@@ -327,6 +331,28 @@ export default function NoveltyEventCard({
       <AuthRequiredModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
+      />
+
+      <NoveltyDetailDialog
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        novelty={novelty}
+        eventDateDebut={eventDateDebut}
+        eventName={eventName}
+        eventVille={eventVille}
+        standInfo={standInfo}
+        likesCount={likesCount}
+        isLiked={isLiked}
+        onInterestToggle={() => {
+          if (!user) {
+            setShowAuthModal(true);
+            return;
+          }
+          toggleLike();
+        }}
+        onBrochureDownload={
+          novelty.doc_url ? handleBrochureDownload : undefined
+        }
       />
     </>
   );
