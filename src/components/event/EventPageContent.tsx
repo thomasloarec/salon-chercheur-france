@@ -247,7 +247,8 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
             
-            {/* Préparer ma visite - shown when >= 80 exhibitors and event not past */}
+            {/* A. Préparer ma visite avec l'IA — bloc stratégique, prioritaire après le hero.
+                Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
             {exhibitorCount >= 80 && !isEventPast && (
               <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -268,20 +269,32 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
 
-            <div className="grid grid-cols-12 gap-6">
-              {/* Colonne gauche - Nouveautés */}
-              <div className="col-span-12 lg:col-span-8">
+            {/* B & C. Nouveautés (gauche) + Exposants (droite, uniquement si exposants disponibles).
+                Sans exposants → la section nouveautés prend toute la largeur (pas de sidebar vide). */}
+            {exhibitorCount > 0 ? (
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-8">
+                  <section id="nouveautes">
+                    <NoveltiesSection event={event} />
+                  </section>
+                </div>
+                <aside className="col-span-12 lg:col-span-4 space-y-6">
+                  <ExhibitorsSidebar event={event} />
+                  <EventAboutSidebar event={event} />
+                </aside>
+              </div>
+            ) : (
+              <div className="space-y-6">
                 <section id="nouveautes">
                   <NoveltiesSection event={event} />
                 </section>
+                <div className="grid grid-cols-12 gap-6">
+                  <div className="col-span-12 lg:col-span-8">
+                    <EventAboutSidebar event={event} />
+                  </div>
+                </div>
               </div>
-
-              {/* Colonne droite - Exposants et À propos */}
-              <aside className="col-span-12 lg:col-span-4 space-y-6">
-                <ExhibitorsSidebar event={event} />
-                <EventAboutSidebar event={event} />
-              </aside>
-            </div>
+            )}
 
             {/* Autres éditions de ce salon (séries) */}
             <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
