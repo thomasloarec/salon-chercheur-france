@@ -352,20 +352,32 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Create claim request
-      await serviceClient
+      // Create claim request (idempotent : éviter les doublons quand l'exposant est réutilisé)
+      const { data: existingClaim } = await serviceClient
         .from('exhibitor_claim_requests')
-        .insert({
-          exhibitor_id: newExhibitor.id,
-          requester_user_id: user.id,
-          status: claimStatus
-        })
+        .select('id, status')
+        .eq('exhibitor_id', newExhibitor.id)
+        .eq('requester_user_id', user.id)
+        .maybeSingle()
+
+      if (!existingClaim) {
+        await serviceClient
+          .from('exhibitor_claim_requests')
+          .insert({
+            exhibitor_id: newExhibitor.id,
+            requester_user_id: user.id,
+            status: claimStatus
+          })
+      } else {
+        console.log('↪️ Claim request déjà existante pour ce user/exposant, skip insert')
+      }
 
       return jsonOk({
         ...newExhibitor,
-        approved: claimStatus === 'approved',
+        approved: claimStatus === 'approved' || newExhibitor.approved === true,
         team_promoted: teamPromoted,
-        participation_deferred: !!defer_participation
+        participation_deferred: !!defer_participation,
+        reused_existing: reusedExisting
       })
     }
 
