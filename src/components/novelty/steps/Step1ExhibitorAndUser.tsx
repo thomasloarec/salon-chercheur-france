@@ -49,6 +49,8 @@ export default function Step1ExhibitorAndUser({
   const [selectedExhibitor, setSelectedExhibitor] = useState<DbExhibitor | null>(null);
   const [selectedExhibitorLogo, setSelectedExhibitorLogo] = useState<File | null>(null);
   const [selectedExhibitorStandInfo, setSelectedExhibitorStandInfo] = useState<string>('');
+  // ✅ Track whether the event has any exhibitor at all (independent of search filter)
+  const [eventHasAnyExhibitor, setEventHasAnyExhibitor] = useState<boolean | null>(null);
   
   // Vérifier le quota pour l'exposant sélectionné
   const { data: quota } = useNoveltyQuota(
@@ -152,7 +154,24 @@ export default function Step1ExhibitorAndUser({
       if (!eventId) {
         console.warn('[Step1ExhibitorAndUser] Aucun id_event défini');
         setExhibitors([]);
+        setEventHasAnyExhibitor(false);
         return;
+      }
+
+      // ✅ Vérifier (une seule fois) si l'événement a au moins un exposant,
+      // indépendamment du filtre de recherche.
+      if (eventHasAnyExhibitor === null) {
+        const { count } = await supabase
+          .from('participations_with_exhibitors')
+          .select('id_exposant', { count: 'exact', head: true })
+          .eq('id_event_text', eventId);
+        const hasAny = (count ?? 0) > 0;
+        setEventHasAnyExhibitor(hasAny);
+        // Si aucun exposant n'existe sur cet événement, on passe directement
+        // au formulaire de création (la recherche ne sert à rien).
+        if (!hasAny) {
+          setShowNewExhibitorForm(true);
+        }
       }
 
       // Charger directement depuis la vue participations_with_exhibitors
@@ -289,9 +308,14 @@ export default function Step1ExhibitorAndUser({
   const resetSelection = () => {
     setSelectedExhibitor(null);
     setSelectedExhibitorStandInfo('');
-    setShowNewExhibitorForm(false);
+    // Si l'événement n'a aucun exposant connu, on garde le formulaire de création ouvert
+    // (sinon l'utilisateur tomberait sur une recherche vide).
+    setShowNewExhibitorForm(eventHasAnyExhibitor === false);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
   };
+
+  // Adapter l'UX selon la disponibilité d'exposants pour cet événement
+  const noExhibitorsForEvent = eventHasAnyExhibitor === false;
 
   return (
     <div className="space-y-8">
@@ -306,8 +330,11 @@ export default function Step1ExhibitorAndUser({
       {/* Exhibitor Selection */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Sélectionner l'exposant</h3>
-          {(selectedExhibitor || showNewExhibitorForm) && (
+          <h3 className="text-lg font-medium">
+            {noExhibitorsForEvent ? 'Ajouter votre entreprise' : "Sélectionner l'exposant"}
+          </h3>
+          {/* Bouton « Changer » : inutile s'il n'y a pas d'exposant à choisir */}
+          {(selectedExhibitor || (showNewExhibitorForm && !noExhibitorsForEvent)) && (
             <Button variant="outline" size="sm" onClick={resetSelection}>
               <X className="h-4 w-4 mr-1" />
               Changer
@@ -426,8 +453,17 @@ export default function Step1ExhibitorAndUser({
           /* New exhibitor form */
           <Card>
             <CardContent className="p-6 space-y-4">
-              <h4 className="font-medium">Créer une nouvelle entreprise</h4>
-              
+              <h4 className="font-medium">
+                {noExhibitorsForEvent
+                  ? 'Renseignez votre entreprise'
+                  : 'Créer une nouvelle entreprise'}
+              </h4>
+              {noExhibitorsForEvent && (
+                <p className="text-sm text-muted-foreground -mt-2">
+                  Aucun exposant n'est encore référencé sur cet événement. Renseignez votre entreprise pour publier votre nouveauté. Si une entreprise existe déjà sur Lotexpo avec ce site web, elle sera automatiquement réutilisée (pas de doublon).
+                </p>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="company-name">Nom de l'entreprise *</Label>

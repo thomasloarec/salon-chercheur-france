@@ -49,6 +49,16 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
   // ✅ Ref pour capturer le logo avant qu'il soit perdu dans les mises à jour d'état
   const exhibitorLogoFileRef = useRef<File | null>(null);
 
+  // ✅ Ref sur le contenu scrollable du dialog pour scroller en haut au changement d'étape
+  const dialogContentRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll to top whenever the step changes (to avoid landing mid-form on step 2)
+  useEffect(() => {
+    if (dialogContentRef.current) {
+      dialogContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [currentStep]);
+
   // Form state
   const [state, setState] = useState<StepperState>({
     step1Data: {},
@@ -916,7 +926,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       />
 
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="novelty-stepper-description">
+        <DialogContent ref={dialogContentRef} className="sm:max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="novelty-stepper-description">
           <DialogHeader>
             <DialogTitle>Ajouter une nouveauté</DialogTitle>
           </DialogHeader>
