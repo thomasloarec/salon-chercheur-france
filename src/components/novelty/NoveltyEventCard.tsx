@@ -189,11 +189,23 @@ export default function NoveltyEventCard({
               </h3>
             </Link>
 
-            {/* Résumé court */}
+            {/* Résumé / description longue avec Voir plus / Voir moins */}
             {description && (
-              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                {description}
-              </p>
+              <div className="text-sm text-muted-foreground leading-relaxed">
+                <p className={cn(!isDescriptionExpanded && 'line-clamp-2')}>
+                  {description}
+                </p>
+                {description.length > 140 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDescriptionExpanded((v) => !v)}
+                    className="text-primary hover:underline text-xs font-medium mt-1"
+                    aria-expanded={isDescriptionExpanded}
+                  >
+                    {isDescriptionExpanded ? 'Voir moins' : 'Voir plus'}
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Séparateur subtil */}
