@@ -308,9 +308,14 @@ export default function Step1ExhibitorAndUser({
   const resetSelection = () => {
     setSelectedExhibitor(null);
     setSelectedExhibitorStandInfo('');
-    setShowNewExhibitorForm(false);
+    // Si l'événement n'a aucun exposant connu, on garde le formulaire de création ouvert
+    // (sinon l'utilisateur tomberait sur une recherche vide).
+    setShowNewExhibitorForm(eventHasAnyExhibitor === false);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
   };
+
+  // Adapter l'UX selon la disponibilité d'exposants pour cet événement
+  const noExhibitorsForEvent = eventHasAnyExhibitor === false;
 
   return (
     <div className="space-y-8">
