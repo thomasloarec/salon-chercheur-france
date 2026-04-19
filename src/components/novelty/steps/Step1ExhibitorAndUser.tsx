@@ -330,8 +330,11 @@ export default function Step1ExhibitorAndUser({
       {/* Exhibitor Selection */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Sélectionner l'exposant</h3>
-          {(selectedExhibitor || showNewExhibitorForm) && (
+          <h3 className="text-lg font-medium">
+            {noExhibitorsForEvent ? 'Ajouter votre entreprise' : "Sélectionner l'exposant"}
+          </h3>
+          {/* Bouton « Changer » : inutile s'il n'y a pas d'exposant à choisir */}
+          {(selectedExhibitor || (showNewExhibitorForm && !noExhibitorsForEvent)) && (
             <Button variant="outline" size="sm" onClick={resetSelection}>
               <X className="h-4 w-4 mr-1" />
               Changer
