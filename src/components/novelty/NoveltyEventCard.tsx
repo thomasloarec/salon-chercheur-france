@@ -5,7 +5,7 @@ import {
   MapPin,
   FileText,
   Building2,
-  ArrowRight,
+  
   Clock,
   Bookmark,
   Download,
