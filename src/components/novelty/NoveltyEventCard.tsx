@@ -69,6 +69,7 @@ export default function NoveltyEventCard({
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadFormType, setLeadFormType] =
     useState<'brochure_download' | 'meeting_request'>('brochure_download');
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   const exhibitor = novelty.exhibitors ?? {
     id: novelty.exhibitor_id,
