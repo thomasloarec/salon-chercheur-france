@@ -5,10 +5,11 @@ import {
   MapPin,
   FileText,
   Building2,
-  
   Clock,
   Bookmark,
   Download,
+  Images,
+  Maximize2,
 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ import {
 } from '@/hooks/useNoveltyLike';
 import LeadForm from './LeadForm';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
+import NoveltyDetailDialog from './NoveltyDetailDialog';
 import type { Novelty } from '@/hooks/useNovelties';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -39,6 +41,8 @@ interface NoveltyEventCardProps {
   novelty: Novelty;
   eventSlug?: string | null;
   eventDateDebut?: string | null;
+  eventName?: string | null;
+  eventVille?: string | null;
   className?: string;
 }
 
@@ -54,6 +58,8 @@ export default function NoveltyEventCard({
   novelty,
   eventSlug,
   eventDateDebut,
+  eventName,
+  eventVille,
   className,
 }: NoveltyEventCardProps) {
   const { user } = useAuth();
@@ -70,6 +76,7 @@ export default function NoveltyEventCard({
   const [leadFormType, setLeadFormType] =
     useState<'brochure_download' | 'meeting_request'>('brochure_download');
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   const exhibitor = novelty.exhibitors ?? {
     id: novelty.exhibitor_id,
@@ -79,9 +86,12 @@ export default function NoveltyEventCard({
   };
 
   const typeLabel = TYPE_LABELS[novelty.type] || novelty.type;
-  const image = novelty.media_urls?.find((url) =>
-    /\.(jpg|jpeg|png|gif|webp)$/i.test(url),
-  );
+  const images =
+    novelty.media_urls?.filter((url) =>
+      /\.(jpg|jpeg|png|gif|webp)$/i.test(url),
+    ) ?? [];
+  const image = images[0];
+  const imageCount = images.length;
   const logo = getExhibitorLogoUrl(
     (exhibitor as any).logo_url,
     (exhibitor as any).website,
@@ -137,19 +147,39 @@ export default function NoveltyEventCard({
         )}
       >
         <div className="flex flex-col sm:flex-row">
-          {/* Visuel compact, jamais dominant */}
-          <Link
-            to={detailHref}
-            className="relative shrink-0 bg-muted overflow-hidden w-full sm:w-44 md:w-48 aspect-[4/3] sm:aspect-[4/5]"
-            aria-label={`Voir ${novelty.title}`}
+          {/* Visuel compact, jamais dominant — clic = popup détaillé */}
+          <button
+            type="button"
+            onClick={() => setShowDetailDialog(true)}
+            className="relative shrink-0 bg-muted overflow-hidden w-full sm:w-44 md:w-48 aspect-[4/3] sm:aspect-[4/5] group/img cursor-zoom-in"
+            aria-label={
+              imageCount > 1
+                ? `Voir les ${imageCount} images de ${novelty.title}`
+                : `Voir le détail de ${novelty.title}`
+            }
           >
             {image ? (
-              <img
-                src={image}
-                alt={novelty.title}
-                loading="lazy"
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-              />
+              <>
+                <img
+                  src={image}
+                  alt={novelty.title}
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover group-hover/img:scale-[1.03] transition-transform duration-500"
+                />
+                {/* Overlay zoom au hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover/img:opacity-100">
+                  <div className="bg-white/90 text-foreground rounded-full p-2 shadow-md">
+                    <Maximize2 className="h-4 w-4" />
+                  </div>
+                </div>
+                {/* Badge nombre d'images si plusieurs */}
+                {imageCount > 1 && (
+                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1 tabular-nums">
+                    <Images className="h-3 w-3" />
+                    {imageCount}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-muted to-muted/40">
                 <Building2 className="h-7 w-7 text-muted-foreground/40" />
@@ -158,7 +188,7 @@ export default function NoveltyEventCard({
                 </span>
               </div>
             )}
-          </Link>
+          </button>
 
           {/* Zone texte */}
           <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-2.5">
@@ -182,12 +212,16 @@ export default function NoveltyEventCard({
               )}
             </div>
 
-            {/* Titre */}
-            <Link to={detailHref} className="block">
-              <h3 className="font-semibold text-base sm:text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+            {/* Titre — clic = popup détaillé */}
+            <button
+              type="button"
+              onClick={() => setShowDetailDialog(true)}
+              className="block text-left"
+            >
+              <h3 className="font-semibold text-base sm:text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors hover:text-primary">
                 {novelty.title}
               </h3>
-            </Link>
+            </button>
 
             {/* Résumé / description longue avec Voir plus / Voir moins */}
             {description && (
@@ -297,6 +331,28 @@ export default function NoveltyEventCard({
       <AuthRequiredModal
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
+      />
+
+      <NoveltyDetailDialog
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        novelty={novelty}
+        eventDateDebut={eventDateDebut}
+        eventName={eventName}
+        eventVille={eventVille}
+        standInfo={standInfo}
+        likesCount={likesCount}
+        isLiked={isLiked}
+        onInterestToggle={() => {
+          if (!user) {
+            setShowAuthModal(true);
+            return;
+          }
+          toggleLike();
+        }}
+        onBrochureDownload={
+          novelty.doc_url ? handleBrochureDownload : undefined
+        }
       />
     </>
   );
