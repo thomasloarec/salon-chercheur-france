@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, FileText, Building2, ArrowRight, Clock } from "lucide-react";
+import { Calendar, MapPin, FileText, Building2, ArrowRight, Clock, ImageOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,9 +21,15 @@ const TYPE_LABELS: Record<string, string> = {
 interface NoveltyWatchCardProps {
   novelty: NoveltyWatchRow;
   className?: string;
+  /** "compact" réduit encore le visuel (utilisé dans "À surveiller maintenant") */
+  variant?: "default" | "compact";
 }
 
-export default function NoveltyWatchCard({ novelty, className }: NoveltyWatchCardProps) {
+export default function NoveltyWatchCard({
+  novelty,
+  className,
+  variant = "default",
+}: NoveltyWatchCardProps) {
   const exhibitor = novelty.exhibitors;
   const event = novelty.events;
   if (!exhibitor || !event) return null;
@@ -36,6 +42,7 @@ export default function NoveltyWatchCard({ novelty, className }: NoveltyWatchCar
     ? differenceInDays(new Date(event.date_debut), new Date())
     : null;
 
+  const isUrgent = daysUntil !== null && daysUntil >= 0 && daysUntil <= 14;
   const countdownLabel =
     daysUntil === null
       ? null
@@ -47,10 +54,16 @@ export default function NoveltyWatchCard({ novelty, className }: NoveltyWatchCar
 
   const eventHref = `/events/${event.slug}#nouveautes`;
 
+  // Dimensions image volontairement plus petites en variant "compact"
+  const imageSize =
+    variant === "compact"
+      ? "w-full sm:w-32 md:w-36 aspect-[4/3] sm:aspect-square"
+      : "w-full sm:w-40 md:w-44 aspect-[4/3] sm:aspect-square";
+
   return (
     <Card
       className={cn(
-        "group overflow-hidden hover:shadow-md transition-shadow border-border/60",
+        "group overflow-hidden hover:shadow-md hover:border-primary/30 transition-all border-border/60",
         className
       )}
     >
@@ -58,7 +71,10 @@ export default function NoveltyWatchCard({ novelty, className }: NoveltyWatchCar
         {/* Visuel : compact, jamais dominant */}
         <Link
           to={eventHref}
-          className="relative shrink-0 w-full sm:w-44 md:w-52 aspect-[4/3] sm:aspect-auto sm:h-auto bg-muted overflow-hidden"
+          className={cn(
+            "relative shrink-0 bg-muted overflow-hidden",
+            imageSize
+          )}
           aria-label={`Voir ${novelty.title}`}
         >
           {image ? (
@@ -69,29 +85,33 @@ export default function NoveltyWatchCard({ novelty, className }: NoveltyWatchCar
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/40">
-              <Building2 className="h-10 w-10 text-muted-foreground/40" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-muted to-muted/40">
+              <Building2 className="h-8 w-8 text-muted-foreground/40" />
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground/60">
+                {typeLabel}
+              </span>
             </div>
           )}
         </Link>
 
         {/* Zone texte */}
-        <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-3">
-          {/* Méta : badge type + countdown */}
+        <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-2.5">
+          {/* Méta haute : type + countdown bien visible */}
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary" className="font-medium">
               {typeLabel}
             </Badge>
             {countdownLabel && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border",
+                  isUrgent
+                    ? "bg-primary/10 text-primary border-primary/20"
+                    : "bg-muted text-foreground/80 border-border"
+                )}
+              >
                 <Clock className="h-3 w-3" />
                 {countdownLabel}
-              </span>
-            )}
-            {novelty.doc_url && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-auto">
-                <FileText className="h-3 w-3" />
-                Document disponible
               </span>
             )}
           </div>
@@ -104,51 +124,61 @@ export default function NoveltyWatchCard({ novelty, className }: NoveltyWatchCar
           </Link>
 
           {/* Description courte */}
-          {novelty.reason_1 && (
+          {novelty.reason_1 && variant !== "compact" && (
             <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
               {novelty.reason_1}
             </p>
           )}
 
-          {/* Ligne exposant */}
-          <div className="flex items-center gap-2 min-w-0">
-            {logo ? (
-              <div className="w-6 h-6 rounded bg-white border flex items-center justify-center shrink-0">
-                <img
-                  src={logo}
-                  alt={exhibitor.name}
-                  className="max-w-full max-h-full object-contain"
-                  loading="lazy"
-                />
-              </div>
-            ) : (
-              <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
-                <Building2 className="h-3 w-3 text-muted-foreground" />
-              </div>
-            )}
-            <span className="text-sm font-medium truncate">{exhibitor.name}</span>
-          </div>
-
-          {/* Ligne salon */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-            <Calendar className="h-3 w-3 shrink-0" />
-            <span className="truncate">{event.nom_event}</span>
-            {event.ville && (
-              <>
-                <span aria-hidden>•</span>
+          {/* Bloc contexte salon — mis en avant */}
+          <div className="rounded-lg bg-muted/50 border border-border/50 px-3 py-2 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground min-w-0">
+              <Calendar className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span className="truncate">{event.nom_event}</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+              {event.date_debut && (
+                <span className="inline-flex items-center gap-1">
+                  {format(new Date(event.date_debut), "dd MMM yyyy", { locale: fr })}
+                </span>
+              )}
+              {event.ville && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
                   {event.ville}
                 </span>
-              </>
-            )}
-            {event.date_debut && (
-              <>
-                <span aria-hidden>•</span>
-                <span>
-                  {format(new Date(event.date_debut), "dd MMM yyyy", { locale: fr })}
-                </span>
-              </>
+              )}
+            </div>
+          </div>
+
+          {/* Ligne exposant + signal document */}
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {logo ? (
+                <div className="w-6 h-6 rounded bg-white border flex items-center justify-center shrink-0">
+                  <img
+                    src={logo}
+                    alt={exhibitor.name}
+                    className="max-w-full max-h-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
+                  <Building2 className="h-3 w-3 text-muted-foreground" />
+                </div>
+              )}
+              <span className="text-sm font-medium truncate">{exhibitor.name}</span>
+            </div>
+
+            {novelty.doc_url && (
+              <Badge
+                variant="outline"
+                className="gap-1 text-xs border-primary/30 text-primary bg-primary/5"
+              >
+                <FileText className="h-3 w-3" />
+                Document disponible
+              </Badge>
             )}
           </div>
 
@@ -160,7 +190,7 @@ export default function NoveltyWatchCard({ novelty, className }: NoveltyWatchCar
                 <ArrowRight className="h-3 w-3" />
               </Link>
             </Button>
-            <Button asChild size="sm" variant="outline">
+            <Button asChild size="sm" variant="ghost" className="text-muted-foreground">
               <Link to={`/events/${event.slug}`}>Voir le salon</Link>
             </Button>
           </div>
