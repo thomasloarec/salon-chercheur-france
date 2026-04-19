@@ -130,15 +130,18 @@ export default function NoveltyWatchCard({
             </p>
           )}
 
-          {/* Bloc contexte salon — mis en avant */}
-          <div className="rounded-lg bg-muted/50 border border-border/50 px-3 py-2 flex flex-col gap-1">
-            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground min-w-0">
-              <Calendar className="h-3.5 w-3.5 shrink-0 text-primary" />
+          {/* Contexte salon — rendu léger, sans aplat */}
+          <div className="flex flex-col gap-1 pt-0.5">
+            <Link
+              to={eventHref}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors min-w-0"
+            >
+              <Calendar className="h-3.5 w-3.5 shrink-0 text-primary/70" />
               <span className="truncate">{event.nom_event}</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+            </Link>
+            <div className="flex items-center gap-x-3 gap-y-1 text-xs text-muted-foreground flex-wrap pl-5">
               {event.date_debut && (
-                <span className="inline-flex items-center gap-1">
+                <span>
                   {format(new Date(event.date_debut), "dd MMM yyyy", { locale: fr })}
                 </span>
               )}
@@ -150,6 +153,9 @@ export default function NoveltyWatchCard({
               )}
             </div>
           </div>
+
+          {/* Séparateur subtil */}
+          <div className="h-px bg-border/60" />
 
           {/* Ligne exposant + signal document */}
           <div className="flex items-center gap-2 min-w-0 flex-wrap">
@@ -164,21 +170,16 @@ export default function NoveltyWatchCard({
                   />
                 </div>
               ) : (
-                <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
-                  <Building2 className="h-3 w-3 text-muted-foreground" />
-                </div>
+                <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
               )}
               <span className="text-sm font-medium truncate">{exhibitor.name}</span>
             </div>
 
             {novelty.doc_url && (
-              <Badge
-                variant="outline"
-                className="gap-1 text-xs border-primary/30 text-primary bg-primary/5"
-              >
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
                 <FileText className="h-3 w-3" />
                 Document disponible
-              </Badge>
+              </span>
             )}
           </div>
 
