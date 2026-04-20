@@ -144,11 +144,13 @@ function App() {
                <Route path="/ville/:slug" element={<CityHub />} />
                <Route path="*" element={<NotFound />} />
               </Routes>
-              <OnboardingTour />
-              <Toaster />
-            </div>
-          </Router>
-        </SiteGuard>
+                <OnboardingTour />
+                <CookieBanner />
+                <Toaster />
+              </div>
+            </Router>
+          </SiteGuard>
+        </ConsentProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

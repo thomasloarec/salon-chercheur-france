@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import logoLotexpo from '@/assets/logo-lotexpo.png';
 import { CANONICAL_SECTORS } from '@/lib/taxonomy';
+import { useConsent } from '@/contexts/ConsentContext';
 
 const FOOTER_SECTORS = CANONICAL_SECTORS.slice(0, 8);
 
