@@ -46,29 +46,9 @@ const MetricCard = ({
   </Card>
 );
 
-// ── Plausible data hook (top pages + sources) ──
-const usePlausibleStats = () => {
-  return useQuery({
-    queryKey: ['plausible-stats-7d'],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('plausible-stats', {
-        method: 'GET',
-      });
-      if (error) throw error;
-      return data as {
-        aggregate: { results: { metrics: number[] } };
-        aggregatePrev: { results: { metrics: number[] } } | null;
-        timeseries: { results: Array<{ dimensions: string[]; metrics: number[] }> };
-        topPages: { results: Array<{ dimensions: string[]; metrics: number[] }> };
-        topSources: { results: Array<{ dimensions: string[]; metrics: number[] }> };
-      };
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
-  });
-};
+// ── (Plausible supprimé — tout passe par GA4) ──
 
-// ── GA4 data hook (visiteurs uniques, pages vues, sessions) ──
+// ── GA4 data hook (visiteurs, pages vues, sessions + top pages/sources) ──
 const useGa4Stats = () => {
   return useQuery({
     queryKey: ['ga4-stats-7d'],
@@ -80,6 +60,8 @@ const useGa4Stats = () => {
       return data as {
         aggregate: { results: { metrics: number[] } };
         aggregatePrev: { results: { metrics: number[] } } | null;
+        topPages: { results: Array<{ dimensions: string[]; metrics: number[] }> };
+        topSources: { results: Array<{ dimensions: string[]; metrics: number[] }> };
         source: string;
       };
     },
@@ -89,10 +71,7 @@ const useGa4Stats = () => {
 };
 
 const AdminOverview = () => {
-  // ── Plausible (top pages + sources uniquement) ──
-  const { data: plausible } = usePlausibleStats();
-
-  // ── GA4 (3 cartes principales) ──
+  // ── GA4 (cartes + top pages + sources) ──
   const { data: ga4, isError: ga4Error } = useGa4Stats();
 
   const visitors = ga4?.aggregate?.results?.metrics?.[0] ?? null;
@@ -221,8 +200,8 @@ const AdminOverview = () => {
         </div>
       </section>
 
-      {/* Top pages & sources */}
-      {plausible && (
+      {/* Top pages & sources (GA4) */}
+      {ga4 && (
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader className="pb-3">
@@ -232,13 +211,13 @@ const AdminOverview = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
-                {plausible.topPages?.results?.slice(0, 8).map((row, i) => (
+                {ga4.topPages?.results?.slice(0, 8).map((row, i) => (
                   <li key={i} className="flex justify-between">
                     <span className="truncate max-w-[70%] text-muted-foreground">{row.dimensions[0]}</span>
-                    <span className="font-medium">{row.metrics[0].toLocaleString('fr-FR')} vis.</span>
+                    <span className="font-medium">{row.metrics[0].toLocaleString('fr-FR')} vues</span>
                   </li>
                 ))}
-                {(!plausible.topPages?.results?.length) && (
+                {(!ga4.topPages?.results?.length) && (
                   <li className="text-muted-foreground">Aucune donnée</li>
                 )}
               </ul>
@@ -252,15 +231,15 @@ const AdminOverview = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
-                {plausible.topSources?.results?.slice(0, 8).map((row, i) => (
+                {ga4.topSources?.results?.slice(0, 8).map((row, i) => (
                   <li key={i} className="flex justify-between">
                     <span className="truncate max-w-[70%] text-muted-foreground">
                       {row.dimensions[0] || 'Direct / Aucun'}
                     </span>
-                    <span className="font-medium">{row.metrics[0].toLocaleString('fr-FR')} vis.</span>
+                    <span className="font-medium">{row.metrics[0].toLocaleString('fr-FR')} sess.</span>
                   </li>
                 ))}
-                {(!plausible.topSources?.results?.length) && (
+                {(!ga4.topSources?.results?.length) && (
                   <li className="text-muted-foreground">Aucune donnée</li>
                 )}
               </ul>

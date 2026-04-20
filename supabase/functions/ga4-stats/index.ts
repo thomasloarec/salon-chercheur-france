@@ -112,18 +112,51 @@ Deno.serve(async (req) => {
       metrics,
     };
 
-    const [currentReport, previousReport] = await Promise.all([
+    // Top pages (par pagePath, top 10)
+    const topPagesBody = {
+      dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
+      dimensions: [{ name: 'pagePath' }],
+      metrics: [{ name: 'screenPageViews' }],
+      orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+      limit: 10,
+    };
+
+    // Top sources (par sessionSource, top 10)
+    const topSourcesBody = {
+      dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
+      dimensions: [{ name: 'sessionSource' }],
+      metrics: [{ name: 'sessions' }],
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      limit: 10,
+    };
+
+    const [currentReport, previousReport, topPagesReport, topSourcesReport] = await Promise.all([
       runReport(accessToken, currentBody),
       runReport(accessToken, previousBody),
+      runReport(accessToken, topPagesBody),
+      runReport(accessToken, topSourcesBody),
     ]);
 
     const current = aggregateMetrics(currentReport);
     const previous = aggregateMetrics(previousReport);
 
-    // Format compatible avec la structure Plausible existante du dashboard
+    // Transformer en format compatible avec le dashboard
+    const topPages = (topPagesReport?.rows ?? []).map((row: any) => ({
+      dimensions: [row.dimensionValues?.[0]?.value ?? ''],
+      metrics: [Number(row.metricValues?.[0]?.value ?? 0)],
+    }));
+
+    const topSources = (topSourcesReport?.rows ?? []).map((row: any) => ({
+      dimensions: [row.dimensionValues?.[0]?.value ?? ''],
+      metrics: [Number(row.metricValues?.[0]?.value ?? 0)],
+    }));
+
+    // Format compatible avec la structure existante du dashboard
     const payload = {
       aggregate: { results: { metrics: current } },
       aggregatePrev: { results: { metrics: previous } },
+      topPages: { results: topPages },
+      topSources: { results: topSources },
       source: 'ga4',
     };
 
