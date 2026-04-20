@@ -46,7 +46,7 @@ const MetricCard = ({
   </Card>
 );
 
-// ── Plausible data hook ──
+// ── Plausible data hook (top pages + sources) ──
 const usePlausibleStats = () => {
   return useQuery({
     queryKey: ['plausible-stats-7d'],
@@ -68,16 +68,39 @@ const usePlausibleStats = () => {
   });
 };
 
-const AdminOverview = () => {
-  // ── Plausible traffic data ──
-  const { data: plausible, isError: plausibleError } = usePlausibleStats();
+// ── GA4 data hook (visiteurs uniques, pages vues, sessions) ──
+const useGa4Stats = () => {
+  return useQuery({
+    queryKey: ['ga4-stats-7d'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('ga4-stats', {
+        method: 'GET',
+      });
+      if (error) throw error;
+      return data as {
+        aggregate: { results: { metrics: number[] } };
+        aggregatePrev: { results: { metrics: number[] } } | null;
+        source: string;
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
 
-  const visitors = plausible?.aggregate?.results?.metrics?.[0] ?? null;
-  const pageviews = plausible?.aggregate?.results?.metrics?.[1] ?? null;
-  const visits = plausible?.aggregate?.results?.metrics?.[2] ?? null;
-  const prevVisitors = plausible?.aggregatePrev?.results?.metrics?.[0] ?? null;
-  const prevPageviews = plausible?.aggregatePrev?.results?.metrics?.[1] ?? null;
-  const prevVisits = plausible?.aggregatePrev?.results?.metrics?.[2] ?? null;
+const AdminOverview = () => {
+  // ── Plausible (top pages + sources uniquement) ──
+  const { data: plausible } = usePlausibleStats();
+
+  // ── GA4 (3 cartes principales) ──
+  const { data: ga4, isError: ga4Error } = useGa4Stats();
+
+  const visitors = ga4?.aggregate?.results?.metrics?.[0] ?? null;
+  const pageviews = ga4?.aggregate?.results?.metrics?.[1] ?? null;
+  const visits = ga4?.aggregate?.results?.metrics?.[2] ?? null;
+  const prevVisitors = ga4?.aggregatePrev?.results?.metrics?.[0] ?? null;
+  const prevPageviews = ga4?.aggregatePrev?.results?.metrics?.[1] ?? null;
+  const prevVisits = ga4?.aggregatePrev?.results?.metrics?.[2] ?? null;
 
   const visitorsDelta = visitors != null && prevVisitors != null ? visitors - prevVisitors : null;
   const pageviewsDelta = pageviews != null && prevPageviews != null ? pageviews - prevPageviews : null;
@@ -167,11 +190,11 @@ const AdminOverview = () => {
         <p className="text-muted-foreground text-sm">Métriques clés de la plateforme</p>
       </div>
 
-      {/* Bloc 1 — Trafic Plausible */}
+      {/* Bloc 1 — Trafic GA4 */}
       <section>
         <h2 className="text-lg font-semibold mb-3">Trafic – 7 derniers jours</h2>
-        {plausibleError && (
-          <p className="text-sm text-destructive mb-2">Impossible de charger les données Plausible.</p>
+        {ga4Error && (
+          <p className="text-sm text-destructive mb-2">Impossible de charger les données Google Analytics.</p>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard

@@ -73,3 +73,6 @@ verify_jwt = false
 
 [functions.prepare-visit]
 verify_jwt = false
+
+[functions.ga4-stats]
+verify_jwt = true
