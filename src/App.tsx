@@ -9,6 +9,9 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import SiteGuard from '@/components/auth/SiteGuard';
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
+import { ConsentProvider } from '@/contexts/ConsentContext';
+import CookieBanner from '@/components/consent/CookieBanner';
+import AnalyticsTracker from '@/components/consent/AnalyticsTracker';
 import Events from '@/pages/Events';
 import HowItWorks from '@/pages/HowItWorks';
 import EventPage from '@/pages/EventPage';
@@ -81,13 +84,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <SiteGuard>
-          <Router>
-            <ScrollToTop />
-              <PendingVisitRedirect />
-            <div className="App">
-              <Routes>
-              <Route path="/" element={<Events />} />
+        <ConsentProvider>
+          <SiteGuard>
+            <Router>
+              <ScrollToTop />
+              <AnalyticsTracker />
+                <PendingVisitRedirect />
+              <div className="App">
+                <Routes>
+                <Route path="/" element={<Events />} />
               <Route path="/comment-ca-marche" element={<HowItWorks />} />
               <Route path="/events/:slug" element={<EventPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
@@ -139,11 +144,13 @@ function App() {
                <Route path="/ville/:slug" element={<CityHub />} />
                <Route path="*" element={<NotFound />} />
               </Routes>
-              <OnboardingTour />
-              <Toaster />
-            </div>
-          </Router>
-        </SiteGuard>
+                <OnboardingTour />
+                <CookieBanner />
+                <Toaster />
+              </div>
+            </Router>
+          </SiteGuard>
+        </ConsentProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
