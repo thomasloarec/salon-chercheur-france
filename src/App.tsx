@@ -84,13 +84,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <SiteGuard>
-          <Router>
-            <ScrollToTop />
-              <PendingVisitRedirect />
-            <div className="App">
-              <Routes>
-              <Route path="/" element={<Events />} />
+        <ConsentProvider>
+          <SiteGuard>
+            <Router>
+              <ScrollToTop />
+              <AnalyticsTracker />
+                <PendingVisitRedirect />
+              <div className="App">
+                <Routes>
+                <Route path="/" element={<Events />} />
               <Route path="/comment-ca-marche" element={<HowItWorks />} />
               <Route path="/events/:slug" element={<EventPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
