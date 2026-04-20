@@ -269,32 +269,18 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
 
-            {/* B & C. Nouveautés (gauche) + Exposants (droite, uniquement si exposants disponibles).
-                Sans exposants → la section nouveautés prend toute la largeur (pas de sidebar vide). */}
-            {exhibitorCount > 0 ? (
-              <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-12 lg:col-span-8">
-                  <section id="nouveautes">
-                    <NoveltiesSection event={event} />
-                  </section>
-                </div>
-                <aside className="col-span-12 lg:col-span-4 space-y-6">
-                  <ExhibitorsSidebar event={event} />
-                  <EventAboutSidebar event={event} />
-                </aside>
-              </div>
-            ) : (
-              <div className="space-y-6">
+            {/* B & C. Nouveautés (gauche) + Sidebar (droite : exposants si disponibles + à propos toujours). */}
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:col-span-8">
                 <section id="nouveautes">
                   <NoveltiesSection event={event} />
                 </section>
-                <div className="grid grid-cols-12 gap-6">
-                  <div className="col-span-12 lg:col-span-8">
-                    <EventAboutSidebar event={event} />
-                  </div>
-                </div>
               </div>
-            )}
+              <aside className="col-span-12 lg:col-span-4 space-y-6">
+                {exhibitorCount > 0 && <ExhibitorsSidebar event={event} />}
+                <EventAboutSidebar event={event} />
+              </aside>
+            </div>
 
             {/* Autres éditions de ce salon (séries) */}
             <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
