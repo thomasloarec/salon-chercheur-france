@@ -12,9 +12,13 @@ export default function CookieBanner() {
 
   if (!needsDecision && !isPreferencesOpen) return null;
 
+  // Pendant l'ouverture du dialog "Personnaliser", on masque la bande pour ne laisser que le popup.
+  // Si l'utilisateur ferme le dialog sans choisir, needsDecision reste true → la bande revient.
+  const showBanner = needsDecision && !isPreferencesOpen;
+
   return (
     <>
-      {needsDecision && (
+      {showBanner && (
         <div
           role="dialog"
           aria-live="polite"
