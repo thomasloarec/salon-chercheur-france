@@ -18,14 +18,15 @@ export default function CookiePreferencesDialog() {
   const { isPreferencesOpen, closePreferences, consent, savePreferences, acceptAll, rejectAll } =
     useConsent();
 
-  const [analytics, setAnalytics] = useState(false);
-  const [marketing, setMarketing] = useState(false);
+  const [analytics, setAnalytics] = useState(true);
+  const [marketing, setMarketing] = useState(true);
 
-  // Synchroniser avec l'état persisté à l'ouverture
+  // À l'ouverture : si un choix existe déjà, le pré-charger ;
+  // sinon (premier passage) tout coché par défaut, l'utilisateur retire ce qu'il refuse.
   useEffect(() => {
     if (isPreferencesOpen) {
-      setAnalytics(consent?.analytics ?? false);
-      setMarketing(consent?.marketing ?? false);
+      setAnalytics(consent?.analytics ?? true);
+      setMarketing(consent?.marketing ?? true);
     }
   }, [isPreferencesOpen, consent]);
 
