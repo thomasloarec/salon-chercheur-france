@@ -68,7 +68,7 @@ const usePlausibleStats = () => {
   });
 };
 
-// ── GA4 data hook (visiteurs uniques, pages vues, sessions) ──
+// ── GA4 data hook (visiteurs, pages vues, sessions + top pages/sources) ──
 const useGa4Stats = () => {
   return useQuery({
     queryKey: ['ga4-stats-7d'],
@@ -80,6 +80,8 @@ const useGa4Stats = () => {
       return data as {
         aggregate: { results: { metrics: number[] } };
         aggregatePrev: { results: { metrics: number[] } } | null;
+        topPages: { results: Array<{ dimensions: string[]; metrics: number[] }> };
+        topSources: { results: Array<{ dimensions: string[]; metrics: number[] }> };
         source: string;
       };
     },
