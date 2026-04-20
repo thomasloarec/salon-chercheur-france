@@ -87,6 +87,12 @@ let ga4Configured = false;
 export function loadGA4(): void {
   if (typeof window === 'undefined') return;
   if (ga4Configured) return;
+  if (!GA4_MEASUREMENT_ID) {
+    if (import.meta.env.DEV) {
+      console.warn('[GA4] Aucun Measurement ID — chargement ignoré');
+    }
+    return;
+  }
   ensureGtag();
 
   if (!ga4Loaded) {
