@@ -18,6 +18,7 @@ const FOOTER_CITIES = [
 ];
 
 const Footer = () => {
+  const { openPreferences } = useConsent();
   return (
     <footer className="bg-primary text-white py-16">
       <div className="w-full px-6 mx-auto">
@@ -85,7 +86,7 @@ const Footer = () => {
             <p className="text-gray-300 text-sm">
               © {new Date().getFullYear()} Lotexpo. Tous droits réservés.
             </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 md:mt-0">
               <Link to="/mentions-legales" className="text-gray-300 hover:text-accent text-sm transition-colors">
                 Mentions légales
               </Link>
@@ -95,6 +96,13 @@ const Footer = () => {
               <Link to="/cgu" className="text-gray-300 hover:text-accent text-sm transition-colors">
                 CGU
               </Link>
+              <button
+                type="button"
+                onClick={openPreferences}
+                className="text-gray-300 hover:text-accent text-sm transition-colors"
+              >
+                Gérer mes cookies
+              </button>
             </div>
           </div>
         </div>
