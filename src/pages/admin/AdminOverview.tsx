@@ -46,27 +46,7 @@ const MetricCard = ({
   </Card>
 );
 
-// ── Plausible data hook (top pages + sources) ──
-const usePlausibleStats = () => {
-  return useQuery({
-    queryKey: ['plausible-stats-7d'],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('plausible-stats', {
-        method: 'GET',
-      });
-      if (error) throw error;
-      return data as {
-        aggregate: { results: { metrics: number[] } };
-        aggregatePrev: { results: { metrics: number[] } } | null;
-        timeseries: { results: Array<{ dimensions: string[]; metrics: number[] }> };
-        topPages: { results: Array<{ dimensions: string[]; metrics: number[] }> };
-        topSources: { results: Array<{ dimensions: string[]; metrics: number[] }> };
-      };
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
-  });
-};
+// ── (Plausible supprimé — tout passe par GA4) ──
 
 // ── GA4 data hook (visiteurs, pages vues, sessions + top pages/sources) ──
 const useGa4Stats = () => {
