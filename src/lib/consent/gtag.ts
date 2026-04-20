@@ -8,7 +8,27 @@
  */
 import type { ConsentState, GoogleConsentParams } from './types';
 
-export const GA4_MEASUREMENT_ID = 'G-JLYJ9NSWRF';
+/**
+ * Measurement ID GA4 lu depuis l'environnement.
+ * - PROD : doit impérativement être défini via VITE_GA4_MEASUREMENT_ID
+ * - DEV  : fallback sur l'ID de dev pour ne pas bloquer le développement local
+ */
+const ENV_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+const DEV_FALLBACK_ID = 'G-JLYJ9NSWRF';
+
+export const GA4_MEASUREMENT_ID: string =
+  ENV_ID && ENV_ID.trim().length > 0
+    ? ENV_ID.trim()
+    : import.meta.env.DEV
+      ? DEV_FALLBACK_ID
+      : '';
+
+if (!ENV_ID && import.meta.env.PROD) {
+  // En prod, on log un avertissement plutôt que de crasher : GA4 sera simplement désactivé.
+  console.warn(
+    '[GA4] VITE_GA4_MEASUREMENT_ID non défini — analytics désactivé en production.',
+  );
+}
 
 declare global {
   interface Window {
