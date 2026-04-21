@@ -8,7 +8,7 @@ import { Cookie } from 'lucide-react';
 import CookiePreferencesDialog from './CookiePreferencesDialog';
 
 export default function CookieBanner() {
-  const { needsDecision, isPreferencesOpen, acceptAll, rejectAll, openPreferences } = useConsent();
+  const { needsDecision, isPreferencesOpen, acceptAll, openPreferences } = useConsent();
 
   if (!needsDecision && !isPreferencesOpen) return null;
 
@@ -35,9 +35,6 @@ export default function CookieBanner() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-              <Button variant="outline" size="sm" onClick={rejectAll}>
-                Tout refuser
-              </Button>
               <Button variant="outline" size="sm" onClick={openPreferences}>
                 Personnaliser
               </Button>
