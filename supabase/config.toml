@@ -76,3 +76,10 @@ verify_jwt = false
 
 [functions.ga4-stats]
 verify_jwt = true
+
+[functions.notifications-create]
+# Authorization is enforced in code: only callers presenting the
+# SERVICE_ROLE key are accepted. We disable the platform JWT check so
+# that the in-code gate is the single source of truth and produces
+# consistent 401 logs for every unauthorized attempt.
+verify_jwt = false
