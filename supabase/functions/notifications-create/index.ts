@@ -19,9 +19,64 @@ interface NotificationPayload {
   metadata?: any
 }
 
+/**
+ * Constant-time string comparison to avoid timing attacks
+ * when validating the service-role bearer token.
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let mismatch = 0
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return mismatch === 0
+}
+
+/**
+ * Authorization gate.
+ *
+ * notifications-create is a privileged write proxy: it inserts rows into
+ * the `notifications` table on behalf of any user. It must therefore only
+ * be reachable by trusted internal callers (cron jobs, edge functions
+ * acting as system) that present the project's SERVICE_ROLE key as a
+ * Bearer token.
+ *
+ * Any anonymous call, any user-JWT call, or any call with the publishable
+ * (anon) key is refused with 401. This preserves the existing legitimate
+ * callers (notifications-cron) which already send the service-role key,
+ * and preserves direct-from-edge-function inserts (e.g. exhibitors-manage)
+ * which bypass this endpoint entirely.
+ */
+function isAuthorizedServiceCaller(req: Request): boolean {
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (!serviceRoleKey) return false
+
+  const authHeader = req.headers.get('Authorization') ?? ''
+  if (!authHeader.startsWith('Bearer ')) return false
+
+  const token = authHeader.slice('Bearer '.length).trim()
+  if (!token) return false
+
+  return timingSafeEqual(token, serviceRoleKey)
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // ---- Authorization gate (must be first) -------------------------------
+  // Only internal/system callers presenting the service-role key may
+  // create notifications. All other calls are rejected before any work.
+  if (!isAuthorizedServiceCaller(req)) {
+    console.warn('notifications-create: unauthorized call rejected', {
+      hasAuthHeader: !!req.headers.get('Authorization'),
+      ua: req.headers.get('user-agent') ?? null,
+    })
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
 
   try {
