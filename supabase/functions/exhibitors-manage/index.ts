@@ -1174,18 +1174,44 @@ Deno.serve(async (req) => {
         const requesterName = [requesterProfile?.first_name, requesterProfile?.last_name].filter(Boolean).join(' ') || 'Utilisateur inconnu'
         const adminUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app')}/admin/exhibitors`
 
-        await serviceClient.from('notifications').insert({
-          user_id: user.id,
-          type: 'claim_request',
-          category: 'admin',
-          title: 'Nouvelle demande de gestion',
-          message: `${requesterName} demande la gestion de "${exhibitor.name}"`,
-          link_url: '/admin/exhibitors',
-          exhibitor_id: exhibitor_id,
-          actor_user_id: user.id,
-          actor_name: requesterName,
-          actor_email: user.email,
-        })
+        // Fan-out in-app notification to every site admin (never to the requester)
+        const { data: adminRoles, error: adminRolesError } = await serviceClient
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin')
+
+        if (adminRolesError) {
+          console.error('⚠️ Failed to load admin recipients for claim_request notification:', adminRolesError)
+        }
+
+        const adminUserIds = Array.from(
+          new Set((adminRoles || []).map((r: any) => r.user_id).filter((id: string | null) => !!id && id !== user.id))
+        )
+
+        if (adminUserIds.length === 0) {
+          console.warn('⚠️ No admin recipient found for claim_request notification (exhibitor=%s, requester=%s). Email fallback only.', exhibitor.name, user.email)
+        } else {
+          const notifRows = adminUserIds.map((adminId: string) => ({
+            user_id: adminId,
+            type: 'claim_request',
+            category: 'admin',
+            title: 'Nouvelle demande de gestion',
+            message: `${requesterName} demande la gestion de "${exhibitor.name}"`,
+            link_url: '/admin/exhibitors',
+            exhibitor_id: exhibitor_id,
+            actor_user_id: user.id,
+            actor_name: requesterName,
+            actor_email: user.email,
+          }))
+
+          const { error: notifInsertError } = await serviceClient
+            .from('notifications')
+            .insert(notifRows)
+
+          if (notifInsertError) {
+            console.error('⚠️ Failed to insert claim_request notifications for admins:', notifInsertError)
+          }
+        }
 
         // Send email to admin@lotexpo.com
         const emailBody = `
