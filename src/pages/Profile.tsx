@@ -32,6 +32,7 @@ import ProfileSkeleton from '@/components/profile/ProfileSkeleton';
 import EmptyProfileState from '@/components/profile/EmptyProfileState';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import MyExhibitorsSection from '@/components/profile/MyExhibitorsSection';
+import MyPendingClaimsSection from '@/components/profile/MyPendingClaimsSection';
 
 const Profile = () => {
   const { user, loading } = useAuth();
