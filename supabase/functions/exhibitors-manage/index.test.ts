@@ -84,18 +84,30 @@ Deno.test("B4: reject_claim has admin-only guard", async () => {
   assertEquals(section.includes("Admin access required"), true);
 });
 
-Deno.test("B5: Domain auto-approve uses strict equality", async () => {
+Deno.test("B5: NO domain-based auto-approval in create action", async () => {
   const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
-  assertEquals(code.includes("websiteDomain.includes(userDomain)"), false, "Must NOT use .includes()");
-  assertEquals(code.includes("userDomain === websiteDomain"), true, "Must use strict ===");
-});
-
-Deno.test("B6: Create action sets owner_user_id from server (not payload)", async () => {
-  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
-  // In the create section, owner_user_id should come from user.id, not requestData
   const createSection = code.split("action === 'create'")[1]?.split("action === 'approve_claim'")[0];
   assertExists(createSection);
-  assertEquals(createSection.includes("owner_user_id: user.id"), true, "owner_user_id must be set from verified user.id");
+  // Domain-equality auto-approve logic must be gone
+  assertEquals(createSection.includes("userDomain === websiteDomain"), false, "Domain auto-approve must be removed");
+  assertEquals(createSection.includes("claimStatus = 'approved'"), false, "claim must never be auto-approved on create");
+});
+
+Deno.test("B6: Create action does NOT set owner_user_id to the requester", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const createSection = code.split("action === 'create'")[1]?.split("action === 'approve_claim'")[0];
+  assertExists(createSection);
+  // owner_user_id must remain null at create time — granted only via approve_claim
+  assertEquals(createSection.includes("owner_user_id: user.id"), false, "owner_user_id must NOT be set from requester at create");
+  assertEquals(createSection.includes("owner_user_id: null"), true, "owner_user_id must be explicitly null at create");
+});
+
+Deno.test("B6b: Create action does NOT auto-insert owner team membership", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const createSection = code.split("action === 'create'")[1]?.split("action === 'approve_claim'")[0];
+  assertExists(createSection);
+  assertEquals(createSection.includes("exhibitor_team_members"), false, "create must not write to exhibitor_team_members");
+  assertEquals(createSection.includes("verified_at"), false, "create must not set verified_at");
 });
 
 Deno.test("B7: approve_claim updates exhibitor owner_user_id from claim data", async () => {
