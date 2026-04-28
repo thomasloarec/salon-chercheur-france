@@ -65,7 +65,12 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
       if (data?.already_pending) {
         toast.info('Vous avez déjà une demande en cours pour cette entreprise.');
       } else {
-        toast.success('Votre demande a bien été envoyée. Elle sera vérifiée par l\'équipe Lotexpo.');
+        toast.success('Demande envoyée', {
+          description:
+            "Votre demande est en attente de validation par l'équipe Lotexpo. " +
+            'Vous la retrouverez dans votre profil. Vous pouvez déjà soumettre une nouveauté pour cette entreprise.',
+          duration: 8000,
+        });
       }
 
       queryClient.invalidateQueries({ queryKey: ['exhibitor-governance'] });
