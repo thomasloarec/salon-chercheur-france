@@ -268,6 +268,9 @@ const Profile = () => {
             {/* Bloc Entreprises que je gère */}
             <MyExhibitorsSection />
 
+            {/* Bloc Demandes de gestion en cours (claims pending) */}
+            <MyPendingClaimsSection />
+
             {/* Bloc Newsletters */}
             <Card className="p-6 rounded-2xl shadow-sm">
               <div className="mb-4">
