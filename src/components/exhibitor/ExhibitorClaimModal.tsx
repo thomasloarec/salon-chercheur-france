@@ -65,10 +65,16 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
       if (data?.already_pending) {
         toast.info('Vous avez déjà une demande en cours pour cette entreprise.');
       } else {
-        toast.success('Votre demande a bien été envoyée. Elle sera vérifiée par l\'équipe Lotexpo.');
+        toast.success('Demande envoyée', {
+          description:
+            "Votre demande est en attente de validation par l'équipe Lotexpo. " +
+            'Vous la retrouverez dans votre profil. Vous pouvez déjà soumettre une nouveauté pour cette entreprise.',
+          duration: 8000,
+        });
       }
 
       queryClient.invalidateQueries({ queryKey: ['exhibitor-governance'] });
+      queryClient.invalidateQueries({ queryKey: ['my-pending-claims'] });
       onOpenChange(false);
     } catch (err: any) {
       console.error('Claim submission error:', err);
@@ -112,13 +118,16 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
         ) : (
           <div className="space-y-3 py-2">
             <p className="text-sm text-muted-foreground">
-              En tant que gestionnaire officiel, vous pourrez :
+              Une fois votre demande validée par l'équipe Lotexpo, vous pourrez :
             </p>
             <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
               <li>Publier des nouveautés au nom de l'entreprise</li>
               <li>Gérer les leads et demandes de contact</li>
               <li>Afficher le badge « Profil vérifié »</li>
             </ul>
+            <p className="text-sm text-muted-foreground bg-muted/50 border rounded-md px-3 py-2">
+              💡 Pendant l'attente, vous pouvez déjà soumettre une nouveauté pour cette entreprise.
+            </p>
           </div>
         )}
 

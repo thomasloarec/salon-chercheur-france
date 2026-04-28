@@ -32,6 +32,7 @@ import ProfileSkeleton from '@/components/profile/ProfileSkeleton';
 import EmptyProfileState from '@/components/profile/EmptyProfileState';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import MyExhibitorsSection from '@/components/profile/MyExhibitorsSection';
+import MyPendingClaimsSection from '@/components/profile/MyPendingClaimsSection';
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -266,6 +267,9 @@ const Profile = () => {
 
             {/* Bloc Entreprises que je gère */}
             <MyExhibitorsSection />
+
+            {/* Bloc Demandes de gestion en cours (claims pending) */}
+            <MyPendingClaimsSection />
 
             {/* Bloc Newsletters */}
             <Card className="p-6 rounded-2xl shadow-sm">
