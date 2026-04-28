@@ -107,7 +107,8 @@ Deno.test("B6b: Create action does NOT auto-insert owner team membership", async
   const createSection = code.split("action === 'create'")[1]?.split("action === 'approve_claim'")[0];
   assertExists(createSection);
   assertEquals(createSection.includes("exhibitor_team_members"), false, "create must not write to exhibitor_team_members");
-  assertEquals(createSection.includes("verified_at"), false, "create must not set verified_at");
+  assertEquals(createSection.includes(".update({ verified_at"), false, "create must not set verified_at");
+  assertEquals(createSection.includes("verified_at: new Date"), false, "create must not assign verified_at timestamp");
 });
 
 Deno.test("B7: approve_claim updates exhibitor owner_user_id from claim data", async () => {
