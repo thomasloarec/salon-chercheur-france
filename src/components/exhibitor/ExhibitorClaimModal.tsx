@@ -74,6 +74,7 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
       }
 
       queryClient.invalidateQueries({ queryKey: ['exhibitor-governance'] });
+      queryClient.invalidateQueries({ queryKey: ['my-pending-claims'] });
       onOpenChange(false);
     } catch (err: any) {
       console.error('Claim submission error:', err);
