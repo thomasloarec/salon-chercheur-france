@@ -117,13 +117,16 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
         ) : (
           <div className="space-y-3 py-2">
             <p className="text-sm text-muted-foreground">
-              En tant que gestionnaire officiel, vous pourrez :
+              Une fois votre demande validée par l'équipe Lotexpo, vous pourrez :
             </p>
             <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
               <li>Publier des nouveautés au nom de l'entreprise</li>
               <li>Gérer les leads et demandes de contact</li>
               <li>Afficher le badge « Profil vérifié »</li>
             </ul>
+            <p className="text-sm text-muted-foreground bg-muted/50 border rounded-md px-3 py-2">
+              💡 Pendant l'attente, vous pouvez déjà soumettre une nouveauté pour cette entreprise.
+            </p>
           </div>
         )}
 
