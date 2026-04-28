@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
         return jsonError('name and event_id are required', 400)
       }
 
-      // ── Helper: normalise un site web pour comparaison stricte de domaine ──
+      // ── Helper: normalise un site web pour dedup par domaine ──
       const normaliseWebsite = (raw: string | null | undefined): string | null => {
         if (!raw) return null
         try {
@@ -211,6 +211,9 @@ Deno.serve(async (req) => {
       }
 
       // STEP 1: Create modern exhibitor (uniquement si aucun doublon trouvé)
+      // DOCTRINE: aucune confiance forte automatique — owner_user_id reste null,
+      // approved reste false. La promotion owner se fait UNIQUEMENT via approve_claim
+      // (modération admin) ou via le futur workflow validation-de-nouveauté.
       if (!newExhibitor) {
         const { data: created, error: createError } = await serviceClient
           .from('exhibitors')
@@ -221,7 +224,7 @@ Deno.serve(async (req) => {
             stand_info: stand_info || null,
             logo_url: logo_url || null,
             approved: false,
-            owner_user_id: user.id
+            owner_user_id: null
           })
           .select()
           .single()
@@ -306,51 +309,12 @@ Deno.serve(async (req) => {
         console.log('⏸️ Participation deferred')
       }
 
-      // STEP 4: Auto-approve claim if email domain matches website domain
-      let claimStatus = 'pending'
-      let teamPromoted = false
-      if (website && user.email) {
-        const userDomain = user.email.split('@')[1]?.toLowerCase()
-        try {
-          const websiteDomain = new URL(website.startsWith('http') ? website : `https://${website}`).hostname.replace(/^www\./, '').toLowerCase()
-          if (userDomain && websiteDomain && userDomain === websiteDomain) {
-            claimStatus = 'approved'
-            await serviceClient
-              .from('exhibitors')
-              .update({ approved: true })
-              .eq('id', newExhibitor.id)
-
-            // Auto-promote as owner (guard: no existing active owner)
-            const { data: existingOwner } = await serviceClient
-              .from('exhibitor_team_members')
-              .select('id')
-              .eq('exhibitor_id', newExhibitor.id)
-              .eq('role', 'owner')
-              .eq('status', 'active')
-              .maybeSingle()
-
-            if (!existingOwner) {
-              const { error: teamError } = await serviceClient
-                .from('exhibitor_team_members')
-                .insert({
-                  exhibitor_id: newExhibitor.id,
-                  user_id: user.id,
-                  role: 'owner',
-                  status: 'active'
-                })
-              if (!teamError) {
-                teamPromoted = true
-                await serviceClient
-                  .from('exhibitors')
-                  .update({ verified_at: new Date().toISOString() })
-                  .eq('id', newExhibitor.id)
-              }
-            }
-          }
-        } catch {
-          // Invalid URL, skip auto-approve
-        }
-      }
+      // STEP 4: AUCUNE auto-approval.
+      // Doctrine Lotexpo : toute confiance forte (approved, verified_at, owner team
+      // membership) est réservée à la modération admin via approve_claim.
+      // Le claim créé ci-dessous reste systématiquement en 'pending'.
+      const claimStatus = 'pending'
+      const teamPromoted = false
 
       // Create claim request (idempotent : éviter les doublons quand l'exposant est réutilisé)
       const { data: existingClaim } = await serviceClient
@@ -374,7 +338,7 @@ Deno.serve(async (req) => {
 
       return jsonOk({
         ...newExhibitor,
-        approved: claimStatus === 'approved' || newExhibitor.approved === true,
+        approved: newExhibitor.approved === true,
         team_promoted: teamPromoted,
         participation_deferred: !!defer_participation,
         reused_existing: reusedExisting
