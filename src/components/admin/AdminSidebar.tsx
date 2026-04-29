@@ -29,6 +29,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
 
 const navSections = [
   {
@@ -76,6 +77,14 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+  const { data: counts } = useAdminPendingCounts();
+
+  // Map of route → pending count to show as a notification bubble
+  const badgeByUrl: Record<string, number> = {
+    '/admin/novelties': counts?.novelties ?? 0,
+    '/admin/exhibitors/claims': counts?.claims ?? 0,
+    '/admin/exhibitors': counts?.unmanagedExhibitors ?? 0,
+  };
 
   const isActive = (url: string, end?: boolean) => {
     if (end) return location.pathname === url;
@@ -107,9 +116,22 @@ export function AdminSidebar() {
                       asChild
                       isActive={isActive(item.url, (item as any).end)}
                     >
-                      <Link to={item.url}>
+                      <Link to={item.url} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        {!collapsed && <span className="flex-1">{item.title}</span>}
+                        {(() => {
+                          const n = badgeByUrl[item.url] ?? 0;
+                          if (!n) return null;
+                          return (
+                            <Badge
+                              variant="destructive"
+                              className="h-5 min-w-[1.25rem] px-1.5 rounded-full text-[10px] font-semibold flex items-center justify-center"
+                              aria-label={`${n} en attente`}
+                            >
+                              {n > 99 ? '99+' : n}
+                            </Badge>
+                          );
+                        })()}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
