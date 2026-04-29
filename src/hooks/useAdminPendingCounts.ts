@@ -13,7 +13,7 @@ export interface AdminPendingCounts {
  * Only fetched when the current user is an admin.
  */
 export const useAdminPendingCounts = () => {
-  const { data: isAdmin } = useIsAdmin();
+  const { isAdmin } = useIsAdmin();
 
   return useQuery({
     queryKey: ['admin-pending-counts'],
