@@ -518,6 +518,31 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
                       <div className="text-xs text-muted-foreground">
                         {new Date(c.created_at).toLocaleDateString('fr-FR')}
                       </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            decideClaimMutation.mutate({ requestId: c.id, action: 'approve_claim' })
+                          }
+                          disabled={decideClaimMutation.isPending}
+                          className="flex-1"
+                        >
+                          <Check className="h-3.5 w-3.5 mr-1" />
+                          Approuver
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            decideClaimMutation.mutate({ requestId: c.id, action: 'reject_claim' })
+                          }
+                          disabled={decideClaimMutation.isPending}
+                          className="flex-1"
+                        >
+                          <X className="h-3.5 w-3.5 mr-1" />
+                          Rejeter
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
