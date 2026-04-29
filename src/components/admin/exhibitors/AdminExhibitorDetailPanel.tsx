@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ArrowLeft, Building2, Shield, ShieldCheck, Globe, User, Users, Clock,
-  Plus, Trash2, Crown, ExternalLink, AlertCircle, CheckCircle, Pencil, Save, X, ClipboardList,
+  Plus, Trash2, Crown, ExternalLink, AlertCircle, CheckCircle, Pencil, Save, X, ClipboardList, Check,
   Briefcase, Mail,
 } from 'lucide-react';
 import { useAdminExhibitorDetail } from '@/hooks/useAdminExhibitors';
@@ -125,6 +125,25 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
       invalidate();
     },
     onError: () => toast({ title: 'Erreur', variant: 'destructive' }),
+  });
+
+  // Approve / reject claim directly from the company detail
+  const decideClaimMutation = useMutation({
+    mutationFn: async ({ requestId, action }: { requestId: string; action: 'approve_claim' | 'reject_claim' }) => {
+      const { error } = await supabase.functions.invoke('exhibitors-manage', {
+        body: { action, request_id: requestId },
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, { action }) => {
+      toast({
+        title: action === 'approve_claim' ? 'Demande approuvée' : 'Demande rejetée',
+      });
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-counts'] });
+    },
+    onError: (err: any) =>
+      toast({ title: 'Erreur', description: err?.message || 'Action impossible', variant: 'destructive' }),
   });
 
   if (isLoading) {
