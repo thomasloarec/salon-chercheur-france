@@ -328,6 +328,60 @@ export type Database = {
           },
         ]
       }
+      event_duplicate_candidates: {
+        Row: {
+          created_at: string
+          id: string
+          match_level: string
+          matched_id: string
+          matched_id_event: string | null
+          matched_kind: string
+          reasons: Json
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          score: number
+          source_id: string
+          source_id_event: string | null
+          source_kind: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_level: string
+          matched_id: string
+          matched_id_event?: string | null
+          matched_kind: string
+          reasons?: Json
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          score: number
+          source_id: string
+          source_id_event?: string | null
+          source_kind: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_level?: string
+          matched_id?: string
+          matched_id_event?: string | null
+          matched_kind?: string
+          reasons?: Json
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          score?: number
+          source_id?: string
+          source_id_event?: string | null
+          source_kind?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_sectors: {
         Row: {
           created_at: string
@@ -379,6 +433,10 @@ export type Database = {
           date_fin: string | null
           description_enrichie: string | null
           description_event: string | null
+          duplicate_check_at: string | null
+          duplicate_check_reason: string | null
+          duplicate_check_score: number | null
+          duplicate_check_status: string
           enrichissement_date: string | null
           enrichissement_niveau: string | null
           enrichissement_score: number | null
@@ -404,6 +462,8 @@ export type Database = {
           updated_at: string | null
           url_image: string | null
           url_site_officiel: string | null
+          url_site_officiel_domain: string | null
+          url_site_officiel_normalized: string | null
           ville: string | null
           visible: boolean | null
         }
@@ -417,6 +477,10 @@ export type Database = {
           date_fin?: string | null
           description_enrichie?: string | null
           description_event?: string | null
+          duplicate_check_at?: string | null
+          duplicate_check_reason?: string | null
+          duplicate_check_score?: number | null
+          duplicate_check_status?: string
           enrichissement_date?: string | null
           enrichissement_niveau?: string | null
           enrichissement_score?: number | null
@@ -442,6 +506,8 @@ export type Database = {
           updated_at?: string | null
           url_image?: string | null
           url_site_officiel?: string | null
+          url_site_officiel_domain?: string | null
+          url_site_officiel_normalized?: string | null
           ville?: string | null
           visible?: boolean | null
         }
@@ -455,6 +521,10 @@ export type Database = {
           date_fin?: string | null
           description_enrichie?: string | null
           description_event?: string | null
+          duplicate_check_at?: string | null
+          duplicate_check_reason?: string | null
+          duplicate_check_score?: number | null
+          duplicate_check_status?: string
           enrichissement_date?: string | null
           enrichissement_niveau?: string | null
           enrichissement_score?: number | null
@@ -480,6 +550,8 @@ export type Database = {
           updated_at?: string | null
           url_image?: string | null
           url_site_officiel?: string | null
+          url_site_officiel_domain?: string | null
+          url_site_officiel_normalized?: string | null
           ville?: string | null
           visible?: boolean | null
         }
@@ -2661,6 +2733,10 @@ export type Database = {
           date_debut: string | null
           date_fin: string | null
           description_event: string | null
+          duplicate_check_at: string | null
+          duplicate_check_reason: string | null
+          duplicate_check_score: number | null
+          duplicate_check_status: string | null
           id: string | null
           id_event: string
           is_b2b: boolean | null
@@ -2687,6 +2763,10 @@ export type Database = {
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
+          duplicate_check_at?: string | null
+          duplicate_check_reason?: string | null
+          duplicate_check_score?: number | null
+          duplicate_check_status?: string | null
           id?: string | null
           id_event: string
           is_b2b?: boolean | null
@@ -2713,6 +2793,10 @@ export type Database = {
           date_debut?: string | null
           date_fin?: string | null
           description_event?: string | null
+          duplicate_check_at?: string | null
+          duplicate_check_reason?: string | null
+          duplicate_check_score?: number | null
+          duplicate_check_status?: string | null
           id?: string | null
           id_event?: string
           is_b2b?: boolean | null
@@ -3404,8 +3488,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      normalize_event_domain: { Args: { p_url: string }; Returns: string }
+      normalize_event_url: { Args: { p_url: string }; Returns: string }
       publish_pending_event_atomic: {
         Args: { p_event_data: Json; p_id_event: string }
+        Returns: Json
+      }
+      rebuild_event_duplicate_candidates: {
+        Args: { p_only_future?: boolean }
         Returns: Json
       }
       related_events: {
@@ -3422,6 +3512,22 @@ export type Database = {
           slug: string
           url_image: string
           ville: string
+        }[]
+      }
+      scan_event_duplicates: {
+        Args: { p_id: string; p_kind: string; p_persist?: boolean }
+        Returns: {
+          match_level: string
+          matched_date_debut: string
+          matched_date_fin: string
+          matched_id: string
+          matched_id_event: string
+          matched_kind: string
+          matched_nom: string
+          matched_url: string
+          matched_visible: boolean
+          reasons: Json
+          score: number
         }[]
       }
       search_events: {

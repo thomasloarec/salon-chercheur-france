@@ -152,6 +152,14 @@ Deno.serve(async (req) => {
     // Récupérer l'UUID de l'événement publié pour l'enrichissement
     const publishedUuid = publishedEvent?.id;
     if (publishedUuid) {
+      // Scan doublons (non bloquant)
+      supabase.rpc('scan_event_duplicates', {
+        p_kind: 'event', p_id: publishedUuid, p_persist: true,
+      }).then(({ error }) => {
+        if (error) console.warn('⚠️ Scan doublons non bloquant:', error.message);
+        else console.log('🔍 Scan doublons effectué pour', eventImport.nom_event);
+      });
+
       const enrichUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/enrich-event-meta`;
       const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
       

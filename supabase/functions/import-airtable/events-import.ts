@@ -204,6 +204,22 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
       eventsImported = newEventsForStaging.length;
       console.log(`[DEBUG] Import terminé : ${eventsImported} événements ajoutés au staging`);
       console.log(`[DEBUG] Publication manuelle requise via publish-pending ou admin`);
+
+      // Scan doublons sur les nouveaux imports (best-effort)
+      try {
+        const { data: stagedRows } = await supabaseClient
+          .from('staging_events_import')
+          .select('id')
+          .in('id_event', newEventsForStaging.map((e: any) => e.id_event));
+        for (const row of stagedRows ?? []) {
+          await supabaseClient.rpc('scan_event_duplicates', {
+            p_kind: 'staging', p_id: row.id, p_persist: true,
+          });
+        }
+        console.log(`[DEBUG] Scan doublons effectué pour ${stagedRows?.length ?? 0} imports`);
+      } catch (scanErr) {
+        console.warn('[WARN] Scan doublons non bloquant échoué:', scanErr);
+      }
     }
   } catch (error) {
     console.error('[ERROR] Exception during events import:', error);
