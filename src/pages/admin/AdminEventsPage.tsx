@@ -4,6 +4,7 @@ import { ImportErrorsPanel } from '@/components/admin/ImportErrorsPanel';
 import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
 import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
 import AdminPastEvents from '@/components/admin/AdminPastEvents';
+import { DuplicateEventsPanel } from '@/components/admin/DuplicateEventsPanel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
@@ -34,6 +35,7 @@ const AdminEventsPage = () => {
       </Card>
 
       <PendingEventsImport />
+      <DuplicateEventsPanel />
       <AirtableAntiDuplicateCheck />
       <AdminPastEvents />
     </div>
