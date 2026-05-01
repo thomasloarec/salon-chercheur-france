@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ANTHROPIC_API_URL, buildAnthropicHeaders } from "../_shared/anthropic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +7,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+// `prepare-visit` intentionally uses Haiku (fast + cheap, suitable for short
+// reasoning over a pre-filtered shortlist of exhibitors). It does NOT use the
+// shared default Sonnet model.
+const PREPARE_VISIT_MODEL = "claude-haiku-4-5-20251001";
 
 // Duration → exhibitor caps
 const DURATION_CAPS: Record<string, { total: number; high: number; medium: number }> = {
@@ -459,13 +463,9 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
 
     const aiResponse = await fetch(ANTHROPIC_API_URL, {
       method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
+      headers: buildAnthropicHeaders(ANTHROPIC_API_KEY),
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: PREPARE_VISIT_MODEL,
         max_tokens: 6000,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -475,10 +475,12 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
     clearTimeout(timeout);
 
     const aiDurationMs = Date.now() - aiStart;
-    console.log(`⏱️ prepare-visit: AI call took ${aiDurationMs}ms`);
+    console.log(`⏱️ prepare-visit: AI call took ${aiDurationMs}ms (model=${PREPARE_VISIT_MODEL})`);
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
+      const errText = await aiResponse.text().catch(() => "");
+      console.error(`prepare-visit: Claude error model=${PREPARE_VISIT_MODEL} status=${status} body=${errText.slice(0, 300)}`);
       if (status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded, please retry in a moment." }),
@@ -491,8 +493,12 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      const errText = await aiResponse.text();
-      console.error("AI Gateway error:", status, errText);
+      if (status === 400 && /context|token|too\s*long/i.test(errText)) {
+        return new Response(
+          JSON.stringify({ error: "Trop de données envoyées au modèle. Réduisez la sélection d'exposants." }),
+          { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
       throw new Error(`AI Gateway error: ${status}`);
     }
 

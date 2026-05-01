@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { ANTHROPIC_API_URL, buildAnthropicHeaders, getAnthropicModelFast } from '../_shared/anthropic.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,15 +37,12 @@ Si les informations sont insuffisantes pour un champ, utilise un tableau vide []
 
 async function callClaude(apiKey: string, nom: string, website: string | null, description: string | null): Promise<Record<string, unknown> | null> {
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const model = getAnthropicModelFast();
+    const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
+      headers: buildAnthropicHeaders(apiKey),
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model,
         max_tokens: 1024,
         messages: [
           { role: 'user', content: buildUserPrompt(nom, website, description) }
@@ -55,7 +53,7 @@ async function callClaude(apiKey: string, nom: string, website: string | null, d
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error(`[ENRICH] Claude API error for "${nom}": ${response.status} ${errText}`);
+      console.error(`[ENRICH] Claude API error for "${nom}" model=${model} status=${response.status}: ${errText.slice(0, 300)}`);
       return null;
     }
 
