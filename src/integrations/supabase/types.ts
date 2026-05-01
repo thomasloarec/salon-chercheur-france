@@ -3517,17 +3517,17 @@ export type Database = {
       scan_event_duplicates: {
         Args: { p_id: string; p_kind: string; p_persist?: boolean }
         Returns: {
-          match_level: string
-          matched_date_debut: string
-          matched_date_fin: string
-          matched_id: string
-          matched_id_event: string
-          matched_kind: string
-          matched_nom: string
-          matched_url: string
-          matched_visible: boolean
-          reasons: Json
-          score: number
+          out_match_level: string
+          out_matched_date_debut: string
+          out_matched_date_fin: string
+          out_matched_id: string
+          out_matched_id_event: string
+          out_matched_kind: string
+          out_matched_nom: string
+          out_matched_url: string
+          out_matched_visible: boolean
+          out_reasons: Json
+          out_score: number
         }[]
       }
       search_events: {
