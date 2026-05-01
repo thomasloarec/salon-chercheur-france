@@ -550,13 +550,9 @@ async function enrichDescription(
   try {
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
+      headers: buildAnthropicHeaders(anthropicKey),
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: getAnthropicModelFast(),
         max_tokens: 1000,
         messages: [{ role: 'user', content: userMessage }],
         system: DESC_ENRICHIE_SYSTEM_PROMPT,
@@ -565,7 +561,7 @@ async function enrichDescription(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ [Desc enrichie] Claude API ${response.status}: ${errorText.slice(0, 200)}`);
+      console.error(`❌ [Desc enrichie] Claude API model=${getAnthropicModelFast()} status=${response.status}: ${errorText.slice(0, 200)}`);
       return { status: 'error', reason: `Claude API ${response.status}` };
     }
 
