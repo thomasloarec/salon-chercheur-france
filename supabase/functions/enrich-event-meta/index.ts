@@ -14,7 +14,7 @@ import { buildCorsHeaders, handleCors } from '../_shared/cors.ts'
  * V2.1 — Polish final : prompt affiné, secteurs humanisés, dates naturelles.
  */
 
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
+import { ANTHROPIC_API_URL, buildAnthropicHeaders, getAnthropicModelFast } from '../_shared/anthropic.ts';
 
 const MIN_LENGTH = 135;
 const MAX_LENGTH = 160;
@@ -273,13 +273,9 @@ async function callClaude(
   try {
     const response = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
+      headers: buildAnthropicHeaders(anthropicKey),
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: getAnthropicModelFast(),
         max_tokens: 200,
         messages: [{ role: 'user', content: userMessage }],
         system: systemPrompt,
@@ -288,6 +284,7 @@ async function callClaude(
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`[enrich-event-meta] Claude error model=${getAnthropicModelFast()} status=${response.status} body=${errorText.slice(0, 200)}`);
       return { text: null, error: `Claude API ${response.status}: ${errorText.slice(0, 200)}` };
     }
 
