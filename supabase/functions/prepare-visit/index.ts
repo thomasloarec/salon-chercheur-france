@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ANTHROPIC_API_URL, buildAnthropicHeaders } from "../_shared/anthropic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +7,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+// `prepare-visit` intentionally uses Haiku (fast + cheap, suitable for short
+// reasoning over a pre-filtered shortlist of exhibitors). It does NOT use the
+// shared default Sonnet model.
+const PREPARE_VISIT_MODEL = "claude-haiku-4-5-20251001";
 
 // Duration → exhibitor caps
 const DURATION_CAPS: Record<string, { total: number; high: number; medium: number }> = {
