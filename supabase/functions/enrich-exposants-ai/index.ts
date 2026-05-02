@@ -142,62 +142,41 @@ serve(async (req) => {
   try {
     console.log('[ENRICH] Starting enrichment batch...');
 
-    // --- Phase 1: Exposants WITH website ---
-    const { data: withWebsite, error: err1 } = await supabaseAdmin
-      .from('exposants')
-      .select('id_exposant, nom_exposant, website_exposant, exposant_description')
-      .not('website_exposant', 'is', null)
-      .neq('website_exposant', '')
-      .not('id_exposant', 'is', null)
-      .limit(BATCH_SIZE);
-
-    if (err1) {
-      console.error('[ENRICH] Query error (with website):', err1.message);
-      throw new Error(err1.message);
+    // --- Diagnostic stats (pre-batch) ---
+    const { data: preStats, error: statsErr } = await supabaseAdmin
+      .rpc('get_exhibitor_ai_enrichment_stats');
+    if (statsErr) {
+      console.error('[ENRICH] Stats RPC error:', statsErr.message);
+    } else {
+      console.log('[ENRICH] Pre-batch stats:', preStats);
     }
 
-    // Filter out those that already have an exhibitor_ai entry
-    let toProcess: typeof withWebsite = [];
-    if (withWebsite && withWebsite.length > 0) {
-      const ids = withWebsite.map(e => e.id_exposant!);
-      const { data: existingAi } = await supabaseAdmin
-        .from('exhibitor_ai')
-        .select('exhibitor_id')
-        .in('exhibitor_id', ids);
+    // --- SQL anti-join: exposants with website AND no valid exhibitor_ai row ---
+    // LIMIT is applied AFTER the NOT-EXISTS filter (server-side, stable order).
+    const { data: toProcessRaw, error: listErr } = await supabaseAdmin
+      .rpc('list_exposants_to_enrich', { p_limit: BATCH_SIZE });
 
-      const existingSet = new Set((existingAi ?? []).map(r => r.exhibitor_id));
-      toProcess = withWebsite.filter(e => !existingSet.has(e.id_exposant!));
+    if (listErr) {
+      console.error('[ENRICH] list_exposants_to_enrich error:', listErr.message);
+      throw new Error(listErr.message);
     }
 
-    // --- Phase 2: If not enough, fill with exposants WITHOUT website ---
-    if (toProcess.length < BATCH_SIZE) {
-      const remaining = BATCH_SIZE - toProcess.length;
-      const { data: withoutWebsite } = await supabaseAdmin
-        .from('exposants')
-        .select('id_exposant, nom_exposant, website_exposant, exposant_description')
-        .not('id_exposant', 'is', null)
-        .or('website_exposant.is.null,website_exposant.eq.')
-        .limit(remaining);
+    const toProcess = (toProcessRaw ?? []) as Array<{
+      id_exposant: string;
+      nom_exposant: string | null;
+      website_exposant: string | null;
+      exposant_description: string | null;
+    }>;
 
-      if (withoutWebsite && withoutWebsite.length > 0) {
-        const ids2 = withoutWebsite.map(e => e.id_exposant!);
-        const { data: existingAi2 } = await supabaseAdmin
-          .from('exhibitor_ai')
-          .select('exhibitor_id')
-          .in('exhibitor_id', ids2);
-
-        const existingSet2 = new Set((existingAi2 ?? []).map(r => r.exhibitor_id));
-        const filtered2 = withoutWebsite.filter(e => !existingSet2.has(e.id_exposant!));
-        toProcess = [...toProcess, ...filtered2];
-      }
-    }
-
-    console.log(`[ENRICH] Found ${toProcess.length} exposants to enrich`);
+    console.log(`[ENRICH] Selected ${toProcess.length} exposants for this batch (BATCH_SIZE=${BATCH_SIZE})`);
 
     if (toProcess.length === 0) {
+      const remaining = (preStats as { remaining_with_site?: number } | null)?.remaining_with_site ?? 0;
       return new Response(JSON.stringify({
-        processed: 0, success: 0, errors: 0, remaining: 0,
-        message: 'All exhibitors already enriched'
+        processed: 0, success: 0, errors: 0, remaining,
+        message: remaining === 0
+          ? 'All exhibitors with a website are already enriched'
+          : 'No exposants matched the SQL filter (check logs)'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -243,25 +222,20 @@ serve(async (req) => {
       }
     }
 
-    // --- Check remaining ---
-    const { count: remainingCount } = await supabaseAdmin
-      .from('exposants')
-      .select('id_exposant', { count: 'exact', head: true })
-      .not('id_exposant', 'is', null);
+    // --- Post-batch stats (truthful counters) ---
+    const { data: postStats } = await supabaseAdmin
+      .rpc('get_exhibitor_ai_enrichment_stats');
+    const remaining = (postStats as { remaining_with_site?: number } | null)?.remaining_with_site ?? 0;
 
-    const { count: enrichedCount } = await supabaseAdmin
-      .from('exhibitor_ai')
-      .select('id', { count: 'exact', head: true });
-
-    const remaining = Math.max(0, (remainingCount ?? 0) - (enrichedCount ?? 0));
-
-    console.log(`[ENRICH] Batch done: ${successCount} success, ${errorCount} errors, ${remaining} remaining`);
+    console.log(`[ENRICH] Batch done: ${successCount} success, ${errorCount} errors, ${remaining} remaining (with site).`);
+    console.log('[ENRICH] Post-batch stats:', postStats);
 
     const report = {
       processed: toProcess.length,
       success: successCount,
       errors: errorCount,
       remaining,
+      stats: postStats ?? null,
     };
 
     // --- Self-recall if more to process ---
