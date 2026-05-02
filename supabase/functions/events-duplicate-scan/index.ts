@@ -32,6 +32,8 @@ const MarkSchema = z.object({
   }),
 });
 
+const ResetSchema = z.object({ reset: z.literal(true) });
+
 Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req.headers.get('Origin'));
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
@@ -65,6 +67,16 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
+
+    // --- 0. Reset ---
+    const resetParsed = ResetSchema.safeParse(body);
+    if (resetParsed.success) {
+      const { data, error } = await serviceClient.rpc('reset_event_duplicate_candidates');
+      if (error) throw error;
+      return new Response(JSON.stringify(data), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // --- 1. Recalcul global ---
     const rebuildParsed = RebuildSchema.safeParse(body);
