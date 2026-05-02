@@ -54,6 +54,29 @@ async function callClaude(apiKey: string, nom: string, website: string | null, d
     if (!response.ok) {
       const errText = await response.text();
       console.error(`[ENRICH] Claude API error for "${nom}" model=${model} status=${response.status}: ${errText.slice(0, 300)}`);
+      // Tag specific recoverable failures so the orchestrator can short-circuit.
+      const lower = errText.toLowerCase();
+      if (lower.includes('credit balance is too low') || lower.includes('credit_balance')) {
+        const err = new Error('ANTHROPIC_CREDIT_EXHAUSTED');
+        (err as any).code = 'ANTHROPIC_CREDIT_EXHAUSTED';
+        (err as any).providerStatus = response.status;
+        (err as any).providerMessage = errText.slice(0, 300);
+        throw err;
+      }
+      if (response.status === 401 || response.status === 403) {
+        const err = new Error('ANTHROPIC_AUTH_ERROR');
+        (err as any).code = 'ANTHROPIC_AUTH_ERROR';
+        (err as any).providerStatus = response.status;
+        (err as any).providerMessage = errText.slice(0, 300);
+        throw err;
+      }
+      if (response.status === 429) {
+        const err = new Error('ANTHROPIC_RATE_LIMITED');
+        (err as any).code = 'ANTHROPIC_RATE_LIMITED';
+        (err as any).providerStatus = response.status;
+        (err as any).providerMessage = errText.slice(0, 300);
+        throw err;
+      }
       return null;
     }
 
@@ -69,6 +92,10 @@ async function callClaude(apiKey: string, nom: string, website: string | null, d
     const parsed = JSON.parse(cleaned);
     return parsed;
   } catch (err) {
+    // Re-throw tagged provider errors so the batch loop can stop early.
+    if (err instanceof Error && (err as any).code) {
+      throw err;
+    }
     console.error(`[ENRICH] Claude call/parse failed for "${nom}":`, err);
     return null;
   }
@@ -184,14 +211,33 @@ serve(async (req) => {
 
     let successCount = 0;
     let errorCount = 0;
+    let fatalProviderError: { code: string; status?: number; message?: string } | null = null;
 
     for (const exposant of toProcess) {
-      const parsed = await callClaude(
-        anthropicKey,
-        exposant.nom_exposant ?? 'Inconnu',
-        exposant.website_exposant,
-        exposant.exposant_description
-      );
+      let parsed: Record<string, unknown> | null = null;
+      try {
+        parsed = await callClaude(
+          anthropicKey,
+          exposant.nom_exposant ?? 'Inconnu',
+          exposant.website_exposant,
+          exposant.exposant_description
+        );
+      } catch (err) {
+        const code = (err as any)?.code as string | undefined;
+        if (code === 'ANTHROPIC_CREDIT_EXHAUSTED' || code === 'ANTHROPIC_AUTH_ERROR' || code === 'ANTHROPIC_RATE_LIMITED') {
+          fatalProviderError = {
+            code,
+            status: (err as any).providerStatus,
+            message: (err as any).providerMessage,
+          };
+          errorCount++;
+          console.error(`[ENRICH] Fatal provider error (${code}) — aborting batch.`);
+          break;
+        }
+        console.error(`[ENRICH] Unexpected error for "${exposant.nom_exposant}":`, err);
+        errorCount++;
+        continue;
+      }
 
       if (!parsed) {
         errorCount++;
@@ -236,10 +282,19 @@ serve(async (req) => {
       errors: errorCount,
       remaining,
       stats: postStats ?? null,
+      error_code: fatalProviderError?.code ?? (successCount === 0 && errorCount > 0 ? 'ALL_ERRORS' : null),
+      error_detail: fatalProviderError
+        ? (fatalProviderError.code === 'ANTHROPIC_CREDIT_EXHAUSTED'
+            ? "Crédit Anthropic épuisé : ajoutez du crédit sur console.anthropic.com (Plans & Billing) pour relancer l'enrichissement."
+            : fatalProviderError.code === 'ANTHROPIC_AUTH_ERROR'
+            ? "Clé API Anthropic invalide ou révoquée : vérifiez le secret ANTHROPIC_API_KEY."
+            : "Anthropic a renvoyé une limite de débit (429). Réessayez dans quelques minutes.")
+        : null,
     };
 
-    // --- Self-recall if more to process ---
-    if (remaining > 0) {
+    // --- Self-recall if more to process AND no systemic failure ---
+    const shouldStop = !!fatalProviderError || (successCount === 0 && errorCount === toProcess.length);
+    if (remaining > 0 && !shouldStop) {
       console.log(`[ENRICH] ${remaining} remaining — triggering next batch...`);
       try {
         const enrichUrl = `${supabaseUrl}/functions/v1/enrich-exposants-ai`;
@@ -254,6 +309,8 @@ serve(async (req) => {
       } catch (_) {
         // Silence — self-recall failure shouldn't affect report
       }
+    } else if (shouldStop) {
+      console.log('[ENRICH] Skipping self-recall: systemic failure detected.');
     }
 
     return new Response(JSON.stringify(report), {

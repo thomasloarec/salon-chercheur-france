@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, CheckCircle, AlertCircle, RefreshCw, Database } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, AlertCircle, RefreshCw, Database, CreditCard, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -11,6 +11,8 @@ interface EnrichmentReport {
   errors: number;
   remaining: number;
   message?: string;
+  error_code?: string | null;
+  error_detail?: string | null;
 }
 
 interface EnrichmentStats {
@@ -110,10 +112,19 @@ const ExhibitorAiEnrichment: React.FC = () => {
 
       setReport(data as EnrichmentReport);
 
-      if (data.processed === 0) {
+      const r = data as EnrichmentReport;
+      if (r.error_code === 'ANTHROPIC_CREDIT_EXHAUSTED') {
+        toast.error('Crédit Anthropic épuisé — voir le détail ci-dessous.');
+      } else if (r.error_code === 'ANTHROPIC_AUTH_ERROR') {
+        toast.error('Clé API Anthropic invalide — voir le détail ci-dessous.');
+      } else if (r.error_code === 'ANTHROPIC_RATE_LIMITED') {
+        toast.warning('Anthropic : limite de débit atteinte (429).');
+      } else if (r.error_code === 'ALL_ERRORS') {
+        toast.error(`Aucun enrichissement n'a réussi sur ce batch (${r.errors} erreurs).`);
+      } else if (r.processed === 0) {
         toast.info('Tous les exposants sont déjà enrichis !');
       } else {
-        toast.success(`${data.success} exposant(s) enrichi(s) avec succès`);
+        toast.success(`${r.success} exposant(s) enrichi(s) avec succès`);
       }
     } catch (err) {
       toast.error("Erreur inattendue lors de l'enrichissement");
@@ -242,6 +253,70 @@ const ExhibitorAiEnrichment: React.FC = () => {
 
         {report && (
           <div className="rounded-lg border p-4 space-y-2 bg-muted/50">
+            {report.error_code === 'ANTHROPIC_CREDIT_EXHAUSTED' && (
+              <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-3 mb-2">
+                <div className="flex items-start gap-2">
+                  <CreditCard className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1.5 text-sm">
+                    <div className="font-semibold text-red-900 dark:text-red-200">
+                      Crédit Anthropic épuisé
+                    </div>
+                    <p className="text-red-800 dark:text-red-300">
+                      L'enrichissement utilise l'API Claude (Anthropic). Le solde de crédit du
+                      compte Anthropic est à zéro, donc <strong>aucun exposant ne peut être
+                      enrichi tant que le crédit n'est pas rechargé</strong>.
+                    </p>
+                    <p className="text-red-800 dark:text-red-300">
+                      Étapes à suivre :
+                    </p>
+                    <ol className="list-decimal list-inside text-red-800 dark:text-red-300 space-y-0.5">
+                      <li>Ouvrir la console Anthropic ci-dessous.</li>
+                      <li>Aller dans <em>Plans &amp; Billing</em>.</li>
+                      <li>Recharger le crédit ou activer la facturation auto.</li>
+                      <li>Revenir ici et relancer l'enrichissement.</li>
+                    </ol>
+                    <a
+                      href="https://console.anthropic.com/settings/billing"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-red-700 dark:text-red-300 underline font-medium"
+                    >
+                      Ouvrir Anthropic — Plans &amp; Billing
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+            {report.error_code === 'ANTHROPIC_AUTH_ERROR' && (
+              <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-3 mb-2 flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                <div className="text-sm text-red-800 dark:text-red-300">
+                  <div className="font-semibold mb-1">Clé API Anthropic invalide</div>
+                  La clé <code>ANTHROPIC_API_KEY</code> est rejetée par Anthropic
+                  (401/403). Vérifiez le secret dans Supabase et régénérez une clé si nécessaire.
+                </div>
+              </div>
+            )}
+            {report.error_code === 'ANTHROPIC_RATE_LIMITED' && (
+              <div className="rounded-md border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-900 p-3 mb-2 flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+                <div className="text-sm text-yellow-900 dark:text-yellow-200">
+                  <div className="font-semibold mb-1">Limite de débit Anthropic (429)</div>
+                  Trop de requêtes en peu de temps. Attendez quelques minutes puis relancez.
+                </div>
+              </div>
+            )}
+            {report.error_code === 'ALL_ERRORS' && !['ANTHROPIC_CREDIT_EXHAUSTED','ANTHROPIC_AUTH_ERROR','ANTHROPIC_RATE_LIMITED'].includes(report.error_code) && (
+              <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-3 mb-2 flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                <div className="text-sm text-red-800 dark:text-red-300">
+                  <div className="font-semibold mb-1">Aucun exposant n'a pu être enrichi</div>
+                  Les {report.errors} appels du batch ont échoué. Consultez les logs de la
+                  edge function <code>enrich-exposants-ai</code> pour le détail.
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               {report.errors === 0 ? (
                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -268,9 +343,15 @@ const ExhibitorAiEnrichment: React.FC = () => {
                 <div className="text-muted-foreground">Restants</div>
               </div>
             </div>
-            {report.remaining > 0 && (
+            {report.remaining > 0 && !report.error_code && (
               <p className="text-xs text-muted-foreground">
                 ℹ️ Le batch suivant a été déclenché automatiquement en arrière-plan.
+              </p>
+            )}
+            {report.remaining > 0 && report.error_code && (
+              <p className="text-xs text-muted-foreground">
+                ⏸️ L'auto-relance a été arrêtée à cause de l'erreur ci-dessus. Corrigez le
+                problème puis relancez manuellement.
               </p>
             )}
             {report.message && (
