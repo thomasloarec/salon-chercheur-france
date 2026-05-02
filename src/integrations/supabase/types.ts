@@ -3395,6 +3395,7 @@ export type Database = {
       }
       delete_user_account: { Args: never; Returns: Json }
       export_user_data: { Args: never; Returns: Json }
+      extract_event_years: { Args: { p_text: string }; Returns: number[] }
       generate_event_slug: {
         Args: { event_city: string; event_name: string; event_year: number }
         Returns: string

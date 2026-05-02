@@ -51,6 +51,8 @@ function reasonsText(r: Record<string, unknown>): string {
   }
   if (r.same_venue) parts.push('même lieu');
   if (r.same_city) parts.push('même ville');
+  if (r.diff_city) parts.push('villes différentes');
+  if (r.diff_years) parts.push('années différentes');
   return parts.length ? parts.join(' · ') : 'signaux faibles';
 }
 
