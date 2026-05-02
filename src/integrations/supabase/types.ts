@@ -3404,6 +3404,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_exhibitor_ai_enrichment_stats: { Args: never; Returns: Json }
       get_exhibitor_uuid: { Args: { old_id: string }; Returns: string }
       get_location_suggestions: {
         Args: { q: string }
@@ -3476,6 +3477,15 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_team_member: { Args: { _exhibitor_id: string }; Returns: boolean }
+      list_exposants_to_enrich: {
+        Args: { p_limit?: number }
+        Returns: {
+          exposant_description: string
+          id_exposant: string
+          nom_exposant: string
+          website_exposant: string
+        }[]
+      }
       log_application_event: {
         Args: {
           p_details?: Json

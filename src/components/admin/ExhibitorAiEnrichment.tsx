@@ -17,6 +17,8 @@ interface EnrichmentStats {
   total: number;
   enriched: number;
   remaining: number;
+  orphan?: number;
+  remainingWithSite?: number;
 }
 
 const ExhibitorAiEnrichment: React.FC = () => {
@@ -31,19 +33,22 @@ const ExhibitorAiEnrichment: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const [exposantsRes, aiRes] = await Promise.all([
-        supabase
-          .from('exposants')
-          .select('id_exposant', { count: 'exact', head: true })
-          .not('id_exposant', 'is', null),
-        supabase
-          .from('exhibitor_ai')
-          .select('id', { count: 'exact', head: true }),
-      ]);
-
-      const total = exposantsRes.count ?? 0;
-      const enriched = aiRes.count ?? 0;
-      setStats({ total, enriched, remaining: Math.max(0, total - enriched) });
+      const { data, error } = await supabase.rpc('get_exhibitor_ai_enrichment_stats');
+      if (error) throw error;
+      const s = (data ?? {}) as {
+        total_exposants?: number;
+        enriched_valid?: number;
+        orphan_ai_rows?: number;
+        remaining_with_site?: number;
+        remaining_total?: number;
+      };
+      setStats({
+        total: s.total_exposants ?? 0,
+        enriched: s.enriched_valid ?? 0,
+        remaining: s.remaining_with_site ?? 0,
+        orphan: s.orphan_ai_rows ?? 0,
+        remainingWithSite: s.remaining_with_site ?? 0,
+      });
     } catch {
       console.error('[ExhibitorAiEnrichment] Failed to fetch stats');
     } finally {
@@ -195,6 +200,12 @@ const ExhibitorAiEnrichment: React.FC = () => {
                 {Math.round((stats.enriched / stats.total) * 100)}% enrichis
               </div>
             </div>
+          )}
+          {stats && (stats.orphan ?? 0) > 0 && (
+            <p className="text-[11px] text-muted-foreground mt-2">
+              ⚠️ {stats.orphan!.toLocaleString('fr-FR')} ligne(s) <code>exhibitor_ai</code> orpheline(s)
+              (anciens identifiants, non liées à un exposant actuel) — non comptées comme enrichies.
+            </p>
           )}
         </div>
 
