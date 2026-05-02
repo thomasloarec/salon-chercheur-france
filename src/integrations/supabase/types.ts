@@ -834,6 +834,39 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_ai_remap_archive: {
+        Row: {
+          archive_id: string
+          archived_at: string
+          new_exhibitor_id: string | null
+          old_exhibitor_id: string
+          operation: string
+          original_ai_id: string
+          original_row: Json
+          reason: string | null
+        }
+        Insert: {
+          archive_id?: string
+          archived_at?: string
+          new_exhibitor_id?: string | null
+          old_exhibitor_id: string
+          operation: string
+          original_ai_id: string
+          original_row: Json
+          reason?: string | null
+        }
+        Update: {
+          archive_id?: string
+          archived_at?: string
+          new_exhibitor_id?: string | null
+          old_exhibitor_id?: string
+          operation?: string
+          original_ai_id?: string
+          original_row?: Json
+          reason?: string | null
+        }
+        Relationships: []
+      }
       exhibitor_claim_requests: {
         Row: {
           created_at: string | null
@@ -2817,6 +2850,24 @@ export type Database = {
         }
         Relationships: []
       }
+      system_locks: {
+        Row: {
+          lock_name: string
+          locked_at: string
+          reason: string | null
+        }
+        Insert: {
+          lock_name: string
+          locked_at?: string
+          reason?: string | null
+        }
+        Update: {
+          lock_name?: string
+          locked_at?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       user_companies: {
         Row: {
           company_id: string
@@ -3367,6 +3418,10 @@ export type Database = {
       }
     }
     Functions: {
+      _exhibitor_ai_completeness: {
+        Args: { a: Database["public"]["Tables"]["exhibitor_ai"]["Row"] }
+        Returns: number
+      }
       can_add_novelty: {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
@@ -3526,6 +3581,7 @@ export type Database = {
         }[]
       }
       reset_event_duplicate_candidates: { Args: never; Returns: Json }
+      run_exhibitor_ai_remap: { Args: never; Returns: Json }
       scan_event_duplicates: {
         Args: { p_id: string; p_kind: string; p_persist?: boolean }
         Returns: {
