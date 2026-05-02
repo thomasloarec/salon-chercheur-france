@@ -125,6 +125,30 @@ export function useRebuildDuplicates() {
   });
 }
 
+export function useResetDuplicates() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('events-duplicate-scan', {
+        body: { reset: true },
+      });
+      if (error) throw error;
+      return data as { ok: boolean; deleted_candidates: number; reset_events: number };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Suggestions effacées',
+        description: `${data?.deleted_candidates ?? 0} suggestion(s) supprimée(s), ${data?.reset_events ?? 0} événement(s) réinitialisé(s).`,
+      });
+      qc.invalidateQueries({ queryKey: ['event-duplicate-candidates'] });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
 export function useResolveDuplicate() {
   const qc = useQueryClient();
   const { toast } = useToast();

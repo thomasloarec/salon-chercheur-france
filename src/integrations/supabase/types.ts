@@ -3514,6 +3514,7 @@ export type Database = {
           ville: string
         }[]
       }
+      reset_event_duplicate_candidates: { Args: never; Returns: Json }
       scan_event_duplicates: {
         Args: { p_id: string; p_kind: string; p_persist?: boolean }
         Returns: {

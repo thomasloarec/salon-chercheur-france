@@ -2,11 +2,23 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, RefreshCw, ExternalLink, Check, X } from 'lucide-react';
+import { AlertTriangle, RefreshCw, ExternalLink, Check, X, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   useEventDuplicates,
   useRebuildDuplicates,
   useResolveDuplicate,
+  useResetDuplicates,
   type DuplicateMatchLevel,
 } from '@/hooks/useEventDuplicates';
 
@@ -31,11 +43,13 @@ function formatDateRange(d?: string | null, f?: string | null) {
 function reasonsText(r: Record<string, unknown>): string {
   const parts: string[] = [];
   if (r.same_dates) parts.push('mêmes dates');
+  else if (r.overlap_dates) parts.push('dates qui se chevauchent');
   if (r.same_url) parts.push('même URL officielle');
   else if (r.same_domain) parts.push('même domaine');
   if (typeof r.name_similarity === 'number' && (r.name_similarity as number) >= 0.5) {
     parts.push(`nom proche (${Math.round((r.name_similarity as number) * 100)}%)`);
   }
+  if (r.same_venue) parts.push('même lieu');
   if (r.same_city) parts.push('même ville');
   return parts.length ? parts.join(' · ') : 'signaux faibles';
 }
@@ -44,8 +58,12 @@ export function DuplicateEventsPanel() {
   const { data, isLoading } = useEventDuplicates();
   const rebuild = useRebuildDuplicates();
   const resolve = useResolveDuplicate();
+  const reset = useResetDuplicates();
 
-  const groups = data ?? [];
+  // Filter out groups where no matched event is hydratable (deleted/missing)
+  const groups = (data ?? [])
+    .map((g) => ({ ...g, rows: g.rows.filter((r) => r.matched) }))
+    .filter((g) => g.rows.length > 0);
 
   return (
     <Card>
@@ -55,15 +73,45 @@ export function DuplicateEventsPanel() {
             <AlertTriangle className="h-5 w-5 text-amber-600" />
             Doublons potentiels détectés ({groups.length})
           </CardTitle>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => rebuild.mutate()}
-            disabled={rebuild.isPending}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${rebuild.isPending ? 'animate-spin' : ''}`} />
-            Recalculer
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => rebuild.mutate()}
+              disabled={rebuild.isPending || reset.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${rebuild.isPending ? 'animate-spin' : ''}`} />
+              Recalculer
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={rebuild.isPending || reset.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Reset
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Effacer les suggestions de doublons ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Voulez-vous effacer toutes les suggestions de doublons ? Cela ne supprimera
+                    aucun événement. Les décisions admin déjà confirmées (distinct / doublon)
+                    seront conservées.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => reset.mutate()}>
+                    Effacer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
