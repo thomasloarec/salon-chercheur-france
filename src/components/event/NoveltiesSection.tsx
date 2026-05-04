@@ -4,6 +4,7 @@ import { Loader2, Rocket } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import NoveltyEventCard from '@/components/novelty/NoveltyEventCard';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
+import NoveltyExampleEmptyState from '@/components/novelty/NoveltyExampleEmptyState';
 import { NoveltiesPreLaunchBanner } from './NoveltiesPreLaunchBanner';
 import { NoveltyNotificationDialog } from './NoveltyNotificationDialog';
 import { useInfiniteNovelties } from '@/hooks/useInfiniteNovelties';
@@ -167,36 +168,8 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
       );
     }
 
-    // Cas normal : pas de nouveautés, message sobre + CTA exposant discret
-    return (
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h2 className="text-xl font-semibold">Nouveautés</h2>
-        </div>
-        <div className="rounded-2xl border bg-card p-5 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Rocket className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">
-                Aucune nouveauté publiée pour l'instant.
-              </p>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Vous exposez ? Soyez le premier à annoncer votre présence.
-              </p>
-            </div>
-            <AddNoveltyButton
-              event={event}
-              variant="outline"
-              size="sm"
-              label="Exposant : publier une nouveauté"
-              className="shrink-0"
-            />
-          </div>
-        </div>
-      </section>
-    );
+    // Cas normal : pas de nouveautés -> empty state pédagogique avec carte exemple
+    return <NoveltyExampleEmptyState event={event} />;
   }
 
   // Error state
