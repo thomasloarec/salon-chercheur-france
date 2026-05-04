@@ -611,7 +611,7 @@ export default function AdminOutreachDashboard() {
                       <Card key={ct.id} className={ct.is_primary ? 'border-primary' : ''}>
                         <CardContent className="pt-4 text-sm space-y-2">
                           <div className="flex items-center justify-between">
-                            <div className="font-medium">{ct.full_name ?? `${ct.first_name ?? ''} ${ct.last_name ?? ''}`.trim() || '(sans nom)'}</div>
+                            <div className="font-medium">{ct.full_name ?? (`${ct.first_name ?? ''} ${ct.last_name ?? ''}`.trim() || '(sans nom)')}</div>
                             {ct.is_primary && <Badge>Primaire</Badge>}
                           </div>
                           <div className="flex items-center gap-2"><code className="text-xs bg-muted px-1.5 py-0.5 rounded flex-1 truncate">{ct.contact_email}</code><Button variant="ghost" size="sm" onClick={() => copy(ct.contact_email)}><Copy className="h-3 w-3" /></Button></div>
