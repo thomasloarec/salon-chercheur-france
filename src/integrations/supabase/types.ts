@@ -1310,6 +1310,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "favorites_event_fkey"
+            columns: ["event_uuid"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "favorites_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -1321,6 +1328,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
         ]
@@ -1507,6 +1521,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leads_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
@@ -1675,6 +1696,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
@@ -1799,6 +1827,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
           {
@@ -2074,6 +2109,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
@@ -2113,6 +2155,13 @@ export type Database = {
             columns: ["participation_id"]
             isOneToOne: true
             referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["id_participation"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: true
+            referencedRelation: "v_outreach_campaigns_missing"
             referencedColumns: ["id_participation"]
           },
         ]
@@ -2258,6 +2307,13 @@ export type Database = {
             referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
         ]
       }
       participation_backup_20250101: {
@@ -2394,6 +2450,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_entitlements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
           {
@@ -3023,6 +3086,13 @@ export type Database = {
             referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
         ]
       }
       visit_plans: {
@@ -3078,6 +3148,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_plans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
         ]
@@ -3156,6 +3233,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wizard_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
         ]
@@ -3321,6 +3405,13 @@ export type Database = {
             referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_a_enrichir: {
@@ -3353,6 +3444,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "outreach_campaigns_participation_id_fkey"
             columns: ["participation_id"]
             isOneToOne: true
@@ -3366,6 +3464,13 @@ export type Database = {
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["id_participation"]
           },
+          {
+            foreignKeyName: "outreach_campaigns_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: true
+            referencedRelation: "v_outreach_campaigns_missing"
+            referencedColumns: ["id_participation"]
+          },
         ]
       }
       v_a_enrichir_test: {
@@ -3377,6 +3482,18 @@ export type Database = {
           id: string | null
           nom_event: string | null
           website: string | null
+        }
+        Relationships: []
+      }
+      v_events_outreach_eligible: {
+        Row: {
+          date_debut: string | null
+          days_before_event: number | null
+          id: string | null
+          nom_event: string | null
+          participations_with_website: number | null
+          slug: string | null
+          ville: string | null
         }
         Relationships: []
       }
@@ -3414,6 +3531,46 @@ export type Database = {
             referencedRelation: "events_geo"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_outreach_campaigns_missing: {
+        Row: {
+          company_name: string | null
+          exhibitor_id: string | null
+          id_event: string | null
+          id_exposant_legacy: string | null
+          id_participation: string | null
+          website: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -3433,6 +3590,7 @@ export type Database = {
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
       cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
+      create_missing_outreach_campaigns: { Args: never; Returns: Json }
       create_novelty_atomic: {
         Args: {
           p_brochure_pdf?: string
@@ -3474,6 +3632,7 @@ export type Database = {
         Args: { novelty_uuid: string }
         Returns: number
       }
+      get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_top_novelties_per_event: {
         Args: never
         Returns: {
