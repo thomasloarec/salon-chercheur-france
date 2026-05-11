@@ -111,7 +111,9 @@ const ExhibitorOutreachPanel = ({ exhibitorId }: Props) => {
       </CardHeader>
       <CardContent className="space-y-4">
         {campaigns.map(c => {
-          const event = data?.eventsById.get(c.event_id);
+          const event = data?.eventsById.get(c.event_id) as
+            | { nom_event?: string; slug?: string; date_debut?: string; date_fin?: string }
+            | undefined;
           const isTerminal = TERMINAL_CAMPAIGN_STATUSES.has(c.campaign_status ?? '');
           const emailKey = c.contact_email?.toLowerCase().trim();
           const blacklistReason = emailKey ? data?.blacklistByEmail.get(emailKey) : undefined;
