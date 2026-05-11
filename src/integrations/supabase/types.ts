@@ -1155,6 +1155,7 @@ export type Database = {
           last_sent_at: string | null
           logo_url: string | null
           name: string
+          name_normalized: string | null
           next_send_date: string | null
           opt_out: boolean | null
           outlook_conv_id: string | null
@@ -1193,6 +1194,7 @@ export type Database = {
           last_sent_at?: string | null
           logo_url?: string | null
           name: string
+          name_normalized?: string | null
           next_send_date?: string | null
           opt_out?: boolean | null
           outlook_conv_id?: string | null
@@ -1231,6 +1233,7 @@ export type Database = {
           last_sent_at?: string | null
           logo_url?: string | null
           name?: string
+          name_normalized?: string | null
           next_send_date?: string | null
           opt_out?: boolean | null
           outlook_conv_id?: string | null
@@ -1255,6 +1258,7 @@ export type Database = {
           id: number
           id_exposant: string | null
           nom_exposant: string | null
+          nom_normalized: string | null
           website_exposant: string | null
         }
         Insert: {
@@ -1263,6 +1267,7 @@ export type Database = {
           id?: number
           id_exposant?: string | null
           nom_exposant?: string | null
+          nom_normalized?: string | null
           website_exposant?: string | null
         }
         Update: {
@@ -1271,6 +1276,7 @@ export type Database = {
           id?: number
           id_exposant?: string | null
           nom_exposant?: string | null
+          nom_normalized?: string | null
           website_exposant?: string | null
         }
         Relationships: []
@@ -2049,6 +2055,7 @@ export type Database = {
           campaign_status: string | null
           claude_classification: string | null
           company_name: string | null
+          company_name_normalized: string | null
           contact_email: string | null
           created_at: string | null
           current_step: number | null
@@ -2078,6 +2085,7 @@ export type Database = {
           campaign_status?: string | null
           claude_classification?: string | null
           company_name?: string | null
+          company_name_normalized?: string | null
           contact_email?: string | null
           created_at?: string | null
           current_step?: number | null
@@ -2107,6 +2115,7 @@ export type Database = {
           campaign_status?: string | null
           claude_classification?: string | null
           company_name?: string | null
+          company_name_normalized?: string | null
           contact_email?: string | null
           created_at?: string | null
           current_step?: number | null
@@ -3753,6 +3762,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      normalize_company_name: { Args: { input: string }; Returns: string }
       normalize_event_domain: { Args: { p_url: string }; Returns: string }
       normalize_event_url: { Args: { p_url: string }; Returns: string }
       publish_pending_event_atomic: {
@@ -3795,6 +3805,24 @@ export type Database = {
           out_matched_visible: boolean
           out_reasons: Json
           out_score: number
+        }[]
+      }
+      search_admin_companies: {
+        Args: { lim?: number; q: string }
+        Returns: {
+          campaign_status: string
+          contact_email: string
+          current_step: number
+          event_id: string
+          exhibitor_id: string
+          has_exhibitor_row: boolean
+          legacy_id: string
+          name: string
+          outreach_id: string
+          relevance: number
+          source: string
+          source_priority: number
+          website: string
         }[]
       }
       search_events: {
