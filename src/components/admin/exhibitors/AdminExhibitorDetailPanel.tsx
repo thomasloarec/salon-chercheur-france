@@ -618,8 +618,6 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
               </div>
             </CardContent>
           </Card>
-            </TabsContent>
-          </Tabs>
         </div>
       </div>
     </div>
