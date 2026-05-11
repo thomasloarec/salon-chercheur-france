@@ -359,6 +359,16 @@ export default function AdminOutreachDashboard() {
         <KpiCard label="Sans email" value={counts.withoutEmail} icon={XCircle} color="text-amber-600" />
       </div>
 
+      {/* KPIs - pilotage qualité */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <KpiCard label="Stoppées (admin)" value={counts.stopped} icon={XCircle} color="text-destructive" />
+        <KpiCard label="Email invalide" value={counts.blocked_invalid_email} icon={UserX} color="text-destructive" />
+        <KpiCard label="Opt-out" value={counts.opted_out} icon={UserX} color="text-destructive" />
+        <KpiCard label="Nouveauté publiée" value={counts.novelty_published} icon={CheckCircle2} color="text-green-600" />
+        <KpiCard label="Email introuvable" value={counts.stop_email_not_found} icon={AlertCircle} color="text-amber-600" />
+        <KpiCard label="Ne participe pas" value={counts.stop_not_attending} icon={AlertCircle} color="text-muted-foreground" />
+      </div>
+
       {/* Filters */}
       <Card>
         <CardContent className="pt-4 space-y-3">
