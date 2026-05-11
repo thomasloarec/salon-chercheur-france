@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type GovernanceStatus = 'unmanaged' | 'pending' | 'managed' | 'test';
 
+export type AdminSearchSource = 'exhibitor' | 'outreach' | 'legacy';
+
 export interface AdminExhibitor {
   id: string;
   name: string;
@@ -21,6 +23,15 @@ export interface AdminExhibitor {
   team_count: number;
   has_pending_claim: boolean;
   governance_status: GovernanceStatus;
+  // Search-only metadata (present when result comes from search_admin_companies RPC)
+  source?: AdminSearchSource;
+  has_exhibitor_row?: boolean;
+  campaign_status?: string | null;
+  current_step?: string | null;
+  legacy_id?: string | null;
+  outreach_id?: string | null;
+  event_id?: string | null;
+  contact_email?: string | null;
 }
 
 export interface AdminExhibitorsFilters {
@@ -34,15 +45,116 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
   return useQuery({
     queryKey: ['admin-exhibitors', filters],
     queryFn: async (): Promise<AdminExhibitor[]> => {
+      const term = (filters.search || '').trim();
+
+      // ── Search mode: use unified RPC across exhibitors / outreach / legacy ──
+      if (term.length > 0) {
+        const { data: rpcRows, error: rpcError } = await supabase.rpc(
+          'search_admin_companies' as any,
+          { q: term, lim: 50 }
+        );
+        if (rpcError) {
+          console.error('[AdminSearch] RPC search_admin_companies error:', rpcError);
+          throw rpcError;
+        }
+        const rows = (rpcRows || []) as any[];
+        const sources = Array.from(new Set(rows.map(r => r.source)));
+        console.log('[AdminSearch]', { q: term, count: rows.length, sources });
+
+        // Fetch governance metadata for rows that have a real exhibitor_id
+        const realIds = rows
+          .map(r => r.exhibitor_id)
+          .filter((id): id is string => !!id);
+
+        let exhibitorMap: Record<string, any> = {};
+        let teamCounts: Record<string, number> = {};
+        let pendingClaims = new Set<string>();
+
+        if (realIds.length > 0) {
+          const [exRes, teamRes, claimRes] = await Promise.all([
+            supabase
+              .from('exhibitors')
+              .select('id, name, slug, website, description, logo_url, approved, owner_user_id, verified_at, is_test, created_at, updated_at, plan')
+              .in('id', realIds),
+            supabase
+              .from('exhibitor_team_members')
+              .select('exhibitor_id')
+              .in('exhibitor_id', realIds)
+              .eq('status', 'active'),
+            supabase
+              .from('exhibitor_claim_requests')
+              .select('exhibitor_id')
+              .in('exhibitor_id', realIds)
+              .eq('status', 'pending'),
+          ]);
+          (exRes.data || []).forEach((e: any) => { exhibitorMap[e.id] = e; });
+          (teamRes.data || []).forEach((t: any) => {
+            teamCounts[t.exhibitor_id] = (teamCounts[t.exhibitor_id] || 0) + 1;
+          });
+          pendingClaims = new Set((claimRes.data || []).map((c: any) => c.exhibitor_id));
+        }
+
+        const result: AdminExhibitor[] = rows.map((r: any) => {
+          const ex = r.exhibitor_id ? exhibitorMap[r.exhibitor_id] : null;
+          const tc = r.exhibitor_id ? (teamCounts[r.exhibitor_id] || 0) : 0;
+          const hasPending = r.exhibitor_id ? pendingClaims.has(r.exhibitor_id) : false;
+          const isTest = ex?.is_test ?? false;
+          let governance_status: GovernanceStatus = 'unmanaged';
+          if (isTest) governance_status = 'test';
+          else if (ex?.owner_user_id || tc > 0) governance_status = 'managed';
+          else if (hasPending) governance_status = 'pending';
+
+          // Synthetic id for non-exhibitor rows so React keys stay unique
+          const id =
+            r.exhibitor_id ||
+            (r.source === 'outreach' ? `outreach:${r.outreach_id}` : `legacy:${r.legacy_id}`);
+
+          return {
+            id,
+            name: r.name || ex?.name || '—',
+            slug: ex?.slug ?? null,
+            website: r.website ?? ex?.website ?? null,
+            description: ex?.description ?? null,
+            logo_url: ex?.logo_url ?? null,
+            approved: ex?.approved ?? null,
+            owner_user_id: ex?.owner_user_id ?? null,
+            verified_at: ex?.verified_at ?? null,
+            is_test: isTest,
+            created_at: ex?.created_at ?? null,
+            updated_at: ex?.updated_at ?? null,
+            plan: ex?.plan ?? null,
+            team_count: tc,
+            has_pending_claim: hasPending,
+            governance_status,
+            source: r.source as AdminSearchSource,
+            has_exhibitor_row: !!r.has_exhibitor_row,
+            campaign_status: r.campaign_status ?? null,
+            current_step: r.current_step ?? null,
+            legacy_id: r.legacy_id ?? null,
+            outreach_id: r.outreach_id ?? null,
+            event_id: r.event_id ?? null,
+            contact_email: r.contact_email ?? null,
+          };
+        });
+
+        // Apply non-search filters client-side
+        return result.filter(e => {
+          if (filters.isTest === 'test' && !e.is_test) return false;
+          if (filters.isTest === 'production' && e.is_test) return false;
+          if (filters.verified === 'verified' && !e.verified_at) return false;
+          if (filters.verified === 'unverified' && e.verified_at) return false;
+          if (filters.status !== 'all' && e.governance_status !== filters.status) return false;
+          return true;
+        });
+      }
+
+      // ── Default mode: full listing (unchanged) ──
       let query = supabase
         .from('exhibitors')
         .select('id, name, slug, website, description, logo_url, approved, owner_user_id, verified_at, is_test, created_at, updated_at, plan')
         .order('created_at', { ascending: false })
         .limit(200);
 
-      if (filters.search) {
-        query = query.ilike('name', `%${filters.search}%`);
-      }
       if (filters.isTest === 'test') {
         query = query.eq('is_test', true);
       } else if (filters.isTest === 'production') {
