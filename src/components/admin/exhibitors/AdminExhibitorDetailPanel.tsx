@@ -460,6 +460,8 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
               </CardContent>
             </Card>
           )}
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Right sidebar */}
