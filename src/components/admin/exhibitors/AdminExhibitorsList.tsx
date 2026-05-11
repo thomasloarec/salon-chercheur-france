@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Building2, Shield, Clock, AlertCircle, ExternalLink, RefreshCw, FlaskConical } from 'lucide-react';
+import { Search, Building2, Shield, Clock, AlertCircle, ExternalLink, RefreshCw, FlaskConical, Mail, Archive } from 'lucide-react';
 import { useAdminExhibitors, type AdminExhibitorsFilters, type GovernanceStatus } from '@/hooks/useAdminExhibitors';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -146,6 +146,25 @@ const AdminExhibitorsList = ({ onSelectExhibitor }: Props) => {
                 </div>
 
                 <div className="flex items-center gap-3 ml-4 shrink-0">
+                  {ex.source === 'outreach' && !ex.has_exhibitor_row && (
+                    <Badge variant="outline" className="text-xs gap-1 bg-sky-50 text-sky-700 border-sky-200">
+                      <Mail className="h-3.5 w-3.5" />
+                      Campagne email uniquement
+                    </Badge>
+                  )}
+                  {ex.source === 'legacy' && !ex.has_exhibitor_row && (
+                    <Badge variant="outline" className="text-xs gap-1 bg-zinc-100 text-zinc-700 border-zinc-300">
+                      <Archive className="h-3.5 w-3.5" />
+                      Exposant legacy
+                    </Badge>
+                  )}
+                  {ex.campaign_status && (
+                    <Badge variant="outline" className="text-xs">
+                      {ex.campaign_status}
+                      {ex.current_step ? ` · ${ex.current_step}` : ''}
+                    </Badge>
+                  )}
+
                   <Badge variant="outline" className={`text-xs gap-1 ${statusColors[ex.governance_status]}`}>
                     {statusIcons[ex.governance_status]}
                     {statusLabels[ex.governance_status]}
