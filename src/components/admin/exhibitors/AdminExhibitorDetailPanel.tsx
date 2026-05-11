@@ -16,6 +16,8 @@ import { useAdminExhibitorDetail } from '@/hooks/useAdminExhibitors';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ExhibitorOutreachPanel from './ExhibitorOutreachPanel';
 
 interface Props {
   exhibitorId: string;
@@ -189,6 +191,17 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Info */}
         <div className="lg:col-span-2 space-y-6">
+          <Tabs defaultValue="overview">
+            <TabsList>
+              <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+              <TabsTrigger value="outreach" className="gap-1">
+                <Mail className="h-3.5 w-3.5" /> Prospection email
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="outreach" className="mt-4">
+              <ExhibitorOutreachPanel exhibitorId={exhibitorId} />
+            </TabsContent>
+            <TabsContent value="overview" className="mt-4 space-y-6">
           {/* Fiche entreprise */}
           <Card>
             <CardHeader>
