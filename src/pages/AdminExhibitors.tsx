@@ -5,21 +5,34 @@ import { Building2, ClipboardList } from 'lucide-react';
 import AdminExhibitorsList from '@/components/admin/exhibitors/AdminExhibitorsList';
 import AdminClaimRequests from '@/components/admin/exhibitors/AdminClaimRequests';
 import AdminExhibitorDetailPanel from '@/components/admin/exhibitors/AdminExhibitorDetailPanel';
+import AdminNonExhibitorPanel from '@/components/admin/exhibitors/AdminNonExhibitorPanel';
+import { isUuid, type AdminSelection } from '@/components/admin/exhibitors/types';
 
 const AdminExhibitors = () => {
-  const [selectedExhibitorId, setSelectedExhibitorId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<AdminSelection | null>(null);
   const [activeTab, setActiveTab] = useState('exhibitors');
 
-  // If an exhibitor is selected (from either tab), show detail panel
-  if (selectedExhibitorId) {
-    return (
-      <div className="space-y-6">
-        <AdminExhibitorDetailPanel
-          exhibitorId={selectedExhibitorId}
-          onBack={() => setSelectedExhibitorId(null)}
-        />
-      </div>
-    );
+  if (selection) {
+    if (selection.kind === 'exhibitor' && isUuid(selection.exhibitor_id)) {
+      return (
+        <div className="space-y-6">
+          <AdminExhibitorDetailPanel
+            exhibitorId={selection.exhibitor_id}
+            onBack={() => setSelection(null)}
+          />
+        </div>
+      );
+    }
+    if (selection.kind === 'outreach' || selection.kind === 'legacy') {
+      return (
+        <div className="space-y-6">
+          <AdminNonExhibitorPanel selection={selection} onBack={() => setSelection(null)} />
+        </div>
+      );
+    }
+    // Defensive fallback (invalid id)
+    console.warn('[AdminDetail] invalid selection, ignoring', selection);
+    setSelection(null);
   }
 
   return (
@@ -44,11 +57,17 @@ const AdminExhibitors = () => {
           </TabsList>
 
           <TabsContent value="exhibitors">
-            <AdminExhibitorsList onSelectExhibitor={setSelectedExhibitorId} />
+            <AdminExhibitorsList onSelectResult={setSelection} />
           </TabsContent>
 
           <TabsContent value="claims">
-            <AdminClaimRequests onSelectExhibitor={setSelectedExhibitorId} />
+            <AdminClaimRequests
+              onSelectExhibitor={(id) =>
+                isUuid(id)
+                  ? setSelection({ kind: 'exhibitor', exhibitor_id: id })
+                  : console.warn('[AdminDetail] non-uuid id from claims', id)
+              }
+            />
           </TabsContent>
       </Tabs>
     </div>

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Building2, Shield, Clock, AlertCircle, ExternalLink, RefreshCw, FlaskConical, Mail, Archive } from 'lucide-react';
 import { useAdminExhibitors, type AdminExhibitorsFilters, type GovernanceStatus } from '@/hooks/useAdminExhibitors';
 import { useDebounce } from '@/hooks/useDebounce';
+import type { AdminSelection } from './types';
 
 const statusLabels: Record<GovernanceStatus, string> = {
   unmanaged: 'Non gérée',
@@ -31,9 +32,10 @@ const statusIcons: Record<GovernanceStatus, React.ReactNode> = {
 
 interface Props {
   onSelectExhibitor?: (id: string) => void;
+  onSelectResult?: (sel: AdminSelection) => void;
 }
 
-const AdminExhibitorsList = ({ onSelectExhibitor }: Props) => {
+const AdminExhibitorsList = ({ onSelectExhibitor, onSelectResult }: Props) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<GovernanceStatus | 'all'>('all');
@@ -126,7 +128,67 @@ const AdminExhibitorsList = ({ onSelectExhibitor }: Props) => {
             {exhibitors.map(ex => (
               <button
                 key={ex.id}
-                onClick={() => onSelectExhibitor?.(ex.id)}
+                onClick={() => {
+                  // Build a typed selection so we never navigate with synthetic ids.
+                  let sel: AdminSelection;
+                  const realExhibitorId =
+                    ex.id && !ex.id.startsWith('outreach:') && !ex.id.startsWith('legacy:')
+                      ? ex.id
+                      : null;
+
+                  if (ex.source === 'outreach' && !ex.has_exhibitor_row) {
+                    sel = {
+                      kind: 'outreach',
+                      outreach_id: ex.outreach_id || ex.id.replace(/^outreach:/, ''),
+                      name: ex.name,
+                      website: ex.website,
+                      contact_email: ex.contact_email ?? null,
+                      event_id: ex.event_id ?? null,
+                      campaign_status: ex.campaign_status ?? null,
+                      current_step: ex.current_step ?? null,
+                      exhibitor_id: null,
+                    };
+                  } else if (ex.source === 'legacy' && !ex.has_exhibitor_row) {
+                    sel = {
+                      kind: 'legacy',
+                      legacy_id: ex.legacy_id || ex.id.replace(/^legacy:/, ''),
+                      name: ex.name,
+                      website: ex.website,
+                    };
+                  } else if (realExhibitorId) {
+                    sel = { kind: 'exhibitor', exhibitor_id: realExhibitorId };
+                  } else {
+                    // Defensive fallback: outreach without flag
+                    sel = ex.outreach_id
+                      ? {
+                          kind: 'outreach',
+                          outreach_id: ex.outreach_id,
+                          name: ex.name,
+                          website: ex.website,
+                          contact_email: ex.contact_email ?? null,
+                          event_id: ex.event_id ?? null,
+                          campaign_status: ex.campaign_status ?? null,
+                          current_step: ex.current_step ?? null,
+                          exhibitor_id: null,
+                        }
+                      : ex.legacy_id
+                      ? { kind: 'legacy', legacy_id: ex.legacy_id, name: ex.name, website: ex.website }
+                      : { kind: 'exhibitor', exhibitor_id: ex.id };
+                  }
+                  console.log('[AdminSearch] click', {
+                    source: ex.source,
+                    has_exhibitor_row: ex.has_exhibitor_row,
+                    exhibitor_id: realExhibitorId,
+                    outreach_id: ex.outreach_id,
+                    legacy_id: ex.legacy_id,
+                    selection: sel,
+                  });
+                  if (onSelectResult) {
+                    onSelectResult(sel);
+                  } else if (sel.kind === 'exhibitor') {
+                    onSelectExhibitor?.(sel.exhibitor_id);
+                  }
+                }}
                 className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors text-left"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">

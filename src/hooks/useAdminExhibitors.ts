@@ -265,10 +265,16 @@ export interface AdminExhibitorDetail {
 }
 
 export function useAdminExhibitorDetail(exhibitorId: string | null) {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isValid = !!exhibitorId && UUID_RE.test(exhibitorId);
   return useQuery({
     queryKey: ['admin-exhibitor-detail', exhibitorId],
     queryFn: async (): Promise<AdminExhibitorDetail | null> => {
       if (!exhibitorId) return null;
+      if (!isValid) {
+        console.warn('[AdminDetail] skipping fetch — non-UUID id:', exhibitorId);
+        return null;
+      }
 
       const [exRes, teamRes, claimsRes, invitesRes] = await Promise.all([
         supabase
@@ -377,6 +383,6 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
         })),
       };
     },
-    enabled: !!exhibitorId,
+    enabled: isValid,
   });
 }
