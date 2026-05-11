@@ -328,6 +328,36 @@ export type Database = {
           },
         ]
       }
+      email_blacklist: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email_normalized: string
+          id: string
+          note: string | null
+          reason: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email_normalized: string
+          id?: string
+          note?: string | null
+          reason: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email_normalized?: string
+          id?: string
+          note?: string | null
+          reason?: string
+          source?: string
+        }
+        Relationships: []
+      }
       event_duplicate_candidates: {
         Row: {
           created_at: string
@@ -2037,7 +2067,10 @@ export type Database = {
           opt_out: boolean | null
           participation_id: string | null
           reply_status: string | null
+          stop_note: string | null
           stop_reason: string | null
+          stopped_at: string | null
+          stopped_by: string | null
           updated_at: string | null
           website: string | null
         }
@@ -2063,7 +2096,10 @@ export type Database = {
           opt_out?: boolean | null
           participation_id?: string | null
           reply_status?: string | null
+          stop_note?: string | null
           stop_reason?: string | null
+          stopped_at?: string | null
+          stopped_by?: string | null
           updated_at?: string | null
           website?: string | null
         }
@@ -2089,7 +2125,10 @@ export type Database = {
           opt_out?: boolean | null
           participation_id?: string | null
           reply_status?: string | null
+          stop_note?: string | null
           stop_reason?: string | null
+          stopped_at?: string | null
+          stopped_by?: string | null
           updated_at?: string | null
           website?: string | null
         }
@@ -3690,6 +3729,7 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      is_email_blacklisted: { Args: { _email: string }; Returns: boolean }
       is_team_member: { Args: { _exhibitor_id: string }; Returns: boolean }
       list_exposants_to_enrich: {
         Args: { p_limit?: number }
