@@ -15,7 +15,10 @@ import {
 } from '@/lib/outreach/labels';
 
 interface Props {
-  exhibitorId: string;
+  exhibitorId?: string;
+  campaignId?: string;
+  /** Optional title shown in the card header. Defaults to "Prospection email". */
+  title?: string;
 }
 
 interface CampaignRow {
@@ -42,21 +45,24 @@ const fmtDate = (s?: string | null) =>
 const fmtDateTime = (s?: string | null) =>
   s ? new Date(s).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 
-const ExhibitorOutreachPanel = ({ exhibitorId }: Props) => {
+const ExhibitorOutreachPanel = ({ exhibitorId, campaignId, title }: Props) => {
   const [stopDialog, setStopDialog] = useState<{ id: string; email?: string | null } | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['exhibitor-outreach', exhibitorId],
+    queryKey: ['exhibitor-outreach', { exhibitorId, campaignId }],
     queryFn: async () => {
-      const { data: campaigns, error } = await supabase
+      let q = supabase
         .from('outreach_campaigns')
         .select(`
           id, event_id, contact_email, email_source, campaign_status, current_step,
           last_sent_at, next_send_at, stop_reason, stop_note, stopped_at,
           hunter_status, hunter_prenom, hunter_poste, created_at, updated_at
         `)
-        .eq('exhibitor_id', exhibitorId)
         .order('created_at', { ascending: false });
+      if (campaignId) q = q.eq('id', campaignId);
+      else if (exhibitorId) q = q.eq('exhibitor_id', exhibitorId);
+      else return { campaigns: [], eventsById: new Map(), blacklistByEmail: new Map() };
+      const { data: campaigns, error } = await q;
       if (error) throw error;
 
       const eventIds = Array.from(new Set((campaigns ?? []).map(c => c.event_id).filter(Boolean)));
@@ -76,6 +82,7 @@ const ExhibitorOutreachPanel = ({ exhibitorId }: Props) => {
 
       return { campaigns: campaigns ?? [], eventsById, blacklistByEmail };
     },
+    enabled: !!(exhibitorId || campaignId),
   });
 
   if (isLoading) {
@@ -106,7 +113,7 @@ const ExhibitorOutreachPanel = ({ exhibitorId }: Props) => {
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Mail className="h-4 w-4" />
-          Prospection email ({campaigns.length})
+          {title ?? 'Prospection email'} ({campaigns.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
