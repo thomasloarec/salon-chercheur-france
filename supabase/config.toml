@@ -83,3 +83,6 @@ verify_jwt = true
 # that the in-code gate is the single source of truth and produces
 # consistent 401 logs for every unauthorized attempt.
 verify_jwt = false
+
+[functions.crm-import]
+verify_jwt = false
