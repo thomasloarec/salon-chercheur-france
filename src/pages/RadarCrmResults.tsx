@@ -8,9 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from '@/components/ui/sheet';
-import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,13 +17,13 @@ import {
 } from '@/components/ui/accordion';
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
-  Heart, CalendarPlus, Flame, AlertCircle, ExternalLink, History,
+  CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
-import { useToggleFavorite } from '@/hooks/useFavorites';
 import { downloadIcs } from '@/lib/radarCrm/icsExport';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 
 type Import = {
   id: string;
@@ -94,6 +91,7 @@ interface EventGroup {
   is_future: boolean;
   companies: Array<{
     company: Company;
+    id_exposant: string;
     stand: string | null;
   }>;
 }
@@ -108,8 +106,10 @@ const RadarCrmResults: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [viewRows, setViewRows] = useState<ParticipationViewRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [openCompany, setOpenCompany] = useState<Company | null>(null);
-  const toggleFav = useToggleFavorite();
+  const [openExhibitor, setOpenExhibitor] = useState<{
+    exhibitor: any;
+    event: any;
+  } | null>(null);
 
   // Auth gate
   useEffect(() => {
@@ -203,7 +203,7 @@ const RadarCrmResults: React.FC = () => {
         groups.set(m.event_id, g);
       }
       if (!g.companies.find((x) => x.company.id === c.id)) {
-        g.companies.push({ company: c, stand: v.stand_exposants_list ?? null });
+        g.companies.push({ company: c, id_exposant: m.id_exposant, stand: v.stand_exposants_list ?? null });
       }
     }
     return Array.from(groups.values());
@@ -234,22 +234,10 @@ const RadarCrmResults: React.FC = () => {
     [matches, viewMap],
   );
 
-  const nextEvent = futureGroups[0];
-
   const onClickEvent = (g: EventGroup) => {
     void trackRadarEvent('crm_event_detail_clicked', { eventId: g.event_id });
     if (g.slug) navigate(`/events/${g.slug}`);
     else toast({ title: 'Page événement indisponible', description: 'Le slug est manquant.' });
-  };
-
-  const onFavorite = async (g: EventGroup) => {
-    try {
-      void trackRadarEvent('crm_favorite_clicked', { eventId: g.event_id });
-      await toggleFav.mutateAsync(g.event_id);
-      toast({ title: 'Favori mis à jour' });
-    } catch (e) {
-      toast({ title: 'Action impossible', description: e instanceof Error ? e.message : '', variant: 'destructive' });
-    }
   };
 
   const onCalendar = (g: EventGroup) => {
@@ -264,6 +252,33 @@ const RadarCrmResults: React.FC = () => {
       end: g.date_fin ?? g.date_debut,
       location: [g.nom_lieu, g.ville].filter(Boolean).join(', '),
       description: desc,
+    });
+  };
+
+  const onOpenExhibitor = (
+    company: Company,
+    id_exposant: string,
+    stand: string | null,
+    g: EventGroup,
+  ) => {
+    void trackRadarEvent('crm_exhibitor_dialog_opened', { eventId: g.event_id, id_exposant });
+    setOpenExhibitor({
+      exhibitor: {
+        id_exposant,
+        exhibitor_name: company.company_name,
+        stand_exposant: stand ?? undefined,
+        website_exposant: company.website_raw ?? undefined,
+      },
+      event: {
+        id: g.event_id,
+        slug: g.slug,
+        nom_event: g.nom_event,
+        date_debut: g.date_debut,
+        date_fin: g.date_fin,
+        ville: g.ville,
+        nom_lieu: g.nom_lieu,
+        url_image: g.url_image,
+      },
     });
   };
 
@@ -318,17 +333,11 @@ const RadarCrmResults: React.FC = () => {
           </div>
 
           {/* Hero stats */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard label="Entreprises analysées" value={companies.length} />
             <StatCard label="Entreprises détectées" value={matchedCompanies.length} accent="success" />
             <StatCard label="Salons à venir" value={futureGroups.length} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
             <StatCard label="Participations futures" value={futureParticipations} />
-            <StatCard
-              label="Prochain salon"
-              value={nextEvent?.days_until != null ? `J-${Math.max(0, nextEvent.days_until)}` : '—'}
-              sub={nextEvent?.nom_event ?? undefined}
-              accent="accent"
-            />
           </div>
 
           {loading ? (
@@ -358,9 +367,8 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
-                          onFavorite={() => onFavorite(g)}
                           onCalendar={() => onCalendar(g)}
-                          onCompanyClick={(c) => setOpenCompany(c)}
+                          onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
                         />
                       ))}
                     </div>
@@ -377,7 +385,7 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
-                          onCompanyClick={(c) => setOpenCompany(c)}
+                          onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
                         />
                       ))}
                     </div>
@@ -388,7 +396,7 @@ const RadarCrmResults: React.FC = () => {
                   <CompanyAccountsList
                     groups={eventGroups}
                     companies={matchedCompanies}
-                    onOpen={(c) => setOpenCompany(c)}
+                    onClickEvent={onClickEvent}
                   />
                 </TabsContent>
               </Tabs>
@@ -462,12 +470,14 @@ const RadarCrmResults: React.FC = () => {
         </div>
       </div>
 
-      <CompanyDrawer
-        company={openCompany}
-        onClose={() => setOpenCompany(null)}
-        groups={eventGroups}
-        onViewEvent={(g) => { setOpenCompany(null); onClickEvent(g); }}
-      />
+      {openExhibitor && (
+        <ExhibitorDetailDialog
+          open={!!openExhibitor}
+          onOpenChange={(o) => !o && setOpenExhibitor(null)}
+          exhibitor={openExhibitor.exhibitor}
+          event={openExhibitor.event}
+        />
+      )}
     </MainLayout>
   );
 };
@@ -546,14 +556,11 @@ const CompanyChip: React.FC<{
 const EventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
-  onFavorite: () => void;
   onCalendar: () => void;
-  onCompanyClick: (c: Company) => void;
-}> = ({ group, onView, onFavorite, onCalendar, onCompanyClick }) => {
+  onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
+}> = ({ group, onView, onCalendar, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
-  const visible = group.companies.slice(0, 5);
-  const more = group.companies.length - visible.length;
 
   return (
     <Card className="overflow-hidden hover:shadow-md hover:border-primary/30 transition-all bg-card">
@@ -609,14 +616,9 @@ const EventCard: React.FC<{
               {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {visible.map(({ company, stand }) => (
-                <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company)} />
+              {group.companies.map(({ company, id_exposant, stand }) => (
+                <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company, id_exposant, stand)} />
               ))}
-              {more > 0 && (
-                <span className="text-xs font-medium text-primary self-center px-2">
-                  + {more} autres comptes
-                </span>
-              )}
             </div>
           </div>
 
@@ -624,11 +626,8 @@ const EventCard: React.FC<{
             <Button size="sm" onClick={onView} disabled={!group.slug}>
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
-            <Button size="sm" variant="outline" onClick={onFavorite}>
-              <Heart className="h-3.5 w-3.5 mr-1" /> Favoris
-            </Button>
             <Button size="sm" variant="outline" onClick={onCalendar}>
-              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agenda
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agenda Lotexpo
             </Button>
           </div>
         </div>
@@ -641,10 +640,8 @@ const EventCard: React.FC<{
 const PastEventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
-  onCompanyClick: (c: Company) => void;
+  onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
 }> = ({ group, onView, onCompanyClick }) => {
-  const visible = group.companies.slice(0, 6);
-  const more = group.companies.length - visible.length;
   return (
     <Card className="overflow-hidden hover:shadow-sm transition-all bg-card">
       <div className="flex flex-col sm:flex-row">
@@ -673,14 +670,9 @@ const PastEventCard: React.FC<{
             Entreprises détectées
           </p>
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {visible.map(({ company, stand }) => (
-              <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company)} />
+            {group.companies.map(({ company, id_exposant, stand }) => (
+              <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company, id_exposant, stand)} />
             ))}
-            {more > 0 && (
-              <span className="text-xs font-medium text-foreground/60 self-center px-2">
-                + {more} autres
-              </span>
-            )}
           </div>
           <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary -ml-2">
             Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
@@ -693,170 +685,155 @@ const PastEventCard: React.FC<{
 
 /** Company "account" cards — modern CRM look */
 const CompanyAccountsList: React.FC<{
-  groups: EventGroup[]; companies: Company[]; onOpen: (c: Company) => void;
-}> = ({ groups, companies, onOpen }) => {
+  groups: EventGroup[]; companies: Company[]; onClickEvent: (g: EventGroup) => void;
+}> = ({ groups, companies, onClickEvent }) => {
   if (companies.length === 0) return <EmptyText label="Aucune entreprise détectée." />;
 
   const enriched = companies.map((c) => {
     const compGroups = groups.filter((g) => g.companies.some((x) => x.company.id === c.id));
     const future = compGroups.filter((g) => g.is_future).sort((a, b) => (a.days_until ?? 9999) - (b.days_until ?? 9999));
     const past = compGroups.filter((g) => !g.is_future).sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? ''));
-    return { c, future, past, next: future[0], lastPast: past[0] };
+    return { c, future, past };
   }).sort((a, b) => {
     if (a.future.length !== b.future.length) return b.future.length - a.future.length;
-    return (a.next?.days_until ?? 9999) - (b.next?.days_until ?? 9999);
+    return (a.future[0]?.days_until ?? 9999) - (b.future[0]?.days_until ?? 9999);
   });
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      {enriched.map(({ c, future, past, next, lastPast }) => (
-        <button
+      {enriched.map(({ c, future, past }) => (
+        <CompanyAccountCard
           key={c.id}
-          type="button"
-          onClick={() => onOpen(c)}
-          className="text-left group"
-        >
-          <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all">
-            <CardContent className="pt-5">
-              <div className="flex items-start gap-3 mb-4">
-                <CompanyAvatar company={c} size="md" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-foreground truncate group-hover:text-primary">
-                    {c.company_name}
-                  </p>
-                  <p className="text-xs text-foreground/60 truncate flex items-center gap-1">
-                    <ExternalLink className="h-3 w-3" />
-                    {c.normalized_domain ?? c.website_raw ?? ''}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-4 text-sm mb-3">
-                <div>
-                  <p className="text-xl font-bold text-primary leading-none">{future.length}</p>
-                  <p className="text-[11px] text-foreground/60 mt-0.5">à venir</p>
-                </div>
-                <div className="border-l pl-4">
-                  <p className="text-xl font-bold text-foreground/80 leading-none">{past.length}</p>
-                  <p className="text-[11px] text-foreground/60 mt-0.5">passés</p>
-                </div>
-              </div>
-              {next ? (
-                <div className="text-xs bg-primary/5 border border-primary/10 rounded p-2">
-                  <p className="text-primary font-semibold uppercase tracking-wide text-[10px]">Prochain</p>
-                  <p className="text-foreground font-medium truncate">{next.nom_event}</p>
-                  <p className="text-foreground/60">{formatDate(next.date_debut)}</p>
-                </div>
-              ) : lastPast ? (
-                <div className="text-xs bg-muted/50 rounded p-2">
-                  <p className="text-foreground/60 font-semibold uppercase tracking-wide text-[10px]">Dernier</p>
-                  <p className="text-foreground/80 font-medium truncate">{lastPast.nom_event}</p>
-                  <p className="text-foreground/60">{formatDate(lastPast.date_debut)}</p>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        </button>
+          company={c}
+          future={future}
+          past={past}
+          onClickEvent={onClickEvent}
+        />
       ))}
     </div>
   );
 };
 
-/** Drawer showing detail for one CRM company */
-const CompanyDrawer: React.FC<{
-  company: Company | null;
-  onClose: () => void;
-  groups: EventGroup[];
-  onViewEvent: (g: EventGroup) => void;
-}> = ({ company, onClose, groups, onViewEvent }) => {
-  const compGroups = useMemo(
-    () => company ? groups.filter((g) => g.companies.some((x) => x.company.id === company.id)) : [],
-    [company, groups],
-  );
-  const future = compGroups.filter((g) => g.is_future).sort((a, b) => (a.days_until ?? 9999) - (b.days_until ?? 9999));
-  const past = compGroups.filter((g) => !g.is_future).sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? ''));
+/** Account card with collapsible event lists */
+const CompanyAccountCard: React.FC<{
+  company: Company;
+  future: EventGroup[];
+  past: EventGroup[];
+  onClickEvent: (g: EventGroup) => void;
+}> = ({ company, future, past, onClickEvent }) => {
+  const INITIAL = 3;
+  const [expF, setExpF] = useState(false);
+  const [expP, setExpP] = useState(false);
+  const futureShown = expF ? future : future.slice(0, INITIAL);
+  const pastShown = expP ? past : past.slice(0, INITIAL);
+  const futureMore = future.length - futureShown.length;
+  const pastMore = past.length - pastShown.length;
+
+  const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
+    const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
+    return (
+      <button
+        key={g.event_id}
+        type="button"
+        onClick={() => onClickEvent(g)}
+        disabled={!g.slug}
+        className={`w-full text-left rounded-md p-2 transition-colors disabled:opacity-60 ${
+          tone === 'future'
+            ? 'bg-primary/5 hover:bg-primary/10 border border-primary/10'
+            : 'bg-muted/40 hover:bg-muted border'
+        }`}
+      >
+        <p className={`text-sm font-medium truncate ${tone === 'future' ? 'text-foreground' : 'text-foreground/80'}`}>
+          {g.nom_event}
+        </p>
+        <p className="text-[11px] text-foreground/60 mt-0.5 truncate">
+          {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
+          {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
+        </p>
+      </button>
+    );
+  };
 
   return (
-    <Sheet open={!!company} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        {company && (
-          <>
-            <SheetHeader>
-              <div className="flex items-center gap-3">
-                <CompanyAvatar company={company} size="md" />
-                <div className="text-left min-w-0">
-                  <SheetTitle className="truncate">{company.company_name}</SheetTitle>
-                  <SheetDescription className="truncate">
-                    {company.normalized_domain ?? company.website_raw ?? '—'}
-                  </SheetDescription>
-                </div>
-              </div>
-            </SheetHeader>
+    <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all">
+      <CardContent className="pt-5 space-y-3">
+        <div className="flex items-start gap-3">
+          <CompanyAvatar company={company} size="md" />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-foreground truncate">{company.company_name}</p>
+            <p className="text-xs text-foreground/60 truncate flex items-center gap-1">
+              <ExternalLink className="h-3 w-3" />
+              {company.normalized_domain ?? company.website_raw ?? ''}
+            </p>
+          </div>
+        </div>
 
-            <div className="mt-6 space-y-6">
-              <section>
-                <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2">
-                  Salons à venir ({future.length})
-                </p>
-                {future.length === 0 ? (
-                  <p className="text-sm text-foreground/60">Aucun salon futur détecté.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {future.map((g) => {
-                      const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
-                      return (
-                        <button
-                          key={g.event_id}
-                          type="button"
-                          onClick={() => onViewEvent(g)}
-                          disabled={!g.slug}
-                          className="w-full text-left bg-primary/5 hover:bg-primary/10 border border-primary/10 rounded-lg p-3 transition-colors disabled:opacity-60"
-                        >
-                          <p className="font-semibold text-foreground">{g.nom_event}</p>
-                          <p className="text-xs text-foreground/70 mt-0.5">
-                            {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
-                            {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
+        <div className="flex gap-4 text-sm">
+          <div>
+            <p className="text-xl font-bold text-primary leading-none">{future.length}</p>
+            <p className="text-[11px] text-foreground/60 mt-0.5">à venir</p>
+          </div>
+          <div className="border-l pl-4">
+            <p className="text-xl font-bold text-foreground/80 leading-none">{past.length}</p>
+            <p className="text-[11px] text-foreground/60 mt-0.5">passés</p>
+          </div>
+        </div>
 
-              <section>
-                <p className="text-xs font-bold uppercase tracking-wide text-foreground/60 mb-2">
-                  Historique passé ({past.length})
-                </p>
-                {past.length === 0 ? (
-                  <p className="text-sm text-foreground/60">Aucun salon passé détecté.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {past.map((g) => {
-                      const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
-                      return (
-                        <button
-                          key={g.event_id}
-                          type="button"
-                          onClick={() => onViewEvent(g)}
-                          disabled={!g.slug}
-                          className="w-full text-left bg-muted/40 hover:bg-muted border rounded-lg p-3 transition-colors disabled:opacity-60"
-                        >
-                          <p className="font-medium text-foreground/90">{g.nom_event}</p>
-                          <p className="text-xs text-foreground/60 mt-0.5">
-                            {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
-                            {stand && <span className="ml-2 text-foreground/70">Stand {stand}</span>}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            </div>
-          </>
+        {future.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary">
+              Salons à venir
+            </p>
+            {futureShown.map((g) => renderRow(g, 'future'))}
+            {futureMore > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpF(true)}
+                className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+              >
+                <ChevronDown className="h-3 w-3" /> Voir {futureMore} salon{futureMore > 1 ? 's' : ''} de plus
+              </button>
+            )}
+            {expF && future.length > INITIAL && (
+              <button
+                type="button"
+                onClick={() => setExpF(false)}
+                className="text-xs font-medium text-foreground/60 hover:underline flex items-center gap-1"
+              >
+                <ChevronUp className="h-3 w-3" /> Réduire
+              </button>
+            )}
+          </div>
         )}
-      </SheetContent>
-    </Sheet>
+
+        {past.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-foreground/60">
+              Historique passé
+            </p>
+            {pastShown.map((g) => renderRow(g, 'past'))}
+            {pastMore > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpP(true)}
+                className="text-xs font-medium text-foreground/70 hover:underline flex items-center gap-1"
+              >
+                <ChevronDown className="h-3 w-3" /> Voir {pastMore} salon{pastMore > 1 ? 's' : ''} de plus
+              </button>
+            )}
+            {expP && past.length > INITIAL && (
+              <button
+                type="button"
+                onClick={() => setExpP(false)}
+                className="text-xs font-medium text-foreground/60 hover:underline flex items-center gap-1"
+              >
+                <ChevronUp className="h-3 w-3" /> Réduire
+              </button>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
