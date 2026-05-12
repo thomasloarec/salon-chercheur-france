@@ -17,7 +17,8 @@ export type RadarEventType =
   | 'crm_favorite_clicked'
   | 'crm_calendar_clicked'
   | 'crm_event_detail_clicked'
-  | 'crm_unmatched_list_opened';
+  | 'crm_unmatched_list_opened'
+  | 'crm_exhibitor_dialog_opened';
 
 export async function trackRadarEvent(event_type: RadarEventType, metadata: Record<string, unknown> = {}) {
   try {
