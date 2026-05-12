@@ -8,9 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from '@/components/ui/sheet';
-import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,13 +17,13 @@ import {
 } from '@/components/ui/accordion';
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
-  Heart, CalendarPlus, Flame, AlertCircle, ExternalLink, History,
+  CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
-import { useToggleFavorite } from '@/hooks/useFavorites';
 import { downloadIcs } from '@/lib/radarCrm/icsExport';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 
 type Import = {
   id: string;
@@ -94,6 +91,7 @@ interface EventGroup {
   is_future: boolean;
   companies: Array<{
     company: Company;
+    id_exposant: string;
     stand: string | null;
   }>;
 }
@@ -108,8 +106,10 @@ const RadarCrmResults: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [viewRows, setViewRows] = useState<ParticipationViewRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [openCompany, setOpenCompany] = useState<Company | null>(null);
-  const toggleFav = useToggleFavorite();
+  const [openExhibitor, setOpenExhibitor] = useState<{
+    exhibitor: any;
+    event: any;
+  } | null>(null);
 
   // Auth gate
   useEffect(() => {
@@ -203,7 +203,7 @@ const RadarCrmResults: React.FC = () => {
         groups.set(m.event_id, g);
       }
       if (!g.companies.find((x) => x.company.id === c.id)) {
-        g.companies.push({ company: c, stand: v.stand_exposants_list ?? null });
+        g.companies.push({ company: c, id_exposant: m.id_exposant, stand: v.stand_exposants_list ?? null });
       }
     }
     return Array.from(groups.values());
@@ -242,16 +242,6 @@ const RadarCrmResults: React.FC = () => {
     else toast({ title: 'Page événement indisponible', description: 'Le slug est manquant.' });
   };
 
-  const onFavorite = async (g: EventGroup) => {
-    try {
-      void trackRadarEvent('crm_favorite_clicked', { eventId: g.event_id });
-      await toggleFav.mutateAsync(g.event_id);
-      toast({ title: 'Favori mis à jour' });
-    } catch (e) {
-      toast({ title: 'Action impossible', description: e instanceof Error ? e.message : '', variant: 'destructive' });
-    }
-  };
-
   const onCalendar = (g: EventGroup) => {
     if (!g.date_debut) return;
     void trackRadarEvent('crm_calendar_clicked', { eventId: g.event_id });
@@ -264,6 +254,33 @@ const RadarCrmResults: React.FC = () => {
       end: g.date_fin ?? g.date_debut,
       location: [g.nom_lieu, g.ville].filter(Boolean).join(', '),
       description: desc,
+    });
+  };
+
+  const onOpenExhibitor = (
+    company: Company,
+    id_exposant: string,
+    stand: string | null,
+    g: EventGroup,
+  ) => {
+    void trackRadarEvent('crm_exhibitor_dialog_opened', { eventId: g.event_id, id_exposant });
+    setOpenExhibitor({
+      exhibitor: {
+        id_exposant,
+        exhibitor_name: company.company_name,
+        stand_exposant: stand ?? undefined,
+        website_exposant: company.website_raw ?? undefined,
+      },
+      event: {
+        id: g.event_id,
+        slug: g.slug,
+        nom_event: g.nom_event,
+        date_debut: g.date_debut,
+        date_fin: g.date_fin,
+        ville: g.ville,
+        nom_lieu: g.nom_lieu,
+        url_image: g.url_image,
+      },
     });
   };
 
@@ -318,17 +335,11 @@ const RadarCrmResults: React.FC = () => {
           </div>
 
           {/* Hero stats */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard label="Entreprises analysées" value={companies.length} />
             <StatCard label="Entreprises détectées" value={matchedCompanies.length} accent="success" />
             <StatCard label="Salons à venir" value={futureGroups.length} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
             <StatCard label="Participations futures" value={futureParticipations} />
-            <StatCard
-              label="Prochain salon"
-              value={nextEvent?.days_until != null ? `J-${Math.max(0, nextEvent.days_until)}` : '—'}
-              sub={nextEvent?.nom_event ?? undefined}
-              accent="accent"
-            />
           </div>
 
           {loading ? (
@@ -358,9 +369,8 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
-                          onFavorite={() => onFavorite(g)}
                           onCalendar={() => onCalendar(g)}
-                          onCompanyClick={(c) => setOpenCompany(c)}
+                          onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
                         />
                       ))}
                     </div>
@@ -377,7 +387,7 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
-                          onCompanyClick={(c) => setOpenCompany(c)}
+                          onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
                         />
                       ))}
                     </div>
@@ -388,7 +398,7 @@ const RadarCrmResults: React.FC = () => {
                   <CompanyAccountsList
                     groups={eventGroups}
                     companies={matchedCompanies}
-                    onOpen={(c) => setOpenCompany(c)}
+                    onClickEvent={onClickEvent}
                   />
                 </TabsContent>
               </Tabs>
@@ -462,12 +472,14 @@ const RadarCrmResults: React.FC = () => {
         </div>
       </div>
 
-      <CompanyDrawer
-        company={openCompany}
-        onClose={() => setOpenCompany(null)}
-        groups={eventGroups}
-        onViewEvent={(g) => { setOpenCompany(null); onClickEvent(g); }}
-      />
+      {openExhibitor && (
+        <ExhibitorDetailDialog
+          open={!!openExhibitor}
+          onOpenChange={(o) => !o && setOpenExhibitor(null)}
+          exhibitor={openExhibitor.exhibitor}
+          event={openExhibitor.event}
+        />
+      )}
     </MainLayout>
   );
 };
