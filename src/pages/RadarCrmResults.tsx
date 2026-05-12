@@ -18,12 +18,15 @@ import {
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
   CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
+  CalendarCheck,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
-import { downloadIcs } from '@/lib/radarCrm/icsExport';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
+import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
+import AuthRequiredModal from '@/components/AuthRequiredModal';
+import { cn } from '@/lib/utils';
 
 type Import = {
   id: string;
