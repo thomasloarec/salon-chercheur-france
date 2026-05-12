@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
     // Uses serviceClient to bypass RLS (auth already verified above)
     // ────────────────────────────────────────────────────
     if (action === 'create') {
-      const { name, website, description, stand_info, logo_url, event_id, defer_participation } = requestData
+      const { name, website, description, stand_info, logo_url, event_id, defer_participation, legacy_id_exposant } = requestData
 
       if (!name || !event_id) {
         return jsonError('name and event_id are required', 400)
@@ -193,6 +193,7 @@ Deno.serve(async (req) => {
       const submittedDomain = normaliseWebsite(website)
       let newExhibitor: any = null
       let reusedExisting = false
+      let migratedFromLegacyId: string | null = null
 
       if (submittedDomain) {
         const { data: candidates } = await serviceClient
@@ -207,6 +208,124 @@ Deno.serve(async (req) => {
           console.log('♻️ Exposant déjà existant pour ce domaine, réutilisation:', match.id)
           newExhibitor = match
           reusedExisting = true
+        }
+      }
+
+      // ── DEDUP par nom normalisé sur exhibitors modernes ──
+      if (!newExhibitor && name) {
+        try {
+          const { data: normRow } = await serviceClient
+            .rpc('normalize_company_name', { input_name: name })
+          const normalized = typeof normRow === 'string' ? normRow : null
+          if (normalized) {
+            const { data: byName } = await serviceClient
+              .from('exhibitors')
+              .select('id, name, website, logo_url, approved, stand_info, owner_user_id')
+              .eq('name_normalized', normalized)
+              .limit(1)
+              .maybeSingle()
+            if (byName) {
+              console.log('♻️ Exposant existant trouvé par nom normalisé, réutilisation:', byName.id)
+              newExhibitor = byName
+              reusedExisting = true
+            }
+          }
+        } catch (e) {
+          console.warn('normalize_company_name RPC failed, skipping name dedup', e)
+        }
+      }
+
+      // ── DEDUP via legacy exposants : retrouver une fiche legacy compatible
+      //   (par id explicite, par domaine, ou par nom normalisé) et migrer
+      //   les participations + ligne legacy vers la nouvelle UUID. ──
+      let legacyMatch: any = null
+      if (!newExhibitor) {
+        // a) id explicite fourni par le frontend
+        if (legacy_id_exposant && typeof legacy_id_exposant === 'string') {
+          const { data: byId } = await serviceClient
+            .from('exposants')
+            .select('id, id_exposant, nom_exposant, website_exposant, exposant_description')
+            .eq('id_exposant', legacy_id_exposant)
+            .maybeSingle()
+          if (byId) legacyMatch = byId
+        }
+        // b) par domaine
+        if (!legacyMatch && submittedDomain) {
+          const { data: legacyCandidates } = await serviceClient
+            .from('exposants')
+            .select('id, id_exposant, nom_exposant, website_exposant, exposant_description')
+            .not('website_exposant', 'is', null)
+            .limit(2000)
+          legacyMatch = (legacyCandidates || []).find(
+            (l: any) => normaliseWebsite(l.website_exposant) === submittedDomain
+          ) || null
+        }
+        // c) par nom normalisé legacy
+        if (!legacyMatch && name) {
+          try {
+            const { data: byNorm } = await serviceClient
+              .from('exposants')
+              .select('id, id_exposant, nom_exposant, website_exposant, exposant_description, nom_normalized')
+              .eq('nom_normalized', (await serviceClient.rpc('normalize_company_name', { input_name: name })).data || '__none__')
+              .limit(1)
+              .maybeSingle()
+            if (byNorm) legacyMatch = byNorm
+          } catch {}
+        }
+      }
+
+      if (!newExhibitor && legacyMatch) {
+        const isUuid = (s: any) => typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
+        if (isUuid(legacyMatch.id_exposant)) {
+          // La ligne legacy est déjà rattachée à un exhibitors moderne
+          const { data: existingModern } = await serviceClient
+            .from('exhibitors')
+            .select('id, name, website, logo_url, approved, stand_info, owner_user_id')
+            .eq('id', legacyMatch.id_exposant)
+            .maybeSingle()
+          if (existingModern) {
+            console.log('♻️ Legacy déjà lié à un exhibitors moderne, réutilisation:', existingModern.id)
+            newExhibitor = existingModern
+            reusedExisting = true
+          }
+        } else {
+          // Promouvoir la ligne legacy : créer la fiche moderne et migrer
+          console.log('🔁 Promotion legacy → moderne pour id_exposant =', legacyMatch.id_exposant)
+          const { data: created, error: createError } = await serviceClient
+            .from('exhibitors')
+            .insert({
+              name: legacyMatch.nom_exposant || name,
+              website: legacyMatch.website_exposant || website || null,
+              description: legacyMatch.exposant_description || description || null,
+              stand_info: stand_info || null,
+              logo_url: logo_url || null,
+              approved: false,
+              owner_user_id: null
+            })
+            .select()
+            .single()
+          if (createError || !created) {
+            console.error('❌ Failed to promote legacy exposant:', createError)
+            return jsonError('Failed to promote legacy exposant', 500, createError)
+          }
+          newExhibitor = created
+          migratedFromLegacyId = legacyMatch.id_exposant
+
+          // Migrer toutes les participations legacy vers le nouvel UUID
+          const { error: partUpdErr } = await serviceClient
+            .from('participation')
+            .update({ exhibitor_id: created.id })
+            .eq('id_exposant', legacyMatch.id_exposant)
+          if (partUpdErr) console.error('⚠️ Échec migration participations:', partUpdErr)
+
+          // Aligner la ligne legacy sur la nouvelle UUID
+          const { error: legacyUpdErr } = await serviceClient
+            .from('exposants')
+            .update({ id_exposant: created.id })
+            .eq('id_exposant', legacyMatch.id_exposant)
+          if (legacyUpdErr) console.error('⚠️ Échec mise à jour legacy:', legacyUpdErr)
+
+          console.log('✅ Promotion terminée, exhibitor:', created.id)
         }
       }
 
