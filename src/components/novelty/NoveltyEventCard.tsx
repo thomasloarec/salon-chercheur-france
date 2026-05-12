@@ -27,6 +27,7 @@ import LeadForm from './LeadForm';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import NoveltyDetailDialog from './NoveltyDetailDialog';
 import type { Novelty } from '@/hooks/useNovelties';
+import type { Event } from '@/types/event';
 
 const TYPE_LABELS: Record<string, string> = {
   Launch: 'Lancement produit',
@@ -43,6 +44,8 @@ interface NoveltyEventCardProps {
   eventDateDebut?: string | null;
   eventName?: string | null;
   eventVille?: string | null;
+  /** Event complet (pour ouvrir la fiche exposant depuis le détail). */
+  event?: Event;
   className?: string;
 }
 
@@ -60,10 +63,14 @@ export default function NoveltyEventCard({
   eventDateDebut,
   eventName,
   eventVille,
+  event,
   className,
 }: NoveltyEventCardProps) {
   const { user } = useAuth();
-  const { isLiked, toggleLike, isPending } = useNoveltyLike(novelty.id);
+  const { isLiked, toggleLike, isPending } = useNoveltyLike(
+    novelty.id,
+    novelty.event_id,
+  );
   const { data: likesCount = 0 } = useNoveltyLikesCount(novelty.id);
   const { data: standInfo } = useNoveltyStand({
     id: novelty.id,
@@ -114,7 +121,7 @@ export default function NoveltyEventCard({
 
   const description = [novelty.reason_1, novelty.reason_2, novelty.reason_3]
     .filter(Boolean)
-    .join(' ');
+    .join('\n\n');
 
   // CTA "Voir le détail" : pour l'instant deep-link vers cette même nouveauté
   // sur la page événement (compat. future page dédiée par nouveauté).
@@ -226,7 +233,12 @@ export default function NoveltyEventCard({
             {/* Résumé / description longue avec Voir plus / Voir moins */}
             {description && (
               <div className="text-sm text-muted-foreground leading-relaxed">
-                <p className={cn(!isDescriptionExpanded && 'line-clamp-2')}>
+                <p
+                  className={cn(
+                    'whitespace-pre-line',
+                    !isDescriptionExpanded && 'line-clamp-2',
+                  )}
+                >
                   {description}
                 </p>
                 {description.length > 140 && (
@@ -340,6 +352,7 @@ export default function NoveltyEventCard({
         eventDateDebut={eventDateDebut}
         eventName={eventName}
         eventVille={eventVille}
+        event={event}
         standInfo={standInfo}
         likesCount={likesCount}
         isLiked={isLiked}
