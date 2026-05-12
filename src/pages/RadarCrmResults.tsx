@@ -243,21 +243,6 @@ const RadarCrmResults: React.FC = () => {
     else toast({ title: 'Page événement indisponible', description: 'Le slug est manquant.' });
   };
 
-  const onCalendar = (g: EventGroup) => {
-    if (!g.date_debut) return;
-    void trackRadarEvent('crm_calendar_clicked', { eventId: g.event_id });
-    const stands = g.companies.map((c) => c.stand).filter(Boolean).join(', ');
-    const desc = `Entreprises de votre CRM détectées : ${g.companies.map((c) => c.company.company_name).join(', ')}.${stands ? ` Stands : ${stands}.` : ''}`;
-    downloadIcs({
-      uid: g.event_id,
-      title: g.nom_event,
-      start: g.date_debut,
-      end: g.date_fin ?? g.date_debut,
-      location: [g.nom_lieu, g.ville].filter(Boolean).join(', '),
-      description: desc,
-    });
-  };
-
   const onOpenExhibitor = (
     company: Company,
     id_exposant: string,
@@ -370,7 +355,6 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
-                          onCalendar={() => onCalendar(g)}
                           onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
                         />
                       ))}
