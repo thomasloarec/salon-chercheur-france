@@ -545,6 +545,30 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_usage_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       csrf_tokens: {
         Row: {
           created_at: string
@@ -4064,6 +4088,10 @@ export type Database = {
         }
         Returns: Json
       }
+      crm_run_matching: {
+        Args: { p_import_id: string; p_user_id: string }
+        Returns: Json
+      }
       delete_user_account: { Args: never; Returns: Json }
       export_user_data: { Args: never; Returns: Json }
       extract_event_years: { Args: { p_text: string }; Returns: number[] }
@@ -4091,6 +4119,7 @@ export type Database = {
         Returns: number
       }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
+      get_radar_crm_admin_stats: { Args: never; Returns: Json }
       get_top_novelties_per_event: {
         Args: never
         Returns: {
