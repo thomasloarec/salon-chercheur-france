@@ -259,6 +259,7 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
             eventDateDebut={event.date_debut}
             eventName={event.nom_event}
             eventVille={event.ville}
+            event={event}
           />
         ))}
       </div>

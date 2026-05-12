@@ -28,6 +28,8 @@ import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import type { Novelty } from '@/hooks/useNovelties';
+import type { Event } from '@/types/event';
+import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 
 const TYPE_LABELS: Record<string, string> = {
   Launch: 'Lancement produit',
@@ -48,6 +50,8 @@ interface NoveltyDetailDialogProps {
   eventName?: string | null;
   /** Ville de l'événement. */
   eventVille?: string | null;
+  /** Event complet, requis pour ouvrir la fiche exposant. */
+  event?: Event;
   /** Stand de l'exposant pour cette nouveauté. */
   standInfo?: string | null;
   /** Nombre de "M'intéresse". */
@@ -73,6 +77,7 @@ export default function NoveltyDetailDialog({
   eventDateDebut,
   eventName,
   eventVille,
+  event,
   standInfo,
   likesCount = 0,
   isLiked = false,
@@ -80,6 +85,7 @@ export default function NoveltyDetailDialog({
   onBrochureDownload,
   initialImageIndex = 0,
 }: NoveltyDetailDialogProps) {
+  const [showExhibitorDialog, setShowExhibitorDialog] = useState(false);
   const exhibitor = novelty.exhibitors ?? {
     id: novelty.exhibitor_id,
     name: 'Exposant',
@@ -307,8 +313,21 @@ export default function NoveltyDetailDialog({
 
             <div className="h-px bg-border" />
 
-            {/* Exposant */}
-            <div className="flex items-center gap-3">
+            {/* Exposant — cliquable pour ouvrir la fiche complète */}
+            <button
+              type="button"
+              onClick={() => event && setShowExhibitorDialog(true)}
+              disabled={!event}
+              className={cn(
+                'flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 transition-colors',
+                event
+                  ? 'hover:bg-muted/60 cursor-pointer'
+                  : 'cursor-default',
+              )}
+              aria-label={
+                event ? `Voir la fiche de ${exhibitor.name}` : exhibitor.name
+              }
+            >
               {logo ? (
                 <div className="w-10 h-10 rounded bg-white border flex items-center justify-center shrink-0">
                   <img
@@ -322,8 +341,13 @@ export default function NoveltyDetailDialog({
                   <Building2 className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
-              <div className="min-w-0">
-                <div className="font-medium text-sm truncate">
+              <div className="min-w-0 flex-1">
+                <div
+                  className={cn(
+                    'font-medium text-sm truncate',
+                    event && 'text-primary hover:underline',
+                  )}
+                >
                   {exhibitor.name}
                 </div>
                 {standInfo && (
@@ -331,8 +355,13 @@ export default function NoveltyDetailDialog({
                     Stand {standInfo}
                   </div>
                 )}
+                {event && (
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    Voir la fiche exposant →
+                  </div>
+                )}
               </div>
-            </div>
+            </button>
 
             {/* Contexte salon */}
             {(eventName || eventDateDebut || eventVille) && (
@@ -442,6 +471,24 @@ export default function NoveltyDetailDialog({
           </div>
         </div>
       </DialogContent>
+
+      {event && (
+        <ExhibitorDetailDialog
+          open={showExhibitorDialog}
+          onOpenChange={setShowExhibitorDialog}
+          event={event}
+          exhibitor={{
+            id_exposant: novelty.exhibitor_id,
+            exhibitor_uuid: novelty.exhibitor_id,
+            exhibitor_name: exhibitor.name,
+            name_final: exhibitor.name,
+            logo_url: (exhibitor as any).logo_url,
+            website_exposant: (exhibitor as any).website,
+            website_final: (exhibitor as any).website,
+            stand_exposant: standInfo || undefined,
+          }}
+        />
+      )}
     </Dialog>
   );
 }
