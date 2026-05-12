@@ -6,6 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from '@/components/ui/sheet';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -16,12 +20,13 @@ import {
 } from '@/components/ui/accordion';
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
-  Heart, CalendarPlus, ChevronRight, Flame, AlertCircle,
+  Heart, CalendarPlus, Flame, AlertCircle, ExternalLink, History,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
 import { useToggleFavorite } from '@/hooks/useFavorites';
 import { downloadIcs } from '@/lib/radarCrm/icsExport';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 
 type Import = {
   id: string;
@@ -72,6 +77,9 @@ const eventInitials = (name: string | null | undefined) => {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 };
 
+const companyInitials = (name: string) =>
+  name.split(/[\s\-_]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+
 /** Aggregated event with all CRM matches */
 interface EventGroup {
   event_id: string;
@@ -100,6 +108,7 @@ const RadarCrmResults: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [viewRows, setViewRows] = useState<ParticipationViewRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [openCompany, setOpenCompany] = useState<Company | null>(null);
   const toggleFav = useToggleFavorite();
 
   // Auth gate
@@ -193,7 +202,6 @@ const RadarCrmResults: React.FC = () => {
         };
         groups.set(m.event_id, g);
       }
-      // dedupe by company id
       if (!g.companies.find((x) => x.company.id === c.id)) {
         g.companies.push({ company: c, stand: v.stand_exposants_list ?? null });
       }
@@ -221,11 +229,15 @@ const RadarCrmResults: React.FC = () => {
   const matchedCompanies = useMemo(() => companies.filter((c) => matchedCompanyIds.has(c.id)), [companies, matchedCompanyIds]);
   const unmatchedCompanies = useMemo(() => companies.filter((c) => !matchedCompanyIds.has(c.id)), [companies, matchedCompanyIds]);
 
+  const futureParticipations = useMemo(
+    () => matches.filter((m) => viewMap.get(`${m.event_id}|${m.id_exposant}`)?.is_future_event).length,
+    [matches, viewMap],
+  );
+
   const nextEvent = futureGroups[0];
 
   const onClickEvent = (g: EventGroup) => {
     void trackRadarEvent('crm_event_detail_clicked', { eventId: g.event_id });
-    void trackRadarEvent('crm_event_clicked', { eventId: g.event_id });
     if (g.slug) navigate(`/events/${g.slug}`);
     else toast({ title: 'Page événement indisponible', description: 'Le slug est manquant.' });
   };
@@ -255,7 +267,7 @@ const RadarCrmResults: React.FC = () => {
     });
   };
 
-  // Empty state (no imports at all)
+  // Empty state
   if (!authLoading && imports !== null && imports.length === 0) {
     return (
       <MainLayout title="Mon Radar CRM | Lotexpo">
@@ -266,183 +278,196 @@ const RadarCrmResults: React.FC = () => {
 
   return (
     <MainLayout title="Mon Radar CRM | Lotexpo">
-      <div className="max-w-6xl mx-auto px-4 py-8 md:py-10 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Radar className="h-5 w-5 text-primary" />
+      <div className="bg-muted/20 min-h-[calc(100vh-200px)]">
+        <div className="max-w-6xl mx-auto px-4 py-8 md:py-10 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
+                  <Radar className="h-5 w-5" />
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">Votre Radar CRM</h1>
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold">Votre Radar CRM</h1>
+              <p className="text-foreground/70 text-sm md:text-base">
+                {loading ? 'Analyse en cours…' :
+                  <><strong className="text-foreground">{matchedCompanies.length}</strong> entreprise{matchedCompanies.length > 1 ? 's' : ''} détectée{matchedCompanies.length > 1 ? 's' : ''} sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo</>}
+              </p>
             </div>
-            <p className="text-muted-foreground text-sm md:text-base">
-              {loading ? 'Analyse en cours…' :
-                <>Nous avons détecté <strong className="text-foreground">{matchedCompanies.length}</strong> entreprise{matchedCompanies.length > 1 ? 's' : ''} de votre fichier sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo.</>}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {imports && imports.length > 1 && (
-              <Select value={activeImportId ?? ''} onValueChange={setActiveImportId}>
-                <SelectTrigger className="w-[240px]">
-                  <SelectValue placeholder="Choisir un import" />
-                </SelectTrigger>
-                <SelectContent>
-                  {imports.map((imp) => (
-                    <SelectItem key={imp.id} value={imp.id}>
-                      {imp.file_name ?? 'Sans nom'} — {formatDate(imp.created_at)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <Button asChild>
-              <Link to="/radar-crm">
-                <Plus className="h-4 w-4 mr-2" /> Nouveau fichier CSV
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Hero stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Entreprises analysées" value={companies.length} />
-          <StatCard label="Entreprises détectées" value={matchedCompanies.length} accent="success" />
-          <StatCard label="Salons à venir" value={futureGroups.length} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
-          <StatCard label="Participations futures" value={matches.filter((m) => {
-            const v = viewMap.get(`${m.event_id}|${m.id_exposant}`);
-            return v?.is_future_event;
-          }).length} />
-          <StatCard
-            label="Prochain événement"
-            value={nextEvent?.days_until != null ? `J-${Math.max(0, nextEvent.days_until)}` : '—'}
-            sub={nextEvent?.nom_event ?? undefined}
-            accent="accent"
-          />
-        </div>
-
-        {loading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
-          </div>
-        ) : (
-          <>
-            <Tabs defaultValue="future">
-              <TabsList>
-                <TabsTrigger value="future">À venir ({futureGroups.length})</TabsTrigger>
-                <TabsTrigger value="past">Historique passé ({pastGroups.length})</TabsTrigger>
-                <TabsTrigger value="companies">Entreprises détectées ({matchedCompanies.length})</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="future" className="mt-5">
-                {futureGroups.length === 0 ? (
-                  <NoFutureMatches companiesCount={companies.length} matchedCount={matchedCompanies.length} />
-                ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {futureGroups.map((g) => (
-                      <EventCard
-                        key={g.event_id}
-                        group={g}
-                        onView={() => onClickEvent(g)}
-                        onFavorite={() => onFavorite(g)}
-                        onCalendar={() => onCalendar(g)}
-                      />
+            <div className="flex items-center gap-2">
+              {imports && imports.length > 1 && (
+                <Select value={activeImportId ?? ''} onValueChange={setActiveImportId}>
+                  <SelectTrigger className="w-[240px] bg-card">
+                    <SelectValue placeholder="Choisir un import" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {imports.map((imp) => (
+                      <SelectItem key={imp.id} value={imp.id}>
+                        {imp.file_name ?? 'Sans nom'} — {formatDate(imp.created_at)}
+                      </SelectItem>
                     ))}
-                  </div>
-                )}
-              </TabsContent>
+                  </SelectContent>
+                </Select>
+              )}
+              <Button asChild>
+                <Link to="/radar-crm">
+                  <Plus className="h-4 w-4 mr-2" /> Nouveau fichier CSV
+                </Link>
+              </Button>
+            </div>
+          </div>
 
-              <TabsContent value="past" className="mt-5">
-                {pastGroups.length === 0 ? (
-                  <EmptyText label="Aucun salon passé détecté." />
-                ) : (
-                  <div className="space-y-3">
-                    {pastGroups.map((g) => (
-                      <PastEventRow key={g.event_id} group={g} onView={() => onClickEvent(g)} />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
+          {/* Hero stats */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <StatCard label="Entreprises analysées" value={companies.length} />
+            <StatCard label="Entreprises détectées" value={matchedCompanies.length} accent="success" />
+            <StatCard label="Salons à venir" value={futureGroups.length} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
+            <StatCard label="Participations futures" value={futureParticipations} />
+            <StatCard
+              label="Prochain salon"
+              value={nextEvent?.days_until != null ? `J-${Math.max(0, nextEvent.days_until)}` : '—'}
+              sub={nextEvent?.nom_event ?? undefined}
+              accent="accent"
+            />
+          </div>
 
-              <TabsContent value="companies" className="mt-5">
-                <CompanyAccountsList groups={eventGroups} companies={matchedCompanies} onView={onClickEvent} />
-              </TabsContent>
-            </Tabs>
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          ) : (
+            <>
+              <Tabs defaultValue="future">
+                <TabsList className="bg-card border">
+                  <TabsTrigger value="future">À venir ({futureGroups.length})</TabsTrigger>
+                  <TabsTrigger value="past">
+                    <History className="h-3.5 w-3.5 mr-1" /> Historique passé ({pastGroups.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="companies">Entreprises ({matchedCompanies.length})</TabsTrigger>
+                </TabsList>
 
-            {/* Detail table (secondary) */}
-            {eventGroups.length > 0 && (
-              <Accordion type="single" collapsible>
-                <AccordionItem value="detail">
-                  <AccordionTrigger className="text-sm text-muted-foreground">
-                    Voir le détail en tableau
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <DetailTable groups={eventGroups} onView={onClickEvent} />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            )}
+                <TabsContent value="future" className="mt-5">
+                  {futureGroups.length === 0 ? (
+                    <NoFutureMatches companiesCount={companies.length} matchedCount={matchedCompanies.length} />
+                  ) : (
+                    <div className="space-y-3">
+                      {futureGroups.map((g) => (
+                        <EventCard
+                          key={g.event_id}
+                          group={g}
+                          onView={() => onClickEvent(g)}
+                          onFavorite={() => onFavorite(g)}
+                          onCalendar={() => onCalendar(g)}
+                          onCompanyClick={(c) => setOpenCompany(c)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
 
-            {/* Unmatched (collapsible secondary block) */}
-            {unmatchedCompanies.length > 0 && (
-              <Card className="bg-muted/30">
-                <CardContent className="pt-6">
-                  <Accordion
-                    type="single"
-                    collapsible
-                    onValueChange={(v) => v && trackRadarEvent('crm_unmatched_list_opened', { count: unmatchedCompanies.length })}
-                  >
-                    <AccordionItem value="unmatched" className="border-none">
-                      <AccordionTrigger className="hover:no-underline py-2">
-                        <div className="flex items-start gap-3 text-left">
-                          <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
-                          <div>
-                            <p className="font-semibold text-base">
-                              Entreprises non détectées dans Lotexpo
-                            </p>
-                            <p className="text-sm text-muted-foreground font-normal">
-                              {unmatchedCompanies.length} entreprise{unmatchedCompanies.length > 1 ? 's' : ''} de votre fichier n'ont pas été retrouvées dans les exposants Lotexpo.
-                            </p>
+                <TabsContent value="past" className="mt-5">
+                  {pastGroups.length === 0 ? (
+                    <EmptyText label="Aucun salon passé détecté." />
+                  ) : (
+                    <div className="space-y-3">
+                      {pastGroups.map((g) => (
+                        <PastEventCard
+                          key={g.event_id}
+                          group={g}
+                          onView={() => onClickEvent(g)}
+                          onCompanyClick={(c) => setOpenCompany(c)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="companies" className="mt-5">
+                  <CompanyAccountsList
+                    groups={eventGroups}
+                    companies={matchedCompanies}
+                    onOpen={(c) => setOpenCompany(c)}
+                  />
+                </TabsContent>
+              </Tabs>
+
+              {/* Detail table (secondary) */}
+              {eventGroups.length > 0 && (
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="detail" className="border rounded-lg bg-card px-4">
+                    <AccordionTrigger className="text-sm text-foreground/70 hover:text-foreground">
+                      Voir le détail en tableau (avancé)
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <DetailTable groups={eventGroups} onView={onClickEvent} />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              )}
+
+              {/* Unmatched (collapsible secondary block) */}
+              {unmatchedCompanies.length > 0 && (
+                <Card className="bg-muted/40 border-dashed">
+                  <CardContent className="pt-6">
+                    <Accordion
+                      type="single"
+                      collapsible
+                      onValueChange={(v) => v && trackRadarEvent('crm_unmatched_list_opened', { count: unmatchedCompanies.length })}
+                    >
+                      <AccordionItem value="unmatched" className="border-none">
+                        <AccordionTrigger className="hover:no-underline py-2">
+                          <div className="flex items-start gap-3 text-left">
+                            <AlertCircle className="h-5 w-5 text-foreground/50 mt-0.5" />
+                            <div>
+                              <p className="font-semibold text-base text-foreground">
+                                Entreprises non détectées dans Lotexpo
+                              </p>
+                              <p className="text-sm text-foreground/70 font-normal">
+                                {unmatchedCompanies.length} entreprise{unmatchedCompanies.length > 1 ? 's' : ''} sans correspondance exposant.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <p className="text-xs text-muted-foreground bg-background rounded p-3 mb-3">
-                          Le matching MVP est basé sur une correspondance exacte du domaine web.
-                          Certains groupes utilisant des sous-domaines ou des sites pays peuvent ne pas être détectés automatiquement.
-                        </p>
-                        <div className="border rounded-lg overflow-x-auto bg-background">
-                          <table className="min-w-full text-sm">
-                            <thead className="bg-muted/50">
-                              <tr><Th>Entreprise</Th><Th>Site importé</Th><Th>Domaine</Th></tr>
-                            </thead>
-                            <tbody>
-                              {unmatchedCompanies.slice(0, 100).map((c) => (
-                                <tr key={c.id} className="border-t">
-                                  <Td className="font-medium">{c.company_name}</Td>
-                                  <Td className="text-muted-foreground max-w-xs truncate">{c.website_raw ?? '—'}</Td>
-                                  <Td className="text-muted-foreground">{c.normalized_domain ?? '—'}</Td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                          {unmatchedCompanies.length > 100 && (
-                            <p className="text-xs text-muted-foreground p-3">
-                              + {unmatchedCompanies.length - 100} autres entreprises non affichées.
-                            </p>
-                          )}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-xs text-foreground/70 bg-background rounded p-3 mb-3">
+                            Le matching MVP est basé sur une correspondance exacte du domaine web.
+                            Les groupes utilisant des sous-domaines ou des sites pays peuvent ne pas être détectés.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {unmatchedCompanies.slice(0, 60).map((c) => (
+                              <div key={c.id} className="flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1">
+                                <CompanyAvatar company={c} size="xs" />
+                                <span className="text-sm font-medium text-foreground">{c.company_name}</span>
+                                {c.normalized_domain && (
+                                  <span className="text-xs text-foreground/50">{c.normalized_domain}</span>
+                                )}
+                              </div>
+                            ))}
+                            {unmatchedCompanies.length > 60 && (
+                              <span className="text-xs text-foreground/60 self-center">
+                                + {unmatchedCompanies.length - 60} autres
+                              </span>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
       </div>
+
+      <CompanyDrawer
+        company={openCompany}
+        onClose={() => setOpenCompany(null)}
+        groups={eventGroups}
+        onViewEvent={(g) => { setOpenCompany(null); onClickEvent(g); }}
+      />
     </MainLayout>
   );
 };
@@ -454,204 +479,384 @@ const StatCard: React.FC<{
   accent?: 'primary' | 'success' | 'accent'; icon?: React.ReactNode;
 }> = ({ label, value, sub, accent, icon }) => {
   const tone =
-    accent === 'primary' ? 'border-primary/30 bg-primary/5' :
-    accent === 'success' ? 'border-emerald-500/30 bg-emerald-500/5' :
-    accent === 'accent'  ? 'border-orange-500/30 bg-orange-500/5' :
+    accent === 'primary' ? 'border-primary/40 bg-primary/5' :
+    accent === 'success' ? 'border-emerald-500/40 bg-emerald-500/5' :
+    accent === 'accent'  ? 'border-accent/50 bg-accent/10' :
     'bg-card';
   const valueTone =
     accent === 'primary' ? 'text-primary' :
     accent === 'success' ? 'text-emerald-600' :
-    accent === 'accent'  ? 'text-orange-600' : '';
+    accent === 'accent'  ? 'text-accent' : 'text-foreground';
   return (
     <Card className={tone}>
       <CardContent className="pt-5 pb-5">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+        <div className="flex items-center gap-1.5 text-xs text-foreground/70 mb-1 font-medium">
           {icon}<span>{label}</span>
         </div>
         <p className={`text-2xl font-bold leading-tight ${valueTone}`}>{value}</p>
-        {sub && <p className="text-xs text-muted-foreground mt-1 truncate" title={sub}>{sub}</p>}
+        {sub && <p className="text-xs text-foreground/60 mt-1 truncate" title={sub}>{sub}</p>}
       </CardContent>
     </Card>
   );
 };
 
-const priorityFor = (n: number): { label: string; tone: string } | null => {
-  if (n >= 3) return { label: `Priorité forte · ${n} comptes`, tone: 'bg-orange-500 text-white' };
+const priorityFor = (n: number): { label: string; tone: string; icon?: React.ReactNode } | null => {
+  if (n >= 3) return { label: `Priorité forte · ${n} comptes`, tone: 'bg-accent text-accent-foreground', icon: <Flame className="h-3 w-3 mr-1" /> };
   if (n === 2) return { label: '2 comptes détectés', tone: 'bg-primary text-primary-foreground' };
-  if (n === 1) return { label: 'Opportunité', tone: 'bg-secondary text-secondary-foreground' };
+  if (n === 1) return { label: 'Opportunité', tone: 'bg-emerald-600 text-white' };
   return null;
 };
 
+/** Small avatar with logo/favicon/initials fallback */
+const CompanyAvatar: React.FC<{ company: Company; size?: 'xs' | 'sm' | 'md' }> = ({ company, size = 'sm' }) => {
+  const url = getExhibitorLogoUrl(null, company.website_raw ?? company.normalized_domain ?? null);
+  const cls = size === 'xs' ? 'h-6 w-6 text-[10px]' : size === 'md' ? 'h-10 w-10 text-sm' : 'h-7 w-7 text-[11px]';
+  return (
+    <Avatar className={`${cls} border bg-background`}>
+      {url && <AvatarImage src={url} alt={company.company_name} />}
+      <AvatarFallback className="bg-primary/10 text-primary font-bold">
+        {companyInitials(company.company_name)}
+      </AvatarFallback>
+    </Avatar>
+  );
+};
+
+/** Company chip — clickable, shows logo + name */
+const CompanyChip: React.FC<{
+  company: Company; stand?: string | null; onClick: () => void;
+}> = ({ company, stand, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group flex items-center gap-2 bg-background border border-border hover:border-primary hover:bg-primary/5 rounded-full pl-1 pr-3 py-1 transition-all"
+  >
+    <CompanyAvatar company={company} size="xs" />
+    <span className="text-sm font-semibold text-foreground group-hover:text-primary">
+      {company.company_name}
+    </span>
+    {stand && (
+      <span className="text-xs font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+        {stand}
+      </span>
+    )}
+  </button>
+);
+
+/** Compact horizontal event card — image left, info center, actions right */
 const EventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
   onFavorite: () => void;
   onCalendar: () => void;
-}> = ({ group, onView, onFavorite, onCalendar }) => {
+  onCompanyClick: (c: Company) => void;
+}> = ({ group, onView, onFavorite, onCalendar, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
-  const visibleCompanies = group.companies.slice(0, 5);
-  const more = group.companies.length - visibleCompanies.length;
-  const stands = Array.from(new Set(group.companies.map((c) => c.stand).filter(Boolean))) as string[];
+  const visible = group.companies.slice(0, 5);
+  const more = group.companies.length - visible.length;
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
-      {/* Image header */}
-      <div className="relative h-36 w-full overflow-hidden">
-        {group.url_image ? (
-          <img
-            src={group.url_image}
-            alt={group.nom_event}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent, var(--primary))))' }}
-          >
-            <span className="text-3xl font-bold text-primary-foreground tracking-wider opacity-80">
-              {eventInitials(group.nom_event)}
-            </span>
-          </div>
-        )}
-        {prio && (
-          <Badge className={`absolute top-3 left-3 ${prio.tone} border-none`}>
-            <Flame className="h-3 w-3 mr-1" /> {prio.label}
-          </Badge>
-        )}
-        {group.days_until != null && (
-          <Badge variant="secondary" className="absolute top-3 right-3 backdrop-blur bg-background/80">
-            J-{Math.max(0, group.days_until)}
-          </Badge>
-        )}
-      </div>
-
-      <CardContent className="pt-5 flex-1 flex flex-col">
-        <h3 className="font-semibold text-lg leading-tight mb-2 line-clamp-2">{group.nom_event}</h3>
-        <div className="text-sm text-muted-foreground space-y-1 mb-3">
-          <p className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5" />
-            {formatDate(group.date_debut)}
-            {group.date_fin && group.date_fin !== group.date_debut ? ` → ${formatDate(group.date_fin)}` : ''}
-          </p>
-          {(group.ville || group.nom_lieu) && (
-            <p className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" />
-              {[group.nom_lieu, group.ville].filter(Boolean).join(' · ')}
-            </p>
+    <Card className="overflow-hidden hover:shadow-md hover:border-primary/30 transition-all bg-card">
+      <div className="flex flex-col sm:flex-row">
+        {/* Thumbnail */}
+        <div className="relative w-full sm:w-[180px] sm:min-w-[180px] h-[140px] sm:h-auto bg-muted overflow-hidden">
+          {group.url_image ? (
+            <img
+              src={group.url_image}
+              alt={group.nom_event}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))' }}
+            >
+              <span className="text-2xl font-bold text-primary-foreground tracking-wider opacity-90">
+                {eventInitials(group.nom_event)}
+              </span>
+            </div>
+          )}
+          {group.days_until != null && (
+            <Badge className="absolute top-2 left-2 bg-foreground text-background border-none">
+              J-{Math.max(0, group.days_until)}
+            </Badge>
           )}
         </div>
 
-        <div className="mb-3">
-          <p className="text-xs font-medium text-muted-foreground mb-1.5">
-            {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM détectée{group.companies.length > 1 ? 's' : ''}
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {visibleCompanies.map(({ company }) => (
-              <Badge key={company.id} variant="outline" className="font-normal">
-                {company.company_name}
+        {/* Body */}
+        <div className="flex-1 p-4 flex flex-col gap-3 min-w-0">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-bold text-lg leading-tight text-foreground line-clamp-2">{group.nom_event}</h3>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-foreground/70 mt-1">
+                <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{formatDate(group.date_debut)}</span>
+                {(group.ville || group.nom_lieu) && (
+                  <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{[group.nom_lieu, group.ville].filter(Boolean).join(' · ')}</span>
+                )}
+              </div>
+            </div>
+            {prio && (
+              <Badge className={`${prio.tone} border-none whitespace-nowrap shrink-0`}>
+                {prio.icon}{prio.label}
               </Badge>
-            ))}
-            {more > 0 && (
-              <Badge variant="secondary" className="font-normal">+ {more} autres</Badge>
             )}
           </div>
-        </div>
 
-        {stands.length > 0 && (
-          <p className="text-xs text-muted-foreground mb-3">
-            <strong>Stand{stands.length > 1 ? 's' : ''} :</strong> {stands.join(' · ')}
-          </p>
-        )}
+          {/* CRM companies — the heart of the card */}
+          <div className="bg-primary/5 border border-primary/10 rounded-lg p-3">
+            <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">
+              {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {visible.map(({ company, stand }) => (
+                <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company)} />
+              ))}
+              {more > 0 && (
+                <span className="text-xs font-medium text-primary self-center px-2">
+                  + {more} autres comptes
+                </span>
+              )}
+            </div>
+          </div>
 
-        <div className="flex flex-wrap gap-2 mt-auto pt-2">
-          <Button size="sm" onClick={onView} disabled={!group.slug}>
-            Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
-          </Button>
-          <Button size="sm" variant="outline" onClick={onFavorite}>
-            <Heart className="h-3.5 w-3.5 mr-1" /> Favoris
-          </Button>
-          <Button size="sm" variant="outline" onClick={onCalendar}>
-            <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agenda
-          </Button>
+          <div className="flex flex-wrap gap-2 mt-auto">
+            <Button size="sm" onClick={onView} disabled={!group.slug}>
+              Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={onFavorite}>
+              <Heart className="h-3.5 w-3.5 mr-1" /> Favoris
+            </Button>
+            <Button size="sm" variant="outline" onClick={onCalendar}>
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agenda
+            </Button>
+          </div>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };
 
-const PastEventRow: React.FC<{ group: EventGroup; onView: () => void }> = ({ group, onView }) => (
-  <div className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow">
-    <div className="h-12 w-12 rounded-md overflow-hidden flex-shrink-0">
-      {group.url_image ? (
-        <img src={group.url_image} alt="" className="w-full h-full object-cover" loading="lazy" />
-      ) : (
-        <div className="w-full h-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
-          {eventInitials(group.nom_event)}
-        </div>
-      )}
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="font-medium truncate">{group.nom_event}</p>
-      <p className="text-xs text-muted-foreground">
-        {formatDate(group.date_debut)} · {group.ville ?? '—'} · {group.companies.length} compte{group.companies.length > 1 ? 's' : ''}
-      </p>
-    </div>
-    <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug}>
-      <ChevronRight className="h-4 w-4" />
-    </Button>
-  </div>
-);
-
-const CompanyAccountsList: React.FC<{
-  groups: EventGroup[]; companies: Company[]; onView: (g: EventGroup) => void;
-}> = ({ groups, companies, onView }) => {
-  if (companies.length === 0) return <EmptyText label="Aucune entreprise détectée." />;
+/** Past event card — same horizontal pattern, muted but companies still visible */
+const PastEventCard: React.FC<{
+  group: EventGroup;
+  onView: () => void;
+  onCompanyClick: (c: Company) => void;
+}> = ({ group, onView, onCompanyClick }) => {
+  const visible = group.companies.slice(0, 6);
+  const more = group.companies.length - visible.length;
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {companies.map((c) => {
-        const compGroups = groups.filter((g) => g.companies.some((x) => x.company.id === c.id));
-        const future = compGroups.filter((g) => g.is_future).sort((a, b) => (a.days_until ?? 9999) - (b.days_until ?? 9999));
-        const past = compGroups.filter((g) => !g.is_future);
-        const next = future[0];
-        return (
-          <Card key={c.id}>
+    <Card className="overflow-hidden hover:shadow-sm transition-all bg-card">
+      <div className="flex flex-col sm:flex-row">
+        <div className="relative w-full sm:w-[140px] sm:min-w-[140px] h-[110px] sm:h-auto bg-muted overflow-hidden">
+          {group.url_image ? (
+            <img src={group.url_image} alt={group.nom_event} className="w-full h-full object-cover opacity-90" loading="lazy" />
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center text-foreground/40 font-bold">
+              {eventInitials(group.nom_event)}
+            </div>
+          )}
+        </div>
+        <div className="flex-1 p-4 min-w-0">
+          <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+            <div>
+              <h3 className="font-bold text-base text-foreground leading-tight">{group.nom_event}</h3>
+              <p className="text-xs text-foreground/60 mt-0.5">
+                {formatDate(group.date_debut)}{group.ville ? ` · ${group.ville}` : ''}
+              </p>
+            </div>
+            <Badge variant="secondary" className="font-semibold">
+              {group.companies.length} compte{group.companies.length > 1 ? 's' : ''}
+            </Badge>
+          </div>
+          <p className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5">
+            Entreprises détectées
+          </p>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {visible.map(({ company, stand }) => (
+              <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company)} />
+            ))}
+            {more > 0 && (
+              <span className="text-xs font-medium text-foreground/60 self-center px-2">
+                + {more} autres
+              </span>
+            )}
+          </div>
+          <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary -ml-2">
+            Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+/** Company "account" cards — modern CRM look */
+const CompanyAccountsList: React.FC<{
+  groups: EventGroup[]; companies: Company[]; onOpen: (c: Company) => void;
+}> = ({ groups, companies, onOpen }) => {
+  if (companies.length === 0) return <EmptyText label="Aucune entreprise détectée." />;
+
+  const enriched = companies.map((c) => {
+    const compGroups = groups.filter((g) => g.companies.some((x) => x.company.id === c.id));
+    const future = compGroups.filter((g) => g.is_future).sort((a, b) => (a.days_until ?? 9999) - (b.days_until ?? 9999));
+    const past = compGroups.filter((g) => !g.is_future).sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? ''));
+    return { c, future, past, next: future[0], lastPast: past[0] };
+  }).sort((a, b) => {
+    if (a.future.length !== b.future.length) return b.future.length - a.future.length;
+    return (a.next?.days_until ?? 9999) - (b.next?.days_until ?? 9999);
+  });
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      {enriched.map(({ c, future, past, next, lastPast }) => (
+        <button
+          key={c.id}
+          type="button"
+          onClick={() => onOpen(c)}
+          className="text-left group"
+        >
+          <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all">
             <CardContent className="pt-5">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                  <Building2 className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">{c.company_name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{c.normalized_domain ?? c.website_raw ?? ''}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                <div className="rounded border p-2">
-                  <p className="text-xs text-muted-foreground">Salons à venir</p>
-                  <p className="font-bold text-primary">{future.length}</p>
-                </div>
-                <div className="rounded border p-2">
-                  <p className="text-xs text-muted-foreground">Salons passés</p>
-                  <p className="font-bold">{past.length}</p>
+              <div className="flex items-start gap-3 mb-4">
+                <CompanyAvatar company={c} size="md" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-foreground truncate group-hover:text-primary">
+                    {c.company_name}
+                  </p>
+                  <p className="text-xs text-foreground/60 truncate flex items-center gap-1">
+                    <ExternalLink className="h-3 w-3" />
+                    {c.normalized_domain ?? c.website_raw ?? ''}
+                  </p>
                 </div>
               </div>
-              {next && (
-                <p className="text-xs text-muted-foreground mb-2">
-                  <strong>Prochain :</strong> {next.nom_event} · {formatDate(next.date_debut)}
-                </p>
-              )}
-              {next && (
-                <Button size="sm" variant="outline" className="w-full" onClick={() => onView(next)}>
-                  Voir les événements <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              )}
+              <div className="flex gap-4 text-sm mb-3">
+                <div>
+                  <p className="text-xl font-bold text-primary leading-none">{future.length}</p>
+                  <p className="text-[11px] text-foreground/60 mt-0.5">à venir</p>
+                </div>
+                <div className="border-l pl-4">
+                  <p className="text-xl font-bold text-foreground/80 leading-none">{past.length}</p>
+                  <p className="text-[11px] text-foreground/60 mt-0.5">passés</p>
+                </div>
+              </div>
+              {next ? (
+                <div className="text-xs bg-primary/5 border border-primary/10 rounded p-2">
+                  <p className="text-primary font-semibold uppercase tracking-wide text-[10px]">Prochain</p>
+                  <p className="text-foreground font-medium truncate">{next.nom_event}</p>
+                  <p className="text-foreground/60">{formatDate(next.date_debut)}</p>
+                </div>
+              ) : lastPast ? (
+                <div className="text-xs bg-muted/50 rounded p-2">
+                  <p className="text-foreground/60 font-semibold uppercase tracking-wide text-[10px]">Dernier</p>
+                  <p className="text-foreground/80 font-medium truncate">{lastPast.nom_event}</p>
+                  <p className="text-foreground/60">{formatDate(lastPast.date_debut)}</p>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
-        );
-      })}
+        </button>
+      ))}
     </div>
+  );
+};
+
+/** Drawer showing detail for one CRM company */
+const CompanyDrawer: React.FC<{
+  company: Company | null;
+  onClose: () => void;
+  groups: EventGroup[];
+  onViewEvent: (g: EventGroup) => void;
+}> = ({ company, onClose, groups, onViewEvent }) => {
+  const compGroups = useMemo(
+    () => company ? groups.filter((g) => g.companies.some((x) => x.company.id === company.id)) : [],
+    [company, groups],
+  );
+  const future = compGroups.filter((g) => g.is_future).sort((a, b) => (a.days_until ?? 9999) - (b.days_until ?? 9999));
+  const past = compGroups.filter((g) => !g.is_future).sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? ''));
+
+  return (
+    <Sheet open={!!company} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        {company && (
+          <>
+            <SheetHeader>
+              <div className="flex items-center gap-3">
+                <CompanyAvatar company={company} size="md" />
+                <div className="text-left min-w-0">
+                  <SheetTitle className="truncate">{company.company_name}</SheetTitle>
+                  <SheetDescription className="truncate">
+                    {company.normalized_domain ?? company.website_raw ?? '—'}
+                  </SheetDescription>
+                </div>
+              </div>
+            </SheetHeader>
+
+            <div className="mt-6 space-y-6">
+              <section>
+                <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2">
+                  Salons à venir ({future.length})
+                </p>
+                {future.length === 0 ? (
+                  <p className="text-sm text-foreground/60">Aucun salon futur détecté.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {future.map((g) => {
+                      const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
+                      return (
+                        <button
+                          key={g.event_id}
+                          type="button"
+                          onClick={() => onViewEvent(g)}
+                          disabled={!g.slug}
+                          className="w-full text-left bg-primary/5 hover:bg-primary/10 border border-primary/10 rounded-lg p-3 transition-colors disabled:opacity-60"
+                        >
+                          <p className="font-semibold text-foreground">{g.nom_event}</p>
+                          <p className="text-xs text-foreground/70 mt-0.5">
+                            {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
+                            {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              <section>
+                <p className="text-xs font-bold uppercase tracking-wide text-foreground/60 mb-2">
+                  Historique passé ({past.length})
+                </p>
+                {past.length === 0 ? (
+                  <p className="text-sm text-foreground/60">Aucun salon passé détecté.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {past.map((g) => {
+                      const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
+                      return (
+                        <button
+                          key={g.event_id}
+                          type="button"
+                          onClick={() => onViewEvent(g)}
+                          disabled={!g.slug}
+                          className="w-full text-left bg-muted/40 hover:bg-muted border rounded-lg p-3 transition-colors disabled:opacity-60"
+                        >
+                          <p className="font-medium text-foreground/90">{g.nom_event}</p>
+                          <p className="text-xs text-foreground/60 mt-0.5">
+                            {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
+                            {stand && <span className="ml-2 text-foreground/70">Stand {stand}</span>}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 };
 
@@ -668,11 +873,11 @@ const DetailTable: React.FC<{ groups: EventGroup[]; onView: (g: EventGroup) => v
         <tbody>
           {rows.map(({ g, c }, i) => (
             <tr key={`${g.event_id}-${c.company.id}-${i}`} className="border-t">
-              <Td className="font-medium">{c.company.company_name}</Td>
-              <Td>{g.nom_event}</Td>
-              <Td>{formatDate(g.date_debut)}</Td>
-              <Td>{g.ville ?? '—'}</Td>
-              <Td className="max-w-[180px] truncate">{c.stand ?? '—'}</Td>
+              <Td className="font-medium text-foreground">{c.company.company_name}</Td>
+              <Td className="text-foreground/80">{g.nom_event}</Td>
+              <Td className="text-foreground/80">{formatDate(g.date_debut)}</Td>
+              <Td className="text-foreground/80">{g.ville ?? '—'}</Td>
+              <Td className="max-w-[180px] truncate text-foreground/80">{c.stand ?? '—'}</Td>
               <Td><Button size="sm" variant="ghost" onClick={() => onView(g)} disabled={!g.slug}>Voir</Button></Td>
             </tr>
           ))}
@@ -683,23 +888,23 @@ const DetailTable: React.FC<{ groups: EventGroup[]; onView: (g: EventGroup) => v
 };
 
 const Th: React.FC<React.HTMLAttributes<HTMLTableCellElement>> = ({ children, ...p }) => (
-  <th {...p} className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap">{children}</th>
+  <th {...p} className="text-left px-3 py-2 font-semibold text-foreground/70 whitespace-nowrap">{children}</th>
 );
 const Td: React.FC<React.HTMLAttributes<HTMLTableCellElement>> = ({ children, className = '', ...p }) => (
   <td {...p} className={`px-3 py-2 ${className}`}>{children}</td>
 );
 const EmptyText: React.FC<{ label: string }> = ({ label }) => (
-  <div className="text-center text-muted-foreground py-12">{label}</div>
+  <div className="text-center text-foreground/60 py-12">{label}</div>
 );
 
 const NoFutureMatches: React.FC<{ companiesCount: number; matchedCount: number }> = ({ companiesCount, matchedCount }) => (
   <Card>
     <CardContent className="pt-8 pb-8 text-center">
       <Sparkles className="h-10 w-10 mx-auto text-primary mb-3" />
-      <h3 className="text-lg font-semibold mb-1">
+      <h3 className="text-lg font-semibold mb-1 text-foreground">
         {matchedCount === 0 ? 'Aucune entreprise détectée pour le moment' : 'Aucun salon à venir détecté'}
       </h3>
-      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+      <p className="text-sm text-foreground/70 max-w-md mx-auto mb-4">
         {matchedCount === 0
           ? `Nous n'avons pas trouvé de correspondance exacte entre les ${companiesCount} domaines de votre fichier et les exposants Lotexpo.`
           : "Vos comptes ne sont pas encore inscrits à un salon à venir. Importez un nouveau fichier ou consultez l'historique."}
@@ -718,41 +923,17 @@ const NoFutureMatches: React.FC<{ companiesCount: number; matchedCount: number }
 
 const RadarEmptyState: React.FC = () => (
   <div className="max-w-3xl mx-auto px-4 py-12 text-center">
-    <div className="h-14 w-14 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-4">
-      <Radar className="h-7 w-7 text-primary" />
+    <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground mx-auto flex items-center justify-center mb-4">
+      <Radar className="h-7 w-7" />
     </div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-2">Votre Radar CRM est vide</h1>
-    <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-      Imaginez importer votre liste de 300 prospects et découvrir en quelques secondes que 12 d'entre eux
-      exposent sur des salons dans les 60 prochains jours.
+    <h1 className="text-2xl md:text-3xl font-bold mb-2 text-foreground">Votre Radar CRM est vide</h1>
+    <p className="text-foreground/70 mb-6 max-w-xl mx-auto">
+      Importez votre liste de prospects et découvrez en quelques secondes ceux qui exposent
+      sur des salons dans les 60 prochains jours.
     </p>
-
-    <Card className="text-left mb-6 overflow-hidden">
-      <div className="grid grid-cols-3 gap-0 border-b">
-        <Demo n="42" l="entreprises analysées" />
-        <Demo n="8" l="salons à venir" accent />
-        <Demo n="13" l="participations passées" />
-      </div>
-      <CardContent className="pt-5">
-        <div className="border rounded-md p-3 bg-muted/30">
-          <p className="font-medium">ACME Industries <span className="text-muted-foreground text-xs">— Prospect</span></p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-            <Calendar className="h-3 w-3" /> Global Industrie · 25 mars 2026 · Paris · Stand B32
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-
     <Button asChild size="lg">
       <Link to="/radar-crm"><Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV</Link>
     </Button>
-  </div>
-);
-
-const Demo: React.FC<{ n: string; l: string; accent?: boolean }> = ({ n, l, accent }) => (
-  <div className="p-4 text-center">
-    <p className={`text-2xl font-bold ${accent ? 'text-primary' : ''}`}>{n}</p>
-    <p className="text-xs text-muted-foreground">{l}</p>
   </div>
 );
 
