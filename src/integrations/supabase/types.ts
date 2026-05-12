@@ -3763,6 +3763,7 @@ export type Database = {
         Returns: undefined
       }
       normalize_company_name: { Args: { input: string }; Returns: string }
+      normalize_domain: { Args: { input_url: string }; Returns: string }
       normalize_event_domain: { Args: { p_url: string }; Returns: string }
       normalize_event_url: { Args: { p_url: string }; Returns: string }
       publish_pending_event_atomic: {

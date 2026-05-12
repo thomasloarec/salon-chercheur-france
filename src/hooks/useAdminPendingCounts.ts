@@ -24,7 +24,7 @@ export const useAdminPendingCounts = () => {
         supabase
           .from('novelties')
           .select('id', { count: 'exact', head: true })
-          .in('status', ['pending', 'under_review']),
+          .eq('status', 'draft'),
         supabase
           .from('exhibitor_claim_requests')
           .select('exhibitor_id', { count: 'exact' })
