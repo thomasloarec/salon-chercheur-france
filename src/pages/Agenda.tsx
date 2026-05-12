@@ -38,14 +38,27 @@ const Agenda = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const upcomingOrOngoingEvents = allEvents
-    .filter(event => {
+  // Fusionner avec les événements issus des nouveautés likées (filet de
+  // sécurité au cas où l'auto-favori n'aurait pas pu s'appliquer).
+  const favoriteIds = new Set(allEvents.map((e: any) => e.id));
+  const eventsFromNovelties = (likedNovelties as any[])
+    .map((n) => n.events)
+    .filter((e) => e && !favoriteIds.has(e.id))
+    .reduce((acc: any[], e: any) => {
+      if (!acc.some((x) => x.id === e.id)) acc.push(e);
+      return acc;
+    }, []);
+
+  const mergedEvents = [...allEvents, ...eventsFromNovelties];
+
+  const upcomingOrOngoingEvents = mergedEvents
+    .filter((event: any) => {
       const endDate = new Date(event.date_fin || event.date_debut);
       endDate.setHours(23, 59, 59, 999);
       return endDate >= today;
     })
     // Sort chronologically: closest events first
-    .sort((a, b) => new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime());
+    .sort((a: any, b: any) => new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime());
 
   // Next event is now the first one in the sorted list
   const nextEvent = upcomingOrOngoingEvents[0];
