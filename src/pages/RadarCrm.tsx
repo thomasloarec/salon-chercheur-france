@@ -1,17 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Lock, Radar, ShieldCheck, Sparkles, Zap, ArrowRight } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
+  Radar, ShieldCheck, Sparkles, Zap, ArrowRight, Target, Map, Rocket,
+  Upload, FileCheck2, Search, Lock,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
-import RadarColumnMapper from '@/components/radar-crm/RadarColumnMapper';
 import RadarPreviewTable from '@/components/radar-crm/RadarPreviewTable';
-import { autoDetectMapping, RADAR_FIELD_REQUIRED, RadarField } from '@/lib/radarCrm/columnDetection';
+import {
+  autoDetectMapping, RADAR_FIELD_LABELS, RADAR_FIELD_REQUIRED, RadarField,
+} from '@/lib/radarCrm/columnDetection';
 import {
   trackRadarEvent, savePendingImport, loadPendingImport, clearPendingImport,
 } from '@/lib/radarCrm/tracking';
@@ -22,6 +33,10 @@ interface ParsedFile {
   rows: Array<Record<string, unknown>>;
 }
 
+const NONE = '__none__';
+const PRIMARY_FIELDS: RadarField[] = ['company_name', 'website_raw'];
+const ADVANCED_FIELDS: RadarField[] = ['crm_status', 'owner_name', 'owner_email', 'notes'];
+
 const RadarCrmPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -29,11 +44,8 @@ const RadarCrmPage: React.FC = () => {
   const [mapping, setMapping] = useState<Partial<Record<RadarField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    void trackRadarEvent('radar_page_viewed');
-  }, []);
+  useEffect(() => { void trackRadarEvent('radar_page_viewed'); }, []);
 
-  // If user just authenticated, restore pending CSV
   useEffect(() => {
     if (!user || parsed) return;
     const pending = loadPendingImport();
@@ -47,6 +59,9 @@ const RadarCrmPage: React.FC = () => {
   const onParsed = (p: ParsedFile) => {
     setParsed(p);
     setMapping(autoDetectMapping(p.headers));
+    setTimeout(() => {
+      document.getElementById('radar-mapping')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const missingRequired = useMemo(
@@ -55,7 +70,7 @@ const RadarCrmPage: React.FC = () => {
     [mapping],
   );
 
-  const handleAuthGate = async (mode: 'login' | 'signup') => {
+  const handleAuthGate = (mode: 'login' | 'signup') => {
     if (!parsed) return;
     savePendingImport({
       fileName: parsed.fileName,
@@ -70,19 +85,14 @@ const RadarCrmPage: React.FC = () => {
   const handleSubmit = async () => {
     if (!parsed || !user) return;
     if (missingRequired.length > 0) {
-      toast({ title: 'Mapping incomplet', description: 'Renseignez les colonnes requises.' });
+      toast({ title: 'Mapping incomplet', description: 'Sélectionnez le nom et le site web.' });
       return;
     }
     setSubmitting(true);
     void trackRadarEvent('crm_import_started', { rows: parsed.rows.length });
     try {
       const { data, error } = await supabase.functions.invoke('crm-import', {
-        body: {
-          fileName: parsed.fileName,
-          sourceType: 'csv',
-          mapping,
-          rows: parsed.rows,
-        },
+        body: { fileName: parsed.fileName, sourceType: 'csv', mapping, rows: parsed.rows },
       });
       if (error) throw error;
       const result = data as { importId?: string; matchesCount?: number; matchedCompaniesCount?: number };
@@ -100,176 +110,291 @@ const RadarCrmPage: React.FC = () => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erreur inconnue';
       void trackRadarEvent('crm_import_failed', { error: msg });
-      toast({ title: 'Échec de l\'import', description: msg, variant: 'destructive' });
+      toast({ title: "Échec de l'import", description: msg, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const setField = (f: RadarField, v: string) => {
+    const next = { ...mapping };
+    if (v === NONE) delete next[f]; else next[f] = v;
+    setMapping(next);
+  };
+
   return (
-    <>
-      <Helmet>
-        <title>Radar CRM — détectez vos comptes sur les salons | Lotexpo</title>
-        <meta
-          name="description"
-          content="Importez votre fichier CRM au format CSV. Lotexpo détecte automatiquement les salons où vos prospects, clients et concurrents exposent."
+    <MainLayout
+      title="Radar CRM | Détectez vos prospects sur les salons"
+      description="Importez votre CRM. Lotexpo détecte automatiquement les salons où vos prospects, clients et concurrents exposent."
+    >
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 -z-10 opacity-90"
+          style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--accent) / 0.06))' }}
         />
-      </Helmet>
-
-      <div className="min-h-screen bg-background">
-        <div className="max-w-5xl mx-auto px-4 py-10 md:py-14">
-          {/* Hero */}
-          <div className="mb-10 text-center">
-            <Badge variant="secondary" className="mb-4">
-              <Sparkles className="h-3 w-3 mr-1" /> Nouveau
-            </Badge>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
-              Découvrez à quels salons participent vos prospects, clients ou concurrents
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Importez votre fichier CRM au format CSV. Lotexpo détecte automatiquement les événements où vos comptes sont présents, afin de vous aider à préparer vos visites commerciales.
-            </p>
+        <div className="max-w-5xl mx-auto px-4 py-12 md:py-20 text-center">
+          <Badge variant="secondary" className="mb-5 inline-flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" /> Nouveau · Bêta
+          </Badge>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
+            Transformez votre fichier CRM en{' '}
+            <span className="text-primary">plan d'action salon</span>
+          </h1>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+            Importez une liste de prospects, clients ou concurrents. Lotexpo identifie les
+            événements où ces entreprises exposent, les stands à visiter et les opportunités
+            commerciales à ne pas manquer.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button size="lg" onClick={() => document.getElementById('radar-upload')?.scrollIntoView({ behavior: 'smooth' })}>
+              <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV
+            </Button>
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5" /> Analyse sécurisée. Vos données restent privées.
+            </span>
           </div>
+        </div>
+      </section>
 
-          {/* Trust strip */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
-            <div className="flex items-start gap-2 p-3 rounded-lg border bg-card">
-              <ShieldCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium">Vos données restent privées</p>
-                <p className="text-muted-foreground text-xs">Visibles uniquement par vous.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2 p-3 rounded-lg border bg-card">
-              <Zap className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium">Matching basé sur le domaine</p>
-                <p className="text-muted-foreground text-xs">Détection exacte par site web.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2 p-3 rounded-lg border bg-card">
-              <Lock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium">Analyse après connexion</p>
-                <p className="text-muted-foreground text-xs">Aucune donnée envoyée avant.</p>
-              </div>
-            </div>
-          </div>
+      {/* Benefits */}
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <BenefitCard
+            icon={<Target className="h-5 w-5" />}
+            title="Détectez vos comptes"
+            text="Repérez automatiquement les entreprises de votre réseau présentes sur les salons Lotexpo."
+          />
+          <BenefitCard
+            icon={<Map className="h-5 w-5" />}
+            title="Priorisez vos déplacements"
+            text="Identifiez les événements où plusieurs prospects ou clients seront présents."
+          />
+          <BenefitCard
+            icon={<Rocket className="h-5 w-5" />}
+            title="Passez à l'action"
+            text="Ajoutez les salons à vos favoris, préparez vos visites et contactez les bons comptes au bon moment."
+          />
+        </div>
+      </section>
 
-          {/* Step 1 — Upload */}
-          {!parsed && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Radar className="h-5 w-5" /> 1. Importez votre fichier
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RadarCsvUploader onParsed={onParsed} />
+      {/* How it works */}
+      <section className="max-w-5xl mx-auto px-4 py-8">
+        <h2 className="text-xl md:text-2xl font-bold text-center mb-6">Comment ça marche ?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Step n={1} icon={<Upload className="h-5 w-5" />} title="Importez un CSV" text="Avec vos entreprises (nom + site web)." />
+          <Step n={2} icon={<Search className="h-5 w-5" />} title="Matching automatique" text="Lotexpo détecte les correspondances par domaine." />
+          <Step n={3} icon={<Radar className="h-5 w-5" />} title="Plan d'action" text="Consultez les salons à venir et les comptes à rencontrer." />
+        </div>
+      </section>
+
+      {/* Trust strip */}
+      <section className="max-w-5xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <TrustItem icon={<ShieldCheck className="h-4 w-4 text-primary" />} label="Données privées" sub="Visibles uniquement par vous." />
+          <TrustItem icon={<Zap className="h-4 w-4 text-primary" />} label="Matching exact" sub="Basé sur le domaine web." />
+          <TrustItem icon={<FileCheck2 className="h-4 w-4 text-primary" />} label="2 colonnes suffisent" sub="Nom + site web." />
+        </div>
+      </section>
+
+      {/* Upload zone */}
+      <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
+        {!parsed && (
+          <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+            <CardContent className="pt-6">
+              <div className="text-center mb-5">
+                <h3 className="text-xl font-semibold mb-1">Importez votre fichier CSV</h3>
+                <p className="text-sm text-muted-foreground">
+                  Colonnes nécessaires : <strong>entreprise</strong> + <strong>site web</strong>.
+                </p>
+              </div>
+              <RadarCsvUploader onParsed={onParsed} />
+            </CardContent>
+          </Card>
+        )}
+
+        {parsed && (
+          <div className="space-y-6" id="radar-mapping">
+            {/* File summary */}
+            <Card className="bg-card">
+              <CardContent className="pt-6 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileCheck2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{parsed.fileName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {parsed.rows.length.toLocaleString('fr-FR')} lignes · {parsed.headers.length} colonnes
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setParsed(null); setMapping({}); }}
+                >
+                  Changer de fichier
+                </Button>
               </CardContent>
             </Card>
-          )}
 
-          {/* Step 2 — Mapping + preview + gate/submit */}
-          {parsed && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Fichier détecté</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <p><span className="text-muted-foreground">Nom : </span>{parsed.fileName}</p>
-                  <p><span className="text-muted-foreground">Lignes : </span>{parsed.rows.length.toLocaleString('fr-FR')}</p>
-                  <p><span className="text-muted-foreground">Colonnes : </span>{parsed.headers.length}</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => { setParsed(null); setMapping({}); }}
-                  >
-                    Changer de fichier
-                  </Button>
-                </CardContent>
-              </Card>
+            {/* Simplified mapping */}
+            <Card>
+              <CardContent className="pt-6 space-y-5">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Vérifiez les colonnes essentielles</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Nous avons détecté automatiquement les colonnes principales. Vérifiez simplement
+                    que le nom d'entreprise et le site web sont corrects.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {PRIMARY_FIELDS.map((f) => (
+                    <FieldSelect
+                      key={f}
+                      label={RADAR_FIELD_LABELS[f]}
+                      required
+                      headers={parsed.headers}
+                      value={mapping[f] ?? NONE}
+                      onChange={(v) => setField(f, v)}
+                    />
+                  ))}
+                </div>
+                {missingRequired.length > 0 && (
+                  <p className="text-sm text-destructive">
+                    Sélectionnez la colonne pour : {missingRequired.map((f) => RADAR_FIELD_LABELS[f]).join(', ')}
+                  </p>
+                )}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>2. Confirmez le mapping des colonnes</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <RadarColumnMapper
-                    headers={parsed.headers}
-                    mapping={mapping}
-                    onChange={setMapping}
-                  />
-                  {missingRequired.length > 0 && (
-                    <p className="text-sm text-destructive">
-                      Colonnes requises manquantes : {missingRequired.join(', ')}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="advanced" className="border-none">
+                    <AccordionTrigger className="text-sm text-muted-foreground hover:no-underline py-2">
+                      Options avancées (statut CRM, commercial, notes)
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        {ADVANCED_FIELDS.map((f) => (
+                          <FieldSelect
+                            key={f}
+                            label={RADAR_FIELD_LABELS[f]}
+                            headers={parsed.headers}
+                            value={mapping[f] ?? NONE}
+                            onChange={(v) => setField(f, v)}
+                          />
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>3. Aperçu (5 premières lignes)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RadarPreviewTable headers={parsed.headers} rows={parsed.rows} />
-                </CardContent>
-              </Card>
+            {/* Preview */}
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm font-medium mb-3">Aperçu — 5 premières lignes</p>
+                <RadarPreviewTable headers={parsed.headers} rows={parsed.rows} />
+              </CardContent>
+            </Card>
 
-              {!authLoading && !user && (
-                <Card className="border-primary/30 bg-primary/5">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lock className="h-5 w-5" /> Votre analyse Radar CRM est prête
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Connectez-vous ou créez un compte pour voir les entreprises détectées sur les salons, les événements associés et les stands à visiter.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Button onClick={() => handleAuthGate('signup')} className="flex-1">
-                        Créer mon compte et voir mes résultats
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                      <Button onClick={() => handleAuthGate('login')} variant="outline" className="flex-1">
-                        Se connecter
-                      </Button>
+            {/* Auth gate / submit */}
+            {!authLoading && !user && (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <Lock className="h-5 w-5 mt-0.5 text-primary" />
+                    <div>
+                      <h3 className="font-semibold">Votre analyse est prête</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Connectez-vous pour voir les entreprises détectées, les salons et les stands.
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {user && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>4. Lancez l'analyse</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      Le matching MVP repose sur une correspondance exacte du domaine web. Certains groupes utilisant des sous-domaines pays peuvent ne pas être détectés.
-                    </p>
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={submitting || missingRequired.length > 0}
-                      size="lg"
-                      className="w-full sm:w-auto"
-                    >
-                      {submitting ? 'Analyse en cours…' : 'Lancer l\'analyse Radar CRM'}
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button onClick={() => handleAuthGate('signup')} className="flex-1">
+                      Créer mon compte et voir mes résultats <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </>
+                    <Button onClick={() => handleAuthGate('login')} variant="outline" className="flex-1">
+                      Se connecter
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {user && (
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting || missingRequired.length > 0}
+                  size="lg"
+                  className="w-full sm:w-auto"
+                >
+                  <Radar className="mr-2 h-4 w-4" />
+                  {submitting ? 'Analyse en cours…' : "Lancer l'analyse Radar CRM"}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+    </MainLayout>
   );
 };
+
+const BenefitCard: React.FC<{ icon: React.ReactNode; title: string; text: string }> = ({ icon, title, text }) => (
+  <Card className="hover:shadow-md transition-shadow">
+    <CardContent className="pt-6">
+      <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-3">
+        {icon}
+      </div>
+      <h3 className="font-semibold mb-1">{title}</h3>
+      <p className="text-sm text-muted-foreground">{text}</p>
+    </CardContent>
+  </Card>
+);
+
+const Step: React.FC<{ n: number; icon: React.ReactNode; title: string; text: string }> = ({ n, icon, title, text }) => (
+  <div className="text-center p-5 rounded-lg border bg-card">
+    <div className="mx-auto h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold mb-3">
+      {n}
+    </div>
+    <div className="flex items-center justify-center gap-2 mb-1 text-primary">{icon}<span className="font-semibold text-foreground">{title}</span></div>
+    <p className="text-sm text-muted-foreground">{text}</p>
+  </div>
+);
+
+const TrustItem: React.FC<{ icon: React.ReactNode; label: string; sub: string }> = ({ icon, label, sub }) => (
+  <div className="flex items-start gap-2 p-3 rounded-lg border bg-card">
+    {icon}
+    <div className="text-sm">
+      <p className="font-medium leading-tight">{label}</p>
+      <p className="text-muted-foreground text-xs">{sub}</p>
+    </div>
+  </div>
+);
+
+const FieldSelect: React.FC<{
+  label: string;
+  required?: boolean;
+  headers: string[];
+  value: string;
+  onChange: (v: string) => void;
+}> = ({ label, required, headers, value, onChange }) => (
+  <div className="space-y-1.5">
+    <Label className="text-sm flex items-center gap-2">
+      {label}
+      {required && <Badge variant="secondary" className="text-[10px]">requis</Badge>}
+    </Label>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger><SelectValue placeholder="Aucune colonne" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NONE}>— Aucune —</SelectItem>
+        {headers.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  </div>
+);
 
 export default RadarCrmPage;

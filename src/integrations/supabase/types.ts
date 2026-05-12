@@ -3680,6 +3680,7 @@ export type Database = {
           date_debut: string | null
           date_fin: string | null
           days_until_event: number | null
+          description_event: string | null
           event_id: string | null
           event_id_text: string | null
           id_exposant: string | null
@@ -3690,9 +3691,12 @@ export type Database = {
           normalized_domain: string | null
           participation_row_count: number | null
           representative_participation_id: string | null
+          secteur: Json | null
+          slug: string | null
           stand_count: number | null
           stand_exposants_list: string | null
           type_event: string | null
+          url_image: string | null
           urlexpo_event: string | null
           ville: string | null
           visible: boolean | null
