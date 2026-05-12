@@ -687,170 +687,155 @@ const PastEventCard: React.FC<{
 
 /** Company "account" cards — modern CRM look */
 const CompanyAccountsList: React.FC<{
-  groups: EventGroup[]; companies: Company[]; onOpen: (c: Company) => void;
-}> = ({ groups, companies, onOpen }) => {
+  groups: EventGroup[]; companies: Company[]; onClickEvent: (g: EventGroup) => void;
+}> = ({ groups, companies, onClickEvent }) => {
   if (companies.length === 0) return <EmptyText label="Aucune entreprise détectée." />;
 
   const enriched = companies.map((c) => {
     const compGroups = groups.filter((g) => g.companies.some((x) => x.company.id === c.id));
     const future = compGroups.filter((g) => g.is_future).sort((a, b) => (a.days_until ?? 9999) - (b.days_until ?? 9999));
     const past = compGroups.filter((g) => !g.is_future).sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? ''));
-    return { c, future, past, next: future[0], lastPast: past[0] };
+    return { c, future, past };
   }).sort((a, b) => {
     if (a.future.length !== b.future.length) return b.future.length - a.future.length;
-    return (a.next?.days_until ?? 9999) - (b.next?.days_until ?? 9999);
+    return (a.future[0]?.days_until ?? 9999) - (b.future[0]?.days_until ?? 9999);
   });
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      {enriched.map(({ c, future, past, next, lastPast }) => (
-        <button
+      {enriched.map(({ c, future, past }) => (
+        <CompanyAccountCard
           key={c.id}
-          type="button"
-          onClick={() => onOpen(c)}
-          className="text-left group"
-        >
-          <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all">
-            <CardContent className="pt-5">
-              <div className="flex items-start gap-3 mb-4">
-                <CompanyAvatar company={c} size="md" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-foreground truncate group-hover:text-primary">
-                    {c.company_name}
-                  </p>
-                  <p className="text-xs text-foreground/60 truncate flex items-center gap-1">
-                    <ExternalLink className="h-3 w-3" />
-                    {c.normalized_domain ?? c.website_raw ?? ''}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-4 text-sm mb-3">
-                <div>
-                  <p className="text-xl font-bold text-primary leading-none">{future.length}</p>
-                  <p className="text-[11px] text-foreground/60 mt-0.5">à venir</p>
-                </div>
-                <div className="border-l pl-4">
-                  <p className="text-xl font-bold text-foreground/80 leading-none">{past.length}</p>
-                  <p className="text-[11px] text-foreground/60 mt-0.5">passés</p>
-                </div>
-              </div>
-              {next ? (
-                <div className="text-xs bg-primary/5 border border-primary/10 rounded p-2">
-                  <p className="text-primary font-semibold uppercase tracking-wide text-[10px]">Prochain</p>
-                  <p className="text-foreground font-medium truncate">{next.nom_event}</p>
-                  <p className="text-foreground/60">{formatDate(next.date_debut)}</p>
-                </div>
-              ) : lastPast ? (
-                <div className="text-xs bg-muted/50 rounded p-2">
-                  <p className="text-foreground/60 font-semibold uppercase tracking-wide text-[10px]">Dernier</p>
-                  <p className="text-foreground/80 font-medium truncate">{lastPast.nom_event}</p>
-                  <p className="text-foreground/60">{formatDate(lastPast.date_debut)}</p>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        </button>
+          company={c}
+          future={future}
+          past={past}
+          onClickEvent={onClickEvent}
+        />
       ))}
     </div>
   );
 };
 
-/** Drawer showing detail for one CRM company */
-const CompanyDrawer: React.FC<{
-  company: Company | null;
-  onClose: () => void;
-  groups: EventGroup[];
-  onViewEvent: (g: EventGroup) => void;
-}> = ({ company, onClose, groups, onViewEvent }) => {
-  const compGroups = useMemo(
-    () => company ? groups.filter((g) => g.companies.some((x) => x.company.id === company.id)) : [],
-    [company, groups],
-  );
-  const future = compGroups.filter((g) => g.is_future).sort((a, b) => (a.days_until ?? 9999) - (b.days_until ?? 9999));
-  const past = compGroups.filter((g) => !g.is_future).sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? ''));
+/** Account card with collapsible event lists */
+const CompanyAccountCard: React.FC<{
+  company: Company;
+  future: EventGroup[];
+  past: EventGroup[];
+  onClickEvent: (g: EventGroup) => void;
+}> = ({ company, future, past, onClickEvent }) => {
+  const INITIAL = 3;
+  const [expF, setExpF] = useState(false);
+  const [expP, setExpP] = useState(false);
+  const futureShown = expF ? future : future.slice(0, INITIAL);
+  const pastShown = expP ? past : past.slice(0, INITIAL);
+  const futureMore = future.length - futureShown.length;
+  const pastMore = past.length - pastShown.length;
+
+  const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
+    const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
+    return (
+      <button
+        key={g.event_id}
+        type="button"
+        onClick={() => onClickEvent(g)}
+        disabled={!g.slug}
+        className={`w-full text-left rounded-md p-2 transition-colors disabled:opacity-60 ${
+          tone === 'future'
+            ? 'bg-primary/5 hover:bg-primary/10 border border-primary/10'
+            : 'bg-muted/40 hover:bg-muted border'
+        }`}
+      >
+        <p className={`text-sm font-medium truncate ${tone === 'future' ? 'text-foreground' : 'text-foreground/80'}`}>
+          {g.nom_event}
+        </p>
+        <p className="text-[11px] text-foreground/60 mt-0.5 truncate">
+          {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
+          {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
+        </p>
+      </button>
+    );
+  };
 
   return (
-    <Sheet open={!!company} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        {company && (
-          <>
-            <SheetHeader>
-              <div className="flex items-center gap-3">
-                <CompanyAvatar company={company} size="md" />
-                <div className="text-left min-w-0">
-                  <SheetTitle className="truncate">{company.company_name}</SheetTitle>
-                  <SheetDescription className="truncate">
-                    {company.normalized_domain ?? company.website_raw ?? '—'}
-                  </SheetDescription>
-                </div>
-              </div>
-            </SheetHeader>
+    <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all">
+      <CardContent className="pt-5 space-y-3">
+        <div className="flex items-start gap-3">
+          <CompanyAvatar company={company} size="md" />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-foreground truncate">{company.company_name}</p>
+            <p className="text-xs text-foreground/60 truncate flex items-center gap-1">
+              <ExternalLink className="h-3 w-3" />
+              {company.normalized_domain ?? company.website_raw ?? ''}
+            </p>
+          </div>
+        </div>
 
-            <div className="mt-6 space-y-6">
-              <section>
-                <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2">
-                  Salons à venir ({future.length})
-                </p>
-                {future.length === 0 ? (
-                  <p className="text-sm text-foreground/60">Aucun salon futur détecté.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {future.map((g) => {
-                      const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
-                      return (
-                        <button
-                          key={g.event_id}
-                          type="button"
-                          onClick={() => onViewEvent(g)}
-                          disabled={!g.slug}
-                          className="w-full text-left bg-primary/5 hover:bg-primary/10 border border-primary/10 rounded-lg p-3 transition-colors disabled:opacity-60"
-                        >
-                          <p className="font-semibold text-foreground">{g.nom_event}</p>
-                          <p className="text-xs text-foreground/70 mt-0.5">
-                            {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
-                            {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
+        <div className="flex gap-4 text-sm">
+          <div>
+            <p className="text-xl font-bold text-primary leading-none">{future.length}</p>
+            <p className="text-[11px] text-foreground/60 mt-0.5">à venir</p>
+          </div>
+          <div className="border-l pl-4">
+            <p className="text-xl font-bold text-foreground/80 leading-none">{past.length}</p>
+            <p className="text-[11px] text-foreground/60 mt-0.5">passés</p>
+          </div>
+        </div>
 
-              <section>
-                <p className="text-xs font-bold uppercase tracking-wide text-foreground/60 mb-2">
-                  Historique passé ({past.length})
-                </p>
-                {past.length === 0 ? (
-                  <p className="text-sm text-foreground/60">Aucun salon passé détecté.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {past.map((g) => {
-                      const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
-                      return (
-                        <button
-                          key={g.event_id}
-                          type="button"
-                          onClick={() => onViewEvent(g)}
-                          disabled={!g.slug}
-                          className="w-full text-left bg-muted/40 hover:bg-muted border rounded-lg p-3 transition-colors disabled:opacity-60"
-                        >
-                          <p className="font-medium text-foreground/90">{g.nom_event}</p>
-                          <p className="text-xs text-foreground/60 mt-0.5">
-                            {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
-                            {stand && <span className="ml-2 text-foreground/70">Stand {stand}</span>}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            </div>
-          </>
+        {future.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary">
+              Salons à venir
+            </p>
+            {futureShown.map((g) => renderRow(g, 'future'))}
+            {futureMore > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpF(true)}
+                className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+              >
+                <ChevronDown className="h-3 w-3" /> Voir {futureMore} salon{futureMore > 1 ? 's' : ''} de plus
+              </button>
+            )}
+            {expF && future.length > INITIAL && (
+              <button
+                type="button"
+                onClick={() => setExpF(false)}
+                className="text-xs font-medium text-foreground/60 hover:underline flex items-center gap-1"
+              >
+                <ChevronUp className="h-3 w-3" /> Réduire
+              </button>
+            )}
+          </div>
         )}
-      </SheetContent>
-    </Sheet>
+
+        {past.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-foreground/60">
+              Historique passé
+            </p>
+            {pastShown.map((g) => renderRow(g, 'past'))}
+            {pastMore > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpP(true)}
+                className="text-xs font-medium text-foreground/70 hover:underline flex items-center gap-1"
+              >
+                <ChevronDown className="h-3 w-3" /> Voir {pastMore} salon{pastMore > 1 ? 's' : ''} de plus
+              </button>
+            )}
+            {expP && past.length > INITIAL && (
+              <button
+                type="button"
+                onClick={() => setExpP(false)}
+                className="text-xs font-medium text-foreground/60 hover:underline flex items-center gap-1"
+              >
+                <ChevronUp className="h-3 w-3" /> Réduire
+              </button>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
