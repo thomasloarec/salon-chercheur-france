@@ -438,6 +438,11 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             stand_info: exhibitorStandInfo,
             logo_url: logoUrl,
             event_id: event.id,
+            // ✅ DEDUP : transmet l'id legacy si l'utilisateur a sélectionné une fiche legacy.
+            // Permet au backend de migrer la fiche existante au lieu d'en créer un doublon.
+            legacy_id_exposant: ('id' in step1.exhibitor && step1.exhibitor.id && !isValidUUID(step1.exhibitor.id))
+              ? step1.exhibitor.id
+              : (exhibitorToCreate.legacy_id_exposant || null),
             // ✅ Ne pas créer la participation maintenant - elle sera créée quand la nouveauté sera publiée
             defer_participation: true
           }
