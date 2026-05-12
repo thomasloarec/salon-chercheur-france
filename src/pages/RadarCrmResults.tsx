@@ -558,14 +558,11 @@ const CompanyChip: React.FC<{
 const EventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
-  onFavorite: () => void;
   onCalendar: () => void;
-  onCompanyClick: (c: Company) => void;
-}> = ({ group, onView, onFavorite, onCalendar, onCompanyClick }) => {
+  onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
+}> = ({ group, onView, onCalendar, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
-  const visible = group.companies.slice(0, 5);
-  const more = group.companies.length - visible.length;
 
   return (
     <Card className="overflow-hidden hover:shadow-md hover:border-primary/30 transition-all bg-card">
@@ -621,14 +618,9 @@ const EventCard: React.FC<{
               {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {visible.map(({ company, stand }) => (
-                <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company)} />
+              {group.companies.map(({ company, id_exposant, stand }) => (
+                <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company, id_exposant, stand)} />
               ))}
-              {more > 0 && (
-                <span className="text-xs font-medium text-primary self-center px-2">
-                  + {more} autres comptes
-                </span>
-              )}
             </div>
           </div>
 
@@ -636,11 +628,8 @@ const EventCard: React.FC<{
             <Button size="sm" onClick={onView} disabled={!group.slug}>
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
-            <Button size="sm" variant="outline" onClick={onFavorite}>
-              <Heart className="h-3.5 w-3.5 mr-1" /> Favoris
-            </Button>
             <Button size="sm" variant="outline" onClick={onCalendar}>
-              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agenda
+              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agenda Lotexpo
             </Button>
           </div>
         </div>
@@ -653,10 +642,8 @@ const EventCard: React.FC<{
 const PastEventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
-  onCompanyClick: (c: Company) => void;
+  onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
 }> = ({ group, onView, onCompanyClick }) => {
-  const visible = group.companies.slice(0, 6);
-  const more = group.companies.length - visible.length;
   return (
     <Card className="overflow-hidden hover:shadow-sm transition-all bg-card">
       <div className="flex flex-col sm:flex-row">
@@ -685,14 +672,9 @@ const PastEventCard: React.FC<{
             Entreprises détectées
           </p>
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {visible.map(({ company, stand }) => (
-              <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company)} />
+            {group.companies.map(({ company, id_exposant, stand }) => (
+              <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company, id_exposant, stand)} />
             ))}
-            {more > 0 && (
-              <span className="text-xs font-medium text-foreground/60 self-center px-2">
-                + {more} autres
-              </span>
-            )}
           </div>
           <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary -ml-2">
             Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
