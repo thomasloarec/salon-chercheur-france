@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, CalendarCheck, Star, Bell, ArrowRight, X, Sparkles, User } from 'lucide-react';
+import { Calendar, CalendarCheck, Star, Bell, ArrowRight, X, Sparkles, User, Radar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
@@ -118,6 +118,33 @@ const STEPS = [
       </div>
     ),
   },
+  {
+    title: 'Radar CRM : détectez vos comptes sur les salons',
+    description:
+      'Importez une liste de prospects, clients ou concurrents. Lotexpo identifie automatiquement les événements où ces entreprises exposent, afin de vous aider à préparer vos visites commerciales.',
+    icon: Radar,
+    cta: 'Tester Radar CRM',
+    secondaryCta: 'Importer plus tard',
+    route: '/radar-crm/results',
+    illustration: (
+      <div className="flex flex-col items-center gap-3 py-4">
+        <div className="w-56 rounded-xl bg-muted/50 border border-border p-3 space-y-2">
+          <div className="text-xs font-medium text-foreground mb-2">Vos comptes détectés</div>
+          {['Acme Corp · Salon Industrie 2026', 'Globex · SIAL Paris', 'Initech · Vivatech'].map((line) => (
+            <div key={line} className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded bg-accent/20 flex items-center justify-center flex-shrink-0">
+                <Radar className="h-3 w-3 text-accent" />
+              </div>
+              <span className="text-xs text-foreground truncate">{line}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground text-center max-w-[240px]">
+          Importez votre CSV, on s'occupe du reste.
+        </p>
+      </div>
+    ),
+  },
 ];
 
 const OnboardingTour: React.FC = () => {
@@ -137,7 +164,7 @@ const OnboardingTour: React.FC = () => {
   const handleNext = () => {
     if (isLastStep) {
       completeOnboarding();
-      navigate('/profile');
+      navigate(currentStep.route || '/profile');
       return;
     }
 

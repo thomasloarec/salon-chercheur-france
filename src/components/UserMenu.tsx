@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, LogOut, CalendarRange, Bell } from 'lucide-react';
+import { User, LogOut, CalendarRange, Bell, Radar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -73,6 +73,12 @@ const UserMenu = () => {
           <Link to="/agenda" className="cursor-pointer">
             <CalendarRange className="mr-2 h-4 w-4" />
             Mon agenda
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/radar-crm/results" className="cursor-pointer">
+            <Radar className="mr-2 h-4 w-4" />
+            Radar CRM
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

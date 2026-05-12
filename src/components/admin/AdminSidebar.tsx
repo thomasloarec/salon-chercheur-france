@@ -27,6 +27,7 @@ import {
   TestTube,
   Wrench,
   Mail,
+  Radar,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -61,6 +62,7 @@ const navSections = [
     items: [
       { title: 'Audit SEO', url: '/admin/seo-audit', icon: BarChart3 },
       { title: 'IA Visite', url: '/admin/ia-visite', icon: Sparkles },
+      { title: 'Radar CRM', url: '/admin/radar-crm', icon: Radar },
     ],
   },
   {
