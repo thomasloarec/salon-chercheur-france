@@ -178,7 +178,10 @@ export const useLikedNovelties = () => {
               slug,
               ville,
               date_debut,
-              date_fin
+              date_fin,
+              url_image,
+              nom_lieu,
+              secteur
             )
           )
         `)
