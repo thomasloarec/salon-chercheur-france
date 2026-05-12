@@ -234,8 +234,6 @@ const RadarCrmResults: React.FC = () => {
     [matches, viewMap],
   );
 
-  const nextEvent = futureGroups[0];
-
   const onClickEvent = (g: EventGroup) => {
     void trackRadarEvent('crm_event_detail_clicked', { eventId: g.event_id });
     if (g.slug) navigate(`/events/${g.slug}`);
