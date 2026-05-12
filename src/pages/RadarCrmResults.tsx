@@ -543,9 +543,8 @@ const CompanyChip: React.FC<{
 const EventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
-  onCalendar: () => void;
   onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
-}> = ({ group, onView, onCalendar, onCompanyClick }) => {
+}> = ({ group, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -613,9 +612,7 @@ const EventCard: React.FC<{
             <Button size="sm" onClick={onView} disabled={!group.slug}>
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
-            <Button size="sm" variant="outline" onClick={onCalendar}>
-              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agenda Lotexpo
-            </Button>
+            <AgendaLotexpoButton eventId={group.event_id} />
           </div>
         </div>
       </div>
