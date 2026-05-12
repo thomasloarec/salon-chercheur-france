@@ -26,6 +26,7 @@ import {
 import LeadForm from './LeadForm';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import NoveltyDetailDialog from './NoveltyDetailDialog';
+import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 import type { Novelty } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
 
@@ -84,6 +85,7 @@ export default function NoveltyEventCard({
     useState<'brochure_download' | 'meeting_request'>('brochure_download');
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showExhibitorDialog, setShowExhibitorDialog] = useState(false);
 
   const exhibitor = novelty.exhibitors ?? {
     id: novelty.exhibitor_id,
@@ -260,21 +262,46 @@ export default function NoveltyEventCard({
             {/* Ligne exposant + stand + signal document */}
             <div className="flex items-center gap-2 min-w-0 flex-wrap">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                {logo ? (
-                  <div className="w-6 h-6 rounded bg-white border flex items-center justify-center shrink-0">
-                    <img
-                      src={logo}
-                      alt={exhibitor.name}
-                      className="max-w-full max-h-full object-contain"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : (
-                  <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                )}
-                <span className="text-sm font-medium truncate">
-                  {exhibitor.name}
-                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (event) setShowExhibitorDialog(true);
+                  }}
+                  disabled={!event}
+                  className={cn(
+                    'flex items-center gap-2 min-w-0 rounded px-1 -mx-1 py-0.5 transition-colors',
+                    event
+                      ? 'hover:bg-muted cursor-pointer'
+                      : 'cursor-default',
+                  )}
+                  aria-label={
+                    event
+                      ? `Voir la fiche de ${exhibitor.name}`
+                      : exhibitor.name
+                  }
+                >
+                  {logo ? (
+                    <div className="w-6 h-6 rounded bg-white border flex items-center justify-center shrink-0">
+                      <img
+                        src={logo}
+                        alt={exhibitor.name}
+                        className="max-w-full max-h-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                  )}
+                  <span
+                    className={cn(
+                      'text-sm font-medium truncate',
+                      event && 'text-primary hover:underline',
+                    )}
+                  >
+                    {exhibitor.name}
+                  </span>
+                </button>
                 {standInfo && (
                   <span className="text-xs text-primary font-medium shrink-0">
                     · Stand {standInfo}
@@ -367,6 +394,24 @@ export default function NoveltyEventCard({
           novelty.doc_url ? handleBrochureDownload : undefined
         }
       />
+
+      {event && (
+        <ExhibitorDetailDialog
+          open={showExhibitorDialog}
+          onOpenChange={setShowExhibitorDialog}
+          event={event}
+          exhibitor={{
+            id_exposant: novelty.exhibitor_id,
+            exhibitor_uuid: novelty.exhibitor_id,
+            exhibitor_name: exhibitor.name,
+            name_final: exhibitor.name,
+            logo_url: (exhibitor as any).logo_url,
+            website_exposant: (exhibitor as any).website,
+            website_final: (exhibitor as any).website,
+            stand_exposant: standInfo || undefined,
+          }}
+        />
+      )}
     </>
   );
 }
