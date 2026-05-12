@@ -18,12 +18,15 @@ import {
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
   CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
+  CalendarCheck,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
-import { downloadIcs } from '@/lib/radarCrm/icsExport';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
+import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
+import AuthRequiredModal from '@/components/AuthRequiredModal';
+import { cn } from '@/lib/utils';
 
 type Import = {
   id: string;
@@ -240,21 +243,6 @@ const RadarCrmResults: React.FC = () => {
     else toast({ title: 'Page événement indisponible', description: 'Le slug est manquant.' });
   };
 
-  const onCalendar = (g: EventGroup) => {
-    if (!g.date_debut) return;
-    void trackRadarEvent('crm_calendar_clicked', { eventId: g.event_id });
-    const stands = g.companies.map((c) => c.stand).filter(Boolean).join(', ');
-    const desc = `Entreprises de votre CRM détectées : ${g.companies.map((c) => c.company.company_name).join(', ')}.${stands ? ` Stands : ${stands}.` : ''}`;
-    downloadIcs({
-      uid: g.event_id,
-      title: g.nom_event,
-      start: g.date_debut,
-      end: g.date_fin ?? g.date_debut,
-      location: [g.nom_lieu, g.ville].filter(Boolean).join(', '),
-      description: desc,
-    });
-  };
-
   const onOpenExhibitor = (
     company: Company,
     id_exposant: string,
@@ -367,7 +355,6 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
-                          onCalendar={() => onCalendar(g)}
                           onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
                         />
                       ))}
@@ -553,12 +540,56 @@ const CompanyChip: React.FC<{
 );
 
 /** Compact horizontal event card — image left, info center, actions right */
+const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
+  const { user } = useAuth();
+  const { data: isFavorite = false } = useIsFavorite(eventId);
+  const toggleFavorite = useToggleFavorite();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    try {
+      void trackRadarEvent('crm_calendar_clicked', { eventId });
+      await toggleFavorite.mutateAsync(eventId);
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleClick}
+        disabled={toggleFavorite.isPending}
+        className={cn(
+          'transition-all duration-200',
+          isFavorite && 'bg-green-500 text-white hover:bg-green-600 border-green-500',
+        )}
+      >
+        {isFavorite ? (
+          <CalendarCheck className="h-3.5 w-3.5 mr-1" />
+        ) : (
+          <CalendarPlus className="h-3.5 w-3.5 mr-1" />
+        )}
+        Agenda Lotexpo
+      </Button>
+      <AuthRequiredModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+    </>
+  );
+};
+
 const EventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
-  onCalendar: () => void;
   onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
-}> = ({ group, onView, onCalendar, onCompanyClick }) => {
+}> = ({ group, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -626,9 +657,7 @@ const EventCard: React.FC<{
             <Button size="sm" onClick={onView} disabled={!group.slug}>
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
-            <Button size="sm" variant="outline" onClick={onCalendar}>
-              <CalendarPlus className="h-3.5 w-3.5 mr-1" /> Agenda Lotexpo
-            </Button>
+            <AgendaLotexpoButton eventId={group.event_id} />
           </div>
         </div>
       </div>
