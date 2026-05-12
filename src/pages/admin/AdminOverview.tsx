@@ -314,12 +314,12 @@ const AdminOverview = () => {
           </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MetricCard title="Imports réalisés" value={fmt(radarStats?.total_imports)} subtitle={`${fmt(radarStats?.failed_imports)} échoués`} />
-          <MetricCard title="Utilisateurs Radar" value={fmt(radarStats?.distinct_users)} subtitle="ayant lancé un import" />
-          <MetricCard title="Entreprises analysées" value={fmt(radarStats?.total_companies)} subtitle={`Moy. ${fmt(radarStats?.avg_companies_per_import)} / import`} />
-          <MetricCard title="Matches générés" value={fmt(radarStats?.total_matches)} subtitle={`${fmt(radarStats?.future_matches)} à venir · ${fmt(radarStats?.past_matches)} passés`} />
-          <MetricCard title="Taux moyen de matching" value={radarStats?.avg_match_rate != null ? `${Math.round(Number(radarStats.avg_match_rate))} %` : '–'} subtitle="entreprises matchées / total" />
-          <MetricCard title="Imports échoués" value={fmt(radarStats?.failed_imports)} subtitle="status = failed" />
+          <MetricCard title="Imports réalisés" value={fmt(radarStats?.totalImports)} subtitle={`${fmt(radarStats?.failedImports)} échoués`} />
+          <MetricCard title="Utilisateurs Radar" value={fmt(radarStats?.distinctUsers)} subtitle="ayant lancé un import" />
+          <MetricCard title="Entreprises analysées" value={fmt(radarStats?.totalCompanies)} subtitle={`Moy. ${fmt(radarStats?.avgCompaniesPerImport)} / import`} />
+          <MetricCard title="Matches générés" value={fmt(radarStats?.totalMatches)} subtitle={`${fmt(radarStats?.futureMatches)} à venir · ${fmt(radarStats?.pastMatches)} passés`} />
+          <MetricCard title="Taux moyen de matching" value={radarStats?.avgMatchRate != null ? `${Number(radarStats.avgMatchRate)} %` : '–'} subtitle="entreprises matchées / total" />
+          <MetricCard title="Imports échoués" value={fmt(radarStats?.failedImports)} subtitle="status = failed" />
         </div>
       </section>
     </div>
