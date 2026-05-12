@@ -2,7 +2,9 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Minus, Globe, Eye, Users, MousePointerClick, ExternalLink, FileText } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Globe, Eye, Users, MousePointerClick, ExternalLink, FileText, Radar, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const fmt = (v: number | null | undefined) => (v != null ? v.toLocaleString('fr-FR') : '–');
 
@@ -162,6 +164,16 @@ const AdminOverview = () => {
   const noveltiesDelta = novelties7d ? novelties7d.current - novelties7d.previous : null;
   const outreachEmpty = !outreachData || outreachData.empty;
 
+  // ── Radar CRM admin stats ──
+  const { data: radarStats } = useQuery({
+    queryKey: ['overview-radar-crm-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_radar_crm_admin_stats' as any);
+      if (error) return null;
+      return data as any;
+    },
+  });
+
   return (
     <div className="space-y-8">
       <div>
@@ -286,6 +298,28 @@ const AdminOverview = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MetricCard title="Entreprises contactées ce mois" value={outreachEmpty ? '–' : fmt(outreachData?.contacted)} subtitle="campaign_status ≠ not_started" />
           <MetricCard title="Taux de conversion → Nouveauté" value={outreachEmpty ? '–' : `${outreachData?.rate ?? 0} %`} subtitle="converted / contactées" />
+        </div>
+      </section>
+
+      {/* Bloc 5 — Radar CRM */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Radar className="h-5 w-5" /> Radar CRM
+          </h2>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/admin/radar-crm">
+              Voir les détails <ArrowRight className="ml-1 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MetricCard title="Imports réalisés" value={fmt(radarStats?.total_imports)} subtitle={`${fmt(radarStats?.failed_imports)} échoués`} />
+          <MetricCard title="Utilisateurs Radar" value={fmt(radarStats?.distinct_users)} subtitle="ayant lancé un import" />
+          <MetricCard title="Entreprises analysées" value={fmt(radarStats?.total_companies)} subtitle={`Moy. ${fmt(radarStats?.avg_companies_per_import)} / import`} />
+          <MetricCard title="Matches générés" value={fmt(radarStats?.total_matches)} subtitle={`${fmt(radarStats?.future_matches)} à venir · ${fmt(radarStats?.past_matches)} passés`} />
+          <MetricCard title="Taux moyen de matching" value={radarStats?.avg_match_rate != null ? `${Math.round(Number(radarStats.avg_match_rate))} %` : '–'} subtitle="entreprises matchées / total" />
+          <MetricCard title="Imports échoués" value={fmt(radarStats?.failed_imports)} subtitle="status = failed" />
         </div>
       </section>
     </div>
