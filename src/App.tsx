@@ -35,6 +35,9 @@ import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
 import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
 import AdminSeoAudit from '@/pages/AdminSeoAudit';
 import AdminIaVisite from '@/pages/AdminIaVisite';
+import AdminRadarCrm from '@/pages/admin/AdminRadarCrm';
+import RadarCrm from '@/pages/RadarCrm';
+import RadarCrmResults from '@/pages/RadarCrmResults';
 import CrmIntegrations from '@/pages/CrmIntegrations';
 import { OAuthCallback } from '@/pages/OAuthCallback';
 import OAuthHubspotTest from '@/pages/OAuthHubspotTest';
@@ -99,6 +102,8 @@ function App() {
             <Route path="/exposants" element={<Exposants />} />
             <Route path="/premium" element={<Exposants />} />
             <Route path="/publier-nouveaute" element={<PublierNouveaute />} />
+            <Route path="/radar-crm" element={<RadarCrm />} />
+            <Route path="/radar-crm/results" element={<RadarCrmResults />} />
 
             {/* Admin routes with sidebar layout */}
             <Route path="/admin" element={<AdminLayout />}>
@@ -118,6 +123,7 @@ function App() {
               <Route path="import-diagnostics" element={<AdminImportDiagnostics />} />
               <Route path="seo-audit" element={<AdminSeoAudit />} />
               <Route path="ia-visite" element={<AdminIaVisite />} />
+              <Route path="radar-crm" element={<AdminRadarCrm />} />
               <Route path="system/ai" element={<AdminSystemAiPage />} />
               <Route path="system/test" element={<AdminSystemTestPage />} />
               <Route path="system/tools" element={<AdminSystemToolsPage />} />
