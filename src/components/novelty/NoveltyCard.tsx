@@ -218,10 +218,10 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
       {/* Description */}
       {description && (
         <div className="text-sm text-muted-foreground leading-relaxed">
-          <p className={cn(!isDescriptionExpanded && "line-clamp-2")}>
+          <p className={cn(!isDescriptionExpanded && "line-clamp-5")}>
             {description}
           </p>
-          {description.length > 150 && (
+          {description.length > 280 && (
             <button
               onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
               className="text-primary hover:underline text-sm mt-1 font-medium"
