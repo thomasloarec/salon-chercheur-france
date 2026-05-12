@@ -17,11 +17,11 @@ export type RadarEventType =
 export async function trackRadarEvent(event_type: RadarEventType, metadata: Record<string, unknown> = {}) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('crm_usage_events').insert({
+    await supabase.from('crm_usage_events').insert([{
       event_type,
       user_id: user?.id ?? null,
-      metadata,
-    });
+      metadata: metadata as never,
+    }]);
   } catch (e) {
     // Tracking must never break the UI
     console.warn('[radar tracking] failed', event_type, e);
