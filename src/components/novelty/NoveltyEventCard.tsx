@@ -238,12 +238,12 @@ export default function NoveltyEventCard({
                 <p
                   className={cn(
                     'whitespace-pre-line',
-                    !isDescriptionExpanded && 'line-clamp-2',
+                    !isDescriptionExpanded && 'line-clamp-5',
                   )}
                 >
                   {description}
                 </p>
-                {description.length > 140 && (
+                {description.length > 280 && (
                   <button
                     type="button"
                     onClick={() => setIsDescriptionExpanded((v) => !v)}
