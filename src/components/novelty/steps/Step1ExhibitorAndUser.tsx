@@ -105,7 +105,12 @@ export default function Step1ExhibitorAndUser({
             website: selectedExhibitor.website || '',
             approved: selectedExhibitor.approved,
             logo: selectedExhibitorLogo || newExhibitorData.logo, // ✅ Prioriser selectedExhibitorLogo
-            stand_info: selectedExhibitorStandInfo || selectedExhibitor.stand_info || '' // ✅ Inclure le stand modifié
+            stand_info: selectedExhibitorStandInfo || selectedExhibitor.stand_info || '', // ✅ Inclure le stand modifié
+            // ✅ DEDUP : si l'id sélectionné est un id legacy (non UUID), on le transmet
+            // pour que le backend puisse migrer la fiche legacy au lieu d'en créer une copie.
+            legacy_id_exposant: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedExhibitor.id)
+              ? null
+              : selectedExhibitor.id,
           }
         : { 
             name: newExhibitorData.name, 
