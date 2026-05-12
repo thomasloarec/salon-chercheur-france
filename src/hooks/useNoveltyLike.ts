@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-export const useNoveltyLike = (noveltyId: string) => {
+export const useNoveltyLike = (noveltyId: string, eventId?: string) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -58,6 +58,31 @@ export const useNoveltyLike = (noveltyId: string) => {
           });
 
         if (error) throw error;
+
+        // Auto-ajout du salon en favori : si l'utilisateur s'intéresse à
+        // une nouveauté, le salon associé doit apparaître dans son agenda.
+        if (eventId) {
+          try {
+            const { data: existingFav } = await supabase
+              .from('favorites')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('event_uuid', eventId)
+              .maybeSingle();
+            if (!existingFav) {
+              await supabase
+                .from('favorites')
+                .insert({
+                  user_id: user.id,
+                  event_uuid: eventId,
+                  event_id: eventId,
+                } as any);
+            }
+          } catch (favErr) {
+            console.warn('Auto-favorite event failed:', favErr);
+          }
+        }
+
         return { action: 'liked' as const };
       }
     },
@@ -67,6 +92,8 @@ export const useNoveltyLike = (noveltyId: string) => {
       queryClient.invalidateQueries({ queryKey: ['novelty-likes-count', noveltyId] });
       queryClient.invalidateQueries({ queryKey: ['novelties'] }); // Rafraîchir la liste des nouveautés
       queryClient.invalidateQueries({ queryKey: ['liked-novelties', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['favorite-events', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] });
 
       // Toast
       toast({
