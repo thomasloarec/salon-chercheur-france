@@ -221,6 +221,148 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_companies: {
+        Row: {
+          company_name: string
+          created_at: string | null
+          crm_status: string | null
+          id: string
+          import_id: string | null
+          is_monitored: boolean | null
+          normalized_domain: string | null
+          notes: string | null
+          owner_email: string | null
+          owner_name: string | null
+          updated_at: string | null
+          user_id: string
+          website_raw: string | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string | null
+          crm_status?: string | null
+          id?: string
+          import_id?: string | null
+          is_monitored?: boolean | null
+          normalized_domain?: string | null
+          notes?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          updated_at?: string | null
+          user_id: string
+          website_raw?: string | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string | null
+          crm_status?: string | null
+          id?: string
+          import_id?: string | null
+          is_monitored?: boolean | null
+          normalized_domain?: string | null
+          notes?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+          website_raw?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_companies_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "crm_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_company_event_matches: {
+        Row: {
+          created_at: string | null
+          crm_company_id: string
+          event_id: string
+          id: string
+          id_exposant: string
+          match_status: string
+          match_type: string
+          normalized_domain: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          crm_company_id: string
+          event_id: string
+          id?: string
+          id_exposant: string
+          match_status?: string
+          match_type?: string
+          normalized_domain: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          crm_company_id?: string
+          event_id?: string
+          id?: string
+          id_exposant?: string
+          match_status?: string
+          match_type?: string
+          normalized_domain?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_company_event_matches_crm_company_id_fkey"
+            columns: ["crm_company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_company_event_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "crm_company_event_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_company_event_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_company_event_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_company_event_matches_id_exposant_fkey"
+            columns: ["id_exposant"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["id_exposant"]
+          },
+          {
+            foreignKeyName: "crm_company_event_matches_id_exposant_fkey"
+            columns: ["id_exposant"]
+            isOneToOne: false
+            referencedRelation: "exposants"
+            referencedColumns: ["id_exposant"]
+          },
+        ]
+      }
       crm_connections: {
         Row: {
           access_token_enc: string
@@ -272,6 +414,134 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      crm_event_alerts: {
+        Row: {
+          alert_status: string
+          alert_type: string
+          created_at: string | null
+          crm_company_id: string
+          event_id: string
+          id: string
+          id_exposant: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_status?: string
+          alert_type?: string
+          created_at?: string | null
+          crm_company_id: string
+          event_id: string
+          id?: string
+          id_exposant: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_status?: string
+          alert_type?: string
+          created_at?: string | null
+          crm_company_id?: string
+          event_id?: string
+          id?: string
+          id_exposant?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_event_alerts_crm_company_id_fkey"
+            columns: ["crm_company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_id_exposant_fkey"
+            columns: ["id_exposant"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["id_exposant"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_id_exposant_fkey"
+            columns: ["id_exposant"]
+            isOneToOne: false
+            referencedRelation: "exposants"
+            referencedColumns: ["id_exposant"]
+          },
+        ]
+      }
+      crm_imports: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          file_name: string | null
+          id: string
+          matched_companies_count: number | null
+          source_type: string
+          status: string
+          total_rows: number | null
+          unmatched_companies_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          file_name?: string | null
+          id?: string
+          matched_companies_count?: number | null
+          source_type?: string
+          status?: string
+          total_rows?: number | null
+          unmatched_companies_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          file_name?: string | null
+          id?: string
+          matched_companies_count?: number | null
+          source_type?: string
+          status?: string
+          total_rows?: number | null
+          unmatched_companies_count?: number | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -429,6 +699,13 @@ export type Database = {
           sector_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "event_sectors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id_text"]
+          },
           {
             foreignKeyName: "event_sectors_event_id_fkey"
             columns: ["event_id"]
@@ -1259,6 +1536,7 @@ export type Database = {
           id_exposant: string | null
           nom_exposant: string | null
           nom_normalized: string | null
+          normalized_domain: string | null
           website_exposant: string | null
         }
         Insert: {
@@ -1268,6 +1546,7 @@ export type Database = {
           id_exposant?: string | null
           nom_exposant?: string | null
           nom_normalized?: string | null
+          normalized_domain?: string | null
           website_exposant?: string | null
         }
         Update: {
@@ -1277,6 +1556,7 @@ export type Database = {
           id_exposant?: string | null
           nom_exposant?: string | null
           nom_normalized?: string | null
+          normalized_domain?: string | null
           website_exposant?: string | null
         }
         Relationships: []
@@ -1335,6 +1615,13 @@ export type Database = {
             foreignKeyName: "favorites_event_fkey"
             columns: ["event_uuid"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "favorites_event_fkey"
+            columns: ["event_uuid"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -1351,6 +1638,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "favorites_event_id_fkey"
@@ -1546,6 +1840,13 @@ export type Database = {
             foreignKeyName: "leads_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -1721,6 +2022,13 @@ export type Database = {
             foreignKeyName: "notifications_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -1851,6 +2159,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
           {
             foreignKeyName: "novelties_event_id_fkey"
             columns: ["event_id"]
@@ -2146,6 +2461,13 @@ export type Database = {
             foreignKeyName: "outreach_campaigns_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -2345,6 +2667,13 @@ export type Database = {
             foreignKeyName: "fk_participation_event"
             columns: ["id_event"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -2486,6 +2815,13 @@ export type Database = {
           revoked_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "premium_entitlements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
           {
             foreignKeyName: "premium_entitlements_event_id_fkey"
             columns: ["event_id"]
@@ -3124,6 +3460,13 @@ export type Database = {
             foreignKeyName: "user_routes_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "user_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -3184,6 +3527,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "visit_plans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
           {
             foreignKeyName: "visit_plans_event_id_fkey"
             columns: ["event_id"]
@@ -3273,6 +3623,13 @@ export type Database = {
             foreignKeyName: "wizard_sessions_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "wizard_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -3294,6 +3651,31 @@ export type Database = {
       }
     }
     Views: {
+      crm_radar_participations_view: {
+        Row: {
+          date_debut: string | null
+          date_fin: string | null
+          days_until_event: number | null
+          event_id: string | null
+          event_id_text: string | null
+          id_exposant: string | null
+          is_future_event: boolean | null
+          nom_event: string | null
+          nom_exposant: string | null
+          nom_lieu: string | null
+          normalized_domain: string | null
+          participation_row_count: number | null
+          representative_participation_id: string | null
+          stand_count: number | null
+          stand_exposants_list: string | null
+          type_event: string | null
+          urlexpo_event: string | null
+          ville: string | null
+          visible: boolean | null
+          website_exposant: string | null
+        }
+        Relationships: []
+      }
       events_geo: {
         Row: {
           affluence: string | null
@@ -3443,6 +3825,13 @@ export type Database = {
             foreignKeyName: "fk_participation_event"
             columns: ["id_event"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -3477,6 +3866,13 @@ export type Database = {
           website: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
           {
             foreignKeyName: "outreach_campaigns_event_id_fkey"
             columns: ["event_id"]
@@ -3569,6 +3965,13 @@ export type Database = {
             foreignKeyName: "outreach_campaigns_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -3598,6 +4001,13 @@ export type Database = {
           website: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
           {
             foreignKeyName: "fk_participation_event"
             columns: ["id_event"]
