@@ -53,7 +53,10 @@ interface NoveltyTileProps {
 export default function NoveltyTile({ novelty, className }: NoveltyTileProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { isLiked, toggleLike, isPending } = useNoveltyLike(novelty.id);
+  const { isLiked, toggleLike, isPending } = useNoveltyLike(
+    novelty.id,
+    novelty.events?.id,
+  );
   const { data: likesCount, isLoading: likesLoading } = useNoveltyLikesCount(novelty.id);
 
   // Sécurité : vérifier que exhibitors existe
