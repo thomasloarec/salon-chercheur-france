@@ -540,6 +540,51 @@ const CompanyChip: React.FC<{
 );
 
 /** Compact horizontal event card — image left, info center, actions right */
+const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
+  const { user } = useAuth();
+  const { data: isFavorite = false } = useIsFavorite(eventId);
+  const toggleFavorite = useToggleFavorite();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    try {
+      void trackRadarEvent('crm_calendar_clicked', { eventId });
+      await toggleFavorite.mutateAsync(eventId);
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleClick}
+        disabled={toggleFavorite.isPending}
+        className={cn(
+          'transition-all duration-200',
+          isFavorite && 'bg-green-500 text-white hover:bg-green-600 border-green-500',
+        )}
+      >
+        {isFavorite ? (
+          <CalendarCheck className="h-3.5 w-3.5 mr-1" />
+        ) : (
+          <CalendarPlus className="h-3.5 w-3.5 mr-1" />
+        )}
+        Agenda Lotexpo
+      </Button>
+      <AuthRequiredModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+    </>
+  );
+};
+
 const EventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
