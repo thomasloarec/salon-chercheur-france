@@ -75,12 +75,14 @@ Deno.serve(async (req) => {
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  // System tracking: started
-  await supabase.from('crm_usage_events').insert({
-    event_type: 'radar_rematch_cron_started',
-    user_id: null,
-    metadata: { source: 'radar_crm_system', dryRun, maxImports, filterUserId, filterImportId } as never,
-  })
+  // System tracking: started (skipped in dryRun to keep it strictly read-only)
+  if (!dryRun) {
+    await supabase.from('crm_usage_events').insert({
+      event_type: 'radar_rematch_cron_started',
+      user_id: null,
+      metadata: { source: 'radar_crm_system', dryRun, maxImports, filterUserId, filterImportId } as never,
+    })
+  }
 
   // 1. Fetch imports to process
   let importsQuery = supabase
@@ -96,6 +98,94 @@ Deno.serve(async (req) => {
   if (importsErr) {
     console.error('Failed to load imports:', importsErr)
     return jsonResp({ success: false, error: importsErr.message }, 500)
+  }
+
+  // ---------------------------------------------------------------
+  // DRY RUN — strictly read-only estimation. No call to crm_run_matching.
+  // No writes to crm_company_event_matches, notifications, or usage events.
+  // ---------------------------------------------------------------
+  if (dryRun) {
+    let estimatedNewMatches = 0
+    let estimatedFutureNewMatches = 0
+    const estimatedNotificationGroups = new Set<string>()
+    const dryErrors: Array<{ importId: string; userId: string; message: string }> = []
+    let importsProcessedDry = 0
+
+    for (const imp of imports ?? []) {
+      importsProcessedDry++
+      try {
+        // 1. companies of this import with a normalized domain
+        const { data: companies, error: cErr } = await supabase
+          .from('crm_companies')
+          .select('id, normalized_domain')
+          .eq('import_id', imp.id)
+          .not('normalized_domain', 'is', null)
+        if (cErr) throw new Error(`crm_companies: ${cErr.message}`)
+        const domains = Array.from(
+          new Set((companies ?? []).map((c: any) => c.normalized_domain).filter(Boolean)),
+        )
+        if (domains.length === 0) continue
+        const companiesByDomain = new Map<string, string[]>()
+        for (const c of companies ?? []) {
+          const d = (c as any).normalized_domain as string
+          const arr = companiesByDomain.get(d) ?? []
+          arr.push((c as any).id)
+          companiesByDomain.set(d, arr)
+        }
+
+        // 2. existing matches for this import → exclusion set
+        const { data: existing, error: eErr } = await supabase
+          .from('crm_company_event_matches')
+          .select('crm_company_id, event_id, id_exposant')
+          .eq('user_id', imp.user_id)
+        if (eErr) throw new Error(`existing matches: ${eErr.message}`)
+        const existingSet = new Set<string>(
+          (existing ?? []).map((m: any) => `${m.crm_company_id}|${m.event_id}|${m.id_exposant}`),
+        )
+
+        // 3. candidate participations from the view
+        const { data: parts, error: pErr } = await supabase
+          .from('crm_radar_participations_view')
+          .select('event_id, id_exposant, normalized_domain, is_future_event')
+          .in('normalized_domain', domains)
+        if (pErr) throw new Error(`participations view: ${pErr.message}`)
+
+        for (const p of parts ?? []) {
+          const domain = (p as any).normalized_domain as string
+          const eventId = (p as any).event_id as string
+          const idExposant = (p as any).id_exposant as string
+          const isFuture = (p as any).is_future_event === true
+          const companyIds = companiesByDomain.get(domain) ?? []
+          for (const companyId of companyIds) {
+            const key = `${companyId}|${eventId}|${idExposant}`
+            if (existingSet.has(key)) continue
+            estimatedNewMatches++
+            if (isFuture) {
+              estimatedFutureNewMatches++
+              estimatedNotificationGroups.add(`${imp.user_id}|${imp.id}|${eventId}`)
+            }
+          }
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e)
+        console.error('Dry-run estimation failed', { importId: imp.id, userId: imp.user_id, message })
+        dryErrors.push({ importId: imp.id, userId: imp.user_id, message })
+      }
+    }
+
+    const dryResp = {
+      success: true,
+      dryRun: true,
+      importsProcessed: importsProcessedDry,
+      estimatedNewMatches,
+      estimatedFutureNewMatches,
+      estimatedNotifications: estimatedNotificationGroups.size,
+      notificationsCreated: 0,
+      notificationsUpdated: 0,
+      errors: dryErrors,
+    }
+    console.log('radar-crm-rematch-cron dry-run summary', dryResp)
+    return jsonResp(dryResp)
   }
 
   const errors: Array<{ importId: string; userId: string; message: string }> = []
