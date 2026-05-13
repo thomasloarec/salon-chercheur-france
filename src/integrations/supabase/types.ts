@@ -545,6 +545,39 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          max_emails_per_week: number
+          preferred_alert_timing_days: number
+          radar_alerts_enabled: boolean
+          trial_teasers_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_emails_per_week?: number
+          preferred_alert_timing_days?: number
+          radar_alerts_enabled?: boolean
+          trial_teasers_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_emails_per_week?: number
+          preferred_alert_timing_days?: number
+          radar_alerts_enabled?: boolean
+          trial_teasers_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       crm_usage_events: {
         Row: {
           created_at: string
@@ -3439,6 +3472,59 @@ export type Database = {
         }
         Relationships: []
       }
+      user_radar_access: {
+        Row: {
+          access_status: string
+          created_at: string
+          first_qualified_import_at: string | null
+          first_qualified_import_id: string | null
+          id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscribed_at: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_status?: string
+          created_at?: string
+          first_qualified_import_at?: string | null
+          first_qualified_import_id?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscribed_at?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_status?: string
+          created_at?: string
+          first_qualified_import_at?: string | null
+          first_qualified_import_id?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscribed_at?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_radar_access_first_qualified_import_id_fkey"
+            columns: ["first_qualified_import_id"]
+            isOneToOne: false
+            referencedRelation: "crm_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -4096,7 +4182,31 @@ export type Database = {
         Args: { p_import_id: string; p_user_id: string }
         Returns: Json
       }
+      delete_my_radar_crm_data: { Args: never; Returns: Json }
       delete_user_account: { Args: never; Returns: Json }
+      ensure_user_radar_access: {
+        Args: { _user_id: string }
+        Returns: {
+          access_status: string
+          created_at: string
+          first_qualified_import_at: string | null
+          first_qualified_import_id: string | null
+          id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscribed_at: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_radar_access"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       export_user_data: { Args: never; Returns: Json }
       extract_event_years: { Args: { p_text: string }; Returns: number[] }
       generate_event_slug: {
@@ -4121,6 +4231,48 @@ export type Database = {
       get_novelty_likes_count: {
         Args: { novelty_uuid: string }
         Returns: number
+      }
+      get_or_create_my_crm_notification_preferences: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          max_emails_per_week: number
+          preferred_alert_timing_days: number
+          radar_alerts_enabled: boolean
+          trial_teasers_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_notification_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_or_create_my_radar_access: {
+        Args: never
+        Returns: {
+          access_status: string
+          created_at: string
+          first_qualified_import_at: string | null
+          first_qualified_import_id: string | null
+          id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscribed_at: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_radar_access"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
