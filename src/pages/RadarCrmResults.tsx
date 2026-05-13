@@ -355,6 +355,7 @@ const RadarCrmResults: React.FC = () => {
                         <EventCard
                           key={g.event_id}
                           group={g}
+                          importId={activeImportId}
                           onView={() => onClickEvent(g)}
                           onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
                         />
@@ -545,7 +546,7 @@ const CompanyChip: React.FC<{
 );
 
 /** Compact horizontal event card — image left, info center, actions right */
-const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
+const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null }> = ({ eventId, importId }) => {
   const { user } = useAuth();
   const { data: isFavorite = false } = useIsFavorite(eventId);
   const toggleFavorite = useToggleFavorite();
@@ -559,8 +560,12 @@ const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
       return;
     }
     try {
-      void trackRadarEvent('crm_calendar_clicked', { eventId });
-      void trackRadarEvent('crm_favorite_clicked', { eventId, source: 'radar_crm' });
+      void trackRadarEvent('crm_favorite_clicked', {
+        source: 'radar_crm',
+        favoriteType: 'event_agenda',
+        eventId,
+        importId: importId ?? null,
+      });
       await toggleFavorite.mutateAsync(eventId);
     } catch (err) {
       console.error('Error toggling favorite:', err);
@@ -584,7 +589,7 @@ const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
         ) : (
           <CalendarPlus className="h-3.5 w-3.5 mr-1" />
         )}
-        Agenda Lotexpo
+        {isFavorite ? 'Dans mon agenda' : 'Ajouter à mon agenda'}
       </Button>
       <AuthRequiredModal open={showAuthModal} onOpenChange={setShowAuthModal} />
     </>
@@ -593,9 +598,10 @@ const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
 
 const EventCard: React.FC<{
   group: EventGroup;
+  importId?: string | null;
   onView: () => void;
   onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
-}> = ({ group, onView, onCompanyClick }) => {
+}> = ({ group, importId, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -663,7 +669,7 @@ const EventCard: React.FC<{
             <Button size="sm" onClick={onView} disabled={!group.slug}>
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
-            <AgendaLotexpoButton eventId={group.event_id} />
+            <AgendaLotexpoButton eventId={group.event_id} importId={importId} />
           </div>
         </div>
       </div>
