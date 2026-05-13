@@ -4,7 +4,6 @@ import { Plus, Lock } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import {
   Tooltip,
   TooltipContent,
@@ -12,8 +11,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import AddNoveltyStepper from './AddNoveltyStepper';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import type { Event } from '@/types/event';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 
@@ -34,10 +31,7 @@ export default function AddNoveltyButton({
 }: AddNoveltyButtonProps) {
   const defaultLabel = 'Exposant ? Ajouter votre nouveauté';
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Vérifier si on est en période de pré-lancement (plus de 60 jours avant l'événement)
@@ -46,73 +40,16 @@ export default function AddNoveltyButton({
   const noveltiesOpenDate = new Date(event.date_debut);
   noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 60);
 
-  const handleClick = async () => {
+  const handleClick = () => {
     // Not logged in - show auth modal
     if (!user) {
       setShowAuthModal(true);
       return;
     }
-
-    setIsChecking(true);
-
-    try {
-      // Check if user is admin via server-side RPC
-      const { data: isAdmin } = await supabase.rpc('is_admin');
-
-      if (isAdmin) {
-        // Admin can do everything
-        setIsModalOpen(true);
-        return;
-      }
-
-      // Check if user owns any exhibitor participating in this event
-      const { data: userExhibitors } = await supabase
-        .from('exhibitors')
-        .select(`
-          id,
-          name,
-          participation!inner(id)
-        `)
-        .eq('owner_user_id', user.id)
-        .eq('participation.id_event', event.id);
-
-      if (!userExhibitors || userExhibitors.length === 0) {
-        // User doesn't own any participating exhibitor
-        toast({
-          title: 'Co-administration requise',
-          description: 'Vous devez être co-administrateur d\'un exposant participant à cet événement.',
-          action: (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // TODO: Open claim modal or redirect to exhibitor claim flow
-                toast({
-                  title: 'Fonctionnalité à venir',
-                  description: 'La demande de co-administration sera bientôt disponible.',
-                });
-              }}
-            >
-              Demander la co-administration
-            </Button>
-          ),
-        });
-        return;
-      }
-
-      // User has exhibitor(s) - open modal
-      setIsModalOpen(true);
-
-    } catch (error) {
-      console.error('Error checking user permissions:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de vérifier vos permissions.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsChecking(false);
-    }
+    // Logged in (admin or not) - open the Stepper directly.
+    // Permission enforcement is delegated to the server (exhibitors-manage,
+    // novelties-create, RLS). The button only opens the flow.
+    setIsModalOpen(true);
   };
 
   // Si période de pré-lancement, afficher bouton désactivé avec tooltip explicatif
@@ -150,13 +87,12 @@ export default function AddNoveltyButton({
     <>
       <Button
         onClick={handleClick}
-        disabled={isChecking}
         variant={variant}
         size={size}
         className={className}
       >
         <Plus className="h-4 w-4 mr-2" />
-        {isChecking ? 'Vérification...' : (label || defaultLabel)}
+        {label || defaultLabel}
       </Button>
 
       <AddNoveltyStepper
