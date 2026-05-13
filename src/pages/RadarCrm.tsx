@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
+import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
 import RadarPreviewTable from '@/components/radar-crm/RadarPreviewTable';
 import {
   autoDetectMapping, RADAR_FIELD_LABELS, RADAR_FIELD_REQUIRED, RadarField,
@@ -32,6 +33,8 @@ interface ParsedFile {
   fileName: string;
   headers: string[];
   rows: Array<Record<string, unknown>>;
+  sourceType: CrmSourceType;
+  sheetName?: string;
 }
 
 const NONE = '__none__';
@@ -65,7 +68,13 @@ const RadarCrmPage: React.FC = () => {
     const pending = loadPendingImport();
     if (pending) {
       const headers = Object.keys(pending.rows[0] ?? {});
-      setParsed({ fileName: pending.fileName, headers, rows: pending.rows });
+      setParsed({
+        fileName: pending.fileName,
+        headers,
+        rows: pending.rows,
+        sourceType: (pending as { sourceType?: CrmSourceType }).sourceType ?? 'csv',
+        sheetName: (pending as { sheetName?: string }).sheetName,
+      });
       setMapping(pending.mapping as Partial<Record<RadarField, string>>);
     }
   }, [user, parsed]);
@@ -86,11 +95,20 @@ const RadarCrmPage: React.FC = () => {
 
   const handleAuthGate = (mode: 'login' | 'signup') => {
     if (!parsed) return;
-    savePendingImport({
-      fileName: parsed.fileName,
-      mapping: mapping as Record<string, string>,
-      rows: parsed.rows,
-    });
+    try {
+      savePendingImport({
+        fileName: parsed.fileName,
+        mapping: mapping as Record<string, string>,
+        rows: parsed.rows,
+        sourceType: parsed.sourceType,
+        sheetName: parsed.sheetName,
+      });
+    } catch {
+      toast({
+        title: 'Fichier prêt',
+        description: 'Connectez-vous pour lancer l’analyse. Si la reprise échoue, réimportez le fichier après connexion.',
+      });
+    }
     void trackRadarEvent(mode === 'login' ? 'login_started_from_radar' : 'signup_started_from_radar');
     void trackRadarEvent('auth_required_shown');
     navigate(`/auth?redirect=${encodeURIComponent('/radar-crm')}${mode === 'signup' ? '&mode=signup' : ''}`);
@@ -106,7 +124,13 @@ const RadarCrmPage: React.FC = () => {
     void trackRadarEvent('crm_import_started', { rows: parsed.rows.length });
     try {
       const { data, error } = await supabase.functions.invoke('crm-import', {
-        body: { fileName: parsed.fileName, sourceType: 'csv', mapping, rows: parsed.rows },
+        body: {
+          fileName: parsed.fileName,
+          sourceType: parsed.sourceType,
+          mapping,
+          rows: parsed.rows,
+          sheetName: parsed.sheetName,
+        },
       });
       if (error) throw error;
       const result = data as { importId?: string; matchesCount?: number; matchedCompaniesCount?: number };
@@ -157,12 +181,12 @@ const RadarCrmPage: React.FC = () => {
               <span className="text-primary">plan d'action salon</span>
             </h1>
             <p className="text-base md:text-lg text-muted-foreground mb-8">
-              Importez votre fichier CSV et découvrez les salons où vos prospects, clients,
+              Importez votre fichier CSV ou Excel et découvrez les salons où vos prospects, clients,
               partenaires ou concurrents exposent.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
               <Button size="lg" onClick={() => scrollToUpload('hero_primary')}>
-                <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV
+                <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV ou Excel
               </Button>
               <Button size="lg" variant="outline" onClick={scrollToHowItWorks}>
                 Voir comment ça marche
@@ -241,7 +265,7 @@ const RadarCrmPage: React.FC = () => {
       <section id="radar-how" className="max-w-5xl mx-auto px-4 py-8 scroll-mt-24">
         <h2 className="text-xl md:text-2xl font-bold text-center mb-6">Comment fonctionne Radar CRM ?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Step n={1} icon={<Upload className="h-5 w-5" />} title="Importez un CSV" text="Avec vos entreprises (nom + site web)." />
+          <Step n={1} icon={<Upload className="h-5 w-5" />} title="Importez un CSV ou Excel" text="Avec vos entreprises (nom + site web)." />
           <Step n={2} icon={<Search className="h-5 w-5" />} title="Matching automatique" text="Lotexpo détecte les correspondances par domaine." />
           <Step n={3} icon={<Radar className="h-5 w-5" />} title="Plan d'action" text="Consultez les salons à venir et les comptes à rencontrer." />
         </div>
@@ -262,9 +286,9 @@ const RadarCrmPage: React.FC = () => {
           <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="pt-6">
               <div className="text-center mb-5">
-                <h3 className="text-xl font-semibold mb-1">Importez votre fichier CSV</h3>
+                <h3 className="text-xl font-semibold mb-1">Importez votre fichier CSV ou Excel</h3>
                 <p className="text-sm text-muted-foreground">
-                  Colonnes nécessaires : <strong>entreprise</strong> + <strong>site web</strong>.
+                  Formats acceptés : CSV, XLSX. Colonnes nécessaires : <strong>entreprise</strong> + <strong>site web</strong>.
                 </p>
               </div>
               <RadarCsvUploader onParsed={onParsed} />
@@ -284,6 +308,9 @@ const RadarCrmPage: React.FC = () => {
                   <div>
                     <p className="font-medium">{parsed.fileName}</p>
                     <p className="text-xs text-muted-foreground">
+                      {parsed.sourceType === 'excel' ? 'Excel' : 'CSV'}
+                      {parsed.sheetName ? ` · Feuille : ${parsed.sheetName}` : ''}
+                      {' · '}
                       {parsed.rows.length.toLocaleString('fr-FR')} lignes · {parsed.headers.length} colonnes
                     </p>
                   </div>
@@ -406,11 +433,11 @@ const RadarCrmPage: React.FC = () => {
             <Badge className="mb-3 bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Beta</Badge>
             <h2 className="text-2xl font-bold mb-2">Une Beta déjà utile, bientôt connectée à votre CRM</h2>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Radar CRM est actuellement disponible en Beta avec un import CSV. Les connexions directes à vos outils CRM sont en cours de préparation.
+              Radar CRM est actuellement disponible en Beta avec import CSV et Excel. Les connexions directes à vos outils CRM sont en cours de préparation.
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <ConnectorBadge name="CSV" status="Disponible en Beta" available />
+            <ConnectorBadge name="CSV / Excel" status="Disponible en Beta" available />
             <ConnectorBadge name="HubSpot" status="Bientôt" />
             <ConnectorBadge name="Salesforce" status="Bientôt" />
             <ConnectorBadge name="Pipedrive" status="Bientôt" />
@@ -418,7 +445,7 @@ const RadarCrmPage: React.FC = () => {
           </div>
           <div className="text-center mt-6">
             <Button onClick={() => scrollToUpload('beta_section')}>
-              <Upload className="h-4 w-4 mr-2" /> Tester la Beta avec un CSV
+              <Upload className="h-4 w-4 mr-2" /> Tester la Beta avec un CSV ou Excel
             </Button>
           </div>
         </div>
@@ -448,11 +475,11 @@ const RadarCrmPage: React.FC = () => {
       <section className="max-w-3xl mx-auto px-4 py-12">
         <h2 className="text-2xl font-bold text-center mb-6">Questions fréquentes</h2>
         <Accordion type="single" collapsible className="w-full">
-          <FaqItem v="q1" q="Quel format de fichier est accepté ?" a="Pour la Beta, Radar CRM accepte uniquement les fichiers CSV." />
+          <FaqItem v="q1" q="Quel format de fichier est accepté ?" a="Radar CRM accepte les fichiers CSV et Excel (.xlsx). Le fichier doit contenir au minimum le nom de l'entreprise et son site web." />
           <FaqItem v="q2" q="Quelles colonnes sont nécessaires ?" a="Le fichier doit contenir au minimum le nom de l'entreprise et son site web." />
           <FaqItem v="q3" q="Comment fonctionne le matching ?" a="Lotexpo compare le domaine web des entreprises de votre fichier avec les domaines des exposants référencés sur la plateforme." />
           <FaqItem v="q4" q="Pourquoi certaines entreprises ne sont-elles pas détectées ?" a="Le matching Beta repose sur une correspondance exacte du domaine web. Certains groupes utilisant des sous-domaines ou des sites pays peuvent ne pas être détectés automatiquement." />
-          <FaqItem v="q5" q="Puis-je connecter directement HubSpot ou Salesforce ?" a="Pas encore. Les connexions CRM directes sont prévues dans une prochaine étape. Pour le moment, vous pouvez tester Radar CRM avec un fichier CSV." />
+          <FaqItem v="q5" q="Puis-je connecter directement HubSpot ou Salesforce ?" a="Pas encore. Les connexions CRM directes sont prévues dans une prochaine étape. Pour le moment, vous pouvez tester Radar CRM avec un fichier CSV ou Excel." />
         </Accordion>
       </section>
 
@@ -465,10 +492,10 @@ const RadarCrmPage: React.FC = () => {
               Prêt à transformer votre fichier CRM en opportunités salon ?
             </h2>
             <p className="text-sm md:text-base opacity-90 mb-6 max-w-2xl mx-auto">
-              Importez votre CSV et découvrez immédiatement les événements où vos comptes sont présents.
+              Importez votre CSV ou Excel et découvrez immédiatement les événements où vos comptes sont présents.
             </p>
             <Button size="lg" variant="secondary" onClick={() => scrollToUpload('final_cta')}>
-              <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV
+              <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV ou Excel
             </Button>
           </div>
         </div>
