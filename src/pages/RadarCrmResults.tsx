@@ -355,6 +355,7 @@ const RadarCrmResults: React.FC = () => {
                         <EventCard
                           key={g.event_id}
                           group={g}
+                          importId={activeImportId}
                           onView={() => onClickEvent(g)}
                           onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
                         />
