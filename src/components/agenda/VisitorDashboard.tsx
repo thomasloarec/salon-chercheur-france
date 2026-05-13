@@ -382,7 +382,7 @@ function RemoveFromAgendaButton({ eventId, eventName }: { eventId: string; event
       size="sm"
       onClick={handleRemove}
       disabled={toggleFavorite.isPending}
-      className="text-muted-foreground hover:text-destructive"
+      className="text-muted-foreground hover:text-white hover:bg-destructive/90"
     >
       <CalendarX className="h-4 w-4 mr-1.5" />
       Retirer de mon agenda
