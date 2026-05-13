@@ -18,7 +18,18 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('invite');
   const inviteEmail = searchParams.get('email');
-  const initialTab = inviteToken ? 'signup' : (searchParams.get('tab') === 'signup' ? 'signup' : 'signin');
+  const redirectParam = searchParams.get('redirect');
+  const modeParam = searchParams.get('mode');
+  const tabParam = searchParams.get('tab');
+  const wantsSignup = modeParam === 'signup' || tabParam === 'signup';
+  const initialTab = inviteToken || wantsSignup ? 'signup' : 'signin';
+
+  const safeRedirect = (() => {
+    if (!redirectParam) return null;
+    // Only allow internal paths
+    if (!redirectParam.startsWith('/') || redirectParam.startsWith('//')) return null;
+    return redirectParam;
+  })();
   
   const [email, setEmail] = useState(inviteEmail || '');
   const [password, setPassword] = useState('');
@@ -42,13 +53,13 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(safeRedirect || '/', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, safeRedirect]);
 
   useEffect(() => {
     if (!inviteToken) {
-      const tab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+      const tab = (searchParams.get('mode') === 'signup' || searchParams.get('tab') === 'signup') ? 'signup' : 'signin';
       setActiveTab(tab);
       resetForm();
     }
@@ -66,7 +77,7 @@ const Auth = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}${safeRedirect || '/'}`,
       },
     });
     
