@@ -300,13 +300,14 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                   </div>
                 )}
 
-                {/* View event button */}
-                <div className="mt-4 pt-4">
+                {/* Actions */}
+                <div className="mt-4 pt-4 flex flex-wrap items-center gap-2">
                   <Link to={`/events/${event.slug}`}>
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                      Voir le salon
+                    <Button variant="outline" size="sm">
+                      Voir le salon <ArrowRight className="h-3.5 w-3.5 ml-1" />
                     </Button>
                   </Link>
+                  <RemoveFromAgendaButton eventId={event.id} eventName={event.nom_event} />
                 </div>
               </div>
             );
