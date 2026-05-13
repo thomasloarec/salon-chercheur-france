@@ -5,7 +5,7 @@ import { fr } from "date-fns/locale"
 import { useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Notification } from "@/hooks/useNotifications"
-import { Calendar, MapPin } from "lucide-react"
+import { Calendar, MapPin, Radar } from "lucide-react"
 
 interface NotificationCardProps {
   notification: Notification
@@ -26,6 +26,7 @@ const getNotificationIcon = (type: string): string => {
     'welcome': '👋',
     'event_reminder_7d': '📅',
     'event_reminder_1d': '🔔',
+    'radar_new_matches': '🎯',
   }
   return icons[type] || '🔔'
 }
@@ -78,6 +79,80 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
     event_ville?: string
     event_nom_lieu?: string
   } | null
+
+  // Radar CRM specific render
+  if (notification.type === 'radar_new_matches') {
+    const meta = (notification.metadata ?? {}) as {
+      eventName?: string
+      eventDate?: string
+      eventCity?: string
+      eventImage?: string
+      companies?: Array<{ companyName?: string }>
+    }
+    const formatDateSafe = (s?: string) => {
+      if (!s) return null
+      try { return format(new Date(s), 'd MMM yyyy', { locale: fr }) } catch { return s }
+    }
+    const companies = Array.isArray(meta.companies) ? meta.companies : []
+    const firstNames = companies.slice(0, 3).map((c) => c?.companyName).filter(Boolean) as string[]
+    const remaining = Math.max(0, companies.length - firstNames.length)
+    const dateLabel = formatDateSafe(meta.eventDate)
+
+    return (
+      <div
+        onClick={handleClick}
+        className={cn(
+          "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50",
+          !notification.read ? "bg-primary/5 border-primary/20" : "bg-background"
+        )}
+      >
+        <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-muted">
+          {meta.eventImage ? (
+            <img src={meta.eventImage} alt={meta.eventName || 'Événement'} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
+              <Radar className="h-8 w-8" />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 space-y-2 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0 pr-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" className="text-xs">Radar CRM</Badge>
+                <p className="font-semibold text-sm">{notification.title}</p>
+                {!notification.read && (
+                  <Badge variant="default" className="text-xs flex-shrink-0">Nouveau</Badge>
+                )}
+              </div>
+              <p className="text-sm text-foreground mt-1">{notification.message}</p>
+            </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: fr })}
+            </span>
+          </div>
+
+          {firstNames.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {firstNames.join(', ')}{remaining > 0 ? ` + ${remaining} autre${remaining > 1 ? 's' : ''}` : ''}
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {dateLabel && (
+              <div className="flex items-center gap-1"><Calendar className="h-3 w-3" /><span>{dateLabel}</span></div>
+            )}
+            {meta.eventCity && (
+              <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /><span>{meta.eventCity}</span></div>
+            )}
+          </div>
+
+          <p className="text-xs text-primary">Voir l'opportunité →</p>
+        </div>
+      </div>
+    )
+  }
 
   // For event reminders, show a special card layout
   if (isEventReminder(notification.type) && eventMetadata) {

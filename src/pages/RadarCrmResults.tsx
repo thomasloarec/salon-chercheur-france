@@ -106,6 +106,7 @@ const RadarCrmResults: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [imports, setImports] = useState<Import[] | null>(null);
   const [activeImportId, setActiveImportId] = useState<string | null>(searchParams.get('importId'));
+  const highlightedEventId = searchParams.get('eventId');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [viewRows, setViewRows] = useState<ParticipationViewRow[]>([]);
@@ -228,18 +229,33 @@ const RadarCrmResults: React.FC = () => {
   const futureGroups = useMemo(
     () => eventGroups.filter((g) => g.is_future)
       .sort((a, b) => {
+        // Highlighted event always first
+        if (highlightedEventId) {
+          if (a.event_id === highlightedEventId && b.event_id !== highlightedEventId) return -1;
+          if (b.event_id === highlightedEventId && a.event_id !== highlightedEventId) return 1;
+        }
         const da = a.days_until ?? 9999;
         const db = b.days_until ?? 9999;
         if (da !== db) return da - db;
         return b.companies.length - a.companies.length;
       }),
-    [eventGroups],
+    [eventGroups, highlightedEventId],
   );
   const pastGroups = useMemo(
     () => eventGroups.filter((g) => !g.is_future)
       .sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? '')),
     [eventGroups],
   );
+
+  // Scroll to highlighted event once results are rendered.
+  useEffect(() => {
+    if (!highlightedEventId || loading) return;
+    if (!eventGroups.find((g) => g.event_id === highlightedEventId)) return;
+    const el = document.getElementById(`radar-event-${highlightedEventId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightedEventId, loading, eventGroups]);
 
   const matchedCompanyIds = useMemo(() => new Set(matches.map((m) => m.crm_company_id)), [matches]);
   const matchedCompanies = useMemo(() => companies.filter((c) => matchedCompanyIds.has(c.id)), [companies, matchedCompanyIds]);
@@ -368,13 +384,21 @@ const RadarCrmResults: React.FC = () => {
                   ) : (
                     <div className="space-y-3">
                       {futureGroups.map((g) => (
-                        <EventCard
+                        <div
                           key={g.event_id}
-                          group={g}
-                          importId={activeImportId}
-                          onView={() => onClickEvent(g)}
-                          onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
-                        />
+                          id={`radar-event-${g.event_id}`}
+                          className={cn(
+                            'transition-all rounded-lg',
+                            highlightedEventId === g.event_id && 'ring-2 ring-primary ring-offset-2',
+                          )}
+                        >
+                          <EventCard
+                            group={g}
+                            importId={activeImportId}
+                            onView={() => onClickEvent(g)}
+                            onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}
