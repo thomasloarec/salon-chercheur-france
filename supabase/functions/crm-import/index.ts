@@ -61,7 +61,8 @@ Deno.serve(async (req) => {
     }
 
     const fileName: string = (payload?.fileName ?? 'import.csv').toString().slice(0, 255)
-    const sourceType: string = payload?.sourceType === 'csv' ? 'csv' : 'csv'
+    const rawSourceType = typeof payload?.sourceType === 'string' ? payload.sourceType.toLowerCase() : 'csv'
+    const sourceType: 'csv' | 'excel' = rawSourceType === 'excel' ? 'excel' : 'csv'
     const mapping: MappingShape | undefined = payload?.mapping
     const rows: Array<Record<string, unknown>> | undefined = payload?.rows
 
