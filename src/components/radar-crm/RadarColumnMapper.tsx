@@ -1,3 +1,10 @@
+/**
+ * @deprecated [LEGACY / NOT WIRED]
+ * Composant de mapping de colonnes Radar CRM non utilisé dans le flux actuel.
+ * Le flux CSV/Excel actif utilise des selects inline dans `src/pages/RadarCrm.tsx`.
+ * Conservé en attendant un éventuel refactor mutualisant le mapping.
+ * Ne pas supprimer sans vérifier qu'aucun futur flux OAuth ne le réutilise.
+ */
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import {
