@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SectorTag } from '@/components/ui/sector-tag';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight, CalendarX } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useVisitPlansForUser, VisitPlan } from '@/hooks/useVisitPlan';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
+import { useToggleFavorite } from '@/hooks/useFavorites';
+import { useToast } from '@/hooks/use-toast';
 
 const NOVELTY_TYPE_LABELS = {
   Launch: 'Lancement',
@@ -298,13 +300,14 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                   </div>
                 )}
 
-                {/* View event button */}
-                <div className="mt-4 pt-4">
+                {/* Actions */}
+                <div className="mt-4 pt-4 flex flex-wrap items-center gap-2">
                   <Link to={`/events/${event.slug}`}>
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                      Voir le salon
+                    <Button variant="outline" size="sm">
+                      Voir le salon <ArrowRight className="h-3.5 w-3.5 ml-1" />
                     </Button>
                   </Link>
+                  <RemoveFromAgendaButton eventId={event.id} eventName={event.nom_event} />
                 </div>
               </div>
             );
@@ -350,5 +353,39 @@ function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.raison}</p>
       </div>
     </div>
+  );
+}
+
+function RemoveFromAgendaButton({ eventId, eventName }: { eventId: string; eventName: string }) {
+  const toggleFavorite = useToggleFavorite();
+  const { toast } = useToast();
+
+  const handleRemove = async () => {
+    try {
+      await toggleFavorite.mutateAsync(eventId);
+      toast({
+        title: 'Retiré de votre agenda',
+        description: `"${eventName}" a été retiré de votre agenda.`,
+      });
+    } catch (err) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de retirer cet événement.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleRemove}
+      disabled={toggleFavorite.isPending}
+      className="text-muted-foreground hover:text-destructive"
+    >
+      <CalendarX className="h-4 w-4 mr-1.5" />
+      Retirer de mon agenda
+    </Button>
   );
 }
