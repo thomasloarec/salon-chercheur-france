@@ -18,7 +18,7 @@ import {
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
   CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
-  CalendarCheck,
+  CalendarCheck, Settings,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
@@ -27,6 +27,7 @@ import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog'
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { cn } from '@/lib/utils';
+import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 
 type Import = {
   id: string;
@@ -113,6 +114,18 @@ const RadarCrmResults: React.FC = () => {
     exhibitor: any;
     event: any;
   } | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const reloadAll = async () => {
+    setActiveImportId(null);
+    setCompanies([]); setMatches([]); setViewRows([]);
+    const { data } = await supabase
+      .from('crm_imports')
+      .select('id, file_name, status, total_rows, matched_companies_count, unmatched_companies_count, created_at')
+      .order('created_at', { ascending: false });
+    setImports((data ?? []) as Import[]);
+    if (data && data.length > 0) setActiveImportId(data[0].id);
+  };
 
   // Auth gate
   useEffect(() => {
