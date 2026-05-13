@@ -15,6 +15,9 @@ type Stats = {
   avgMatchRate: number;
   futureMatches: number;
   pastMatches: number;
+  betaUsers?: number;
+  alertsEnabledUsers?: number;
+  dataDeletions?: number;
   recentImports: Array<{
     id: string; user_email: string | null; file_name: string | null;
     source_type: string; status: string; total_rows: number;
@@ -48,6 +51,9 @@ const AdminRadarCrm: React.FC = () => {
     { l: 'Taux moyen de matching', v: `${stats.avgMatchRate}%` },
     { l: 'Salons futurs détectés', v: stats.futureMatches },
     { l: 'Salons passés détectés', v: stats.pastMatches },
+    { l: 'Utilisateurs Beta Radar CRM', v: stats.betaUsers ?? 0 },
+    { l: 'Alertes activées', v: stats.alertsEnabledUsers ?? 0 },
+    { l: 'Suppressions de données Radar CRM', v: stats.dataDeletions ?? 0 },
   ];
 
   return (
