@@ -2,6 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type RadarEventType =
   | 'radar_page_viewed'
+  | 'radar_landing_viewed'
+  | 'radar_landing_cta_clicked'
   | 'csv_upload_started'
   | 'csv_parsed'
   | 'auth_required_shown'
