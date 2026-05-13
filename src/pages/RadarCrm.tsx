@@ -8,6 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
@@ -47,6 +48,7 @@ const RadarCrmPage: React.FC = () => {
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [mapping, setMapping] = useState<Partial<Record<RadarField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [privacyAck, setPrivacyAck] = useState(false);
   const autoSubmitRef = useRef(false);
   const resumedFromPendingRef = useRef(false);
 
