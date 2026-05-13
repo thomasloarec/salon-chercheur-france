@@ -114,7 +114,7 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
       toast({ title: 'Erreur lors de la suppression', description: error.message, variant: 'destructive' });
       return;
     }
-    const summary = (data ?? {}) as Record<string, number>;
+    const summary = (data ?? {}) as unknown as Record<string, number>;
     void trackRadarEvent('radar_data_deleted', {
       source: 'radar_crm',
       deletedImports: summary.deleted_imports ?? summary.deletedImports ?? 0,
