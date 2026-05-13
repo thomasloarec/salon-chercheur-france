@@ -545,7 +545,7 @@ const CompanyChip: React.FC<{
 );
 
 /** Compact horizontal event card — image left, info center, actions right */
-const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
+const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null }> = ({ eventId, importId }) => {
   const { user } = useAuth();
   const { data: isFavorite = false } = useIsFavorite(eventId);
   const toggleFavorite = useToggleFavorite();
@@ -559,8 +559,12 @@ const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
       return;
     }
     try {
-      void trackRadarEvent('crm_calendar_clicked', { eventId });
-      void trackRadarEvent('crm_favorite_clicked', { eventId, source: 'radar_crm' });
+      void trackRadarEvent('crm_favorite_clicked', {
+        source: 'radar_crm',
+        favoriteType: 'event_agenda',
+        eventId,
+        importId: importId ?? null,
+      });
       await toggleFavorite.mutateAsync(eventId);
     } catch (err) {
       console.error('Error toggling favorite:', err);
@@ -584,7 +588,7 @@ const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
         ) : (
           <CalendarPlus className="h-3.5 w-3.5 mr-1" />
         )}
-        Agenda Lotexpo
+        {isFavorite ? 'Dans mon agenda' : 'Ajouter à mon agenda'}
       </Button>
       <AuthRequiredModal open={showAuthModal} onOpenChange={setShowAuthModal} />
     </>
