@@ -82,6 +82,26 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
+    // Beta rate-limit: max 3 imports (processing/completed) per user per 24h.
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const { count: recentCount, error: rlErr } = await serviceClient
+      .from('crm_imports')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .in('status', ['processing', 'completed'])
+      .gte('created_at', since)
+    if (rlErr) {
+      console.error('Rate-limit check failed:', rlErr)
+    } else if ((recentCount ?? 0) >= 3) {
+      return jsonResp(
+        {
+          error: 'rate_limited',
+          message: 'Vous avez atteint la limite Beta de 3 imports par jour. Réessayez demain.',
+        },
+        429,
+      )
+    }
+
     // 1. Create import row
     const { data: importRow, error: importErr } = await serviceClient
       .from('crm_imports')
