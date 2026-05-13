@@ -10,6 +10,7 @@ import {
   ArrowLeft, Building2, Mail, Archive, Globe, ExternalLink, Calendar, Info,
 } from 'lucide-react';
 import ExhibitorOutreachPanel from './ExhibitorOutreachPanel';
+import AdminExhibitorParticipationsCard from './AdminExhibitorParticipationsCard';
 import { CAMPAIGN_STATUS_VARIANTS, campaignStatusLabel } from '@/lib/outreach/labels';
 import type { AdminSelection } from './types';
 
@@ -157,43 +158,10 @@ const AdminNonExhibitorPanel = ({ selection, onBack }: Props) => {
                 </CardContent>
               </Card>
 
-              {isOutreach && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Calendar className="h-4 w-4" /> Événement concerné
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    {event ? (
-                      <>
-                        <div className="font-medium">{event.nom_event}</div>
-                        <div className="text-muted-foreground">
-                          {fmtDate(event.date_debut)}
-                          {event.date_fin && event.date_fin !== event.date_debut
-                            ? ` → ${fmtDate(event.date_fin)}`
-                            : ''}
-                          {event.ville ? ` · ${event.ville}` : ''}
-                        </div>
-                        {event.slug && (
-                          <a
-                            href={`/events/${event.slug}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-primary hover:underline inline-flex items-center gap-1 text-xs"
-                          >
-                            Voir la fiche événement <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </>
-                    ) : eventId ? (
-                      <span className="text-muted-foreground">Chargement…</span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+              <AdminExhibitorParticipationsCard
+                exhibitorName={selection.name}
+                legacyId={selection.kind === 'legacy' ? selection.legacy_id : null}
+              />
             </TabsContent>
 
             {isOutreach && (
