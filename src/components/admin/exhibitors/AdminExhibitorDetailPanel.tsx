@@ -278,6 +278,12 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
             </CardContent>
           </Card>
 
+          {/* Participations (events + stand) */}
+          <AdminExhibitorParticipationsCard
+            exhibitorId={ex.id}
+            exhibitorName={ex.name}
+          />
+
           {/* Team members */}
           <Card>
             <CardHeader>
