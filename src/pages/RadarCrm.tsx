@@ -14,7 +14,7 @@ import {
 import {
   Radar, ShieldCheck, Sparkles, Zap, ArrowRight, Target, Map, Rocket,
   Upload, FileCheck2, Search, Lock, CheckCircle2, Eye, Globe, EyeOff,
-  Building2, CalendarClock, MapPin,
+  Building2, MapPin,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,7 +57,7 @@ const RadarCrmPage: React.FC = () => {
 
   const scrollToHowItWorks = () => {
     void trackRadarEvent('radar_landing_cta_clicked', { source: 'hero_secondary' });
-    document.getElementById('radar-how').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('radar-how')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
