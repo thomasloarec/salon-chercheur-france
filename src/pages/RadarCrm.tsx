@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,8 @@ const RadarCrmPage: React.FC = () => {
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [mapping, setMapping] = useState<Partial<Record<RadarField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const autoSubmitRef = useRef(false);
+  const resumedFromPendingRef = useRef(false);
 
   useEffect(() => {
     void trackRadarEvent('radar_page_viewed');
@@ -76,6 +78,7 @@ const RadarCrmPage: React.FC = () => {
         sheetName: (pending as { sheetName?: string }).sheetName,
       });
       setMapping(pending.mapping as Partial<Record<RadarField, string>>);
+      resumedFromPendingRef.current = true;
     }
   }, [user, parsed]);
 
