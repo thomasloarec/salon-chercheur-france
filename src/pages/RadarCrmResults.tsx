@@ -239,6 +239,7 @@ const RadarCrmResults: React.FC = () => {
 
   const onClickEvent = (g: EventGroup) => {
     void trackRadarEvent('crm_event_detail_clicked', { eventId: g.event_id });
+    void trackRadarEvent('crm_event_clicked', { eventId: g.event_id, source: 'radar_crm' });
     if (g.slug) navigate(`/events/${g.slug}`);
     else toast({ title: 'Page événement indisponible', description: 'Le slug est manquant.' });
   };
@@ -409,7 +410,11 @@ const RadarCrmResults: React.FC = () => {
                     <Accordion
                       type="single"
                       collapsible
-                      onValueChange={(v) => v && trackRadarEvent('crm_unmatched_list_opened', { count: unmatchedCompanies.length })}
+                      onValueChange={(v) => {
+                        if (!v) return;
+                        void trackRadarEvent('crm_unmatched_list_opened', { count: unmatchedCompanies.length });
+                        void trackRadarEvent('crm_unmatched_viewed', { count: unmatchedCompanies.length, source: 'radar_crm' });
+                      }}
                     >
                       <AccordionItem value="unmatched" className="border-none">
                         <AccordionTrigger className="hover:no-underline py-2">
