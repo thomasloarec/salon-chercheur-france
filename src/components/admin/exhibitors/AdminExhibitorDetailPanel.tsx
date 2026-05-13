@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExhibitorOutreachPanel from './ExhibitorOutreachPanel';
+import AdminExhibitorParticipationsCard from './AdminExhibitorParticipationsCard';
 
 interface Props {
   exhibitorId: string;
