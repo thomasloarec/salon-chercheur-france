@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/accordion';
 import {
   Radar, ShieldCheck, Sparkles, Zap, ArrowRight, Target, Map, Rocket,
-  Upload, FileCheck2, Search, Lock,
+  Upload, FileCheck2, Search, Lock, CheckCircle2, Eye, Globe, EyeOff,
+  Building2, CalendarClock, MapPin,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,7 +45,20 @@ const RadarCrmPage: React.FC = () => {
   const [mapping, setMapping] = useState<Partial<Record<RadarField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { void trackRadarEvent('radar_page_viewed'); }, []);
+  useEffect(() => {
+    void trackRadarEvent('radar_page_viewed');
+    void trackRadarEvent('radar_landing_viewed');
+  }, []);
+
+  const scrollToUpload = (source: string) => {
+    void trackRadarEvent('radar_landing_cta_clicked', { source });
+    document.getElementById('radar-upload')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const scrollToHowItWorks = () => {
+    void trackRadarEvent('radar_landing_cta_clicked', { source: 'hero_secondary' });
+    document.getElementById('radar-how').scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     if (!user || parsed) return;
@@ -133,26 +147,71 @@ const RadarCrmPage: React.FC = () => {
           className="absolute inset-0 -z-10 opacity-90"
           style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--accent) / 0.06))' }}
         />
-        <div className="max-w-5xl mx-auto px-4 py-12 md:py-20 text-center">
-          <Badge variant="secondary" className="mb-5 inline-flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" /> Nouveau · Bêta
-          </Badge>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
-            Transformez votre fichier CRM en{' '}
-            <span className="text-primary">plan d'action salon</span>
-          </h1>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Importez une liste de prospects, clients ou concurrents. Lotexpo identifie les
-            événements où ces entreprises exposent, les stands à visiter et les opportunités
-            commerciales à ne pas manquer.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" onClick={() => document.getElementById('radar-upload')?.scrollIntoView({ behavior: 'smooth' })}>
-              <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV
-            </Button>
-            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5" /> Analyse sécurisée. Vos données restent privées.
-            </span>
+        <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <Badge className="mb-5 inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">
+              <Sparkles className="h-3.5 w-3.5" /> Beta
+            </Badge>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
+              Transformez votre fichier CRM en{' '}
+              <span className="text-primary">plan d'action salon</span>
+            </h1>
+            <p className="text-base md:text-lg text-muted-foreground mb-8">
+              Importez votre fichier CSV et découvrez les salons où vos prospects, clients,
+              partenaires ou concurrents exposent.
+            </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+              <Button size="lg" onClick={() => scrollToUpload('hero_primary')}>
+                <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV
+              </Button>
+              <Button size="lg" variant="outline" onClick={scrollToHowItWorks}>
+                Voir comment ça marche
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5" /> Analyse sécurisée. Vos données restent privées. Matching basé sur les sites web.
+            </p>
+          </div>
+
+          {/* Hero preview card */}
+          <div className="relative">
+            <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 via-accent/10 to-transparent rounded-3xl blur-2xl -z-10" />
+            <Card className="shadow-xl border-primary/10">
+              <CardContent className="pt-6 space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                      <Radar className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold leading-tight">Votre Radar CRM</p>
+                      <p className="text-xs text-muted-foreground">Aperçu d'un résultat</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">Démo</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <StatTile label="Entreprises analysées" value="310" />
+                  <StatTile label="Détectées sur salons" value="60" accent />
+                  <StatTile label="Participations futures" value="12" />
+                  <StatTile label="Prochain salon" value="Dans 9 j" />
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-sm">SEPEM Brest</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Brest · Dans 9 jours</p>
+                    </div>
+                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 text-[10px]">3 comptes</Badge>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <CompanyRow name="OSE" stand="A56" />
+                    <CompanyRow name="MAX EUROPE" stand="E35" />
+                    <CompanyRow name="LES MECAMIENS" stand="A39" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -179,8 +238,8 @@ const RadarCrmPage: React.FC = () => {
       </section>
 
       {/* How it works */}
-      <section className="max-w-5xl mx-auto px-4 py-8">
-        <h2 className="text-xl md:text-2xl font-bold text-center mb-6">Comment ça marche ?</h2>
+      <section id="radar-how" className="max-w-5xl mx-auto px-4 py-8 scroll-mt-24">
+        <h2 className="text-xl md:text-2xl font-bold text-center mb-6">Comment fonctionne Radar CRM ?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Step n={1} icon={<Upload className="h-5 w-5" />} title="Importez un CSV" text="Avec vos entreprises (nom + site web)." />
           <Step n={2} icon={<Search className="h-5 w-5" />} title="Matching automatique" text="Lotexpo détecte les correspondances par domaine." />
@@ -339,6 +398,81 @@ const RadarCrmPage: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* Beta connections strip */}
+      <section className="max-w-6xl mx-auto px-4 py-12">
+        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8">
+          <div className="text-center mb-6">
+            <Badge className="mb-3 bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Beta</Badge>
+            <h2 className="text-2xl font-bold mb-2">Une Beta déjà utile, bientôt connectée à votre CRM</h2>
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+              Radar CRM est actuellement disponible en Beta avec un import CSV. Les connexions directes à vos outils CRM sont en cours de préparation.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <ConnectorBadge name="CSV" status="Disponible en Beta" available />
+            <ConnectorBadge name="HubSpot" status="Bientôt" />
+            <ConnectorBadge name="Salesforce" status="Bientôt" />
+            <ConnectorBadge name="Pipedrive" status="Bientôt" />
+            <ConnectorBadge name="Zoho CRM" status="Bientôt" />
+          </div>
+          <div className="text-center mt-6">
+            <Button onClick={() => scrollToUpload('beta_section')}>
+              <Upload className="h-4 w-4 mr-2" /> Tester la Beta avec un CSV
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Privacy */}
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div>
+            <Badge variant="secondary" className="mb-3"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Confidentialité</Badge>
+            <h2 className="text-2xl font-bold mb-3">Vos données CRM restent privées</h2>
+            <p className="text-sm text-muted-foreground">
+              Votre fichier est associé uniquement à votre compte. Lotexpo utilise les sites web
+              des entreprises pour rechercher des correspondances avec les exposants référencés.
+              Vos données ne sont jamais affichées publiquement.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <PrivacyPoint icon={<Eye className="h-4 w-4" />} text="Données visibles uniquement par vous" />
+            <PrivacyPoint icon={<Globe className="h-4 w-4" />} text="Analyse basée sur le domaine web" />
+            <PrivacyPoint icon={<EyeOff className="h-4 w-4" />} text="Aucun partage public de votre fichier" />
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="max-w-3xl mx-auto px-4 py-12">
+        <h2 className="text-2xl font-bold text-center mb-6">Questions fréquentes</h2>
+        <Accordion type="single" collapsible className="w-full">
+          <FaqItem v="q1" q="Quel format de fichier est accepté ?" a="Pour la Beta, Radar CRM accepte uniquement les fichiers CSV." />
+          <FaqItem v="q2" q="Quelles colonnes sont nécessaires ?" a="Le fichier doit contenir au minimum le nom de l'entreprise et son site web." />
+          <FaqItem v="q3" q="Comment fonctionne le matching ?" a="Lotexpo compare le domaine web des entreprises de votre fichier avec les domaines des exposants référencés sur la plateforme." />
+          <FaqItem v="q4" q="Pourquoi certaines entreprises ne sont-elles pas détectées ?" a="Le matching Beta repose sur une correspondance exacte du domaine web. Certains groupes utilisant des sous-domaines ou des sites pays peuvent ne pas être détectés automatiquement." />
+          <FaqItem v="q5" q="Puis-je connecter directement HubSpot ou Salesforce ?" a="Pas encore. Les connexions CRM directes sont prévues dans une prochaine étape. Pour le moment, vous pouvez tester Radar CRM avec un fichier CSV." />
+        </Accordion>
+      </section>
+
+      {/* Final CTA */}
+      <section className="max-w-5xl mx-auto px-4 py-12 mb-8">
+        <div className="rounded-2xl bg-primary text-primary-foreground p-10 text-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at top right, white, transparent 60%)' }} />
+          <div className="relative">
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">
+              Prêt à transformer votre fichier CRM en opportunités salon ?
+            </h2>
+            <p className="text-sm md:text-base opacity-90 mb-6 max-w-2xl mx-auto">
+              Importez votre CSV et découvrez immédiatement les événements où vos comptes sont présents.
+            </p>
+            <Button size="lg" variant="secondary" onClick={() => scrollToUpload('final_cta')}>
+              <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV
+            </Button>
+          </div>
+        </div>
+      </section>
     </MainLayout>
   );
 };
@@ -395,6 +529,44 @@ const FieldSelect: React.FC<{
       </SelectContent>
     </Select>
   </div>
+);
+
+const StatTile: React.FC<{ label: string; value: string; accent?: boolean }> = ({ label, value, accent }) => (
+  <div className={`rounded-lg p-3 border ${accent ? 'bg-primary/10 border-primary/30' : 'bg-card'}`}>
+    <p className={`text-xl font-bold leading-none ${accent ? 'text-primary' : ''}`}>{value}</p>
+    <p className="text-[11px] text-muted-foreground mt-1">{label}</p>
+  </div>
+);
+
+const CompanyRow: React.FC<{ name: string; stand: string }> = ({ name, stand }) => (
+  <div className="flex items-center justify-between">
+    <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3 text-muted-foreground" /> {name}</span>
+    <span className="font-mono text-muted-foreground">Stand {stand}</span>
+  </div>
+);
+
+const ConnectorBadge: React.FC<{ name: string; status: string; available?: boolean }> = ({ name, status, available }) => (
+  <div className={`rounded-lg border bg-card p-3 text-center ${available ? 'border-emerald-300 ring-1 ring-emerald-200' : ''}`}>
+    <p className="font-semibold text-sm">{name}</p>
+    <p className={`text-[11px] mt-1 ${available ? 'text-emerald-700' : 'text-muted-foreground'}`}>
+      {available && <CheckCircle2 className="inline h-3 w-3 mr-1" />}
+      {status}
+    </p>
+  </div>
+);
+
+const PrivacyPoint: React.FC<{ icon: React.ReactNode; text: string }> = ({ icon, text }) => (
+  <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+    <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center">{icon}</div>
+    <p className="text-sm font-medium">{text}</p>
+  </div>
+);
+
+const FaqItem: React.FC<{ v: string; q: string; a: string }> = ({ v, q, a }) => (
+  <AccordionItem value={v}>
+    <AccordionTrigger className="text-left">{q}</AccordionTrigger>
+    <AccordionContent className="text-muted-foreground">{a}</AccordionContent>
+  </AccordionItem>
 );
 
 export default RadarCrmPage;
