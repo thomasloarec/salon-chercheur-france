@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, User, Bell, CalendarRange, LogOut } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, User, Bell, CalendarRange, LogOut, Radar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import UserMenu from './UserMenu';
@@ -48,6 +48,18 @@ const Header = () => {
             >
               <Calendar className="h-4 w-4" />
               <span>Nouveautés</span>
+            </NavLink>
+            <NavLink 
+              to="/radar-crm" 
+              className={({ isActive }) => 
+                `text-gray-700 hover:text-primary transition-colors flex items-center space-x-1 ${
+                  isActive ? 'text-primary font-medium' : ''
+                }`
+              }
+            >
+              <Radar className="h-4 w-4" />
+              <span>Radar CRM</span>
+              <Badge variant="secondary" className="ml-1 text-[10px] uppercase">Beta</Badge>
             </NavLink>
             <NavLink 
               to="/exposants" 
@@ -136,6 +148,20 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Nouveautés
+              </NavLink>
+              <NavLink
+                to="/radar-crm"
+                className={({ isActive }) => 
+                  `block px-3 py-2 text-gray-700 hover:text-primary transition-colors ${
+                    isActive ? 'text-primary font-medium' : ''
+                  }`
+                }
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="inline-flex items-center gap-2">
+                  Radar CRM
+                  <Badge variant="secondary" className="text-[10px] uppercase">Beta</Badge>
+                </span>
               </NavLink>
               <NavLink
                 to="/exposants"
