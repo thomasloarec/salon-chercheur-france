@@ -47,9 +47,7 @@ const RadarCsvUploader: React.FC<Props> = ({ onParsed }) => {
       >
         <FileSpreadsheet className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
         <p className="text-sm text-foreground font-medium mb-1">
-          Glissez-déposez votre fichier CSV ici
-        </p>
-        <p className="text-sm text-foreground font-medium mb-1">
+          Glissez-déposez votre fichier CSV ou Excel ici
         </p>
         <p className="text-xs text-muted-foreground mb-4">
           Formats acceptés : CSV, XLSX — max {MAX_ROWS.toLocaleString('fr-FR')} lignes
