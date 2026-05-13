@@ -560,6 +560,7 @@ const AgendaLotexpoButton: React.FC<{ eventId: string }> = ({ eventId }) => {
     }
     try {
       void trackRadarEvent('crm_calendar_clicked', { eventId });
+      void trackRadarEvent('crm_favorite_clicked', { eventId, source: 'radar_crm' });
       await toggleFavorite.mutateAsync(eventId);
     } catch (err) {
       console.error('Error toggling favorite:', err);
