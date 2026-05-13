@@ -487,6 +487,11 @@ const RadarCrmResults: React.FC = () => {
           event={openExhibitor.event}
         />
       )}
+      <RadarCrmSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        onDataDeleted={() => { void reloadAll(); }}
+      />
     </MainLayout>
   );
 };
