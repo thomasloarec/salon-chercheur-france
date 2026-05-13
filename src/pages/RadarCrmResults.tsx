@@ -669,7 +669,7 @@ const EventCard: React.FC<{
             <Button size="sm" onClick={onView} disabled={!group.slug}>
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
-            <AgendaLotexpoButton eventId={group.event_id} />
+            <AgendaLotexpoButton eventId={group.event_id} importId={importId} />
           </div>
         </div>
       </div>
