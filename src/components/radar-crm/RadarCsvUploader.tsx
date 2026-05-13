@@ -1,73 +1,37 @@
 import React, { useRef, useState } from 'react';
-import Papa from 'papaparse';
 import { Button } from '@/components/ui/button';
 import { Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
-
-interface ParsedFile {
-  fileName: string;
-  headers: string[];
-  rows: Array<Record<string, unknown>>;
-}
+import { parseCrmFile, MAX_ROWS, type ParsedCrmFile } from '@/lib/radarCrm/parseFile';
 
 interface Props {
-  onParsed: (parsed: ParsedFile) => void;
+  onParsed: (parsed: ParsedCrmFile) => void;
 }
-
-const MAX_ROWS = 5000;
-const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 
 const RadarCsvUploader: React.FC<Props> = ({ onParsed }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleFiles = (file: File) => {
+  const handleFiles = async (file: File) => {
     setError(null);
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setError('Format non supporté. Importez un fichier .csv (Excel bientôt disponible).');
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setError('Fichier trop volumineux (max 8 Mo).');
-      return;
-    }
     setLoading(true);
     void trackRadarEvent('csv_upload_started', { size: file.size, name: file.name });
-
-    Papa.parse<Record<string, unknown>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      worker: false,
-      complete: (results) => {
-        setLoading(false);
-        if (results.errors && results.errors.length > 0) {
-          console.warn('CSV parse errors', results.errors);
-        }
-        const rows = (results.data || []).filter(
-          (r) => r && typeof r === 'object' && Object.values(r).some((v) => v != null && String(v).trim() !== ''),
-        );
-        if (rows.length === 0) {
-          setError('Aucune ligne lisible dans ce fichier.');
-          return;
-        }
-        if (rows.length > MAX_ROWS) {
-          setError(`Trop de lignes (${rows.length}). Limite : ${MAX_ROWS}.`);
-          return;
-        }
-        const headers = (results.meta.fields || []).filter(Boolean);
-        if (headers.length === 0) {
-          setError('Aucune colonne détectée. Vérifiez que la première ligne contient les en-têtes.');
-          return;
-        }
-        void trackRadarEvent('csv_parsed', { rows: rows.length, columns: headers.length });
-        onParsed({ fileName: file.name, headers, rows });
-      },
-      error: (err) => {
-        setLoading(false);
-        setError(`Erreur de lecture du fichier : ${err.message}`);
-      },
-    });
+    try {
+      const parsed = await parseCrmFile(file);
+      void trackRadarEvent('csv_parsed', {
+        rows: parsed.rows.length,
+        columns: parsed.headers.length,
+        fileType: parsed.sourceType,
+        sheetName: parsed.sheetName,
+      });
+      onParsed(parsed);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erreur de lecture du fichier';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,8 +49,10 @@ const RadarCsvUploader: React.FC<Props> = ({ onParsed }) => {
         <p className="text-sm text-foreground font-medium mb-1">
           Glissez-déposez votre fichier CSV ici
         </p>
+        <p className="text-sm text-foreground font-medium mb-1">
+        </p>
         <p className="text-xs text-muted-foreground mb-4">
-          Format CSV uniquement — Excel bientôt disponible — max {MAX_ROWS.toLocaleString('fr-FR')} lignes
+          Formats acceptés : CSV, XLSX — max {MAX_ROWS.toLocaleString('fr-FR')} lignes
         </p>
         <Button
           onClick={() => inputRef.current?.click()}
@@ -94,12 +60,12 @@ const RadarCsvUploader: React.FC<Props> = ({ onParsed }) => {
           variant="default"
         >
           <Upload className="mr-2 h-4 w-4" />
-          {loading ? 'Lecture…' : 'Importer mon fichier CSV'}
+          {loading ? 'Lecture…' : 'Importer mon fichier CSV ou Excel'}
         </Button>
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
