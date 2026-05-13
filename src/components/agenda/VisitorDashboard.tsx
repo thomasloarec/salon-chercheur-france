@@ -355,3 +355,37 @@ function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string
     </div>
   );
 }
+
+function RemoveFromAgendaButton({ eventId, eventName }: { eventId: string; eventName: string }) {
+  const toggleFavorite = useToggleFavorite();
+  const { toast } = useToast();
+
+  const handleRemove = async () => {
+    try {
+      await toggleFavorite.mutateAsync(eventId);
+      toast({
+        title: 'Retiré de votre agenda',
+        description: `"${eventName}" a été retiré de votre agenda.`,
+      });
+    } catch (err) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de retirer cet événement.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleRemove}
+      disabled={toggleFavorite.isPending}
+      className="text-muted-foreground hover:text-destructive"
+    >
+      <CalendarX className="h-4 w-4 mr-1.5" />
+      Retirer de mon agenda
+    </Button>
+  );
+}
