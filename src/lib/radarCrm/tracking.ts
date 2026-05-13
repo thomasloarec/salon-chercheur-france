@@ -43,6 +43,8 @@ export interface PendingImport {
   mapping: Record<string, string>;
   rows: Array<Record<string, unknown>>;
   savedAt: number;
+  sourceType?: 'csv' | 'excel';
+  sheetName?: string;
 }
 
 export function savePendingImport(p: Omit<PendingImport, 'savedAt'>) {
