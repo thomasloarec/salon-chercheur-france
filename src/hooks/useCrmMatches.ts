@@ -1,3 +1,11 @@
+/**
+ * @deprecated [LEGACY / NOT WIRED]
+ * Hook orphelin lié à un ancien flux OAuth CRM (HubSpot / Salesforce / Pipedrive / Zoho).
+ * Le flux Radar CRM actuel passe par l'import CSV/Excel + edge function `crm-import`
+ * et expose ses données via les tables `crm_imports` / `crm_companies` /
+ * `crm_company_event_matches` (voir `src/pages/RadarCrmResults.tsx`).
+ * À conserver tel quel tant qu'on n'a pas tranché sur la future intégration OAuth CRM.
+ */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
