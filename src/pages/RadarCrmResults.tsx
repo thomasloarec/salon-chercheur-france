@@ -312,6 +312,9 @@ const RadarCrmResults: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+                <Settings className="h-4 w-4 mr-2" /> Paramètres Radar CRM
+              </Button>
               {imports && imports.length > 1 && (
                 <Select value={activeImportId ?? ''} onValueChange={setActiveImportId}>
                   <SelectTrigger className="w-[240px] bg-card">
