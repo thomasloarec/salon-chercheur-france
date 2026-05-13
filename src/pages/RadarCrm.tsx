@@ -8,6 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
@@ -47,6 +48,7 @@ const RadarCrmPage: React.FC = () => {
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [mapping, setMapping] = useState<Partial<Record<RadarField, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [privacyAck, setPrivacyAck] = useState(false);
   const autoSubmitRef = useRef(false);
   const resumedFromPendingRef = useRef(false);
 
@@ -424,16 +426,46 @@ const RadarCrmPage: React.FC = () => {
             )}
 
             {user && (
-              <div className="flex justify-center">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting || missingRequired.length > 0}
-                  size="lg"
-                  className="w-full sm:w-auto"
-                >
-                  <Radar className="mr-2 h-4 w-4" />
-                  {submitting ? 'Analyse en cours…' : "Lancer l'analyse Radar CRM"}
-                </Button>
+              <div className="space-y-4">
+                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                  <p className="text-sm text-foreground/80">
+                    En lançant l'analyse, vous autorisez Lotexpo à traiter les entreprises et sites web de ce fichier afin de détecter les salons où ces entreprises exposent. Vos données Radar CRM restent privées et peuvent être supprimées à tout moment depuis vos paramètres Radar CRM.
+                  </p>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={privacyAck}
+                      onCheckedChange={(v) => {
+                        const next = v === true;
+                        setPrivacyAck(next);
+                        if (next) void trackRadarEvent('radar_privacy_notice_acknowledged', { source: 'radar_crm' });
+                      }}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm">
+                      J'ai compris que ce fichier sera utilisé pour générer mon Radar CRM.
+                    </span>
+                  </label>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    onClick={() => {
+                      if (!privacyAck) {
+                        toast({ title: 'Veuillez confirmer', description: "Cochez la case pour autoriser l'analyse de votre fichier." });
+                        return;
+                      }
+                      void handleSubmit();
+                    }}
+                    disabled={submitting || missingRequired.length > 0 || !privacyAck}
+                    size="lg"
+                    className="w-full sm:w-auto"
+                  >
+                    <Radar className="mr-2 h-4 w-4" />
+                    {submitting ? 'Analyse en cours…' : "Lancer l'analyse Radar CRM"}
+                  </Button>
+                  {!privacyAck && (
+                    <p className="text-xs text-muted-foreground">Cochez la case ci-dessus pour activer l'analyse.</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
