@@ -30,16 +30,6 @@ function timingSafeEqual(a: string, b: string): boolean {
   return mismatch === 0
 }
 
-function isAuthorized(req: Request): boolean {
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  if (!serviceRoleKey) return false
-  const authHeader = req.headers.get('Authorization') ?? ''
-  if (!authHeader.startsWith('Bearer ')) return false
-  const token = authHeader.slice('Bearer '.length).trim()
-  if (!token) return false
-  return timingSafeEqual(token, serviceRoleKey)
-}
-
 type AuthMode = 'service_role' | 'admin'
 
 async function authorizeRequest(
