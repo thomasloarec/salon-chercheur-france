@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Radar } from 'lucide-react';
+import RadarCrmRematchPanel from '@/components/admin/RadarCrmRematchPanel';
 
 type Stats = {
   totalImports: number;
@@ -75,6 +76,8 @@ const AdminRadarCrm: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      <RadarCrmRematchPanel />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Derniers imports</CardTitle></CardHeader>
