@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Radar } from 'lucide-react';
 import RadarCrmRematchPanel from '@/components/admin/RadarCrmRematchPanel';
+import RadarCrmCronStatus from '@/components/admin/RadarCrmCronStatus';
 
 type Stats = {
   totalImports: number;
@@ -77,6 +78,7 @@ const AdminRadarCrm: React.FC = () => {
         ))}
       </div>
 
+      <RadarCrmCronStatus />
       <RadarCrmRematchPanel />
 
       <Card>
