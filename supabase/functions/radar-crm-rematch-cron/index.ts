@@ -235,6 +235,8 @@ Deno.serve(async (req) => {
   let notificationsCreated = 0
   let notificationsUpdated = 0
   let skippedNotificationsPreferences = 0
+  let reconciliationCandidatesFound = 0
+  let reconciliationGroupsFound = 0
   let missingNotificationsCreated = 0
   let missingNotificationsSkippedExisting = 0
   let missingNotificationsSkippedPreferences = 0
@@ -265,39 +267,36 @@ Deno.serve(async (req) => {
       const futureMatches = newMatches.filter((m) => m.is_future_event === true)
       futureNewMatches += futureMatches.length
 
-      if (futureMatches.length === 0) continue
-      if (!alertsEnabled) {
-        skippedNotificationsPreferences += 1
-        continue
-      }
-      if (dryRun) continue
+      if (futureMatches.length > 0) {
+        if (!alertsEnabled) {
+          skippedNotificationsPreferences += 1
+        } else {
+          // Group by event_id
+          const byEvent = new Map<string, NewMatchRow[]>()
+          for (const m of futureMatches) {
+            const arr = byEvent.get(m.event_id) ?? []
+            arr.push(m)
+            byEvent.set(m.event_id, arr)
+          }
 
-      // Group by event_id
-      const byEvent = new Map<string, NewMatchRow[]>()
-      for (const m of futureMatches) {
-        const arr = byEvent.get(m.event_id) ?? []
-        arr.push(m)
-        byEvent.set(m.event_id, arr)
-      }
+          // Enrich events
+          const eventIds = Array.from(byEvent.keys())
+          const { data: eventRows } = await supabase
+            .from('events')
+            .select('id, nom_event, slug, date_debut, ville, nom_lieu, url_image')
+            .in('id', eventIds)
+          const eventMap = new Map<string, any>((eventRows ?? []).map((e: any) => [e.id, e]))
 
-      // Enrich events
-      const eventIds = Array.from(byEvent.keys())
-      const { data: eventRows } = await supabase
-        .from('events')
-        .select('id, nom_event, slug, date_debut, ville, nom_lieu, url_image')
-        .in('id', eventIds)
-      const eventMap = new Map<string, any>((eventRows ?? []).map((e: any) => [e.id, e]))
-
-      // Enrich stand info from view
-      const exposantIds = Array.from(new Set(futureMatches.map((m) => m.id_exposant)))
-      const { data: viewRows } = await supabase
-        .from('crm_radar_participations_view')
-        .select('event_id, id_exposant, stand_exposants_list')
-        .in('event_id', eventIds)
-        .in('id_exposant', exposantIds)
-      const standMap = new Map<string, string | null>(
-        (viewRows ?? []).map((v: any) => [`${v.event_id}|${v.id_exposant}`, v.stand_exposants_list ?? null]),
-      )
+          // Enrich stand info from view
+          const exposantIds = Array.from(new Set(futureMatches.map((m) => m.id_exposant)))
+          const { data: viewRows } = await supabase
+            .from('crm_radar_participations_view')
+            .select('event_id, id_exposant, stand_exposants_list')
+            .in('event_id', eventIds)
+            .in('id_exposant', exposantIds)
+          const standMap = new Map<string, string | null>(
+            (viewRows ?? []).map((v: any) => [`${v.event_id}|${v.id_exposant}`, v.stand_exposants_list ?? null]),
+          )
 
       for (const [eventId, matches] of byEvent.entries()) {
         const ev = eventMap.get(eventId) ?? {}
