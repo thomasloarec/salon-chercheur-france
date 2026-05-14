@@ -410,30 +410,35 @@ Deno.serve(async (req) => {
       // notifications_category_check constraint).
       // -----------------------------------------------------------
       if (alertsEnabled) {
-        // 1. All existing matches for this import (via crm_companies)
-        const { data: importCompanies } = await supabase
+        // 1. All existing matches for this import: crm_company_event_matches
+        // joined logically through crm_companies(import_id/user_id), then events(date_debut).
+        // This intentionally does not depend on crm_run_matching's newMatches result.
+        const { data: importCompanies, error: importCompaniesErr } = await supabase
           .from('crm_companies')
           .select('id, company_name')
           .eq('import_id', imp.id)
           .eq('user_id', imp.user_id)
+        if (importCompaniesErr) throw new Error(`reconciliation companies: ${importCompaniesErr.message}`)
         const companyMap = new Map<string, string>(
           (importCompanies ?? []).map((c: any) => [c.id, c.company_name]),
         )
         const companyIds = Array.from(companyMap.keys())
         if (companyIds.length > 0) {
-          const { data: allMatches } = await supabase
+          const { data: allMatches, error: allMatchesErr } = await supabase
             .from('crm_company_event_matches')
             .select('crm_company_id, event_id, id_exposant')
             .eq('user_id', imp.user_id)
             .in('crm_company_id', companyIds)
+          if (allMatchesErr) throw new Error(`reconciliation matches: ${allMatchesErr.message}`)
 
           // Filter to future events
           const matchEventIds = Array.from(new Set((allMatches ?? []).map((m: any) => m.event_id)))
           if (matchEventIds.length > 0) {
-            const { data: evs } = await supabase
+            const { data: evs, error: evsErr } = await supabase
               .from('events')
               .select('id, nom_event, slug, date_debut, ville, nom_lieu, url_image')
               .in('id', matchEventIds)
+            if (evsErr) throw new Error(`reconciliation events: ${evsErr.message}`)
             const evMap = new Map<string, any>((evs ?? []).map((e: any) => [e.id, e]))
             const today = new Date(); today.setHours(0, 0, 0, 0)
 
@@ -461,11 +466,12 @@ Deno.serve(async (req) => {
             const eventIdsR = Array.from(groupedByEvent.keys())
             const standMapR = new Map<string, string | null>()
             if (exposantIdsR.length > 0 && eventIdsR.length > 0) {
-              const { data: viewRowsR } = await supabase
+              const { data: viewRowsR, error: viewRowsRErr } = await supabase
                 .from('crm_radar_participations_view')
                 .select('event_id, id_exposant, stand_exposants_list')
                 .in('event_id', eventIdsR)
                 .in('id_exposant', exposantIdsR)
+              if (viewRowsRErr) throw new Error(`reconciliation stands: ${viewRowsRErr.message}`)
               for (const v of viewRowsR ?? []) {
                 standMapR.set(`${(v as any).event_id}|${(v as any).id_exposant}`, (v as any).stand_exposants_list ?? null)
               }
@@ -473,7 +479,7 @@ Deno.serve(async (req) => {
 
             for (const [eventId, companies] of groupedByEvent.entries()) {
               const groupKey = `radar_crm:${imp.user_id}:${imp.id}:${eventId}`
-              const { data: existingNotif } = await supabase
+              const { data: existingNotif, error: existingNotifErr } = await supabase
                 .from('notifications')
                 .select('id')
                 .eq('user_id', imp.user_id)
@@ -481,6 +487,7 @@ Deno.serve(async (req) => {
                 .eq('group_key', groupKey)
                 .limit(1)
                 .maybeSingle()
+              if (existingNotifErr) throw new Error(`reconciliation existing notification: ${existingNotifErr.message}`)
               if (existingNotif) {
                 missingNotificationsSkippedExisting++
                 continue
