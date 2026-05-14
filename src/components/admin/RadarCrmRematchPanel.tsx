@@ -27,7 +27,6 @@ import {
   Loader2,
   Play,
   FlaskConical,
-  RefreshCw,
   ChevronDown,
   ChevronUp,
   Settings2,
@@ -55,13 +54,6 @@ type RematchResult = {
   error?: string;
 };
 
-type RunHistoryRow = {
-  id: string;
-  event_type: string;
-  created_at: string;
-  metadata: any;
-};
-
 const RadarCrmRematchPanel: React.FC = () => {
   const [maxImports, setMaxImports] = useState<string>('50');
   const [userId, setUserId] = useState('');
@@ -73,8 +65,6 @@ const RadarCrmRematchPanel: React.FC = () => {
   const [lastDryRun, setLastDryRun] = useState<RematchResult | null>(null);
   const [lastDryRunKey, setLastDryRunKey] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [history, setHistory] = useState<RunHistoryRow[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
 
   const currentParamsKey = useMemo(
     () => `${maxImports}|${userId.trim()}|${importId.trim()}`,
@@ -82,27 +72,6 @@ const RadarCrmRematchPanel: React.FC = () => {
   );
 
   const realRunEnabled = lastDryRunKey !== null && lastDryRunKey === currentParamsKey;
-
-  const loadHistory = async () => {
-    setHistoryLoading(true);
-    const { data } = await supabase
-      .from('crm_usage_events')
-      .select('id, event_type, created_at, metadata')
-      .in('event_type', [
-        'radar_rematch_cron_started',
-        'radar_rematch_cron_completed',
-        'radar_rematch_new_matches_detected',
-        'radar_notification_created',
-      ])
-      .order('created_at', { ascending: false })
-      .limit(20);
-    setHistory((data as any[]) ?? []);
-    setHistoryLoading(false);
-  };
-
-  useEffect(() => {
-    loadHistory();
-  }, []);
 
   const invoke = async (dryRun: boolean) => {
     setLoading(dryRun ? 'dry' : 'real');
@@ -131,7 +100,6 @@ const RadarCrmRematchPanel: React.FC = () => {
       } else {
         toast.error('Échec du re-matching');
       }
-      await loadHistory();
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       toast.error(`Erreur: ${msg}`);
@@ -311,12 +279,16 @@ const RadarCrmRematchPanel: React.FC = () => {
                 </p>
               ) : (
                 <ul className="text-sm space-y-1">
-                  <li>• imports analysés : <strong>{lastDryRun.importsProcessed ?? 0}</strong></li>
-                  <li>• nouveaux matches estimés : <strong>{lastDryRun.estimatedNewMatches ?? 0}</strong></li>
-                  <li>• opportunités futures estimées : <strong>{lastDryRun.estimatedFutureNewMatches ?? 0}</strong></li>
-                  <li>• notifications potentielles : <strong>{lastDryRun.estimatedNotifications ?? 0}</strong></li>
+                  <li>• Imports analysés : <strong>{lastDryRun.importsProcessed ?? 0}</strong></li>
+                  <li>• Nouveaux matches estimés : <strong>{lastDryRun.estimatedNewMatches ?? 0}</strong></li>
+                  <li>• Nouvelles opportunités futures estimées : <strong>{lastDryRun.estimatedFutureNewMatches ?? 0}</strong></li>
+                  <li>• Nouvelles notifications potentielles : <strong>{lastDryRun.estimatedNotifications ?? 0}</strong></li>
                 </ul>
               )}
+              <p className="text-xs text-muted-foreground pt-1 border-t mt-2">
+                La prévisualisation estime les nouveaux matches. Le run réel vérifie aussi les
+                notifications manquées sur des matches déjà existants.
+              </p>
             </div>
           )}
 
@@ -374,63 +346,6 @@ const RadarCrmRematchPanel: React.FC = () => {
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Derniers runs Radar CRM</CardTitle>
-          <Button size="sm" variant="ghost" onClick={loadHistory} disabled={historyLoading}>
-            <RefreshCw className={`h-4 w-4 ${historyLoading ? 'animate-spin' : ''}`} />
-          </Button>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-2">Date</th>
-                <th className="text-left p-2">Type</th>
-                <th className="text-left p-2">Imports</th>
-                <th className="text-left p-2">New matches</th>
-                <th className="text-left p-2">Notif. créées</th>
-                <th className="text-left p-2">Notif. MAJ</th>
-                <th className="text-left p-2">Erreurs</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.length === 0 && (
-                <tr>
-                  <td className="p-2 text-muted-foreground" colSpan={7}>
-                    Aucun run enregistré.
-                  </td>
-                </tr>
-              )}
-              {history.map((row) => {
-                const m = row.metadata ?? {};
-                return (
-                  <tr key={row.id} className="border-t">
-                    <td className="p-2 whitespace-nowrap">
-                      {new Date(row.created_at).toLocaleString('fr-FR')}
-                    </td>
-                    <td className="p-2">
-                      <Badge variant="outline" className="text-xs">
-                        {row.event_type.replace('radar_', '')}
-                      </Badge>
-                    </td>
-                    <td className="p-2">{m.importsProcessed ?? '—'}</td>
-                    <td className="p-2">
-                      {m.newMatchesCreated ?? m.estimatedNewMatches ?? m.futureNewMatches ?? '—'}
-                    </td>
-                    <td className="p-2">{m.notificationsCreated ?? '—'}</td>
-                    <td className="p-2">{m.notificationsUpdated ?? '—'}</td>
-                    <td className="p-2">
-                      {Array.isArray(m.errors) ? m.errors.length : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
         </CardContent>
       </Card>
 
