@@ -153,6 +153,13 @@ const RadarCrmRematchPanel: React.FC = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-5">
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-foreground flex gap-2">
+            <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <p>
+              Utilisez ce panneau pour tester ou déclencher manuellement le re-matching.
+              Le dry-run doit toujours être lancé avant le run réel.
+            </p>
+          </div>
           <div>
             <Label className="text-xs">maxImports</Label>
             <Select value={maxImports} onValueChange={setMaxImports}>
