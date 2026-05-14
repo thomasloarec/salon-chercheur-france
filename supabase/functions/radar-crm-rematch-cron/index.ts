@@ -388,6 +388,8 @@ Deno.serve(async (req) => {
           })
         }
       }
+        }
+      }
 
       if (futureMatches.length > 0) {
         await supabase.from('crm_usage_events').insert({
@@ -441,6 +443,7 @@ Deno.serve(async (req) => {
               const ev = evMap.get((m as any).event_id)
               if (!ev || !ev.date_debut) continue
               if (new Date(ev.date_debut) < today) continue
+              reconciliationCandidatesFound++
               const arr = groupedByEvent.get((m as any).event_id) ?? []
               arr.push({
                 crmCompanyId: (m as any).crm_company_id,
@@ -449,6 +452,7 @@ Deno.serve(async (req) => {
               })
               groupedByEvent.set((m as any).event_id, arr)
             }
+            reconciliationGroupsFound += groupedByEvent.size
 
             // Stand info
             const exposantIdsR = Array.from(new Set(
@@ -548,6 +552,8 @@ Deno.serve(async (req) => {
     notificationsCreated,
     notificationsUpdated,
     skippedNotificationsPreferences,
+    reconciliationCandidatesFound,
+    reconciliationGroupsFound,
     missingNotificationsCreated,
     missingNotificationsSkippedExisting,
     missingNotificationsSkippedPreferences,
