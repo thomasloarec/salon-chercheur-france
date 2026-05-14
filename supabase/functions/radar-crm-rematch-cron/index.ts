@@ -235,6 +235,9 @@ Deno.serve(async (req) => {
   let notificationsCreated = 0
   let notificationsUpdated = 0
   let skippedNotificationsPreferences = 0
+  let missingNotificationsCreated = 0
+  let missingNotificationsSkippedExisting = 0
+  let missingNotificationsSkippedPreferences = 0
 
   for (const imp of imports ?? []) {
     importsProcessed++
@@ -399,6 +402,137 @@ Deno.serve(async (req) => {
           } as never,
         })
       }
+
+      // -----------------------------------------------------------
+      // RECONCILIATION — for matches that already existed but never
+      // produced a notification (e.g. previous insert blocked by the
+      // notifications_category_check constraint).
+      // -----------------------------------------------------------
+      if (alertsEnabled) {
+        // 1. All existing matches for this import (via crm_companies)
+        const { data: importCompanies } = await supabase
+          .from('crm_companies')
+          .select('id, company_name')
+          .eq('import_id', imp.id)
+          .eq('user_id', imp.user_id)
+        const companyMap = new Map<string, string>(
+          (importCompanies ?? []).map((c: any) => [c.id, c.company_name]),
+        )
+        const companyIds = Array.from(companyMap.keys())
+        if (companyIds.length > 0) {
+          const { data: allMatches } = await supabase
+            .from('crm_company_event_matches')
+            .select('crm_company_id, event_id, id_exposant')
+            .eq('user_id', imp.user_id)
+            .in('crm_company_id', companyIds)
+
+          // Filter to future events
+          const matchEventIds = Array.from(new Set((allMatches ?? []).map((m: any) => m.event_id)))
+          if (matchEventIds.length > 0) {
+            const { data: evs } = await supabase
+              .from('events')
+              .select('id, nom_event, slug, date_debut, ville, nom_lieu, url_image')
+              .in('id', matchEventIds)
+            const evMap = new Map<string, any>((evs ?? []).map((e: any) => [e.id, e]))
+            const today = new Date(); today.setHours(0, 0, 0, 0)
+
+            // Group future matches by event
+            const groupedByEvent = new Map<string, Array<{ crmCompanyId: string; companyName: string; idExposant: string }>>()
+            for (const m of allMatches ?? []) {
+              const ev = evMap.get((m as any).event_id)
+              if (!ev || !ev.date_debut) continue
+              if (new Date(ev.date_debut) < today) continue
+              const arr = groupedByEvent.get((m as any).event_id) ?? []
+              arr.push({
+                crmCompanyId: (m as any).crm_company_id,
+                companyName: companyMap.get((m as any).crm_company_id) ?? 'Entreprise',
+                idExposant: (m as any).id_exposant,
+              })
+              groupedByEvent.set((m as any).event_id, arr)
+            }
+
+            // Stand info
+            const exposantIdsR = Array.from(new Set(
+              Array.from(groupedByEvent.values()).flat().map((c) => c.idExposant),
+            ))
+            const eventIdsR = Array.from(groupedByEvent.keys())
+            const standMapR = new Map<string, string | null>()
+            if (exposantIdsR.length > 0 && eventIdsR.length > 0) {
+              const { data: viewRowsR } = await supabase
+                .from('crm_radar_participations_view')
+                .select('event_id, id_exposant, stand_exposants_list')
+                .in('event_id', eventIdsR)
+                .in('id_exposant', exposantIdsR)
+              for (const v of viewRowsR ?? []) {
+                standMapR.set(`${(v as any).event_id}|${(v as any).id_exposant}`, (v as any).stand_exposants_list ?? null)
+              }
+            }
+
+            for (const [eventId, companies] of groupedByEvent.entries()) {
+              const groupKey = `radar_crm:${imp.user_id}:${imp.id}:${eventId}`
+              const { data: existingNotif } = await supabase
+                .from('notifications')
+                .select('id')
+                .eq('user_id', imp.user_id)
+                .eq('type', 'radar_new_matches')
+                .eq('group_key', groupKey)
+                .limit(1)
+                .maybeSingle()
+              if (existingNotif) {
+                missingNotificationsSkippedExisting++
+                continue
+              }
+              const ev = evMap.get(eventId) ?? {}
+              const eventName: string = ev.nom_event ?? 'un salon'
+              const enrichedCompanies = companies.map((c) => ({
+                ...c,
+                stand: standMapR.get(`${eventId}|${c.idExposant}`) ?? null,
+              }))
+              const count = enrichedCompanies.length
+              const message = count === 1
+                ? `${enrichedCompanies[0].companyName} expose à ${eventName}`
+                : `${count} entreprises de votre Radar CRM exposent à ${eventName}`
+              const metadata = {
+                source: 'radar_crm',
+                importId: imp.id,
+                eventId,
+                eventName,
+                eventDate: ev.date_debut ?? null,
+                eventCity: ev.ville ?? null,
+                eventVenue: ev.nom_lieu ?? null,
+                eventSlug: ev.slug ?? null,
+                eventImage: ev.url_image ?? null,
+                companies: enrichedCompanies,
+                reconciliation: true,
+              }
+              const { error: recInsErr } = await supabase.from('notifications').insert({
+                user_id: imp.user_id,
+                type: 'radar_new_matches',
+                category: 'radar_crm',
+                title: 'Nouvelle opportunité Radar CRM',
+                message,
+                icon: '🎯',
+                event_id: eventId,
+                link_url: `/radar-crm/results?importId=${imp.id}&eventId=${eventId}`,
+                group_key: groupKey,
+                group_count: count,
+                metadata: metadata as never,
+              })
+              if (recInsErr) {
+                throw new Error(`reconciliation notification insert: ${recInsErr.message}`)
+              }
+              missingNotificationsCreated++
+              await supabase.from('crm_usage_events').insert({
+                event_type: 'radar_notification_reconciled',
+                user_id: null,
+                metadata: { source: 'radar_crm_system', userId: imp.user_id, importId: imp.id, eventId, count } as never,
+              })
+            }
+          }
+        }
+      } else {
+        missingNotificationsSkippedPreferences++
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
       console.error('Import processing failed', { importId: imp.id, userId: imp.user_id, message })
@@ -415,6 +549,9 @@ Deno.serve(async (req) => {
     notificationsCreated,
     notificationsUpdated,
     skippedNotificationsPreferences,
+    missingNotificationsCreated,
+    missingNotificationsSkippedExisting,
+    missingNotificationsSkippedPreferences,
     errors,
   }
 
