@@ -54,6 +54,7 @@ const RadarCrmCronStatus: React.FC = () => {
   const [runs, setRuns] = useState<RunRow[]>([]);
   const [openErrors, setOpenErrors] = useState<Record<string, boolean>>({});
   const [openCron, setOpenCron] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   const load = async () => {
     setLoading(true);
@@ -62,7 +63,7 @@ const RadarCrmCronStatus: React.FC = () => {
       .select('id, created_at, metadata')
       .eq('event_type', 'radar_rematch_cron_completed')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(30);
     setRuns((data as any[]) ?? []);
     setLoading(false);
   };
@@ -204,7 +205,7 @@ const RadarCrmCronStatus: React.FC = () => {
       {/* Block 3: history */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">10 derniers runs Radar CRM</CardTitle>
+          <CardTitle className="text-base">Historique des re-matchings Radar CRM</CardTitle>
           <Button size="sm" variant="ghost" onClick={load} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -217,6 +218,8 @@ const RadarCrmCronStatus: React.FC = () => {
                 <th className="text-left p-2">Type</th>
                 <th className="text-left p-2">Imports analysés</th>
                 <th className="text-left p-2">Nouveaux matches</th>
+                <th className="text-left p-2">Matches existants vérifiés</th>
+                <th className="text-left p-2">Groupes vérifiés</th>
                 <th className="text-left p-2">Notif. créées</th>
                 <th className="text-left p-2">Notif. réparées</th>
                 <th className="text-left p-2">Notif. déjà existantes</th>
@@ -226,12 +229,12 @@ const RadarCrmCronStatus: React.FC = () => {
             <tbody>
               {runs.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={8} className="p-2 text-muted-foreground">
+                  <td colSpan={10} className="p-2 text-muted-foreground">
                     Aucun run enregistré.
                   </td>
                 </tr>
               )}
-              {runs.map((r) => {
+              {runs.slice(0, visibleCount).map((r) => {
                 const m = r.metadata ?? {};
                 const errors = Array.isArray(m.errors) ? m.errors : [];
                 const isOpen = !!openErrors[r.id];
@@ -250,6 +253,8 @@ const RadarCrmCronStatus: React.FC = () => {
                       <td className="p-2">
                         {fmt(m.newMatchesCreated ?? m.estimatedNewMatches)}
                       </td>
+                      <td className="p-2">{fmt(m.reconciliationCandidatesFound)}</td>
+                      <td className="p-2">{fmt(m.reconciliationGroupsFound)}</td>
                       <td className="p-2">{fmt(m.notificationsCreated)}</td>
                       <td className="p-2">{fmt(m.missingNotificationsCreated)}</td>
                       <td className="p-2">{fmt(m.missingNotificationsSkippedExisting)}</td>
@@ -270,7 +275,7 @@ const RadarCrmCronStatus: React.FC = () => {
                     </tr>
                     {isOpen && errors.length > 0 && (
                       <tr className="border-t bg-muted/30">
-                        <td colSpan={8} className="p-2">
+                        <td colSpan={10} className="p-2">
                           <pre className="text-xs bg-background p-2 rounded border max-h-64 overflow-auto">
                             {JSON.stringify(errors, null, 2)}
                           </pre>
@@ -282,6 +287,17 @@ const RadarCrmCronStatus: React.FC = () => {
               })}
             </tbody>
           </table>
+          {runs.length > visibleCount && (
+            <div className="flex justify-center mt-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setVisibleCount((c) => Math.min(c + 20, runs.length))}
+              >
+                Voir plus
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -314,7 +330,7 @@ const RadarCrmCronStatus: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/40 transition-colors text-left"
             >
               <div>
-                <p className="text-base font-semibold">Activation future du cron quotidien</p>
+                <p className="text-base font-semibold">Activer le re-matching automatique quotidien</p>
                 <p className="text-sm text-muted-foreground">
                   Procédure recommandée pour automatiser le re-matching.
                 </p>
@@ -329,8 +345,11 @@ const RadarCrmCronStatus: React.FC = () => {
           <CollapsibleContent>
             <CardContent className="space-y-3 border-t pt-4">
               <p className="text-sm text-muted-foreground">
-                Une fois les tests manuels validés, vous pourrez activer un cron quotidien
-                pour lancer automatiquement le re-matching Radar CRM.
+                Cette commande permet à Supabase de lancer automatiquement le Radar CRM tous
+                les matins. Elle appelle la fonction sécurisée{' '}
+                <span className="font-mono">radar-crm-rematch-cron</span> avec la clé
+                service_role stockée dans Supabase Vault. La clé n'est jamais affichée dans
+                Lotexpo.
               </p>
               <div className="flex justify-end">
                 <Button size="sm" variant="outline" onClick={copySql}>
@@ -338,13 +357,22 @@ const RadarCrmCronStatus: React.FC = () => {
                   Copier la commande SQL
                 </Button>
               </div>
-              <pre className="text-xs bg-muted p-3 rounded border max-h-96 overflow-auto whitespace-pre">
-                {SQL_TEMPLATE}
-              </pre>
-              <p className="text-xs text-muted-foreground">
-                La SERVICE_ROLE_KEY n'est jamais exposée côté frontend : la commande la lit
-                depuis Supabase Vault au moment de l'exécution.
-              </p>
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between gap-2 p-2 rounded border hover:bg-muted/40 transition-colors text-left text-sm font-medium"
+                  >
+                    <span>Afficher la commande SQL d'activation</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <pre className="text-xs bg-muted p-3 mt-2 rounded border max-h-96 overflow-auto whitespace-pre">
+                    {SQL_TEMPLATE}
+                  </pre>
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </CollapsibleContent>
         </Collapsible>
