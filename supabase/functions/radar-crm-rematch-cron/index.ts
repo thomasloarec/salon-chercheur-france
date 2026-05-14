@@ -4,8 +4,10 @@
 // import, then turns the new matches (future events only) into in-app
 // notifications grouped per (user, import, event).
 //
-// Auth gate: caller MUST present `Authorization: Bearer <SERVICE_ROLE_KEY>`.
-// Same convention as `notifications-create`. No user JWT, no anon key.
+// Auth gate: caller MUST present `Authorization: Bearer <token>` where token is
+// either the service role key (backend/cron) OR a valid user JWT belonging to
+// an admin (manual trigger from /admin/radar-crm). Never trust userId from the
+// payload for authorization — only as an execution filter.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
 const corsHeaders = {
@@ -38,6 +40,52 @@ function isAuthorized(req: Request): boolean {
   return timingSafeEqual(token, serviceRoleKey)
 }
 
+type AuthMode = 'service_role' | 'admin'
+
+async function authorizeRequest(
+  req: Request,
+): Promise<{ ok: true; mode: AuthMode } | { ok: false; status: number; error: string }> {
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+  if (!serviceRoleKey || !supabaseUrl) {
+    return { ok: false, status: 500, error: 'Server misconfigured' }
+  }
+  const authHeader = req.headers.get('Authorization') ?? ''
+  if (!authHeader.startsWith('Bearer ')) {
+    return { ok: false, status: 401, error: 'Unauthorized' }
+  }
+  const token = authHeader.slice('Bearer '.length).trim()
+  if (!token) return { ok: false, status: 401, error: 'Unauthorized' }
+
+  // Mode A — service role (backend / cron)
+  if (timingSafeEqual(token, serviceRoleKey)) {
+    return { ok: true, mode: 'service_role' }
+  }
+
+  // Mode B — admin user JWT
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+  if (!anonKey) return { ok: false, status: 401, error: 'Unauthorized' }
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const { data: userData, error: userErr } = await userClient.auth.getUser(token)
+  if (userErr || !userData?.user) {
+    return { ok: false, status: 401, error: 'Unauthorized' }
+  }
+  // Use service-role client to evaluate admin status reliably
+  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const { data: isAdmin, error: adminErr } = await adminClient.rpc('is_admin', {
+    _user_id: userData.user.id,
+  } as never)
+  if (adminErr || isAdmin !== true) {
+    return { ok: false, status: 403, error: 'Forbidden' }
+  }
+  return { ok: true, mode: 'admin' }
+}
+
 interface NewMatchRow {
   match_id: string
   crm_company_id: string
@@ -53,9 +101,10 @@ interface NewMatchRow {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
   if (req.method !== 'POST') return jsonResp({ error: 'Method not allowed' }, 405)
-  if (!isAuthorized(req)) {
-    console.warn('radar-crm-rematch-cron: unauthorized call rejected')
-    return jsonResp({ error: 'Unauthorized' }, 401)
+  const auth = await authorizeRequest(req)
+  if (!auth.ok) {
+    console.warn('radar-crm-rematch-cron: rejected', { status: auth.status })
+    return jsonResp({ error: auth.error }, auth.status)
   }
 
   let payload: any = {}
