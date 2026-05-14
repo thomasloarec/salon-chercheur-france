@@ -77,8 +77,9 @@ async function authorizeRequest(
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
-  const { data: isAdmin, error: adminErr } = await adminClient.rpc('is_admin', {
+  const { data: isAdmin, error: adminErr } = await adminClient.rpc('has_role', {
     _user_id: userData.user.id,
+    _role: 'admin',
   } as never)
   if (adminErr || isAdmin !== true) {
     return { ok: false, status: 403, error: 'Forbidden' }
