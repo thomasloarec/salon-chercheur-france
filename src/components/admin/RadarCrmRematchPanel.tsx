@@ -46,6 +46,11 @@ type RematchResult = {
   notificationsCreated?: number;
   notificationsUpdated?: number;
   skippedNotificationsPreferences?: number;
+  missingNotificationsCreated?: number;
+  missingNotificationsSkippedExisting?: number;
+  missingNotificationsSkippedPreferences?: number;
+  reconciliationCandidatesFound?: number;
+  reconciliationGroupsFound?: number;
   errors?: Array<{ importId: string; userId: string; message: string }>;
   error?: string;
 };
@@ -328,6 +333,26 @@ const RadarCrmRematchPanel: React.FC = () => {
                 <Stat
                   label="skippedNotificationsPreferences"
                   value={result.skippedNotificationsPreferences}
+                />
+                <Stat
+                  label="Matches existants éligibles à réconciliation"
+                  value={result.reconciliationCandidatesFound}
+                />
+                <Stat
+                  label="Groupes de notifications à vérifier"
+                  value={result.reconciliationGroupsFound}
+                />
+                <Stat
+                  label="Notifications manquées réparées"
+                  value={result.missingNotificationsCreated}
+                />
+                <Stat
+                  label="Notifications déjà existantes"
+                  value={result.missingNotificationsSkippedExisting}
+                />
+                <Stat
+                  label="Notifications ignorées par préférences"
+                  value={result.missingNotificationsSkippedPreferences}
                 />
               </div>
               {result.errors && result.errors.length > 0 && (
