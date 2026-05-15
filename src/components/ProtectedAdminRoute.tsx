@@ -28,14 +28,18 @@ const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
   React.useEffect(() => {
     const checkAdminRole = async () => {
       if (user) {
+        setLoading(true);
         const { data, error } = await supabase
           .rpc('is_admin');
         
         if (!error) {
           setIsAdmin(data || false);
         }
+        setLoading(false);
+      } else {
+        setIsAdmin(false);
+        setLoading(false);
       }
-      setLoading(false);
     };
     
     checkAdminRole();

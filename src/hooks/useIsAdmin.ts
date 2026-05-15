@@ -22,6 +22,7 @@ export const useIsAdmin = () => {
         return;
       }
 
+      setLoading(true);
       try {
         const { data, error } = await supabase.rpc('is_admin');
         
