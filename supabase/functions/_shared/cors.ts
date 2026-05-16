@@ -1,5 +1,8 @@
 export const ALLOWED_ORIGINS = [
   "https://lotexpo.fr",
+  "https://lotexpo.com",
+  "https://www.lotexpo.com",
+  "https://lotexpo.lovable.app",
   "https://*.lovableproject.com",
   "https://*.lovable.app",
   "http://localhost:3000",
