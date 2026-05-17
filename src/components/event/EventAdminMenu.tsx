@@ -52,7 +52,9 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
     return null;
   }
 
-  const isPendingEvent = !event.visible;
+  // Un événement "pending" provient de staging_events_import (slug préfixé `pending-`).
+  // La visibilité (visible=false) ne suffit PAS : un événement publié peut être masqué.
+  const isPendingEvent = typeof event.slug === 'string' && event.slug.startsWith('pending-');
 
   const handlePublishEvent = async () => {
     setIsPublishing(true);
@@ -189,17 +191,33 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
     try {
       console.log('Attempting to delete event with ID:', event.id);
       
-      // Utiliser la bonne table selon si c'est un événement en attente ou publié
-      const tableName = isPendingEvent ? 'staging_events_import' : 'events';
-      
-      const { error } = await supabase
-        .from(tableName)
-        .delete()
-        .eq('id_event', event.id_event);
+      let deletedCount = 0;
 
-      if (error) {
-        console.error('Supabase delete error:', error);
-        throw error;
+      if (isPendingEvent) {
+        const { error, count } = await supabase
+          .from('staging_events_import')
+          .delete({ count: 'exact' })
+          .eq('id', event.id);
+        if (error) {
+          console.error('Supabase delete error (staging):', error);
+          throw error;
+        }
+        deletedCount = count ?? 0;
+      } else {
+        // Suppression par UUID (clé primaire) — plus fiable que id_event
+        const { error, count } = await supabase
+          .from('events')
+          .delete({ count: 'exact' })
+          .eq('id', event.id);
+        if (error) {
+          console.error('Supabase delete error (events):', error);
+          throw error;
+        }
+        deletedCount = count ?? 0;
+      }
+
+      if (deletedCount === 0) {
+        throw new Error("Aucune ligne supprimée. Vérifiez vos droits admin ou des données liées bloquant la suppression.");
       }
 
       console.log('Event deleted successfully');
@@ -208,6 +226,12 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         title: "Événement supprimé",
         description: "L'événement a été supprimé définitivement.",
       });
+
+      // Invalider les caches pour que les listes admin se rafraîchissent
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events:infinite'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-event-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-events'] });
 
       // Close the dialog first
       setShowDeleteDialog(false);
@@ -219,7 +243,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       console.error('Error deleting event:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer l'événement.",
+        description: error instanceof Error ? error.message : "Impossible de supprimer l'événement.",
         variant: "destructive",
       });
     } finally {
