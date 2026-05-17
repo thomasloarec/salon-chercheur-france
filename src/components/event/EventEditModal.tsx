@@ -70,6 +70,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     url_site_officiel: '',
     type_event: 'salon' as Event['type_event'],
     tarif: '',
+    affluence: '',
     visible: true,
   });
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
@@ -191,6 +192,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       url_site_officiel: event.url_site_officiel || '',
       type_event: (event.type_event as Event['type_event']) || 'salon',
       tarif: event.tarif || '',
+      affluence: event.affluence ? String(event.affluence) : '',
       visible: event.visible ?? true,
     });
 
@@ -286,6 +288,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           url_site_officiel: formData.url_site_officiel || null,
           type_event: formData.type_event,
           tarif: formData.tarif || null,
+          affluence: formData.affluence || null,
           updated_at: new Date().toISOString(),
         };
 
@@ -321,6 +324,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
           url_site_officiel: formData.url_site_officiel || null,
           type_event: formData.type_event,
           tarif: formData.tarif || null,
+          affluence: formData.affluence || null,
           visible: formData.visible,
           slug: seoSlug || event.slug,
           meta_description_gen: seoMetaDescription || null,
@@ -658,6 +662,19 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                 value={formData.tarif}
                 onChange={(e) => setFormData((prev) => ({ ...prev, tarif: e.target.value }))}
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <Label htmlFor="affluence">Affluence (nombre de visiteurs attendus)</Label>
+              <Input
+                id="affluence"
+                value={formData.affluence}
+                onChange={(e) => setFormData((prev) => ({ ...prev, affluence: e.target.value }))}
+                placeholder="ex: 15000 ou Non communiqué"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Saisissez un nombre (ex. 15000) ou un texte libre.
+              </p>
             </div>
           </div>
 
