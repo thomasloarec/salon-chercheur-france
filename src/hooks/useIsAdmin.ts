@@ -34,6 +34,7 @@ export const useIsAdmin = () => {
       setLoading(true);
       try {
         const { data, error } = await supabase.rpc('is_admin');
+        if (cancelled) return;
         
         if (error) {
           console.error('Error checking admin status:', error);
