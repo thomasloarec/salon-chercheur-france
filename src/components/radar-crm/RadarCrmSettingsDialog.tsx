@@ -36,6 +36,9 @@ type Prefs = {
   trial_teasers_enabled: boolean;
   preferred_alert_timing_days: number;
   max_emails_per_week: number;
+  radar_email_enabled: boolean;
+  radar_email_unsubscribed_at: string | null;
+  radar_email_disabled_at: string | null;
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -71,6 +74,9 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
         trial_teasers_enabled: true,
         preferred_alert_timing_days: 14,
         max_emails_per_week: 2,
+        radar_email_enabled: false,
+        radar_email_unsubscribed_at: null,
+        radar_email_disabled_at: null,
       });
       setLoading(false);
     })();
@@ -98,6 +104,21 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
       source: 'radar_crm',
       ...patch,
     });
+  };
+
+  const toggleEmail = async (enabled: boolean) => {
+    if (enabled) {
+      await updatePref({
+        radar_email_enabled: true,
+        radar_email_unsubscribed_at: null,
+        radar_email_disabled_at: null,
+      });
+    } else {
+      await updatePref({
+        radar_email_enabled: false,
+        radar_email_disabled_at: new Date().toISOString(),
+      });
+    }
   };
 
   const handleDeleteClick = () => {
@@ -187,6 +208,20 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
                       checked={prefs.radar_alerts_enabled}
                       disabled={saving}
                       onCheckedChange={(v) => void updatePref({ radar_alerts_enabled: v })}
+                    />
+                  </div>
+
+                  <div className="flex items-start justify-between gap-4 border-t pt-4">
+                    <div className="flex-1">
+                      <Label className="font-medium">Recevoir les alertes Radar CRM par email</Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Recevez un email lorsque des entreprises de votre CRM sont détectées sur des salons à venir. Indépendant des notifications internes Lotexpo ci-dessus.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={prefs.radar_email_enabled}
+                      disabled={saving}
+                      onCheckedChange={(v) => void toggleEmail(v)}
                     />
                   </div>
 
