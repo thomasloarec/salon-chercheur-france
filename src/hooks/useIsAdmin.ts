@@ -10,14 +10,23 @@ import { supabase } from '@/integrations/supabase/client';
  * @returns {boolean} loading - Whether the admin check is still in progress
  */
 export const useIsAdmin = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const checkAdminRole = async () => {
+      if (authLoading) {
+        return;
+      }
+
       if (!user) {
+        if (cancelled) return;
         setIsAdmin(false);
+        setCheckedUserId(null);
         setLoading(false);
         return;
       }
@@ -36,12 +45,21 @@ export const useIsAdmin = () => {
         console.error('Unexpected error checking admin status:', err);
         setIsAdmin(false);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setCheckedUserId(user.id);
+          setLoading(false);
+        }
       }
     };
 
     checkAdminRole();
-  }, [user]);
 
-  return { isAdmin, loading };
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, authLoading]);
+
+  const waitingForCurrentUserCheck = !!user && checkedUserId !== user.id;
+
+  return { isAdmin, loading: authLoading || loading || waitingForCurrentUserCheck };
 };
