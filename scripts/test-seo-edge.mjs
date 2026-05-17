@@ -1,37 +1,89 @@
 #!/usr/bin/env node
-// Quick raw-HTML smoke test for the SEO edge middleware.
+// Raw-HTML smoke test for the SEO edge middleware (pre-JS view).
 // Usage: BASE=https://lotexpo.com node scripts/test-seo-edge.mjs
 const BASE = process.env.BASE || 'https://lotexpo.com';
-const URLS = [
-  '/',
-  '/blog',
-  '/events/architect-work-bordeaux',
-  '/events/enviropro-sud-ouest-2027',
-  '/secteur/agroalimentaire',
-  '/ville/paris',
+
+const TARGETS = [
+  { url: '/', kind: 'home' },
+  { url: '/blog', kind: 'blog-index' },
+  { url: '/blog/salons-sante-medical-juin-2026', kind: 'blog-article' },
+  { url: '/events/global-industrie', kind: 'event-with-exhibitors' },
+  { url: '/events/ideobain', kind: 'event-without-exhibitors' },
+  { url: '/secteur/agroalimentaire', kind: 'sector' },
+  { url: '/ville/paris', kind: 'city' },
 ];
 
-const checks = [
-  ['has <title> non générique', (h) => /<title>(?!Lotexpo \| Tous les salons)[^<]+<\/title>/i.test(h)],
-  ['has canonical', (h) => /<link rel="canonical"/i.test(h)],
-  ['has meta description', (h) => /<meta name="description"/i.test(h)],
-  ['has #seo-prerender H1', (h) => /<div id="seo-prerender"[^>]*>[\s\S]*?<h1/i.test(h)],
-  ['no Chargement title', (h) => !/<title>[^<]*Chargement/i.test(h)],
-];
+const baseChecks = {
+  'title spécifique (≠ shell)': (h) =>
+    /<title>([^<]+)<\/title>/i.test(h) &&
+    !/<title>Lotexpo \| Tous les salons professionnels en France<\/title>/i.test(h),
+  'meta description présente': (h) => /<meta\s+name="description"\s+content="[^"]+"/i.test(h),
+  'canonical présent': (h) => /<link\s+rel="canonical"\s+href="https:\/\/lotexpo\.com[^"]*"/i.test(h),
+  'pas de "Chargement…" en title': (h) => !/<title>[^<]*Chargement/i.test(h),
+  'H1 présent dans le HTML brut': (h) => /<h1[\s>]/i.test(h),
+};
 
-const r = await Promise.all(URLS.map(async (p) => {
+const perKind = {
+  'event-with-exhibitors': {
+    'JSON-LD Event présent': (h) => /"@type"\s*:\s*"Event"/.test(h),
+    'lien interne /secteur/': (h) => /<a[^>]+href="\/secteur\/[^"]+"/i.test(h),
+    'lien interne /ville/': (h) => /<a[^>]+href="\/ville\/[^"]+"/i.test(h),
+    'bloc exposants présent': (h) => /Entreprises exposantes référencées/i.test(h),
+    'au moins 1 nom d\'exposant <li>': (h) =>
+      (h.match(/Entreprises exposantes référencées[\s\S]*?<ul>([\s\S]*?)<\/ul>/i)?.[1] || '')
+        .match(/<li>[^<]{2,}<\/li>/g)?.length >= 1,
+  },
+  'event-without-exhibitors': {
+    'JSON-LD Event présent': (h) => /"@type"\s*:\s*"Event"/.test(h),
+    'pas de bloc exposants vide': (h) =>
+      !/Entreprises exposantes référencées[\s\S]*?<ul>\s*<\/ul>/i.test(h),
+  },
+  sector: {
+    'JSON-LD CollectionPage': (h) => /"@type"\s*:\s*"CollectionPage"/.test(h),
+    '≥ 5 liens /events/ si dispo': (h) =>
+      (h.match(/<a[^>]+href="\/events\/[^"]+"/gi)?.length || 0) >= 5 ||
+      /Lotexpo référence 0 salon|référence [1-4] salon/i.test(h),
+  },
+  city: {
+    'JSON-LD CollectionPage': (h) => /"@type"\s*:\s*"CollectionPage"/.test(h),
+    '≥ 5 liens /events/ si dispo': (h) =>
+      (h.match(/<a[^>]+href="\/events\/[^"]+"/gi)?.length || 0) >= 5 ||
+      /recense 0 salon|recense [1-4] salon/i.test(h),
+  },
+  'blog-article': {
+    'JSON-LD Article': (h) => /"@type"\s*:\s*"Article"/.test(h),
+  },
+  'blog-index': {
+    'au moins 1 lien /blog/': (h) =>
+      (h.match(/<a[^>]+href="\/blog\/[^"]+"/gi)?.length || 0) >= 1,
+  },
+  home: {
+    'paragraphe éditorial présent': (h) => /centralise les salons professionnels/i.test(h),
+  },
+};
+
+let pass = 0, fail = 0;
+const rows = await Promise.all(TARGETS.map(async (t) => {
   try {
-    const res = await fetch(BASE + p, { redirect: 'follow' });
+    const res = await fetch(BASE + t.url, { redirect: 'follow', headers: { 'user-agent': 'lotexpo-seo-test' } });
     const html = await res.text();
-    const results = checks.map(([n, f]) => [n, f(html)]);
-    return { p, status: res.status, len: html.length, results, edge: res.headers.get('x-seo-edge') };
+    const results = [];
+    for (const [n, fn] of Object.entries(baseChecks)) results.push([n, !!fn(html)]);
+    for (const [n, fn] of Object.entries(perKind[t.kind] || {})) results.push([n, !!fn(html)]);
+    return { ...t, status: res.status, len: html.length, edge: res.headers.get('x-seo-edge') || '-', results };
   } catch (e) {
-    return { p, error: e.message };
+    return { ...t, error: e.message };
   }
 }));
 
-for (const row of r) {
-  console.log('\n=== ' + row.p + ' === [' + row.status + '] ' + (row.len || 0) + 'b edge=' + (row.edge || 'no'));
-  if (row.error) { console.log('  ERROR', row.error); continue; }
-  for (const [n, ok] of row.results) console.log(' ', ok ? '✓' : '✗', n);
+for (const r of rows) {
+  console.log(`\n=== ${r.url}  [${r.kind}]  status=${r.status}  size=${r.len}  x-seo-edge=${r.edge}`);
+  if (r.error) { console.log('  ERROR', r.error); fail++; continue; }
+  for (const [n, ok] of r.results) {
+    console.log('  ' + (ok ? '✓' : '✗') + ' ' + n);
+    ok ? pass++ : fail++;
+  }
 }
+
+console.log(`\n──── total: ${pass} OK, ${fail} KO ────`);
+process.exit(fail > 0 ? 1 : 0);

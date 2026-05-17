@@ -286,7 +286,17 @@ async function buildSectorPage(slug: string): Promise<BuildResult | null> {
   );
   const canonical = `${SITE_ORIGIN}/secteur/${slug}`;
   const top = matching.slice(0, 5);
-  const headExtra = commonHead(canonical, title, description);
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: title,
+    url: canonical,
+    description,
+    hasPart: top.map((e) => ({ '@type': 'Event', name: e.nom_event, url: `${SITE_ORIGIN}/events/${e.slug}`, startDate: e.date_debut || undefined })),
+  };
+  const headExtra =
+    commonHead(canonical, title, description) +
+    `<script type="application/ld+json">${safeJsonLd(collectionSchema)}</script>`;
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>Salons ${escapeHtml(String(sectorLabel))} en France</h1>
     <p>Lotexpo référence ${matching.length} salon${matching.length > 1 ? 's' : ''} professionnel${matching.length > 1 ? 's' : ''} à venir dans le secteur ${escapeHtml(String(sectorLabel))}.</p>
@@ -310,7 +320,17 @@ async function buildCityPage(slug: string): Promise<BuildResult | null> {
   );
   const canonical = `${SITE_ORIGIN}/ville/${slug}`;
   const top = matching.slice(0, 5);
-  const headExtra = commonHead(canonical, title, description);
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: title,
+    url: canonical,
+    description,
+    hasPart: top.map((e) => ({ '@type': 'Event', name: e.nom_event, url: `${SITE_ORIGIN}/events/${e.slug}`, startDate: e.date_debut || undefined })),
+  };
+  const headExtra =
+    commonHead(canonical, title, description) +
+    `<script type="application/ld+json">${safeJsonLd(collectionSchema)}</script>`;
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>Salons professionnels à ${escapeHtml(String(cityLabel))}</h1>
     <p>Lotexpo recense ${matching.length} salon${matching.length > 1 ? 's' : ''} professionnel${matching.length > 1 ? 's' : ''} à venir à ${escapeHtml(String(cityLabel))}.</p>
