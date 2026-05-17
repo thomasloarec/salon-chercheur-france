@@ -424,8 +424,8 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
 
     const IMG_H = 180;
     const heroImage = imgUrl
-      ? `<img src="${escapeHtml(imgUrl)}" alt="${evName}" width="568" height="${IMG_H}" style="display:block;width:100%;max-width:100%;height:${IMG_H}px;object-fit:cover;border-radius:10px 10px 0 0;border:0;outline:none;" />`
-      : `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;height:${IMG_H}px;background:${ORANGE_SOFT};border-radius:10px 10px 0 0;border-bottom:1px solid ${BORDER};"><tr><td align="center" valign="middle" style="padding:16px;color:${ORANGE_DARK};font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;line-height:1.3;word-break:break-word;">${evName}</td></tr></table>`;
+      ? `<img src="${escapeHtml(imgUrl)}" alt="${evName}" width="568" height="${IMG_H}" class="rcrm-hero" style="display:block;width:100%;max-width:100%;height:${IMG_H}px;object-fit:cover;border-radius:10px 10px 0 0;border:0;outline:none;" />`
+      : `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="rcrm-hero-wrap" style="width:100%;height:${IMG_H}px;background:${ORANGE_SOFT};border-radius:10px 10px 0 0;border-bottom:1px solid ${BORDER};"><tr><td align="center" valign="middle" class="rcrm-hero" style="padding:16px;color:${ORANGE_DARK};font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;line-height:1.3;word-break:break-word;">${evName}</td></tr></table>`;
 
     const companiesTitle = g.companies.length > 1
       ? 'Entreprises détectées dans votre CRM'
@@ -458,7 +458,7 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
 
     const contentBlock = `
       <span style="display:inline-block;padding:3px 10px;background:${ORANGE};color:#fff;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Opportunité Radar CRM</span>
-      <h2 style="font-size:20px;margin:10px 0 4px 0;color:${NAVY};line-height:1.3;word-break:break-word;">${evName}</h2>
+      <h2 class="rcrm-event-title" style="font-size:20px;margin:10px 0 4px 0;color:${NAVY};line-height:1.3;word-break:break-word;">${evName}</h2>
       <div style="font-size:13px;color:${MUTED};margin-bottom:10px;line-height:1.5;word-break:break-word;">${evDate}${evCity ? ` · ${evCity}` : ''}${evVenue ? ` · ${evVenue}` : ''}</div>
       <div style="font-size:12px;font-weight:600;color:${NAVY};text-transform:uppercase;letter-spacing:.04em;margin:6px 0 4px 0;">${companiesTitle}</div>
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;">${companiesChips}</table>
@@ -470,7 +470,7 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
       <tr><td style="padding:0 0 16px 0;">
         <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;background:#fff;border:1px solid ${BORDER};border-radius:12px;border-collapse:separate;">
           <tr><td style="padding:0;line-height:0;font-size:0;">${heroImage}</td></tr>
-          <tr><td style="padding:16px;">${contentBlock}</td></tr>
+          <tr><td class="rcrm-card-cell" style="padding:18px;">${contentBlock}</td></tr>
         </table>
       </td></tr>`;
   }).join('');
