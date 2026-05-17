@@ -227,6 +227,12 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
         description: "L'événement a été supprimé définitivement.",
       });
 
+      // Invalider les caches pour que les listes admin se rafraîchissent
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events:infinite'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-event-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-events'] });
+
       // Close the dialog first
       setShowDeleteDialog(false);
       
@@ -237,7 +243,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
       console.error('Error deleting event:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer l'événement.",
+        description: error instanceof Error ? error.message : "Impossible de supprimer l'événement.",
         variant: "destructive",
       });
     } finally {
