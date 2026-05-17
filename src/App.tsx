@@ -67,6 +67,10 @@ function PendingVisitRedirect() {
   const navigate = useNavigate();
   useEffect(() => {
     const handler = (e: Event) => {
+      if (window.location.pathname.startsWith('/admin')) {
+        return;
+      }
+
       const slug = (e as CustomEvent).detail?.slug;
       if (slug) {
         navigate(`/events/${slug}`, { replace: true });
