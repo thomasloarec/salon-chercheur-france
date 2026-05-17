@@ -549,9 +549,12 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          last_radar_email_sent_at: string | null
           max_emails_per_week: number
           preferred_alert_timing_days: number
           radar_alerts_enabled: boolean
+          radar_email_enabled: boolean
+          radar_email_unsubscribed_at: string | null
           trial_teasers_enabled: boolean
           updated_at: string
           user_id: string
@@ -559,9 +562,12 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          last_radar_email_sent_at?: string | null
           max_emails_per_week?: number
           preferred_alert_timing_days?: number
           radar_alerts_enabled?: boolean
+          radar_email_enabled?: boolean
+          radar_email_unsubscribed_at?: string | null
           trial_teasers_enabled?: boolean
           updated_at?: string
           user_id: string
@@ -569,9 +575,12 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          last_radar_email_sent_at?: string | null
           max_emails_per_week?: number
           preferred_alert_timing_days?: number
           radar_alerts_enabled?: boolean
+          radar_email_enabled?: boolean
+          radar_email_unsubscribed_at?: string | null
           trial_teasers_enabled?: boolean
           updated_at?: string
           user_id?: string
@@ -682,6 +691,36 @@ export type Database = {
           note?: string | null
           reason?: string
           source?: string
+        }
+        Relationships: []
+      }
+      email_unsubscribe_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          scope: string
+          token: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          scope?: string
+          token?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          scope?: string
+          token?: string
+          used_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2973,6 +3012,75 @@ export type Database = {
           },
         ]
       }
+      radar_email_log: {
+        Row: {
+          companies_count: number
+          created_at: string
+          dry_run: boolean
+          email_subject: string | null
+          email_to: string | null
+          email_type: string
+          error_message: string | null
+          event_ids: string[]
+          events_count: number
+          id: string
+          import_ids: string[]
+          metadata: Json
+          notification_ids: string[]
+          resend_message_id: string | null
+          scheduled_for: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          visibility_mode: string
+        }
+        Insert: {
+          companies_count?: number
+          created_at?: string
+          dry_run?: boolean
+          email_subject?: string | null
+          email_to?: string | null
+          email_type?: string
+          error_message?: string | null
+          event_ids?: string[]
+          events_count?: number
+          id?: string
+          import_ids?: string[]
+          metadata?: Json
+          notification_ids?: string[]
+          resend_message_id?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          visibility_mode?: string
+        }
+        Update: {
+          companies_count?: number
+          created_at?: string
+          dry_run?: boolean
+          email_subject?: string | null
+          email_to?: string | null
+          email_type?: string
+          error_message?: string | null
+          event_ids?: string[]
+          events_count?: number
+          id?: string
+          import_ids?: string[]
+          metadata?: Json
+          notification_ids?: string[]
+          resend_message_id?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          visibility_mode?: string
+        }
+        Relationships: []
+      }
       regions: {
         Row: {
           code: string
@@ -4237,9 +4345,12 @@ export type Database = {
         Returns: {
           created_at: string
           id: string
+          last_radar_email_sent_at: string | null
           max_emails_per_week: number
           preferred_alert_timing_days: number
           radar_alerts_enabled: boolean
+          radar_email_enabled: boolean
+          radar_email_unsubscribed_at: string | null
           trial_teasers_enabled: boolean
           updated_at: string
           user_id: string
