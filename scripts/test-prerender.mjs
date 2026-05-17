@@ -15,9 +15,9 @@ const TARGETS = [
 ];
 
 const baseChecks = {
-  'title spécifique (≠ shell)': (h) =>
+  'title spécifique (≠ shell)': (h, t) =>
     /<title>([^<]+)<\/title>/i.test(h) &&
-    !/<title>Lotexpo \| Tous les salons professionnels en France<\/title>/i.test(h),
+    (t.kind === 'home' || !/<title>Lotexpo \| Tous les salons professionnels en France<\/title>/i.test(h)),
   'meta description présente': (h) => /<meta\s+name="description"\s+content="[^"]+"/i.test(h),
   'canonical présent': (h) => /<link\s+rel="canonical"\s+href="https:\/\/lotexpo\.com[^"]*"/i.test(h),
   'pas de "Chargement…" en title': (h) => !/<title>[^<]*Chargement/i.test(h),
@@ -60,8 +60,8 @@ const rows = await Promise.all(TARGETS.map(async (t) => {
     const res = await fetch(BASE + t.url, { redirect: 'follow', headers: { 'user-agent': 'lotexpo-prerender-test' } });
     const html = await res.text();
     const results = [];
-    for (const [n, fn] of Object.entries(baseChecks)) results.push([n, !!fn(html)]);
-    for (const [n, fn] of Object.entries(perKind[t.kind] || {})) results.push([n, !!fn(html)]);
+    for (const [n, fn] of Object.entries(baseChecks)) results.push([n, !!fn(html, t)]);
+    for (const [n, fn] of Object.entries(perKind[t.kind] || {})) results.push([n, !!fn(html, t)]);
     return { ...t, status: res.status, len: html.length, results };
   } catch (e) { return { ...t, error: e.message }; }
 }));
