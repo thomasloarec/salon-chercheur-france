@@ -188,6 +188,40 @@ Deno.serve(async (req) => {
         })
         .eq('id', importId)
 
+      // 6. Enable Radar CRM emails by default for users who actually use Radar CRM.
+      //    - create prefs row if missing (radar_alerts_enabled=true, radar_email_enabled=true)
+      //    - if existing row and neither unsubscribed nor voluntarily disabled → enable email
+      //    - never auto-reactivate users who unsubscribed or voluntarily disabled
+      try {
+        const { data: existingPref } = await serviceClient
+          .from('crm_notification_preferences')
+          .select('user_id, radar_email_enabled, radar_email_unsubscribed_at, radar_email_disabled_at')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (!existingPref) {
+          await serviceClient
+            .from('crm_notification_preferences')
+            .insert({
+              user_id: user.id,
+              radar_alerts_enabled: true,
+              radar_email_enabled: true,
+            })
+        } else if (
+          existingPref.radar_email_unsubscribed_at === null &&
+          existingPref.radar_email_disabled_at === null &&
+          existingPref.radar_email_enabled !== true
+        ) {
+          await serviceClient
+            .from('crm_notification_preferences')
+            .update({ radar_email_enabled: true, updated_at: new Date().toISOString() })
+            .eq('user_id', user.id)
+        }
+      } catch (prefErr) {
+        console.error('crm-import: failed to upsert radar email preferences:', prefErr)
+        // Non-blocking — import still succeeds.
+      }
+
       return jsonResp({
         success: true,
         importId,

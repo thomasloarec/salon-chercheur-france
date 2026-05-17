@@ -553,6 +553,7 @@ export type Database = {
           max_emails_per_week: number
           preferred_alert_timing_days: number
           radar_alerts_enabled: boolean
+          radar_email_disabled_at: string | null
           radar_email_enabled: boolean
           radar_email_unsubscribed_at: string | null
           trial_teasers_enabled: boolean
@@ -566,6 +567,7 @@ export type Database = {
           max_emails_per_week?: number
           preferred_alert_timing_days?: number
           radar_alerts_enabled?: boolean
+          radar_email_disabled_at?: string | null
           radar_email_enabled?: boolean
           radar_email_unsubscribed_at?: string | null
           trial_teasers_enabled?: boolean
@@ -579,6 +581,7 @@ export type Database = {
           max_emails_per_week?: number
           preferred_alert_timing_days?: number
           radar_alerts_enabled?: boolean
+          radar_email_disabled_at?: string | null
           radar_email_enabled?: boolean
           radar_email_unsubscribed_at?: string | null
           trial_teasers_enabled?: boolean
@@ -4349,6 +4352,7 @@ export type Database = {
           max_emails_per_week: number
           preferred_alert_timing_days: number
           radar_alerts_enabled: boolean
+          radar_email_disabled_at: string | null
           radar_email_enabled: boolean
           radar_email_unsubscribed_at: string | null
           trial_teasers_enabled: boolean
