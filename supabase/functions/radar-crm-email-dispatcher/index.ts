@@ -77,6 +77,15 @@ interface NotificationRow {
   metadata: Record<string, unknown> | null;
 }
 
+function normalizeCompanyName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResp({ error: 'Method not allowed' }, 405);
@@ -236,17 +245,75 @@ Deno.serve(async (req) => {
 
       if (candidates.length === 0) continue;
 
+      // Consolidate per event_id — same event must not appear twice in a digest.
+      type Grouped = {
+        eventId: string;
+        event: any;
+        notificationIds: string[];
+        importIds: string[];
+        companies: any[]; // deduped
+        mergedCount: number;
+        latestCreatedAt: string;
+      };
+      const groupedMap = new Map<string, Grouped>();
+      for (const c of candidates) {
+        const eid = c.event.id as string;
+        const meta = (c.notification.metadata ?? {}) as Record<string, unknown>;
+        const importId =
+          (typeof meta.importId === 'string' && meta.importId) ||
+          (typeof meta.import_id === 'string' && meta.import_id) ||
+          null;
+        let g = groupedMap.get(eid);
+        if (!g) {
+          g = {
+            eventId: eid,
+            event: c.event,
+            notificationIds: [],
+            importIds: [],
+            companies: [],
+            mergedCount: 0,
+            latestCreatedAt: c.notification.created_at,
+          };
+          groupedMap.set(eid, g);
+        }
+        g.notificationIds.push(c.notification.id);
+        g.mergedCount += 1;
+        if (importId && !g.importIds.includes(importId)) g.importIds.push(importId);
+        if (new Date(c.notification.created_at) > new Date(g.latestCreatedAt)) {
+          g.latestCreatedAt = c.notification.created_at;
+          g.event = c.event;
+        }
+        for (const co of c.companies) {
+          const key = co?.crmCompanyId
+            ? `id:${String(co.crmCompanyId)}`
+            : co?.companyName
+              ? `n:${normalizeCompanyName(String(co.companyName))}`
+              : null;
+          if (!key) continue;
+          if (g.companies.some((existing) => {
+            const ek = existing?.crmCompanyId
+              ? `id:${String(existing.crmCompanyId)}`
+              : existing?.companyName
+                ? `n:${normalizeCompanyName(String(existing.companyName))}`
+                : null;
+            return ek === key;
+          })) continue;
+          g.companies.push(co);
+        }
+      }
+
+      const groupedList = Array.from(groupedMap.values());
       // Sort: nearest first, then most companies.
-      candidates.sort((a, b) => {
+      groupedList.sort((a, b) => {
         const da = new Date(a.event.date_debut).getTime();
         const db = new Date(b.event.date_debut).getTime();
         if (da !== db) return da - db;
-        return (b.companies.length) - (a.companies.length);
+        return b.companies.length - a.companies.length;
       });
 
-      const top = candidates.slice(0, 5);
+      const top = groupedList.slice(0, 5);
       usersEligible += 1;
-      notificationsIncluded += top.length;
+      notificationsIncluded += top.reduce((acc, g) => acc + g.notificationIds.length, 0);
 
       // Fetch user email (auth.users via admin API).
       let emailTo: string | null = null;
@@ -256,8 +323,13 @@ Deno.serve(async (req) => {
       } catch (_) { /* ignore */ }
 
       const allCompanies = new Set<string>();
-      for (const c of top) for (const co of c.companies) {
-        if (co?.crmCompanyId) allCompanies.add(String(co.crmCompanyId));
+      for (const g of top) for (const co of g.companies) {
+        const key = co?.crmCompanyId
+          ? `id:${String(co.crmCompanyId)}`
+          : co?.companyName
+            ? `n:${normalizeCompanyName(String(co.companyName))}`
+            : null;
+        if (key) allCompanies.add(key);
       }
 
       const subject = top.length === 1
@@ -270,15 +342,18 @@ Deno.serve(async (req) => {
         subject,
         eventsCount: top.length,
         companiesCount: allCompanies.size,
-        notifications: top.map((c) => ({
-          notificationId: c.notification.id,
-          eventId: c.event.id,
-          eventName: c.event.nom_event,
-          eventDate: c.event.date_debut,
-          eventCity: c.event.ville,
-          eventVenue: c.event.nom_lieu,
-          eventSlug: c.event.slug,
-          companies: c.companies.map((co: any) => ({
+        notifications: top.map((g) => ({
+          notificationId: g.notificationIds[0],
+          notificationIds: g.notificationIds,
+          mergedNotificationsCount: g.mergedCount,
+          importIds: g.importIds,
+          eventId: g.event.id,
+          eventName: g.event.nom_event,
+          eventDate: g.event.date_debut,
+          eventCity: g.event.ville,
+          eventVenue: g.event.nom_lieu,
+          eventSlug: g.event.slug,
+          companies: g.companies.map((co: any) => ({
             crmCompanyId: co.crmCompanyId ?? null,
             companyName: co.companyName ?? null,
             stand: co.stand ?? null,
