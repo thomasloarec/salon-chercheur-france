@@ -56,12 +56,14 @@ export const useIsAdmin = () => {
         let adminRoleRequest = adminRoleRequests.get(user.id);
 
         if (!adminRoleRequest) {
-          adminRoleRequest = supabase.rpc('is_admin').then(({ data, error }) => {
-            if (error) throw error;
-            return data || false;
-          }).finally(() => {
-            adminRoleRequests.delete(user.id);
-          });
+          adminRoleRequest = Promise.resolve(supabase.rpc('is_admin'))
+            .then(({ data, error }) => {
+              if (error) throw error;
+              return data || false;
+            })
+            .finally(() => {
+              adminRoleRequests.delete(user.id);
+            });
 
           adminRoleRequests.set(user.id, adminRoleRequest);
         }
