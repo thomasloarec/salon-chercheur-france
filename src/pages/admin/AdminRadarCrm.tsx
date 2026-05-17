@@ -7,6 +7,7 @@ import { Radar } from 'lucide-react';
 import RadarCrmRematchPanel from '@/components/admin/RadarCrmRematchPanel';
 import RadarCrmCronStatus from '@/components/admin/RadarCrmCronStatus';
 import RadarCrmEmailPreviewPanel from '@/components/admin/RadarCrmEmailPreviewPanel';
+import RadarCrmBetaBatchPanel from '@/components/admin/RadarCrmBetaBatchPanel';
 
 type Stats = {
   totalImports: number;
@@ -82,6 +83,7 @@ const AdminRadarCrm: React.FC = () => {
       <RadarCrmCronStatus />
       <RadarCrmRematchPanel />
       <RadarCrmEmailPreviewPanel />
+      <RadarCrmBetaBatchPanel />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Derniers imports</CardTitle></CardHeader>
