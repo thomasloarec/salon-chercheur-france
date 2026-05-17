@@ -2,14 +2,18 @@
 //
 // Modes:
 //   - dryRun=true (default): preview-only, no Resend call, no DB writes.
-//   - sendReal=true + dryRun=false: Beta manual single-user real send.
+//   - sendReal=true + dryRun=false + userId: Beta manual single-user real send
+//       (admin JWT or service_role).
+//   - sendReal=true + dryRun=false + no userId: Beta batch real send
+//       (service_role ONLY — admins are refused with 403).
 //
 // Real-send safeguards:
-//   - caller must be admin (JWT) or service_role.
-//   - userId is REQUIRED.
-//   - user must have radar_email_enabled=true and not be unsubscribed.
+//   - manual mode: caller is admin or service_role; userId is REQUIRED.
+//   - batch mode: caller MUST be service_role; userId is optional.
+//   - users included must have radar_email_enabled=true and not unsubscribed.
 //   - weekly quota (max_emails_per_week) is enforced.
 //   - notification ids already present in a previous sent log are skipped.
+//   - capped by maxUsers and maxEmailsPerRun per invocation.
 //   - radar-crm-rematch-cron, crm_run_matching, internal notifications are
 //     not touched.
 //
@@ -577,6 +581,9 @@ Deno.serve(async (req) => {
   const dryRun: boolean = sendReal ? payload?.dryRun === true : payload?.dryRun !== false;
   const filterUserId: string | null = typeof payload?.userId === 'string' && payload.userId ? payload.userId : null;
   const overrideLookahead: number | null = Number.isFinite(payload?.lookaheadDays) ? Number(payload.lookaheadDays) : null;
+  const source: string = typeof payload?.source === 'string' && payload.source
+    ? payload.source
+    : (auth.mode === 'service_role' ? 'cron' : 'manual_admin');
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -584,10 +591,45 @@ Deno.serve(async (req) => {
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  // ----- REAL SEND PATH (single targeted user, manual admin Beta) -----
+  // Helper: insert a system usage event (user_id = null). Best-effort.
+  const trackSystem = async (eventType: string, metadata: Record<string, unknown>) => {
+    try {
+      await supabase.from('crm_usage_events').insert({
+        user_id: null,
+        event_type: eventType,
+        metadata: { source: 'radar_email_system', dispatcher_source: source, ...metadata },
+      });
+    } catch (_) { /* tracking is best-effort */ }
+  };
+
+  // ----- REAL SEND PATHS -----
   if (sendReal) {
     if (dryRun) return jsonResp({ success: false, error: 'sendReal=true cannot be combined with dryRun=true' }, 400);
-    if (!filterUserId) return jsonResp({ success: false, error: 'Real email sending requires a target userId in Beta.' }, 400);
+
+    // BATCH mode (no userId) — strictly service_role.
+    if (!filterUserId) {
+      if (auth.mode !== 'service_role') {
+        return jsonResp({ success: false, error: 'Batch real email sending requires service_role.' }, 403);
+      }
+      return await runBatchRealSend(supabase, overrideLookahead, payload, source, trackSystem);
+    }
+
+    // MANUAL single-user mode — admin or service_role.
+    return await runManualRealSend(supabase, filterUserId, overrideLookahead, source, trackSystem);
+  }
+
+  // ----- DRY-RUN PATH -----
+  return await runDryRun(supabase, filterUserId, overrideLookahead, payload);
+});
+
+async function runManualRealSend(
+  supabase: ReturnType<typeof createClient>,
+  filterUserId: string,
+  overrideLookahead: number | null,
+  source: string,
+  trackSystem: (e: string, m: Record<string, unknown>) => Promise<void>,
+): Promise<Response> {
+  await trackSystem('radar_email_dispatch_started', { sendReal: true, dryRun: false, mode: 'manual', userId: filterUserId });
 
     const { data: prefRow, error: prefErr } = await supabase
       .from('crm_notification_preferences')
@@ -598,111 +640,249 @@ Deno.serve(async (req) => {
       return jsonResp({ success: false, error: 'Radar email is not enabled for this user.' }, 400);
     }
 
-    let built;
-    try { built = await buildPreviewForUser(supabase, prefRow, overrideLookahead); }
-    catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      return jsonResp({ success: false, error: msg }, 500);
-    }
+  const r = await sendRealForUser(supabase, prefRow, overrideLookahead);
+  await trackSystem('radar_email_dispatch_completed', {
+    sendReal: true, dryRun: false, mode: 'manual',
+    usersScanned: 1,
+    usersEligible: r.outcome === 'sent' ? 1 : 0,
+    emailsSent: r.outcome === 'sent' ? 1 : 0,
+    emailsFailed: r.outcome === 'failed' ? 1 : 0,
+    notificationsIncluded: r.notificationIdsIncluded?.length ?? 0,
+    skippedNotificationsAlreadyEmailed: r.skippedNotificationsAlreadyEmailed ?? 0,
+  });
+  if (r.outcome === 'sent') {
+    await trackSystem('radar_email_sent', { userId: filterUserId, logId: r.logId, resendMessageId: r.resendMessageId });
+  } else if (r.outcome === 'failed') {
+    await trackSystem('radar_email_failed', { userId: filterUserId, logId: r.logId, error: r.error });
+  }
+  return jsonResp(r.response, r.status);
+}
 
-    if (!built.preview) {
-      return jsonResp({
+async function runBatchRealSend(
+  supabase: ReturnType<typeof createClient>,
+  overrideLookahead: number | null,
+  payload: any,
+  source: string,
+  trackSystem: (e: string, m: Record<string, unknown>) => Promise<void>,
+): Promise<Response> {
+  const maxUsers: number = Math.min(Math.max(1, Number(payload?.maxUsers) || 50), 500);
+  const maxEmailsPerRun: number = Math.min(Math.max(1, Number(payload?.maxEmailsPerRun) || 20), 500);
+
+  await trackSystem('radar_email_dispatch_started', { sendReal: true, dryRun: false, mode: 'batch', maxUsers, maxEmailsPerRun });
+
+  const { data: prefsRows, error: prefsErr } = await supabase
+    .from('crm_notification_preferences')
+    .select('user_id, radar_email_enabled, radar_email_unsubscribed_at, preferred_alert_timing_days, max_emails_per_week')
+    .eq('radar_email_enabled', true)
+    .is('radar_email_unsubscribed_at', null)
+    .limit(maxUsers);
+  if (prefsErr) return jsonResp({ success: false, error: prefsErr.message }, 500);
+
+  const usersScanned = (prefsRows ?? []).length;
+  let usersEligible = 0;
+  let emailsSent = 0;
+  let emailsFailed = 0;
+  let notificationsIncluded = 0;
+  let skippedUsersPreferences = 0;
+  let skippedUsersQuota = 0;
+  let skippedNotificationsAlreadyEmailed = 0;
+  const errors: Array<{ userId: string; message: string }> = [];
+  const sent: Array<{ userId: string; emailTo: string | null; logId: string; resendMessageId: string }> = [];
+
+  for (const pref of prefsRows ?? []) {
+    if (emailsSent >= maxEmailsPerRun) break;
+    const userId = pref.user_id as string;
+    try {
+      const r = await sendRealForUser(supabase, pref, overrideLookahead);
+      skippedNotificationsAlreadyEmailed += r.skippedNotificationsAlreadyEmailed ?? 0;
+      if (r.outcome === 'sent') {
+        usersEligible += 1;
+        emailsSent += 1;
+        notificationsIncluded += r.notificationIdsIncluded?.length ?? 0;
+        sent.push({ userId, emailTo: r.emailTo ?? null, logId: r.logId!, resendMessageId: r.resendMessageId! });
+        await trackSystem('radar_email_sent', { userId, logId: r.logId, resendMessageId: r.resendMessageId });
+      } else if (r.outcome === 'failed') {
+        emailsFailed += 1;
+        errors.push({ userId, message: r.error ?? 'unknown' });
+        await trackSystem('radar_email_failed', { userId, logId: r.logId ?? null, error: r.error });
+      } else if (r.outcome === 'skipped') {
+        if (r.reason === 'quota') skippedUsersQuota += 1;
+        else skippedUsersPreferences += 1;
+      }
+    } catch (e) {
+      emailsFailed += 1;
+      const msg = e instanceof Error ? e.message : String(e);
+      errors.push({ userId, message: msg });
+      await trackSystem('radar_email_failed', { userId, error: msg });
+    }
+  }
+
+  await trackSystem('radar_email_dispatch_completed', {
+    sendReal: true, dryRun: false, mode: 'batch',
+    usersScanned, usersEligible, emailsSent, emailsFailed,
+    notificationsIncluded,
+    skippedUsersPreferences, skippedUsersQuota,
+    skippedNotificationsAlreadyEmailed,
+    errorsCount: errors.length,
+  });
+
+  return jsonResp({
+    success: true, dryRun: false, sendReal: true, mode: 'batch',
+    usersScanned, usersEligible, emailsSent, emailsFailed,
+    notificationsIncluded,
+    skippedUsersPreferences, skippedUsersQuota,
+    skippedNotificationsAlreadyEmailed,
+    sent, errors,
+  });
+}
+
+type RealSendResult = {
+  outcome: 'sent' | 'skipped' | 'failed';
+  status: number;
+  response: Record<string, unknown>;
+  reason?: string;
+  logId?: string;
+  resendMessageId?: string;
+  emailTo?: string | null;
+  notificationIdsIncluded?: string[];
+  skippedNotificationsAlreadyEmailed?: number;
+  error?: string;
+};
+
+async function sendRealForUser(
+  supabase: ReturnType<typeof createClient>,
+  prefRow: any,
+  overrideLookahead: number | null,
+): Promise<RealSendResult> {
+  const filterUserId = prefRow.user_id as string;
+
+  let built;
+  try { built = await buildPreviewForUser(supabase, prefRow, overrideLookahead); }
+  catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { outcome: 'failed', status: 500, response: { success: false, error: msg }, error: msg };
+  }
+
+  if (!built.preview) {
+    return {
+      outcome: 'skipped',
+      status: 200,
+      reason: built.skip,
+      skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
+      response: {
         success: true, dryRun: false, sendReal: true,
         emailsSent: 0,
         reason: built.skip ?? 'no_eligible',
         skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
-      });
-    }
-
-    const p = built.preview;
-    if (!p.emailTo) {
-      return jsonResp({ success: false, error: 'No email address found for this user.' }, 400);
-    }
-
-    // Insert pending log first (so concurrent retries can see something in-flight).
-    const metadataLog = {
-      events: p.groups.map((g) => ({
-        eventId: g.eventId,
-        eventName: g.event.nom_event,
-        eventDate: g.event.date_debut,
-        eventCity: g.event.ville,
-        companies: g.companies.map((c: any) => ({ crmCompanyId: c.crmCompanyId ?? null, companyName: c.companyName ?? null })),
-      })),
+      },
     };
-
-    const { data: logRow, error: logErr } = await supabase
-      .from('radar_email_log')
-      .insert({
-        user_id: filterUserId,
-        status: 'pending',
-        dry_run: false,
-        email_to: p.emailTo,
-        email_subject: p.subject,
-        email_type: 'radar_digest',
-        visibility_mode: 'full',
-        notification_ids: p.notificationIds,
-        event_ids: p.eventIds,
-        import_ids: p.importIds,
-        events_count: p.eventsCount,
-        companies_count: p.companiesCount,
-        metadata: metadataLog,
-      })
-      .select('id').single();
-    if (logErr || !logRow) {
-      return jsonResp({ success: false, error: `log insert: ${logErr?.message ?? 'unknown'}` }, 500);
-    }
-    const logId = (logRow as { id: string }).id;
-
-    let unsubscribeUrl = '';
-    try { unsubscribeUrl = await ensureUnsubscribeUrl(supabase, filterUserId); }
-    catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      await supabase.from('radar_email_log').update({ status: 'failed', error_message: msg }).eq('id', logId);
-      return jsonResp({ success: false, error: msg }, 500);
-    }
-
-    const appBaseUrl = Deno.env.get('APP_BASE_URL') ?? 'https://lotexpo.com';
-    const { html, text } = renderEmail(p, unsubscribeUrl, appBaseUrl);
-
-    try {
-      const { id: resendId } = await sendResendEmail({
-        to: p.emailTo,
-        subject: p.subject,
-        html, text,
-        tags: [
-          { name: 'feature', value: 'radar_crm' },
-          { name: 'email_type', value: 'radar_digest' },
-          { name: 'environment', value: 'beta' },
-        ],
-      });
-      const nowIso = new Date().toISOString();
-      await supabase.from('radar_email_log').update({
-        status: 'sent', sent_at: nowIso, resend_message_id: resendId,
-      }).eq('id', logId);
-      await supabase.from('crm_notification_preferences').update({
-        last_radar_email_sent_at: nowIso,
-      }).eq('user_id', filterUserId);
-
-      return jsonResp({
-        success: true, dryRun: false, sendReal: true,
-        emailsSent: 1,
-        emailTo: p.emailTo,
-        subject: p.subject,
-        resendMessageId: resendId,
-        status: 'sent',
-        logId,
-        notificationIdsIncluded: p.notificationIds,
-        skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error('resend send failed', { userId: filterUserId, message: msg });
-      await supabase.from('radar_email_log').update({ status: 'failed', error_message: msg.slice(0, 1000) }).eq('id', logId);
-      return jsonResp({ success: false, error: msg, status: 'failed', logId }, 500);
-    }
   }
 
-  // ----- DRY-RUN PATH -----
+  const p = built.preview;
+  if (!p.emailTo) {
+    return {
+      outcome: 'failed', status: 400,
+      response: { success: false, error: 'No email address found for this user.' },
+      error: 'no_email',
+    };
+  }
+
+  const metadataLog = {
+    events: p.groups.map((g) => ({
+      eventId: g.eventId,
+      eventName: g.event.nom_event,
+      eventDate: g.event.date_debut,
+      eventCity: g.event.ville,
+      companies: g.companies.map((c: any) => ({ crmCompanyId: c.crmCompanyId ?? null, companyName: c.companyName ?? null })),
+    })),
+  };
+
+  const { data: logRow, error: logErr } = await supabase
+    .from('radar_email_log')
+    .insert({
+      user_id: filterUserId,
+      status: 'pending',
+      dry_run: false,
+      email_to: p.emailTo,
+      email_subject: p.subject,
+      email_type: 'radar_digest',
+      visibility_mode: 'full',
+      notification_ids: p.notificationIds,
+      event_ids: p.eventIds,
+      import_ids: p.importIds,
+      events_count: p.eventsCount,
+      companies_count: p.companiesCount,
+      metadata: metadataLog,
+    })
+    .select('id').single();
+  if (logErr || !logRow) {
+    const msg = `log insert: ${logErr?.message ?? 'unknown'}`;
+    return { outcome: 'failed', status: 500, response: { success: false, error: msg }, error: msg };
+  }
+  const logId = (logRow as { id: string }).id;
+
+  let unsubscribeUrl = '';
+  try { unsubscribeUrl = await ensureUnsubscribeUrl(supabase, filterUserId); }
+  catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await supabase.from('radar_email_log').update({ status: 'failed', error_message: msg }).eq('id', logId);
+    return { outcome: 'failed', status: 500, response: { success: false, error: msg }, error: msg, logId };
+  }
+
+  const appBaseUrl = Deno.env.get('APP_BASE_URL') ?? 'https://lotexpo.com';
+  const { html, text } = renderEmail(p, unsubscribeUrl, appBaseUrl);
+
+  try {
+    const { id: resendId } = await sendResendEmail({
+      to: p.emailTo,
+      subject: p.subject,
+      html, text,
+      tags: [
+        { name: 'feature', value: 'radar_crm' },
+        { name: 'email_type', value: 'radar_digest' },
+        { name: 'environment', value: 'beta' },
+      ],
+    });
+    const nowIso = new Date().toISOString();
+    await supabase.from('radar_email_log').update({
+      status: 'sent', sent_at: nowIso, resend_message_id: resendId,
+    }).eq('id', logId);
+    await supabase.from('crm_notification_preferences').update({
+      last_radar_email_sent_at: nowIso,
+    }).eq('user_id', filterUserId);
+
+    return {
+      outcome: 'sent', status: 200,
+      logId, resendMessageId: resendId, emailTo: p.emailTo,
+      notificationIdsIncluded: p.notificationIds,
+      skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
+      response: {
+        success: true, dryRun: false, sendReal: true,
+        emailsSent: 1,
+        emailTo: p.emailTo, subject: p.subject,
+        resendMessageId: resendId, status: 'sent', logId,
+        notificationIdsIncluded: p.notificationIds,
+        skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
+      },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('resend send failed', { userId: filterUserId, message: msg });
+    await supabase.from('radar_email_log').update({ status: 'failed', error_message: msg.slice(0, 1000) }).eq('id', logId);
+    return {
+      outcome: 'failed', status: 500,
+      response: { success: false, error: msg, status: 'failed', logId },
+      error: msg, logId,
+    };
+  }
+}
+
+async function runDryRun(
+  supabase: ReturnType<typeof createClient>,
+  filterUserId: string | null,
+  overrideLookahead: number | null,
+  payload: any,
+): Promise<Response> {
   const maxUsers: number = Math.min(Math.max(1, Number(payload?.maxUsers) || 50), 500);
   const maxEmailsPerRun: number = Math.min(Math.max(1, Number(payload?.maxEmailsPerRun) || maxUsers), 500);
 
@@ -757,4 +937,4 @@ Deno.serve(async (req) => {
     skippedNotificationsAlreadyEmailed,
     previews, errors,
   });
-});
+}
