@@ -17,6 +17,9 @@ type Preview = {
   companiesCount: number;
   notifications: Array<{
     notificationId: string;
+    notificationIds?: string[];
+    mergedNotificationsCount?: number;
+    importIds?: string[];
     eventId: string;
     eventName: string | null;
     eventDate: string | null;
@@ -188,10 +191,13 @@ const RadarCrmEmailPreviewPanel: React.FC = () => {
                                 {n.eventSlug && (
                                   <> · <a className="underline" href={`/radar-crm/results?eventId=${n.eventId}`} target="_blank" rel="noreferrer">Voir Radar</a></>
                                 )}
+                                {n.mergedNotificationsCount && n.mergedNotificationsCount > 1 && (
+                                  <> · <span className="italic">{n.mergedNotificationsCount} notifications regroupées</span></>
+                                )}
                               </div>
                               {n.companies.length > 0 && (
                                 <div className="text-muted-foreground">
-                                  Entreprises : {n.companies.map((c) => c.companyName).filter(Boolean).join(', ') || '—'}
+                                  Entreprises ({n.companies.length}) : {n.companies.map((c) => c.companyName).filter(Boolean).join(', ') || '—'}
                                 </div>
                               )}
                             </li>
