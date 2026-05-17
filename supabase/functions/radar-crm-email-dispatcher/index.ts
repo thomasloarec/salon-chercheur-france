@@ -474,7 +474,9 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
       </td></tr>`;
   }).join('');
 
-  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${escapeHtml(p.subject)}</title></head>
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${escapeHtml(p.subject)}</title>
+<style>@media only screen and (max-width:520px){.rcrm-img-cell,.rcrm-content-cell{display:block !important;width:100% !important;padding:16px 16px 0 16px !important;}.rcrm-img-cell img,.rcrm-img-cell table{width:100% !important;max-width:100% !important;height:200px !important;}}</style>
+</head>
 <body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${TEXT};">
   <div style="display:none;max-height:0;overflow:hidden;color:transparent;">${totalCompanies} entreprise${totalCompanies>1?'s':''} de votre CRM exposent sur ${totalEvents} salon${totalEvents>1?'s':''}. Préparez vos rendez-vous.</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
@@ -482,7 +484,7 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
         <tr><td style="padding:0 4px 18px 4px;">
           <table role="presentation" width="100%"><tr>
-            <td style="font-size:20px;font-weight:700;color:${NAVY};letter-spacing:-0.01em;">Lot<span style="color:${ORANGE};">expo</span></td>
+            <td style="font-size:20px;font-weight:700;color:${ORANGE};letter-spacing:-0.01em;">Lotexpo</td>
             <td style="text-align:right;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.06em;">Radar CRM</td>
           </tr></table>
         </td></tr>
