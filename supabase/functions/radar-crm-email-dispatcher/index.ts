@@ -422,11 +422,10 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
     const evVenue = g.event.nom_lieu ? escapeHtml(String(g.event.nom_lieu)) : '';
     const imgUrl = g.event.url_image ? String(g.event.url_image) : null;
 
-    const VIMG_W = 170;
-    const VIMG_H = 240;
-    const verticalImage = imgUrl
-      ? `<img src="${escapeHtml(imgUrl)}" alt="${evName}" width="${VIMG_W}" height="${VIMG_H}" style="display:block;width:${VIMG_W}px;height:${VIMG_H}px;object-fit:cover;border-radius:10px;border:0;outline:none;" />`
-      : `<table role="presentation" cellpadding="0" cellspacing="0" width="${VIMG_W}" style="width:${VIMG_W}px;height:${VIMG_H}px;background:${ORANGE_SOFT};border-radius:10px;border:1px solid ${BORDER};"><tr><td align="center" valign="middle" style="padding:10px;color:${ORANGE_DARK};font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;line-height:1.3;">${evName}</td></tr></table>`;
+    const IMG_H = 180;
+    const heroImage = imgUrl
+      ? `<img src="${escapeHtml(imgUrl)}" alt="${evName}" width="568" height="${IMG_H}" class="rcrm-hero" style="display:block;width:100%;max-width:100%;height:${IMG_H}px;object-fit:cover;border-radius:10px 10px 0 0;border:0;outline:none;" />`
+      : `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="rcrm-hero-wrap" style="width:100%;height:${IMG_H}px;background:${ORANGE_SOFT};border-radius:10px 10px 0 0;border-bottom:1px solid ${BORDER};"><tr><td align="center" valign="middle" class="rcrm-hero" style="padding:16px;color:${ORANGE_DARK};font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;line-height:1.3;word-break:break-word;">${evName}</td></tr></table>`;
 
     const companiesTitle = g.companies.length > 1
       ? 'Entreprises détectées dans votre CRM'
@@ -435,22 +434,22 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
     const companiesChips = g.companies.map((co: any) => {
       const name = escapeHtml(String(co.companyName ?? '—'));
       const fav = faviconUrl(co.normalizedDomain);
-      const stand = co.stand ? `<span style="font-size:12px;color:${MUTED};margin-left:8px;">Stand ${escapeHtml(String(co.stand))}</span>` : '';
-      const domain = co.normalizedDomain ? `<div style="font-size:11px;color:${MUTED};margin-top:2px;">${escapeHtml(String(co.normalizedDomain))}</div>` : '';
+      const standTxt = co.stand ? `Stand ${escapeHtml(String(co.stand))}` : '';
+      const domainTxt = co.normalizedDomain ? escapeHtml(String(co.normalizedDomain)) : '';
+      const subParts = [domainTxt, standTxt].filter(Boolean).join(' · ');
+      const subLine = subParts ? `<div style="font-size:12px;color:${MUTED};margin-top:2px;word-break:break-word;">${subParts}</div>` : '';
       const logoCell = fav
         ? `<img src="${escapeHtml(fav)}" alt="${name}" width="32" height="32" style="display:block;width:32px;height:32px;border-radius:6px;border:1px solid ${BORDER};background:#fff;object-fit:contain;" />`
         : `<div style="width:32px;height:32px;border-radius:6px;background:${ORANGE};color:#fff;font-weight:700;font-size:13px;line-height:32px;text-align:center;">${escapeHtml(companyInitials(String(co.companyName ?? '?')))}</div>`;
       return `
-        <tr><td style="padding:8px 0;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff;border:1px solid ${BORDER};border-radius:10px;">
+        <tr><td style="padding:6px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;background:#fff;border:1px solid ${BORDER};border-radius:10px;">
             <tr>
-              <td width="48" style="padding:10px 0 10px 12px;vertical-align:middle;">${logoCell}</td>
-              <td style="padding:10px 12px;vertical-align:middle;">
-                <div style="font-size:14px;font-weight:700;color:${TEXT};">${name}${stand}</div>
-                ${domain}
-              </td>
-              <td style="padding:10px 12px;vertical-align:middle;text-align:right;">
-                <span style="display:inline-block;padding:4px 10px;background:${ORANGE_SOFT};color:${ORANGE_DARK};border-radius:999px;font-size:11px;font-weight:600;">Présent dans votre CRM</span>
+              <td width="44" style="padding:10px 0 10px 12px;vertical-align:top;">${logoCell}</td>
+              <td style="padding:10px 12px;vertical-align:top;">
+                <div style="font-size:14px;font-weight:700;color:${TEXT};word-break:break-word;line-height:1.3;">${name}</div>
+                ${subLine}
+                <div style="margin-top:6px;"><span style="display:inline-block;padding:3px 8px;background:${ORANGE_SOFT};color:${ORANGE_DARK};border-radius:999px;font-size:11px;font-weight:600;">Présent dans votre CRM</span></div>
               </td>
             </tr>
           </table>
@@ -459,33 +458,45 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
 
     const contentBlock = `
       <span style="display:inline-block;padding:3px 10px;background:${ORANGE};color:#fff;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Opportunité Radar CRM</span>
-      <h2 style="font-size:18px;margin:10px 0 4px 0;color:${NAVY};line-height:1.3;">${evName}</h2>
-      <div style="font-size:13px;color:${MUTED};margin-bottom:10px;">${evDate}${evCity ? ` · ${evCity}` : ''}${evVenue ? ` · ${evVenue}` : ''}</div>
+      <h2 class="rcrm-event-title" style="font-size:20px;margin:10px 0 4px 0;color:${NAVY};line-height:1.3;word-break:break-word;">${evName}</h2>
+      <div style="font-size:13px;color:${MUTED};margin-bottom:10px;line-height:1.5;word-break:break-word;">${evDate}${evCity ? ` · ${evCity}` : ''}${evVenue ? ` · ${evVenue}` : ''}</div>
       <div style="font-size:12px;font-weight:600;color:${NAVY};text-transform:uppercase;letter-spacing:.04em;margin:6px 0 4px 0;">${companiesTitle}</div>
-      <table role="presentation" cellpadding="0" cellspacing="0" width="100%">${companiesChips}</table>
-      <div style="margin-top:14px;">
-        <a href="${eventLink}" style="display:inline-block;padding:11px 20px;background:${ORANGE};color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Voir cette opportunité →</a>
-      </div>`;
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;">${companiesChips}</table>
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;margin-top:14px;"><tr><td align="center">
+        <a href="${eventLink}" class="rcrm-cta" style="display:block;width:100%;max-width:100%;box-sizing:border-box;padding:12px 16px;background:${ORANGE};color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;text-align:center;">Voir cette opportunité →</a>
+      </td></tr></table>`;
 
     return `
-      <tr><td style="padding:0 0 20px 0;">
-        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff;border:1px solid ${BORDER};border-radius:12px;">
-          <tr>
-            <td width="${VIMG_W}" valign="top" style="padding:16px 0 16px 16px;width:${VIMG_W}px;" class="rcrm-img-cell">${verticalImage}</td>
-            <td valign="top" style="padding:16px 20px 16px 16px;" class="rcrm-content-cell">${contentBlock}</td>
-          </tr>
+      <tr><td style="padding:0 0 16px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;background:#fff;border:1px solid ${BORDER};border-radius:12px;border-collapse:separate;">
+          <tr><td style="padding:0;line-height:0;font-size:0;">${heroImage}</td></tr>
+          <tr><td class="rcrm-card-cell" style="padding:18px;">${contentBlock}</td></tr>
         </table>
       </td></tr>`;
   }).join('');
 
-  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${escapeHtml(p.subject)}</title>
-<style>@media only screen and (max-width:520px){.rcrm-img-cell,.rcrm-content-cell{display:block !important;width:100% !important;padding:16px 16px 0 16px !important;}.rcrm-img-cell img,.rcrm-img-cell table{width:100% !important;max-width:100% !important;height:200px !important;}}</style>
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="color-scheme" content="light only" /><meta name="supported-color-schemes" content="light only" /><title>${escapeHtml(p.subject)}</title>
+<style>
+  img{max-width:100% !important;height:auto;}
+  table{border-collapse:collapse;}
+  .rcrm-cta{mso-padding-alt:12px 16px;}
+  @media only screen and (max-width:520px){
+    .rcrm-container{width:100% !important;max-width:100% !important;padding:0 !important;}
+    .rcrm-outer-cell{padding:12px 8px !important;}
+    .rcrm-intro{padding:20px 16px !important;border-radius:12px !important;}
+    .rcrm-intro h1{font-size:20px !important;}
+    .rcrm-hero{height:160px !important;}
+    .rcrm-card-cell{padding:14px !important;}
+    .rcrm-event-title{font-size:18px !important;}
+    .rcrm-final-cta{display:block !important;width:100% !important;box-sizing:border-box !important;}
+  }
+</style>
 </head>
 <body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${TEXT};">
   <div style="display:none;max-height:0;overflow:hidden;color:transparent;">${totalCompanies} entreprise${totalCompanies>1?'s':''} de votre CRM exposent sur ${totalEvents} salon${totalEvents>1?'s':''}. Préparez vos rendez-vous.</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
-    <tr><td align="center" style="padding:24px 12px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};width:100%;">
+    <tr><td align="center" class="rcrm-outer-cell" style="padding:24px 12px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" class="rcrm-container" style="max-width:600px;width:100%;">
         <tr><td style="padding:0 4px 18px 4px;">
           <table role="presentation" width="100%"><tr>
             <td style="font-size:20px;font-weight:700;color:${ORANGE};letter-spacing:-0.01em;">Lotexpo</td>
@@ -493,8 +504,8 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
           </tr></table>
         </td></tr>
 
-        <tr><td style="background:#fff;border:1px solid ${BORDER};border-radius:14px;padding:28px 24px;">
-          <h1 style="font-size:22px;line-height:1.3;margin:0 0 10px 0;color:${NAVY};">De nouvelles opportunités salon détectées</h1>
+        <tr><td class="rcrm-intro" style="background:#fff;border:1px solid ${BORDER};border-radius:14px;padding:28px 24px;">
+          <h1 style="font-size:22px;line-height:1.3;margin:0 0 10px 0;color:${NAVY};word-break:break-word;">De nouvelles opportunités salon détectées</h1>
           <p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 16px 0;">
             Radar CRM a détecté que des entreprises présentes dans votre fichier CRM exposent prochainement sur des salons référencés par Lotexpo.
           </p>
@@ -514,7 +525,7 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
         </td></tr>
 
         <tr><td style="text-align:center;padding:8px 0 24px 0;">
-          <a href="${appBaseUrl}/radar-crm" style="display:inline-block;padding:14px 26px;background:${ORANGE};color:#fff;border-radius:10px;text-decoration:none;font-size:15px;font-weight:700;">Voir toutes mes opportunités Radar CRM</a>
+          <a href="${appBaseUrl}/radar-crm" class="rcrm-final-cta" style="display:inline-block;max-width:100%;box-sizing:border-box;padding:14px 26px;background:${ORANGE};color:#fff;border-radius:10px;text-decoration:none;font-size:15px;font-weight:700;text-align:center;">Voir toutes mes opportunités Radar CRM</a>
         </td></tr>
 
         <tr><td style="padding:8px 12px 24px 12px;">
