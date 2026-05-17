@@ -103,6 +103,19 @@ function formatDateFr(iso: string | null): string {
   catch { return iso; }
 }
 
+function faviconUrl(domain: string | null | undefined): string | null {
+  if (!domain) return null;
+  const d = String(domain).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  if (!d) return null;
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(d)}&sz=128`;
+}
+
+function companyInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  if (parts.length === 0) return '?';
+  return parts.map((p) => p[0]!.toUpperCase()).join('');
+}
+
 type GroupedEvent = {
   eventId: string;
   event: any;
@@ -180,7 +193,7 @@ async function buildPreviewForUser(
   let eventMap = new Map<string, any>();
   if (eventIds.length > 0) {
     const { data: eventRows } = await supabase
-      .from('events').select('id, nom_event, slug, date_debut, ville, nom_lieu').in('id', eventIds);
+      .from('events').select('id, nom_event, slug, date_debut, ville, nom_lieu, url_image').in('id', eventIds);
     eventMap = new Map((eventRows ?? []).map((e: any) => [e.id, e]));
   }
 
@@ -243,6 +256,35 @@ async function buildPreviewForUser(
   });
   const top = groupedList.slice(0, 5);
 
+  // Enrich companies with normalized_domain from crm_companies for favicon rendering.
+  const allCrmCompanyIds = Array.from(new Set(
+    top.flatMap((g) => g.companies.map((c: any) => c.crmCompanyId).filter(Boolean)),
+  )) as string[];
+  if (allCrmCompanyIds.length > 0) {
+    try {
+      const { data: crmRows } = await supabase
+        .from('crm_companies')
+        .select('id, normalized_domain, website_raw, company_name')
+        .in('id', allCrmCompanyIds);
+      const domainMap = new Map<string, { domain: string | null; website: string | null }>();
+      for (const r of crmRows ?? []) {
+        domainMap.set((r as any).id, {
+          domain: (r as any).normalized_domain ?? null,
+          website: (r as any).website_raw ?? null,
+        });
+      }
+      for (const g of top) {
+        for (const co of g.companies as any[]) {
+          const info = co.crmCompanyId ? domainMap.get(co.crmCompanyId) : null;
+          if (info) {
+            co.normalizedDomain = info.domain;
+            co.website = info.website;
+          }
+        }
+      }
+    } catch (_) { /* favicons are best-effort */ }
+  }
+
   let emailTo: string | null = null;
   try {
     const { data: userData } = await supabase.auth.admin.getUserById(userId);
@@ -256,9 +298,32 @@ async function buildPreviewForUser(
   const companiesCount = companyKeys.size;
   const eventsCount = top.length;
 
-  const subject = companiesCount === 1
-    ? `1 entreprise de votre Radar CRM expose bientôt`
-    : `${companiesCount} entreprises de votre Radar CRM exposent bientôt sur ${eventsCount} salons`;
+  // Smart subject line — fall back to generic if names would be too long.
+  const SUBJECT_MAX = 90;
+  const firstCompanyName: string | null = (() => {
+    for (const g of top) for (const co of g.companies as any[]) {
+      if (co?.companyName) return String(co.companyName);
+    }
+    return null;
+  })();
+  const firstEventName: string | null = top[0]?.event?.nom_event ? String(top[0].event.nom_event) : null;
+  let subject: string;
+  if (companiesCount === 1 && eventsCount === 1 && firstCompanyName && firstEventName) {
+    subject = `${firstCompanyName} expose bientôt à ${firstEventName}`;
+  } else if (companiesCount === 1 && eventsCount > 1 && firstCompanyName) {
+    subject = `${firstCompanyName} expose bientôt sur ${eventsCount} salons`;
+  } else if (companiesCount > 1 && eventsCount === 1 && firstEventName) {
+    subject = `${companiesCount} entreprises de votre Radar CRM exposent à ${firstEventName}`;
+  } else if (companiesCount > 1) {
+    subject = `${companiesCount} entreprises de votre Radar CRM exposent bientôt sur ${eventsCount} salons`;
+  } else {
+    subject = `1 entreprise de votre Radar CRM expose bientôt`;
+  }
+  if (subject.length > SUBJECT_MAX) {
+    subject = companiesCount === 1
+      ? `1 entreprise de votre Radar CRM expose bientôt`
+      : `${companiesCount} entreprises de votre Radar CRM exposent bientôt`;
+  }
 
   const notificationIds = top.flatMap((g) => g.notificationIds);
   const importIds = Array.from(new Set(top.flatMap((g) => g.importIds)));
@@ -293,10 +358,12 @@ function previewToJson(p: PreviewBuild) {
       eventCity: g.event.ville,
       eventVenue: g.event.nom_lieu,
       eventSlug: g.event.slug,
+      eventImage: g.event.url_image ?? null,
       companies: g.companies.map((co: any) => ({
         crmCompanyId: co.crmCompanyId ?? null,
         companyName: co.companyName ?? null,
         stand: co.stand ?? null,
+        normalizedDomain: co.normalizedDomain ?? null,
       })),
     })),
   };
@@ -331,66 +398,158 @@ async function ensureUnsubscribeUrl(
 }
 
 function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string) {
+  const ORANGE = '#ff7a1f';
+  const ORANGE_DARK = '#ea6a10';
+  const ORANGE_SOFT = '#fff4ec';
+  const NAVY = '#06286e';
+  const TEXT = '#0f172a';
+  const MUTED = '#64748b';
+  const BORDER = '#e5e7eb';
+  const BG = '#f5f7fb';
+
+  const totalCompanies = p.companiesCount;
+  const totalEvents = p.eventsCount;
+
   const eventsHtml = p.groups.map((g) => {
-    const companiesList = g.companies.map((c) => escapeHtml(String(c.companyName ?? '—'))).join(', ');
-    const link = `${appBaseUrl}/radar-crm/results?eventId=${g.eventId}`;
+    const eventLink = `${appBaseUrl}/radar-crm/results?eventId=${g.eventId}`;
+    const evName = escapeHtml(String(g.event.nom_event ?? '—'));
+    const evDate = escapeHtml(formatDateFr(g.event.date_debut));
+    const evCity = g.event.ville ? escapeHtml(String(g.event.ville)) : '';
+    const evVenue = g.event.nom_lieu ? escapeHtml(String(g.event.nom_lieu)) : '';
+    const imgUrl = g.event.url_image ? String(g.event.url_image) : null;
+
+    const imageBlock = imgUrl
+      ? `<img src="${escapeHtml(imgUrl)}" alt="${evName}" width="536" style="display:block;width:100%;max-width:536px;height:170px;object-fit:cover;border-radius:10px 10px 0 0;border:0;outline:none;" />`
+      : `<div style="width:100%;height:120px;background:${ORANGE_SOFT};border-radius:10px 10px 0 0;display:table-cell;text-align:center;vertical-align:middle;color:${ORANGE_DARK};font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;">${evName}</div>`;
+
+    const companiesTitle = g.companies.length > 1
+      ? 'Entreprises détectées dans votre CRM'
+      : 'Entreprise détectée dans votre CRM';
+
+    const companiesChips = g.companies.map((co: any) => {
+      const name = escapeHtml(String(co.companyName ?? '—'));
+      const fav = faviconUrl(co.normalizedDomain);
+      const stand = co.stand ? `<span style="font-size:12px;color:${MUTED};margin-left:8px;">Stand ${escapeHtml(String(co.stand))}</span>` : '';
+      const domain = co.normalizedDomain ? `<div style="font-size:11px;color:${MUTED};margin-top:2px;">${escapeHtml(String(co.normalizedDomain))}</div>` : '';
+      const logoCell = fav
+        ? `<img src="${escapeHtml(fav)}" alt="${name}" width="32" height="32" style="display:block;width:32px;height:32px;border-radius:6px;border:1px solid ${BORDER};background:#fff;object-fit:contain;" />`
+        : `<div style="width:32px;height:32px;border-radius:6px;background:${ORANGE};color:#fff;font-weight:700;font-size:13px;line-height:32px;text-align:center;">${escapeHtml(companyInitials(String(co.companyName ?? '?')))}</div>`;
+      return `
+        <tr><td style="padding:8px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff;border:1px solid ${BORDER};border-radius:10px;">
+            <tr>
+              <td width="48" style="padding:10px 0 10px 12px;vertical-align:middle;">${logoCell}</td>
+              <td style="padding:10px 12px;vertical-align:middle;">
+                <div style="font-size:14px;font-weight:700;color:${TEXT};">${name}${stand}</div>
+                ${domain}
+              </td>
+              <td style="padding:10px 12px;vertical-align:middle;text-align:right;">
+                <span style="display:inline-block;padding:4px 10px;background:${ORANGE_SOFT};color:${ORANGE_DARK};border-radius:999px;font-size:11px;font-weight:600;">Présent dans votre CRM</span>
+              </td>
+            </tr>
+          </table>
+        </td></tr>`;
+    }).join('');
+
     return `
-      <tr><td style="padding:16px 0;border-top:1px solid #e5e7eb;">
-        <div style="font-size:16px;font-weight:600;color:#0f172a;margin-bottom:4px;">${escapeHtml(String(g.event.nom_event ?? '—'))}</div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:8px;">
-          ${escapeHtml(formatDateFr(g.event.date_debut))} · ${escapeHtml(String(g.event.ville ?? '—'))}${g.event.nom_lieu ? ` · ${escapeHtml(String(g.event.nom_lieu))}` : ''}
-        </div>
-        <div style="font-size:13px;color:#334155;margin-bottom:12px;">
-          <strong>${g.companies.length} entreprise${g.companies.length > 1 ? 's' : ''} détectée${g.companies.length > 1 ? 's' : ''} :</strong> ${companiesList || '—'}
-        </div>
-        <a href="${link}" style="display:inline-block;padding:8px 14px;background:#0f172a;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;">Voir dans Radar CRM</a>
+      <tr><td style="padding:0 0 20px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff;border:1px solid ${BORDER};border-radius:12px;overflow:hidden;">
+          <tr><td style="padding:0;">${imageBlock}</td></tr>
+          <tr><td style="padding:18px 20px 6px 20px;">
+            <span style="display:inline-block;padding:3px 10px;background:${ORANGE};color:#fff;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Opportunité Radar CRM</span>
+            <h2 style="font-size:18px;margin:10px 0 4px 0;color:${NAVY};line-height:1.3;">${evName}</h2>
+            <div style="font-size:13px;color:${MUTED};margin-bottom:4px;">${evDate}${evCity ? ` · ${evCity}` : ''}${evVenue ? ` · ${evVenue}` : ''}</div>
+          </td></tr>
+          <tr><td style="padding:8px 20px 4px 20px;">
+            <div style="font-size:12px;font-weight:600;color:${NAVY};text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">${companiesTitle}</div>
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">${companiesChips}</table>
+          </td></tr>
+          <tr><td style="padding:14px 20px 20px 20px;">
+            <a href="${eventLink}" style="display:inline-block;padding:11px 20px;background:${ORANGE};color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Voir cette opportunité →</a>
+          </td></tr>
+        </table>
       </td></tr>`;
   }).join('');
 
-  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
-    <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;padding:32px;">
-        <tr><td>
-          <div style="font-size:13px;color:#64748b;margin-bottom:8px;">Lotexpo · Radar CRM</div>
-          <h1 style="font-size:22px;margin:0 0 12px 0;color:#0f172a;">De nouvelles opportunités salon détectées</h1>
-          <p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 16px 0;">
-            Radar CRM a détecté que des entreprises présentes dans votre fichier CRM exposent prochainement sur des événements référencés par Lotexpo.
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${escapeHtml(p.subject)}</title></head>
+<body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${TEXT};">
+  <div style="display:none;max-height:0;overflow:hidden;color:transparent;">${totalCompanies} entreprise${totalCompanies>1?'s':''} de votre CRM exposent sur ${totalEvents} salon${totalEvents>1?'s':''}. Préparez vos rendez-vous.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
+    <tr><td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="padding:0 4px 18px 4px;">
+          <table role="presentation" width="100%"><tr>
+            <td style="font-size:20px;font-weight:700;color:${NAVY};letter-spacing:-0.01em;">Lot<span style="color:${ORANGE};">expo</span></td>
+            <td style="text-align:right;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.06em;">Radar CRM</td>
+          </tr></table>
+        </td></tr>
+
+        <tr><td style="background:#fff;border:1px solid ${BORDER};border-radius:14px;padding:28px 24px;">
+          <h1 style="font-size:22px;line-height:1.3;margin:0 0 10px 0;color:${NAVY};">De nouvelles opportunités salon détectées</h1>
+          <p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 16px 0;">
+            Radar CRM a détecté que des entreprises présentes dans votre fichier CRM exposent prochainement sur des salons référencés par Lotexpo.
           </p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${ORANGE_SOFT};border-radius:10px;margin-bottom:8px;">
+            <tr>
+              <td style="padding:14px 16px;font-size:13px;color:${NAVY};">
+                <strong style="color:${ORANGE_DARK};">${totalCompanies}</strong> entreprise${totalCompanies>1?'s':''} de votre CRM ·
+                <strong style="color:${ORANGE_DARK};">${totalEvents}</strong> salon${totalEvents>1?'s':''}<br/>
+                <span style="color:${MUTED};">Préparez vos rendez-vous avant l’événement.</span>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:20px 0 0 0;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${eventsHtml}</table>
-          <div style="margin-top:24px;text-align:center;">
-            <a href="${appBaseUrl}/radar-crm" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Voir mes opportunités Radar CRM</a>
-          </div>
-          <p style="font-size:12px;color:#94a3b8;margin-top:24px;line-height:1.5;">
-            Ces informations sont basées sur les données de participation disponibles sur Lotexpo à la date d'envoi.
+        </td></tr>
+
+        <tr><td style="text-align:center;padding:8px 0 24px 0;">
+          <a href="${appBaseUrl}/radar-crm" style="display:inline-block;padding:14px 26px;background:${ORANGE};color:#fff;border-radius:10px;text-decoration:none;font-size:15px;font-weight:700;">Voir toutes mes opportunités Radar CRM</a>
+        </td></tr>
+
+        <tr><td style="padding:8px 12px 24px 12px;">
+          <p style="font-size:12px;color:${MUTED};line-height:1.6;margin:0 0 10px 0;text-align:center;">
+            Ces informations sont basées sur les données de participation disponibles sur Lotexpo à la date d’envoi.
           </p>
-          <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
-          <p style="font-size:12px;color:#94a3b8;line-height:1.5;margin:0;">
+          <p style="font-size:12px;color:${MUTED};line-height:1.6;margin:0;text-align:center;">
             Vous recevez cet email car vous avez activé les alertes email Radar CRM sur Lotexpo.<br/>
-            <a href="${unsubscribeUrl}" style="color:#64748b;text-decoration:underline;">Se désabonner des emails Radar CRM</a>
+            <a href="${unsubscribeUrl}" style="color:${NAVY};text-decoration:underline;">Se désabonner des emails Radar CRM</a>
           </p>
         </td></tr>
       </table>
     </td></tr>
   </table>
-  </body></html>`;
+</body></html>`;
 
   const textLines = [
+    'Lotexpo · Radar CRM',
     'De nouvelles opportunités salon détectées',
     '',
-    "Radar CRM a détecté que des entreprises présentes dans votre fichier CRM exposent prochainement sur des événements référencés par Lotexpo.",
+    `${totalCompanies} entreprise${totalCompanies > 1 ? 's' : ''} de votre CRM · ${totalEvents} salon${totalEvents > 1 ? 's' : ''}`,
+    'Préparez vos rendez-vous avant l’événement.',
+    '',
+    "Radar CRM a détecté que des entreprises présentes dans votre fichier CRM exposent prochainement sur des salons référencés par Lotexpo.",
     '',
   ];
   for (const g of p.groups) {
-    textLines.push(`- ${g.event.nom_event ?? '—'}`);
+    textLines.push(`▶ ${g.event.nom_event ?? '—'}`);
     textLines.push(`  ${formatDateFr(g.event.date_debut)} · ${g.event.ville ?? '—'}${g.event.nom_lieu ? ` · ${g.event.nom_lieu}` : ''}`);
-    textLines.push(`  Entreprises : ${g.companies.map((c) => c.companyName).filter(Boolean).join(', ') || '—'}`);
-    textLines.push(`  ${appBaseUrl}/radar-crm/results?eventId=${g.eventId}`);
+    const label = g.companies.length > 1 ? 'Entreprises détectées dans votre CRM' : 'Entreprise détectée dans votre CRM';
+    textLines.push(`  ${label} :`);
+    for (const co of g.companies as any[]) {
+      const parts = [String(co.companyName ?? '—')];
+      if (co.stand) parts.push(`stand ${co.stand}`);
+      if (co.normalizedDomain) parts.push(co.normalizedDomain);
+      textLines.push(`    • ${parts.join(' · ')}`);
+    }
+    textLines.push(`  Voir cette opportunité : ${appBaseUrl}/radar-crm/results?eventId=${g.eventId}`);
     textLines.push('');
   }
-  textLines.push(`Voir mes opportunités : ${appBaseUrl}/radar-crm`);
+  textLines.push(`Voir toutes mes opportunités Radar CRM : ${appBaseUrl}/radar-crm`);
   textLines.push('');
   textLines.push("Ces informations sont basées sur les données de participation disponibles sur Lotexpo à la date d'envoi.");
+  textLines.push('Vous recevez cet email car vous avez activé les alertes email Radar CRM sur Lotexpo.');
   textLines.push(`Se désabonner : ${unsubscribeUrl}`);
 
   return { html, text: textLines.join('\n') };
