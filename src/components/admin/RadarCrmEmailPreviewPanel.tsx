@@ -6,8 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Loader2, Mail, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Mail, Info, ChevronDown, ChevronUp, Send } from 'lucide-react';
 
 type Preview = {
   userId: string;
@@ -45,6 +49,19 @@ type Result = {
   error?: string;
 };
 
+type SendResult = {
+  success?: boolean;
+  emailsSent?: number;
+  emailTo?: string;
+  subject?: string;
+  resendMessageId?: string;
+  status?: string;
+  logId?: string;
+  reason?: string;
+  skippedNotificationsAlreadyEmailed?: number;
+  error?: string;
+};
+
 const RadarCrmEmailPreviewPanel: React.FC = () => {
   const [userId, setUserId] = useState('');
   const [maxUsers, setMaxUsers] = useState('50');
@@ -52,10 +69,14 @@ const RadarCrmEmailPreviewPanel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<SendResult | null>(null);
 
   const run = async () => {
     setLoading(true);
     setResult(null);
+    setSendResult(null);
     try {
       const payload: Record<string, unknown> = {
         dryRun: true,
@@ -81,6 +102,42 @@ const RadarCrmEmailPreviewPanel: React.FC = () => {
       setResult({ success: false, error: msg });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const firstPreview = result?.previews?.[0];
+  const canSendReal = Boolean(
+    result?.success && userId.trim() && (result.emailsWouldSend ?? 0) > 0 && firstPreview?.emailTo,
+  );
+
+  const sendReal = async () => {
+    setSending(true);
+    setSendResult(null);
+    try {
+      const payload: Record<string, unknown> = {
+        sendReal: true,
+        dryRun: false,
+        userId: userId.trim(),
+      };
+      if (lookaheadDays.trim()) payload.lookaheadDays = Number(lookaheadDays);
+      const { data, error } = await supabase.functions.invoke('radar-crm-email-dispatcher', { body: payload });
+      if (error) throw error;
+      const res = data as SendResult;
+      setSendResult(res);
+      if (res?.success && (res.emailsSent ?? 0) > 0) {
+        toast.success(`Email envoyé à ${res.emailTo ?? ''}`);
+      } else if (res?.success) {
+        toast.message(`Aucun email envoyé (${res.reason ?? 'pas d\'éligibilité'})`);
+      } else {
+        toast.error(res?.error ?? 'Échec de l\'envoi');
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg);
+      setSendResult({ success: false, error: msg });
+    } finally {
+      setSending(false);
+      setConfirmOpen(false);
     }
   };
 
@@ -167,7 +224,23 @@ const RadarCrmEmailPreviewPanel: React.FC = () => {
 
                 {(result.previews ?? []).length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Aperçus des emails</h4>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="font-semibold text-sm">Aperçus des emails</h4>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        disabled={!canSendReal || sending}
+                        onClick={() => setConfirmOpen(true)}
+                      >
+                        {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        Envoyer cet email test réel
+                      </Button>
+                    </div>
+                    {!canSendReal && (
+                      <p className="text-xs text-muted-foreground">
+                        L'envoi réel exige un User ID précis, une preview valide avec au moins un email simulé et une adresse email connue.
+                      </p>
+                    )}
                     {result.previews!.map((p, i) => (
                       <div key={i} className="border rounded-md p-3 space-y-2">
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -208,6 +281,34 @@ const RadarCrmEmailPreviewPanel: React.FC = () => {
                   </div>
                 )}
 
+                {sendResult && (
+                  <Alert variant={sendResult.success ? 'default' : 'destructive'}>
+                    <AlertDescription>
+                      {sendResult.success ? (
+                        sendResult.emailsSent ? (
+                          <div className="space-y-1">
+                            <div><strong>Email envoyé.</strong></div>
+                            <div className="text-xs">Destinataire : {sendResult.emailTo}</div>
+                            <div className="text-xs">Sujet : {sendResult.subject}</div>
+                            <div className="text-xs">Resend ID : {sendResult.resendMessageId}</div>
+                            <div className="text-xs">Status : {sendResult.status} · Log : {sendResult.logId}</div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <div><strong>Aucun email envoyé.</strong></div>
+                            <div className="text-xs">Raison : {sendResult.reason ?? '—'}</div>
+                            {(sendResult.skippedNotificationsAlreadyEmailed ?? 0) > 0 && (
+                              <div className="text-xs">Notifs déjà emailées : {sendResult.skippedNotificationsAlreadyEmailed}</div>
+                            )}
+                          </div>
+                        )
+                      ) : (
+                        <>Erreur : {sendResult.error}</>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {(result.errors ?? []).length > 0 && (
                   <div className="space-y-1">
                     <h4 className="font-semibold text-sm text-destructive">Erreurs</h4>
@@ -220,6 +321,25 @@ const RadarCrmEmailPreviewPanel: React.FC = () => {
             )}
           </div>
         )}
+
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Envoyer un email réel via Resend ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Vous allez envoyer un vrai email via Resend à <strong>{firstPreview?.emailTo ?? '—'}</strong>.
+                Cette action sera enregistrée dans <code>radar_email_log</code> et empêchera un nouvel envoi
+                pour les mêmes notifications.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={sending}>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={(e) => { e.preventDefault(); sendReal(); }} disabled={sending}>
+                {sending ? 'Envoi…' : 'Confirmer l\'envoi'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
