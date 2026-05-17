@@ -39,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const pendingPlanProcessed = useRef(false);
+  const authBootstrapped = useRef(false);
 
   useEffect(() => {
     const processPostSignInTasks = async (currentSession: Session) => {
@@ -141,7 +142,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setSession(nextSession);
         setUser(nextSession?.user ?? null);
-        setLoading(false);
+        if (event !== 'INITIAL_SESSION' || authBootstrapped.current) {
+          setLoading(false);
+        }
 
         if (!nextSession?.user) {
           pendingPlanProcessed.current = false;
@@ -177,6 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await handleInvalidSession(error);
         return;
       } finally {
+        authBootstrapped.current = true;
         setLoading(false);
       }
     };
