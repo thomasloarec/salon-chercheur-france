@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.radar-crm-rematch-cron]
 verify_jwt = false
+
+[functions.radar-crm-email-dispatcher]
+verify_jwt = false
