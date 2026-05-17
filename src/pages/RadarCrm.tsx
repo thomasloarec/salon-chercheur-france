@@ -431,6 +431,9 @@ const RadarCrmPage: React.FC = () => {
                   <p className="text-sm text-foreground/80">
                     En lançant l'analyse, vous autorisez Lotexpo à traiter les entreprises et sites web de ce fichier afin de détecter les salons où ces entreprises exposent. Vos données Radar CRM restent privées et peuvent être supprimées à tout moment depuis vos paramètres Radar CRM.
                   </p>
+                  <p className="text-xs text-muted-foreground">
+                    En utilisant Radar CRM, vous recevrez par défaut des alertes email lorsque de nouvelles opportunités sont détectées. Vous pourrez les désactiver à tout moment dans les Paramètres Radar CRM.
+                  </p>
                   <label className="flex items-start gap-2 cursor-pointer">
                     <Checkbox
                       checked={privacyAck}
