@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.seo-enrichment-batch]
 verify_jwt = false
+
+[functions.admin-seo-batch-proxy]
+verify_jwt = true
