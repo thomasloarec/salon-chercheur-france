@@ -138,7 +138,17 @@ const RadarCrmPage: React.FC = () => {
         },
       });
       if (error) throw error;
-      const result = data as { importId?: string; matchesCount?: number; matchedCompaniesCount?: number };
+      const result = data as {
+        importId?: string;
+        matchesCount?: number;
+        matchedCompaniesCount?: number;
+        qualityWarning?: {
+          suspiciousRate: number;
+          threshold: number;
+          suspicious: boolean;
+          needsReviewCount: number;
+        };
+      };
       void trackRadarEvent('crm_import_completed', {
         importId: result.importId,
         matches: result.matchesCount,
@@ -149,6 +159,13 @@ const RadarCrmPage: React.FC = () => {
         title: 'Analyse terminée',
         description: `${result.matchedCompaniesCount ?? 0} entreprise(s) détectée(s) sur des salons.`,
       });
+      if (result.qualityWarning?.suspicious) {
+        toast({
+          title: 'Qualité du fichier à vérifier',
+          description: `${result.qualityWarning.needsReviewCount} correspondance(s) suspecte(s) (${Math.round(result.qualityWarning.suspiciousRate * 100)}%). Vérifiez que le nom d'entreprise est bien dans la bonne colonne.`,
+          variant: 'destructive',
+        });
+      }
       navigate(`/radar-crm/results?importId=${result.importId ?? ''}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erreur inconnue';

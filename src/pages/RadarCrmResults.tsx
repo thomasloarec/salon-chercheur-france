@@ -52,10 +52,14 @@ type Match = {
   id_exposant: string;
   event_id: string;
   normalized_domain: string;
+  needs_review?: boolean | null;
+  name_similarity?: number | null;
+  review_reason?: string | null;
 };
 
 type ParticipationViewRow = {
   id_exposant: string;
+  nom_exposant: string | null;
   event_id: string;
   nom_event: string | null;
   type_event: string | null;
@@ -96,7 +100,10 @@ interface EventGroup {
   companies: Array<{
     company: Company;
     id_exposant: string;
+    nom_exposant: string | null;
     stand: string | null;
+    needs_review: boolean;
+    name_similarity: number | null;
   }>;
 }
 
@@ -169,7 +176,7 @@ const RadarCrmResults: React.FC = () => {
       }
       const { data: mts } = await supabase
         .from('crm_company_event_matches')
-        .select('id, crm_company_id, id_exposant, event_id, normalized_domain')
+        .select('id, crm_company_id, id_exposant, event_id, normalized_domain, needs_review, name_similarity, review_reason')
         .in('crm_company_id', compList.map((c) => c.id));
       const matchList = (mts ?? []) as Match[];
       setMatches(matchList);
@@ -179,7 +186,7 @@ const RadarCrmResults: React.FC = () => {
         const exposantIds = Array.from(new Set(matchList.map((m) => m.id_exposant)));
         const { data: vrows } = await supabase
           .from('crm_radar_participations_view')
-          .select('id_exposant, event_id, nom_event, type_event, date_debut, date_fin, ville, nom_lieu, stand_exposants_list, is_future_event, days_until_event, url_image, slug')
+          .select('id_exposant, nom_exposant, event_id, nom_event, type_event, date_debut, date_fin, ville, nom_lieu, stand_exposants_list, is_future_event, days_until_event, url_image, slug')
           .in('event_id', eventIds)
           .in('id_exposant', exposantIds);
         setViewRows((vrows ?? []) as ParticipationViewRow[]);
@@ -220,7 +227,14 @@ const RadarCrmResults: React.FC = () => {
         groups.set(m.event_id, g);
       }
       if (!g.companies.find((x) => x.company.id === c.id)) {
-        g.companies.push({ company: c, id_exposant: m.id_exposant, stand: v.stand_exposants_list ?? null });
+        g.companies.push({
+          company: c,
+          id_exposant: m.id_exposant,
+          nom_exposant: v.nom_exposant ?? null,
+          stand: v.stand_exposants_list ?? null,
+          needs_review: m.needs_review === true,
+          name_similarity: m.name_similarity ?? null,
+        });
       }
     }
     return Array.from(groups.values());
@@ -278,12 +292,16 @@ const RadarCrmResults: React.FC = () => {
     id_exposant: string,
     stand: string | null,
     g: EventGroup,
+    nom_exposant: string | null,
+    needs_review: boolean,
   ) => {
     void trackRadarEvent('crm_exhibitor_dialog_opened', { eventId: g.event_id, id_exposant });
     setOpenExhibitor({
       exhibitor: {
         id_exposant,
-        exhibitor_name: company.company_name,
+        exhibitor_name: nom_exposant ?? company.company_name,
+        crm_company_name: company.company_name,
+        needs_review,
         stand_exposant: stand ?? undefined,
         website_exposant: company.website_raw ?? undefined,
       },
@@ -396,7 +414,8 @@ const RadarCrmResults: React.FC = () => {
                             group={g}
                             importId={activeImportId}
                             onView={() => onClickEvent(g)}
-                            onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
+                            onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
+                              onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
                           />
                         </div>
                       ))}
@@ -414,7 +433,8 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
-                          onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
+                          onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
+                            onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
                         />
                       ))}
                     </div>
@@ -571,20 +591,38 @@ const CompanyAvatar: React.FC<{ company: Company; size?: 'xs' | 'sm' | 'md' }> =
 
 /** Company chip — clickable, shows logo + name */
 const CompanyChip: React.FC<{
-  company: Company; stand?: string | null; onClick: () => void;
-}> = ({ company, stand, onClick }) => (
+  company: Company;
+  stand?: string | null;
+  nomExposant?: string | null;
+  needsReview?: boolean;
+  onClick: () => void;
+}> = ({ company, stand, nomExposant, needsReview, onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="group flex items-center gap-2 bg-background border border-border hover:border-primary hover:bg-primary/5 rounded-full pl-1 pr-3 py-1 transition-all"
+    className={cn(
+      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1 transition-all hover:bg-primary/5',
+      needsReview ? 'border-amber-500/60 hover:border-amber-500' : 'border-border hover:border-primary',
+    )}
+    title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
     <CompanyAvatar company={company} size="xs" />
-    <span className="text-sm font-semibold text-foreground group-hover:text-primary">
-      {company.company_name}
+    <span className="flex flex-col items-start leading-tight">
+      <span className="text-sm font-semibold text-foreground group-hover:text-primary">
+        {nomExposant ?? company.company_name}
+      </span>
+      {nomExposant && nomExposant !== company.company_name && (
+        <span className="text-[10px] text-foreground/60">CRM : {company.company_name}</span>
+      )}
     </span>
     {stand && (
       <span className="text-xs font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">
         {stand}
+      </span>
+    )}
+    {needsReview && (
+      <span className="text-[10px] font-medium text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded">
+        À vérifier
       </span>
     )}
   </button>
@@ -645,7 +683,13 @@ const EventCard: React.FC<{
   group: EventGroup;
   importId?: string | null;
   onView: () => void;
-  onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
+  onCompanyClick: (
+    c: Company,
+    id_exposant: string,
+    stand: string | null,
+    nom_exposant: string | null,
+    needs_review: boolean,
+  ) => void;
 }> = ({ group, importId, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
@@ -704,8 +748,15 @@ const EventCard: React.FC<{
               {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {group.companies.map(({ company, id_exposant, stand }) => (
-                <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company, id_exposant, stand)} />
+              {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
+                <CompanyChip
+                  key={company.id}
+                  company={company}
+                  stand={stand}
+                  nomExposant={nom_exposant}
+                  needsReview={needs_review}
+                  onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
+                />
               ))}
             </div>
           </div>
@@ -726,7 +777,13 @@ const EventCard: React.FC<{
 const PastEventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
-  onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
+  onCompanyClick: (
+    c: Company,
+    id_exposant: string,
+    stand: string | null,
+    nom_exposant: string | null,
+    needs_review: boolean,
+  ) => void;
 }> = ({ group, onView, onCompanyClick }) => {
   return (
     <Card className="overflow-hidden hover:shadow-sm transition-all bg-card">
@@ -756,8 +813,15 @@ const PastEventCard: React.FC<{
             Entreprises détectées
           </p>
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {group.companies.map(({ company, id_exposant, stand }) => (
-              <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company, id_exposant, stand)} />
+            {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
+              <CompanyChip
+                key={company.id}
+                company={company}
+                stand={stand}
+                nomExposant={nom_exposant}
+                needsReview={needs_review}
+                onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
+              />
             ))}
           </div>
           <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary -ml-2">

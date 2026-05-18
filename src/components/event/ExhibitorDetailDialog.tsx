@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Event } from '@/types/event';
-import { ExternalLink, Building2, MapPin, Globe, Calendar } from 'lucide-react';
+import { ExternalLink, Building2, MapPin, Globe, Calendar, AlertTriangle } from 'lucide-react';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeExternalUrl } from '@/lib/url';
 import { normalizeStandNumber } from '@/utils/standUtils';
@@ -32,6 +32,9 @@ interface Exhibitor {
   website_final?: string;
   // AI enrichment
   ai_resume_court?: string;
+  // Radar CRM extras
+  crm_company_name?: string;
+  needs_review?: boolean;
 }
 
 interface ExhibitorDetailDialogProps {
@@ -182,6 +185,22 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Radar CRM — needs_review alert */}
+          {e.needs_review && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div className="text-sm leading-snug">
+                <p className="font-semibold">Correspondance CRM à vérifier</p>
+                <p className="mt-0.5 text-amber-800">
+                  Le nom de votre fichier CRM
+                  {e.crm_company_name ? <> (<span className="font-medium">{e.crm_company_name}</span>)</> : null}
+                  {' '}diffère sensiblement du nom Lotexpo (<span className="font-medium">{displayName}</span>).
+                  Confirmez qu'il s'agit bien de la même entreprise.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Description */}
           {description && (
             <div className="prose prose-sm max-w-none">

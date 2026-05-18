@@ -22,11 +22,19 @@ type Stats = {
   betaUsers?: number;
   alertsEnabledUsers?: number;
   dataDeletions?: number;
+  needsReviewMatches?: number;
+  suspiciousImports?: number;
   recentImports: Array<{
     id: string; user_email: string | null; file_name: string | null;
     source_type: string; status: string; total_rows: number;
     matched_companies_count: number; unmatched_companies_count: number;
     error_message: string | null; created_at: string;
+    suspicious_rate: number | null;
+  }>;
+  recentSuspiciousImports?: Array<{
+    id: string; user_email: string | null; file_name: string | null;
+    status: string; total_rows: number; matched_companies_count: number;
+    suspicious_rate: number | null; created_at: string;
   }>;
 };
 
@@ -58,6 +66,8 @@ const AdminRadarCrm: React.FC = () => {
     { l: 'Utilisateurs Beta Radar CRM', v: stats.betaUsers ?? 0 },
     { l: 'Alertes activées', v: stats.alertsEnabledUsers ?? 0 },
     { l: 'Suppressions de données Radar CRM', v: stats.dataDeletions ?? 0 },
+    { l: 'Matches à vérifier', v: stats.needsReviewMatches ?? 0 },
+    { l: 'Imports suspects (>30%)', v: stats.suspiciousImports ?? 0 },
   ];
 
   return (
@@ -98,6 +108,7 @@ const AdminRadarCrm: React.FC = () => {
                 <th className="text-left p-2">Lignes</th>
                 <th className="text-left p-2">Matchées</th>
                 <th className="text-left p-2">Non m.</th>
+                <th className="text-left p-2">Suspect</th>
                 <th className="text-left p-2">Statut</th>
                 <th className="text-left p-2">Erreur</th>
               </tr>
@@ -113,6 +124,13 @@ const AdminRadarCrm: React.FC = () => {
                   <td className="p-2">{i.matched_companies_count}</td>
                   <td className="p-2">{i.unmatched_companies_count}</td>
                   <td className="p-2">
+                    {i.suspicious_rate != null ? (
+                      <Badge variant={i.suspicious_rate > 0.30 ? 'destructive' : 'outline'}>
+                        {Math.round(i.suspicious_rate * 100)}%
+                      </Badge>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="p-2">
                     <Badge variant={i.status === 'completed' ? 'secondary' : i.status === 'failed' ? 'destructive' : 'outline'}>{i.status}</Badge>
                   </td>
                   <td className="p-2 text-xs text-destructive max-w-[200px] truncate">{i.error_message ?? ''}</td>
@@ -122,6 +140,48 @@ const AdminRadarCrm: React.FC = () => {
           </table>
         </CardContent>
       </Card>
+
+      {(stats.recentSuspiciousImports?.length ?? 0) > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base text-amber-700">Imports suspects récents (suspicious_rate &gt; 30%)</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-2">Date</th>
+                  <th className="text-left p-2">Utilisateur</th>
+                  <th className="text-left p-2">Fichier</th>
+                  <th className="text-left p-2">Lignes</th>
+                  <th className="text-left p-2">Matchées</th>
+                  <th className="text-left p-2">Taux suspect</th>
+                  <th className="text-left p-2">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(stats.recentSuspiciousImports ?? []).map((i) => (
+                  <tr key={i.id} className="border-t">
+                    <td className="p-2 whitespace-nowrap">{new Date(i.created_at).toLocaleString('fr-FR')}</td>
+                    <td className="p-2">{i.user_email ?? '—'}</td>
+                    <td className="p-2">{i.file_name ?? '—'}</td>
+                    <td className="p-2">{i.total_rows}</td>
+                    <td className="p-2">{i.matched_companies_count}</td>
+                    <td className="p-2">
+                      <Badge variant="destructive">
+                        {i.suspicious_rate != null ? `${Math.round(i.suspicious_rate * 100)}%` : '—'}
+                      </Badge>
+                    </td>
+                    <td className="p-2">
+                      <Badge variant={i.status === 'completed' ? 'secondary' : 'outline'}>{i.status}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

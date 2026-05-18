@@ -232,6 +232,13 @@ Deno.serve(async (req) => {
         matchesCount: stats.matchesCount ?? 0,
         futureMatchesCount: stats.futureMatchesCount ?? 0,
         pastMatchesCount: stats.pastMatchesCount ?? 0,
+        needsReviewCount: stats.needsReviewCount ?? 0,
+        qualityWarning: {
+          suspiciousRate: stats.suspiciousRate ?? 0,
+          threshold: 0.30,
+          suspicious: (stats.suspiciousRate ?? 0) > 0.30,
+          needsReviewCount: stats.needsReviewCount ?? 0,
+        },
       })
     } catch (innerErr) {
       const msg = innerErr instanceof Error ? innerErr.message : 'Unknown error'
