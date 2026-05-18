@@ -87,6 +87,8 @@ interface NewMatchRow {
   normalized_domain: string
   is_future_event: boolean | null
   nom_event: string | null
+  needs_review?: boolean | null
+  name_similarity?: number | null
 }
 
 Deno.serve(async (req) => {
@@ -264,7 +266,13 @@ Deno.serve(async (req) => {
 
       const newMatches: NewMatchRow[] = ((matchData as any)?.newMatches ?? []) as NewMatchRow[]
       newMatchesCreated += newMatches.length
-      const futureMatches = newMatches.filter((m) => m.is_future_event === true)
+      // Exclude matches flagged as needs_review from standard automatic
+      // notifications. They remain visible in the UI with a warning badge,
+      // and are surfaced in admin stats — but never trigger an email or
+      // an in-app notification.
+      const futureMatches = newMatches.filter(
+        (m) => m.is_future_event === true && m.needs_review !== true,
+      )
       futureNewMatches += futureMatches.length
 
       if (futureMatches.length > 0) {
@@ -426,9 +434,10 @@ Deno.serve(async (req) => {
         if (companyIds.length > 0) {
           const { data: allMatches, error: allMatchesErr } = await supabase
             .from('crm_company_event_matches')
-            .select('crm_company_id, event_id, id_exposant')
+            .select('crm_company_id, event_id, id_exposant, needs_review')
             .eq('user_id', imp.user_id)
             .in('crm_company_id', companyIds)
+            .eq('needs_review', false)
           if (allMatchesErr) throw new Error(`reconciliation matches: ${allMatchesErr.message}`)
 
           // Filter to future events
