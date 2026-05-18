@@ -75,7 +75,7 @@ export function EnrichedDescriptionValidation() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
-  const [filter, setFilter] = useState<FilterValue>('needs_action');
+  const [filter, setFilter] = useState<FilterValue>('to_fix');
   const [revalidating, setRevalidating] = useState(false);
   const [revalidateOneId, setRevalidateOneId] = useState<string | null>(null);
   const [lastRunIds, setLastRunIds] = useState<Set<string>>(new Set());
@@ -320,19 +320,25 @@ export function EnrichedDescriptionValidation() {
   };
 
   const filteredEvents = events.filter((ev) => {
+    const isIgnored = ev.auto_validation_report?.ignored_for_now === true;
+    const failChecks = ev.auto_validation_report?.checks?.filter((c) => c.status === 'fail' && c.blocker) ?? [];
+    const warnChecks = ev.auto_validation_report?.checks?.filter((c) => c.status === 'warning') ?? [];
+    const hasBlocker = failChecks.length > 0 || ev.auto_validation_status === 'failed';
+    const hasWarning = warnChecks.length > 0 || ev.auto_validation_status === 'warning';
+    const isPublished = ev.enrichissement_statut === 'valide'
+      && ev.auto_validation_status === 'passed'
+      && ev.validation_mode === 'auto';
     switch (filter) {
-      case 'needs_action':
-        return ev.enrichissement_statut === 'en_attente'
-          || ev.auto_validation_status === 'warning'
-          || ev.auto_validation_status === 'failed';
-      case 'pending': return ev.enrichissement_statut === 'en_attente';
+      case 'to_fix':
+        return !isIgnored && hasBlocker;
+      case 'to_review':
+        return !isIgnored && !hasBlocker && hasWarning;
+      case 'last_run':
+        return lastRunIds.has(ev.id);
       case 'published':
-        return ev.enrichissement_statut === 'valide'
-          && ev.auto_validation_status === 'passed'
-          && ev.validation_mode === 'auto';
-      case 'warning': return ev.auto_validation_status === 'warning';
-      case 'failed': return ev.auto_validation_status === 'failed';
-      case 'last_run': return lastRunIds.has(ev.id);
+        return isPublished;
+      case 'ignored':
+        return isIgnored;
       default: return true;
     }
   });
