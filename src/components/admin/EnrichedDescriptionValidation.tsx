@@ -110,7 +110,7 @@ export function EnrichedDescriptionValidation() {
       });
       setEvents((eventsRes.data ?? []).map((e) => ({
         ...e,
-        auto_validation_report: (e.auto_validation_report ?? null) as AutoValidationReport | null,
+        auto_validation_report: (e.auto_validation_report ?? null) as unknown as AutoValidationReport | null,
       })) as PendingEvent[]);
     } catch (e) {
       console.error('Fetch error', e);
