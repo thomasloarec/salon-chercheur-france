@@ -320,20 +320,54 @@ export function EnrichedDescriptionValidation() {
           </div>
         </div>
 
-        {/* 2. Pending list */}
-        {events.length === 0 && !loading && (
+        {/* 2. Filtres */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {([
+            ['all', `Tous (${events.length})`],
+            ['pending', `En attente (${events.filter(e => e.enrichissement_statut === 'en_attente').length})`],
+            ['auto', `Validés auto (${events.filter(e => e.auto_validation_status === 'passed' && e.validation_mode === 'auto').length})`],
+            ['warning', `Warnings (${events.filter(e => e.auto_validation_status === 'warning').length})`],
+            ['failed', `Failed (${events.filter(e => e.auto_validation_status === 'failed').length})`],
+          ] as Array<[FilterValue, string]>).map(([val, label]) => (
+            <Button
+              key={val}
+              size="sm"
+              variant={filter === val ? 'default' : 'outline'}
+              onClick={() => setFilter(val)}
+              className="text-xs"
+            >
+              {label}
+            </Button>
+          ))}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={reValidateAll}
+            disabled={revalidating}
+            className="text-xs ml-auto"
+          >
+            {revalidating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+            Re-valider tous
+          </Button>
+        </div>
+
+        {/* 3. Liste */}
+        {filteredEvents.length === 0 && !loading && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Aucun événement en attente de validation.
+            Aucun événement dans cette catégorie.
           </p>
         )}
 
-        {events.length > 0 && (
+        {filteredEvents.length > 0 && (
           <div className="space-y-3 max-h-[600px] overflow-y-auto">
-            {events.map(ev => {
+            {filteredEvents.map(ev => {
               const expanded = expandedIds.has(ev.id);
               const isEditing = editingId === ev.id;
               const preview = ev.description_enrichie?.slice(0, 200) ?? '';
               const hasMore = (ev.description_enrichie?.length ?? 0) > 200;
+              const report = ev.auto_validation_report;
+              const failedCodes = report?.checks?.filter(c => c.status === 'fail').map(c => c.code) ?? [];
+              const warningCodes = report?.checks?.filter(c => c.status === 'warning').map(c => c.code) ?? [];
               return (
                 <div key={ev.id} className="border rounded-lg p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -346,6 +380,18 @@ export function EnrichedDescriptionValidation() {
                       </Link>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {[ev.ville, ev.date_debut].filter(Boolean).join(' · ')}
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {autoValidationBadge(ev)}
+                        {ev.enrichissement_statut === 'valide' && (
+                          <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">Publié</Badge>
+                        )}
+                        {failedCodes.map(c => (
+                          <Badge key={c} className="bg-red-50 text-red-700 border-red-200 text-xs">{checkLabelToBadge(c)}</Badge>
+                        ))}
+                        {warningCodes.map(c => (
+                          <Badge key={c} className="bg-amber-50 text-amber-700 border-amber-200 text-xs">{checkLabelToBadge(c)}</Badge>
+                        ))}
                       </div>
                     </div>
                     {scoreBadge(ev.enrichissement_score)}
