@@ -144,14 +144,40 @@ type PreviewBuild = {
 
 type SkipReason = 'preferences' | 'quota' | 'no_notifications' | 'no_eligible' | 'all_already_emailed';
 
+type BuildSkipCounters = {
+  skippedCompaniesMissingMatch: number;
+  skippedCompaniesNeedsReview: number;
+  skippedNotificationsEmptyAfterFiltering: number;
+  skippedNotificationsDeletedImport: number;
+};
+
+function emptySkipCounters(): BuildSkipCounters {
+  return {
+    skippedCompaniesMissingMatch: 0,
+    skippedCompaniesNeedsReview: 0,
+    skippedNotificationsEmptyAfterFiltering: 0,
+    skippedNotificationsDeletedImport: 0,
+  };
+}
+
+function addSkipCounters(a: BuildSkipCounters, b: BuildSkipCounters): BuildSkipCounters {
+  return {
+    skippedCompaniesMissingMatch: a.skippedCompaniesMissingMatch + b.skippedCompaniesMissingMatch,
+    skippedCompaniesNeedsReview: a.skippedCompaniesNeedsReview + b.skippedCompaniesNeedsReview,
+    skippedNotificationsEmptyAfterFiltering: a.skippedNotificationsEmptyAfterFiltering + b.skippedNotificationsEmptyAfterFiltering,
+    skippedNotificationsDeletedImport: a.skippedNotificationsDeletedImport + b.skippedNotificationsDeletedImport,
+  };
+}
+
 async function buildPreviewForUser(
   supabase: ReturnType<typeof createClient>,
   pref: any,
   overrideLookahead: number | null,
-): Promise<{ preview: PreviewBuild | null; skip?: SkipReason; alreadyEmailedCount: number }> {
+): Promise<{ preview: PreviewBuild | null; skip?: SkipReason; alreadyEmailedCount: number; skipCounters: BuildSkipCounters }> {
   const userId = pref.user_id as string;
   const timingDays = overrideLookahead ?? Number(pref.preferred_alert_timing_days) ?? 14;
   const maxPerWeek = Number(pref.max_emails_per_week) ?? 2;
+  const skipCounters = emptySkipCounters();
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { count: sentCount, error: countErr } = await supabase
@@ -163,7 +189,7 @@ async function buildPreviewForUser(
     .gte('sent_at', sevenDaysAgo);
   if (countErr) throw new Error(`quota count: ${countErr.message}`);
   if ((sentCount ?? 0) >= maxPerWeek) {
-    return { preview: null, skip: 'quota', alreadyEmailedCount: 0 };
+    return { preview: null, skip: 'quota', alreadyEmailedCount: 0, skipCounters };
   }
 
   const { data: notifs, error: nErr } = await supabase
@@ -177,7 +203,7 @@ async function buildPreviewForUser(
   if (nErr) throw new Error(`notifications: ${nErr.message}`);
   const candidateNotifs = (notifs ?? []) as NotificationRow[];
   if (candidateNotifs.length === 0) {
-    return { preview: null, skip: 'no_notifications', alreadyEmailedCount: 0 };
+    return { preview: null, skip: 'no_notifications', alreadyEmailedCount: 0, skipCounters };
   }
 
   const { data: alreadyLogs, error: logsErr } = await supabase
@@ -197,7 +223,7 @@ async function buildPreviewForUser(
   let eventMap = new Map<string, any>();
   if (eventIds.length > 0) {
     const { data: eventRows } = await supabase
-      .from('events').select('id, nom_event, slug, date_debut, ville, nom_lieu, url_image').in('id', eventIds);
+      .from('events').select('id, nom_event, slug, date_debut, ville, nom_lieu, url_image, visible').in('id', eventIds);
     eventMap = new Map((eventRows ?? []).map((e: any) => [e.id, e]));
   }
 
@@ -212,6 +238,8 @@ async function buildPreviewForUser(
     if (!n.event_id) continue;
     const ev = eventMap.get(n.event_id);
     if (!ev || !ev.date_debut) continue;
+    // event.visible must be true when the column is present (defensive: missing column => allow).
+    if (ev.visible === false) continue;
     const evDate = new Date(`${ev.date_debut}T00:00:00Z`);
     if (evDate < minDate || evDate > maxDate) continue;
     const meta = (n.metadata ?? {}) as Record<string, unknown>;
@@ -221,11 +249,178 @@ async function buildPreviewForUser(
 
   if (candidates.length === 0) {
     const skip: SkipReason = alreadyEmailedCount > 0 ? 'all_already_emailed' : 'no_eligible';
-    return { preview: null, skip, alreadyEmailedCount };
+    return { preview: null, skip, alreadyEmailedCount, skipCounters };
+  }
+
+  // ------------------------------------------------------------------
+  // STRICT ELIGIBILITY FILTER (Incident Airbus/Age 3 — V3 hardening).
+  //
+  // A company in a notification's metadata is eligible only if EVERY
+  // one of these conditions holds against the current database state:
+  //   1. crm_company_event_matches row exists (user_id, event_id,
+  //      crm_company_id, id_exposant from metadata.companies[]);
+  //   2. needs_review = false on that match;
+  //   3. crm_companies row still exists for crm_company_id;
+  //   4. crm_imports row still exists for crm_companies.import_id and
+  //      status = 'completed' (covers the corrupted/deleted import
+  //      42825220-c9bb-4749-9bfd-ba86ed15084c case).
+  //
+  // We never trust metadata.companyName / metadata.importId alone:
+  // the primary display name is rebuilt from exposants.nom_exposant.
+  // ------------------------------------------------------------------
+
+  const allCrmCompanyIdsRaw: string[] = [];
+  const matchProbeKeys: Array<{ eventId: string; crmCompanyId: string; idExposant: string }> = [];
+  for (const c of candidates) {
+    for (const co of c.companies) {
+      const cid = typeof co?.crmCompanyId === 'string' ? co.crmCompanyId : null;
+      const idEx = typeof co?.idExposant === 'string' ? co.idExposant : null;
+      if (!cid || !idEx) continue;
+      allCrmCompanyIdsRaw.push(cid);
+      matchProbeKeys.push({ eventId: c.event.id as string, crmCompanyId: cid, idExposant: idEx });
+    }
+  }
+  const allCrmCompanyIds = Array.from(new Set(allCrmCompanyIdsRaw));
+  const allEventIds = Array.from(new Set(candidates.map((c) => c.event.id as string)));
+
+  // Bulk-load matches for this user in scope.
+  type MatchRow = {
+    event_id: string;
+    crm_company_id: string;
+    id_exposant: string;
+    needs_review: boolean;
+  };
+  const matchKey = (eventId: string, crmCompanyId: string, idExposant: string) =>
+    `${eventId}|${crmCompanyId}|${idExposant}`;
+  const validMatchKeys = new Set<string>();
+  const needsReviewKeys = new Set<string>();
+  if (allEventIds.length > 0 && allCrmCompanyIds.length > 0) {
+    const { data: matchRows } = await supabase
+      .from('crm_company_event_matches')
+      .select('event_id, crm_company_id, id_exposant, needs_review')
+      .eq('user_id', userId)
+      .in('event_id', allEventIds)
+      .in('crm_company_id', allCrmCompanyIds);
+    for (const m of (matchRows ?? []) as MatchRow[]) {
+      const k = matchKey(m.event_id, m.crm_company_id, m.id_exposant);
+      if (m.needs_review === true) needsReviewKeys.add(k);
+      else validMatchKeys.add(k);
+    }
+  }
+
+  // Bulk-load CRM companies + import status.
+  const crmCompanyMap = new Map<string, { id: string; company_name: string | null; import_id: string | null; normalized_domain: string | null; website_raw: string | null }>();
+  const completedImportIds = new Set<string>();
+  if (allCrmCompanyIds.length > 0) {
+    const { data: crmRows } = await supabase
+      .from('crm_companies')
+      .select('id, company_name, import_id, normalized_domain, website_raw')
+      .in('id', allCrmCompanyIds);
+    for (const r of crmRows ?? []) {
+      crmCompanyMap.set((r as any).id, r as any);
+    }
+    const importIds = Array.from(new Set(
+      Array.from(crmCompanyMap.values()).map((c) => c.import_id).filter((v): v is string => Boolean(v)),
+    ));
+    if (importIds.length > 0) {
+      const { data: importRows } = await supabase
+        .from('crm_imports')
+        .select('id, status')
+        .in('id', importIds)
+        .eq('status', 'completed');
+      for (const r of importRows ?? []) completedImportIds.add((r as any).id);
+    }
+  }
+
+  // Bulk-load exposants for primary display name (nom_exposant).
+  const allIdExposants = Array.from(new Set(matchProbeKeys.map((k) => k.idExposant)));
+  const exposantNameMap = new Map<string, string>();
+  if (allIdExposants.length > 0) {
+    const { data: expoRows } = await supabase
+      .from('exposants')
+      .select('id_exposant, nom_exposant')
+      .in('id_exposant', allIdExposants);
+    for (const r of expoRows ?? []) {
+      const k = (r as any).id_exposant as string | null;
+      const n = (r as any).nom_exposant as string | null;
+      if (k && n) exposantNameMap.set(k, n);
+    }
+  }
+
+  // Apply strict filter to each candidate notification.
+  const filteredCandidates: Array<{ notification: NotificationRow; event: any; companies: any[] }> = [];
+  for (const c of candidates) {
+    const meta = (c.notification.metadata ?? {}) as Record<string, unknown>;
+    const metaImportId =
+      (typeof meta.importId === 'string' && meta.importId) ||
+      (typeof meta.import_id === 'string' && meta.import_id) ||
+      null;
+
+    const keepCompanies: any[] = [];
+    let companiesEvaluated = 0;
+    for (const co of c.companies) {
+      companiesEvaluated += 1;
+      const cid: string | null = typeof co?.crmCompanyId === 'string' ? co.crmCompanyId : null;
+      const idEx: string | null = typeof co?.idExposant === 'string' ? co.idExposant : null;
+      if (!cid || !idEx) {
+        skipCounters.skippedCompaniesMissingMatch += 1;
+        continue;
+      }
+      const k = matchKey(c.event.id as string, cid, idEx);
+      if (needsReviewKeys.has(k)) {
+        skipCounters.skippedCompaniesNeedsReview += 1;
+        continue;
+      }
+      if (!validMatchKeys.has(k)) {
+        skipCounters.skippedCompaniesMissingMatch += 1;
+        continue;
+      }
+      const crmCompany = crmCompanyMap.get(cid);
+      if (!crmCompany) {
+        skipCounters.skippedCompaniesMissingMatch += 1;
+        continue;
+      }
+      if (!crmCompany.import_id || !completedImportIds.has(crmCompany.import_id)) {
+        // Import deleted or not completed (e.g. import 42825220-...).
+        skipCounters.skippedCompaniesMissingMatch += 1;
+        continue;
+      }
+      const exhibitorName = exposantNameMap.get(idEx) ?? null;
+      keepCompanies.push({
+        ...co,
+        crmCompanyId: cid,
+        idExposant: idEx,
+        exhibitorName, // primary display name (real Lotexpo exposant)
+        companyName: crmCompany.company_name ?? co.companyName ?? null,
+        normalizedDomain: crmCompany.normalized_domain ?? co.normalizedDomain ?? null,
+        website: crmCompany.website_raw ?? co.website ?? null,
+      });
+    }
+
+    if (keepCompanies.length === 0) {
+      // Distinguish "import deleted" from "empty after filtering" for the report.
+      const importExisted = metaImportId
+        ? Array.from(crmCompanyMap.values()).some(
+            (cc) => cc.import_id === metaImportId && completedImportIds.has(metaImportId),
+          )
+        : false;
+      if (metaImportId && !importExisted) {
+        skipCounters.skippedNotificationsDeletedImport += 1;
+      } else if (companiesEvaluated > 0) {
+        skipCounters.skippedNotificationsEmptyAfterFiltering += 1;
+      }
+      continue;
+    }
+    filteredCandidates.push({ ...c, companies: keepCompanies });
+  }
+
+  if (filteredCandidates.length === 0) {
+    const skip: SkipReason = alreadyEmailedCount > 0 ? 'all_already_emailed' : 'no_eligible';
+    return { preview: null, skip, alreadyEmailedCount, skipCounters };
   }
 
   const groupedMap = new Map<string, GroupedEvent>();
-  for (const c of candidates) {
+  for (const c of filteredCandidates) {
     const eid = c.event.id as string;
     const meta = (c.notification.metadata ?? {}) as Record<string, unknown>;
     const importId =
@@ -260,73 +455,9 @@ async function buildPreviewForUser(
   });
   const top = groupedList.slice(0, 5);
 
-  // Exclude companies whose underlying match is flagged needs_review.
-  // Automatic Radar CRM emails never include suspicious matches.
-  try {
-    const eventIdsForFilter = top.map((g) => g.eventId);
-    const crmCompanyIdsForFilter = Array.from(new Set(
-      top.flatMap((g) => g.companies.map((c: any) => c.crmCompanyId).filter(Boolean)),
-    )) as string[];
-    if (eventIdsForFilter.length > 0 && crmCompanyIdsForFilter.length > 0) {
-      const { data: flagged } = await supabase
-        .from('crm_company_event_matches')
-        .select('event_id, crm_company_id')
-        .eq('user_id', userId)
-        .eq('needs_review', true)
-        .in('event_id', eventIdsForFilter)
-        .in('crm_company_id', crmCompanyIdsForFilter);
-      const flaggedKeys = new Set<string>(
-        (flagged ?? []).map((r: any) => `${r.event_id}|${r.crm_company_id}`),
-      );
-      if (flaggedKeys.size > 0) {
-        for (const g of top) {
-          g.companies = g.companies.filter(
-            (c: any) => !c.crmCompanyId || !flaggedKeys.has(`${g.eventId}|${c.crmCompanyId}`),
-          );
-        }
-      }
-    }
-  } catch (_) {
-    // Best-effort: do not let a filter error block legitimate sends.
-  }
-
-  // Drop groups that became empty after the needs_review filter.
-  const filteredTop = top.filter((g) => g.companies.length > 0);
-  if (filteredTop.length === 0) {
-    const skip: SkipReason = alreadyEmailedCount > 0 ? 'all_already_emailed' : 'no_eligible';
-    return { preview: null, skip, alreadyEmailedCount };
-  }
-  top.length = 0;
-  top.push(...filteredTop);
-
-  // Enrich companies with normalized_domain from crm_companies for favicon rendering.
-  const allCrmCompanyIds = Array.from(new Set(
-    top.flatMap((g) => g.companies.map((c: any) => c.crmCompanyId).filter(Boolean)),
-  )) as string[];
-  if (allCrmCompanyIds.length > 0) {
-    try {
-      const { data: crmRows } = await supabase
-        .from('crm_companies')
-        .select('id, normalized_domain, website_raw, company_name')
-        .in('id', allCrmCompanyIds);
-      const domainMap = new Map<string, { domain: string | null; website: string | null }>();
-      for (const r of crmRows ?? []) {
-        domainMap.set((r as any).id, {
-          domain: (r as any).normalized_domain ?? null,
-          website: (r as any).website_raw ?? null,
-        });
-      }
-      for (const g of top) {
-        for (const co of g.companies as any[]) {
-          const info = co.crmCompanyId ? domainMap.get(co.crmCompanyId) : null;
-          if (info) {
-            co.normalizedDomain = info.domain;
-            co.website = info.website;
-          }
-        }
-      }
-    } catch (_) { /* favicons are best-effort */ }
-  }
+  // Note: companies were already enriched (exhibitorName, companyName,
+  // normalizedDomain) during the strict filter pass above. No second
+  // enrichment query is needed here.
 
   let emailTo: string | null = null;
   try {
@@ -343,8 +474,11 @@ async function buildPreviewForUser(
 
   // Smart subject line — fall back to generic if names would be too long.
   const SUBJECT_MAX = 90;
+  // Subject uses the real exposant name (exposants.nom_exposant) when known,
+  // not the CRM-supplied companyName which may be stale or misleading.
   const firstCompanyName: string | null = (() => {
     for (const g of top) for (const co of g.companies as any[]) {
+      if (co?.exhibitorName) return String(co.exhibitorName);
       if (co?.companyName) return String(co.companyName);
     }
     return null;
@@ -380,6 +514,7 @@ async function buildPreviewForUser(
       groups: top,
     },
     alreadyEmailedCount,
+    skipCounters,
   };
 }
 
