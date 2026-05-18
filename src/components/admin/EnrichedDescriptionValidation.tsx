@@ -357,20 +357,35 @@ export function EnrichedDescriptionValidation() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <p className="text-sm text-muted-foreground">
-          Par défaut, seuls les textes qui demandent une action humaine sont affichés. Les textes déjà publiés sont accessibles via l'onglet « Déjà publiés ».
-        </p>
+        <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground space-y-1">
+          <p><strong className="text-foreground">Boîte de réception des actions.</strong> Par défaut, seuls les textes <em>à corriger</em> sont affichés.</p>
+          <p className="flex items-start gap-1.5"><Info className="h-3.5 w-3.5 mt-0.5 shrink-0" /> « Relancer le contrôle qualité » ne valide pas automatiquement les textes : cette action relance uniquement les contrôles. Les textes avec erreurs restent à corriger.</p>
+        </div>
 
         {/* 2. Filtres */}
         <div className="flex flex-wrap gap-2 items-center">
-          {([
-            ['needs_action', `À vérifier (${events.filter(e => e.enrichissement_statut === 'en_attente' || e.auto_validation_status === 'warning' || e.auto_validation_status === 'failed').length})`],
-            ['last_run', `Dernier run (${events.filter(e => lastRunIds.has(e.id)).length})`],
-            ['pending', `En attente (${events.filter(e => e.enrichissement_statut === 'en_attente').length})`],
-            ['warning', `Warnings (${events.filter(e => e.auto_validation_status === 'warning').length})`],
-            ['failed', `Failed (${events.filter(e => e.auto_validation_status === 'failed').length})`],
-            ['published', `Déjà publiés (${events.filter(e => e.enrichissement_statut === 'valide' && e.auto_validation_status === 'passed' && e.validation_mode === 'auto').length})`],
-          ] as Array<[FilterValue, string]>).map(([val, label]) => (
+          {(() => {
+            const counts = events.reduce((acc, e) => {
+              const isIgnored = e.auto_validation_report?.ignored_for_now === true;
+              const failChecks = e.auto_validation_report?.checks?.filter((c) => c.status === 'fail' && c.blocker) ?? [];
+              const warnChecks = e.auto_validation_report?.checks?.filter((c) => c.status === 'warning') ?? [];
+              const hasBlocker = failChecks.length > 0 || e.auto_validation_status === 'failed';
+              const hasWarning = warnChecks.length > 0 || e.auto_validation_status === 'warning';
+              if (isIgnored) acc.ignored++;
+              else if (hasBlocker) acc.to_fix++;
+              else if (hasWarning) acc.to_review++;
+              if (lastRunIds.has(e.id)) acc.last_run++;
+              if (e.enrichissement_statut === 'valide' && e.auto_validation_status === 'passed' && e.validation_mode === 'auto') acc.published++;
+              return acc;
+            }, { to_fix: 0, to_review: 0, last_run: 0, published: 0, ignored: 0 });
+            return ([
+              ['to_fix', `À corriger (${counts.to_fix})`],
+              ['to_review', `À relire (${counts.to_review})`],
+              ['last_run', `Dernier run (${counts.last_run})`],
+              ['published', `Déjà publiés (${counts.published})`],
+              ['ignored', `Archivés / ignorés (${counts.ignored})`],
+            ] as Array<[FilterValue, string]>);
+          })().map(([val, label]) => (
             <Button
               key={val}
               size="sm"
@@ -387,9 +402,10 @@ export function EnrichedDescriptionValidation() {
             onClick={reValidateAll}
             disabled={revalidating}
             className="text-xs ml-auto"
+            title="Relance les contrôles qualité sur tous les textes. Ne valide pas automatiquement."
           >
             {revalidating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
-            Re-valider tous
+            Relancer le contrôle qualité
           </Button>
         </div>
 
