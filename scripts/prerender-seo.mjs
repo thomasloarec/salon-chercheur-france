@@ -176,7 +176,13 @@ function buildEvent(ev, exhibitors) {
   const year = ev.date_debut ? new Date(ev.date_debut).getFullYear() : new Date().getFullYear();
   const city = ev.ville || 'France';
   const title = truncate(`${ev.nom_event} ${year} | Salon professionnel à ${city} – Lotexpo`, 70);
-  const cleanDesc = stripHtml(ev.description_event);
+  // Description publiable : description_enrichie UNIQUEMENT si statut='valide'
+  const enrichedValid =
+    ev.enrichissement_statut === 'valide' && ev.description_enrichie
+      ? stripHtml(ev.description_enrichie)
+      : '';
+  const cleanDescRaw = stripHtml(ev.description_event);
+  const cleanDesc = enrichedValid || cleanDescRaw;
   let description;
   if (ev.meta_description_gen) description = truncate(String(ev.meta_description_gen), 160);
   else if (cleanDesc) description = truncate(cleanDesc, 160);
@@ -346,7 +352,7 @@ async function main() {
   const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, cities: 0 };
 
   // 2. fetch events
-  const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
+  const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
   const events = await sbPaged(`events?visible=eq.true&is_test=eq.false&slug=not.is.null&select=${eventFields}&order=date_debut.desc`);
   console.log(`[prerender] events fetched: ${events.length}`);
 
