@@ -296,6 +296,7 @@ Deno.serve(async (req) => {
 
     // ─── Process each event by delegating to enrich-event-meta ───
     const processedIds: string[] = [];
+    const processedEvents: Array<Record<string, unknown>> = [];
     const errorEvents: Array<{ id: string; nom_event: string; reason: string }> = [];
     let metaDone = 0;
     let descDone = 0;
@@ -333,6 +334,32 @@ Deno.serve(async (req) => {
         if (descOk && autoVal === 'passed') descAutoValidated++;
         if (descOk && autoVal && autoVal !== 'passed') descPending++;
 
+        let decision = 'skipped';
+        if (metaErr) decision = 'failed';
+        else if (descOk && autoVal === 'passed') decision = 'publie_auto';
+        else if (descOk && autoVal === 'warning') decision = 'revue_manuelle';
+        else if (descOk && autoVal === 'failed') decision = 'failed_validation';
+        else if (descOk) decision = 'revue_manuelle';
+        else if (metaOk) decision = 'meta_only';
+
+        processedEvents.push({
+          id: ev.id,
+          nom_event: ev.nom_event,
+          slug: ev.slug,
+          public_url: ev.slug ? `/events/${ev.slug}` : null,
+          score: ev.enrichissement_score,
+          niveau: ev.enrichissement_niveau,
+          meta_status: metaStatus ?? null,
+          description_done: descOk,
+          auto_validation_status: autoVal ?? null,
+          auto_validation_score: result?.auto_validation_score ?? null,
+          validation_mode: result?.validation_mode ?? null,
+          enrichissement_statut: result?.enrichissement_statut ?? null,
+          decision,
+          warnings: result?.auto_validation_warnings ?? null,
+          error: metaErr ? (result?.reason ?? `HTTP ${resp.status}`) : null,
+        });
+
         if (metaOk || descOk) {
           successCount++;
         } else if (metaErr) {
@@ -350,6 +377,37 @@ Deno.serve(async (req) => {
           nom_event: ev.nom_event,
           reason: err instanceof Error ? err.message : String(err),
         });
+        processedEvents.push({
+          id: ev.id,
+          nom_event: ev.nom_event,
+          slug: ev.slug,
+          public_url: ev.slug ? `/events/${ev.slug}` : null,
+          score: ev.enrichissement_score,
+          niveau: ev.enrichissement_niveau,
+          decision: 'failed',
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    // Re-fetch final DB state for processed events (canonical truth, in case enrich-event-meta
+    // response shape misses some fields).
+    if (processedIds.length > 0) {
+      const { data: finalRows } = await supabase
+        .from('events')
+        .select('id, auto_validation_status, auto_validation_score, validation_mode, enrichissement_statut')
+        .in('id', processedIds);
+      const byId: Record<string, Record<string, unknown>> = {};
+      for (const row of (finalRows ?? []) as Array<Record<string, unknown>>) {
+        byId[row.id as string] = row;
+      }
+      for (const pe of processedEvents) {
+        const row = byId[pe.id as string];
+        if (!row) continue;
+        if (pe.auto_validation_status == null) pe.auto_validation_status = row.auto_validation_status ?? null;
+        if (pe.auto_validation_score == null) pe.auto_validation_score = row.auto_validation_score ?? null;
+        if (pe.validation_mode == null) pe.validation_mode = row.validation_mode ?? null;
+        if (pe.enrichissement_statut == null) pe.enrichissement_statut = row.enrichissement_statut ?? null;
       }
     }
 
@@ -415,6 +473,7 @@ Deno.serve(async (req) => {
         deploy: params.deploy,
         trigger_source: params.trigger_source,
         processed_ids: processedIds,
+        processed_events: processedEvents,
         errors: errorEvents,
         desc_auto_validated: descAutoValidated,
         desc_pending_review: descPending,

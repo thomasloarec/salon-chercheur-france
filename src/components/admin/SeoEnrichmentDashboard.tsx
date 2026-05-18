@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Activity, RefreshCw, Loader2, PlayCircle, Beaker, Rocket, Zap,
   CheckCircle2, AlertTriangle, XCircle, Server, ChevronDown, ChevronUp,
+  ExternalLink, Settings, ListChecks,
 } from 'lucide-react';
 
 interface EligibilityStats {
@@ -49,6 +50,7 @@ interface ValidationCounts {
   null_score: number;
   score_ge_55: number;
   desc_missing: number;
+  published: number;
 }
 
 type BatchMode = 'dry_run' | 'test' | 'run';
@@ -97,16 +99,16 @@ export function SeoEnrichmentDashboard() {
     setLoading(true);
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, descMissingRes] = await Promise.all([
+      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, descMissingRes, publishedRes] = await Promise.all([
         supabase.rpc('count_seo_enrichment_eligible'),
         supabase.from('seo_enrichment_runs')
           .select('*')
           .order('started_at', { ascending: false })
           .limit(15),
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .eq('auto_validation_status', 'passed'),
+          .eq('auto_validation_status', 'passed').eq('validation_mode', 'auto'),
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .eq('enrichissement_statut', 'en_attente'),
+          .or('enrichissement_statut.eq.en_attente,validation_mode.eq.manual'),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('auto_validation_status', 'failed'),
         supabase.from('events').select('id', { count: 'exact', head: true })
@@ -118,6 +120,8 @@ export function SeoEnrichmentDashboard() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .is('description_enrichie', null),
+        supabase.from('events').select('id', { count: 'exact', head: true })
+          .eq('enrichissement_statut', 'valide'),
       ]);
 
       if (eligibilityRes.error) throw eligibilityRes.error;
@@ -130,6 +134,7 @@ export function SeoEnrichmentDashboard() {
         null_score: nullScoreRes.count ?? 0,
         score_ge_55: ge55Res.count ?? 0,
         desc_missing: descMissingRes.count ?? 0,
+        published: publishedRes.count ?? 0,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -161,12 +166,15 @@ export function SeoEnrichmentDashboard() {
           description: `${r.selected_count ?? 0} sélectionné(s) sur ${r.total_eligible ?? 0} éligibles.`,
         });
       } else {
+        const autoVal = (r.desc_auto_validated as number | undefined) ?? 0;
+        const pendingRev = (r.desc_pending_review as number | undefined) ?? 0;
         toast({
           title: `✅ Batch ${mode} terminé`,
-          description: `${r.events_success ?? 0} succès, ${r.events_failed ?? 0} échec(s) — Vercel: ${r.deploy_hook_triggered ? 'déclenché' : 'non déclenché'}`,
+          description: `${r.events_processed ?? 0} traités, ${autoVal} publiés auto, ${pendingRev} en revue, ${r.events_failed ?? 0} échec(s) — Vercel ${r.deploy_hook_triggered ? 'déclenché' : 'non déclenché'}`,
         });
       }
       fetchData();
+      window.dispatchEvent(new CustomEvent('seo-enrichment-refresh'));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       toast({ title: 'Erreur batch', description: msg, variant: 'destructive' });
@@ -218,7 +226,7 @@ export function SeoEnrichmentDashboard() {
             <Kpi label="Auto-validés (passed)" value={validationCounts?.passed} tone="emerald" />
             <Kpi label="En attente revue" value={validationCounts?.pending} tone="amber" />
             <Kpi label="Validation failed" value={validationCounts?.failed} tone="red" />
-            <Kpi label="Pages publiables" value={(validationCounts?.passed ?? 0)} tone="emerald" />
+            <Kpi label="Pages publiées" value={validationCounts?.published} tone="emerald" />
           </div>
 
           {/* Last run summary */}
@@ -249,6 +257,23 @@ export function SeoEnrichmentDashboard() {
               <p className="text-muted-foreground">Aucun run enregistré pour l'instant.</p>
             )}
           </div>
+
+          {/* Détail du dernier run — événements traités */}
+          {lastRun && Array.isArray((lastRun.details ?? {})['processed_events'])
+            && ((lastRun.details ?? {})['processed_events'] as unknown[]).length > 0 && (
+            <LastRunProcessedEvents
+              events={(lastRun.details as Record<string, unknown>)['processed_events'] as ProcessedEvent[]}
+              deployTriggered={!!lastRun.deploy_hook_triggered}
+            />
+          )}
+          {lastRun && !Array.isArray((lastRun.details ?? {})['processed_events'])
+            && Array.isArray((lastRun.details ?? {})['processed_ids'])
+            && ((lastRun.details ?? {})['processed_ids'] as unknown[]).length > 0 && (
+            <LastRunProcessedFallback
+              ids={(lastRun.details as Record<string, unknown>)['processed_ids'] as string[]}
+              deployTriggered={!!lastRun.deploy_hook_triggered}
+            />
+          )}
 
           {/* Action buttons */}
           <div className="space-y-2">
@@ -427,4 +452,163 @@ function Kpi({ label, value, tone }: { label: string; value: number | null | und
       <div className="text-[11px] opacity-80 mt-0.5">{label}</div>
     </div>
   );
+}
+
+interface ProcessedEvent {
+  id: string;
+  nom_event?: string | null;
+  slug?: string | null;
+  public_url?: string | null;
+  score?: number | null;
+  niveau?: string | null;
+  description_done?: boolean | null;
+  meta_status?: string | null;
+  auto_validation_status?: string | null;
+  auto_validation_score?: number | null;
+  validation_mode?: string | null;
+  enrichissement_statut?: string | null;
+  decision?: string | null;
+  warnings?: unknown;
+  error?: string | null;
+}
+
+function decisionBadge(decision?: string | null) {
+  switch (decision) {
+    case 'publie_auto':
+      return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />Publié auto</Badge>;
+    case 'revue_manuelle':
+      return <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]"><AlertTriangle className="h-3 w-3 mr-1" />En revue</Badge>;
+    case 'failed':
+    case 'failed_validation':
+      return <Badge className="bg-red-100 text-red-800 border-red-300 text-[10px]"><XCircle className="h-3 w-3 mr-1" />Échec</Badge>;
+    case 'meta_only':
+      return <Badge variant="outline" className="text-[10px]">Meta uniquement</Badge>;
+    case 'skipped':
+      return <Badge variant="outline" className="text-[10px]">Skippé</Badge>;
+    default:
+      return <Badge variant="outline" className="text-[10px]">{decision ?? '—'}</Badge>;
+  }
+}
+
+function LastRunProcessedEvents({ events, deployTriggered }: { events: ProcessedEvent[]; deployTriggered: boolean }) {
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <div className="bg-muted/30 px-4 py-2 text-sm font-medium flex items-center gap-2">
+        <ListChecks className="h-4 w-4" />
+        Événements traités lors du dernier run ({events.length})
+        {deployTriggered && (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-300 text-[10px] ml-auto">Vercel déclenché</Badge>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-muted/20">
+            <tr>
+              <th className="text-left px-2 py-2 font-medium">Événement</th>
+              <th className="text-right px-2 py-2 font-medium">Score</th>
+              <th className="text-left px-2 py-2 font-medium">Desc.</th>
+              <th className="text-left px-2 py-2 font-medium">Auto-val.</th>
+              <th className="text-left px-2 py-2 font-medium">Mode</th>
+              <th className="text-left px-2 py-2 font-medium">Statut</th>
+              <th className="text-left px-2 py-2 font-medium">Décision</th>
+              <th className="px-2 py-2"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {events.map((e) => (
+              <tr key={e.id} className="hover:bg-muted/20">
+                <td className="px-2 py-1.5 max-w-[240px]">
+                  <div className="font-medium truncate">{e.nom_event ?? e.id}</div>
+                  {e.slug && <div className="text-[10px] text-muted-foreground truncate">/events/{e.slug}</div>}
+                  {e.error && <div className="text-[10px] text-red-700 truncate" title={e.error}>{e.error}</div>}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums">
+                  {e.score ?? '—'}
+                  {e.niveau && <div className="text-[10px] text-muted-foreground">{e.niveau}</div>}
+                </td>
+                <td className="px-2 py-1.5">{e.description_done ? '✅' : '—'}</td>
+                <td className="px-2 py-1.5">
+                  {e.auto_validation_status
+                    ? `${e.auto_validation_status}${e.auto_validation_score != null ? ` (${e.auto_validation_score})` : ''}`
+                    : '—'}
+                </td>
+                <td className="px-2 py-1.5">{e.validation_mode ?? '—'}</td>
+                <td className="px-2 py-1.5">{e.enrichissement_statut ?? '—'}</td>
+                <td className="px-2 py-1.5">{decisionBadge(e.decision)}</td>
+                <td className="px-2 py-1.5 whitespace-nowrap">
+                  <div className="flex items-center gap-1">
+                    {e.slug && (
+                      <a
+                        href={`/events/${e.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+                        title="Voir page publique"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                    <a
+                      href={`/admin/events/${e.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+                      title="Fiche admin"
+                    >
+                      <Settings className="h-3 w-3" />
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/** Fallback for older runs that only stored processed_ids — fetch event names live. */
+function LastRunProcessedFallback({ ids, deployTriggered }: { ids: string[]; deployTriggered: boolean }) {
+  const [rows, setRows] = useState<Array<{
+    id: string; nom_event: string | null; slug: string | null;
+    enrichissement_score: number | null; enrichissement_niveau: string | null;
+    enrichissement_statut: string | null; auto_validation_status: string | null;
+    auto_validation_score: number | null; validation_mode: string | null;
+  }>>([]);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.from('events')
+      .select('id, nom_event, slug, enrichissement_score, enrichissement_niveau, enrichissement_statut, auto_validation_status, auto_validation_score, validation_mode')
+      .in('id', ids)
+      .then(({ data }) => {
+        if (!cancelled) setRows((data ?? []) as typeof rows);
+      });
+    return () => { cancelled = true; };
+  }, [ids]);
+  const events: ProcessedEvent[] = rows.map((r) => {
+    const autoVal = r.auto_validation_status;
+    const statut = r.enrichissement_statut;
+    let decision = 'skipped';
+    if (statut === 'valide' && autoVal === 'passed' && r.validation_mode === 'auto') decision = 'publie_auto';
+    else if (autoVal === 'warning') decision = 'revue_manuelle';
+    else if (autoVal === 'failed') decision = 'failed_validation';
+    else if (statut === 'en_attente') decision = 'revue_manuelle';
+    else if (statut === 'valide') decision = 'publie_auto';
+    return {
+      id: r.id,
+      nom_event: r.nom_event,
+      slug: r.slug,
+      score: r.enrichissement_score,
+      niveau: r.enrichissement_niveau,
+      description_done: true,
+      auto_validation_status: autoVal,
+      auto_validation_score: r.auto_validation_score,
+      validation_mode: r.validation_mode,
+      enrichissement_statut: statut,
+      decision,
+    };
+  });
+  if (events.length === 0) return null;
+  return <LastRunProcessedEvents events={events} deployTriggered={deployTriggered} />;
 }
