@@ -539,6 +539,8 @@ function previewToJson(p: PreviewBuild) {
       eventImage: g.event.url_image ?? null,
       companies: g.companies.map((co: any) => ({
         crmCompanyId: co.crmCompanyId ?? null,
+        idExposant: co.idExposant ?? null,
+        exhibitorName: co.exhibitorName ?? null,
         companyName: co.companyName ?? null,
         stand: co.stand ?? null,
         normalizedDomain: co.normalizedDomain ?? null,
