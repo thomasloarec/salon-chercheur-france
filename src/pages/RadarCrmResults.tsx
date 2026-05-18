@@ -591,20 +591,38 @@ const CompanyAvatar: React.FC<{ company: Company; size?: 'xs' | 'sm' | 'md' }> =
 
 /** Company chip — clickable, shows logo + name */
 const CompanyChip: React.FC<{
-  company: Company; stand?: string | null; onClick: () => void;
-}> = ({ company, stand, onClick }) => (
+  company: Company;
+  stand?: string | null;
+  nomExposant?: string | null;
+  needsReview?: boolean;
+  onClick: () => void;
+}> = ({ company, stand, nomExposant, needsReview, onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="group flex items-center gap-2 bg-background border border-border hover:border-primary hover:bg-primary/5 rounded-full pl-1 pr-3 py-1 transition-all"
+    className={cn(
+      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1 transition-all hover:bg-primary/5',
+      needsReview ? 'border-amber-500/60 hover:border-amber-500' : 'border-border hover:border-primary',
+    )}
+    title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
     <CompanyAvatar company={company} size="xs" />
-    <span className="text-sm font-semibold text-foreground group-hover:text-primary">
-      {company.company_name}
+    <span className="flex flex-col items-start leading-tight">
+      <span className="text-sm font-semibold text-foreground group-hover:text-primary">
+        {nomExposant ?? company.company_name}
+      </span>
+      {nomExposant && nomExposant !== company.company_name && (
+        <span className="text-[10px] text-foreground/60">CRM : {company.company_name}</span>
+      )}
     </span>
     {stand && (
       <span className="text-xs font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">
         {stand}
+      </span>
+    )}
+    {needsReview && (
+      <span className="text-[10px] font-medium text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded">
+        À vérifier
       </span>
     )}
   </button>
