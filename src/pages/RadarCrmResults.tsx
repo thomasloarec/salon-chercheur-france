@@ -52,10 +52,14 @@ type Match = {
   id_exposant: string;
   event_id: string;
   normalized_domain: string;
+  needs_review?: boolean | null;
+  name_similarity?: number | null;
+  review_reason?: string | null;
 };
 
 type ParticipationViewRow = {
   id_exposant: string;
+  nom_exposant: string | null;
   event_id: string;
   nom_event: string | null;
   type_event: string | null;
@@ -96,7 +100,10 @@ interface EventGroup {
   companies: Array<{
     company: Company;
     id_exposant: string;
+    nom_exposant: string | null;
     stand: string | null;
+    needs_review: boolean;
+    name_similarity: number | null;
   }>;
 }
 
@@ -169,7 +176,7 @@ const RadarCrmResults: React.FC = () => {
       }
       const { data: mts } = await supabase
         .from('crm_company_event_matches')
-        .select('id, crm_company_id, id_exposant, event_id, normalized_domain')
+        .select('id, crm_company_id, id_exposant, event_id, normalized_domain, needs_review, name_similarity, review_reason')
         .in('crm_company_id', compList.map((c) => c.id));
       const matchList = (mts ?? []) as Match[];
       setMatches(matchList);
@@ -179,7 +186,7 @@ const RadarCrmResults: React.FC = () => {
         const exposantIds = Array.from(new Set(matchList.map((m) => m.id_exposant)));
         const { data: vrows } = await supabase
           .from('crm_radar_participations_view')
-          .select('id_exposant, event_id, nom_event, type_event, date_debut, date_fin, ville, nom_lieu, stand_exposants_list, is_future_event, days_until_event, url_image, slug')
+          .select('id_exposant, nom_exposant, event_id, nom_event, type_event, date_debut, date_fin, ville, nom_lieu, stand_exposants_list, is_future_event, days_until_event, url_image, slug')
           .in('event_id', eventIds)
           .in('id_exposant', exposantIds);
         setViewRows((vrows ?? []) as ParticipationViewRow[]);
@@ -220,7 +227,14 @@ const RadarCrmResults: React.FC = () => {
         groups.set(m.event_id, g);
       }
       if (!g.companies.find((x) => x.company.id === c.id)) {
-        g.companies.push({ company: c, id_exposant: m.id_exposant, stand: v.stand_exposants_list ?? null });
+        g.companies.push({
+          company: c,
+          id_exposant: m.id_exposant,
+          nom_exposant: v.nom_exposant ?? null,
+          stand: v.stand_exposants_list ?? null,
+          needs_review: m.needs_review === true,
+          name_similarity: m.name_similarity ?? null,
+        });
       }
     }
     return Array.from(groups.values());
