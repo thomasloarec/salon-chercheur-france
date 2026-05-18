@@ -319,6 +319,106 @@ export function EnrichedDescriptionValidation() {
     }
   };
 
+  const autoFix = async (eventId: string) => {
+    setAutoFixId(eventId);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-seo-batch-proxy', {
+        body: {
+          target: 'seo-auto-fix-description',
+          payload: { event_id: eventId },
+        },
+      });
+      if (error) throw error;
+      const s = (data as { summary?: { fixed?: boolean; after?: { status?: string; decision?: string } } })?.summary;
+      if (s?.fixed) {
+        toast({
+          title: '🪄 Correction appliquée',
+          description: `Nouveau statut : ${s.after?.status ?? '?'} (${s.after?.decision ?? '?'})`,
+        });
+      } else {
+        toast({ title: 'Aucune correction nécessaire' });
+      }
+      fetchData();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur correction', description: msg, variant: 'destructive' });
+    } finally {
+      setAutoFixId(null);
+    }
+  };
+
+  const ignoreForNow = async (ev: PendingEvent) => {
+    setIgnoreId(ev.id);
+    const report = (ev.auto_validation_report ?? {}) as AutoValidationReport;
+    const newReport = { ...report, ignored_for_now: true };
+    const { error } = await supabase.from('events')
+      .update({
+        auto_validation_report: newReport as unknown as Record<string, unknown>,
+        validation_mode: 'manual',
+      })
+      .eq('id', ev.id);
+    setIgnoreId(null);
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '🗄️ Ignoré', description: 'Disponible dans l\'onglet « Archivés / ignorés ».' });
+      setEvents((prev) => prev.map((e) => e.id === ev.id ? { ...e, auto_validation_report: newReport, validation_mode: 'manual' } : e));
+    }
+  };
+
+  const unignore = async (ev: PendingEvent) => {
+    setIgnoreId(ev.id);
+    const report = (ev.auto_validation_report ?? {}) as AutoValidationReport;
+    const { ignored_for_now: _omit, ...rest } = report;
+    void _omit;
+    const { error } = await supabase.from('events')
+      .update({ auto_validation_report: rest as unknown as Record<string, unknown> })
+      .eq('id', ev.id);
+    setIgnoreId(null);
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '↩️ Réintégré dans la file' });
+      setEvents((prev) => prev.map((e) => e.id === ev.id ? { ...e, auto_validation_report: rest as AutoValidationReport } : e));
+    }
+  };
+
+  /** Génère une explication humaine pour un check en échec ou warning. */
+  const explainCheck = (c: AutoValidationCheck, ev: PendingEvent): string => {
+    const ev_ = (s: string | null) => s ?? '—';
+    const evid = (c.evidence ?? []).slice(0, 3).join(', ');
+    switch (c.code) {
+      case 'city_consistency':
+        return `Ville incorrecte : le texte mentionne « ${evid} », mais l'événement est à ${ev_(ev.ville)}.`;
+      case 'venue_consistency':
+        return `Lieu incorrect : le texte mentionne un autre lieu (« ${evid} »).`;
+      case 'date_consistency':
+        return `Date incohérente : année(s) « ${evid} » absente(s) des dates source.`;
+      case 'numbers_grounded':
+        return `Chiffre non vérifié : « ${evid} » n'est pas présent dans les données source (visiteurs, exposants, m²…).`;
+      case 'price_invented':
+        return `Tarif inventé : le texte mentionne un prix alors qu'aucun tarif n'est connu en base.`;
+      case 'program_invented':
+        return `Programme inventé : ${c.details ?? 'horaires, ateliers ou intervenants non présents en base'}.`;
+      case 'exhibitors_grounded':
+        return `Exposant non sourcé : « ${evid} » cité comme exposant mais absent de la liste officielle.`;
+      case 'length_min':
+        return c.status === 'fail' ? `Texte trop court : ${c.details ?? ''}` : `Texte un peu court (${c.details ?? ''}).`;
+      case 'superlatives':
+        return `Style à améliorer : superlatifs non sourcés (${evid}).`;
+      case 'generic_text':
+        return `Texte trop générique : à reformuler pour gagner en précision.`;
+      case 'repetition':
+        return `Répétitions détectées.`;
+      case 'fake_faq':
+        return `FAQ artificielle.`;
+      case 'commercial_promise':
+        return `Promesse commerciale à reformuler.`;
+      default:
+        return c.details ?? c.label ?? c.code;
+    }
+  };
+
   const filteredEvents = events.filter((ev) => {
     const isIgnored = ev.auto_validation_report?.ignored_for_now === true;
     const failChecks = ev.auto_validation_report?.checks?.filter((c) => c.status === 'fail' && c.blocker) ?? [];
