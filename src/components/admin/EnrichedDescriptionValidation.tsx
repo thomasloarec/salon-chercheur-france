@@ -353,7 +353,7 @@ export function EnrichedDescriptionValidation() {
     const newReport = { ...report, ignored_for_now: true };
     const { error } = await supabase.from('events')
       .update({
-        auto_validation_report: newReport as unknown as Record<string, unknown>,
+        auto_validation_report: newReport as never,
         validation_mode: 'manual',
       })
       .eq('id', ev.id);
@@ -372,7 +372,7 @@ export function EnrichedDescriptionValidation() {
     const { ignored_for_now: _omit, ...rest } = report;
     void _omit;
     const { error } = await supabase.from('events')
-      .update({ auto_validation_report: rest as unknown as Record<string, unknown> })
+      .update({ auto_validation_report: rest as never })
       .eq('id', ev.id);
     setIgnoreId(null);
     if (error) {
