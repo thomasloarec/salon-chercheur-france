@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.radar-crm-unsubscribe]
 verify_jwt = false
+
+[functions.seo-enrichment-batch]
+verify_jwt = false
