@@ -9,7 +9,7 @@ import {
   CheckCircle, XCircle, Loader2, RefreshCw, Rocket,
   ChevronDown, ChevronUp, FileCheck, AlertTriangle,
   Pencil, Save, X, ShieldCheck, ShieldAlert, Sparkles, ShieldQuestion,
-  ExternalLink, Settings
+  ExternalLink, Settings, Wand2, Archive, Info
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -51,9 +51,10 @@ interface AutoValidationReport {
   blockers: string[];
   warnings: string[];
   stats: { char_count: number; word_count: number; min_words_required: number };
+  ignored_for_now?: boolean;
 }
 
-type FilterValue = 'needs_action' | 'last_run' | 'pending' | 'warning' | 'failed' | 'published';
+type FilterValue = 'to_fix' | 'to_review' | 'last_run' | 'published' | 'ignored';
 
 interface Stats {
   pending: number;
@@ -78,6 +79,8 @@ export function EnrichedDescriptionValidation() {
   const [revalidating, setRevalidating] = useState(false);
   const [revalidateOneId, setRevalidateOneId] = useState<string | null>(null);
   const [lastRunIds, setLastRunIds] = useState<Set<string>>(new Set());
+  const [autoFixId, setAutoFixId] = useState<string | null>(null);
+  const [ignoreId, setIgnoreId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
