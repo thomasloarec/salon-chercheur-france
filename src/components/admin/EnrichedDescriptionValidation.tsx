@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle, XCircle, Loader2, RefreshCw, Rocket,
   ChevronDown, ChevronUp, Clock, FileCheck, AlertTriangle, Calendar,
-  Pencil, Save, X
+  Pencil, Save, X, ShieldCheck, ShieldAlert, Sparkles
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -25,7 +25,35 @@ interface PendingEvent {
   date_debut: string | null;
   enrichissement_score: number | null;
   description_enrichie: string | null;
+  enrichissement_statut: string | null;
+  auto_validation_status: string | null;
+  auto_validation_score: number | null;
+  auto_validation_report: AutoValidationReport | null;
+  validation_mode: string | null;
 }
+
+interface AutoValidationCheck {
+  code: string;
+  label: string;
+  status: 'pass' | 'warning' | 'fail';
+  blocker: boolean;
+  penalty: number;
+  details?: string;
+  evidence?: string[];
+}
+
+interface AutoValidationReport {
+  status: 'passed' | 'warning' | 'failed';
+  score: number;
+  decision: 'auto_validate' | 'manual_review';
+  reason: string;
+  checks: AutoValidationCheck[];
+  blockers: string[];
+  warnings: string[];
+  stats: { char_count: number; word_count: number; min_words_required: number };
+}
+
+type FilterValue = 'all' | 'pending' | 'auto' | 'warning' | 'failed';
 
 interface Stats {
   pending: number;
@@ -46,6 +74,8 @@ export function EnrichedDescriptionValidation() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
+  const [filter, setFilter] = useState<FilterValue>('all');
+  const [revalidating, setRevalidating] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -65,8 +95,9 @@ export function EnrichedDescriptionValidation() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .gt('date_debut', today),
         supabase.from('events')
-          .select('id, nom_event, slug, ville, date_debut, enrichissement_score, description_enrichie')
-          .eq('enrichissement_statut', 'en_attente')
+          .select('id, nom_event, slug, ville, date_debut, enrichissement_score, description_enrichie, enrichissement_statut, auto_validation_status, auto_validation_score, auto_validation_report, validation_mode')
+          .not('description_enrichie', 'is', null)
+          .in('enrichissement_statut', ['en_attente', 'valide'])
           .order('enrichissement_score', { ascending: false })
           .limit(100),
       ]);
