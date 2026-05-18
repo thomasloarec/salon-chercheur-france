@@ -255,39 +255,87 @@ function checkNumbersGrounded(text: string, src: EventSource): CheckResult {
   };
 }
 
-function checkExhibitorsGrounded(text: string, exhibitorNames: string[]): CheckResult {
-  // On cherche les noms propres en majuscules (TOKEN, ACME, etc.) qui ne sont pas dans la liste
-  // Heuristique conservative : ne pas générer de faux positifs.
-  const allowed = new Set(exhibitorNames.map(normalize));
-  // Repère des chaînes en CAPS de 3+ lettres (hors stop-words)
-  const STOPCAPS = new Set(['IFTM', 'IPEM', 'CES', 'AI', 'IA', 'B2B', 'B2C', 'FR', 'EU', 'USA', 'UK', 'PME', 'ETI', 'SAS', 'SARL', 'IT', 'CTO', 'CEO', 'CRM', 'ERP', 'SEO', 'API', 'TGV', 'RER', 'COP']);
+function checkExhibitorsGrounded(text: string, src: EventSource, exhibitorNames: string[]): CheckResult {
+  // Cherche des tokens en MAJUSCULES non sourcés ET utilisés dans un contexte
+  // qui désigne explicitement une entreprise / un exposant. Évite les faux
+  // positifs sur acronymes (MICE, UNESCO, ESG…) ou termes présents dans le
+  // contexte source (nom_event, lieu, secteur, description_event).
+  const allowed = new Set(exhibitorNames.map(normalize).filter(Boolean));
+
+  // Liste blanche : acronymes institutionnels / sectoriels courants
+  const STOPCAPS = new Set([
+    // Tech / business
+    'AI', 'IA', 'B2B', 'B2C', 'D2C', 'PME', 'ETI', 'TPE', 'SAS', 'SARL', 'SA',
+    'IT', 'OT', 'CTO', 'CEO', 'CFO', 'COO', 'CMO', 'DG', 'RH',
+    'CRM', 'ERP', 'SEO', 'SEA', 'API', 'SDK', 'SAAS', 'PAAS', 'IAAS', 'KPI',
+    'IOT', 'ML', 'NLP', 'LLM', 'AR', 'VR', 'XR', 'UI', 'UX', 'QA',
+    // RSE / finance / juridique
+    'RSE', 'ESG', 'CSR', 'RGPD', 'GDPR', 'TVA', 'IFRS', 'EBITDA', 'ROI', 'IPO',
+    'LP', 'GP', 'LPS', 'GPS', 'VC', 'PE', 'AUM', 'NAV',
+    // Pays / régions / langues
+    'FR', 'EU', 'UE', 'USA', 'UK', 'US', 'CN', 'JP', 'DACH', 'EMEA', 'APAC', 'MENA', 'LATAM',
+    // Tourisme / événementiel / institutions
+    'MICE', 'UNESCO', 'OTAN', 'NATO', 'OMS', 'ONU', 'OCDE', 'OPEP', 'COP', 'GIEC',
+    'SNCF', 'RATP', 'TGV', 'RER',
+    // Salons / médias
+    'CES', 'IFA', 'NRF', 'SIAL', 'CFIA',
+  ]);
+
+  // Tokens présents dans le contexte source — à ignorer automatiquement
+  const sourceBag = normalize([
+    src.nom_event ?? '',
+    src.ville ?? '',
+    src.pays ?? '',
+    src.nom_lieu ?? '',
+    src.rue ?? '',
+    src.description_event ?? '',
+    ...(Array.isArray(src.secteur)
+      ? src.secteur.map((s) => (typeof s === 'string' ? s : (s as { name?: string })?.name ?? ''))
+      : []),
+  ].join(' '));
+
+  // Regex CAPS 3+ caractères (acronymes ou noms type ACME)
   const re = /\b([A-Z][A-Z0-9&.\-]{2,}(?:\s+[A-Z][A-Z0-9&.\-]{2,}){0,3})\b/g;
+
+  // Contextes "exposant" : on ne flag que si le token apparaît dans une
+  // fenêtre de 40 caractères contenant un mot évocateur d'entreprise.
+  const companyContextRe = /(stand|exposant|exposants|expose|exposera|présent[ée]?\s+(?:par|sur)|société|entreprise|marque|groupe|filiale|fournisseur|partenaire\s+officiel|sponsor|éditeur|fabricant|startup|scale-?up|équipementier)/i;
+
   const suspects: string[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    const token = m[1];
-    if (STOPCAPS.has(token)) continue;
-    if (allowed.has(normalize(token))) continue;
-    // Tolérer si fragment d'un nom autorisé
+    const token = m[1].trim();
+    if (STOPCAPS.has(token.toUpperCase())) continue;
+    const norm = normalize(token);
+    if (!norm) continue;
+    if (allowed.has(norm)) continue;
+    // Fragment d'un nom autorisé
     let inAllowed = false;
     for (const a of allowed) {
-      if (a.includes(normalize(token)) || normalize(token).includes(a)) { inAllowed = true; break; }
+      if (a && (a.includes(norm) || norm.includes(a))) { inAllowed = true; break; }
     }
-    if (!inAllowed) suspects.push(token);
+    if (inAllowed) continue;
+    // Présent dans le contexte source (nom_event, lieu, secteur, description_event…)
+    if (sourceBag.includes(norm)) continue;
+    // Contexte explicitement "entreprise" ?
+    const start = Math.max(0, m.index - 40);
+    const end = Math.min(text.length, m.index + token.length + 40);
+    const window = text.slice(start, end);
+    if (!companyContextRe.test(window)) continue;
+    suspects.push(token);
   }
-  // Dédup
+
   const dedup = [...new Set(suspects)];
   if (dedup.length === 0) {
     return { code: 'exhibitors_grounded', label: 'Exposants sourcés', status: 'pass', blocker: false, penalty: 0 };
   }
-  // On reste prudent : warning, pas fail (pour éviter faux positifs sur sigles)
   return {
     code: 'exhibitors_grounded',
     label: 'Exposants sourcés',
     status: 'warning',
     blocker: false,
     penalty: 15,
-    details: `${dedup.length} nom(s) en majuscules non trouvé(s) dans la liste des exposants`,
+    details: `${dedup.length} entreprise(s) citée(s) en contexte exposant mais absente(s) de la liste`,
     evidence: dedup.slice(0, 8),
   };
 }
@@ -310,20 +358,45 @@ function checkPriceInvented(text: string, src: EventSource): CheckResult {
   };
 }
 
-function checkProgramInvented(text: string): CheckResult {
-  // On bloque seulement les mentions très précises : horaires, jour précis d'une conf, nom d'atelier
-  const re = /(\b\d{1,2}h\d{0,2}\b|\bde\s+\d{1,2}h\b|programme\s+complet|conf[ée]rence\s+inaugurale|atelier\s+«|workshop\s+«|keynote\s+de\s+m)/i;
-  if (re.test(text)) {
-    return {
-      code: 'program_invented',
-      label: 'Programme non inventé',
-      status: 'warning',
-      blocker: false,
-      penalty: 15,
-      details: 'Mention d\'horaires précis ou de programme détaillé — vérifier la source',
-    };
+function checkProgramInvented(text: string, src: EventSource): CheckResult {
+  // Bloque uniquement les inventions précises : horaires, sessions nommées,
+  // intervenants nommés, programmes jour-par-jour, ateliers/keynotes spécifiques.
+  // Les thématiques générales (déjà dans description_event) ne sont pas bloquées.
+  const sourceText = normalize(src.description_event ?? '');
+
+  const patterns: { re: RegExp; label: string; allowIfInSource?: boolean }[] = [
+    { re: /\b\d{1,2}h\d{2}\b/i, label: 'horaire précis (ex: 9h30)', allowIfInSource: true },
+    { re: /\bde\s+\d{1,2}h(\d{2})?\s+(?:à|a)\s+\d{1,2}h/i, label: 'créneau horaire', allowIfInSource: true },
+    { re: /conf[ée]rence\s+inaugurale/i, label: 'conférence inaugurale' },
+    { re: /atelier\s+[«"][^»"]{3,}[»"]/i, label: 'atelier nommé' },
+    { re: /workshop\s+[«"][^»"]{3,}[»"]/i, label: 'workshop nommé' },
+    { re: /keynote\s+(?:de\s+)?(?:m\.|mme|monsieur|madame|dr\.?|prof\.?)\s+[A-Z]/i, label: 'keynote avec intervenant nommé' },
+    { re: /intervenant[s]?\s*:\s*[A-Z]/i, label: 'liste d\'intervenants nommés' },
+    { re: /jour\s+\d\s*:\s*/i, label: 'programme jour-par-jour' },
+    { re: /(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+\d{1,2}h/i, label: 'session jour+horaire' },
+  ];
+
+  const hits: string[] = [];
+  for (const p of patterns) {
+    const m = text.match(p.re);
+    if (!m) continue;
+    // Si le motif EXACT est déjà présent dans la source, on tolère
+    if (p.allowIfInSource && sourceText.includes(normalize(m[0]))) continue;
+    hits.push(p.label);
   }
-  return { code: 'program_invented', label: 'Programme non inventé', status: 'pass', blocker: false, penalty: 0 };
+
+  if (hits.length === 0) {
+    return { code: 'program_invented', label: 'Programme non inventé', status: 'pass', blocker: false, penalty: 0 };
+  }
+  return {
+    code: 'program_invented',
+    label: 'Programme non inventé',
+    status: 'warning',
+    blocker: false,
+    penalty: 15,
+    details: 'Élément(s) de programme précis détecté(s) — vérifier la source',
+    evidence: hits.slice(0, 5),
+  };
 }
 
 function checkSuperlatives(text: string): CheckResult {
@@ -376,24 +449,96 @@ function checkCommercialPromise(text: string): CheckResult {
 }
 
 function checkGeneric(text: string, src: EventSource): CheckResult {
-  // Densité de tokens event-specific (nom_event + secteurs)
+  // Approche par ANCRAGES : on compte les éléments factuels distincts présents
+  // (nom_event, ville, pays, lieu, année(s), secteur(s)). Un texte avec ≥ 5
+  // ancrages distincts est considéré comme suffisamment ancré, même si la
+  // densité brute reste faible.
   const norm = normalize(text);
   const totalWords = wordCount(norm);
   if (totalWords === 0) {
     return { code: 'generic_text', label: 'Texte non générique', status: 'warning', blocker: false, penalty: 10, details: 'texte vide après normalisation' };
   }
-  const tokens = [normalize(src.nom_event), ...sectorTokens(src.secteur)].filter(Boolean);
-  let hits = 0;
-  for (const t of tokens) {
-    if (!t) continue;
-    const re = new RegExp(`\\b${t.split(' ').join('\\s+')}\\b`, 'g');
-    hits += (norm.match(re) ?? []).length;
+
+  const anchors: { key: string; hit: boolean }[] = [];
+  const addAnchor = (key: string, candidates: string[]) => {
+    const hit = candidates.some((c) => {
+      const cn = normalize(c);
+      if (!cn || cn.length < 2) return false;
+      return norm.includes(cn);
+    });
+    anchors.push({ key, hit });
+  };
+
+  // 1. nom_event : on accepte n'importe quel token significatif (≥ 3 car), ex: "IFTM"
+  const nameTokens = normalize(src.nom_event ?? '')
+    .split(' ')
+    .filter((w) => w.length >= 3 && !['les', 'des', 'pour', 'avec', 'salon', 'event', 'expo'].includes(w));
+  addAnchor('nom_event', [normalize(src.nom_event ?? ''), ...nameTokens]);
+
+  // 2. ville
+  if (src.ville) addAnchor('ville', [src.ville]);
+  // 3. pays
+  if (src.pays) addAnchor('pays', [src.pays]);
+  // 4. lieu
+  if (src.nom_lieu) {
+    const venueTokens = normalize(src.nom_lieu).split(' ').filter((w) => w.length >= 4);
+    addAnchor('lieu', [normalize(src.nom_lieu), ...venueTokens]);
   }
-  const density = hits / totalWords;
-  if (density < 0.005) {
-    return { code: 'generic_text', label: 'Texte non générique', status: 'warning', blocker: false, penalty: 10, details: `densité event-specific très faible (${(density * 100).toFixed(2)}%)` };
+  // 5. année(s)
+  const years = new Set<string>();
+  for (const d of [src.date_debut, src.date_fin]) {
+    if (d) {
+      const y = new Date(d).getFullYear();
+      if (Number.isFinite(y)) years.add(String(y));
+    }
   }
-  return { code: 'generic_text', label: 'Texte non générique', status: 'pass', blocker: false, penalty: 0, details: `densité ${(density * 100).toFixed(2)}%` };
+  if (years.size > 0) addAnchor('annee', [...years]);
+  // 6. secteur(s)
+  const sectors = sectorTokens(src.secteur);
+  if (sectors.length > 0) {
+    const flat = sectors.flatMap((s) => [s, ...s.split(' ').filter((w) => w.length >= 4)]);
+    addAnchor('secteur', flat);
+  }
+  // 7. URL officielle (domaine)
+  if (src.url_site_officiel) {
+    try {
+      const host = new URL(src.url_site_officiel).hostname.replace(/^www\./, '').split('.')[0];
+      if (host && host.length >= 3) addAnchor('source_officielle', [host]);
+    } catch { /* ignore */ }
+  }
+
+  const hitCount = anchors.filter((a) => a.hit).length;
+  const missing = anchors.filter((a) => !a.hit).map((a) => a.key);
+
+  // Densité brute (fallback) : nb d'occurrences de tokens d'ancrages / mots
+  let occ = 0;
+  for (const a of anchors) {
+    // approximation : pour le scoring densité, on compte juste les ancrages présents
+    if (a.hit) occ += 1;
+  }
+  const density = occ / totalWords;
+
+  // Pass si ≥ 5 ancrages OU densité ≥ 0.5 %
+  if (hitCount >= 5 || density >= 0.005) {
+    return {
+      code: 'generic_text',
+      label: 'Texte non générique',
+      status: 'pass',
+      blocker: false,
+      penalty: 0,
+      details: `${hitCount} ancrage(s) présent(s) (densité ${(density * 100).toFixed(2)}%)`,
+    };
+  }
+
+  return {
+    code: 'generic_text',
+    label: 'Texte non générique',
+    status: 'warning',
+    blocker: false,
+    penalty: 10,
+    details: `Seulement ${hitCount} ancrage(s) factuel(s) présent(s) — manque: ${missing.join(', ')}`,
+    evidence: missing,
+  };
 }
 
 function checkRepetition(text: string): CheckResult {
@@ -445,9 +590,9 @@ export function validateEnrichedDescription(
     checkCity(text, source),
     checkVenue(text, source),
     checkNumbersGrounded(text, source),
-    checkExhibitorsGrounded(text, exhibitorNames),
+    checkExhibitorsGrounded(text, source, exhibitorNames),
     checkPriceInvented(text, source),
-    checkProgramInvented(text),
+    checkProgramInvented(text, source),
     checkSuperlatives(text),
     checkCommercialPromise(text),
     checkGeneric(text, source),
