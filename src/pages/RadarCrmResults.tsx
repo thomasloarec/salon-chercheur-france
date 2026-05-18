@@ -683,7 +683,13 @@ const EventCard: React.FC<{
   group: EventGroup;
   importId?: string | null;
   onView: () => void;
-  onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
+  onCompanyClick: (
+    c: Company,
+    id_exposant: string,
+    stand: string | null,
+    nom_exposant: string | null,
+    needs_review: boolean,
+  ) => void;
 }> = ({ group, importId, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
@@ -742,8 +748,15 @@ const EventCard: React.FC<{
               {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {group.companies.map(({ company, id_exposant, stand }) => (
-                <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company, id_exposant, stand)} />
+              {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
+                <CompanyChip
+                  key={company.id}
+                  company={company}
+                  stand={stand}
+                  nomExposant={nom_exposant}
+                  needsReview={needs_review}
+                  onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
+                />
               ))}
             </div>
           </div>
@@ -764,7 +777,13 @@ const EventCard: React.FC<{
 const PastEventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
-  onCompanyClick: (c: Company, id_exposant: string, stand: string | null) => void;
+  onCompanyClick: (
+    c: Company,
+    id_exposant: string,
+    stand: string | null,
+    nom_exposant: string | null,
+    needs_review: boolean,
+  ) => void;
 }> = ({ group, onView, onCompanyClick }) => {
   return (
     <Card className="overflow-hidden hover:shadow-sm transition-all bg-card">
@@ -794,8 +813,15 @@ const PastEventCard: React.FC<{
             Entreprises détectées
           </p>
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {group.companies.map(({ company, id_exposant, stand }) => (
-              <CompanyChip key={company.id} company={company} stand={stand} onClick={() => onCompanyClick(company, id_exposant, stand)} />
+            {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
+              <CompanyChip
+                key={company.id}
+                company={company}
+                stand={stand}
+                nomExposant={nom_exposant}
+                needsReview={needs_review}
+                onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
+              />
             ))}
           </div>
           <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary -ml-2">
