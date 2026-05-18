@@ -112,6 +112,30 @@ Deno.serve(async (req) => {
 
   const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' };
 
+  // ─── Shared-secret gate ───
+  // Toute requête (cron, manuel, dry_run) DOIT inclure x-seo-batch-secret.
+  // Sans header valide : 401, aucun travail, aucune écriture, aucun deploy.
+  const BATCH_SECRET = Deno.env.get('SEO_BATCH_SECRET') ?? '';
+  if (!BATCH_SECRET) {
+    return new Response(JSON.stringify({
+      error: 'SEO_BATCH_SECRET non configuré côté serveur',
+    }), { status: 500, headers: jsonHeaders });
+  }
+  const provided = req.headers.get('x-seo-batch-secret') ?? '';
+  // Constant-time compare
+  const a = new TextEncoder().encode(provided);
+  const b = new TextEncoder().encode(BATCH_SECRET);
+  let ok = a.length === b.length;
+  const len = Math.max(a.length, b.length);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < len; i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
+  ok = ok && diff === 0;
+  if (!ok) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401, headers: jsonHeaders,
+    });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const params = parseParams(body);
