@@ -844,6 +844,10 @@ export type Database = {
         Row: {
           affluence: string | null
           airtable_id: string | null
+          auto_validated_at: string | null
+          auto_validation_report: Json | null
+          auto_validation_score: number | null
+          auto_validation_status: string | null
           campagne_active: boolean | null
           code_postal: string | null
           created_at: string | null
@@ -882,12 +886,17 @@ export type Database = {
           url_site_officiel: string | null
           url_site_officiel_domain: string | null
           url_site_officiel_normalized: string | null
+          validation_mode: string | null
           ville: string | null
           visible: boolean | null
         }
         Insert: {
           affluence?: string | null
           airtable_id?: string | null
+          auto_validated_at?: string | null
+          auto_validation_report?: Json | null
+          auto_validation_score?: number | null
+          auto_validation_status?: string | null
           campagne_active?: boolean | null
           code_postal?: string | null
           created_at?: string | null
@@ -926,12 +935,17 @@ export type Database = {
           url_site_officiel?: string | null
           url_site_officiel_domain?: string | null
           url_site_officiel_normalized?: string | null
+          validation_mode?: string | null
           ville?: string | null
           visible?: boolean | null
         }
         Update: {
           affluence?: string | null
           airtable_id?: string | null
+          auto_validated_at?: string | null
+          auto_validation_report?: Json | null
+          auto_validation_score?: number | null
+          auto_validation_status?: string | null
           campagne_active?: boolean | null
           code_postal?: string | null
           created_at?: string | null
@@ -970,6 +984,7 @@ export type Database = {
           url_site_officiel?: string | null
           url_site_officiel_domain?: string | null
           url_site_officiel_normalized?: string | null
+          validation_mode?: string | null
           ville?: string | null
           visible?: boolean | null
         }

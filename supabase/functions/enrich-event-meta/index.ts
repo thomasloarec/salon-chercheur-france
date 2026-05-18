@@ -15,6 +15,7 @@ import { buildCorsHeaders, handleCors } from '../_shared/cors.ts'
  */
 
 import { ANTHROPIC_API_URL, buildAnthropicHeaders, getAnthropicModelFast } from '../_shared/anthropic.ts';
+import { validateEnrichedDescription, type EventSource } from '../_shared/validate-enriched-description.ts';
 
 const MIN_LENGTH = 135;
 const MAX_LENGTH = 160;
@@ -41,6 +42,9 @@ interface EventData {
   description_enrichie: string | null;
   enrichissement_niveau: string | null;
   enrichissement_statut: string | null;
+  pays?: string | null;
+  code_postal?: string | null;
+  rue?: string | null;
 }
 
 interface EnrichResult {
@@ -57,6 +61,8 @@ interface EnrichResult {
   retry_reason?: string;
   description_enrichie_status?: 'done' | 'skipped' | 'error';
   description_enrichie_reason?: string;
+  auto_validation_status?: 'passed' | 'warning' | 'failed';
+  auto_validation_score?: number;
 }
 
 /* ─── DATE FORMATTING (natural French) ─── */
@@ -537,7 +543,7 @@ async function enrichDescription(
   supabase: ReturnType<typeof createClient>,
   event: EventData,
   anthropicKey: string,
-): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string }> {
+): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string; auto_validation_status?: 'passed' | 'warning' | 'failed'; auto_validation_score?: number }> {
   const eligibility = isEligibleForDescEnrichie(event);
   if (!eligibility.eligible) {
     return { status: 'skipped', reason: eligibility.reason };
@@ -579,13 +585,40 @@ async function enrichDescription(
       return { status: 'error', reason: 'Contient "[NON RENSEIGNÉ]"' };
     }
 
+    // ─── Auto-validation ───
+    const exhibitorNames = await loadExhibitorNamesForEvent(supabase, event.id);
+    const source: EventSource = {
+      nom_event: event.nom_event,
+      date_debut: event.date_debut,
+      date_fin: event.date_fin,
+      ville: event.ville,
+      pays: event.pays ?? null,
+      nom_lieu: event.nom_lieu,
+      code_postal: event.code_postal ?? null,
+      rue: event.rue,
+      secteur: event.secteur,
+      affluence: event.affluence,
+      tarif: event.tarif,
+      url_site_officiel: event.url_site_officiel,
+      description_event: event.description_event,
+      enrichissement_niveau: event.enrichissement_niveau,
+    };
+    const validation = validateEnrichedDescription(text, source, exhibitorNames);
+    const autoValidated = validation.decision === 'auto_validate';
+    console.log(`🛡️ [Auto-validation] ${event.nom_event} → ${validation.status} (score=${validation.score}, decision=${validation.decision})`);
+
     // ─── Écriture en DB ───
     const { error: updateError } = await supabase
       .from('events')
       .update({
         description_enrichie: text,
-        enrichissement_statut: 'en_attente',
+        enrichissement_statut: autoValidated ? 'valide' : 'en_attente',
         enrichissement_date: new Date().toISOString(),
+        auto_validation_status: validation.status,
+        auto_validation_score: validation.score,
+        auto_validation_report: validation,
+        auto_validated_at: new Date().toISOString(),
+        validation_mode: autoValidated ? 'auto' : 'manual',
       })
       .eq('id', event.id);
 
@@ -594,8 +627,8 @@ async function enrichDescription(
       return { status: 'error', reason: `Erreur DB: ${updateError.message}` };
     }
 
-    console.log(`✅ [Desc enrichie] OK pour ${event.nom_event} (${text.length} car.)`);
-    return { status: 'done' };
+    console.log(`✅ [Desc enrichie] OK pour ${event.nom_event} (${text.length} car., ${autoValidated ? 'AUTO-VALIDÉ' : 'EN ATTENTE'})`);
+    return { status: 'done', auto_validation_status: validation.status, auto_validation_score: validation.score };
 
   } catch (err) {
     console.error(`❌ [Desc enrichie] Erreur pour ${event.nom_event}:`, err);
@@ -603,8 +636,35 @@ async function enrichDescription(
   }
 }
 
+/** Récupère les noms d'exposants liés à un événement via la table `participation`. */
+async function loadExhibitorNamesForEvent(
+  supabase: ReturnType<typeof createClient>,
+  eventId: string,
+): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('participation')
+      .select('exhibitor_name, exhibitors(name)')
+      .eq('id_event', eventId)
+      .limit(2000);
+    if (error) {
+      console.warn(`⚠️ [Auto-validation] Impossible de charger les exposants: ${error.message}`);
+      return [];
+    }
+    const names = new Set<string>();
+    for (const row of (data ?? []) as Array<{ exhibitor_name: string | null; exhibitors: { name: string | null } | null }>) {
+      if (row.exhibitor_name) names.add(row.exhibitor_name);
+      if (row.exhibitors?.name) names.add(row.exhibitors.name);
+    }
+    return [...names];
+  } catch (e) {
+    console.warn(`⚠️ [Auto-validation] exhibitors load failed:`, e);
+    return [];
+  }
+}
+
 /* ─── SELECT FIELDS ─── */
-const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, nom_lieu, rue, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut, enrichissement_score';
+const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, pays, nom_lieu, rue, code_postal, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut, enrichissement_score';
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -753,6 +813,8 @@ Deno.serve(async (req) => {
         const descResult = await enrichDescription(supabase, ev as EventData, ANTHROPIC_API_KEY);
         result.description_enrichie_status = descResult.status;
         result.description_enrichie_reason = descResult.reason;
+        result.auto_validation_status = descResult.auto_validation_status;
+        result.auto_validation_score = descResult.auto_validation_score;
         results.push(result);
       }
 
@@ -761,8 +823,10 @@ Deno.serve(async (req) => {
       const errors = results.filter(r => r.status === 'error').length;
       const retried = results.filter(r => r.retried).length;
       const descDone = results.filter(r => r.description_enrichie_status === 'done').length;
+      const autoValidated = results.filter(r => r.auto_validation_status === 'passed').length;
+      const pendingReview = results.filter(r => r.auto_validation_status === 'warning' || r.auto_validation_status === 'failed').length;
 
-      console.log(`📦 Batch V2 terminé — meta: done=${done}, skipped=${skipped}, errors=${errors}, retried=${retried} | desc_enrichie: done=${descDone}`);
+      console.log(`📦 Batch V2 terminé — meta: done=${done}, skipped=${skipped}, errors=${errors}, retried=${retried} | desc_enrichie: done=${descDone} (auto=${autoValidated}, à relire=${pendingReview})`);
 
       return new Response(JSON.stringify({
         batch: true,
@@ -772,6 +836,8 @@ Deno.serve(async (req) => {
         errors,
         retried,
         description_enrichie_done: descDone,
+        auto_validated: autoValidated,
+        pending_review: pendingReview,
         results,
       }), { status: 200, headers: jsonHeaders });
     }
@@ -799,6 +865,8 @@ Deno.serve(async (req) => {
     const descResult = await enrichDescription(supabase, event as EventData, ANTHROPIC_API_KEY);
     result.description_enrichie_status = descResult.status;
     result.description_enrichie_reason = descResult.reason;
+    result.auto_validation_status = descResult.auto_validation_status;
+    result.auto_validation_score = descResult.auto_validation_score;
 
     const statusCode = result.status === 'error' ? 500 : 200;
     return new Response(JSON.stringify(result), { status: statusCode, headers: jsonHeaders });
