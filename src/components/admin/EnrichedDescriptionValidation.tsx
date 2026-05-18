@@ -526,6 +526,10 @@ export function EnrichedDescriptionValidation() {
               const report = ev.auto_validation_report;
               const failedCodes = report?.checks?.filter(c => c.status === 'fail').map(c => c.code) ?? [];
               const warningCodes = report?.checks?.filter(c => c.status === 'warning').map(c => c.code) ?? [];
+              const issueChecks = report?.checks?.filter(c => c.status === 'fail' || c.status === 'warning') ?? [];
+              const isIgnored = report?.ignored_for_now === true;
+              const fixableCodes = new Set(['city_consistency','venue_consistency','date_consistency','numbers_grounded','price_invented','program_invented','exhibitors_grounded','superlatives']);
+              const canAutoFix = issueChecks.some(c => fixableCodes.has(c.code));
               return (
                 <div key={ev.id} className="border rounded-lg p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -568,10 +572,29 @@ export function EnrichedDescriptionValidation() {
                         {warningCodes.map(c => (
                           <Badge key={c} className="bg-amber-50 text-amber-700 border-amber-200 text-xs">{checkLabelToBadge(c)}</Badge>
                         ))}
+                        {isIgnored && (
+                          <Badge className="bg-slate-100 text-slate-700 border-slate-300 text-xs"><Archive className="h-3 w-3 mr-1" />Ignoré</Badge>
+                        )}
                       </div>
                     </div>
                     {scoreBadge(ev.enrichissement_score)}
                   </div>
+
+                  {issueChecks.length > 0 && (
+                    <div className="rounded-md border border-amber-200 bg-amber-50/60 p-2.5 text-xs space-y-1">
+                      <div className="font-medium text-amber-900 flex items-center gap-1.5">
+                        <Info className="h-3.5 w-3.5" /> Pourquoi ce texte est dans la file ?
+                      </div>
+                      <ul className="space-y-0.5 text-amber-900/90">
+                        {issueChecks.slice(0, 5).map((c, i) => (
+                          <li key={`${c.code}-${i}`} className="flex gap-1.5">
+                            <span className="opacity-60">•</span>
+                            <span>{explainCheck(c, ev)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {isEditing ? (
                     <div className="space-y-2">
