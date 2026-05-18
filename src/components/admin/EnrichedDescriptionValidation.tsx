@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle, XCircle, Loader2, RefreshCw, Rocket,
   ChevronDown, ChevronUp, Clock, FileCheck, AlertTriangle, Calendar,
-  Pencil, Save, X, ShieldCheck, ShieldAlert, Sparkles, ShieldQuestion
+  Pencil, Save, X, ShieldCheck, ShieldAlert, Sparkles, ShieldQuestion,
+  ExternalLink, Settings
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -53,7 +53,7 @@ interface AutoValidationReport {
   stats: { char_count: number; word_count: number; min_words_required: number };
 }
 
-type FilterValue = 'all' | 'pending' | 'auto' | 'warning' | 'failed';
+type FilterValue = 'all' | 'pending' | 'auto' | 'warning' | 'failed' | 'last_run';
 
 interface Stats {
   pending: number;
@@ -77,15 +77,16 @@ export function EnrichedDescriptionValidation() {
   const [filter, setFilter] = useState<FilterValue>('all');
   const [revalidating, setRevalidating] = useState(false);
   const [revalidateOneId, setRevalidateOneId] = useState<string | null>(null);
+  const [lastRunIds, setLastRunIds] = useState<Set<string>>(new Set());
 
   const today = new Date().toISOString().split('T')[0];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [pendingRes, validRes, eligibleRes, futureRes, eventsRes] = await Promise.all([
+      const [pendingRes, validRes, eligibleRes, futureRes, eventsRes, lastRunRes] = await Promise.all([
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .eq('enrichissement_statut', 'en_attente'),
+          .or('enrichissement_statut.eq.en_attente,validation_mode.eq.manual'),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('enrichissement_statut', 'valide'),
         supabase.from('events').select('id', { count: 'exact', head: true })
@@ -101,6 +102,11 @@ export function EnrichedDescriptionValidation() {
           .in('enrichissement_statut', ['en_attente', 'valide'])
           .order('enrichissement_score', { ascending: false })
           .limit(100),
+        supabase.from('seo_enrichment_runs')
+          .select('details')
+          .neq('trigger_source', 'dry_run')
+          .order('started_at', { ascending: false })
+          .limit(1),
       ]);
 
       setStats({
@@ -113,6 +119,9 @@ export function EnrichedDescriptionValidation() {
         ...e,
         auto_validation_report: (e.auto_validation_report ?? null) as unknown as AutoValidationReport | null,
       })) as PendingEvent[]);
+      const lastDetails = lastRunRes.data?.[0]?.details as Record<string, unknown> | undefined;
+      const ids = (lastDetails?.processed_ids as string[] | undefined) ?? [];
+      setLastRunIds(new Set(ids));
     } catch (e) {
       console.error('Fetch error', e);
     } finally {
@@ -121,6 +130,13 @@ export function EnrichedDescriptionValidation() {
   }, [today]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Global refresh — triggered by dashboard actions
+  useEffect(() => {
+    const handler = () => fetchData();
+    window.addEventListener('seo-enrichment-refresh', handler);
+    return () => window.removeEventListener('seo-enrichment-refresh', handler);
+  }, [fetchData]);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -306,6 +322,7 @@ export function EnrichedDescriptionValidation() {
       case 'auto': return ev.auto_validation_status === 'passed' && ev.validation_mode === 'auto';
       case 'warning': return ev.auto_validation_status === 'warning';
       case 'failed': return ev.auto_validation_status === 'failed';
+      case 'last_run': return lastRunIds.has(ev.id);
       default: return true;
     }
   });
@@ -352,6 +369,7 @@ export function EnrichedDescriptionValidation() {
         <div className="flex flex-wrap gap-2 items-center">
           {([
             ['all', `Tous (${events.length})`],
+            ['last_run', `Dernier run (${events.filter(e => lastRunIds.has(e.id)).length})`],
             ['pending', `En attente (${events.filter(e => e.enrichissement_statut === 'en_attente').length})`],
             ['auto', `Validés auto (${events.filter(e => e.auto_validation_status === 'passed' && e.validation_mode === 'auto').length})`],
             ['warning', `Warnings (${events.filter(e => e.auto_validation_status === 'warning').length})`],
@@ -400,12 +418,30 @@ export function EnrichedDescriptionValidation() {
                 <div key={ev.id} className="border rounded-lg p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <Link
-                        to={ev.slug ? `/salon/${ev.slug}` : '#'}
-                        className="font-medium text-primary hover:underline truncate block"
-                      >
-                        {ev.nom_event}
-                      </Link>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {ev.slug ? (
+                          <a
+                            href={`/events/${ev.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            {ev.nom_event}
+                            <ExternalLink className="h-3 w-3 opacity-60" />
+                          </a>
+                        ) : (
+                          <span className="font-medium">{ev.nom_event}</span>
+                        )}
+                        <a
+                          href={`/admin/events/${ev.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+                          title="Fiche admin"
+                        >
+                          <Settings className="h-3 w-3" /> admin
+                        </a>
+                      </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {[ev.ville, ev.date_debut].filter(Boolean).join(' · ')}
                       </div>
