@@ -16,6 +16,7 @@ import { buildCorsHeaders, handleCors } from '../_shared/cors.ts';
 const ALLOWED_TARGETS = new Set([
   'seo-enrichment-batch',
   'revalidate-enriched-description',
+  'seo-auto-fix-description',
 ]);
 
 Deno.serve(async (req) => {
