@@ -4356,6 +4356,10 @@ export type Database = {
       }
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
       cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
+      compute_event_enrichissement_score: {
+        Args: { p_event_id: string }
+        Returns: number
+      }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
       count_seo_enrichment_eligible: { Args: never; Returns: Json }
       create_missing_outreach_campaigns: { Args: never; Returns: Json }
@@ -4571,6 +4575,7 @@ export type Database = {
       normalize_domain: { Args: { input_url: string }; Returns: string }
       normalize_event_domain: { Args: { p_url: string }; Returns: string }
       normalize_event_url: { Args: { p_url: string }; Returns: string }
+      parse_affluence_int: { Args: { p: string }; Returns: number }
       publish_pending_event_atomic: {
         Args: { p_event_data: Json; p_id_event: string }
         Returns: Json
@@ -4612,6 +4617,10 @@ export type Database = {
           out_reasons: Json
           out_score: number
         }[]
+      }
+      score_events_batch: {
+        Args: { p_dry_run?: boolean; p_limit?: number; p_only_null?: boolean }
+        Returns: Json
       }
       search_admin_companies: {
         Args: { lim?: number; q: string }
