@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,15 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import {
   Activity, RefreshCw, Loader2, PlayCircle, Beaker, Rocket, Zap,
   CheckCircle2, AlertTriangle, XCircle, Server, ChevronDown, ChevronUp,
-  ExternalLink, Settings, ListChecks,
+  ExternalLink, Settings, ListChecks, Lightbulb, Calculator, ShieldQuestion,
+  Info,
 } from 'lucide-react';
 
 interface EligibilityStats {
@@ -43,7 +47,7 @@ interface RunRow {
   details: Record<string, unknown> | null;
 }
 
-interface ValidationCounts {
+interface Counters {
   passed: number;
   pending: number;
   failed: number;
@@ -86,10 +90,33 @@ function formatDateTime(iso: string): string {
   });
 }
 
+function triggerLabel(src: string): string {
+  switch (src) {
+    case 'manual': return 'Manuel';
+    case 'cron': return 'Cron';
+    case 'dry_run': return 'Dry-run';
+    default: return src;
+  }
+}
+
+function batchLabelFromRun(r: RunRow): string {
+  const d = r.details ?? {};
+  const mode = (d as Record<string, unknown>)['mode'] as string | undefined;
+  const sel = r.events_selected ?? 0;
+  if (mode === 'dry_run') return `Dry-run (${sel})`;
+  if (mode === 'test') return `Batch test (${sel})`;
+  if (mode === 'run') {
+    if (sel <= 5) return `Batch pilote (${sel})`;
+    if (sel <= 20) return `Batch ${sel}`;
+    return `Batch ${sel}`;
+  }
+  return `${triggerLabel(r.trigger_source)} (${sel})`;
+}
+
 export function SeoEnrichmentDashboard() {
   const { toast } = useToast();
   const [eligibility, setEligibility] = useState<EligibilityStats | null>(null);
-  const [validationCounts, setValidationCounts] = useState<ValidationCounts | null>(null);
+  const [counters, setCounters] = useState<Counters | null>(null);
   const [runs, setRuns] = useState<RunRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -127,7 +154,7 @@ export function SeoEnrichmentDashboard() {
       if (eligibilityRes.error) throw eligibilityRes.error;
       setEligibility(eligibilityRes.data as unknown as EligibilityStats);
       setRuns((runsRes.data ?? []) as RunRow[]);
-      setValidationCounts({
+      setCounters({
         passed: passedRes.count ?? 0,
         pending: pendingRes.count ?? 0,
         failed: failedRes.count ?? 0,
@@ -145,6 +172,11 @@ export function SeoEnrichmentDashboard() {
   }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    const handler = () => fetchData();
+    window.addEventListener('seo-enrichment-refresh', handler);
+    return () => window.removeEventListener('seo-enrichment-refresh', handler);
+  }, [fetchData]);
 
   const runBatch = async (mode: BatchMode, limit: number, deploy: boolean, key: string) => {
     setActionLoading(key);
@@ -157,9 +189,7 @@ export function SeoEnrichmentDashboard() {
       });
       if (error) throw error;
       const r = data as Record<string, unknown>;
-      if (r?.error) {
-        throw new Error(String(r.error));
-      }
+      if (r?.error) throw new Error(String(r.error));
       if (mode === 'dry_run') {
         toast({
           title: '🧪 Dry-run terminé',
@@ -183,6 +213,56 @@ export function SeoEnrichmentDashboard() {
     }
   };
 
+  const runScoring = async () => {
+    setActionLoading('score');
+    try {
+      const { data, error } = await supabase.rpc('score_events_batch', {
+        p_limit: 20,
+        p_dry_run: false,
+        p_only_null: true,
+      });
+      if (error) throw error;
+      const d = data as Record<string, unknown> | null;
+      const processed = (d?.['processed'] as number | undefined) ?? 0;
+      toast({
+        title: '🧮 Scoring terminé',
+        description: `${processed} événement(s) scoré(s).`,
+      });
+      fetchData();
+      window.dispatchEvent(new CustomEvent('seo-enrichment-refresh'));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur scoring', description: msg, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const runRevalidate = async () => {
+    setActionLoading('reval');
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-seo-batch-proxy', {
+        body: {
+          target: 'revalidate-enriched-description',
+          payload: { dry_run: false, limit: 200 },
+        },
+      });
+      if (error) throw error;
+      const s = (data as { summary?: { auto_validated?: number; warning?: number; failed?: number; total?: number } })?.summary;
+      toast({
+        title: '🛡️ Re-validation terminée',
+        description: `${s?.total ?? 0} évalué(s) — auto ${s?.auto_validated ?? 0}, warning ${s?.warning ?? 0}, failed ${s?.failed ?? 0}`,
+      });
+      fetchData();
+      window.dispatchEvent(new CustomEvent('seo-enrichment-refresh'));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur re-validation', description: msg, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const toggleRunDetails = (id: string) => {
     setExpandedRunIds((prev) => {
       const next = new Set(prev);
@@ -191,156 +271,277 @@ export function SeoEnrichmentDashboard() {
     });
   };
 
-  const lastRun = runs[0];
+  const lastRun = runs.find((r) => r.trigger_source !== 'dry_run') ?? runs[0];
   const lastDeployRun = runs.find((r) => r.deploy_hook_triggered);
+  const lastNonDryRuns = useMemo(() => runs.filter((r) => r.trigger_source !== 'dry_run'), [runs]);
+
+  // ─── Recommandation ───
+  const recommendation = useMemo(() => {
+    if (!counters || !eligibility) return null;
+    // Cas B — dernier run failed
+    if (lastRun && lastRun.status === 'failed') {
+      return {
+        tone: 'red' as const,
+        title: 'Le dernier run a échoué. Corrige l’erreur avant de relancer.',
+        cta: {
+          label: 'Voir le détail de l’erreur',
+          onClick: () => {
+            setExpandedRunIds((prev) => new Set(prev).add(lastRun.id));
+            document.getElementById('seo-runs-history')?.scrollIntoView({ behavior: 'smooth' });
+          },
+        },
+      };
+    }
+    // Cas A — textes à vérifier
+    if (counters.pending > 0 || counters.failed > 0) {
+      const total = counters.pending + counters.failed;
+      return {
+        tone: 'amber' as const,
+        title: `${total} description${total > 1 ? 's nécessitent' : ' nécessite'} une vérification manuelle avant de lancer un nouveau gros batch.`,
+        cta: {
+          label: 'Voir les textes à vérifier',
+          onClick: () => document.getElementById('seo-validation')?.scrollIntoView({ behavior: 'smooth' }),
+        },
+      };
+    }
+    // Cas C — beaucoup d'événements sans score
+    if (counters.null_score >= 10) {
+      return {
+        tone: 'blue' as const,
+        title: `${counters.null_score} événements n’ont pas encore de score SEO. Il est recommandé de scorer 20 événements.`,
+        cta: { label: 'Scorer 20 événements', onClick: runScoring },
+      };
+    }
+    // Cas E — prudence : aucun batch pilote récent
+    const recentPilots = lastNonDryRuns.filter((r) => (r.events_selected ?? 0) <= 5).length;
+    const recentLargeRuns = lastNonDryRuns.filter((r) => (r.events_selected ?? 0) >= 10 && r.status === 'success').length;
+    if (recentPilots < 2 && recentLargeRuns === 0 && counters.score_ge_55 > 0) {
+      return {
+        tone: 'blue' as const,
+        title: 'Le système est stable, mais il est recommandé de lancer encore un Batch pilote 5 avant Batch 20.',
+        cta: { label: 'Lancer Batch pilote 5', onClick: () => runBatch('run', 5, true, 'pilot') },
+      };
+    }
+    // Cas D — système stable, propose batch 20
+    if (lastRun && lastRun.status === 'success' && counters.score_ge_55 > 0) {
+      return {
+        tone: 'emerald' as const,
+        title: 'Le dernier batch a réussi. Tu peux lancer un batch de 20 événements.',
+        cta: { label: 'Lancer Batch 20', onClick: () => runBatch('run', 20, true, 'big') },
+      };
+    }
+    return {
+      tone: 'slate' as const,
+      title: 'Rien d’urgent. Lance un dry-run pour voir les prochains événements éligibles.',
+      cta: { label: 'Dry-run 20', onClick: () => runBatch('dry_run', 20, false, 'dry') },
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [counters, eligibility, lastRun, lastNonDryRuns]);
+
+  // ─── Statut global ───
+  const globalStatus: { label: string; tone: 'emerald' | 'amber' | 'red' } = useMemo(() => {
+    if (lastRun?.status === 'failed') return { label: 'Erreur', tone: 'red' };
+    if ((counters?.pending ?? 0) > 0 || (counters?.failed ?? 0) > 0) return { label: 'Attention', tone: 'amber' };
+    return { label: 'OK', tone: 'emerald' };
+  }, [lastRun, counters]);
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="space-y-6">
-      {/* Bloc 1 — Résumé global */}
+      {/* ─── Bloc 0 — Action recommandée maintenant ─── */}
+      {recommendation && (
+        <Card className={`border-2 ${
+          recommendation.tone === 'red' ? 'border-red-300 bg-red-50/50' :
+          recommendation.tone === 'amber' ? 'border-amber-300 bg-amber-50/50' :
+          recommendation.tone === 'emerald' ? 'border-emerald-300 bg-emerald-50/50' :
+          recommendation.tone === 'blue' ? 'border-blue-300 bg-blue-50/50' :
+          'border-slate-300 bg-slate-50/50'
+        }`}>
+          <CardContent className="pt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+            <div className="flex items-start gap-3">
+              <Lightbulb className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                recommendation.tone === 'red' ? 'text-red-600' :
+                recommendation.tone === 'amber' ? 'text-amber-600' :
+                recommendation.tone === 'emerald' ? 'text-emerald-600' :
+                recommendation.tone === 'blue' ? 'text-blue-600' :
+                'text-slate-600'
+              }`} />
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Action recommandée maintenant</div>
+                <div className="text-base font-medium">{recommendation.title}</div>
+              </div>
+            </div>
+            <Button onClick={recommendation.cta.onClick} disabled={!!actionLoading} size="lg">
+              {actionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              {recommendation.cta.label}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ─── Bloc 1 — Actions SEO ─── */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
-              Pilotage enrichissement SEO
+              Actions SEO
             </CardTitle>
             <Button variant="ghost" size="sm" onClick={fetchData} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
           <CardDescription>
-            Vue d'ensemble du pipeline : scoring, génération IA, validation automatique et publication.
+            Toutes les actions de pilotage de l'enrichissement, regroupées au même endroit.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Eligibility KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <Kpi label="Total éligibles" value={eligibility?.total_eligible} tone="blue" />
-            <Kpi label="Score NULL" value={validationCounts?.null_score} tone="slate" />
-            <Kpi label="Score ≥ 55" value={validationCounts?.score_ge_55} tone="emerald" />
-            <Kpi label="Description manquante" value={eligibility?.no_description_enrichie} tone="amber" />
-            <Kpi label="Meta manquante" value={eligibility?.no_meta} tone="amber" />
-            <Kpi label="Description courte" value={eligibility?.short_description} tone="slate" />
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Kpi label="Auto-validés (passed)" value={validationCounts?.passed} tone="emerald" />
-            <Kpi label="En attente revue" value={validationCounts?.pending} tone="amber" />
-            <Kpi label="Validation failed" value={validationCounts?.failed} tone="red" />
-            <Kpi label="Pages publiées" value={validationCounts?.published} tone="emerald" />
-          </div>
-
-          {/* Last run summary */}
-          <div className="border rounded-lg p-4 bg-muted/30 text-sm space-y-1">
-            <div className="font-medium flex items-center gap-2">
-              <Server className="h-4 w-4" /> Dernier run
-            </div>
-            {lastRun ? (
-              <>
-                <div className="flex flex-wrap items-center gap-2">
-                  {statusBadge(lastRun.status)}
-                  <Badge variant="outline">{lastRun.trigger_source}</Badge>
-                  <span className="text-muted-foreground">{formatDateTime(lastRun.started_at)}</span>
-                  <span className="text-muted-foreground">· durée {formatDuration(lastRun.started_at, lastRun.finished_at)}</span>
-                </div>
-                <div className="text-muted-foreground">
-                  {lastRun.events_processed ?? 0}/{lastRun.events_selected ?? 0} traités —
-                  {' '}{lastRun.events_success ?? 0} succès, {lastRun.events_failed ?? 0} échec(s)
-                </div>
-                <div className="text-muted-foreground">
-                  Dernier déploiement Vercel :{' '}
-                  {lastDeployRun
-                    ? `${formatDateTime(lastDeployRun.started_at)} (HTTP ${lastDeployRun.deploy_hook_status ?? '?'})`
-                    : 'aucun dans l\'historique récent'}
-                </div>
-              </>
-            ) : (
-              <p className="text-muted-foreground">Aucun run enregistré pour l'instant.</p>
-            )}
-          </div>
-
-          {/* Détail du dernier run — événements traités */}
-          {lastRun && Array.isArray((lastRun.details ?? {})['processed_events'])
-            && ((lastRun.details ?? {})['processed_events'] as unknown[]).length > 0 && (
-            <LastRunProcessedEvents
-              events={(lastRun.details as Record<string, unknown>)['processed_events'] as ProcessedEvent[]}
-              deployTriggered={!!lastRun.deploy_hook_triggered}
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <ActionTile
+              icon={<Beaker className="h-4 w-4" />}
+              title="Dry-run 20"
+              description="Voir les prochains événements sans rien modifier."
+              onClick={() => runBatch('dry_run', 20, false, 'dry')}
+              loading={actionLoading === 'dry'}
+              disabled={!!actionLoading}
+              variant="outline"
             />
-          )}
-          {lastRun && !Array.isArray((lastRun.details ?? {})['processed_events'])
-            && Array.isArray((lastRun.details ?? {})['processed_ids'])
-            && ((lastRun.details ?? {})['processed_ids'] as unknown[]).length > 0 && (
-            <LastRunProcessedFallback
-              ids={(lastRun.details as Record<string, unknown>)['processed_ids'] as string[]}
-              deployTriggered={!!lastRun.deploy_hook_triggered}
+            <ActionTile
+              icon={<PlayCircle className="h-4 w-4" />}
+              title="Batch test 2"
+              description="Tester sur 2 événements, sans risque."
+              onClick={() => runBatch('test', 2, false, 'test')}
+              loading={actionLoading === 'test'}
+              disabled={!!actionLoading}
+              variant="outline"
             />
-          )}
-
-          {/* Action buttons */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium">Actions manuelles</div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!!actionLoading}
-                onClick={() => runBatch('dry_run', 20, false, 'dry')}
-              >
-                {actionLoading === 'dry' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Beaker className="h-4 w-4 mr-2" />}
-                Dry-run (20)
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!!actionLoading}
-                onClick={() => runBatch('test', 2, false, 'test')}
-              >
-                {actionLoading === 'test' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PlayCircle className="h-4 w-4 mr-2" />}
-                Batch test (2)
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                disabled={!!actionLoading}
-                onClick={() => runBatch('run', 5, true, 'pilot')}
-              >
-                {actionLoading === 'pilot' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Rocket className="h-4 w-4 mr-2" />}
-                Batch pilote (5)
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm" disabled={!!actionLoading}>
-                    {actionLoading === 'big' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
+            <ActionTile
+              icon={<Rocket className="h-4 w-4" />}
+              title="Batch pilote 5"
+              description="Générer 5 descriptions et publier automatiquement celles qui sont sûres."
+              onClick={() => runBatch('run', 5, true, 'pilot')}
+              loading={actionLoading === 'pilot'}
+              disabled={!!actionLoading}
+              variant="default"
+            />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  disabled={!!actionLoading}
+                  className="text-left border-2 border-red-200 hover:border-red-300 bg-red-50/30 rounded-lg p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-2 font-medium text-red-900">
+                    {actionLoading === 'big' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
                     Batch 20
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmer le lancement d'un batch de 20 événements ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action va générer jusqu'à 20 descriptions enrichies + meta et déclenchera Vercel si du contenu public change.
-                      Consomme des crédits Claude.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => runBatch('run', 20, true, 'big')}>
-                      Lancer le batch 20
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Le Deploy Hook Vercel n'est déclenché que si la meta a été (re)générée ou si au moins une description a été auto-validée.
-            </p>
+                  </div>
+                  <div className="text-xs text-red-700 mt-1">
+                    Traitement plus large. À utiliser quand les derniers batchs sont propres.
+                  </div>
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmer le lancement d'un batch de 20 événements ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action va générer jusqu'à 20 descriptions enrichies + meta et déclenchera Vercel si du contenu public change.
+                    Consomme des crédits Claude.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => runBatch('run', 20, true, 'big')}>
+                    Lancer le batch 20
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <ActionTile
+              icon={<Calculator className="h-4 w-4" />}
+              title="Scorer 20 événements"
+              description="Attribuer un score aux événements sans score."
+              onClick={runScoring}
+              loading={actionLoading === 'score'}
+              disabled={!!actionLoading}
+              variant="outline"
+            />
+            <ActionTile
+              icon={<ShieldQuestion className="h-4 w-4" />}
+              title="Revalider les textes"
+              description="Rejouer le contrôle qualité sans générer de nouveau texte."
+              onClick={runRevalidate}
+              loading={actionLoading === 'reval'}
+              disabled={!!actionLoading}
+              variant="outline"
+            />
           </div>
+          <p className="text-xs text-muted-foreground mt-4">
+            Le Deploy Hook Vercel n'est déclenché que si la meta a été (re)générée ou si au moins une description a été auto-validée.
+          </p>
         </CardContent>
       </Card>
 
-      {/* Bloc 2 — Historique des runs */}
+      {/* ─── Bloc 2 — Compteurs en 4 familles ─── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiFamily
+          title="À traiter"
+          tone="blue"
+          items={[
+            { label: 'Total éligibles', value: eligibility?.total_eligible, hint: 'Événements pouvant être enrichis (visibles, futurs, non finalisés).' },
+            { label: 'Sans score', value: counters?.null_score, hint: 'Score NULL = événements pas encore priorisés.' },
+            { label: 'Description manquante', value: eligibility?.no_description_enrichie },
+            { label: 'Meta manquante', value: eligibility?.no_meta },
+          ]}
+        />
+        <KpiFamily
+          title="Publiés"
+          tone="emerald"
+          items={[
+            { label: 'Pages publiées', value: counters?.published, hint: 'Descriptions visibles publiquement après rebuild Vercel.' },
+            { label: 'Auto-validés', value: counters?.passed, hint: 'Validés automatiquement par le contrôle qualité.' },
+          ]}
+        />
+        <KpiFamily
+          title="À vérifier"
+          tone="amber"
+          items={[
+            { label: 'En attente revue', value: counters?.pending, hint: 'Texte généré mais pas publié, en attente de relecture.' },
+            { label: 'Validation failed', value: counters?.failed },
+          ]}
+        />
+        <KpiFamily
+          title="Système"
+          tone={globalStatus.tone}
+          items={[
+            { label: 'Statut global', valueText: globalStatus.label },
+            { label: 'Dernier run', valueText: lastRun ? formatDateTime(lastRun.started_at) : '—' },
+            { label: 'Dernier déploiement Vercel', valueText: lastDeployRun ? formatDateTime(lastDeployRun.started_at) : '—' },
+          ]}
+        />
+      </div>
+
+      {/* ─── Bloc 3 — Résultat de la dernière action ─── */}
       <Card>
         <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ListChecks className="h-4 w-4" />
+            Résultat de la dernière action
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {lastRun ? (
+            <LastActionSummary run={lastRun} />
+          ) : (
+            <p className="text-sm text-muted-foreground">Aucun run enregistré pour l'instant.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ─── Bloc 4 — Historique des runs (replié par défaut visuellement) ─── */}
+      <Card id="seo-runs-history">
+        <CardHeader>
           <CardTitle className="text-base">Historique des runs (15 derniers)</CardTitle>
+          <CardDescription>Pour comprendre l'historique. Les actions principales sont en haut de page.</CardDescription>
         </CardHeader>
         <CardContent>
           {runs.length === 0 ? (
@@ -435,21 +636,95 @@ export function SeoEnrichmentDashboard() {
         </CardContent>
       </Card>
     </div>
+    </TooltipProvider>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | null | undefined; tone: 'blue' | 'emerald' | 'amber' | 'red' | 'slate' }) {
+// ──────────────────────────────────────────────────────────
+// Composants internes
+// ──────────────────────────────────────────────────────────
+
+function ActionTile({
+  icon, title, description, onClick, loading, disabled, variant,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+  loading: boolean;
+  disabled: boolean;
+  variant: 'default' | 'outline';
+}) {
+  const base = variant === 'default'
+    ? 'border-primary/40 bg-primary/5 hover:bg-primary/10'
+    : 'hover:bg-muted/40';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`text-left border-2 rounded-lg p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${base}`}
+    >
+      <div className="flex items-center gap-2 font-medium">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
+        {title}
+      </div>
+      <div className="text-xs text-muted-foreground mt-1">{description}</div>
+    </button>
+  );
+}
+
+interface KpiItem {
+  label: string;
+  value?: number | null;
+  valueText?: string;
+  hint?: string;
+}
+
+function KpiFamily({
+  title, tone, items,
+}: {
+  title: string;
+  tone: 'blue' | 'emerald' | 'amber' | 'red' | 'slate';
+  items: KpiItem[];
+}) {
   const toneClasses: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-700 border-blue-200',
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    red: 'bg-red-50 text-red-700 border-red-200',
-    slate: 'bg-slate-50 text-slate-700 border-slate-200',
+    blue: 'border-blue-200 bg-blue-50/40',
+    emerald: 'border-emerald-200 bg-emerald-50/40',
+    amber: 'border-amber-200 bg-amber-50/40',
+    red: 'border-red-200 bg-red-50/40',
+    slate: 'border-slate-200 bg-slate-50/40',
+  };
+  const titleTone: Record<string, string> = {
+    blue: 'text-blue-800',
+    emerald: 'text-emerald-800',
+    amber: 'text-amber-800',
+    red: 'text-red-800',
+    slate: 'text-slate-800',
   };
   return (
-    <div className={`border rounded-lg p-3 text-center ${toneClasses[tone]}`}>
-      <div className="text-2xl font-bold tabular-nums">{value ?? '—'}</div>
-      <div className="text-[11px] opacity-80 mt-0.5">{label}</div>
+    <div className={`border-2 rounded-lg p-4 ${toneClasses[tone]}`}>
+      <div className={`text-sm font-semibold mb-3 ${titleTone[tone]}`}>{title}</div>
+      <div className="space-y-2">
+        {items.map((it) => (
+          <div key={it.label} className="flex items-center justify-between gap-2 text-sm">
+            <span className="text-muted-foreground flex items-center gap-1 min-w-0">
+              <span className="truncate">{it.label}</span>
+              {it.hint && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 opacity-50 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-xs">{it.hint}</TooltipContent>
+                </Tooltip>
+              )}
+            </span>
+            <span className="font-semibold tabular-nums">
+              {it.valueText ?? (it.value ?? '—')}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -458,7 +733,6 @@ interface ProcessedEvent {
   id: string;
   nom_event?: string | null;
   slug?: string | null;
-  public_url?: string | null;
   score?: number | null;
   niveau?: string | null;
   description_done?: boolean | null;
@@ -490,34 +764,97 @@ function decisionBadge(decision?: string | null) {
   }
 }
 
-function LastRunProcessedEvents({ events, deployTriggered }: { events: ProcessedEvent[]; deployTriggered: boolean }) {
+function whatToDo(decision?: string | null): { label: string; tone: 'emerald' | 'amber' | 'red' | 'slate' } {
+  switch (decision) {
+    case 'publie_auto': return { label: 'Rien à faire', tone: 'emerald' };
+    case 'meta_only': return { label: 'Rien à faire', tone: 'emerald' };
+    case 'revue_manuelle': return { label: 'Relire ou revalider', tone: 'amber' };
+    case 'failed':
+    case 'failed_validation': return { label: 'Corriger ou rejeter', tone: 'red' };
+    case 'skipped': return { label: 'Aucune action', tone: 'slate' };
+    default: return { label: '—', tone: 'slate' };
+  }
+}
+
+function whatToDoBadge(decision?: string | null) {
+  const { label, tone } = whatToDo(decision);
+  const cls: Record<string, string> = {
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    amber: 'bg-amber-50 text-amber-700 border-amber-200',
+    red: 'bg-red-50 text-red-700 border-red-200',
+    slate: 'bg-slate-50 text-slate-700 border-slate-200',
+  };
+  return <Badge className={`${cls[tone]} text-[10px]`}>{label}</Badge>;
+}
+
+function LastActionSummary({ run }: { run: RunRow }) {
+  const details = run.details ?? {};
+  const autoVal = (details['desc_auto_validated'] as number | undefined) ?? 0;
+  const pendingRev = (details['desc_pending_review'] as number | undefined) ?? 0;
+  const processedEvents = Array.isArray(details['processed_events'])
+    ? (details['processed_events'] as ProcessedEvent[])
+    : null;
+  const processedIds = !processedEvents && Array.isArray(details['processed_ids'])
+    ? (details['processed_ids'] as string[])
+    : null;
+
+  return (
+    <div className="space-y-4">
+      <div className="text-sm space-y-1">
+        <div>
+          <span className="text-muted-foreground">Dernière action : </span>
+          <span className="font-medium">{batchLabelFromRun(run)}</span>
+          <span className="text-muted-foreground"> · {formatDateTime(run.started_at)}</span>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Résultat : </span>
+          <span className="font-medium">
+            {run.events_processed ?? 0} traité{(run.events_processed ?? 0) > 1 ? 's' : ''},{' '}
+            {autoVal} publié{autoVal > 1 ? 's' : ''} automatiquement,{' '}
+            {pendingRev} à vérifier,{' '}
+            {run.events_failed ?? 0} erreur{(run.events_failed ?? 0) > 1 ? 's' : ''}.
+          </span>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Vercel : </span>
+          {run.deploy_hook_triggered ? (
+            <span className="font-medium text-blue-700">déclenché avec succès (HTTP {run.deploy_hook_status ?? '?'}).</span>
+          ) : (details['public_changed'] === false ? (
+            <span className="text-muted-foreground">non déclenché (aucun changement public).</span>
+          ) : (
+            <span className="text-muted-foreground">non déclenché.</span>
+          ))}
+        </div>
+      </div>
+
+      {processedEvents && processedEvents.length > 0 && (
+        <ProcessedEventsTable events={processedEvents} />
+      )}
+      {processedIds && processedIds.length > 0 && (
+        <ProcessedFallback ids={processedIds} />
+      )}
+    </div>
+  );
+}
+
+function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
   return (
     <div className="border rounded-lg overflow-hidden">
-      <div className="bg-muted/30 px-4 py-2 text-sm font-medium flex items-center gap-2">
-        <ListChecks className="h-4 w-4" />
-        Événements traités lors du dernier run ({events.length})
-        {deployTriggered && (
-          <Badge className="bg-blue-100 text-blue-800 border-blue-300 text-[10px] ml-auto">Vercel déclenché</Badge>
-        )}
-      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
-          <thead className="bg-muted/20">
+          <thead className="bg-muted/30">
             <tr>
               <th className="text-left px-2 py-2 font-medium">Événement</th>
               <th className="text-right px-2 py-2 font-medium">Score</th>
-              <th className="text-left px-2 py-2 font-medium">Desc.</th>
-              <th className="text-left px-2 py-2 font-medium">Auto-val.</th>
-              <th className="text-left px-2 py-2 font-medium">Mode</th>
-              <th className="text-left px-2 py-2 font-medium">Statut</th>
               <th className="text-left px-2 py-2 font-medium">Décision</th>
+              <th className="text-left px-2 py-2 font-medium">Que faire&nbsp;?</th>
               <th className="px-2 py-2"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {events.map((e) => (
               <tr key={e.id} className="hover:bg-muted/20">
-                <td className="px-2 py-1.5 max-w-[240px]">
+                <td className="px-2 py-1.5 max-w-[280px]">
                   <div className="font-medium truncate">{e.nom_event ?? e.id}</div>
                   {e.slug && <div className="text-[10px] text-muted-foreground truncate">/events/{e.slug}</div>}
                   {e.error && <div className="text-[10px] text-red-700 truncate" title={e.error}>{e.error}</div>}
@@ -526,15 +863,8 @@ function LastRunProcessedEvents({ events, deployTriggered }: { events: Processed
                   {e.score ?? '—'}
                   {e.niveau && <div className="text-[10px] text-muted-foreground">{e.niveau}</div>}
                 </td>
-                <td className="px-2 py-1.5">{e.description_done ? '✅' : '—'}</td>
-                <td className="px-2 py-1.5">
-                  {e.auto_validation_status
-                    ? `${e.auto_validation_status}${e.auto_validation_score != null ? ` (${e.auto_validation_score})` : ''}`
-                    : '—'}
-                </td>
-                <td className="px-2 py-1.5">{e.validation_mode ?? '—'}</td>
-                <td className="px-2 py-1.5">{e.enrichissement_statut ?? '—'}</td>
                 <td className="px-2 py-1.5">{decisionBadge(e.decision)}</td>
+                <td className="px-2 py-1.5">{whatToDoBadge(e.decision)}</td>
                 <td className="px-2 py-1.5 whitespace-nowrap">
                   <div className="flex items-center gap-1">
                     {e.slug && (
@@ -568,8 +898,7 @@ function LastRunProcessedEvents({ events, deployTriggered }: { events: Processed
   );
 }
 
-/** Fallback for older runs that only stored processed_ids — fetch event names live. */
-function LastRunProcessedFallback({ ids, deployTriggered }: { ids: string[]; deployTriggered: boolean }) {
+function ProcessedFallback({ ids }: { ids: string[] }) {
   const [rows, setRows] = useState<Array<{
     id: string; nom_event: string | null; slug: string | null;
     enrichissement_score: number | null; enrichissement_niveau: string | null;
@@ -610,5 +939,5 @@ function LastRunProcessedFallback({ ids, deployTriggered }: { ids: string[]; dep
     };
   });
   if (events.length === 0) return null;
-  return <LastRunProcessedEvents events={events} deployTriggered={deployTriggered} />;
+  return <ProcessedEventsTable events={events} />;
 }
