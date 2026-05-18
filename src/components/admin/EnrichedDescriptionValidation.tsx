@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle, XCircle, Loader2, RefreshCw, Rocket,
-  ChevronDown, ChevronUp, Clock, FileCheck, AlertTriangle, Calendar,
+  ChevronDown, ChevronUp, FileCheck, AlertTriangle,
   Pencil, Save, X, ShieldCheck, ShieldAlert, Sparkles, ShieldQuestion,
   ExternalLink, Settings
 } from 'lucide-react';
