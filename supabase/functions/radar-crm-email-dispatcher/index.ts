@@ -606,15 +606,20 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
       : 'Entreprise détectée dans votre CRM';
 
     const companiesChips = g.companies.map((co: any) => {
-      const name = escapeHtml(String(co.companyName ?? '—'));
+      const primary = co.exhibitorName ?? co.companyName ?? '—';
+      const name = escapeHtml(String(primary));
+      const crmName = co.exhibitorName && co.companyName && co.companyName !== co.exhibitorName
+        ? escapeHtml(String(co.companyName))
+        : '';
       const fav = faviconUrl(co.normalizedDomain);
       const standTxt = co.stand ? `Stand ${escapeHtml(String(co.stand))}` : '';
       const domainTxt = co.normalizedDomain ? escapeHtml(String(co.normalizedDomain)) : '';
-      const subParts = [domainTxt, standTxt].filter(Boolean).join(' · ');
+      const crmLabel = crmName ? `CRM : ${crmName}` : '';
+      const subParts = [crmLabel, domainTxt, standTxt].filter(Boolean).join(' · ');
       const subLine = subParts ? `<div style="font-size:12px;color:${MUTED};margin-top:2px;word-break:break-word;">${subParts}</div>` : '';
       const logoCell = fav
         ? `<img src="${escapeHtml(fav)}" alt="${name}" width="32" height="32" style="display:block;width:32px;height:32px;border-radius:6px;border:1px solid ${BORDER};background:#fff;object-fit:contain;" />`
-        : `<div style="width:32px;height:32px;border-radius:6px;background:${ORANGE};color:#fff;font-weight:700;font-size:13px;line-height:32px;text-align:center;">${escapeHtml(companyInitials(String(co.companyName ?? '?')))}</div>`;
+        : `<div style="width:32px;height:32px;border-radius:6px;background:${ORANGE};color:#fff;font-weight:700;font-size:13px;line-height:32px;text-align:center;">${escapeHtml(companyInitials(String(primary)))}</div>`;
       return `
         <tr><td style="padding:6px 0;">
           <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;background:#fff;border:1px solid ${BORDER};border-radius:10px;">
@@ -732,7 +737,11 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
     const label = g.companies.length > 1 ? 'Entreprises détectées dans votre CRM' : 'Entreprise détectée dans votre CRM';
     textLines.push(`  ${label} :`);
     for (const co of g.companies as any[]) {
-      const parts = [String(co.companyName ?? '—')];
+      const primary = String(co.exhibitorName ?? co.companyName ?? '—');
+      const parts = [primary];
+      if (co.exhibitorName && co.companyName && co.companyName !== co.exhibitorName) {
+        parts.push(`CRM : ${co.companyName}`);
+      }
       if (co.stand) parts.push(`stand ${co.stand}`);
       if (co.normalizedDomain) parts.push(co.normalizedDomain);
       textLines.push(`    • ${parts.join(' · ')}`);
