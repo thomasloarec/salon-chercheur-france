@@ -132,19 +132,22 @@ function getSourceNumbers(src: EventSource): Set<number> {
 function checkLength(text: string, src: EventSource): { check: CheckResult; words: number; min: number } {
   const words = wordCount(text);
   const min = src.enrichissement_niveau === 'premium' ? 250 : 180;
-  // Tolérance de 5 % : un texte légèrement court n'est plus bloquant,
-  // il devient un simple warning. < 95 % du minimum → fail bloquant.
+  // Règle 3 paliers :
+  //  ≥ 95 % du minimum : longueur acceptable (pass, aucune pénalité) — auto-validation possible
+  //  85 % – 95 %       : warning (revue manuelle, pénalité légère)
+  //  < 85 %            : fail bloquant
   const softMin = Math.floor(min * 0.95);
+  const hardMin = Math.floor(min * 0.85);
   let status: CheckStatus;
   let penalty: number;
   let blocker: boolean;
-  if (words >= min) {
+  if (words >= softMin) {
     status = 'pass';
     penalty = 0;
     blocker = false;
-  } else if (words >= softMin) {
+  } else if (words >= hardMin) {
     status = 'warning';
-    penalty = 15;
+    penalty = 10;
     blocker = false;
   } else {
     status = 'fail';
@@ -160,7 +163,7 @@ function checkLength(text: string, src: EventSource): { check: CheckResult; word
       status,
       blocker,
       penalty,
-      details: `${words} mots (min: ${min}, tolérance: ${softMin})`,
+      details: `${words} mots (min: ${min}, acceptable ≥ ${softMin}, fail < ${hardMin})`,
     },
   };
 }
