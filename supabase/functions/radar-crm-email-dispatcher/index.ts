@@ -260,6 +260,45 @@ async function buildPreviewForUser(
   });
   const top = groupedList.slice(0, 5);
 
+  // Exclude companies whose underlying match is flagged needs_review.
+  // Automatic Radar CRM emails never include suspicious matches.
+  try {
+    const eventIdsForFilter = top.map((g) => g.eventId);
+    const crmCompanyIdsForFilter = Array.from(new Set(
+      top.flatMap((g) => g.companies.map((c: any) => c.crmCompanyId).filter(Boolean)),
+    )) as string[];
+    if (eventIdsForFilter.length > 0 && crmCompanyIdsForFilter.length > 0) {
+      const { data: flagged } = await supabase
+        .from('crm_company_event_matches')
+        .select('event_id, crm_company_id')
+        .eq('user_id', userId)
+        .eq('needs_review', true)
+        .in('event_id', eventIdsForFilter)
+        .in('crm_company_id', crmCompanyIdsForFilter);
+      const flaggedKeys = new Set<string>(
+        (flagged ?? []).map((r: any) => `${r.event_id}|${r.crm_company_id}`),
+      );
+      if (flaggedKeys.size > 0) {
+        for (const g of top) {
+          g.companies = g.companies.filter(
+            (c: any) => !c.crmCompanyId || !flaggedKeys.has(`${g.eventId}|${c.crmCompanyId}`),
+          );
+        }
+      }
+    }
+  } catch (_) {
+    // Best-effort: do not let a filter error block legitimate sends.
+  }
+
+  // Drop groups that became empty after the needs_review filter.
+  const filteredTop = top.filter((g) => g.companies.length > 0);
+  if (filteredTop.length === 0) {
+    const skip: SkipReason = alreadyEmailedCount > 0 ? 'all_already_emailed' : 'no_eligible';
+    return { preview: null, skip, alreadyEmailedCount };
+  }
+  top.length = 0;
+  top.push(...filteredTop);
+
   // Enrich companies with normalized_domain from crm_companies for favicon rendering.
   const allCrmCompanyIds = Array.from(new Set(
     top.flatMap((g) => g.companies.map((c: any) => c.crmCompanyId).filter(Boolean)),
