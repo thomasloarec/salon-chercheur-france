@@ -883,6 +883,7 @@ async function runBatchRealSend(
   let skippedUsersPreferences = 0;
   let skippedUsersQuota = 0;
   let skippedNotificationsAlreadyEmailed = 0;
+  let aggregateSkipCounters = emptySkipCounters();
   const errors: Array<{ userId: string; message: string }> = [];
   const sent: Array<{ userId: string; emailTo: string | null; logId: string; resendMessageId: string }> = [];
 
@@ -892,6 +893,7 @@ async function runBatchRealSend(
     try {
       const r = await sendRealForUser(supabase, pref, overrideLookahead);
       skippedNotificationsAlreadyEmailed += r.skippedNotificationsAlreadyEmailed ?? 0;
+      if (r.skipCounters) aggregateSkipCounters = addSkipCounters(aggregateSkipCounters, r.skipCounters);
       if (r.outcome === 'sent') {
         usersEligible += 1;
         emailsSent += 1;
@@ -920,6 +922,7 @@ async function runBatchRealSend(
     notificationsIncluded,
     skippedUsersPreferences, skippedUsersQuota,
     skippedNotificationsAlreadyEmailed,
+    ...aggregateSkipCounters,
     errorsCount: errors.length,
   });
 
@@ -929,6 +932,7 @@ async function runBatchRealSend(
     notificationsIncluded,
     skippedUsersPreferences, skippedUsersQuota,
     skippedNotificationsAlreadyEmailed,
+    ...aggregateSkipCounters,
     sent, errors,
   });
 }
