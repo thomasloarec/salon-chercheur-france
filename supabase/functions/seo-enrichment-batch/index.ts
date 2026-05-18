@@ -38,6 +38,8 @@ interface CandidateEvent {
   description_enrichie: string | null;
   enrichissement_statut: string | null;
   description_event: string | null;
+  enrichissement_score: number | null;
+  enrichissement_niveau: string | null;
 }
 
 const PRIORITY_SECTOR_KEYWORDS = [
@@ -54,7 +56,12 @@ function flattenSecteur(secteur: unknown): string[] {
   return arr.flatMap((s) => (Array.isArray(s) ? s : [s])).filter(Boolean).map((s) => String(s));
 }
 
-function scoreEvent(ev: CandidateEvent, hasParticipations: boolean): number {
+/**
+ * Tie-breaker score, utilisé UNIQUEMENT après tri par enrichissement_score DESC.
+ * Le ranking principal est piloté par events.enrichissement_score (0-100)
+ * calculé par public.compute_event_enrichissement_score().
+ */
+function tieBreakScore(ev: CandidateEvent, hasParticipations: boolean): number {
   let score = 0;
   if (hasParticipations) score += 1000;
   if (ev.date_debut && ev.date_debut.startsWith('2026')) score += 500;
@@ -172,7 +179,7 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().slice(0, 10);
     const { data: rawEvents, error: fetchErr } = await supabase
       .from('events')
-      .select('id, id_event, nom_event, slug, ville, secteur, date_debut, meta_description_gen, description_enrichie, enrichissement_statut, description_event')
+      .select('id, id_event, nom_event, slug, ville, secteur, date_debut, meta_description_gen, description_enrichie, enrichissement_statut, description_event, enrichissement_score, enrichissement_niveau')
       .eq('visible', true)
       .or('is_test.is.null,is_test.eq.false')
       .not('slug', 'is', null)
@@ -186,49 +193,87 @@ Deno.serve(async (req) => {
 
     const eligible = ((rawEvents ?? []) as CandidateEvent[]).filter(isEligible);
 
-    // ─── Fetch participation counts (priority signal) ───
-    const idEvents = eligible.map((e) => e.id_event).filter((x): x is string => !!x);
-    const participationsByEvent: Record<string, number> = {};
-    if (idEvents.length > 0) {
+    // ─── Fetch participation counts (FIX: participation.id_event = events.id UUID) ───
+    const eventUuids = eligible.map((e) => e.id).filter((x): x is string => !!x);
+    const participationsByEventUuid: Record<string, number> = {};
+    if (eventUuids.length > 0) {
       const { data: parts } = await supabase
         .from('participation')
         .select('id_event')
-        .in('id_event', idEvents);
+        .in('id_event', eventUuids);
       for (const p of (parts ?? []) as Array<{ id_event: string }>) {
-        participationsByEvent[p.id_event] = (participationsByEvent[p.id_event] ?? 0) + 1;
+        participationsByEventUuid[p.id_event] = (participationsByEventUuid[p.id_event] ?? 0) + 1;
       }
     }
 
+    // ─── Sort: enrichissement_score DESC (source de vérité) ───
+    // Tie-break: participations > 0, 2026, secteur prioritaire, desc_enrichie manquante,
+    // meta manquante, puis date_debut ASC. Les scores NULL passent en dernier.
     eligible.sort((a, b) => {
-      const sa = scoreEvent(a, (participationsByEvent[a.id_event ?? ''] ?? 0) > 0);
-      const sb = scoreEvent(b, (participationsByEvent[b.id_event ?? ''] ?? 0) > 0);
-      if (sb !== sa) return sb - sa;
+      const scoreA = a.enrichissement_score;
+      const scoreB = b.enrichissement_score;
+      const aNull = scoreA === null || scoreA === undefined;
+      const bNull = scoreB === null || scoreB === undefined;
+      if (aNull !== bNull) return aNull ? 1 : -1; // non-null d'abord
+      if (!aNull && !bNull && scoreA !== scoreB) return (scoreB as number) - (scoreA as number);
+      const ta = tieBreakScore(a, (participationsByEventUuid[a.id] ?? 0) > 0);
+      const tb = tieBreakScore(b, (participationsByEventUuid[b.id] ?? 0) > 0);
+      if (tb !== ta) return tb - ta;
       return (a.date_debut ?? '9999-12-31').localeCompare(b.date_debut ?? '9999-12-31');
     });
 
-    const selected = eligible.slice(0, params.limit);
+    // En mode RUN: ne traiter que les événements à score >= 55. Les score NULL ou < 55
+    // restent éligibles en dry_run mais ne consomment pas de tokens IA.
+    const runQueue = params.mode === 'run'
+      ? eligible.filter((e) => typeof e.enrichissement_score === 'number' && (e.enrichissement_score as number) >= 55)
+      : eligible;
+    const selected = runQueue.slice(0, params.limit);
 
     // ─── DRY RUN — no DB write, no deploy ───
     if (params.mode === 'dry_run') {
+      const ge55 = eligible.filter((e) => typeof e.enrichissement_score === 'number' && (e.enrichissement_score as number) >= 55).length;
+      const nullScore = eligible.filter((e) => e.enrichissement_score === null || e.enrichissement_score === undefined).length;
       return new Response(JSON.stringify({
         mode: 'dry_run',
         total_eligible: eligible.length,
+        eligible_score_ge_55: ge55,
+        eligible_score_null: nullScore,
         selected_count: selected.length,
-        selected: selected.map((e) => ({
-          id: e.id,
-          slug: e.slug,
-          nom_event: e.nom_event,
-          ville: e.ville,
-          date_debut: e.date_debut,
-          has_participations: (participationsByEvent[e.id_event ?? ''] ?? 0) > 0,
-          score: scoreEvent(e, (participationsByEvent[e.id_event ?? ''] ?? 0) > 0),
-          reasons: {
-            no_meta: !e.meta_description_gen,
-            status_not_valid: !e.enrichissement_statut || e.enrichissement_statut !== 'valide',
-            no_description_enrichie: !e.description_enrichie,
-            short_description: (e.description_event ?? '').length < 500,
-          },
-        })),
+        selected: selected.map((e, idx) => {
+          const pcount = participationsByEventUuid[e.id] ?? 0;
+          const hasScore = typeof e.enrichissement_score === 'number';
+          const scoreOk = hasScore && (e.enrichissement_score as number) >= 55;
+          const wouldProcess = scoreOk; // critère mode run
+          const skip_reason = !hasScore
+            ? 'enrichissement_score NULL (à scorer)'
+            : (e.enrichissement_score as number) < 55
+              ? `enrichissement_score=${e.enrichissement_score} < 55`
+              : null;
+          const selection_reasons: string[] = [];
+          if (!e.meta_description_gen) selection_reasons.push('meta_description_gen manquante');
+          if (!e.enrichissement_statut || e.enrichissement_statut !== 'valide') selection_reasons.push('enrichissement_statut != valide');
+          if (!e.description_enrichie) selection_reasons.push('description_enrichie manquante');
+          if ((e.description_event ?? '').length < 500) selection_reasons.push('description_event < 500c');
+          return {
+            sort_rank: idx + 1,
+            id: e.id,
+            slug: e.slug,
+            nom_event: e.nom_event,
+            ville: e.ville,
+            date_debut: e.date_debut,
+            enrichissement_score: e.enrichissement_score,
+            enrichissement_niveau: e.enrichissement_niveau,
+            participations_count: pcount,
+            has_participations: pcount > 0,
+            meta_description_gen_present: !!e.meta_description_gen,
+            description_enrichie_present: !!e.description_enrichie,
+            enrichissement_statut: e.enrichissement_statut,
+            tie_break_score: tieBreakScore(e, pcount > 0),
+            would_process: wouldProcess,
+            skip_reason,
+            selection_reason: selection_reasons.join(' + '),
+          };
+        }),
       }), { status: 200, headers: jsonHeaders });
     }
 
