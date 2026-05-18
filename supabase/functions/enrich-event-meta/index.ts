@@ -41,6 +41,9 @@ interface EventData {
   description_enrichie: string | null;
   enrichissement_niveau: string | null;
   enrichissement_statut: string | null;
+  pays?: string | null;
+  code_postal?: string | null;
+  rue?: string | null;
 }
 
 interface EnrichResult {
@@ -57,6 +60,8 @@ interface EnrichResult {
   retry_reason?: string;
   description_enrichie_status?: 'done' | 'skipped' | 'error';
   description_enrichie_reason?: string;
+  auto_validation_status?: 'passed' | 'warning' | 'failed';
+  auto_validation_score?: number;
 }
 
 /* ─── DATE FORMATTING (natural French) ─── */
