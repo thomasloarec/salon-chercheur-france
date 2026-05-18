@@ -299,6 +299,8 @@ Deno.serve(async (req) => {
     const errorEvents: Array<{ id: string; nom_event: string; reason: string }> = [];
     let metaDone = 0;
     let descDone = 0;
+    let descAutoValidated = 0;
+    let descPending = 0;
     let successCount = 0;
     let failCount = 0;
     let skippedCount = 0;
@@ -322,11 +324,14 @@ Deno.serve(async (req) => {
 
         const metaOk = metaStatus === 'done';
         const descOk = descStatus === 'done';
+        const autoVal = result?.auto_validation_status as string | undefined;
         const metaSkipped = metaStatus === 'skipped';
         const metaErr = metaStatus === 'error' || !resp.ok;
 
         if (metaOk) metaDone++;
         if (descOk) descDone++;
+        if (descOk && autoVal === 'passed') descAutoValidated++;
+        if (descOk && autoVal && autoVal !== 'passed') descPending++;
 
         if (metaOk || descOk) {
           successCount++;
@@ -348,7 +353,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    const dataChanged = metaDone > 0 || descDone > 0;
+    // Changement RÉELLEMENT visible côté pré-rendu public :
+    //  - une meta_description_gen a été (re)générée → présente dans <head> public
+    //  - OU au moins une description_enrichie a été auto-validée (statut 'valide')
+    // Les descriptions restées en_attente NE changent rien côté public,
+    // donc ne doivent pas déclencher de re-build Vercel.
+    const publicChanged = metaDone > 0 || descAutoValidated > 0;
 
     // ─── Deploy hook policy ───
     // - run + deploy !== false + data changed → hook
@@ -356,9 +366,9 @@ Deno.serve(async (req) => {
     // - dry_run → never (already returned)
     let shouldDeploy = false;
     if (params.mode === 'run') {
-      shouldDeploy = params.deploy !== false && dataChanged;
+      shouldDeploy = params.deploy !== false && publicChanged;
     } else if (params.mode === 'test') {
-      shouldDeploy = params.deploy === true && dataChanged;
+      shouldDeploy = params.deploy === true && publicChanged;
     }
 
     let deployTriggered = false;
@@ -406,6 +416,9 @@ Deno.serve(async (req) => {
         trigger_source: params.trigger_source,
         processed_ids: processedIds,
         errors: errorEvents,
+        desc_auto_validated: descAutoValidated,
+        desc_pending_review: descPending,
+        public_changed: publicChanged,
       },
     }).eq('id', runId);
 
@@ -420,6 +433,9 @@ Deno.serve(async (req) => {
       events_skipped: skippedCount,
       meta_done: metaDone,
       description_done: descDone,
+      desc_auto_validated: descAutoValidated,
+      desc_pending_review: descPending,
+      public_changed: publicChanged,
       deploy_hook_triggered: deployTriggered,
       deploy_hook_status: deployStatus,
       deploy_hook_error: deployError,
