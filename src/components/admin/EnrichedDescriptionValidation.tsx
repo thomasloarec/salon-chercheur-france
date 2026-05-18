@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle, XCircle, Loader2, RefreshCw, Rocket,
   ChevronDown, ChevronUp, Clock, FileCheck, AlertTriangle, Calendar,
-  Pencil, Save, X, ShieldCheck, ShieldAlert, Sparkles
+  Pencil, Save, X, ShieldCheck, ShieldAlert, Sparkles, ShieldQuestion
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -76,6 +76,7 @@ export function EnrichedDescriptionValidation() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [filter, setFilter] = useState<FilterValue>('all');
   const [revalidating, setRevalidating] = useState(false);
+  const [revalidateOneId, setRevalidateOneId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -254,8 +255,11 @@ export function EnrichedDescriptionValidation() {
   const reValidateAll = async () => {
     setRevalidating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('revalidate-enriched-description', {
-        body: { dry_run: false, limit: 200 },
+      const { data, error } = await supabase.functions.invoke('admin-seo-batch-proxy', {
+        body: {
+          target: 'revalidate-enriched-description',
+          payload: { dry_run: false, limit: 200 },
+        },
       });
       if (error) throw error;
       const s = (data as { summary?: { auto_validated?: number; warning?: number; failed?: number; total?: number } })?.summary;
@@ -269,6 +273,30 @@ export function EnrichedDescriptionValidation() {
       toast({ title: 'Erreur', description: msg, variant: 'destructive' });
     } finally {
       setRevalidating(false);
+    }
+  };
+
+  const reValidateOne = async (eventId: string) => {
+    setRevalidateOneId(eventId);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-seo-batch-proxy', {
+        body: {
+          target: 'revalidate-enriched-description',
+          payload: { dry_run: false, event_ids: [eventId] },
+        },
+      });
+      if (error) throw error;
+      const s = (data as { summary?: { auto_validated?: number; warning?: number; failed?: number } })?.summary;
+      toast({
+        title: '🛡️ Revalidé',
+        description: `auto: ${s?.auto_validated ?? 0}, warning: ${s?.warning ?? 0}, failed: ${s?.failed ?? 0}`,
+      });
+      fetchData();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+    } finally {
+      setRevalidateOneId(null);
     }
   };
 
