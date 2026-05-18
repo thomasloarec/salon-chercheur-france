@@ -813,6 +813,8 @@ Deno.serve(async (req) => {
         const descResult = await enrichDescription(supabase, ev as EventData, ANTHROPIC_API_KEY);
         result.description_enrichie_status = descResult.status;
         result.description_enrichie_reason = descResult.reason;
+        result.auto_validation_status = descResult.auto_validation_status;
+        result.auto_validation_score = descResult.auto_validation_score;
         results.push(result);
       }
 
@@ -821,8 +823,10 @@ Deno.serve(async (req) => {
       const errors = results.filter(r => r.status === 'error').length;
       const retried = results.filter(r => r.retried).length;
       const descDone = results.filter(r => r.description_enrichie_status === 'done').length;
+      const autoValidated = results.filter(r => r.auto_validation_status === 'passed').length;
+      const pendingReview = results.filter(r => r.auto_validation_status === 'warning' || r.auto_validation_status === 'failed').length;
 
-      console.log(`📦 Batch V2 terminé — meta: done=${done}, skipped=${skipped}, errors=${errors}, retried=${retried} | desc_enrichie: done=${descDone}`);
+      console.log(`📦 Batch V2 terminé — meta: done=${done}, skipped=${skipped}, errors=${errors}, retried=${retried} | desc_enrichie: done=${descDone} (auto=${autoValidated}, à relire=${pendingReview})`);
 
       return new Response(JSON.stringify({
         batch: true,
@@ -832,6 +836,8 @@ Deno.serve(async (req) => {
         errors,
         retried,
         description_enrichie_done: descDone,
+        auto_validated: autoValidated,
+        pending_review: pendingReview,
         results,
       }), { status: 200, headers: jsonHeaders });
     }
@@ -859,6 +865,8 @@ Deno.serve(async (req) => {
     const descResult = await enrichDescription(supabase, event as EventData, ANTHROPIC_API_KEY);
     result.description_enrichie_status = descResult.status;
     result.description_enrichie_reason = descResult.reason;
+    result.auto_validation_status = descResult.auto_validation_status;
+    result.auto_validation_score = descResult.auto_validation_score;
 
     const statusCode = result.status === 'error' ? 500 : 200;
     return new Response(JSON.stringify(result), { status: statusCode, headers: jsonHeaders });
