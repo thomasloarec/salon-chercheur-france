@@ -286,7 +286,10 @@ export type Database = {
           id_exposant: string
           match_status: string
           match_type: string
+          name_similarity: number | null
+          needs_review: boolean
           normalized_domain: string
+          review_reason: string | null
           user_id: string
         }
         Insert: {
@@ -297,7 +300,10 @@ export type Database = {
           id_exposant: string
           match_status?: string
           match_type?: string
+          name_similarity?: number | null
+          needs_review?: boolean
           normalized_domain: string
+          review_reason?: string | null
           user_id: string
         }
         Update: {
@@ -308,7 +314,10 @@ export type Database = {
           id_exposant?: string
           match_status?: string
           match_type?: string
+          name_similarity?: number | null
+          needs_review?: boolean
           normalized_domain?: string
+          review_reason?: string | null
           user_id?: string
         }
         Relationships: [
@@ -512,6 +521,7 @@ export type Database = {
           matched_companies_count: number | null
           source_type: string
           status: string
+          suspicious_rate: number | null
           total_rows: number | null
           unmatched_companies_count: number | null
           updated_at: string | null
@@ -525,6 +535,7 @@ export type Database = {
           matched_companies_count?: number | null
           source_type?: string
           status?: string
+          suspicious_rate?: number | null
           total_rows?: number | null
           unmatched_companies_count?: number | null
           updated_at?: string | null
@@ -538,6 +549,7 @@ export type Database = {
           matched_companies_count?: number | null
           source_type?: string
           status?: string
+          suspicious_rate?: number | null
           total_rows?: number | null
           unmatched_companies_count?: number | null
           updated_at?: string | null
@@ -4289,6 +4301,16 @@ export type Database = {
         }
         Returns: Json
       }
+      crm_backfill_match_review: { Args: never; Returns: Json }
+      crm_compute_match_review: {
+        Args: { p_crm_name: string; p_exhibitor_name: string }
+        Returns: {
+          name_similarity: number
+          needs_review: boolean
+          review_reason: string
+        }[]
+      }
+      crm_normalize_company_name: { Args: { p_name: string }; Returns: string }
       crm_run_matching: {
         Args: { p_import_id: string; p_user_id: string }
         Returns: Json
