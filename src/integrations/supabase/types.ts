@@ -3267,6 +3267,69 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_enrichment_runs: {
+        Row: {
+          created_at: string
+          deploy_hook_error: string | null
+          deploy_hook_status: number | null
+          deploy_hook_triggered: boolean
+          description_done: number
+          details: Json
+          error_message: string | null
+          events_failed: number
+          events_processed: number
+          events_selected: number
+          events_skipped: number
+          events_success: number
+          finished_at: string | null
+          id: string
+          meta_done: number
+          started_at: string
+          status: string
+          trigger_source: string
+        }
+        Insert: {
+          created_at?: string
+          deploy_hook_error?: string | null
+          deploy_hook_status?: number | null
+          deploy_hook_triggered?: boolean
+          description_done?: number
+          details?: Json
+          error_message?: string | null
+          events_failed?: number
+          events_processed?: number
+          events_selected?: number
+          events_skipped?: number
+          events_success?: number
+          finished_at?: string | null
+          id?: string
+          meta_done?: number
+          started_at?: string
+          status?: string
+          trigger_source?: string
+        }
+        Update: {
+          created_at?: string
+          deploy_hook_error?: string | null
+          deploy_hook_status?: number | null
+          deploy_hook_triggered?: boolean
+          description_done?: number
+          details?: Json
+          error_message?: string | null
+          events_failed?: number
+          events_processed?: number
+          events_selected?: number
+          events_skipped?: number
+          events_success?: number
+          finished_at?: string | null
+          id?: string
+          meta_done?: number
+          started_at?: string
+          status?: string
+          trigger_source?: string
+        }
+        Relationships: []
+      }
       seo_keywords: {
         Row: {
           created_at: string
@@ -4268,6 +4331,15 @@ export type Database = {
           },
         ]
       }
+      v_seo_enrichment_status: {
+        Row: {
+          failed_last_7d: number | null
+          last_run: Json | null
+          runs_last_7d: number | null
+          success_last_7d: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _exhibitor_ai_completeness: {
@@ -4285,6 +4357,7 @@ export type Database = {
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
       cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
+      count_seo_enrichment_eligible: { Args: never; Returns: Json }
       create_missing_outreach_campaigns: { Args: never; Returns: Json }
       create_novelty_atomic: {
         Args: {
