@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -349,8 +349,8 @@ export function SeoEnrichmentDashboard() {
                     const pendingRev = (details['desc_pending_review'] as number | undefined) ?? null;
                     const publicChanged = details['public_changed'] as boolean | undefined;
                     return (
-                      <>
-                        <tr key={r.id} className="hover:bg-muted/30">
+                      <Fragment key={r.id}>
+                        <tr className="hover:bg-muted/30">
                           <td className="px-2 py-1.5 whitespace-nowrap">{formatDateTime(r.started_at)}</td>
                           <td className="px-2 py-1.5"><Badge variant="outline" className="text-[10px]">{r.trigger_source}</Badge></td>
                           <td className="px-2 py-1.5">{statusBadge(r.status)}</td>
@@ -386,7 +386,7 @@ export function SeoEnrichmentDashboard() {
                           </td>
                         </tr>
                         {expanded && (
-                          <tr key={`${r.id}-d`} className="bg-muted/20">
+                          <tr className="bg-muted/20">
                             <td colSpan={14} className="px-3 py-2">
                               {r.deploy_hook_error && (
                                 <div className="text-red-700 mb-1">Vercel : {r.deploy_hook_error}</div>
@@ -400,7 +400,7 @@ export function SeoEnrichmentDashboard() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>
