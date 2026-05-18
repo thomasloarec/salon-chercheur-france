@@ -543,7 +543,7 @@ async function enrichDescription(
   supabase: ReturnType<typeof createClient>,
   event: EventData,
   anthropicKey: string,
-): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string }> {
+): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string; auto_validation_status?: 'passed' | 'warning' | 'failed'; auto_validation_score?: number }> {
   const eligibility = isEligibleForDescEnrichie(event);
   if (!eligibility.eligible) {
     return { status: 'skipped', reason: eligibility.reason };
@@ -585,13 +585,40 @@ async function enrichDescription(
       return { status: 'error', reason: 'Contient "[NON RENSEIGNÉ]"' };
     }
 
+    // ─── Auto-validation ───
+    const exhibitorNames = await loadExhibitorNamesForEvent(supabase, event.id);
+    const source: EventSource = {
+      nom_event: event.nom_event,
+      date_debut: event.date_debut,
+      date_fin: event.date_fin,
+      ville: event.ville,
+      pays: event.pays ?? null,
+      nom_lieu: event.nom_lieu,
+      code_postal: event.code_postal ?? null,
+      rue: event.rue,
+      secteur: event.secteur,
+      affluence: event.affluence,
+      tarif: event.tarif,
+      url_site_officiel: event.url_site_officiel,
+      description_event: event.description_event,
+      enrichissement_niveau: event.enrichissement_niveau,
+    };
+    const validation = validateEnrichedDescription(text, source, exhibitorNames);
+    const autoValidated = validation.decision === 'auto_validate';
+    console.log(`🛡️ [Auto-validation] ${event.nom_event} → ${validation.status} (score=${validation.score}, decision=${validation.decision})`);
+
     // ─── Écriture en DB ───
     const { error: updateError } = await supabase
       .from('events')
       .update({
         description_enrichie: text,
-        enrichissement_statut: 'en_attente',
+        enrichissement_statut: autoValidated ? 'valide' : 'en_attente',
         enrichissement_date: new Date().toISOString(),
+        auto_validation_status: validation.status,
+        auto_validation_score: validation.score,
+        auto_validation_report: validation,
+        auto_validated_at: new Date().toISOString(),
+        validation_mode: autoValidated ? 'auto' : 'manual',
       })
       .eq('id', event.id);
 
@@ -600,12 +627,39 @@ async function enrichDescription(
       return { status: 'error', reason: `Erreur DB: ${updateError.message}` };
     }
 
-    console.log(`✅ [Desc enrichie] OK pour ${event.nom_event} (${text.length} car.)`);
-    return { status: 'done' };
+    console.log(`✅ [Desc enrichie] OK pour ${event.nom_event} (${text.length} car., ${autoValidated ? 'AUTO-VALIDÉ' : 'EN ATTENTE'})`);
+    return { status: 'done', auto_validation_status: validation.status, auto_validation_score: validation.score };
 
   } catch (err) {
     console.error(`❌ [Desc enrichie] Erreur pour ${event.nom_event}:`, err);
     return { status: 'error', reason: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** Récupère les noms d'exposants liés à un événement via la table `participation`. */
+async function loadExhibitorNamesForEvent(
+  supabase: ReturnType<typeof createClient>,
+  eventId: string,
+): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('participation')
+      .select('exhibitor_name, exhibitors(name)')
+      .eq('id_event', eventId)
+      .limit(2000);
+    if (error) {
+      console.warn(`⚠️ [Auto-validation] Impossible de charger les exposants: ${error.message}`);
+      return [];
+    }
+    const names = new Set<string>();
+    for (const row of (data ?? []) as Array<{ exhibitor_name: string | null; exhibitors: { name: string | null } | null }>) {
+      if (row.exhibitor_name) names.add(row.exhibitor_name);
+      if (row.exhibitors?.name) names.add(row.exhibitors.name);
+    }
+    return [...names];
+  } catch (e) {
+    console.warn(`⚠️ [Auto-validation] exhibitors load failed:`, e);
+    return [];
   }
 }
 
