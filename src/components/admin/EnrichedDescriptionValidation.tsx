@@ -216,6 +216,72 @@ export function EnrichedDescriptionValidation() {
     return <Badge variant="outline">{score}</Badge>;
   };
 
+  const autoValidationBadge = (ev: PendingEvent) => {
+    const s = ev.auto_validation_status;
+    const score = ev.auto_validation_score;
+    if (!s) return <Badge variant="outline" className="text-xs">Non auto-validé</Badge>;
+    if (s === 'passed' && ev.validation_mode === 'auto') {
+      return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs"><ShieldCheck className="h-3 w-3 mr-1" />Validé auto · {score}/100</Badge>;
+    }
+    if (s === 'warning') {
+      return <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs"><AlertTriangle className="h-3 w-3 mr-1" />À relire · {score}/100</Badge>;
+    }
+    if (s === 'failed') {
+      return <Badge className="bg-red-100 text-red-800 border-red-300 text-xs"><ShieldAlert className="h-3 w-3 mr-1" />Échec · {score}/100</Badge>;
+    }
+    return <Badge variant="outline" className="text-xs">{s} · {score ?? '?'}/100</Badge>;
+  };
+
+  const checkLabelToBadge = (code: string): string => {
+    switch (code) {
+      case 'numbers_grounded': return 'Chiffre non vérifié';
+      case 'date_consistency': return 'Date incohérente';
+      case 'city_consistency': return 'Ville incorrecte';
+      case 'venue_consistency': return 'Lieu incorrect';
+      case 'exhibitors_grounded': return 'Exposant non sourcé';
+      case 'price_invented': return 'Tarif inventé';
+      case 'program_invented': return 'Programme non sourcé';
+      case 'length_min': return 'Texte trop court';
+      case 'superlatives': return 'Superlatif non sourcé';
+      case 'commercial_promise': return 'Promesse commerciale';
+      case 'generic_text': return 'Texte trop générique';
+      case 'repetition': return 'Répétitions';
+      case 'fake_faq': return 'FAQ artificielle';
+      default: return code;
+    }
+  };
+
+  const reValidateAll = async () => {
+    setRevalidating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('revalidate-enriched-description', {
+        body: { dry_run: false, limit: 200 },
+      });
+      if (error) throw error;
+      const s = (data as { summary?: { auto_validated?: number; warning?: number; failed?: number; total?: number } })?.summary;
+      toast({
+        title: '🛡️ Re-validation terminée',
+        description: `${s?.total ?? 0} évalué(s) — auto: ${s?.auto_validated ?? 0}, warning: ${s?.warning ?? 0}, failed: ${s?.failed ?? 0}`,
+      });
+      fetchData();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+    } finally {
+      setRevalidating(false);
+    }
+  };
+
+  const filteredEvents = events.filter((ev) => {
+    switch (filter) {
+      case 'pending': return ev.enrichissement_statut === 'en_attente';
+      case 'auto': return ev.auto_validation_status === 'passed' && ev.validation_mode === 'auto';
+      case 'warning': return ev.auto_validation_status === 'warning';
+      case 'failed': return ev.auto_validation_status === 'failed';
+      default: return true;
+    }
+  });
+
   return (
     <Card>
       <CardHeader>
