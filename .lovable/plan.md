@@ -1,243 +1,107 @@
-## Plan V3 — Radar CRM needs_review (corrections SQL avant migration)
 
-Invariants : matching domaine inchangé ; import `42825220-…` non recréé ; aucun cron supprimé ; quotas / `radar_email_log` / Resend / désabonnement / template mobile intacts.
+# Auto-validation des descriptions enrichies
 
----
+## 1. Schéma — migration `events`
 
-## 1. Migration SQL (corrigée)
+Ajouter 5 colonnes (toutes nullable) :
+- `auto_validation_status text` — `passed` | `warning` | `failed`
+- `auto_validation_score integer` — 0-100
+- `auto_validation_report jsonb` — `{ checks: [...], blockers: [...], warnings: [...], stats: {...} }`
+- `auto_validated_at timestamptz`
+- `validation_mode text` — `auto` | `manual` | `rejected`
 
-### 1.1 Extensions + colonnes
-Inchangé vs V2 (`pg_trgm`, `unaccent`, `name_similarity`, `needs_review`, `review_reason`, index `(user_id, needs_review)`, `crm_imports.suspicious_rate`).
+Pas d'index ni de contrainte CHECK (souplesse).
 
-### 1.2 `crm_normalize_company_name` / `crm_compute_match_review`
-`STABLE`. Logique inchangée vs V2 :
-- normalisation : lowercase, unaccent, suppression ponctuation + formes juridiques.
-- `sim = max(similarity(a,b), contained ? 0.6 : 0)`.
-- Seuil `< 0.35` ⇒ `needs_review=true`, `review_reason='crm_name_exhibitor_name_mismatch'`.
-- Si un nom normalisé est NULL : `(NULL, false, NULL)`.
+## 2. Module de validation partagé
 
-### 1.3 `crm_run_matching` — **correctifs majeurs**
+Créer `supabase/functions/_shared/validate-enriched-description.ts` (utilisable par `enrich-event-meta`, `seo-enrichment-batch`, et une future fonction `revalidate-enriched-description`).
 
-a) **Capture explicite des IDs insérés** (point 2 du user) :
-
-```sql
-DECLARE
-  v_inserted_match_ids uuid[] := ARRAY[]::uuid[];
-BEGIN
-  WITH inserted AS (
-    INSERT INTO public.crm_company_event_matches (...)
-    SELECT ... FROM public.crm_companies c
-    JOIN public.crm_radar_participations_view r ON ...
-    WHERE c.import_id = p_import_id AND c.user_id = p_user_id
-    ON CONFLICT (crm_company_id, id_exposant, event_id) DO NOTHING
-    RETURNING id
-  )
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-  INTO v_inserted_match_ids
-  FROM inserted;
+Signature :
+```ts
+validateEnrichedDescription(description: string, source: EventSource, exhibitorsNames: string[]): ValidationResult
 ```
 
-b) **UPDATE sécurisé via sous-requête** (point 1 du user) — la table cible `m` n'est jamais référencée dans un JOIN :
+Contrôles exécutés (chacun produit `pass | warning | fail`, contribue au score, peut être bloquant) :
 
-```sql
-UPDATE public.crm_company_event_matches m
-SET name_similarity = s.name_similarity,
-    needs_review    = s.needs_review,
-    review_reason   = s.review_reason
-FROM (
-  SELECT
-    m2.id AS match_id,
-    r.name_similarity,
-    r.needs_review,
-    r.review_reason
-  FROM public.crm_company_event_matches m2
-  JOIN public.crm_companies c   ON c.id = m2.crm_company_id
-  JOIN public.exposants ex      ON ex.id_exposant = m2.id_exposant
-  CROSS JOIN LATERAL public.crm_compute_match_review(c.company_name, ex.nom_exposant) r
-  WHERE c.import_id = p_import_id
-) s
-WHERE m.id = s.match_id;
-```
+| Code | Catégorie | Bloquant | Pénalité |
+|---|---|---|---|
+| `length_min` | longueur ≥ 250 mots premium / 180 standard | oui (< minimum) | -100 si fail |
+| `date_consistency` | dates citées ⊂ {date_debut, date_fin, année} | oui | -100 |
+| `city_consistency` | villes citées ⊂ {ville, pays} | oui | -100 |
+| `venue_consistency` | si `nom_lieu` cité, doit matcher | oui | -100 |
+| `numbers_grounded` | tout nombre (visiteurs/exposants/éditions/m²/%) doit avoir une source en base | oui | -100 |
+| `exhibitors_grounded` | noms d'exposants cités ⊂ liste participations | oui | -100 |
+| `price_invented` | mention "€", "gratuit", "tarif", "billet" → fail si pas de `tarif` | oui | -100 |
+| `program_invented` | mention conférence/atelier/horaire précis → fail | oui | -100 |
+| `superlatives` | "le plus grand", "n°1", "leader mondial", "incontournable", "unique en France" | non (warning) | -10 |
+| `commercial_promise` | "garantit", "tous les professionnels", "100%" | non (warning) | -10 |
+| `generic_text` | densité de mots-clés trop faible (event-specific tokens < 3%) | non (warning) | -10 |
+| `repetition` | n-grammes répétés > seuil | non (warning) | -5 |
+| `fake_faq` | détecte "Question :", "Q :", patterns FAQ | non (warning) | -10 |
 
-c) **`suspicious_rate` de l'import** calculé/persisté :
-```sql
-SELECT count(*), count(*) FILTER (WHERE m.needs_review)
-INTO v_total, v_flagged
-FROM crm_company_event_matches m
-JOIN crm_companies c ON c.id = m.crm_company_id
-WHERE c.import_id = p_import_id;
+Détection des nombres : regex `\b\d[\d  .,]*\b` + contexte ; exclu : années identiques aux dates source, numéros de rue/CP de l'événement.
 
-v_suspicious_rate := CASE WHEN v_total = 0 THEN NULL
-                          ELSE round(v_flagged::numeric / v_total, 4) END;
+Score = 100 - somme(pénalités), borné [0, 100].
 
-UPDATE crm_imports SET suspicious_rate = v_suspicious_rate, updated_at = now()
-WHERE id = p_import_id;
-```
-→ Pas de match ⇒ `NULL` (documenté : « non calculable, aucun match »).
+Décision :
+- 1+ bloquant → `failed`, score forcé ≤ 50
+- 0 bloquant, score ≥ 85 → `passed`
+- sinon → `warning`
 
-d) **`newMatches` basé sur `v_inserted_match_ids`** (point 2/3 du user) :
+## 3. Intégration `enrich-event-meta`
 
-```sql
-SELECT COALESCE(jsonb_agg(to_jsonb(d)
-         ORDER BY (d.is_future_event)::int DESC), '[]'::jsonb)
-INTO v_new_matches
-FROM (
-  SELECT
-    m.id AS match_id, m.crm_company_id,
-    c.company_name AS crm_company_name, c.import_id,
-    m.id_exposant, ex.nom_exposant,
-    m.event_id, e.nom_event,
-    m.normalized_domain,
-    m.name_similarity, m.needs_review, m.review_reason,
-    (e.date_debut >= CURRENT_DATE) AS is_future_event
-  FROM public.crm_company_event_matches m
-  JOIN public.crm_companies c ON c.id = m.crm_company_id
-  LEFT JOIN public.exposants ex ON ex.id_exposant = m.id_exposant
-  LEFT JOIN public.events e ON e.id = m.event_id
-  WHERE m.id = ANY(v_inserted_match_ids)
-) d;
-```
+Après génération de `description_enrichie`, avant l'UPDATE final :
+1. Charger `participations_with_exhibitors` pour cet event (déjà fait pour l'enrichissement)
+2. Appeler `validateEnrichedDescription`
+3. Écrire dans l'UPDATE :
+   - `auto_validation_status`, `auto_validation_score`, `auto_validation_report`, `auto_validated_at = now()`
+   - Si `passed` : `enrichissement_statut = 'valide'`, `validation_mode = 'auto'`
+   - Sinon : `enrichissement_statut = 'en_attente'`, `validation_mode = 'manual'`
 
-e) **Retour JSON** : tous les champs V2 + `needsReviewCount` + `suspiciousRate`.
-f) Permissions : `service_role` only.
+`seo-enrichment-batch` n'a rien à changer (il délègue à `enrich-event-meta`).
 
-### 1.4 `crm_backfill_match_review()` — même pattern de sous-requête
+## 4. Fonction `revalidate-enriched-description` (pour le test)
 
-```sql
-WITH upd AS (
-  UPDATE public.crm_company_event_matches m
-  SET name_similarity = s.name_similarity,
-      needs_review    = s.needs_review,
-      review_reason   = s.review_reason
-  FROM (
-    SELECT m2.id AS match_id, r.name_similarity, r.needs_review, r.review_reason
-    FROM public.crm_company_event_matches m2
-    JOIN public.crm_companies c ON c.id = m2.crm_company_id
-    JOIN public.exposants ex   ON ex.id_exposant = m2.id_exposant
-    CROSS JOIN LATERAL public.crm_compute_match_review(c.company_name, ex.nom_exposant) r
-  ) s
-  WHERE m.id = s.match_id
-  RETURNING m.id, m.needs_review
-)
-SELECT count(*), count(*) FILTER (WHERE needs_review)
-INTO v_processed_matches, v_flagged_matches FROM upd;
-```
+Nouvelle edge function POST `{ event_ids: string[], dry_run: boolean }` :
+- Recharge les events + participations
+- Re-joue la validation sur `description_enrichie` existant
+- Si `dry_run=true` : ne touche pas la base, renvoie le rapport
+- Sinon : applique la décision (status/score/report/mode)
 
-Puis `UPDATE crm_imports` via sous-requête `per_import` (count/flagged par `import_id`).
-Retour : `{ processedMatches, flaggedMatches, processedImports, suspiciousImports }`.
-Exécution unique : `SELECT public.crm_backfill_match_review();` à la fin de la migration.
-Permissions : `service_role` only.
+Utilisée pour le test IFTM/IPEM demandé en §6 sans regénérer le texte.
 
-### 1.5 `get_radar_crm_admin_stats()`
-Ajout (sans casser l'existant) : `needsReviewMatches`, `suspiciousImports`, `recentSuspiciousImports[]`, et colonne `suspicious_rate` dans `recentImports[]`. `SECURITY DEFINER`, vérif `is_admin()`.
+## 5. Admin UI — `EnrichedDescriptionValidation.tsx`
 
----
+- Étendre l'interface `EventRow` avec les 5 nouvelles colonnes
+- Charger aussi `enrichissement_statut = 'valide'` quand `validation_mode = 'auto'` (pour les auditer)
+- Badges (composants existants) :
+  - vert `Validé automatiquement` (status=passed, mode=auto)
+  - orange `À relire` (status=warning)
+  - rouge `Échec validation` (status=failed)
+  - badges secondaires pour chaque code de check échoué : `Chiffre non vérifié`, `Date incohérente`, `Exposant inventé`, `Texte trop court`, `Superlatif non sourcé`, etc.
+- Filtres (tabs ou Select) : `Tous` / `Validés auto` / `Warnings` / `Failed` / `À valider manuellement`
+- Panneau détail : afficher `auto_validation_report` (liste des checks avec leur statut)
 
-## 2. Edge function `radar-crm-rematch-cron`
+## 6. Test IFTM + IPEM
 
-À la création des notifications standard (`type='radar_new_matches'`, ligne ~270 / ~480) :
-- **Filtrer en amont** : `futureMatches = newMatches.filter(m => m.is_future_event === true && m.needs_review !== true)`.
-- Idem dans la branche `RECONCILIATION` : enrichir la requête `crm_company_event_matches` avec `needs_review` et exclure `needs_review=true` du `groupedByEvent`.
-- Compteur `skippedNeedsReviewMatches` ajouté au `summary`.
-- Anti-doublon, `group_key`, idempotence, ensure_radar_access : intacts.
+Sans modifier la base ni déployer Vercel :
+1. Déployer la nouvelle edge function `revalidate-enriched-description`
+2. Appel `{ event_ids: [IFTM_id, IPEM_id], dry_run: true }`
+3. Retour utilisateur :
+   - score, status, report détaillé par check
+   - décision finale (passerait en auto / resterait en attente + raison)
 
-MVP : **pas de notification automatique** pour `needs_review=true`. Visibles uniquement dans l'UI.
+Ensuite, sur accord utilisateur, relancer avec `dry_run: false` pour appliquer.
 
-## 3. Edge function `radar-crm-email-dispatcher`
+## 7. Garde-fous respectés
 
-Double sécurité :
-1. **Niveau notification** : skip si `metadata.needsReview === true`.
-2. **Niveau match** : pour chaque notif candidate, charger `crm_company_event_matches` correspondant aux `(crmCompanyId, idExposant, eventId)` et filtrer les lignes où `needs_review=true`. Si plus aucune ligne, skip la notif.
+- Aucun Deploy Hook Vercel déclenché
+- Aucun cron activé
+- Aucun batch massif lancé
+- Le rendu public (`EventPageHeader`, prerender) est inchangé : il continue de lire `enrichissement_statut='valide'` ; la nouveauté c'est que ce statut peut être positionné automatiquement.
 
-Affichage chip (matches restants, donc non-suspects par construction) :
-- Titre = `exposants.nom_exposant` (jointure via `id_exposant`).
-- Sous-texte si normalisations différentes : `Correspond à votre fiche CRM : {crm_companies.company_name}`.
-- Subject : utilise `nom_exposant`.
-- Quotas, `radar_email_log`, `resend_message_id`, désabonnement, Resend, template mobile : **intacts**.
+## Détails techniques
 
-## 4. Edge function `crm-import`
-Renvoie au front `qualityWarning: { rate, threshold: 0.30, suspicious: rate > 0.30, needsReviewCount }` lu depuis le retour de `crm_run_matching` (single source of truth SQL).
-
----
-
-## 5. Front
-
-### `src/pages/RadarCrmResults.tsx`
-- Étendre la requête `crm_company_event_matches` : ajouter `needs_review, review_reason, name_similarity`.
-- Titre carte/chip = `viewRow.nom_exposant` (vrai exposant).
-- Sous-texte (si différent) : `Correspond à votre fiche CRM : {company.company_name}`.
-- Si `needs_review` : badge orange `Correspondance à vérifier` + tooltip `Le domaine correspond, mais le nom de votre fiche CRM diffère fortement du nom exposant.`
-- Bannière qualité (si `qualityWarning.suspicious=true`) en haut, orange non bloquant.
-- `onOpenExhibitor` : passe `nom_exposant`, `crmCompanyName`, `needsReview` au popup.
-
-### `src/components/event/ExhibitorDetailDialog.tsx`
-Si `exhibitor.needsReview` + `exhibitor.crmCompanyName` : encart bas `Correspondance CRM à vérifier : {crmCompanyName}`. Titre principal inchangé (vrai exposant).
-
-### `src/pages/admin/AdminRadarCrm.tsx`
-- 2 cards : `Matches à vérifier`, `Imports suspects`.
-- Colonne `suspicious_rate` dans le tableau « Derniers imports » (`%` ou `—`).
-- Nouveau tableau `Imports suspects récents` à partir de `recentSuspiciousImports`.
-
----
-
-## 6. Logique exacte (verrouillée)
-
-**needs_review**
-```
-a = normalize(crm_name); b = normalize(exhibitor_name)
-sim = max(similarity(a,b), (position(a in b)>0 OR position(b in a)>0 ? 0.6 : 0))
-needs_review = a IS NOT NULL AND b IS NOT NULL AND sim < 0.35
-review_reason = needs_review ? 'crm_name_exhibitor_name_mismatch' : NULL
-```
-
-**suspicious_rate (par import)**
-```
-total   = COUNT(matches de l'import)
-flagged = COUNT(matches needs_review=true de l'import)
-suspicious_rate = total = 0 ? NULL : flagged / total   (round 4 décimales)
-import.suspicious = suspicious_rate > 0.30
-```
-
----
-
-## 7. Impacts
-
-| Domaine | État |
-|---|---|
-| Matching domaine | **Inchangé** |
-| Notifications internes auto | `needs_review=true` ⇒ pas de notif |
-| Emails auto | Double filtre (metadata + jointure matches) ; titre = vrai exposant ; `needs_review` exclus |
-| UI `/radar-crm/results` | Vrai exposant en titre, nom CRM en secondaire, badge « À vérifier », bannière qualité |
-| Popup exposant | Encart « Correspondance CRM à vérifier » si applicable |
-| Admin | 2 stats + colonne + tableau, stats existantes préservées |
-| Crons | **Aucun supprimé**, contenu enrichi uniquement |
-| Quotas / désabonnement / Resend / `radar_email_log` | **Intacts** |
-
----
-
-## 8. Tests post-exécution
-
-- **A** Import propre : ~0 needs_review ; emails OK.
-- **B** Import corrompu (`Airbus|oxypharm.net`, `Toshiba|renaultgroup.com`) : match domaine créé, `needs_review=true`, UI affiche OXY'PHARM en titre + « Correspond à votre fiche CRM : Airbus… », badge orange, **exclu des emails**.
-- **C** `curl_edge_functions` dispatcher en dry-run : aucun match `needs_review` dans le payload.
-- **D** SQL : migration passe (pas d'erreur `m` dans JOIN), `newMatches` basé sur `v_inserted_match_ids` (jamais `created_at >= now() - interval`).
-
----
-
-## 9. Fichiers touchés
-
-- `supabase/migrations/<ts>_radar_crm_needs_review_v3.sql`
-- `supabase/functions/radar-crm-rematch-cron/index.ts`
-- `supabase/functions/radar-crm-email-dispatcher/index.ts`
-- `supabase/functions/crm-import/index.ts`
-- `src/pages/RadarCrmResults.tsx`
-- `src/pages/RadarCrm.tsx` (passe `qualityWarning` aux résultats si import direct)
-- `src/components/event/ExhibitorDetailDialog.tsx`
-- `src/pages/admin/AdminRadarCrm.tsx`
-
----
-
-## Validation requise
-
-Réponds simplement **« go V3 »** (ou indique seuils différents) et j'exécute dans l'ordre :
-1. migration SQL → 2. dispatcher + cron + crm-import → 3. UI résultats + popup + admin → 4. tests B/C/D.
+- Module de validation en TypeScript pur (pas de dépendance externe), testable hors edge function
+- Tests Deno minimaux : 1 cas "texte propre IFTM" + 1 cas "texte avec chiffre inventé" + 1 cas "date contradictoire"
+- L'admin reste rétrocompatible : les events déjà `en_attente` sans `auto_validation_report` s'affichent avec un badge neutre "Non auto-validé"
