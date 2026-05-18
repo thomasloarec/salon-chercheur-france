@@ -53,7 +53,7 @@ interface AutoValidationReport {
   stats: { char_count: number; word_count: number; min_words_required: number };
 }
 
-type FilterValue = 'all' | 'pending' | 'auto' | 'warning' | 'failed' | 'last_run';
+type FilterValue = 'needs_action' | 'last_run' | 'pending' | 'warning' | 'failed' | 'published';
 
 interface Stats {
   pending: number;
@@ -74,7 +74,7 @@ export function EnrichedDescriptionValidation() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
-  const [filter, setFilter] = useState<FilterValue>('all');
+  const [filter, setFilter] = useState<FilterValue>('needs_action');
   const [revalidating, setRevalidating] = useState(false);
   const [revalidateOneId, setRevalidateOneId] = useState<string | null>(null);
   const [lastRunIds, setLastRunIds] = useState<Set<string>>(new Set());
@@ -318,8 +318,15 @@ export function EnrichedDescriptionValidation() {
 
   const filteredEvents = events.filter((ev) => {
     switch (filter) {
+      case 'needs_action':
+        return ev.enrichissement_statut === 'en_attente'
+          || ev.auto_validation_status === 'warning'
+          || ev.auto_validation_status === 'failed';
       case 'pending': return ev.enrichissement_statut === 'en_attente';
-      case 'auto': return ev.auto_validation_status === 'passed' && ev.validation_mode === 'auto';
+      case 'published':
+        return ev.enrichissement_statut === 'valide'
+          && ev.auto_validation_status === 'passed'
+          && ev.validation_mode === 'auto';
       case 'warning': return ev.auto_validation_status === 'warning';
       case 'failed': return ev.auto_validation_status === 'failed';
       case 'last_run': return lastRunIds.has(ev.id);
@@ -331,9 +338,9 @@ export function EnrichedDescriptionValidation() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-lg flex items-center gap-2" id="seo-validation">
             <FileCheck className="h-5 w-5" />
-            Validation des descriptions enrichies
+            Textes à vérifier manuellement
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={fetchData} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -341,39 +348,19 @@ export function EnrichedDescriptionValidation() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* 1. Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-yellow-50 p-4 rounded-lg text-center">
-            <Clock className="h-5 w-5 mx-auto mb-1 text-yellow-600" />
-            <div className="text-2xl font-bold text-yellow-700">{stats.pending}</div>
-            <div className="text-xs text-yellow-600">En attente</div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <CheckCircle className="h-5 w-5 mx-auto mb-1 text-green-600" />
-            <div className="text-2xl font-bold text-green-700">{stats.validated}</div>
-            <div className="text-xs text-green-600">Validés</div>
-          </div>
-          <div className="bg-orange-50 p-4 rounded-lg text-center">
-            <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-orange-600" />
-            <div className="text-2xl font-bold text-orange-700">{stats.eligibleUntreated}</div>
-            <div className="text-xs text-orange-600">Non traités éligibles</div>
-          </div>
-          <div className="bg-blue-50 p-4 rounded-lg text-center">
-            <Calendar className="h-5 w-5 mx-auto mb-1 text-blue-600" />
-            <div className="text-2xl font-bold text-blue-700">{stats.totalFuture}</div>
-            <div className="text-xs text-blue-600">Événements futurs</div>
-          </div>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Par défaut, seuls les textes qui demandent une action humaine sont affichés. Les textes déjà publiés sont accessibles via l'onglet « Déjà publiés ».
+        </p>
 
         {/* 2. Filtres */}
         <div className="flex flex-wrap gap-2 items-center">
           {([
-            ['all', `Tous (${events.length})`],
+            ['needs_action', `À vérifier (${events.filter(e => e.enrichissement_statut === 'en_attente' || e.auto_validation_status === 'warning' || e.auto_validation_status === 'failed').length})`],
             ['last_run', `Dernier run (${events.filter(e => lastRunIds.has(e.id)).length})`],
             ['pending', `En attente (${events.filter(e => e.enrichissement_statut === 'en_attente').length})`],
-            ['auto', `Validés auto (${events.filter(e => e.auto_validation_status === 'passed' && e.validation_mode === 'auto').length})`],
             ['warning', `Warnings (${events.filter(e => e.auto_validation_status === 'warning').length})`],
             ['failed', `Failed (${events.filter(e => e.auto_validation_status === 'failed').length})`],
+            ['published', `Déjà publiés (${events.filter(e => e.enrichissement_statut === 'valide' && e.auto_validation_status === 'passed' && e.validation_mode === 'auto').length})`],
           ] as Array<[FilterValue, string]>).map(([val, label]) => (
             <Button
               key={val}
