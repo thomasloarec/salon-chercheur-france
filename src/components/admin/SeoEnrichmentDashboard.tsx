@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Activity, RefreshCw, Loader2, PlayCircle, Beaker, Rocket, Zap,
   CheckCircle2, AlertTriangle, XCircle, Server, ChevronDown, ChevronUp,
+  ExternalLink, Settings, ListChecks,
 } from 'lucide-react';
 
 interface EligibilityStats {
@@ -49,6 +50,7 @@ interface ValidationCounts {
   null_score: number;
   score_ge_55: number;
   desc_missing: number;
+  published: number;
 }
 
 type BatchMode = 'dry_run' | 'test' | 'run';
@@ -97,16 +99,16 @@ export function SeoEnrichmentDashboard() {
     setLoading(true);
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, descMissingRes] = await Promise.all([
+      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, descMissingRes, publishedRes] = await Promise.all([
         supabase.rpc('count_seo_enrichment_eligible'),
         supabase.from('seo_enrichment_runs')
           .select('*')
           .order('started_at', { ascending: false })
           .limit(15),
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .eq('auto_validation_status', 'passed'),
+          .eq('auto_validation_status', 'passed').eq('validation_mode', 'auto'),
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .eq('enrichissement_statut', 'en_attente'),
+          .or('enrichissement_statut.eq.en_attente,validation_mode.eq.manual'),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('auto_validation_status', 'failed'),
         supabase.from('events').select('id', { count: 'exact', head: true })
@@ -118,6 +120,8 @@ export function SeoEnrichmentDashboard() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .is('description_enrichie', null),
+        supabase.from('events').select('id', { count: 'exact', head: true })
+          .eq('enrichissement_statut', 'valide'),
       ]);
 
       if (eligibilityRes.error) throw eligibilityRes.error;
@@ -130,6 +134,7 @@ export function SeoEnrichmentDashboard() {
         null_score: nullScoreRes.count ?? 0,
         score_ge_55: ge55Res.count ?? 0,
         desc_missing: descMissingRes.count ?? 0,
+        published: publishedRes.count ?? 0,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -161,12 +166,15 @@ export function SeoEnrichmentDashboard() {
           description: `${r.selected_count ?? 0} sélectionné(s) sur ${r.total_eligible ?? 0} éligibles.`,
         });
       } else {
+        const autoVal = (r.desc_auto_validated as number | undefined) ?? 0;
+        const pendingRev = (r.desc_pending_review as number | undefined) ?? 0;
         toast({
           title: `✅ Batch ${mode} terminé`,
-          description: `${r.events_success ?? 0} succès, ${r.events_failed ?? 0} échec(s) — Vercel: ${r.deploy_hook_triggered ? 'déclenché' : 'non déclenché'}`,
+          description: `${r.events_processed ?? 0} traités, ${autoVal} publiés auto, ${pendingRev} en revue, ${r.events_failed ?? 0} échec(s) — Vercel ${r.deploy_hook_triggered ? 'déclenché' : 'non déclenché'}`,
         });
       }
       fetchData();
+      window.dispatchEvent(new CustomEvent('seo-enrichment-refresh'));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       toast({ title: 'Erreur batch', description: msg, variant: 'destructive' });
@@ -218,7 +226,7 @@ export function SeoEnrichmentDashboard() {
             <Kpi label="Auto-validés (passed)" value={validationCounts?.passed} tone="emerald" />
             <Kpi label="En attente revue" value={validationCounts?.pending} tone="amber" />
             <Kpi label="Validation failed" value={validationCounts?.failed} tone="red" />
-            <Kpi label="Pages publiables" value={(validationCounts?.passed ?? 0)} tone="emerald" />
+            <Kpi label="Pages publiées" value={validationCounts?.published} tone="emerald" />
           </div>
 
           {/* Last run summary */}
@@ -249,6 +257,23 @@ export function SeoEnrichmentDashboard() {
               <p className="text-muted-foreground">Aucun run enregistré pour l'instant.</p>
             )}
           </div>
+
+          {/* Détail du dernier run — événements traités */}
+          {lastRun && Array.isArray((lastRun.details ?? {})['processed_events'])
+            && ((lastRun.details ?? {})['processed_events'] as unknown[]).length > 0 && (
+            <LastRunProcessedEvents
+              events={(lastRun.details as Record<string, unknown>)['processed_events'] as ProcessedEvent[]}
+              deployTriggered={!!lastRun.deploy_hook_triggered}
+            />
+          )}
+          {lastRun && !Array.isArray((lastRun.details ?? {})['processed_events'])
+            && Array.isArray((lastRun.details ?? {})['processed_ids'])
+            && ((lastRun.details ?? {})['processed_ids'] as unknown[]).length > 0 && (
+            <LastRunProcessedFallback
+              ids={(lastRun.details as Record<string, unknown>)['processed_ids'] as string[]}
+              deployTriggered={!!lastRun.deploy_hook_triggered}
+            />
+          )}
 
           {/* Action buttons */}
           <div className="space-y-2">
