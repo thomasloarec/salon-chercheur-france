@@ -669,10 +669,48 @@ export function EnrichedDescriptionValidation() {
                       className="text-indigo-700 border-indigo-300 hover:bg-indigo-50"
                       disabled={revalidateOneId === ev.id}
                       onClick={() => reValidateOne(ev.id)}
+                      title="Relance les contrôles qualité sur ce texte"
                     >
                       {revalidateOneId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ShieldQuestion className="h-3 w-3 mr-1" />}
-                      Revalider
+                      Relancer le contrôle
                     </Button>
+                    {canAutoFix && !isIgnored && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-purple-700 border-purple-300 hover:bg-purple-50"
+                        disabled={autoFixId === ev.id}
+                        onClick={() => autoFix(ev.id)}
+                        title="Relance l'IA avec un prompt correctif strict, sans inventer d'informations"
+                      >
+                        {autoFixId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wand2 className="h-3 w-3 mr-1" />}
+                        Corriger automatiquement
+                      </Button>
+                    )}
+                    {!isIgnored ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-slate-600 hover:text-slate-900"
+                        disabled={ignoreId === ev.id}
+                        onClick={() => ignoreForNow(ev)}
+                        title="Sort cet événement de la file active sans le publier"
+                      >
+                        {ignoreId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Archive className="h-3 w-3 mr-1" />}
+                        Ignorer pour l'instant
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-slate-600 hover:text-slate-900"
+                        disabled={ignoreId === ev.id}
+                        onClick={() => unignore(ev)}
+                      >
+                        {ignoreId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                        Réintégrer
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
