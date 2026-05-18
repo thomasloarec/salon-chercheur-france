@@ -492,6 +492,16 @@ export function EnrichedDescriptionValidation() {
                     >
                       <XCircle className="h-3 w-3 mr-1" /> Rejeter
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-indigo-700 border-indigo-300 hover:bg-indigo-50"
+                      disabled={revalidateOneId === ev.id}
+                      onClick={() => reValidateOne(ev.id)}
+                    >
+                      {revalidateOneId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ShieldQuestion className="h-3 w-3 mr-1" />}
+                      Revalider
+                    </Button>
                   </div>
                 </div>
               );
