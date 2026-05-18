@@ -845,6 +845,7 @@ async function runManualRealSend(
     emailsFailed: r.outcome === 'failed' ? 1 : 0,
     notificationsIncluded: r.notificationIdsIncluded?.length ?? 0,
     skippedNotificationsAlreadyEmailed: r.skippedNotificationsAlreadyEmailed ?? 0,
+    ...(r.skipCounters ?? emptySkipCounters()),
   });
   if (r.outcome === 'sent') {
     await trackSystem('radar_email_sent', { userId: filterUserId, logId: r.logId, resendMessageId: r.resendMessageId });
