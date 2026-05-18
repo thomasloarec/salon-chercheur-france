@@ -292,12 +292,16 @@ const RadarCrmResults: React.FC = () => {
     id_exposant: string,
     stand: string | null,
     g: EventGroup,
+    nom_exposant: string | null,
+    needs_review: boolean,
   ) => {
     void trackRadarEvent('crm_exhibitor_dialog_opened', { eventId: g.event_id, id_exposant });
     setOpenExhibitor({
       exhibitor: {
         id_exposant,
-        exhibitor_name: company.company_name,
+        exhibitor_name: nom_exposant ?? company.company_name,
+        crm_company_name: company.company_name,
+        needs_review,
         stand_exposant: stand ?? undefined,
         website_exposant: company.website_raw ?? undefined,
       },
@@ -410,7 +414,8 @@ const RadarCrmResults: React.FC = () => {
                             group={g}
                             importId={activeImportId}
                             onView={() => onClickEvent(g)}
-                            onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
+                            onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
+                              onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
                           />
                         </div>
                       ))}
@@ -428,7 +433,8 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
-                          onCompanyClick={(c, id_exposant, stand) => onOpenExhibitor(c, id_exposant, stand, g)}
+                          onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
+                            onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
                         />
                       ))}
                     </div>
