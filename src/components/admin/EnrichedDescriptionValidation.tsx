@@ -108,7 +108,10 @@ export function EnrichedDescriptionValidation() {
         eligibleUntreated: eligibleRes.count ?? 0,
         totalFuture: futureRes.count ?? 0,
       });
-      setEvents(eventsRes.data ?? []);
+      setEvents((eventsRes.data ?? []).map((e) => ({
+        ...e,
+        auto_validation_report: (e.auto_validation_report ?? null) as AutoValidationReport | null,
+      })) as PendingEvent[]);
     } catch (e) {
       console.error('Fetch error', e);
     } finally {
