@@ -54,6 +54,23 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: 'POST requis' }), { status: 405, headers });
   }
 
+  // Shared-secret gate (réutilise SEO_BATCH_SECRET)
+  const BATCH_SECRET = Deno.env.get('SEO_BATCH_SECRET') ?? '';
+  if (!BATCH_SECRET) {
+    return new Response(JSON.stringify({ error: 'SEO_BATCH_SECRET non configuré' }), { status: 500, headers });
+  }
+  const provided = req.headers.get('x-seo-batch-secret') ?? '';
+  const a = new TextEncoder().encode(provided);
+  const b = new TextEncoder().encode(BATCH_SECRET);
+  let ok = a.length === b.length;
+  const len = Math.max(a.length, b.length);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < len; i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
+  ok = ok && diff === 0;
+  if (!ok) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+  }
+
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
