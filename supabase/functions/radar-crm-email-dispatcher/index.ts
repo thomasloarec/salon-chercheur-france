@@ -1109,6 +1109,7 @@ async function runDryRun(
   let skippedNotificationsAlreadyEmailed = 0;
   let notificationsIncluded = 0;
   let usersEligible = 0;
+  let aggregateSkipCounters = emptySkipCounters();
   const previews: Array<Record<string, unknown>> = [];
   const errors: Array<{ userId: string; message: string }> = [];
 
@@ -1120,6 +1121,7 @@ async function runDryRun(
     try {
       const built = await buildPreviewForUser(supabase, pref, overrideLookahead);
       skippedNotificationsAlreadyEmailed += built.alreadyEmailedCount;
+      aggregateSkipCounters = addSkipCounters(aggregateSkipCounters, built.skipCounters);
       if (!built.preview) {
         if (built.skip === 'quota') skippedUsersQuota += 1;
         continue;
@@ -1141,6 +1143,7 @@ async function runDryRun(
     notificationsIncluded,
     skippedUsersPreferences, skippedUsersQuota,
     skippedNotificationsAlreadyEmailed,
+    ...aggregateSkipCounters,
     previews, errors,
   });
 }
