@@ -101,3 +101,9 @@ verify_jwt = false
 
 [functions.admin-seo-batch-proxy]
 verify_jwt = true
+
+[functions.seo-auto-fix-description]
+verify_jwt = false
+
+[functions.revalidate-enriched-description]
+verify_jwt = false

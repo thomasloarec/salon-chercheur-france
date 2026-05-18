@@ -9,7 +9,7 @@ import {
   CheckCircle, XCircle, Loader2, RefreshCw, Rocket,
   ChevronDown, ChevronUp, FileCheck, AlertTriangle,
   Pencil, Save, X, ShieldCheck, ShieldAlert, Sparkles, ShieldQuestion,
-  ExternalLink, Settings
+  ExternalLink, Settings, Wand2, Archive, Info
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -51,9 +51,10 @@ interface AutoValidationReport {
   blockers: string[];
   warnings: string[];
   stats: { char_count: number; word_count: number; min_words_required: number };
+  ignored_for_now?: boolean;
 }
 
-type FilterValue = 'needs_action' | 'last_run' | 'pending' | 'warning' | 'failed' | 'published';
+type FilterValue = 'to_fix' | 'to_review' | 'last_run' | 'published' | 'ignored';
 
 interface Stats {
   pending: number;
@@ -74,10 +75,12 @@ export function EnrichedDescriptionValidation() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
-  const [filter, setFilter] = useState<FilterValue>('needs_action');
+  const [filter, setFilter] = useState<FilterValue>('to_fix');
   const [revalidating, setRevalidating] = useState(false);
   const [revalidateOneId, setRevalidateOneId] = useState<string | null>(null);
   const [lastRunIds, setLastRunIds] = useState<Set<string>>(new Set());
+  const [autoFixId, setAutoFixId] = useState<string | null>(null);
+  const [ignoreId, setIgnoreId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -316,20 +319,126 @@ export function EnrichedDescriptionValidation() {
     }
   };
 
+  const autoFix = async (eventId: string) => {
+    setAutoFixId(eventId);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-seo-batch-proxy', {
+        body: {
+          target: 'seo-auto-fix-description',
+          payload: { event_id: eventId },
+        },
+      });
+      if (error) throw error;
+      const s = (data as { summary?: { fixed?: boolean; after?: { status?: string; decision?: string } } })?.summary;
+      if (s?.fixed) {
+        toast({
+          title: '🪄 Correction appliquée',
+          description: `Nouveau statut : ${s.after?.status ?? '?'} (${s.after?.decision ?? '?'})`,
+        });
+      } else {
+        toast({ title: 'Aucune correction nécessaire' });
+      }
+      fetchData();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur correction', description: msg, variant: 'destructive' });
+    } finally {
+      setAutoFixId(null);
+    }
+  };
+
+  const ignoreForNow = async (ev: PendingEvent) => {
+    setIgnoreId(ev.id);
+    const report = (ev.auto_validation_report ?? {}) as AutoValidationReport;
+    const newReport = { ...report, ignored_for_now: true };
+    const { error } = await supabase.from('events')
+      .update({
+        auto_validation_report: newReport as never,
+        validation_mode: 'manual',
+      })
+      .eq('id', ev.id);
+    setIgnoreId(null);
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '🗄️ Ignoré', description: 'Disponible dans l\'onglet « Archivés / ignorés ».' });
+      setEvents((prev) => prev.map((e) => e.id === ev.id ? { ...e, auto_validation_report: newReport, validation_mode: 'manual' } : e));
+    }
+  };
+
+  const unignore = async (ev: PendingEvent) => {
+    setIgnoreId(ev.id);
+    const report = (ev.auto_validation_report ?? {}) as AutoValidationReport;
+    const { ignored_for_now: _omit, ...rest } = report;
+    void _omit;
+    const { error } = await supabase.from('events')
+      .update({ auto_validation_report: rest as never })
+      .eq('id', ev.id);
+    setIgnoreId(null);
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '↩️ Réintégré dans la file' });
+      setEvents((prev) => prev.map((e) => e.id === ev.id ? { ...e, auto_validation_report: rest as AutoValidationReport } : e));
+    }
+  };
+
+  /** Génère une explication humaine pour un check en échec ou warning. */
+  const explainCheck = (c: AutoValidationCheck, ev: PendingEvent): string => {
+    const ev_ = (s: string | null) => s ?? '—';
+    const evid = (c.evidence ?? []).slice(0, 3).join(', ');
+    switch (c.code) {
+      case 'city_consistency':
+        return `Ville incorrecte : le texte mentionne « ${evid} », mais l'événement est à ${ev_(ev.ville)}.`;
+      case 'venue_consistency':
+        return `Lieu incorrect : le texte mentionne un autre lieu (« ${evid} »).`;
+      case 'date_consistency':
+        return `Date incohérente : année(s) « ${evid} » absente(s) des dates source.`;
+      case 'numbers_grounded':
+        return `Chiffre non vérifié : « ${evid} » n'est pas présent dans les données source (visiteurs, exposants, m²…).`;
+      case 'price_invented':
+        return `Tarif inventé : le texte mentionne un prix alors qu'aucun tarif n'est connu en base.`;
+      case 'program_invented':
+        return `Programme inventé : ${c.details ?? 'horaires, ateliers ou intervenants non présents en base'}.`;
+      case 'exhibitors_grounded':
+        return `Exposant non sourcé : « ${evid} » cité comme exposant mais absent de la liste officielle.`;
+      case 'length_min':
+        return c.status === 'fail' ? `Texte trop court : ${c.details ?? ''}` : `Texte un peu court (${c.details ?? ''}).`;
+      case 'superlatives':
+        return `Style à améliorer : superlatifs non sourcés (${evid}).`;
+      case 'generic_text':
+        return `Texte trop générique : à reformuler pour gagner en précision.`;
+      case 'repetition':
+        return `Répétitions détectées.`;
+      case 'fake_faq':
+        return `FAQ artificielle.`;
+      case 'commercial_promise':
+        return `Promesse commerciale à reformuler.`;
+      default:
+        return c.details ?? c.label ?? c.code;
+    }
+  };
+
   const filteredEvents = events.filter((ev) => {
+    const isIgnored = ev.auto_validation_report?.ignored_for_now === true;
+    const failChecks = ev.auto_validation_report?.checks?.filter((c) => c.status === 'fail' && c.blocker) ?? [];
+    const warnChecks = ev.auto_validation_report?.checks?.filter((c) => c.status === 'warning') ?? [];
+    const hasBlocker = failChecks.length > 0 || ev.auto_validation_status === 'failed';
+    const hasWarning = warnChecks.length > 0 || ev.auto_validation_status === 'warning';
+    const isPublished = ev.enrichissement_statut === 'valide'
+      && ev.auto_validation_status === 'passed'
+      && ev.validation_mode === 'auto';
     switch (filter) {
-      case 'needs_action':
-        return ev.enrichissement_statut === 'en_attente'
-          || ev.auto_validation_status === 'warning'
-          || ev.auto_validation_status === 'failed';
-      case 'pending': return ev.enrichissement_statut === 'en_attente';
+      case 'to_fix':
+        return !isIgnored && hasBlocker;
+      case 'to_review':
+        return !isIgnored && !hasBlocker && hasWarning;
+      case 'last_run':
+        return lastRunIds.has(ev.id);
       case 'published':
-        return ev.enrichissement_statut === 'valide'
-          && ev.auto_validation_status === 'passed'
-          && ev.validation_mode === 'auto';
-      case 'warning': return ev.auto_validation_status === 'warning';
-      case 'failed': return ev.auto_validation_status === 'failed';
-      case 'last_run': return lastRunIds.has(ev.id);
+        return isPublished;
+      case 'ignored':
+        return isIgnored;
       default: return true;
     }
   });
@@ -348,20 +457,35 @@ export function EnrichedDescriptionValidation() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <p className="text-sm text-muted-foreground">
-          Par défaut, seuls les textes qui demandent une action humaine sont affichés. Les textes déjà publiés sont accessibles via l'onglet « Déjà publiés ».
-        </p>
+        <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground space-y-1">
+          <p><strong className="text-foreground">Boîte de réception des actions.</strong> Par défaut, seuls les textes <em>à corriger</em> sont affichés.</p>
+          <p className="flex items-start gap-1.5"><Info className="h-3.5 w-3.5 mt-0.5 shrink-0" /> « Relancer le contrôle qualité » ne valide pas automatiquement les textes : cette action relance uniquement les contrôles. Les textes avec erreurs restent à corriger.</p>
+        </div>
 
         {/* 2. Filtres */}
         <div className="flex flex-wrap gap-2 items-center">
-          {([
-            ['needs_action', `À vérifier (${events.filter(e => e.enrichissement_statut === 'en_attente' || e.auto_validation_status === 'warning' || e.auto_validation_status === 'failed').length})`],
-            ['last_run', `Dernier run (${events.filter(e => lastRunIds.has(e.id)).length})`],
-            ['pending', `En attente (${events.filter(e => e.enrichissement_statut === 'en_attente').length})`],
-            ['warning', `Warnings (${events.filter(e => e.auto_validation_status === 'warning').length})`],
-            ['failed', `Failed (${events.filter(e => e.auto_validation_status === 'failed').length})`],
-            ['published', `Déjà publiés (${events.filter(e => e.enrichissement_statut === 'valide' && e.auto_validation_status === 'passed' && e.validation_mode === 'auto').length})`],
-          ] as Array<[FilterValue, string]>).map(([val, label]) => (
+          {(() => {
+            const counts = events.reduce((acc, e) => {
+              const isIgnored = e.auto_validation_report?.ignored_for_now === true;
+              const failChecks = e.auto_validation_report?.checks?.filter((c) => c.status === 'fail' && c.blocker) ?? [];
+              const warnChecks = e.auto_validation_report?.checks?.filter((c) => c.status === 'warning') ?? [];
+              const hasBlocker = failChecks.length > 0 || e.auto_validation_status === 'failed';
+              const hasWarning = warnChecks.length > 0 || e.auto_validation_status === 'warning';
+              if (isIgnored) acc.ignored++;
+              else if (hasBlocker) acc.to_fix++;
+              else if (hasWarning) acc.to_review++;
+              if (lastRunIds.has(e.id)) acc.last_run++;
+              if (e.enrichissement_statut === 'valide' && e.auto_validation_status === 'passed' && e.validation_mode === 'auto') acc.published++;
+              return acc;
+            }, { to_fix: 0, to_review: 0, last_run: 0, published: 0, ignored: 0 });
+            return ([
+              ['to_fix', `À corriger (${counts.to_fix})`],
+              ['to_review', `À relire (${counts.to_review})`],
+              ['last_run', `Dernier run (${counts.last_run})`],
+              ['published', `Déjà publiés (${counts.published})`],
+              ['ignored', `Archivés / ignorés (${counts.ignored})`],
+            ] as Array<[FilterValue, string]>);
+          })().map(([val, label]) => (
             <Button
               key={val}
               size="sm"
@@ -378,9 +502,10 @@ export function EnrichedDescriptionValidation() {
             onClick={reValidateAll}
             disabled={revalidating}
             className="text-xs ml-auto"
+            title="Relance les contrôles qualité sur tous les textes. Ne valide pas automatiquement."
           >
             {revalidating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
-            Re-valider tous
+            Relancer le contrôle qualité
           </Button>
         </div>
 
@@ -401,6 +526,10 @@ export function EnrichedDescriptionValidation() {
               const report = ev.auto_validation_report;
               const failedCodes = report?.checks?.filter(c => c.status === 'fail').map(c => c.code) ?? [];
               const warningCodes = report?.checks?.filter(c => c.status === 'warning').map(c => c.code) ?? [];
+              const issueChecks = report?.checks?.filter(c => c.status === 'fail' || c.status === 'warning') ?? [];
+              const isIgnored = report?.ignored_for_now === true;
+              const fixableCodes = new Set(['city_consistency','venue_consistency','date_consistency','numbers_grounded','price_invented','program_invented','exhibitors_grounded','superlatives']);
+              const canAutoFix = issueChecks.some(c => fixableCodes.has(c.code));
               return (
                 <div key={ev.id} className="border rounded-lg p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -443,10 +572,29 @@ export function EnrichedDescriptionValidation() {
                         {warningCodes.map(c => (
                           <Badge key={c} className="bg-amber-50 text-amber-700 border-amber-200 text-xs">{checkLabelToBadge(c)}</Badge>
                         ))}
+                        {isIgnored && (
+                          <Badge className="bg-slate-100 text-slate-700 border-slate-300 text-xs"><Archive className="h-3 w-3 mr-1" />Ignoré</Badge>
+                        )}
                       </div>
                     </div>
                     {scoreBadge(ev.enrichissement_score)}
                   </div>
+
+                  {issueChecks.length > 0 && (
+                    <div className="rounded-md border border-amber-200 bg-amber-50/60 p-2.5 text-xs space-y-1">
+                      <div className="font-medium text-amber-900 flex items-center gap-1.5">
+                        <Info className="h-3.5 w-3.5" /> Pourquoi ce texte est dans la file ?
+                      </div>
+                      <ul className="space-y-0.5 text-amber-900/90">
+                        {issueChecks.slice(0, 5).map((c, i) => (
+                          <li key={`${c.code}-${i}`} className="flex gap-1.5">
+                            <span className="opacity-60">•</span>
+                            <span>{explainCheck(c, ev)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {isEditing ? (
                     <div className="space-y-2">
@@ -521,10 +669,48 @@ export function EnrichedDescriptionValidation() {
                       className="text-indigo-700 border-indigo-300 hover:bg-indigo-50"
                       disabled={revalidateOneId === ev.id}
                       onClick={() => reValidateOne(ev.id)}
+                      title="Relance les contrôles qualité sur ce texte"
                     >
                       {revalidateOneId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ShieldQuestion className="h-3 w-3 mr-1" />}
-                      Revalider
+                      Relancer le contrôle
                     </Button>
+                    {canAutoFix && !isIgnored && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-purple-700 border-purple-300 hover:bg-purple-50"
+                        disabled={autoFixId === ev.id}
+                        onClick={() => autoFix(ev.id)}
+                        title="Relance l'IA avec un prompt correctif strict, sans inventer d'informations"
+                      >
+                        {autoFixId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wand2 className="h-3 w-3 mr-1" />}
+                        Corriger automatiquement
+                      </Button>
+                    )}
+                    {!isIgnored ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-slate-600 hover:text-slate-900"
+                        disabled={ignoreId === ev.id}
+                        onClick={() => ignoreForNow(ev)}
+                        title="Sort cet événement de la file active sans le publier"
+                      >
+                        {ignoreId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Archive className="h-3 w-3 mr-1" />}
+                        Ignorer pour l'instant
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-slate-600 hover:text-slate-900"
+                        disabled={ignoreId === ev.id}
+                        onClick={() => unignore(ev)}
+                      >
+                        {ignoreId === ev.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                        Réintégrer
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
