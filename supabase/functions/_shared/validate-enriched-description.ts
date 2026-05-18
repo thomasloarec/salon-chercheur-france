@@ -255,7 +255,6 @@ function checkNumbersGrounded(text: string, src: EventSource): CheckResult {
   };
 }
 
-function checkExhibitorsGrounded(text: string, exhibitorNames: string[]): CheckResult {
 function checkExhibitorsGrounded(text: string, src: EventSource, exhibitorNames: string[]): CheckResult {
   // Cherche des tokens en MAJUSCULES non sourcés ET utilisés dans un contexte
   // qui désigne explicitement une entreprise / un exposant. Évite les faux
