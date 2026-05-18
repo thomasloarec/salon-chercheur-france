@@ -15,6 +15,7 @@ import { buildCorsHeaders, handleCors } from '../_shared/cors.ts'
  */
 
 import { ANTHROPIC_API_URL, buildAnthropicHeaders, getAnthropicModelFast } from '../_shared/anthropic.ts';
+import { validateEnrichedDescription, type EventSource } from '../_shared/validate-enriched-description.ts';
 
 const MIN_LENGTH = 135;
 const MAX_LENGTH = 160;
