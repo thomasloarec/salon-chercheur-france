@@ -942,6 +942,7 @@ type RealSendResult = {
   emailTo?: string | null;
   notificationIdsIncluded?: string[];
   skippedNotificationsAlreadyEmailed?: number;
+  skipCounters?: BuildSkipCounters;
   error?: string;
 };
 
@@ -965,11 +966,13 @@ async function sendRealForUser(
       status: 200,
       reason: built.skip,
       skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
+      skipCounters: built.skipCounters,
       response: {
         success: true, dryRun: false, sendReal: true,
         emailsSent: 0,
         reason: built.skip ?? 'no_eligible',
         skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
+        ...built.skipCounters,
       },
     };
   }
@@ -1052,6 +1055,7 @@ async function sendRealForUser(
       logId, resendMessageId: resendId, emailTo: p.emailTo,
       notificationIdsIncluded: p.notificationIds,
       skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
+      skipCounters: built.skipCounters,
       response: {
         success: true, dryRun: false, sendReal: true,
         emailsSent: 1,
@@ -1059,6 +1063,7 @@ async function sendRealForUser(
         resendMessageId: resendId, status: 'sent', logId,
         notificationIdsIncluded: p.notificationIds,
         skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
+        ...built.skipCounters,
       },
     };
   } catch (e) {
