@@ -15,9 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Activity, RefreshCw, Loader2, PlayCircle, Beaker, Rocket, Zap,
   CheckCircle2, AlertTriangle, XCircle, Server, ChevronDown, ChevronUp,
-  ExternalLink, Settings, ListChecks, Lightbulb, Calculator, ShieldQuestion,
+  ExternalLink, ListChecks, Lightbulb, Calculator, ShieldQuestion,
   Info,
 } from 'lucide-react';
+import { SeoEventDetailSheet, type ProcessedEventLite } from './SeoEventDetailSheet';
 
 interface EligibilityStats {
   total_eligible: number;
@@ -102,15 +103,23 @@ function triggerLabel(src: string): string {
 function batchLabelFromRun(r: RunRow): string {
   const d = r.details ?? {};
   const mode = (d as Record<string, unknown>)['mode'] as string | undefined;
+  const requested = ((d as Record<string, unknown>)['limit'] as number | undefined) ?? null;
   const sel = r.events_selected ?? 0;
-  if (mode === 'dry_run') return `Dry-run (${sel})`;
-  if (mode === 'test') return `Batch test (${sel})`;
-  if (mode === 'run') {
-    if (sel <= 5) return `Batch pilote (${sel})`;
-    if (sel <= 20) return `Batch ${sel}`;
-    return `Batch ${sel}`;
+  // Libellé basé sur le mode + limite demandée, pas sur ce qui a été réellement trouvé
+  let base: string;
+  if (mode === 'dry_run') base = `Dry-run ${requested ?? sel}`;
+  else if (mode === 'test') base = `Batch test ${requested ?? sel}`;
+  else if (mode === 'run') {
+    const req = requested ?? sel;
+    if (req <= 5) base = `Batch pilote ${req}`;
+    else base = `Batch ${req}`;
+  } else {
+    base = `${triggerLabel(r.trigger_source)} ${requested ?? sel}`;
   }
-  return `${triggerLabel(r.trigger_source)} (${sel})`;
+  if (requested != null && requested !== sel) {
+    return `${base} demandé — ${sel} événement${sel > 1 ? 's' : ''} réellement traitable${sel > 1 ? 's' : ''}`;
+  }
+  return base;
 }
 
 export function SeoEnrichmentDashboard() {
