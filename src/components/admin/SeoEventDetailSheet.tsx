@@ -520,6 +520,11 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
                   « Valider quand même » force la publication malgré les erreurs détectées. Utile pour les faux positifs (ex. un salon « à Lyon » qui se tient en réalité à Chassieu au parc Eurexpo — ce n'est pas une erreur factuelle).
                 </p>
               )}
+              {isErrored && (
+                <p className="text-[10px] text-amber-700">
+                  Cet événement est bloqué en statut « error » (probablement après un échec de génération de meta description). Vous pouvez : (1) modifier la meta_description_gen ci-dessus puis cliquer « Valider quand même » pour la publier telle quelle, ou (2) cliquer « Débloquer » pour le remettre dans la file et qu'il soit retenté au prochain batch.
+                </p>
+              )}
             </section>
           </div>
         )}
