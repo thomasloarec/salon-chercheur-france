@@ -777,10 +777,10 @@ function whatToDo(decision?: string | null): { label: string; tone: 'emerald' | 
   switch (decision) {
     case 'publie_auto': return { label: 'Rien à faire', tone: 'emerald' };
     case 'meta_only': return { label: 'Rien à faire', tone: 'emerald' };
-    case 'revue_manuelle': return { label: 'Relire ou revalider', tone: 'amber' };
+    case 'revue_manuelle': return { label: 'Ouvrir le détail pour relire', tone: 'amber' };
     case 'failed':
-    case 'failed_validation': return { label: 'Corriger ou rejeter', tone: 'red' };
-    case 'skipped': return { label: 'Aucune action', tone: 'slate' };
+    case 'failed_validation': return { label: 'Ouvrir le détail pour corriger', tone: 'red' };
+    case 'skipped': return { label: 'Voir pourquoi', tone: 'slate' };
     default: return { label: '—', tone: 'slate' };
   }
 }
