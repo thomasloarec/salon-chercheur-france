@@ -785,6 +785,8 @@ function decisionBadge(decision?: string | null) {
   switch (decision) {
     case 'publie_auto':
       return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />Publié auto</Badge>;
+    case 'publie_manuelle':
+      return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />Validé</Badge>;
     case 'revue_manuelle':
       return <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]"><AlertTriangle className="h-3 w-3 mr-1" />En revue</Badge>;
     case 'failed':
@@ -802,6 +804,7 @@ function decisionBadge(decision?: string | null) {
 function whatToDo(decision?: string | null): { label: string; tone: 'emerald' | 'amber' | 'red' | 'slate' } {
   switch (decision) {
     case 'publie_auto': return { label: 'Rien à faire', tone: 'emerald' };
+    case 'publie_manuelle': return { label: 'Rien à faire', tone: 'emerald' };
     case 'meta_only': return { label: 'Rien à faire', tone: 'emerald' };
     case 'revue_manuelle': return { label: 'Ouvrir le détail pour relire', tone: 'amber' };
     case 'failed':
