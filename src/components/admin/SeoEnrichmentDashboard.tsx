@@ -62,6 +62,13 @@ interface Counters {
   published: number;
 }
 
+interface StaleFailureInfo {
+  runId: string;
+  errorIds: string[];
+  resolvedIds: string[];
+  unresolvedIds: string[];
+}
+
 type BatchMode = 'dry_run' | 'test' | 'run';
 
 function statusBadge(status: string) {
@@ -135,6 +142,7 @@ export function SeoEnrichmentDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [expandedRunIds, setExpandedRunIds] = useState<Set<string>>(new Set());
   const [missingDescOpen, setMissingDescOpen] = useState(false);
+  const [staleFailure, setStaleFailure] = useState<StaleFailureInfo | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -152,14 +160,17 @@ export function SeoEnrichmentDashboard() {
           .eq('enrichissement_statut', 'en_attente'),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('auto_validation_status', 'failed')
-          .or('enrichissement_statut.is.null,enrichissement_statut.neq.valide'),
+          .or('enrichissement_statut.is.null,enrichissement_statut.neq.valide')
+          // Exclure les événements validés manuellement (statut=valide + mode=manual) :
+          // l'admin a déjà résolu la situation, ils ne doivent plus être comptés "failed".
+          .not('validation_mode', 'eq', 'manual'),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .is('enrichissement_score', null),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .gte('enrichissement_score', 55),
-        supabase.from('events').select('id, meta_description_gen, description_enrichie, enrichissement_statut')
+        supabase.from('events').select('id, meta_description_gen, description_enrichie, enrichissement_statut, validation_mode')
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .not('slug', 'is', null).neq('slug', '')
           .gte('enrichissement_score', 55)
@@ -175,7 +186,9 @@ export function SeoEnrichmentDashboard() {
       const hasText = (value: unknown) => typeof value === 'string' && value.trim().length > 0;
       const descGeneratableStatuses = new Set([null, 'non_traite', 'done']);
       const readyForBatchCount = (readyForBatchRes.data ?? []).filter((row) => {
-        const r = row as { meta_description_gen: string | null; description_enrichie: string | null; enrichissement_statut: string | null };
+        const r = row as { meta_description_gen: string | null; description_enrichie: string | null; enrichissement_statut: string | null; validation_mode: string | null };
+        // Un événement validé manuellement (admin a tranché) n'est plus traitable par le batch.
+        if (r.enrichissement_statut === 'valide' && r.validation_mode === 'manual') return false;
         return !hasText(r.meta_description_gen)
           || (!hasText(r.description_enrichie) && descGeneratableStatuses.has(r.enrichissement_statut));
       }).length;
@@ -191,6 +204,40 @@ export function SeoEnrichmentDashboard() {
         desc_missing: descMissingRes.count ?? 0,
         published: publishedRes.count ?? 0,
       });
+
+      // ─── Détection d'échec périmé ───
+      // Si le dernier run non-dry_run est "failed" mais que tous les événements
+      // listés en erreur sont maintenant résolus (statut=valide), on considère
+      // l'échec comme historique et on ne bloque plus l'admin.
+      const lastNonDry = (runsRes.data ?? []).find((r) => (r as RunRow).trigger_source !== 'dry_run') as RunRow | undefined;
+      if (lastNonDry && lastNonDry.status === 'failed') {
+        const errs = (lastNonDry.details as Record<string, unknown> | null)?.['errors'];
+        const errorIds: string[] = Array.isArray(errs)
+          ? (errs as Array<{ id?: string }>).map((e) => e?.id ?? '').filter(Boolean)
+          : [];
+        if (errorIds.length > 0) {
+          const { data: errRows } = await supabase
+            .from('events')
+            .select('id, enrichissement_statut, validation_mode, meta_description_gen')
+            .in('id', errorIds);
+          const resolvedIds: string[] = [];
+          const unresolvedIds: string[] = [];
+          for (const id of errorIds) {
+            const row = (errRows ?? []).find((r) => (r as { id: string }).id === id) as
+              | { id: string; enrichissement_statut: string | null; validation_mode: string | null; meta_description_gen: string | null }
+              | undefined;
+            const resolved = !!row
+              && row.enrichissement_statut === 'valide'
+              && hasText(row.meta_description_gen);
+            (resolved ? resolvedIds : unresolvedIds).push(id);
+          }
+          setStaleFailure({ runId: lastNonDry.id, errorIds, resolvedIds, unresolvedIds });
+        } else {
+          setStaleFailure(null);
+        }
+      } else {
+        setStaleFailure(null);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       toast({ title: 'Erreur chargement', description: msg, variant: 'destructive' });
