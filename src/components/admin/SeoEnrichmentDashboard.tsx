@@ -15,9 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Activity, RefreshCw, Loader2, PlayCircle, Beaker, Rocket, Zap,
   CheckCircle2, AlertTriangle, XCircle, Server, ChevronDown, ChevronUp,
-  ExternalLink, Settings, ListChecks, Lightbulb, Calculator, ShieldQuestion,
+  ExternalLink, ListChecks, Lightbulb, Calculator, ShieldQuestion,
   Info,
 } from 'lucide-react';
+import { SeoEventDetailSheet, type ProcessedEventLite } from './SeoEventDetailSheet';
 
 interface EligibilityStats {
   total_eligible: number;
@@ -102,15 +103,23 @@ function triggerLabel(src: string): string {
 function batchLabelFromRun(r: RunRow): string {
   const d = r.details ?? {};
   const mode = (d as Record<string, unknown>)['mode'] as string | undefined;
+  const requested = ((d as Record<string, unknown>)['limit'] as number | undefined) ?? null;
   const sel = r.events_selected ?? 0;
-  if (mode === 'dry_run') return `Dry-run (${sel})`;
-  if (mode === 'test') return `Batch test (${sel})`;
-  if (mode === 'run') {
-    if (sel <= 5) return `Batch pilote (${sel})`;
-    if (sel <= 20) return `Batch ${sel}`;
-    return `Batch ${sel}`;
+  // Libellé basé sur le mode + limite demandée, pas sur ce qui a été réellement trouvé
+  let base: string;
+  if (mode === 'dry_run') base = `Dry-run ${requested ?? sel}`;
+  else if (mode === 'test') base = `Batch test ${requested ?? sel}`;
+  else if (mode === 'run') {
+    const req = requested ?? sel;
+    if (req <= 5) base = `Batch pilote ${req}`;
+    else base = `Batch ${req}`;
+  } else {
+    base = `${triggerLabel(r.trigger_source)} ${requested ?? sel}`;
   }
-  return `${triggerLabel(r.trigger_source)} (${sel})`;
+  if (requested != null && requested !== sel) {
+    return `${base} demandé — ${sel} événement${sel > 1 ? 's' : ''} réellement traitable${sel > 1 ? 's' : ''}`;
+  }
+  return base;
 }
 
 export function SeoEnrichmentDashboard() {
@@ -744,6 +753,8 @@ interface ProcessedEvent {
   decision?: string | null;
   warnings?: unknown;
   error?: string | null;
+  meta_reason?: string | null;
+  desc_reason?: string | null;
 }
 
 function decisionBadge(decision?: string | null) {
@@ -768,10 +779,10 @@ function whatToDo(decision?: string | null): { label: string; tone: 'emerald' | 
   switch (decision) {
     case 'publie_auto': return { label: 'Rien à faire', tone: 'emerald' };
     case 'meta_only': return { label: 'Rien à faire', tone: 'emerald' };
-    case 'revue_manuelle': return { label: 'Relire ou revalider', tone: 'amber' };
+    case 'revue_manuelle': return { label: 'Ouvrir le détail pour relire', tone: 'amber' };
     case 'failed':
-    case 'failed_validation': return { label: 'Corriger ou rejeter', tone: 'red' };
-    case 'skipped': return { label: 'Aucune action', tone: 'slate' };
+    case 'failed_validation': return { label: 'Ouvrir le détail pour corriger', tone: 'red' };
+    case 'skipped': return { label: 'Voir pourquoi', tone: 'slate' };
     default: return { label: '—', tone: 'slate' };
   }
 }
@@ -838,6 +849,8 @@ function LastActionSummary({ run }: { run: RunRow }) {
 }
 
 function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const selected = events.find((e) => e.id === openId) ?? null;
   return (
     <div className="border rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -867,6 +880,14 @@ function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
                 <td className="px-2 py-1.5">{whatToDoBadge(e.decision)}</td>
                 <td className="px-2 py-1.5 whitespace-nowrap">
                   <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => setOpenId(e.id)}
+                    >
+                      Voir détail
+                    </Button>
                     {e.slug && (
                       <a
                         href={`/events/${e.slug}`}
@@ -878,15 +899,6 @@ function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
-                    <a
-                      href={`/admin/events/${e.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
-                      title="Fiche admin"
-                    >
-                      <Settings className="h-3 w-3" />
-                    </a>
                   </div>
                 </td>
               </tr>
@@ -894,6 +906,11 @@ function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
           </tbody>
         </table>
       </div>
+      <SeoEventDetailSheet
+        open={!!openId}
+        onOpenChange={(o) => { if (!o) setOpenId(null); }}
+        processed={selected as ProcessedEventLite | null}
+      />
     </div>
   );
 }

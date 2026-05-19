@@ -358,6 +358,9 @@ Deno.serve(async (req) => {
           decision,
           warnings: result?.auto_validation_warnings ?? null,
           error: metaErr ? (result?.reason ?? `HTTP ${resp.status}`) : null,
+          meta_reason: result?.reason ?? null,
+          desc_reason: result?.description_enrichie_reason ?? null,
+          desc_status: descStatus ?? null,
         });
 
         if (metaOk || descOk) {
