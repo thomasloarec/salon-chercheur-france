@@ -981,6 +981,36 @@ trigger   : cron`}</pre>
           </AlertDialog>
         </CardContent>
       </Card>
+
+      {/* ─── Dialog de confirmation pour la correction automatique ─── */}
+      <AlertDialog open={autoFixConfirmOpen} onOpenChange={setAutoFixConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lancer la correction automatique sur 5 erreurs&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action va corriger jusqu'à 5 descriptions en échec en supprimant ou
+              remplaçant les informations non fiables (ville incorrecte, lieu incorrect, chiffres non sourcés).
+              Aucun nouveau batch IA complet n'est lancé. Vercel ne sera déclenché que si au
+              moins une description repasse en statut « valide ».
+              {autoFixable && (
+                <div className="mt-3 text-xs">
+                  {autoFixable.count} événement(s) candidat(s) — {Math.min(autoFixable.count, 5)} seront traités.
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { setAutoFixConfirmOpen(false); runAutoFixBatch(); }}
+              disabled={(autoFixable?.count ?? 0) === 0}
+            >
+              Lancer la correction
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
     </TooltipProvider>
   );
