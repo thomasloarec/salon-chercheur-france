@@ -327,6 +327,37 @@ Deno.serve(async (req) => {
     const CONCURRENCY = 5;
     const processOne = async (ev: CandidateEvent) => {
       try {
+        // ─── Garde-fou hash : skip si déjà à jour, AUCUN appel Claude ───
+        const force = (body as Record<string, unknown>).force === true;
+        if (!force
+          && hasText(ev.description_enrichie)
+          && ev.enrichissement_statut === 'valide'
+          && ev.seo_generated_from_hash) {
+          const { data: hashData } = await supabase.rpc('compute_seo_source_hash', { p_event_id: ev.id });
+          const currentHash = typeof hashData === 'string' ? hashData : null;
+          if (currentHash && currentHash === ev.seo_generated_from_hash) {
+            await supabase
+              .from('events')
+              .update({ seo_last_checked_at: new Date().toISOString() })
+              .eq('id', ev.id);
+            processedIds.push(ev.id);
+            skippedCount++;
+            processedEvents.push({
+              id: ev.id,
+              nom_event: ev.nom_event,
+              slug: ev.slug,
+              public_url: ev.slug ? `/events/${ev.slug}` : null,
+              score: ev.enrichissement_score,
+              niveau: ev.enrichissement_niveau,
+              meta_status: 'skipped',
+              description_done: false,
+              decision: 'skipped',
+              skip_reason: 'already_up_to_date_hash_match',
+            });
+            return;
+          }
+        }
+
         const resp = await fetch(`${SUPABASE_URL}/functions/v1/enrich-event-meta`, {
           method: 'POST',
           headers: {
@@ -334,7 +365,7 @@ Deno.serve(async (req) => {
             'Authorization': `Bearer ${SERVICE_KEY}`,
             'apikey': SERVICE_KEY,
           },
-          body: JSON.stringify({ event_id: ev.id }),
+          body: JSON.stringify({ event_id: ev.id, force }),
         });
         const result = await resp.json().catch(() => ({}));
         processedIds.push(ev.id);
