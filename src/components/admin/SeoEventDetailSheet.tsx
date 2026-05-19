@@ -439,8 +439,17 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
                   {busy === 'fix' ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Wand2 className="h-3 w-3 mr-1" />}
                   Corriger automatiquement
                 </Button>
-                <Button variant="outline" size="sm" onClick={markValid} disabled={!!busy || !event.description_enrichie || event.enrichissement_statut === 'valide'}>
-                  <CheckCircle2 className="h-3 w-3 mr-1" /> Valider manuellement
+                <Button
+                  variant={failChecks.length > 0 ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={markValid}
+                  disabled={!!busy || !event.description_enrichie || event.enrichissement_statut === 'valide'}
+                  title={failChecks.length > 0
+                    ? 'Force la publication de la description même si le contrôle qualité a détecté des erreurs (ex. faux positif sur la ville).'
+                    : 'Marque la description comme valide et la publie.'}
+                >
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  {failChecks.length > 0 ? 'Valider quand même' : 'Valider manuellement'}
                 </Button>
                 {event.auto_validation_report?.ignored_for_now ? (
                   <Button variant="outline" size="sm" onClick={() => setIgnore(false)} disabled={!!busy}>
@@ -458,6 +467,11 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
               <p className="text-[10px] text-muted-foreground">
                 « Corriger automatiquement » utilise l'IA pour réparer les erreurs détectées sans inventer de nouvelles informations. Aucun déploiement Vercel n'est déclenché sauf si une description passe réellement en valide.
               </p>
+              {failChecks.length > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  « Valider quand même » force la publication malgré les erreurs détectées. Utile pour les faux positifs (ex. un salon « à Lyon » qui se tient en réalité à Chassieu au parc Eurexpo — ce n'est pas une erreur factuelle).
+                </p>
+              )}
             </section>
           </div>
         )}
