@@ -860,6 +860,7 @@ export type Database = {
           duplicate_check_score: number | null
           duplicate_check_status: string
           enrichissement_date: string | null
+          enrichissement_ignored: boolean
           enrichissement_niveau: string | null
           enrichissement_score: number | null
           enrichissement_statut: string | null
@@ -913,6 +914,7 @@ export type Database = {
           duplicate_check_score?: number | null
           duplicate_check_status?: string
           enrichissement_date?: string | null
+          enrichissement_ignored?: boolean
           enrichissement_niveau?: string | null
           enrichissement_score?: number | null
           enrichissement_statut?: string | null
@@ -966,6 +968,7 @@ export type Database = {
           duplicate_check_score?: number | null
           duplicate_check_status?: string
           enrichissement_date?: string | null
+          enrichissement_ignored?: boolean
           enrichissement_niveau?: string | null
           enrichissement_score?: number | null
           enrichissement_statut?: string | null
