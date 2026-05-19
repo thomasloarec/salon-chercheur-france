@@ -726,14 +726,11 @@ export function SeoEnrichmentDashboard() {
               disabled={!!actionLoading}
               variant="outline"
             />
-            <ActionTile
-              icon={<Wrench className="h-4 w-4" />}
-              title="Corriger erreurs simples (5)"
-              description="Réécrit jusqu'à 5 textes en échec (ville, lieu, chiffres non sourcés) sans rien inventer."
-              onClick={runAutoFixBatch}
+            <AutoFixActionTile
+              autoFixable={autoFixable}
               loading={actionLoading === 'autofix'}
-              disabled={!!actionLoading || (counters?.failed ?? 0) === 0}
-              variant="outline"
+              disabled={!!actionLoading}
+              onClick={() => setAutoFixConfirmOpen(true)}
             />
           </div>
           <p className="text-xs text-muted-foreground mt-4">
