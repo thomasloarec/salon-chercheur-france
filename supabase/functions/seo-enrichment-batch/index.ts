@@ -328,6 +328,7 @@ Deno.serve(async (req) => {
         const autoVal = result?.auto_validation_status as string | undefined;
         const metaSkipped = metaStatus === 'skipped';
         const metaErr = metaStatus === 'error' || !resp.ok;
+        const manuallyValidated = result?.enrichissement_statut === 'valide' && result?.validation_mode === 'manual';
 
         if (metaOk) metaDone++;
         if (descOk) descDone++;
@@ -336,6 +337,7 @@ Deno.serve(async (req) => {
 
         let decision = 'skipped';
         if (metaErr) decision = 'failed';
+        else if (manuallyValidated) decision = 'publie_manuelle';
         else if (descOk && autoVal === 'passed') decision = 'publie_auto';
         else if (descOk && autoVal === 'warning') decision = 'revue_manuelle';
         else if (descOk && autoVal === 'failed') decision = 'failed_validation';
