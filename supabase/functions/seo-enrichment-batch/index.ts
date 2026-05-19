@@ -413,6 +413,11 @@ Deno.serve(async (req) => {
         if (pe.auto_validation_score == null) pe.auto_validation_score = row.auto_validation_score ?? null;
         if (pe.validation_mode == null) pe.validation_mode = row.validation_mode ?? null;
         if (pe.enrichissement_statut == null) pe.enrichissement_statut = row.enrichissement_statut ?? null;
+        const finalStatut = row.enrichissement_statut;
+        const finalMode = row.validation_mode;
+        const finalAutoValidation = row.auto_validation_status;
+        if (finalStatut === 'valide' && finalMode === 'manual') pe.decision = 'publie_manuelle';
+        else if (finalStatut === 'valide' && finalMode === 'auto' && finalAutoValidation === 'passed') pe.decision = 'publie_auto';
       }
     }
 
