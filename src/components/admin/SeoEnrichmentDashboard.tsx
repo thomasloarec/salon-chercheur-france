@@ -847,6 +847,8 @@ function LastActionSummary({ run }: { run: RunRow }) {
 }
 
 function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const selected = events.find((e) => e.id === openId) ?? null;
   return (
     <div className="border rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -876,6 +878,14 @@ function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
                 <td className="px-2 py-1.5">{whatToDoBadge(e.decision)}</td>
                 <td className="px-2 py-1.5 whitespace-nowrap">
                   <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => setOpenId(e.id)}
+                    >
+                      Voir détail
+                    </Button>
                     {e.slug && (
                       <a
                         href={`/events/${e.slug}`}
@@ -887,15 +897,6 @@ function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
-                    <a
-                      href={`/admin/events/${e.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
-                      title="Fiche admin"
-                    >
-                      <Settings className="h-3 w-3" />
-                    </a>
                   </div>
                 </td>
               </tr>
@@ -903,6 +904,11 @@ function ProcessedEventsTable({ events }: { events: ProcessedEvent[] }) {
           </tbody>
         </table>
       </div>
+      <SeoEventDetailSheet
+        open={!!openId}
+        onOpenChange={(o) => { if (!o) setOpenId(null); }}
+        processed={selected as ProcessedEventLite | null}
+      />
     </div>
   );
 }
