@@ -331,7 +331,7 @@ export function SeoEnrichmentDashboard() {
     // Cas E — prudence : aucun batch pilote récent
     const recentPilots = lastNonDryRuns.filter((r) => (r.events_selected ?? 0) <= 5).length;
     const recentLargeRuns = lastNonDryRuns.filter((r) => (r.events_selected ?? 0) >= 10 && r.status === 'success').length;
-    if (recentPilots < 2 && recentLargeRuns === 0 && counters.score_ge_55 > 0) {
+    if (recentPilots < 2 && recentLargeRuns === 0 && counters.ready_for_batch > 0) {
       return {
         tone: 'blue' as const,
         title: 'Le système est stable, mais il est recommandé de lancer encore un Batch pilote 5 avant Batch 20.',
@@ -339,7 +339,7 @@ export function SeoEnrichmentDashboard() {
       };
     }
     // Cas D — système stable, propose batch 20
-    if (lastRun && lastRun.status === 'success' && counters.score_ge_55 > 0) {
+    if (lastRun && lastRun.status === 'success' && counters.ready_for_batch > 0) {
       return {
         tone: 'emerald' as const,
         title: 'Le dernier batch a réussi. Tu peux lancer un batch de 20 événements.',
@@ -453,10 +453,10 @@ export function SeoEnrichmentDashboard() {
                   </div>
                   <div className="text-xs text-red-700 mt-1">
                     Traitement plus large. À utiliser quand les derniers batchs sont propres.
-                    {typeof counters?.score_ge_55 === 'number' && (
+                    {typeof counters?.ready_for_batch === 'number' && (
                       <div className="mt-1 font-medium">
-                        {counters.score_ge_55} événement(s) prêt(s) (score ≥ 55) — le batch ne traitera que ceux-là.
-                        {counters.score_ge_55 < 20 && counters.null_score > 0 && (
+                        {counters.ready_for_batch} événement(s) vraiment traitable(s) — score ≥ 55 + texte manquant.
+                        {counters.ready_for_batch < 20 && counters.null_score > 0 && (
                           <> Lancez « Scorer 20 événements » pour en débloquer davantage.</>
                         )}
                       </div>
@@ -470,10 +470,10 @@ export function SeoEnrichmentDashboard() {
                   <AlertDialogDescription>
                     Cette action va générer jusqu'à 20 descriptions enrichies + meta et déclenchera Vercel si du contenu public change.
                     Consomme des crédits Claude.
-                    {typeof counters?.score_ge_55 === 'number' && (
+                    {typeof counters?.ready_for_batch === 'number' && (
                       <>
-                        {' '}Actuellement, <strong>{counters.score_ge_55} événement(s)</strong> ont un score ≥ 55 et seront traités
-                        (les événements avec un score inférieur ou NULL sont ignorés).
+                        {' '}Actuellement, <strong>{counters.ready_for_batch} événement(s)</strong> ont un score ≥ 55 et une meta ou description manquante.
+                        Le batch en traitera jusqu'à 20. Les événements déjà publiés ne sont pas repris.
                       </>
                     )}
                   </AlertDialogDescription>
@@ -518,7 +518,8 @@ export function SeoEnrichmentDashboard() {
           tone="blue"
           items={[
             { label: 'Total éligibles', value: eligibility?.total_eligible, hint: 'Événements pouvant être enrichis (visibles, futurs, non finalisés).' },
-            { label: 'Prêts à enrichir (score ≥ 55)', value: counters?.score_ge_55, hint: 'Seuls les événements avec un score ≥ 55 sont traités par les batchs. Les autres doivent d’abord être scorés.' },
+            { label: 'Score ≥ 55', value: counters?.score_ge_55, hint: 'Événements suffisamment prioritaires, y compris ceux déjà publiés.' },
+            { label: 'Traitables par Batch 20', value: counters?.ready_for_batch, hint: 'Score ≥ 55 et meta ou description enrichie manquante. Ce compteur correspond au maximum réellement traitable par batch.' },
             { label: 'Sans score', value: counters?.null_score, hint: 'Score NULL = événements pas encore priorisés.' },
             { label: 'Description manquante', value: eligibility?.no_description_enrichie },
           ]}
