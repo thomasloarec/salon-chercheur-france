@@ -753,6 +753,8 @@ interface ProcessedEvent {
   decision?: string | null;
   warnings?: unknown;
   error?: string | null;
+  meta_reason?: string | null;
+  desc_reason?: string | null;
 }
 
 function decisionBadge(decision?: string | null) {
