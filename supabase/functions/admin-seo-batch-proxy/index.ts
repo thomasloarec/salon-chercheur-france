@@ -17,6 +17,7 @@ const ALLOWED_TARGETS = new Set([
   'seo-enrichment-batch',
   'revalidate-enriched-description',
   'seo-auto-fix-description',
+  'seo-auto-fix-batch',
 ]);
 
 Deno.serve(async (req) => {
