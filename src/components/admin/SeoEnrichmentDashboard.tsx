@@ -16,7 +16,7 @@ import {
   Activity, RefreshCw, Loader2, PlayCircle, Beaker, Rocket, Zap,
   CheckCircle2, AlertTriangle, XCircle, Server, ChevronDown, ChevronUp,
   ExternalLink, ListChecks, Lightbulb, Calculator, ShieldQuestion,
-  Info,
+  Info, Wrench, Moon,
 } from 'lucide-react';
 import { SeoEventDetailSheet, type ProcessedEventLite } from './SeoEventDetailSheet';
 import {
@@ -338,6 +338,31 @@ export function SeoEnrichmentDashboard() {
     }
   };
 
+  const runAutoFixBatch = async () => {
+    setActionLoading('autofix');
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-seo-batch-proxy', {
+        body: {
+          target: 'seo-auto-fix-batch',
+          payload: { limit: 5 },
+        },
+      });
+      if (error) throw error;
+      const r = data as { processed?: number; fixed?: number; still_failed?: number; errored?: number; by_reason_before?: Record<string, number> };
+      toast({
+        title: '🛠️ Correction automatique terminée',
+        description: `${r.processed ?? 0} traité(s) — ${r.fixed ?? 0} corrigé(s), ${r.still_failed ?? 0} encore en échec, ${r.errored ?? 0} erreur(s).`,
+      });
+      fetchData();
+      window.dispatchEvent(new CustomEvent('seo-enrichment-refresh'));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur correction auto', description: msg, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const toggleRunDetails = (id: string) => {
     setExpandedRunIds((prev) => {
       const next = new Set(prev);
@@ -349,6 +374,35 @@ export function SeoEnrichmentDashboard() {
   const lastRun = runs.find((r) => r.trigger_source !== 'dry_run') ?? runs[0];
   const lastDeployRun = runs.find((r) => r.deploy_hook_triggered);
   const lastNonDryRuns = useMemo(() => runs.filter((r) => r.trigger_source !== 'dry_run'), [runs]);
+
+  // ─── Évaluation des critères de passage au cron nocturne ───
+  const cronReadiness = useMemo(() => {
+    const last5 = lastNonDryRuns.slice(0, 5);
+    const last3 = lastNonDryRuns.slice(0, 3);
+    const successCount = last5.filter((r) => r.status === 'success').length;
+    const technicalErrors = last5.filter((r) => r.status === 'failed').length;
+    const autoValRate = (() => {
+      if (last3.length === 0) return 0;
+      let processed = 0; let autoVal = 0;
+      for (const r of last3) {
+        processed += r.events_processed ?? 0;
+        const d = (r.details ?? {}) as Record<string, unknown>;
+        autoVal += (d['desc_auto_validated'] as number | undefined) ?? 0;
+      }
+      if (processed === 0) return 0;
+      return autoVal / processed;
+    })();
+    const checks = [
+      { key: 'success3', label: '≥ 3 batchs réussis (5 derniers)', ok: successCount >= 3, detail: `${successCount}/5` },
+      { key: 'no_tech_err', label: 'Aucun échec technique (5 derniers)', ok: technicalErrors === 0, detail: `${technicalErrors} échec(s)` },
+      { key: 'auto_rate', label: 'Taux auto-validation ≥ 70 % (3 derniers)', ok: autoValRate >= 0.7, detail: `${Math.round(autoValRate * 100)}%` },
+      { key: 'few_failed', label: 'Moins de 20 textes en échec validation', ok: (counters?.failed ?? 0) < 20, detail: `${counters?.failed ?? 0}` },
+      { key: 'no_null_score', label: 'Aucun événement sans score', ok: (counters?.null_score ?? 0) === 0, detail: `${counters?.null_score ?? 0}` },
+      { key: 'deploy_ok', label: 'Dernier déploiement Vercel sans erreur', ok: !!lastDeployRun && !lastDeployRun.deploy_hook_error, detail: lastDeployRun ? (lastDeployRun.deploy_hook_error ? 'erreur' : 'ok') : '—' },
+    ];
+    const ready = checks.every((c) => c.ok);
+    return { ready, checks };
+  }, [lastNonDryRuns, counters, lastDeployRun]);
 
   // ─── Recommandation ───
   const recommendation = useMemo(() => {
@@ -378,7 +432,15 @@ export function SeoEnrichmentDashboard() {
         cta: { label: 'Lancer Batch 20', onClick: () => runBatch('run', 20, true, 'big') },
       };
     }
-    // Cas A — textes à vérifier
+    // Cas A — beaucoup d'échecs de validation : proposer la correction automatique en priorité
+    if (counters.failed >= 5) {
+      return {
+        tone: 'amber' as const,
+        title: `${counters.failed} textes en échec de validation. Lance la correction automatique des erreurs simples.`,
+        cta: { label: 'Corriger automatiquement les erreurs simples', onClick: runAutoFixBatch },
+      };
+    }
+    // Cas A-bis — quelques textes à vérifier manuellement
     if (counters.pending > 0 || counters.failed > 0) {
       const total = counters.pending + counters.failed;
       return {
@@ -410,6 +472,17 @@ export function SeoEnrichmentDashboard() {
     }
     // Cas D — système stable, propose batch 20
     if (lastRun && lastRun.status === 'success' && counters.ready_for_batch > 0) {
+      // Si tous les critères cron sont remplis, suggère la préparation du cron
+      if (cronReadiness.ready) {
+        return {
+          tone: 'emerald' as const,
+          title: 'Tous les critères sont remplis. Le système est prêt pour le cron nocturne.',
+          cta: {
+            label: 'Préparer activation cron',
+            onClick: () => document.getElementById('seo-cron-readiness')?.scrollIntoView({ behavior: 'smooth' }),
+          },
+        };
+      }
       return {
         tone: 'emerald' as const,
         title: 'Le dernier batch a réussi. Tu peux lancer un batch de 20 événements.',
@@ -422,7 +495,7 @@ export function SeoEnrichmentDashboard() {
       cta: { label: 'Dry-run 20', onClick: () => runBatch('dry_run', 20, false, 'dry') },
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counters, eligibility, lastRun, lastNonDryRuns, staleFailure]);
+  }, [counters, eligibility, lastRun, lastNonDryRuns, staleFailure, cronReadiness]);
 
   // ─── Statut global ───
   const globalStatus: { label: string; tone: 'emerald' | 'amber' | 'red' } = useMemo(() => {
@@ -575,6 +648,15 @@ export function SeoEnrichmentDashboard() {
               onClick={runRevalidate}
               loading={actionLoading === 'reval'}
               disabled={!!actionLoading}
+              variant="outline"
+            />
+            <ActionTile
+              icon={<Wrench className="h-4 w-4" />}
+              title="Corriger erreurs simples (5)"
+              description="Réécrit jusqu'à 5 textes en échec (ville, lieu, chiffres non sourcés) sans rien inventer."
+              onClick={runAutoFixBatch}
+              loading={actionLoading === 'autofix'}
+              disabled={!!actionLoading || (counters?.failed ?? 0) === 0}
               variant="outline"
             />
           </div>
@@ -744,6 +826,74 @@ export function SeoEnrichmentDashboard() {
         open={missingDescOpen}
         onOpenChange={setMissingDescOpen}
       />
+
+      {/* ─── Bloc 5 — Préparation cron nocturne ─── */}
+      <Card id="seo-cron-readiness" className={cronReadiness.ready ? 'border-emerald-300' : ''}>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Moon className="h-4 w-4" />
+            Prêt pour cron nocturne :{' '}
+            <Badge className={cronReadiness.ready ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300'}>
+              {cronReadiness.ready ? 'Oui' : 'Non'}
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Cette section ne fait que mesurer la maturité du système. Aucun cron n'est créé tant que tu ne confirmes pas explicitement.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ul className="space-y-1.5 text-sm">
+            {cronReadiness.checks.map((c) => (
+              <li key={c.key} className="flex items-center gap-2">
+                {c.ok
+                  ? <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                  : <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />}
+                <span className={c.ok ? '' : 'text-muted-foreground'}>{c.label}</span>
+                <span className="text-xs text-muted-foreground ml-auto tabular-nums">{c.detail}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="border-t pt-3 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Configuration cible (non activée)</div>
+            <pre className="text-[11px] leading-relaxed bg-muted/30 border rounded p-2">{`fréquence : 1× par nuit (03:00 UTC)
+limit     : 20
+mode      : run
+deploy    : true
+trigger   : cron`}</pre>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                disabled={!cronReadiness.ready}
+                variant={cronReadiness.ready ? 'default' : 'outline'}
+              >
+                <Moon className="h-4 w-4 mr-2" />
+                Préparer activation cron
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmer l'activation du cron SEO automatique ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action installerait un job pg_cron exécutant Batch 20 chaque nuit avec déploiement Vercel automatique.
+                  Dans cette phase, l'activation reste désactivée : confirme uniquement si tu veux qu'on prépare la migration cron dans un prochain message.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => toast({
+                    title: 'Préparation cron à faire dans un prochain message',
+                    description: 'Aucune modification n\'a été effectuée. Demande explicitement « active le cron SEO » pour que la migration soit créée.',
+                  })}
+                >
+                  J'ai noté
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
     </div>
     </TooltipProvider>
   );
