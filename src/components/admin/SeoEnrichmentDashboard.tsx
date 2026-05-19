@@ -353,8 +353,11 @@ export function SeoEnrichmentDashboard() {
   // ─── Recommandation ───
   const recommendation = useMemo(() => {
     if (!counters || !eligibility) return null;
-    // Cas B — dernier run failed
-    if (lastRun && lastRun.status === 'failed') {
+    // Cas B — dernier run failed ET au moins un événement encore non résolu
+    const failureStillBlocking = lastRun
+      && lastRun.status === 'failed'
+      && (!staleFailure || staleFailure.unresolvedIds.length > 0);
+    if (failureStillBlocking) {
       return {
         tone: 'red' as const,
         title: 'Le dernier run a échoué. Corrige l’erreur avant de relancer.',
@@ -365,6 +368,14 @@ export function SeoEnrichmentDashboard() {
             document.getElementById('seo-runs-history')?.scrollIntoView({ behavior: 'smooth' });
           },
         },
+      };
+    }
+    // Cas B-bis — échec historique mais tous les événements en erreur sont maintenant résolus
+    if (lastRun && lastRun.status === 'failed' && staleFailure && staleFailure.unresolvedIds.length === 0) {
+      return {
+        tone: 'emerald' as const,
+        title: `Les ${staleFailure.resolvedIds.length} événement(s) du dernier run en échec ont été corrigés manuellement. Tu peux relancer un batch.`,
+        cta: { label: 'Lancer Batch 20', onClick: () => runBatch('run', 20, true, 'big') },
       };
     }
     // Cas A — textes à vérifier
@@ -411,14 +422,16 @@ export function SeoEnrichmentDashboard() {
       cta: { label: 'Dry-run 20', onClick: () => runBatch('dry_run', 20, false, 'dry') },
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counters, eligibility, lastRun, lastNonDryRuns]);
+  }, [counters, eligibility, lastRun, lastNonDryRuns, staleFailure]);
 
   // ─── Statut global ───
   const globalStatus: { label: string; tone: 'emerald' | 'amber' | 'red' } = useMemo(() => {
-    if (lastRun?.status === 'failed') return { label: 'Erreur', tone: 'red' };
+    if (lastRun?.status === 'failed' && (!staleFailure || staleFailure.unresolvedIds.length > 0)) {
+      return { label: 'Erreur', tone: 'red' };
+    }
     if ((counters?.pending ?? 0) > 0 || (counters?.failed ?? 0) > 0) return { label: 'Attention', tone: 'amber' };
     return { label: 'OK', tone: 'emerald' };
-  }, [lastRun, counters]);
+  }, [lastRun, counters, staleFailure]);
 
   return (
     <TooltipProvider delayDuration={150}>
