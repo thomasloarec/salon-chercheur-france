@@ -125,6 +125,9 @@ function humanSkipReason(raw: string | null | undefined): string | null {
 function statutBadge(ev: EventRow) {
   const statut = ev.enrichissement_statut;
   const av = ev.auto_validation_status;
+  if (statut === 'valide' && ev.validation_mode === 'manual') {
+    return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300"><CheckCircle2 className="h-3 w-3 mr-1" />Validé quand même</Badge>;
+  }
   if (statut === 'valide' && av === 'passed' && ev.validation_mode === 'auto') {
     return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300"><CheckCircle2 className="h-3 w-3 mr-1" />Publié automatiquement</Badge>;
   }
@@ -294,6 +297,9 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
   const failChecks = event?.auto_validation_report?.checks?.filter((c) => c.status === 'fail') ?? [];
   const warnChecks = event?.auto_validation_report?.checks?.filter((c) => c.status === 'warning') ?? [];
   const skipReason = humanSkipReason(processed?.meta_reason ?? processed?.desc_reason ?? processed?.error);
+  const alreadyPublished = event?.enrichissement_statut === 'valide' && !!event.description_enrichie;
+  const canForceValidate = !!event?.description_enrichie && !alreadyPublished;
+  const forceValidateLabel = failChecks.length > 0 ? 'Valider quand même' : 'Valider manuellement';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -443,13 +449,15 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
                   variant={failChecks.length > 0 ? 'default' : 'outline'}
                   size="sm"
                   onClick={markValid}
-                  disabled={!!busy || !event.description_enrichie || event.enrichissement_statut === 'valide'}
+                  disabled={!!busy || !canForceValidate}
                   title={failChecks.length > 0
                     ? 'Force la publication de la description même si le contrôle qualité a détecté des erreurs (ex. faux positif sur la ville).'
-                    : 'Marque la description comme valide et la publie.'}
+                    : alreadyPublished
+                      ? 'Cet événement est déjà validé et n’a plus besoin d’action.'
+                      : 'Marque la description comme valide et la publie.'}
                 >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  {failChecks.length > 0 ? 'Valider quand même' : 'Valider manuellement'}
+                  {alreadyPublished ? 'Déjà validé' : forceValidateLabel}
                 </Button>
                 {event.auto_validation_report?.ignored_for_now ? (
                   <Button variant="outline" size="sm" onClick={() => setIgnore(false)} disabled={!!busy}>

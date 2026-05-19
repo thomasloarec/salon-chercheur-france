@@ -77,13 +77,17 @@ function tieBreakScore(ev: CandidateEvent, hasParticipations: boolean): number {
   return score;
 }
 
+function hasText(value: string | null | undefined): boolean {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 function isEligible(e: CandidateEvent): boolean {
-  return (
-    !e.meta_description_gen ||
-    !e.enrichissement_statut || e.enrichissement_statut !== 'valide' ||
-    !e.description_enrichie ||
-    (e.description_event ?? '').length < 500
-  );
+  // Le batch ne sait générer que la meta et/ou la description enrichie.
+  // Un événement déjà publié ne doit donc pas être repris uniquement parce que
+  // sa description source est courte ou parce que l'auto-validation garde une trace d'échec.
+  const descCanBeGenerated = !hasText(e.description_enrichie)
+    && (!e.enrichissement_statut || ['non_traite', 'done'].includes(e.enrichissement_statut));
+  return !hasText(e.meta_description_gen) || descCanBeGenerated;
 }
 
 function parseParams(body: Record<string, unknown>): Params {
@@ -250,10 +254,8 @@ Deno.serve(async (req) => {
               ? `enrichissement_score=${e.enrichissement_score} < 55`
               : null;
           const selection_reasons: string[] = [];
-          if (!e.meta_description_gen) selection_reasons.push('meta_description_gen manquante');
-          if (!e.enrichissement_statut || e.enrichissement_statut !== 'valide') selection_reasons.push('enrichissement_statut != valide');
-          if (!e.description_enrichie) selection_reasons.push('description_enrichie manquante');
-          if ((e.description_event ?? '').length < 500) selection_reasons.push('description_event < 500c');
+          if (!hasText(e.meta_description_gen)) selection_reasons.push('meta_description_gen manquante');
+          if (!hasText(e.description_enrichie)) selection_reasons.push('description_enrichie manquante et générable');
           return {
             sort_rank: idx + 1,
             id: e.id,
@@ -328,6 +330,7 @@ Deno.serve(async (req) => {
         const autoVal = result?.auto_validation_status as string | undefined;
         const metaSkipped = metaStatus === 'skipped';
         const metaErr = metaStatus === 'error' || !resp.ok;
+        const manuallyValidated = result?.enrichissement_statut === 'valide' && result?.validation_mode === 'manual';
 
         if (metaOk) metaDone++;
         if (descOk) descDone++;
@@ -336,6 +339,7 @@ Deno.serve(async (req) => {
 
         let decision = 'skipped';
         if (metaErr) decision = 'failed';
+        else if (manuallyValidated) decision = 'publie_manuelle';
         else if (descOk && autoVal === 'passed') decision = 'publie_auto';
         else if (descOk && autoVal === 'warning') decision = 'revue_manuelle';
         else if (descOk && autoVal === 'failed') decision = 'failed_validation';
@@ -411,6 +415,11 @@ Deno.serve(async (req) => {
         if (pe.auto_validation_score == null) pe.auto_validation_score = row.auto_validation_score ?? null;
         if (pe.validation_mode == null) pe.validation_mode = row.validation_mode ?? null;
         if (pe.enrichissement_statut == null) pe.enrichissement_statut = row.enrichissement_statut ?? null;
+        const finalStatut = row.enrichissement_statut;
+        const finalMode = row.validation_mode;
+        const finalAutoValidation = row.auto_validation_status;
+        if (finalStatut === 'valide' && finalMode === 'manual') pe.decision = 'publie_manuelle';
+        else if (finalStatut === 'valide' && finalMode === 'auto' && finalAutoValidation === 'passed') pe.decision = 'publie_auto';
       }
     }
 

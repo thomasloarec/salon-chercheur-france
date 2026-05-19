@@ -54,6 +54,7 @@ interface Counters {
   failed: number;
   null_score: number;
   score_ge_55: number;
+  ready_for_batch: number;
   desc_missing: number;
   published: number;
 }
@@ -135,7 +136,7 @@ export function SeoEnrichmentDashboard() {
     setLoading(true);
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, descMissingRes, publishedRes] = await Promise.all([
+      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, readyForBatchRes, descMissingRes, publishedRes] = await Promise.all([
         supabase.rpc('count_seo_enrichment_eligible'),
         supabase.from('seo_enrichment_runs')
           .select('*')
@@ -144,15 +145,21 @@ export function SeoEnrichmentDashboard() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('auto_validation_status', 'passed').eq('validation_mode', 'auto'),
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .or('enrichissement_statut.eq.en_attente,validation_mode.eq.manual'),
+          .eq('enrichissement_statut', 'en_attente'),
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .eq('auto_validation_status', 'failed'),
+          .eq('auto_validation_status', 'failed')
+          .or('enrichissement_statut.is.null,enrichissement_statut.neq.valide'),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .is('enrichissement_score', null),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .gte('enrichissement_score', 55),
+        supabase.from('events').select('id, meta_description_gen, description_enrichie, enrichissement_statut')
+          .eq('visible', true).eq('is_test', false).gte('date_debut', today)
+          .not('slug', 'is', null).neq('slug', '')
+          .gte('enrichissement_score', 55)
+          .limit(1000),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .is('description_enrichie', null),
@@ -161,6 +168,13 @@ export function SeoEnrichmentDashboard() {
       ]);
 
       if (eligibilityRes.error) throw eligibilityRes.error;
+      const hasText = (value: unknown) => typeof value === 'string' && value.trim().length > 0;
+      const descGeneratableStatuses = new Set([null, 'non_traite', 'done']);
+      const readyForBatchCount = (readyForBatchRes.data ?? []).filter((row) => {
+        const r = row as { meta_description_gen: string | null; description_enrichie: string | null; enrichissement_statut: string | null };
+        return !hasText(r.meta_description_gen)
+          || (!hasText(r.description_enrichie) && descGeneratableStatuses.has(r.enrichissement_statut));
+      }).length;
       setEligibility(eligibilityRes.data as unknown as EligibilityStats);
       setRuns((runsRes.data ?? []) as RunRow[]);
       setCounters({
@@ -169,6 +183,7 @@ export function SeoEnrichmentDashboard() {
         failed: failedRes.count ?? 0,
         null_score: nullScoreRes.count ?? 0,
         score_ge_55: ge55Res.count ?? 0,
+        ready_for_batch: readyForBatchCount,
         desc_missing: descMissingRes.count ?? 0,
         published: publishedRes.count ?? 0,
       });
@@ -324,7 +339,7 @@ export function SeoEnrichmentDashboard() {
     // Cas E — prudence : aucun batch pilote récent
     const recentPilots = lastNonDryRuns.filter((r) => (r.events_selected ?? 0) <= 5).length;
     const recentLargeRuns = lastNonDryRuns.filter((r) => (r.events_selected ?? 0) >= 10 && r.status === 'success').length;
-    if (recentPilots < 2 && recentLargeRuns === 0 && counters.score_ge_55 > 0) {
+    if (recentPilots < 2 && recentLargeRuns === 0 && counters.ready_for_batch > 0) {
       return {
         tone: 'blue' as const,
         title: 'Le système est stable, mais il est recommandé de lancer encore un Batch pilote 5 avant Batch 20.',
@@ -332,7 +347,7 @@ export function SeoEnrichmentDashboard() {
       };
     }
     // Cas D — système stable, propose batch 20
-    if (lastRun && lastRun.status === 'success' && counters.score_ge_55 > 0) {
+    if (lastRun && lastRun.status === 'success' && counters.ready_for_batch > 0) {
       return {
         tone: 'emerald' as const,
         title: 'Le dernier batch a réussi. Tu peux lancer un batch de 20 événements.',
@@ -437,7 +452,7 @@ export function SeoEnrichmentDashboard() {
               <AlertDialogTrigger asChild>
                 <button
                   type="button"
-                  disabled={!!actionLoading}
+                  disabled={!!actionLoading || (counters?.ready_for_batch ?? 0) === 0}
                   className="text-left border-2 border-red-200 hover:border-red-300 bg-red-50/30 rounded-lg p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-2 font-medium text-red-900">
@@ -446,10 +461,11 @@ export function SeoEnrichmentDashboard() {
                   </div>
                   <div className="text-xs text-red-700 mt-1">
                     Traitement plus large. À utiliser quand les derniers batchs sont propres.
-                    {typeof counters?.score_ge_55 === 'number' && (
+                    {typeof counters?.ready_for_batch === 'number' && (
                       <div className="mt-1 font-medium">
-                        {counters.score_ge_55} événement(s) prêt(s) (score ≥ 55) — le batch ne traitera que ceux-là.
-                        {counters.score_ge_55 < 20 && counters.null_score > 0 && (
+                        {counters.ready_for_batch} événement(s) vraiment traitable(s) — score ≥ 55 + texte manquant.
+                        {counters.ready_for_batch === 0 && <> Aucun nouveau texte à générer maintenant.</>}
+                        {counters.ready_for_batch < 20 && counters.null_score > 0 && (
                           <> Lancez « Scorer 20 événements » pour en débloquer davantage.</>
                         )}
                       </div>
@@ -463,10 +479,10 @@ export function SeoEnrichmentDashboard() {
                   <AlertDialogDescription>
                     Cette action va générer jusqu'à 20 descriptions enrichies + meta et déclenchera Vercel si du contenu public change.
                     Consomme des crédits Claude.
-                    {typeof counters?.score_ge_55 === 'number' && (
+                    {typeof counters?.ready_for_batch === 'number' && (
                       <>
-                        {' '}Actuellement, <strong>{counters.score_ge_55} événement(s)</strong> ont un score ≥ 55 et seront traités
-                        (les événements avec un score inférieur ou NULL sont ignorés).
+                        {' '}Actuellement, <strong>{counters.ready_for_batch} événement(s)</strong> ont un score ≥ 55 et une meta ou description manquante.
+                        Le batch en traitera jusqu'à 20. Les événements déjà publiés ne sont pas repris.
                       </>
                     )}
                   </AlertDialogDescription>
@@ -510,8 +526,9 @@ export function SeoEnrichmentDashboard() {
           title="À traiter"
           tone="blue"
           items={[
-            { label: 'Total éligibles', value: eligibility?.total_eligible, hint: 'Événements pouvant être enrichis (visibles, futurs, non finalisés).' },
-            { label: 'Prêts à enrichir (score ≥ 55)', value: counters?.score_ge_55, hint: 'Seuls les événements avec un score ≥ 55 sont traités par les batchs. Les autres doivent d’abord être scorés.' },
+            { label: 'Total incomplets', value: eligibility?.total_eligible, hint: 'Indicateur large : événements futurs avec au moins un signal incomplet. Ce n’est pas le nombre que Batch 20 va traiter.' },
+            { label: 'Score ≥ 55', value: counters?.score_ge_55, hint: 'Événements suffisamment prioritaires, y compris ceux déjà publiés.' },
+            { label: 'Traitables par Batch 20', value: counters?.ready_for_batch, hint: 'Score ≥ 55 et meta ou description enrichie manquante. Ce compteur correspond au maximum réellement traitable par batch.' },
             { label: 'Sans score', value: counters?.null_score, hint: 'Score NULL = événements pas encore priorisés.' },
             { label: 'Description manquante', value: eligibility?.no_description_enrichie },
           ]}
@@ -775,6 +792,8 @@ function decisionBadge(decision?: string | null) {
   switch (decision) {
     case 'publie_auto':
       return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />Publié auto</Badge>;
+    case 'publie_manuelle':
+      return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />Validé</Badge>;
     case 'revue_manuelle':
       return <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]"><AlertTriangle className="h-3 w-3 mr-1" />En revue</Badge>;
     case 'failed':
@@ -792,6 +811,7 @@ function decisionBadge(decision?: string | null) {
 function whatToDo(decision?: string | null): { label: string; tone: 'emerald' | 'amber' | 'red' | 'slate' } {
   switch (decision) {
     case 'publie_auto': return { label: 'Rien à faire', tone: 'emerald' };
+    case 'publie_manuelle': return { label: 'Rien à faire', tone: 'emerald' };
     case 'meta_only': return { label: 'Rien à faire', tone: 'emerald' };
     case 'revue_manuelle': return { label: 'Ouvrir le détail pour relire', tone: 'amber' };
     case 'failed':
@@ -951,6 +971,7 @@ function ProcessedFallback({ ids }: { ids: string[] }) {
     const statut = r.enrichissement_statut;
     let decision = 'skipped';
     if (statut === 'valide' && autoVal === 'passed' && r.validation_mode === 'auto') decision = 'publie_auto';
+    else if (statut === 'valide' && r.validation_mode === 'manual') decision = 'publie_manuelle';
     else if (autoVal === 'warning') decision = 'revue_manuelle';
     else if (autoVal === 'failed') decision = 'failed_validation';
     else if (statut === 'en_attente') decision = 'revue_manuelle';
