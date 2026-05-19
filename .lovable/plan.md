@@ -1,112 +1,168 @@
-## Phase E — Activation contrôlée du cron SEO + visibilité scores faibles
+## Objectif
 
-### Audit live (à partir des 209 events futurs visibles)
+Remplacer la logique "cron nocturne" par :
+- traitement **post-import** (déclenché manuellement depuis l'admin après chaque import mensuel) ;
+- **anti-retraitement Claude** par hash de la source ;
+- **visibilité** sur la consommation Claude potentielle avant tout lancement ;
+- **aucun cron actif** créé maintenant (préparation uniquement pour un éventuel rattrapage hebdomadaire futur).
 
-| Catégorie | Définition | Volume |
+Aucun appel à Claude, aucun build Vercel, aucun job pg_cron ne sera créé par cette étape.
+
+---
+
+## Migration 1 — Anti-retraitement par hash + flag ignored étendu
+
+Fichier : nouvelle migration SQL.
+
+### 1.1 Colonnes ajoutées sur `events`
+- `seo_source_hash text` — hash de la source actuelle (recalculé à la lecture)
+- `seo_generated_from_hash text` — hash de la source utilisée lors de la dernière génération Claude réussie
+- `seo_generated_at timestamptz` — date du dernier appel Claude réussi
+- `seo_last_checked_at timestamptz` — date du dernier passage sans appel Claude
+
+Index partiel pour les recherches "à retraiter".
+
+### 1.2 Fonction `compute_seo_source_hash(p_event_id uuid) returns text`
+Hash `md5` (stable, déterministe) d'un payload JSONB normalisé :
+- `nom_event`, `slug`, `date_debut`, `date_fin`
+- `ville`, `code_postal`, `nom_lieu`, `pays`
+- `secteur` (jsonb trié), `affluence`, `tarif`
+- `description_event`, `meta_description_gen`, `url_site_officiel`
+- `exhibitors_count` = `count(participation where id_event=event.id_event)`
+
+Tout est `coalesce`é et trimmé pour éviter les faux changements (espaces, NULL vs '').
+
+### 1.3 Fonction `seo_eligible_events(p_only_post_import boolean default false)`
+Vue/fonction qui renvoie les `events` candidats avec :
+- `visible=true`, `is_test=false`, `slug` non vide, `date_debut >= CURRENT_DATE`
+- `coalesce(enrichissement_ignored,false)=false`
+- `enrichissement_score >= 55`
+- `current_hash` et un statut calculé :
+  - `up_to_date` : `description_enrichie IS NOT NULL` ET `enrichissement_statut='valide'` ET `seo_generated_from_hash = current_hash`
+  - `needs_claude` : tout le reste
+- Si `p_only_post_import=true` : ne renvoie que les events créés/modifiés depuis le dernier run réussi.
+
+### 1.4 Fonction `check_seo_automation_dependencies()` (remplace `check_seo_cron_dependencies`)
+Renvoie en plus des checks existants :
+- `would_call_claude_count` : nb d'events `needs_claude` si on lance maintenant
+- `would_skip_count` : nb d'events `up_to_date`
+- `ignored_count`
+- `score_lt_55_count`
+- `score_null_count`
+- garde tous les checks techniques (secrets vault, pg_net, application_logs, run en cours, cron job présent/actif).
+
+L'ancienne `check_seo_cron_dependencies()` est conservée comme alias (DROP + recreate qui appelle la nouvelle) pour ne rien casser.
+
+### 1.5 Étendre `enrichissement_ignored` partout
+- `score_events_batch` : déjà fait dans la migration précédente.
+- `seo_eligible_events` : intègre le filtre.
+- `seo-enrichment-batch` (edge function) : ajout du filtre `coalesce(enrichissement_ignored,false)=false` dans la sélection des candidats (côté SQL de l'edge).
+
+---
+
+## Migration 2 — Renommage (préparation cron hebdo, NON activé)
+
+- `start_seo_cron_run()` reste en place mais devient l'implémentation interne ;
+- création de `start_seo_weekly_catchup()` qui appelle l'edge avec `trigger_source='weekly_cron'`, `limit:20`, `deploy:true`.
+- **Aucun `cron.schedule(...)` exécuté.** Une note SQL en commentaire documente la commande à lancer manuellement plus tard si rattrapage hebdo souhaité (dimanche 02:30 UTC ≈ 03:30/04:30 Paris).
+
+---
+
+## Edge function `seo-enrichment-batch` — anti-retraitement Claude
+
+Modifications côté code (pas SQL) :
+
+1. **Avant l'appel Claude pour chaque event** :
+   - récupérer `current_hash = compute_seo_source_hash(event.id)` (via RPC ou recalcul JS strictement équivalent → on utilise la RPC SQL pour garantir égalité).
+   - si `description_enrichie` présente ET `enrichissement_statut='valide'` ET `seo_generated_from_hash = current_hash` ET pas de `force_admin=true` dans le payload : **skip**, mettre à jour `seo_last_checked_at=now()`, comptabiliser dans `skipped_unchanged`.
+2. **Après génération Claude réussie** :
+   - écrire `seo_source_hash = seo_generated_from_hash = current_hash`, `seo_generated_at = now()`.
+3. **Filtre de sélection initial** :
+   - ajouter `coalesce(enrichissement_ignored,false)=false`.
+4. **Réponse** : ajouter compteurs `skipped_unchanged`, `called_claude`, `ignored_filtered`, `would_call_claude` (mode dry).
+5. **Nouveau mode** `mode:'post_import'` : ne traite que les events `needs_claude` créés/modifiés depuis le dernier `seo_enrichment_runs` réussi (fallback : 35 jours).
+
+Aucun changement aux règles de validation, aucun changement Vercel (Deploy Hook reste gated sur `public_changed`).
+
+---
+
+## Edge function `seo-recompute-score` (déjà au plan, à confirmer comme créée)
+
+Inchangé : RPC admin wrapper de `compute_event_enrichissement_score`. Sera utilisé par le bouton "Recalculer le score" dans le dashboard. Pas dans cette étape si pas encore présent.
+
+---
+
+## Dashboard `/admin/events/seo` — refonte vocabulaire + action post-import
+
+Fichier : `src/components/admin/SeoEnrichmentDashboard.tsx`.
+
+### Bloc renommé "Automatisation SEO" (anciennement "Cron SEO automatique")
+
+- Titre : **Automatisation SEO**
+- Recommandation actuelle : **Post-import recommandé**
+- Tableau récapitulatif :
+  - Manuel — ✅ disponible
+  - Post-import — ✅ disponible
+  - Hebdomadaire — ⏸ optionnel (non activé)
+  - Nocturne quotidien — ❌ non recommandé (import mensuel)
+- Bouton principal : **Traiter les nouveaux événements importés** (`mode:'post_import'`)
+- Bouton secondaire grisé : **Activer rattrapage hebdomadaire** → ouvre une confirmation expliquant la commande SQL à exécuter (pas d'exécution auto).
+
+### Carte renommée "Prêt pour automatisation récurrente"
+
+Affiche le retour de `check_seo_automation_dependencies()` :
+- ✅/❌ pour chaque check technique
+- **Si vous lancez maintenant : X événements appelleront Claude** (en gros, en orange si >0)
+- **Y événements seront skippés (déjà à jour)**
+- **Z ignorés** / **N score <55** / **M score NULL**
+
+### Confirmation avant lancement post-import
+
+`AlertDialog` qui affiche :
+- nb d'events qui appelleront Claude
+- nb skippés
+- mention "Coût estimé : ~X appels Claude, ~Y déploiements Vercel si contenu modifié"
+- bouton "Lancer" / "Annuler"
+
+### Résultat d'exécution
+
+Carte "Résultat de la dernière action" complétée avec :
+- `called_claude`, `skipped_unchanged`, `ignored_filtered`, `validated`, `failed`
+- Deploy Hook : déclenché oui/non
+- Liste des events traités avec statut avant/après
+
+---
+
+## Ce qui n'est PAS fait dans cette étape
+
+- Aucun `cron.schedule(...)` n'est exécuté.
+- Aucun appel à `seo-enrichment-batch` n'est déclenché par cette migration.
+- Aucun build Vercel.
+- Aucun appel Claude.
+- Aucune modification du scoring (logique inchangée, seuls les filtres `ignored` sont étendus).
+
+---
+
+## Détails techniques (résumé)
+
+| Élément | Type | Action |
 |---|---|---|
-| A. Éligibles cron | score ≥ 55 ET (desc_enrichie NULL OU statut≠valide) | **1** |
-| Score ≥ 55 déjà `valide` | rien à faire | 111 |
-| B. Score moyen 35–54 | non traité auto | **97** |
-| C. Score < 35 | ignoré par défaut | **0** |
-| Score NULL | aucun | 0 |
+| `events.seo_source_hash` | colonne | ADD |
+| `events.seo_generated_from_hash` | colonne | ADD |
+| `events.seo_generated_at` | colonne | ADD |
+| `events.seo_last_checked_at` | colonne | ADD |
+| `compute_seo_source_hash(uuid)` | fonction | CREATE |
+| `seo_eligible_events(boolean)` | fonction | CREATE |
+| `check_seo_automation_dependencies()` | fonction | CREATE |
+| `check_seo_cron_dependencies()` | fonction | REWRITE → alias |
+| `start_seo_weekly_catchup()` | fonction | CREATE (non programmée) |
+| `seo-enrichment-batch/index.ts` | edge | filtre ignored + skip par hash + mode post_import |
+| `SeoEnrichmentDashboard.tsx` | UI | renommage + post-import + previsions Claude |
 
-Aucun cron SEO n'existe actuellement (`cron.job` vide côté SEO). La fonction `seo-enrichment-batch` filtre déjà en mode `run` sur score ≥ 55, gate Vercel sur `public_changed`, et libère les runs orphelins après 10 min. Aucune logique métier à modifier dans le batch.
+## Critères de validation
 
----
-
-### 1. Migration BD
-
-Ajouter un drapeau `enrichissement_ignored boolean default false` à `events` pour permettre "Ignorer" un event score moyen/faible.
-
-Ajouter une fonction `public.start_seo_cron_run()` (SECURITY DEFINER, owner postgres) appelée par pg_cron, qui :
-
-- vérifie qu'aucun run `running` n'a démarré depuis < 2 h ; sinon log et sort ;
-- fait un `net.http_post` vers `seo-enrichment-batch` avec headers `apikey` (anon), `x-seo-batch-secret` (lu depuis `vault` ou variable de session admin), body `{"mode":"run","limit":20,"deploy":true,"trigger_source":"cron"}` ;
-- log dans `seo_enrichment_runs.details` côté fonction batch (déjà fait).
-
-Le secret `SEO_BATCH_SECRET` côté pg_cron sera passé via `cron.schedule` créé par **outil `insert`** (pas migration) car contient secret + URL projet — instruction explicite du système.
-
-Filtre cron mis à jour côté fonction batch : ajouter `AND coalesce(enrichissement_ignored,false)=false` dans la sélection des éligibles (4 lignes dans `seo-enrichment-batch/index.ts`).
-
-### 2. Edge function `seo-recompute-score`
-
-Petite fonction admin-gated qui appelle la RPC existante `compute_event_enrichissement_score(uuid)` pour un event et renvoie le nouveau score. Branchée sur bouton "Recalculer score".
-
-### 3. Dashboard `SeoEnrichmentDashboard.tsx`
-
-#### Nouvelles catégories KPI (en haut)
-- **Éligibles cron** (A) — score ≥ 55 + desc manquante/non valide + non ignoré
-- **À vérifier manuellement** (D) — desc générée ET (auto_val warning/failed OU validation_mode=manual OU statut=en_attente). Exclut explicitement les events sans desc générée.
-- **Non traités auto** (B+C+ignorés) — chiffre global cliquable qui déplie la section ci-dessous.
-
-#### Section repliable "Événements non traités automatiquement"
-3 sous-compteurs (35–54, <35, NULL) + table compacte par défaut limitée aux 20 premiers, avec colonnes : nom, slug, date, ville, score, raison (`Score moyen` / `Score faible` / `Données insuffisantes` / `Ignoré manuellement`). Actions par ligne :
-- "Voir événement" → ouvre page admin event
-- "Recalculer score" → appelle `seo-recompute-score`
-- "Ignorer" / "Réactiver" → toggle `enrichissement_ignored`
-- "Forcer enrichissement test" (admin only) → ouvre AlertDialog de confirmation forte, puis appelle `seo-enrichment-batch` avec event ciblé en `mode:test`. Garde-fou : refuse si score < 20.
-
-#### Bloc "Cron SEO automatique"
-- Badge **Cron actif** / **Cron inactif** lu depuis `cron.job` via RPC `get_seo_cron_status()` (à créer, SECURITY DEFINER, restreinte admin).
-- Affiche : nom (`seo-enrichment-nightly`), schedule (`30 1 * * *` UTC ≈ 02:30/03:30 Paris selon DST), payload, dernière exécution cron, prochaine exécution estimée.
-- Bouton "Désactiver le cron" → RPC `disable_seo_cron()` (admin only) qui fait `UPDATE cron.job SET active=false`.
-- Bouton "Activer le cron" si inactif → RPC `enable_seo_cron()`.
-- Instructions claires : "Pour supprimer définitivement, voir SQL Editor : `SELECT cron.unschedule('seo-enrichment-nightly');`"
-
-#### Test pré-cron
-Bouton "Test final (limit=5, trigger=manual, deploy=true)" qui réutilise le proxy admin existant. Affiche le résultat dans la carte "Dernier résultat".
-
-### 4. Création du cron job
-
-Via l'outil **insert** (pas migration), une fois la fonction `start_seo_cron_run` créée :
-
-```sql
-SELECT cron.schedule(
-  'seo-enrichment-nightly',
-  '30 1 * * *',  -- 01:30 UTC = 02:30 (hiver) / 03:30 (été) Paris
-  $$SELECT public.start_seo_cron_run();$$
-);
-```
-
-Idempotent : avant insertion, `SELECT cron.unschedule('seo-enrichment-nightly')` si déjà présent.
-
-`start_seo_cron_run` lit `SEO_BATCH_SECRET` depuis `vault.decrypted_secrets` (à insérer via outil insert également). URL fonction et anon key inline (project-specific, OK selon doc cron).
-
-### 5. Confirmations explicites (réponse finale à l'utilisateur)
-
-À la fin, je fournirai :
-- les 3 chiffres (score < 55 total, 35–54, < 35, NULL) ;
-- confirmation que le cron filtre sur score ≥ 55 + non ignoré ;
-- où trouver les non-traités dans le dashboard ;
-- comment forcer un traitement manuel ou désactiver le cron.
-
----
-
-### Fichiers
-
-**Créés**
-- `supabase/functions/seo-recompute-score/index.ts` — admin-gated RPC wrapper
-- migration SQL (colonne `enrichissement_ignored`, fonction `start_seo_cron_run`, RPC `get_seo_cron_status` / `enable_seo_cron` / `disable_seo_cron`)
-
-**Modifiés**
-- `supabase/functions/seo-enrichment-batch/index.ts` — ajout filtre `enrichissement_ignored`
-- `supabase/functions/admin-seo-batch-proxy/index.ts` — ajout `seo-recompute-score` à l'allowlist
-- `src/components/admin/SeoEnrichmentDashboard.tsx` — nouvelles catégories + section repliable + bloc cron + test final
-
-**Non modifié**
-- Logique de scoring, d'enrichissement, d'auto-validation et de Vercel deploy.
-
-### Ordre d'exécution
-
-1. Migration SQL (colonne + RPCs cron) — **demande approbation utilisateur**.
-2. Insertion `SEO_BATCH_SECRET` dans vault + `cron.schedule` via outil insert — **demande approbation utilisateur**.
-3. Edge functions (recompute + filter ignored).
-4. Refonte dashboard.
-5. Bouton "Test final 5" → utilisateur lance, vérifie OK.
-6. Bouton "Activer cron" → utilisateur active.
-
-### Hors scope
-
-- Pas de modification de la fonction de scoring.
-- Pas d'enrichissement IA des events score < 55.
-- Pas d'archivage automatique des events score faible.
+1. Avant tout lancement, le dashboard indique combien d'events appelleront Claude.
+2. Un event déjà valide avec hash inchangé ne consomme aucun crédit Claude.
+3. Un event `enrichissement_ignored=true` n'est jamais sélectionné par scoring, batch ou cron.
+4. Aucun cron actif n'existe après application.
+5. L'action "Traiter les nouveaux événements importés" fonctionne sans déclencher Claude si rien n'a changé.
