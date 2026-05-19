@@ -877,6 +877,10 @@ export type Database = {
           rue: string | null
           salon_priorite: number | null
           secteur: Json | null
+          seo_generated_at: string | null
+          seo_generated_from_hash: string | null
+          seo_last_checked_at: string | null
+          seo_source_hash: string | null
           slug: string | null
           status_event: string | null
           tarif: string | null
@@ -926,6 +930,10 @@ export type Database = {
           rue?: string | null
           salon_priorite?: number | null
           secteur?: Json | null
+          seo_generated_at?: string | null
+          seo_generated_from_hash?: string | null
+          seo_last_checked_at?: string | null
+          seo_source_hash?: string | null
           slug?: string | null
           status_event?: string | null
           tarif?: string | null
@@ -975,6 +983,10 @@ export type Database = {
           rue?: string | null
           salon_priorite?: number | null
           secteur?: Json | null
+          seo_generated_at?: string | null
+          seo_generated_from_hash?: string | null
+          seo_last_checked_at?: string | null
+          seo_source_hash?: string | null
           slug?: string | null
           status_event?: string | null
           tarif?: string | null
@@ -4369,12 +4381,15 @@ export type Database = {
         Args: { event_id: string; exhibitor_id: string }
         Returns: boolean
       }
+      check_seo_automation_dependencies: { Args: never; Returns: Json }
+      check_seo_cron_dependencies: { Args: never; Returns: Json }
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
       cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
       compute_event_enrichissement_score: {
         Args: { p_event_id: string }
         Returns: number
       }
+      compute_seo_source_hash: { Args: { p_event_id: string }; Returns: string }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
       count_seo_enrichment_eligible: { Args: never; Returns: Json }
       create_missing_outreach_campaigns: { Args: never; Returns: Json }
@@ -4695,6 +4710,24 @@ export type Database = {
         }
         Returns: string[]
       }
+      seo_eligible_events: {
+        Args: { p_only_post_import?: boolean }
+        Returns: {
+          current_hash: string
+          date_debut: string
+          description_enrichie_present: boolean
+          enrichissement_ignored: boolean
+          enrichissement_score: number
+          enrichissement_statut: string
+          generated_from_hash: string
+          id: string
+          nom_event: string
+          reason: string
+          slug: string
+          status: string
+        }[]
+      }
+      start_seo_weekly_catchup: { Args: never; Returns: Json }
       toggle_favorite: { Args: { p_event: string }; Returns: undefined }
       update_existing_events_slugs: { Args: never; Returns: undefined }
       update_user_password: {
