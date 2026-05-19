@@ -519,7 +519,7 @@ export function SeoEnrichmentDashboard() {
           title="À traiter"
           tone="blue"
           items={[
-            { label: 'Total éligibles', value: eligibility?.total_eligible, hint: 'Événements pouvant être enrichis (visibles, futurs, non finalisés).' },
+            { label: 'Total incomplets', value: eligibility?.total_eligible, hint: 'Indicateur large : événements futurs avec au moins un signal incomplet. Ce n’est pas le nombre que Batch 20 va traiter.' },
             { label: 'Score ≥ 55', value: counters?.score_ge_55, hint: 'Événements suffisamment prioritaires, y compris ceux déjà publiés.' },
             { label: 'Traitables par Batch 20', value: counters?.ready_for_batch, hint: 'Score ≥ 55 et meta ou description enrichie manquante. Ce compteur correspond au maximum réellement traitable par batch.' },
             { label: 'Sans score', value: counters?.null_score, hint: 'Score NULL = événements pas encore priorisés.' },
