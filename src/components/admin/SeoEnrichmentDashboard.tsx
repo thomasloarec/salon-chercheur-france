@@ -765,7 +765,8 @@ export function SeoEnrichmentDashboard() {
           tone="amber"
           items={[
             { label: 'En attente revue', value: counters?.pending, hint: 'Texte généré mais pas publié, en attente de relecture.' },
-            { label: 'Validation failed', value: counters?.failed },
+            { label: 'Validation failed', value: counters?.failed, hint: 'Textes en échec automatique qui ne sont pas déjà validés manuellement.' },
+            { label: 'À corriger auto.', value: autoFixable?.count ?? 0, hint: 'Textes en échec, non validés manuellement, avec description enrichie présente. Ce sont les seuls que le correcteur automatique peut traiter.' },
           ]}
         />
         <KpiFamily
@@ -778,6 +779,19 @@ export function SeoEnrichmentDashboard() {
           ]}
         />
       </div>
+
+      {/* ─── Bloc 2.5 — Erreurs corrigeables automatiquement ─── */}
+      <AutoFixableSection
+        info={autoFixable}
+        loading={actionLoading === 'autofix'}
+        disabled={!!actionLoading}
+        onLaunch={() => setAutoFixConfirmOpen(true)}
+      />
+
+      {/* ─── Bloc 2.6 — Résultat de la dernière correction automatique ─── */}
+      {lastAutoFix && (
+        <LastAutoFixCard result={lastAutoFix} />
+      )}
 
       {/* ─── Bloc 3 — Résultat de la dernière action ─── */}
       <Card>
