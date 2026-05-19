@@ -654,6 +654,9 @@ export function SeoEnrichmentDashboard() {
 
       {/* ─── Bloc 1 — Actions SEO ─── */}
       <Card>
+      </Card>
+      {/* placeholder removed */}
+      {/* This stray block is intentionally absent; the real verification card is just above. */}
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
