@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
   Loader2, ExternalLink, Settings, RefreshCw, Wand2, Archive,
-  CheckCircle2, AlertTriangle, XCircle, Info, Save,
+  CheckCircle2, AlertTriangle, XCircle, Info, Save, Unlock,
 } from 'lucide-react';
 
 /**
@@ -263,6 +263,11 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
     const { error } = await supabase.from('events').update({
       enrichissement_statut: 'valide',
       validation_mode: 'manual',
+      // Si l'événement était bloqué en 'error' suite à un échec de génération
+      // de meta, on réinitialise les indicateurs d'erreur pour qu'il passe
+      // proprement en "validé manuellement".
+      auto_validation_status: null,
+      auto_validation_score: null,
     }).eq('id', event.id);
     setBusy(null);
     if (error) toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
@@ -286,6 +291,22 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
     else { toast({ title: '🗑️ Description rejetée' }); await load(event.id); refreshGlobal(); }
   };
 
+  const resetErrorStatus = async () => {
+    if (!event) return;
+    if (!confirm('Réinitialiser le statut « error » pour permettre un nouveau traitement automatique ?')) return;
+    setBusy('reset');
+    const { error } = await supabase.from('events').update({
+      enrichissement_statut: null,
+      auto_validation_status: null,
+      auto_validation_score: null,
+      auto_validation_report: null,
+      validation_mode: null,
+    }).eq('id', event.id);
+    setBusy(null);
+    if (error) toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    else { toast({ title: '🔓 Statut réinitialisé', description: 'L\'événement repartira dans la file au prochain batch.' }); await load(event.id); refreshGlobal(); }
+  };
+
   const field = <K extends keyof EventRow>(key: K, current: EventRow[K]): EventRow[K] => {
     return (key in edits ? (edits as Record<string, unknown>)[key as string] : current) as EventRow[K];
   };
@@ -298,8 +319,13 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
   const warnChecks = event?.auto_validation_report?.checks?.filter((c) => c.status === 'warning') ?? [];
   const skipReason = humanSkipReason(processed?.meta_reason ?? processed?.desc_reason ?? processed?.error);
   const alreadyPublished = event?.enrichissement_statut === 'valide' && !!event.description_enrichie;
-  const canForceValidate = !!event?.description_enrichie && !alreadyPublished;
-  const forceValidateLabel = failChecks.length > 0 ? 'Valider quand même' : 'Valider manuellement';
+  // On autorise la validation manuelle dès qu'il y a au moins une meta description
+  // OU une description enrichie, même si le statut actuel est 'error' (cas où la
+  // génération auto a échoué mais l'admin a saisi un texte à la main).
+  const hasAnyText = !!event?.description_enrichie || !!event?.meta_description_gen;
+  const isErrored = event?.enrichissement_statut === 'error';
+  const canForceValidate = hasAnyText && !alreadyPublished;
+  const forceValidateLabel = (failChecks.length > 0 || isErrored) ? 'Valider quand même' : 'Valider manuellement';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -454,11 +480,25 @@ export function SeoEventDetailSheet({ open, onOpenChange, processed }: Props) {
                     ? 'Force la publication de la description même si le contrôle qualité a détecté des erreurs (ex. faux positif sur la ville).'
                     : alreadyPublished
                       ? 'Cet événement est déjà validé et n’a plus besoin d’action.'
-                      : 'Marque la description comme valide et la publie.'}
+                      : isErrored
+                        ? 'Force la validation malgré le statut « error » (utile quand vous avez corrigé la meta à la main).'
+                        : 'Marque la description comme valide et la publie.'}
                 >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   {alreadyPublished ? 'Déjà validé' : forceValidateLabel}
                 </Button>
+                {isErrored && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetErrorStatus}
+                    disabled={!!busy}
+                    title="Remet le statut à zéro pour permettre une nouvelle tentative automatique."
+                  >
+                    {busy === 'reset' ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Unlock className="h-3 w-3 mr-1" />}
+                    Débloquer (reset status)
+                  </Button>
+                )}
                 {event.auto_validation_report?.ignored_for_now ? (
                   <Button variant="outline" size="sm" onClick={() => setIgnore(false)} disabled={!!busy}>
                     <RefreshCw className="h-3 w-3 mr-1" /> Réintégrer dans la file
