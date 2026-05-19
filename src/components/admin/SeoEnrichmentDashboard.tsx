@@ -652,6 +652,128 @@ export function SeoEnrichmentDashboard() {
         </Card>
       )}
 
+      {/* ─── Bloc 0bis — Vérification automatisation SEO ─── */}
+      <Card className="border-2 border-indigo-200 bg-indigo-50/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldQuestion className="h-5 w-5 text-indigo-600" />
+            Vérification automatisation SEO
+          </CardTitle>
+          <CardDescription>
+            Vérifie les dépendances et l'efficacité du garde-fou hash. <strong>Aucun appel Claude, aucun déploiement Vercel.</strong>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={runCheckDeps} disabled={!!actionLoading} variant="outline">
+              {actionLoading === 'deps' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wrench className="h-4 w-4 mr-2" />}
+              Vérifier les dépendances
+            </Button>
+            <Button onClick={runHashProtectionTest} disabled={!!actionLoading} variant="outline">
+              {actionLoading === 'hashtest' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ShieldQuestion className="h-4 w-4 mr-2" />}
+              Tester anti-retraitement
+            </Button>
+          </div>
+
+          {depsResult && (() => {
+            const d = depsResult;
+            const ready = d['ready'] === true;
+            const wouldCallClaude = (d['would_call_claude_now'] as number | undefined) ?? (d['would_call_claude'] as number | undefined) ?? null;
+            const wouldSkip = (d['would_skip_hash_match'] as number | undefined) ?? (d['would_skip'] as number | undefined) ?? null;
+            const ignored = (d['events_ignored'] as number | undefined) ?? null;
+            const scoreLow = (d['events_score_below_55'] as number | undefined) ?? null;
+            const scoreNull = (d['events_score_null'] as number | undefined) ?? null;
+            const Row = ({ label, ok, value }: { label: string; ok?: boolean; value?: React.ReactNode }) => (
+              <div className="flex items-center justify-between text-sm py-1 border-b border-indigo-100/60 last:border-0">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-medium flex items-center gap-2">
+                  {typeof ok === 'boolean' ? (ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <XCircle className="h-4 w-4 text-red-600" />) : null}
+                  {value}
+                </span>
+              </div>
+            );
+            return (
+              <div className="rounded-lg border border-indigo-200 bg-background p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700 mb-2">Dépendances automatisation</div>
+                <Row label="Prêt" ok={ready} value={ready ? 'oui' : 'non'} />
+                <Row label="SEO_BATCH_SECRET" ok={d['seo_batch_secret_ok'] === true || d['secrets'] && (d['secrets'] as Record<string, unknown>)['SEO_BATCH_SECRET'] === true} />
+                <Row label="SUPABASE_ANON_KEY" ok={d['supabase_anon_key_ok'] === true || d['secrets'] && (d['secrets'] as Record<string, unknown>)['SUPABASE_ANON_KEY'] === true} />
+                <Row label="application_logs" ok={d['application_logs_ok'] === true || d['tables'] && (d['tables'] as Record<string, unknown>)['application_logs'] === true} />
+                <Row label="pg_net" ok={d['pg_net_ok'] === true || d['extensions'] && (d['extensions'] as Record<string, unknown>)['pg_net'] === true} />
+                <Row label="Run en cours" ok={d['run_in_progress'] === false} value={d['run_in_progress'] === true ? 'oui' : 'non'} />
+                <Row label="Cron SEO actif" ok={d['cron_seo_active'] === false} value={d['cron_seo_active'] === true ? 'oui' : 'non'} />
+                {wouldCallClaude !== null && <Row label="Si lancé maintenant → appellerait Claude" value={<span className={wouldCallClaude > 0 ? 'text-amber-700' : 'text-emerald-700'}>{wouldCallClaude}</span>} />}
+                {wouldSkip !== null && <Row label="Déjà à jour, skippés sans Claude" value={<span className="text-emerald-700">{wouldSkip}</span>} />}
+                {ignored !== null && <Row label="Événements ignorés" value={ignored} />}
+                {scoreLow !== null && <Row label="Score < 55" value={scoreLow} />}
+                {scoreNull !== null && <Row label="Score NULL" value={scoreNull} />}
+                {wouldCallClaude !== null && (
+                  <div className={`mt-3 rounded-md p-3 text-sm font-medium ${wouldCallClaude > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}>
+                    Si vous lancez maintenant, <strong>{wouldCallClaude}</strong> événement(s) appelleraient Claude.
+                  </div>
+                )}
+                <details className="mt-3">
+                  <summary className="text-xs cursor-pointer text-muted-foreground">Voir la réponse brute</summary>
+                  <pre className="text-[10px] mt-2 max-h-60 overflow-auto bg-muted/40 p-2 rounded">{JSON.stringify(d, null, 2)}</pre>
+                </details>
+              </div>
+            );
+          })()}
+
+          {hashTestResult && (() => {
+            const r = hashTestResult;
+            const tested = (r['tested_count'] as number | undefined) ?? 0;
+            const wouldSkip = (r['would_skip_count'] as number | undefined) ?? 0;
+            const wouldNotSkip = (r['would_not_skip_count'] as number | undefined) ?? 0;
+            const allSkip = r['all_would_skip'] === true;
+            const warning = r['warning'] as string | undefined;
+            const results = (r['results'] as Array<Record<string, unknown>> | undefined) ?? [];
+            return (
+              <div className="rounded-lg border border-indigo-200 bg-background p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700 mb-2">Test anti-retraitement</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
+                  <div><div className="text-xs text-muted-foreground">tested_count</div><div className="font-semibold">{tested}</div></div>
+                  <div><div className="text-xs text-muted-foreground">would_skip</div><div className="font-semibold text-emerald-700">{wouldSkip}</div></div>
+                  <div><div className="text-xs text-muted-foreground">would_not_skip</div><div className="font-semibold text-amber-700">{wouldNotSkip}</div></div>
+                  <div><div className="text-xs text-muted-foreground">all_would_skip</div><div className="font-semibold">{allSkip ? 'oui' : 'non'}</div></div>
+                </div>
+                {warning && (
+                  <div className="rounded-md p-3 text-sm bg-amber-100 text-amber-900 mb-3">
+                    ⚠️ {warning}
+                  </div>
+                )}
+                {allSkip && tested > 0 && (
+                  <div className="rounded-md p-3 text-sm bg-emerald-100 text-emerald-900 mb-3 font-medium">
+                    Protection active : {wouldSkip}/{tested} événements déjà enrichis seraient skippés sans appeler Claude.
+                  </div>
+                )}
+                {results.length > 0 && (
+                  <div className="space-y-1 text-xs">
+                    {results.map((ev, i) => (
+                      <div key={i} className="flex items-center justify-between border-b border-indigo-100/60 py-1 last:border-0">
+                        <span className="font-mono truncate max-w-[60%]">{String(ev['nom_event'] ?? ev['id'] ?? '—')}</span>
+                        <span className="flex items-center gap-2">
+                          {ev['would_skip'] === true ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">skip</Badge>
+                          ) : (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">claude</Badge>
+                          )}
+                          <span className="text-muted-foreground">{String(ev['skip_reason'] ?? '')}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <details className="mt-3">
+                  <summary className="text-xs cursor-pointer text-muted-foreground">Voir la réponse brute</summary>
+                  <pre className="text-[10px] mt-2 max-h-60 overflow-auto bg-muted/40 p-2 rounded">{JSON.stringify(r, null, 2)}</pre>
+                </details>
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
       {/* ─── Bloc 1 — Actions SEO ─── */}
       <Card>
         <CardHeader>
