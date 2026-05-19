@@ -964,6 +964,7 @@ function ProcessedFallback({ ids }: { ids: string[] }) {
     const statut = r.enrichissement_statut;
     let decision = 'skipped';
     if (statut === 'valide' && autoVal === 'passed' && r.validation_mode === 'auto') decision = 'publie_auto';
+    else if (statut === 'valide' && r.validation_mode === 'manual') decision = 'publie_manuelle';
     else if (autoVal === 'warning') decision = 'revue_manuelle';
     else if (autoVal === 'failed') decision = 'failed_validation';
     else if (statut === 'en_attente') decision = 'revue_manuelle';
