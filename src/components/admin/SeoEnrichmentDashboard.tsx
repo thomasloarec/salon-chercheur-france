@@ -54,6 +54,7 @@ interface Counters {
   failed: number;
   null_score: number;
   score_ge_55: number;
+  ready_for_batch: number;
   desc_missing: number;
   published: number;
 }
@@ -135,7 +136,7 @@ export function SeoEnrichmentDashboard() {
     setLoading(true);
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, descMissingRes, publishedRes] = await Promise.all([
+      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, readyForBatchRes, descMissingRes, publishedRes] = await Promise.all([
         supabase.rpc('count_seo_enrichment_eligible'),
         supabase.from('seo_enrichment_runs')
           .select('*')
@@ -155,6 +156,11 @@ export function SeoEnrichmentDashboard() {
           .gte('enrichissement_score', 55),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
+          .not('slug', 'is', null).neq('slug', '')
+          .gte('enrichissement_score', 55)
+          .or('meta_description_gen.is.null,meta_description_gen.eq.,description_enrichie.is.null,description_enrichie.eq.'),
+        supabase.from('events').select('id', { count: 'exact', head: true })
+          .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .is('description_enrichie', null),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('enrichissement_statut', 'valide'),
@@ -169,6 +175,7 @@ export function SeoEnrichmentDashboard() {
         failed: failedRes.count ?? 0,
         null_score: nullScoreRes.count ?? 0,
         score_ge_55: ge55Res.count ?? 0,
+        ready_for_batch: readyForBatchRes.count ?? 0,
         desc_missing: descMissingRes.count ?? 0,
         published: publishedRes.count ?? 0,
       });
