@@ -77,13 +77,15 @@ function tieBreakScore(ev: CandidateEvent, hasParticipations: boolean): number {
   return score;
 }
 
+function hasText(value: string | null | undefined): boolean {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 function isEligible(e: CandidateEvent): boolean {
-  return (
-    !e.meta_description_gen ||
-    !e.enrichissement_statut || e.enrichissement_statut !== 'valide' ||
-    !e.description_enrichie ||
-    (e.description_event ?? '').length < 500
-  );
+  // Le batch ne sait générer que la meta et/ou la description enrichie.
+  // Un événement déjà publié ne doit donc pas être repris uniquement parce que
+  // sa description source est courte ou parce que l'auto-validation garde une trace d'échec.
+  return !hasText(e.meta_description_gen) || !hasText(e.description_enrichie);
 }
 
 function parseParams(body: Record<string, unknown>): Params {
@@ -250,10 +252,8 @@ Deno.serve(async (req) => {
               ? `enrichissement_score=${e.enrichissement_score} < 55`
               : null;
           const selection_reasons: string[] = [];
-          if (!e.meta_description_gen) selection_reasons.push('meta_description_gen manquante');
-          if (!e.enrichissement_statut || e.enrichissement_statut !== 'valide') selection_reasons.push('enrichissement_statut != valide');
-          if (!e.description_enrichie) selection_reasons.push('description_enrichie manquante');
-          if ((e.description_event ?? '').length < 500) selection_reasons.push('description_event < 500c');
+          if (!hasText(e.meta_description_gen)) selection_reasons.push('meta_description_gen manquante');
+          if (!hasText(e.description_enrichie)) selection_reasons.push('description_enrichie manquante');
           return {
             sort_rank: idx + 1,
             id: e.id,
