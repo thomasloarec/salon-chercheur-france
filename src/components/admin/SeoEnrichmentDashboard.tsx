@@ -155,11 +155,11 @@ export function SeoEnrichmentDashboard() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .gte('enrichissement_score', 55),
-        supabase.from('events').select('id', { count: 'exact', head: true })
+        supabase.from('events').select('id, meta_description_gen, description_enrichie, enrichissement_statut')
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .not('slug', 'is', null).neq('slug', '')
           .gte('enrichissement_score', 55)
-          .or('meta_description_gen.is.null,meta_description_gen.eq.,description_enrichie.is.null,description_enrichie.eq.'),
+          .limit(1000),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .is('description_enrichie', null),
@@ -168,6 +168,13 @@ export function SeoEnrichmentDashboard() {
       ]);
 
       if (eligibilityRes.error) throw eligibilityRes.error;
+      const hasText = (value: unknown) => typeof value === 'string' && value.trim().length > 0;
+      const descGeneratableStatuses = new Set([null, 'non_traite', 'done']);
+      const readyForBatchCount = (readyForBatchRes.data ?? []).filter((row) => {
+        const r = row as { meta_description_gen: string | null; description_enrichie: string | null; enrichissement_statut: string | null };
+        return !hasText(r.meta_description_gen)
+          || (!hasText(r.description_enrichie) && descGeneratableStatuses.has(r.enrichissement_statut));
+      }).length;
       setEligibility(eligibilityRes.data as unknown as EligibilityStats);
       setRuns((runsRes.data ?? []) as RunRow[]);
       setCounters({
@@ -176,7 +183,7 @@ export function SeoEnrichmentDashboard() {
         failed: failedRes.count ?? 0,
         null_score: nullScoreRes.count ?? 0,
         score_ge_55: ge55Res.count ?? 0,
-        ready_for_batch: readyForBatchRes.count ?? 0,
+        ready_for_batch: readyForBatchCount,
         desc_missing: descMissingRes.count ?? 0,
         published: publishedRes.count ?? 0,
       });
