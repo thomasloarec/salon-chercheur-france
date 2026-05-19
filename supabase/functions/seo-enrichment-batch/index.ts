@@ -85,7 +85,9 @@ function isEligible(e: CandidateEvent): boolean {
   // Le batch ne sait générer que la meta et/ou la description enrichie.
   // Un événement déjà publié ne doit donc pas être repris uniquement parce que
   // sa description source est courte ou parce que l'auto-validation garde une trace d'échec.
-  return !hasText(e.meta_description_gen) || !hasText(e.description_enrichie);
+  const descCanBeGenerated = !hasText(e.description_enrichie)
+    && (!e.enrichissement_statut || ['non_traite', 'done'].includes(e.enrichissement_statut));
+  return !hasText(e.meta_description_gen) || descCanBeGenerated;
 }
 
 function parseParams(body: Record<string, unknown>): Params {
@@ -253,7 +255,7 @@ Deno.serve(async (req) => {
               : null;
           const selection_reasons: string[] = [];
           if (!hasText(e.meta_description_gen)) selection_reasons.push('meta_description_gen manquante');
-          if (!hasText(e.description_enrichie)) selection_reasons.push('description_enrichie manquante');
+          if (!hasText(e.description_enrichie)) selection_reasons.push('description_enrichie manquante et générable');
           return {
             sort_rank: idx + 1,
             id: e.id,
