@@ -69,6 +69,33 @@ interface StaleFailureInfo {
   unresolvedIds: string[];
 }
 
+interface AutoFixableInfo {
+  count: number;
+  byReason: Record<string, number>;
+  totalFailed: number;       // toutes les events en failed (y compris déjà validées manuellement)
+  failedManual: number;      // failed mais déjà validées manuellement → exclues du correcteur
+  failedNoDesc: number;      // failed mais description_enrichie null → rien à corriger
+}
+
+interface AutoFixResult {
+  ranAt: string;
+  processed: number;
+  fixed: number;
+  still_failed: number;
+  errored: number;
+  by_reason_before?: Record<string, number>;
+  results?: Array<{
+    event_id: string;
+    nom_event: string | null;
+    slug: string | null;
+    status: string;
+    reason?: string;
+    before?: { status: string; score: number };
+    after?: { status: string; score: number; decision?: string };
+  }>;
+  deploy_triggered?: boolean;
+}
+
 type BatchMode = 'dry_run' | 'test' | 'run';
 
 function statusBadge(status: string) {
@@ -143,6 +170,9 @@ export function SeoEnrichmentDashboard() {
   const [expandedRunIds, setExpandedRunIds] = useState<Set<string>>(new Set());
   const [missingDescOpen, setMissingDescOpen] = useState(false);
   const [staleFailure, setStaleFailure] = useState<StaleFailureInfo | null>(null);
+  const [autoFixable, setAutoFixable] = useState<AutoFixableInfo | null>(null);
+  const [lastAutoFix, setLastAutoFix] = useState<AutoFixResult | null>(null);
+  const [autoFixConfirmOpen, setAutoFixConfirmOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -203,6 +233,39 @@ export function SeoEnrichmentDashboard() {
         ready_for_batch: readyForBatchCount,
         desc_missing: descMissingRes.count ?? 0,
         published: publishedRes.count ?? 0,
+      });
+
+      // ─── Audit "erreurs corrigeables automatiquement" ───
+      // Source unique : events futurs visibles avec auto_validation_status='failed',
+      // pas déjà validés manuellement, et avec description_enrichie non null.
+      const { data: failedRows } = await supabase
+        .from('events')
+        .select('id, validation_mode, enrichissement_statut, description_enrichie, auto_validation_report')
+        .eq('visible', true).eq('is_test', false).gte('date_debut', today)
+        .eq('auto_validation_status', 'failed')
+        .limit(500);
+      const allFailed = (failedRows ?? []) as Array<{
+        id: string;
+        validation_mode: string | null;
+        enrichissement_statut: string | null;
+        description_enrichie: string | null;
+        auto_validation_report: Record<string, unknown> | null;
+      }>;
+      const fixable = allFailed.filter((r) => r.validation_mode !== 'manual' && !!r.description_enrichie);
+      const byReason: Record<string, number> = {};
+      for (const r of fixable) {
+        const checks = (r.auto_validation_report?.['checks'] ?? []) as Array<{ code?: string; status?: string }>;
+        const codes = Array.isArray(checks)
+          ? [...new Set(checks.filter((c) => c?.status === 'fail').map((c) => c.code ?? 'unknown'))]
+          : [];
+        for (const c of codes) byReason[c] = (byReason[c] ?? 0) + 1;
+      }
+      setAutoFixable({
+        count: fixable.length,
+        byReason,
+        totalFailed: allFailed.length,
+        failedManual: allFailed.filter((r) => r.validation_mode === 'manual').length,
+        failedNoDesc: allFailed.filter((r) => !r.description_enrichie).length,
       });
 
       // ─── Détection d'échec périmé ───
@@ -348,10 +411,19 @@ export function SeoEnrichmentDashboard() {
         },
       });
       if (error) throw error;
-      const r = data as { processed?: number; fixed?: number; still_failed?: number; errored?: number; by_reason_before?: Record<string, number> };
+      const r = data as AutoFixResult & { processed?: number; fixed?: number; still_failed?: number; errored?: number };
       toast({
         title: '🛠️ Correction automatique terminée',
         description: `${r.processed ?? 0} traité(s) — ${r.fixed ?? 0} corrigé(s), ${r.still_failed ?? 0} encore en échec, ${r.errored ?? 0} erreur(s).`,
+      });
+      setLastAutoFix({
+        ranAt: new Date().toISOString(),
+        processed: r.processed ?? 0,
+        fixed: r.fixed ?? 0,
+        still_failed: r.still_failed ?? 0,
+        errored: r.errored ?? 0,
+        by_reason_before: r.by_reason_before,
+        results: r.results,
       });
       fetchData();
       window.dispatchEvent(new CustomEvent('seo-enrichment-refresh'));
@@ -432,12 +504,16 @@ export function SeoEnrichmentDashboard() {
         cta: { label: 'Lancer Batch 20', onClick: () => runBatch('run', 20, true, 'big') },
       };
     }
-    // Cas A — beaucoup d'échecs de validation : proposer la correction automatique en priorité
-    if (counters.failed >= 5) {
+    // Cas A — erreurs réellement corrigeables automatiquement
+    if ((autoFixable?.count ?? 0) >= 1) {
+      const n = Math.min(autoFixable!.count, 5);
       return {
         tone: 'amber' as const,
-        title: `${counters.failed} textes en échec de validation. Lance la correction automatique des erreurs simples.`,
-        cta: { label: 'Corriger automatiquement les erreurs simples', onClick: runAutoFixBatch },
+        title: `${autoFixable!.count} description${autoFixable!.count > 1 ? 's en échec sont corrigeables' : ' en échec est corrigeable'} automatiquement.`,
+        cta: {
+          label: `Corriger automatiquement ${n} erreur${n > 1 ? 's' : ''}`,
+          onClick: () => setAutoFixConfirmOpen(true),
+        },
       };
     }
     // Cas A-bis — quelques textes à vérifier manuellement
@@ -495,7 +571,7 @@ export function SeoEnrichmentDashboard() {
       cta: { label: 'Dry-run 20', onClick: () => runBatch('dry_run', 20, false, 'dry') },
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counters, eligibility, lastRun, lastNonDryRuns, staleFailure, cronReadiness]);
+  }, [counters, eligibility, lastRun, lastNonDryRuns, staleFailure, cronReadiness, autoFixable]);
 
   // ─── Statut global ───
   const globalStatus: { label: string; tone: 'emerald' | 'amber' | 'red' } = useMemo(() => {
@@ -650,14 +726,11 @@ export function SeoEnrichmentDashboard() {
               disabled={!!actionLoading}
               variant="outline"
             />
-            <ActionTile
-              icon={<Wrench className="h-4 w-4" />}
-              title="Corriger erreurs simples (5)"
-              description="Réécrit jusqu'à 5 textes en échec (ville, lieu, chiffres non sourcés) sans rien inventer."
-              onClick={runAutoFixBatch}
+            <AutoFixActionTile
+              autoFixable={autoFixable}
               loading={actionLoading === 'autofix'}
-              disabled={!!actionLoading || (counters?.failed ?? 0) === 0}
-              variant="outline"
+              disabled={!!actionLoading}
+              onClick={() => setAutoFixConfirmOpen(true)}
             />
           </div>
           <p className="text-xs text-muted-foreground mt-4">
@@ -692,7 +765,8 @@ export function SeoEnrichmentDashboard() {
           tone="amber"
           items={[
             { label: 'En attente revue', value: counters?.pending, hint: 'Texte généré mais pas publié, en attente de relecture.' },
-            { label: 'Validation failed', value: counters?.failed },
+            { label: 'Validation failed', value: counters?.failed, hint: 'Textes en échec automatique qui ne sont pas déjà validés manuellement.' },
+            { label: 'À corriger auto.', value: autoFixable?.count ?? 0, hint: 'Textes en échec, non validés manuellement, avec description enrichie présente. Ce sont les seuls que le correcteur automatique peut traiter.' },
           ]}
         />
         <KpiFamily
@@ -705,6 +779,19 @@ export function SeoEnrichmentDashboard() {
           ]}
         />
       </div>
+
+      {/* ─── Bloc 2.5 — Erreurs corrigeables automatiquement ─── */}
+      <AutoFixableSection
+        info={autoFixable}
+        loading={actionLoading === 'autofix'}
+        disabled={!!actionLoading}
+        onLaunch={() => setAutoFixConfirmOpen(true)}
+      />
+
+      {/* ─── Bloc 2.6 — Résultat de la dernière correction automatique ─── */}
+      {lastAutoFix && (
+        <LastAutoFixCard result={lastAutoFix} />
+      )}
 
       {/* ─── Bloc 3 — Résultat de la dernière action ─── */}
       <Card>
@@ -894,6 +981,36 @@ trigger   : cron`}</pre>
           </AlertDialog>
         </CardContent>
       </Card>
+
+      {/* ─── Dialog de confirmation pour la correction automatique ─── */}
+      <AlertDialog open={autoFixConfirmOpen} onOpenChange={setAutoFixConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lancer la correction automatique sur 5 erreurs&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action va corriger jusqu'à 5 descriptions en échec en supprimant ou
+              remplaçant les informations non fiables (ville incorrecte, lieu incorrect, chiffres non sourcés).
+              Aucun nouveau batch IA complet n'est lancé. Vercel ne sera déclenché que si au
+              moins une description repasse en statut « valide ».
+              {autoFixable && (
+                <div className="mt-3 text-xs">
+                  {autoFixable.count} événement(s) candidat(s) — {Math.min(autoFixable.count, 5)} seront traités.
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { setAutoFixConfirmOpen(false); runAutoFixBatch(); }}
+              disabled={(autoFixable?.count ?? 0) === 0}
+            >
+              Lancer la correction
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
     </TooltipProvider>
   );
@@ -930,6 +1047,199 @@ function ActionTile({
       </div>
       <div className="text-xs text-muted-foreground mt-1">{description}</div>
     </button>
+  );
+}
+
+// ──────────────────────────────────────────────────────────
+// Correction automatique : tuile d'action, section dédiée, résultat
+// ──────────────────────────────────────────────────────────
+
+const REASON_LABELS: Record<string, string> = {
+  city_consistency: 'Ville incorrecte',
+  venue_consistency: 'Lieu incorrect',
+  numbers_grounded: 'Chiffre non sourcé',
+  exhibitors_grounded: 'Exposant non sourcé',
+  program_grounded: 'Programme inventé',
+  generic_text: 'Texte trop générique',
+  too_short: 'Texte trop court',
+};
+
+function disabledReason(info: AutoFixableInfo | null): string | null {
+  if (!info) return 'Chargement en cours…';
+  if (info.totalFailed === 0) return 'Aucun texte en failed.';
+  if (info.count === 0 && info.failedManual === info.totalFailed) {
+    return `Aucune erreur corrigeable : les ${info.totalFailed} échec(s) ont déjà été validés manuellement.`;
+  }
+  if (info.count === 0 && info.failedNoDesc > 0) {
+    return 'Aucune description enrichie à corriger.';
+  }
+  if (info.count === 0) return 'Aucune erreur corrigeable automatiquement.';
+  return null;
+}
+
+function AutoFixActionTile({
+  autoFixable, loading, disabled, onClick,
+}: {
+  autoFixable: AutoFixableInfo | null;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const reason = disabledReason(autoFixable);
+  const isDisabled = disabled || !!reason;
+  const count = Math.min(autoFixable?.count ?? 0, 5);
+  const button = (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isDisabled}
+      className="text-left border-2 rounded-lg p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/40 w-full"
+    >
+      <div className="flex items-center gap-2 font-medium">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
+        Corriger automatiquement {count > 0 ? count : 5} erreur{count !== 1 ? 's' : ''}
+      </div>
+      <div className="text-xs text-muted-foreground mt-1">
+        Corrige jusqu'à 5 descriptions bloquées (ville, lieu, chiffres non sourcés), puis relance le contrôle qualité. Aucune invention.
+      </div>
+      {reason && (
+        <div className="text-[11px] text-amber-700 mt-2 font-medium">⚠ {reason}</div>
+      )}
+    </button>
+  );
+  return reason ? (
+    <Tooltip>
+      <TooltipTrigger asChild><div>{button}</div></TooltipTrigger>
+      <TooltipContent className="max-w-xs text-xs">{reason}</TooltipContent>
+    </Tooltip>
+  ) : button;
+}
+
+function AutoFixableSection({
+  info, loading, disabled, onLaunch,
+}: {
+  info: AutoFixableInfo | null;
+  loading: boolean;
+  disabled: boolean;
+  onLaunch: () => void;
+}) {
+  if (!info) return null;
+  // Toujours afficher la section pour transparence des compteurs.
+  const reason = disabledReason(info);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Wrench className="h-4 w-4" />
+          Erreurs corrigeables automatiquement
+        </CardTitle>
+        <CardDescription>
+          Source unique : événements futurs visibles avec <code>auto_validation_status = failed</code>,
+          non validés manuellement, avec une description enrichie présente.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div className="border rounded-md p-3">
+            <div className="text-muted-foreground text-xs">Total failed</div>
+            <div className="text-2xl font-semibold tabular-nums">{info.totalFailed}</div>
+          </div>
+          <div className="border rounded-md p-3 bg-emerald-50/30">
+            <div className="text-muted-foreground text-xs">Corrigeables auto.</div>
+            <div className="text-2xl font-semibold tabular-nums text-emerald-700">{info.count}</div>
+          </div>
+          <div className="border rounded-md p-3">
+            <div className="text-muted-foreground text-xs">Déjà validés manuellement</div>
+            <div className="text-2xl font-semibold tabular-nums text-muted-foreground">{info.failedManual}</div>
+          </div>
+          <div className="border rounded-md p-3">
+            <div className="text-muted-foreground text-xs">Sans description enrichie</div>
+            <div className="text-2xl font-semibold tabular-nums text-muted-foreground">{info.failedNoDesc}</div>
+          </div>
+        </div>
+
+        {info.count > 0 && Object.keys(info.byReason).length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-muted-foreground mb-2">Répartition par cause</div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(info.byReason).sort((a, b) => b[1] - a[1]).map(([code, n]) => (
+                <Badge key={code} variant="outline" className="text-xs">
+                  {REASON_LABELS[code] ?? code} : <span className="ml-1 font-semibold tabular-nums">{n}</span>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 pt-2">
+          <Button onClick={onLaunch} disabled={disabled || !!reason} size="lg">
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wrench className="h-4 w-4 mr-2" />}
+            Corriger automatiquement {Math.min(info.count, 5) || 5} erreur{Math.min(info.count, 5) === 1 ? '' : 's'}
+          </Button>
+          {reason && (
+            <span className="text-xs text-muted-foreground">{reason}</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LastAutoFixCard({ result }: { result: AutoFixResult }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <ListChecks className="h-4 w-4" />
+          Résultat de la dernière correction automatique
+        </CardTitle>
+        <CardDescription>
+          {formatDateTime(result.ranAt)} — {result.processed} analysé(s), {result.fixed} corrigé(s),{' '}
+          {result.still_failed} encore en échec, {result.errored} erreur(s) techniques.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {result.results && result.results.length > 0 ? (
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="text-left px-2 py-2 font-medium">Événement</th>
+                  <th className="text-left px-2 py-2 font-medium">Avant</th>
+                  <th className="text-left px-2 py-2 font-medium">Après</th>
+                  <th className="text-left px-2 py-2 font-medium">Statut</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {result.results.map((r) => (
+                  <tr key={r.event_id} className="hover:bg-muted/20">
+                    <td className="px-2 py-1.5 max-w-[280px]">
+                      <div className="font-medium truncate">{r.nom_event ?? r.event_id}</div>
+                      {r.slug && <div className="text-[10px] text-muted-foreground truncate">/events/{r.slug}</div>}
+                      {r.reason && <div className="text-[10px] text-muted-foreground truncate" title={r.reason}>{r.reason}</div>}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {r.before ? `${r.before.status} (${r.before.score})` : '—'}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {r.after ? `${r.after.status} (${r.after.score})` : '—'}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {r.status === 'fixed' && <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]">Corrigé</Badge>}
+                      {r.status === 'still_failed' && <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]">Encore en échec</Badge>}
+                      {r.status === 'no_change' && <Badge variant="outline" className="text-[10px]">Aucun changement</Badge>}
+                      {r.status === 'error' && <Badge className="bg-red-100 text-red-800 border-red-300 text-[10px]">Erreur</Badge>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Aucun événement traité.</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
