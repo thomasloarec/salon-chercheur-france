@@ -173,6 +173,8 @@ export function SeoEnrichmentDashboard() {
   const [autoFixable, setAutoFixable] = useState<AutoFixableInfo | null>(null);
   const [lastAutoFix, setLastAutoFix] = useState<AutoFixResult | null>(null);
   const [autoFixConfirmOpen, setAutoFixConfirmOpen] = useState(false);
+  const [depsResult, setDepsResult] = useState<Record<string, unknown> | null>(null);
+  const [hashTestResult, setHashTestResult] = useState<Record<string, unknown> | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -441,6 +443,40 @@ export function SeoEnrichmentDashboard() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+  };
+
+  const runCheckDeps = async () => {
+    setActionLoading('deps');
+    try {
+      const { data, error } = await supabase.rpc('check_seo_automation_dependencies');
+      if (error) throw error;
+      setDepsResult((data ?? {}) as Record<string, unknown>);
+      toast({ title: 'Vérification dépendances OK', description: 'Aucun appel Claude effectué.' });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur vérification', description: msg, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const runHashProtectionTest = async () => {
+    setActionLoading('hashtest');
+    try {
+      const { data, error } = await supabase.rpc('seo_test_hash_protection');
+      if (error) throw error;
+      setHashTestResult((data ?? {}) as Record<string, unknown>);
+      const r = (data ?? {}) as Record<string, unknown>;
+      toast({
+        title: 'Test anti-retraitement terminé',
+        description: `tested=${r['tested_count'] ?? 0} • would_skip=${r['would_skip_count'] ?? 0} • would_not_skip=${r['would_not_skip_count'] ?? 0}`,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: 'Erreur test hash', description: msg, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const lastRun = runs.find((r) => r.trigger_source !== 'dry_run') ?? runs[0];
