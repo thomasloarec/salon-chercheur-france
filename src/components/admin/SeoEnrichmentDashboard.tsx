@@ -411,10 +411,19 @@ export function SeoEnrichmentDashboard() {
         },
       });
       if (error) throw error;
-      const r = data as { processed?: number; fixed?: number; still_failed?: number; errored?: number; by_reason_before?: Record<string, number> };
+      const r = data as AutoFixResult & { processed?: number; fixed?: number; still_failed?: number; errored?: number };
       toast({
         title: '🛠️ Correction automatique terminée',
         description: `${r.processed ?? 0} traité(s) — ${r.fixed ?? 0} corrigé(s), ${r.still_failed ?? 0} encore en échec, ${r.errored ?? 0} erreur(s).`,
+      });
+      setLastAutoFix({
+        ranAt: new Date().toISOString(),
+        processed: r.processed ?? 0,
+        fixed: r.fixed ?? 0,
+        still_failed: r.still_failed ?? 0,
+        errored: r.errored ?? 0,
+        by_reason_before: r.by_reason_before,
+        results: r.results,
       });
       fetchData();
       window.dispatchEvent(new CustomEvent('seo-enrichment-refresh'));
