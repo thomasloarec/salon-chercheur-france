@@ -4730,6 +4730,7 @@ export type Database = {
           status: string
         }[]
       }
+      seo_test_hash_protection: { Args: never; Returns: Json }
       start_seo_weekly_catchup: { Args: never; Returns: Json }
       toggle_favorite: { Args: { p_event: string }; Returns: undefined }
       update_existing_events_slugs: { Args: never; Returns: undefined }
