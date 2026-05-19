@@ -162,13 +162,26 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
     // ─── Anti-double-run lock (skip in dry_run) ───
+    // Un batch 20 prend ~60s max. On considère qu'au-delà de 5 min un run
+    // est orphelin (timeout/504) et on le marque comme failed pour libérer le verrou.
     if (params.mode !== 'dry_run') {
-      const twoHoursAgo = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      // Auto-release des runs orphelins
+      await supabase
+        .from('seo_enrichment_runs')
+        .update({
+          status: 'failed',
+          finished_at: new Date().toISOString(),
+          deploy_hook_error: 'Run orphelin libéré automatiquement (timeout présumé)',
+        })
+        .eq('status', 'running')
+        .lt('started_at', fiveMinAgo);
+
       const { data: running } = await supabase
         .from('seo_enrichment_runs')
         .select('id, started_at')
         .eq('status', 'running')
-        .gte('started_at', twoHoursAgo)
+        .gte('started_at', fiveMinAgo)
         .limit(1);
       if (running && running.length > 0) {
         return new Response(JSON.stringify({
