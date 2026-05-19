@@ -40,6 +40,7 @@ interface CandidateEvent {
   description_event: string | null;
   enrichissement_score: number | null;
   enrichissement_niveau: string | null;
+  seo_generated_from_hash?: string | null;
 }
 
 const PRIORITY_SECTOR_KEYWORDS = [
@@ -196,7 +197,7 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().slice(0, 10);
     const { data: rawEvents, error: fetchErr } = await supabase
       .from('events')
-      .select('id, id_event, nom_event, slug, ville, secteur, date_debut, meta_description_gen, description_enrichie, enrichissement_statut, description_event, enrichissement_score, enrichissement_niveau')
+      .select('id, id_event, nom_event, slug, ville, secteur, date_debut, meta_description_gen, description_enrichie, enrichissement_statut, description_event, enrichissement_score, enrichissement_niveau, seo_generated_from_hash')
       .eq('visible', true)
       .or('is_test.is.null,is_test.eq.false')
       .not('slug', 'is', null)
