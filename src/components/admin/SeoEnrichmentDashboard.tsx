@@ -1050,6 +1050,199 @@ function ActionTile({
   );
 }
 
+// ──────────────────────────────────────────────────────────
+// Correction automatique : tuile d'action, section dédiée, résultat
+// ──────────────────────────────────────────────────────────
+
+const REASON_LABELS: Record<string, string> = {
+  city_consistency: 'Ville incorrecte',
+  venue_consistency: 'Lieu incorrect',
+  numbers_grounded: 'Chiffre non sourcé',
+  exhibitors_grounded: 'Exposant non sourcé',
+  program_grounded: 'Programme inventé',
+  generic_text: 'Texte trop générique',
+  too_short: 'Texte trop court',
+};
+
+function disabledReason(info: AutoFixableInfo | null): string | null {
+  if (!info) return 'Chargement en cours…';
+  if (info.totalFailed === 0) return 'Aucun texte en failed.';
+  if (info.count === 0 && info.failedManual === info.totalFailed) {
+    return `Aucune erreur corrigeable : les ${info.totalFailed} échec(s) ont déjà été validés manuellement.`;
+  }
+  if (info.count === 0 && info.failedNoDesc > 0) {
+    return 'Aucune description enrichie à corriger.';
+  }
+  if (info.count === 0) return 'Aucune erreur corrigeable automatiquement.';
+  return null;
+}
+
+function AutoFixActionTile({
+  autoFixable, loading, disabled, onClick,
+}: {
+  autoFixable: AutoFixableInfo | null;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const reason = disabledReason(autoFixable);
+  const isDisabled = disabled || !!reason;
+  const count = Math.min(autoFixable?.count ?? 0, 5);
+  const button = (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isDisabled}
+      className="text-left border-2 rounded-lg p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/40 w-full"
+    >
+      <div className="flex items-center gap-2 font-medium">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
+        Corriger automatiquement {count > 0 ? count : 5} erreur{count !== 1 ? 's' : ''}
+      </div>
+      <div className="text-xs text-muted-foreground mt-1">
+        Corrige jusqu'à 5 descriptions bloquées (ville, lieu, chiffres non sourcés), puis relance le contrôle qualité. Aucune invention.
+      </div>
+      {reason && (
+        <div className="text-[11px] text-amber-700 mt-2 font-medium">⚠ {reason}</div>
+      )}
+    </button>
+  );
+  return reason ? (
+    <Tooltip>
+      <TooltipTrigger asChild><div>{button}</div></TooltipTrigger>
+      <TooltipContent className="max-w-xs text-xs">{reason}</TooltipContent>
+    </Tooltip>
+  ) : button;
+}
+
+function AutoFixableSection({
+  info, loading, disabled, onLaunch,
+}: {
+  info: AutoFixableInfo | null;
+  loading: boolean;
+  disabled: boolean;
+  onLaunch: () => void;
+}) {
+  if (!info) return null;
+  // Toujours afficher la section pour transparence des compteurs.
+  const reason = disabledReason(info);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Wrench className="h-4 w-4" />
+          Erreurs corrigeables automatiquement
+        </CardTitle>
+        <CardDescription>
+          Source unique : événements futurs visibles avec <code>auto_validation_status = failed</code>,
+          non validés manuellement, avec une description enrichie présente.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div className="border rounded-md p-3">
+            <div className="text-muted-foreground text-xs">Total failed</div>
+            <div className="text-2xl font-semibold tabular-nums">{info.totalFailed}</div>
+          </div>
+          <div className="border rounded-md p-3 bg-emerald-50/30">
+            <div className="text-muted-foreground text-xs">Corrigeables auto.</div>
+            <div className="text-2xl font-semibold tabular-nums text-emerald-700">{info.count}</div>
+          </div>
+          <div className="border rounded-md p-3">
+            <div className="text-muted-foreground text-xs">Déjà validés manuellement</div>
+            <div className="text-2xl font-semibold tabular-nums text-muted-foreground">{info.failedManual}</div>
+          </div>
+          <div className="border rounded-md p-3">
+            <div className="text-muted-foreground text-xs">Sans description enrichie</div>
+            <div className="text-2xl font-semibold tabular-nums text-muted-foreground">{info.failedNoDesc}</div>
+          </div>
+        </div>
+
+        {info.count > 0 && Object.keys(info.byReason).length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-muted-foreground mb-2">Répartition par cause</div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(info.byReason).sort((a, b) => b[1] - a[1]).map(([code, n]) => (
+                <Badge key={code} variant="outline" className="text-xs">
+                  {REASON_LABELS[code] ?? code} : <span className="ml-1 font-semibold tabular-nums">{n}</span>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 pt-2">
+          <Button onClick={onLaunch} disabled={disabled || !!reason} size="lg">
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wrench className="h-4 w-4 mr-2" />}
+            Corriger automatiquement {Math.min(info.count, 5) || 5} erreur{Math.min(info.count, 5) === 1 ? '' : 's'}
+          </Button>
+          {reason && (
+            <span className="text-xs text-muted-foreground">{reason}</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LastAutoFixCard({ result }: { result: AutoFixResult }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <ListChecks className="h-4 w-4" />
+          Résultat de la dernière correction automatique
+        </CardTitle>
+        <CardDescription>
+          {formatDateTime(result.ranAt)} — {result.processed} analysé(s), {result.fixed} corrigé(s),{' '}
+          {result.still_failed} encore en échec, {result.errored} erreur(s) techniques.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {result.results && result.results.length > 0 ? (
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="text-left px-2 py-2 font-medium">Événement</th>
+                  <th className="text-left px-2 py-2 font-medium">Avant</th>
+                  <th className="text-left px-2 py-2 font-medium">Après</th>
+                  <th className="text-left px-2 py-2 font-medium">Statut</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {result.results.map((r) => (
+                  <tr key={r.event_id} className="hover:bg-muted/20">
+                    <td className="px-2 py-1.5 max-w-[280px]">
+                      <div className="font-medium truncate">{r.nom_event ?? r.event_id}</div>
+                      {r.slug && <div className="text-[10px] text-muted-foreground truncate">/events/{r.slug}</div>}
+                      {r.reason && <div className="text-[10px] text-muted-foreground truncate" title={r.reason}>{r.reason}</div>}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {r.before ? `${r.before.status} (${r.before.score})` : '—'}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {r.after ? `${r.after.status} (${r.after.score})` : '—'}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {r.status === 'fixed' && <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]">Corrigé</Badge>}
+                      {r.status === 'still_failed' && <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]">Encore en échec</Badge>}
+                      {r.status === 'no_change' && <Badge variant="outline" className="text-[10px]">Aucun changement</Badge>}
+                      {r.status === 'error' && <Badge className="bg-red-100 text-red-800 border-red-300 text-[10px]">Erreur</Badge>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Aucun événement traité.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 interface KpiItem {
   label: string;
   value?: number | null;
