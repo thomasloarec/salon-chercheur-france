@@ -19,6 +19,9 @@ import {
   Info,
 } from 'lucide-react';
 import { SeoEventDetailSheet, type ProcessedEventLite } from './SeoEventDetailSheet';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
 
 interface EligibilityStats {
   total_eligible: number;
@@ -131,6 +134,7 @@ export function SeoEnrichmentDashboard() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [expandedRunIds, setExpandedRunIds] = useState<Set<string>>(new Set());
+  const [missingDescOpen, setMissingDescOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -530,7 +534,7 @@ export function SeoEnrichmentDashboard() {
             { label: 'Score ≥ 55', value: counters?.score_ge_55, hint: 'Événements suffisamment prioritaires, y compris ceux déjà publiés.' },
             { label: 'Traitables par Batch 20', value: counters?.ready_for_batch, hint: 'Score ≥ 55 et meta ou description enrichie manquante. Ce compteur correspond au maximum réellement traitable par batch.' },
             { label: 'Sans score', value: counters?.null_score, hint: 'Score NULL = événements pas encore priorisés.' },
-            { label: 'Description manquante', value: eligibility?.no_description_enrichie },
+            { label: 'Description manquante', value: eligibility?.no_description_enrichie, hint: 'Cliquez pour voir la liste et traiter chaque événement manuellement.', onClick: () => setMissingDescOpen(true) },
           ]}
         />
         <KpiFamily
@@ -675,6 +679,11 @@ export function SeoEnrichmentDashboard() {
           )}
         </CardContent>
       </Card>
+
+      <MissingDescriptionsDialog
+        open={missingDescOpen}
+        onOpenChange={setMissingDescOpen}
+      />
     </div>
     </TooltipProvider>
   );
@@ -719,6 +728,7 @@ interface KpiItem {
   value?: number | null;
   valueText?: string;
   hint?: string;
+  onClick?: () => void;
 }
 
 function KpiFamily({
@@ -747,9 +757,16 @@ function KpiFamily({
       <div className={`text-sm font-semibold mb-3 ${titleTone[tone]}`}>{title}</div>
       <div className="space-y-2">
         {items.map((it) => (
-          <div key={it.label} className="flex items-center justify-between gap-2 text-sm">
+          <div
+            key={it.label}
+            className={`flex items-center justify-between gap-2 text-sm ${it.onClick ? 'cursor-pointer hover:bg-white/60 rounded px-1 -mx-1 transition-colors' : ''}`}
+            onClick={it.onClick}
+            role={it.onClick ? 'button' : undefined}
+            tabIndex={it.onClick ? 0 : undefined}
+            onKeyDown={it.onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') it.onClick?.(); } : undefined}
+          >
             <span className="text-muted-foreground flex items-center gap-1 min-w-0">
-              <span className="truncate">{it.label}</span>
+              <span className={`truncate ${it.onClick ? 'underline decoration-dotted underline-offset-2' : ''}`}>{it.label}</span>
               {it.hint && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -766,6 +783,116 @@ function KpiFamily({
         ))}
       </div>
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────
+// Dialog : liste des événements sans description_enrichie
+// ──────────────────────────────────────────────────────────
+function MissingDescriptionsDialog({
+  open, onOpenChange,
+}: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [rows, setRows] = useState<Array<{
+    id: string; nom_event: string | null; slug: string | null; ville: string | null;
+    date_debut: string | null; enrichissement_score: number | null;
+    enrichissement_statut: string | null; meta_description_gen: string | null;
+  }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<ProcessedEventLite | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    const today = new Date().toISOString().slice(0, 10);
+    supabase.from('events')
+      .select('id, nom_event, slug, ville, date_debut, enrichissement_score, enrichissement_statut, meta_description_gen')
+      .eq('visible', true).eq('is_test', false).gte('date_debut', today)
+      .is('description_enrichie', null)
+      .order('enrichissement_score', { ascending: false, nullsFirst: false })
+      .order('date_debut', { ascending: true })
+      .limit(500)
+      .then(({ data, error }) => {
+        if (!error) setRows((data ?? []) as typeof rows);
+        setLoading(false);
+      });
+  }, [open, refreshKey]);
+
+  useEffect(() => {
+    const handler = () => setRefreshKey((k) => k + 1);
+    window.addEventListener('seo-enrichment-refresh', handler);
+    return () => window.removeEventListener('seo-enrichment-refresh', handler);
+  }, []);
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Événements sans description enrichie</DialogTitle>
+            <DialogDescription>
+              {loading ? 'Chargement…' : `${rows.length} événement(s) futur(s) sans description enrichie. Cliquez sur « Voir détail » pour les traiter (générer, corriger ou valider manuellement).`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-auto border rounded-lg">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/50 sticky top-0">
+                <tr>
+                  <th className="text-left px-2 py-2 font-medium">Événement</th>
+                  <th className="text-left px-2 py-2 font-medium">Ville</th>
+                  <th className="text-left px-2 py-2 font-medium">Date</th>
+                  <th className="text-right px-2 py-2 font-medium">Score</th>
+                  <th className="text-left px-2 py-2 font-medium">Statut</th>
+                  <th className="text-left px-2 py-2 font-medium">Meta</th>
+                  <th className="px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map((r) => (
+                  <tr key={r.id} className="hover:bg-muted/20">
+                    <td className="px-2 py-1.5 max-w-[280px]">
+                      <div className="font-medium truncate">{r.nom_event ?? r.id}</div>
+                      {r.slug && <div className="text-[10px] text-muted-foreground truncate">/events/{r.slug}</div>}
+                    </td>
+                    <td className="px-2 py-1.5 truncate max-w-[120px]">{r.ville ?? '—'}</td>
+                    <td className="px-2 py-1.5 whitespace-nowrap">{r.date_debut ?? '—'}</td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">{r.enrichissement_score ?? <span className="text-muted-foreground">—</span>}</td>
+                    <td className="px-2 py-1.5">
+                      {r.enrichissement_statut === 'error'
+                        ? <Badge className="bg-red-100 text-red-800 border-red-300 text-[10px]">error</Badge>
+                        : r.enrichissement_statut
+                          ? <Badge variant="outline" className="text-[10px]">{r.enrichissement_statut}</Badge>
+                          : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {r.meta_description_gen
+                        ? <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                        : <XCircle className="h-3 w-3 text-red-500" />}
+                    </td>
+                    <td className="px-2 py-1.5 text-right">
+                      <Button
+                        size="sm" variant="outline" className="h-7 px-2 text-[11px]"
+                        onClick={() => setSelected({ id: r.id, nom_event: r.nom_event, slug: r.slug })}
+                      >
+                        Voir détail
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {!loading && rows.length === 0 && (
+                  <tr><td colSpan={7} className="px-2 py-6 text-center text-muted-foreground">Aucun événement sans description enrichie.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <SeoEventDetailSheet
+        open={!!selected}
+        onOpenChange={(o) => { if (!o) setSelected(null); }}
+        processed={selected}
+      />
+    </>
   );
 }
 
