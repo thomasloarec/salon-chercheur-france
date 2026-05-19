@@ -504,12 +504,16 @@ export function SeoEnrichmentDashboard() {
         cta: { label: 'Lancer Batch 20', onClick: () => runBatch('run', 20, true, 'big') },
       };
     }
-    // Cas A — beaucoup d'échecs de validation : proposer la correction automatique en priorité
-    if (counters.failed >= 5) {
+    // Cas A — erreurs réellement corrigeables automatiquement
+    if ((autoFixable?.count ?? 0) >= 1) {
+      const n = Math.min(autoFixable!.count, 5);
       return {
         tone: 'amber' as const,
-        title: `${counters.failed} textes en échec de validation. Lance la correction automatique des erreurs simples.`,
-        cta: { label: 'Corriger automatiquement les erreurs simples', onClick: runAutoFixBatch },
+        title: `${autoFixable!.count} description${autoFixable!.count > 1 ? 's en échec sont corrigeables' : ' en échec est corrigeable'} automatiquement.`,
+        cta: {
+          label: `Corriger automatiquement ${n} erreur${n > 1 ? 's' : ''}`,
+          onClick: () => setAutoFixConfirmOpen(true),
+        },
       };
     }
     // Cas A-bis — quelques textes à vérifier manuellement
@@ -567,7 +571,7 @@ export function SeoEnrichmentDashboard() {
       cta: { label: 'Dry-run 20', onClick: () => runBatch('dry_run', 20, false, 'dry') },
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counters, eligibility, lastRun, lastNonDryRuns, staleFailure, cronReadiness]);
+  }, [counters, eligibility, lastRun, lastNonDryRuns, staleFailure, cronReadiness, autoFixable]);
 
   // ─── Statut global ───
   const globalStatus: { label: string; tone: 'emerald' | 'amber' | 'red' } = useMemo(() => {
