@@ -147,7 +147,8 @@ export function SeoEnrichmentDashboard() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('enrichissement_statut', 'en_attente'),
         supabase.from('events').select('id', { count: 'exact', head: true })
-          .eq('auto_validation_status', 'failed'),
+          .eq('auto_validation_status', 'failed')
+          .or('validation_mode.is.null,validation_mode.neq.manual'),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('visible', true).eq('is_test', false).gte('date_debut', today)
           .is('enrichissement_score', null),
