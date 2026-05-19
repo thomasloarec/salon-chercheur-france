@@ -780,7 +780,7 @@ Deno.serve(async (req) => {
       const results: DescEnrichieResult[] = [];
       for (const ev of events) {
         const eventData = ev as EventData & { enrichissement_score?: number | null };
-        const descResult = await enrichDescription(supabase, eventData, ANTHROPIC_API_KEY);
+        const descResult = await enrichDescription(supabase, eventData, ANTHROPIC_API_KEY, { force: body.force === true });
         
         // If done, fetch the saved text length
         let charCount: number | undefined;
@@ -855,7 +855,7 @@ Deno.serve(async (req) => {
       for (const ev of events) {
         const result = await enrichSingleEvent(supabase, ev as EventData, ANTHROPIC_API_KEY);
         // After meta enrichment, attempt description_enrichie for eligible events
-        const descResult = await enrichDescription(supabase, ev as EventData, ANTHROPIC_API_KEY);
+        const descResult = await enrichDescription(supabase, ev as EventData, ANTHROPIC_API_KEY, { force: body.force === true });
         result.description_enrichie_status = descResult.status;
         result.description_enrichie_reason = descResult.reason;
         result.auto_validation_status = descResult.auto_validation_status;
@@ -907,7 +907,7 @@ Deno.serve(async (req) => {
 
     const result = await enrichSingleEvent(supabase, event as EventData, ANTHROPIC_API_KEY);
     // Also attempt description_enrichie
-    const descResult = await enrichDescription(supabase, event as EventData, ANTHROPIC_API_KEY);
+    const descResult = await enrichDescription(supabase, event as EventData, ANTHROPIC_API_KEY, { force: body.force === true });
     result.description_enrichie_status = descResult.status;
     result.description_enrichie_reason = descResult.reason;
     result.auto_validation_status = descResult.auto_validation_status;
