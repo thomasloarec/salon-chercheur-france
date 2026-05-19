@@ -543,10 +543,41 @@ async function enrichDescription(
   supabase: ReturnType<typeof createClient>,
   event: EventData,
   anthropicKey: string,
-): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string; auto_validation_status?: 'passed' | 'warning' | 'failed'; auto_validation_score?: number }> {
+  options: { force?: boolean } = {},
+): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string; auto_validation_status?: 'passed' | 'warning' | 'failed'; auto_validation_score?: number; current_hash?: string | null }> {
+  // ─── Garde-fou anti-retraitement (hash) ───
+  // Si description_enrichie existe, statut=valide et seo_generated_from_hash == compute_seo_source_hash(event.id),
+  // on skip immédiatement sans appeler Claude. seo_last_checked_at est mis à now() pour tracer le contrôle.
+  const evWithHash = event as EventData & { seo_generated_from_hash?: string | null };
+  let currentHash: string | null = null;
+  try {
+    const { data: hashData, error: hashErr } = await supabase.rpc('compute_seo_source_hash', { p_event_id: event.id });
+    if (hashErr) {
+      console.warn(`⚠️ [hash-guard] RPC compute_seo_source_hash failed for ${event.id}: ${hashErr.message}`);
+    } else if (typeof hashData === 'string') {
+      currentHash = hashData;
+    }
+  } catch (e) {
+    console.warn(`⚠️ [hash-guard] compute_seo_source_hash threw for ${event.id}:`, e);
+  }
+
+  const descAlreadyOk = !!(event.description_enrichie && event.description_enrichie.trim() !== '');
+  const statutValide = event.enrichissement_statut === 'valide';
+  const hashMatch = !!currentHash && !!evWithHash.seo_generated_from_hash && evWithHash.seo_generated_from_hash === currentHash;
+
+  if (!options.force && descAlreadyOk && statutValide && hashMatch) {
+    // Skip: aucun appel Claude. On rafraîchit juste seo_last_checked_at.
+    await supabase
+      .from('events')
+      .update({ seo_last_checked_at: new Date().toISOString() })
+      .eq('id', event.id);
+    console.log(`⏭️ [hash-guard] skip already_up_to_date_hash_match for ${event.nom_event}`);
+    return { status: 'skipped', reason: 'already_up_to_date_hash_match', current_hash: currentHash };
+  }
+
   const eligibility = isEligibleForDescEnrichie(event);
   if (!eligibility.eligible) {
-    return { status: 'skipped', reason: eligibility.reason };
+    return { status: 'skipped', reason: eligibility.reason, current_hash: currentHash };
   }
 
   console.log(`📝 [Desc enrichie] Appel Claude pour : ${event.nom_event}`);
@@ -627,8 +658,22 @@ async function enrichDescription(
       return { status: 'error', reason: `Erreur DB: ${updateError.message}` };
     }
 
+    // ─── Persistance hash après génération réussie ───
+    if (currentHash) {
+      const nowIso = new Date().toISOString();
+      await supabase
+        .from('events')
+        .update({
+          seo_source_hash: currentHash,
+          seo_generated_from_hash: currentHash,
+          seo_generated_at: nowIso,
+          seo_last_checked_at: nowIso,
+        })
+        .eq('id', event.id);
+    }
+
     console.log(`✅ [Desc enrichie] OK pour ${event.nom_event} (${text.length} car., ${autoValidated ? 'AUTO-VALIDÉ' : 'EN ATTENTE'})`);
-    return { status: 'done', auto_validation_status: validation.status, auto_validation_score: validation.score };
+    return { status: 'done', auto_validation_status: validation.status, auto_validation_score: validation.score, current_hash: currentHash };
 
   } catch (err) {
     console.error(`❌ [Desc enrichie] Erreur pour ${event.nom_event}:`, err);
@@ -664,7 +709,7 @@ async function loadExhibitorNamesForEvent(
 }
 
 /* ─── SELECT FIELDS ─── */
-const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, pays, nom_lieu, rue, code_postal, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut, enrichissement_score';
+const SELECT_FIELDS = 'id, id_event, nom_event, slug, type_event, secteur, ville, pays, nom_lieu, rue, code_postal, date_debut, date_fin, description_event, affluence, tarif, url_site_officiel, meta_description_gen, description_enrichie, enrichissement_niveau, enrichissement_statut, enrichissement_score, seo_generated_from_hash';
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -735,7 +780,7 @@ Deno.serve(async (req) => {
       const results: DescEnrichieResult[] = [];
       for (const ev of events) {
         const eventData = ev as EventData & { enrichissement_score?: number | null };
-        const descResult = await enrichDescription(supabase, eventData, ANTHROPIC_API_KEY);
+        const descResult = await enrichDescription(supabase, eventData, ANTHROPIC_API_KEY, { force: body.force === true });
         
         // If done, fetch the saved text length
         let charCount: number | undefined;
@@ -810,7 +855,7 @@ Deno.serve(async (req) => {
       for (const ev of events) {
         const result = await enrichSingleEvent(supabase, ev as EventData, ANTHROPIC_API_KEY);
         // After meta enrichment, attempt description_enrichie for eligible events
-        const descResult = await enrichDescription(supabase, ev as EventData, ANTHROPIC_API_KEY);
+        const descResult = await enrichDescription(supabase, ev as EventData, ANTHROPIC_API_KEY, { force: body.force === true });
         result.description_enrichie_status = descResult.status;
         result.description_enrichie_reason = descResult.reason;
         result.auto_validation_status = descResult.auto_validation_status;
@@ -862,7 +907,7 @@ Deno.serve(async (req) => {
 
     const result = await enrichSingleEvent(supabase, event as EventData, ANTHROPIC_API_KEY);
     // Also attempt description_enrichie
-    const descResult = await enrichDescription(supabase, event as EventData, ANTHROPIC_API_KEY);
+    const descResult = await enrichDescription(supabase, event as EventData, ANTHROPIC_API_KEY, { force: body.force === true });
     result.description_enrichie_status = descResult.status;
     result.description_enrichie_reason = descResult.reason;
     result.auto_validation_status = descResult.auto_validation_status;
