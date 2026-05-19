@@ -423,11 +423,11 @@ export function EnrichedDescriptionValidation() {
     const isIgnored = ev.auto_validation_report?.ignored_for_now === true;
     const failChecks = ev.auto_validation_report?.checks?.filter((c) => c.status === 'fail' && c.blocker) ?? [];
     const warnChecks = ev.auto_validation_report?.checks?.filter((c) => c.status === 'warning') ?? [];
-    const hasBlocker = failChecks.length > 0 || ev.auto_validation_status === 'failed';
-    const hasWarning = warnChecks.length > 0 || ev.auto_validation_status === 'warning';
+    const isManuallyValidated = ev.enrichissement_statut === 'valide' && ev.validation_mode === 'manual';
+    const hasBlocker = !isManuallyValidated && (failChecks.length > 0 || ev.auto_validation_status === 'failed');
+    const hasWarning = !isManuallyValidated && (warnChecks.length > 0 || ev.auto_validation_status === 'warning');
     const isPublished = ev.enrichissement_statut === 'valide'
-      && ev.auto_validation_status === 'passed'
-      && ev.validation_mode === 'auto';
+      && ((ev.auto_validation_status === 'passed' && ev.validation_mode === 'auto') || ev.validation_mode === 'manual');
     switch (filter) {
       case 'to_fix':
         return !isIgnored && hasBlocker;
@@ -469,13 +469,14 @@ export function EnrichedDescriptionValidation() {
               const isIgnored = e.auto_validation_report?.ignored_for_now === true;
               const failChecks = e.auto_validation_report?.checks?.filter((c) => c.status === 'fail' && c.blocker) ?? [];
               const warnChecks = e.auto_validation_report?.checks?.filter((c) => c.status === 'warning') ?? [];
-              const hasBlocker = failChecks.length > 0 || e.auto_validation_status === 'failed';
-              const hasWarning = warnChecks.length > 0 || e.auto_validation_status === 'warning';
+              const isManuallyValidated = e.enrichissement_statut === 'valide' && e.validation_mode === 'manual';
+              const hasBlocker = !isManuallyValidated && (failChecks.length > 0 || e.auto_validation_status === 'failed');
+              const hasWarning = !isManuallyValidated && (warnChecks.length > 0 || e.auto_validation_status === 'warning');
               if (isIgnored) acc.ignored++;
               else if (hasBlocker) acc.to_fix++;
               else if (hasWarning) acc.to_review++;
               if (lastRunIds.has(e.id)) acc.last_run++;
-              if (e.enrichissement_statut === 'valide' && e.auto_validation_status === 'passed' && e.validation_mode === 'auto') acc.published++;
+              if (e.enrichissement_statut === 'valide' && ((e.auto_validation_status === 'passed' && e.validation_mode === 'auto') || e.validation_mode === 'manual')) acc.published++;
               return acc;
             }, { to_fix: 0, to_review: 0, last_run: 0, published: 0, ignored: 0 });
             return ([
