@@ -308,7 +308,10 @@ Deno.serve(async (req) => {
     let failCount = 0;
     let skippedCount = 0;
 
-    for (const ev of selected) {
+    // Traitement par vagues parallèles pour éviter le timeout gateway (~150s).
+    // 20 events × ~10s séquentiel = 200s → 504. En parallèle par vagues de 5 → ~40-60s.
+    const CONCURRENCY = 5;
+    const processOne = async (ev: CandidateEvent) => {
       try {
         const resp = await fetch(`${SUPABASE_URL}/functions/v1/enrich-event-meta`, {
           method: 'POST',
@@ -395,6 +398,11 @@ Deno.serve(async (req) => {
           error: err instanceof Error ? err.message : String(err),
         });
       }
+    };
+
+    for (let i = 0; i < selected.length; i += CONCURRENCY) {
+      const chunk = selected.slice(i, i + CONCURRENCY);
+      await Promise.all(chunk.map(processOne));
     }
 
     // Re-fetch final DB state for processed events (canonical truth, in case enrich-event-meta
