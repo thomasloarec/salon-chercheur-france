@@ -201,13 +201,42 @@ function checkCity(text: string, src: EventSource): CheckResult {
   }
   const norm = normalize(text);
   const cityNorm = normalize(src.ville);
-  if (!norm.includes(cityNorm)) {
+  // Alias géographiques : communes de banlieue qui hébergent les parcs d'expo
+  // de la grande ville voisine. Citer la grande ville n'est PAS une erreur.
+  // clé = ville source (commune réelle), valeurs = villes "tolérées" dans le texte
+  const CITY_ALIASES: Record<string, string[]> = {
+    chassieu: ['lyon'],
+    eurexpo: ['lyon'],
+    villeurbanne: ['lyon'],
+    villepinte: ['paris'],
+    'le bourget': ['paris'],
+    bourget: ['paris'],
+    'paris nord villepinte': ['paris'],
+    'porte de versailles': ['paris'],
+    nanterre: ['paris'],
+    'la defense': ['paris'],
+    courbevoie: ['paris'],
+    puteaux: ['paris'],
+    cergy: ['paris'],
+    'parc chanot': ['marseille'],
+    'aubagne': ['marseille'],
+    blagnac: ['toulouse'],
+    merignac: ['bordeaux'],
+    'lesquin': ['lille'],
+    'villeneuve d ascq': ['lille'],
+    'saint herblain': ['nantes'],
+    'la baule': ['nantes'],
+    schiltigheim: ['strasbourg'],
+    'illkirch': ['strasbourg'],
+  };
+  const allowed = new Set<string>([cityNorm, ...(CITY_ALIASES[cityNorm] ?? [])]);
+  if (!norm.includes(cityNorm) && ![...allowed].some((a) => norm.includes(a))) {
     // ville pas mentionnée — toléré (warning faible)
     return { code: 'city_consistency', label: 'Cohérence de la ville', status: 'pass', blocker: false, penalty: 0, details: 'ville source non citée (toléré)' };
   }
   // Liste blanche des autres villes FR majeures qu'on ne veut pas voir citées à tort
   const otherCities = ['paris', 'lyon', 'marseille', 'toulouse', 'bordeaux', 'lille', 'nantes', 'strasbourg', 'nice', 'montpellier', 'rennes', 'grenoble', 'cannes', 'reims'];
-  const wrong = otherCities.filter((c) => c !== cityNorm && new RegExp(`\\b${c}\\b`).test(norm));
+  const wrong = otherCities.filter((c) => !allowed.has(c) && new RegExp(`\\b${c}\\b`).test(norm));
   if (wrong.length > 0) {
     return {
       code: 'city_consistency',
@@ -215,7 +244,7 @@ function checkCity(text: string, src: EventSource): CheckResult {
       status: 'fail',
       blocker: true,
       penalty: 100,
-      details: `Ville(s) étrangère(s) citée(s): ${wrong.join(', ')} alors que l'événement est à ${src.ville}`,
+      details: `Ville(s) étrangère(s) citée(s): ${wrong.join(', ')} alors que l'événement est à ${src.ville}${CITY_ALIASES[cityNorm] ? ` (alias autorisés: ${CITY_ALIASES[cityNorm].join(', ')})` : ''}`,
       evidence: wrong,
     };
   }
