@@ -677,12 +677,14 @@ export function SeoEnrichmentDashboard() {
 
           {depsResult && (() => {
             const d = depsResult;
-            const ready = d['ready'] === true;
-            const wouldCallClaude = (d['would_call_claude_now'] as number | undefined) ?? (d['would_call_claude'] as number | undefined) ?? null;
-            const wouldSkip = (d['would_skip_hash_match'] as number | undefined) ?? (d['would_skip'] as number | undefined) ?? null;
-            const ignored = (d['events_ignored'] as number | undefined) ?? null;
-            const scoreLow = (d['events_score_below_55'] as number | undefined) ?? null;
-            const scoreNull = (d['events_score_null'] as number | undefined) ?? null;
+            const ready = d['all_ok'] === true;
+            const wouldCallClaude = (d['would_call_claude_count'] as number | undefined) ?? null;
+            const wouldSkip = (d['would_skip_count'] as number | undefined) ?? null;
+            const ignored = (d['ignored_count'] as number | undefined) ?? null;
+            const scoreLow = (d['score_lt_55_count'] as number | undefined) ?? null;
+            const scoreNull = (d['score_null_count'] as number | undefined) ?? null;
+            const runRunning = ((d['running_run_in_last_2h'] as number | undefined) ?? 0) > 0;
+            const cronActive = d['cron_job_active'] === true;
             const Row = ({ label, ok, value }: { label: string; ok?: boolean; value?: React.ReactNode }) => (
               <div className="flex items-center justify-between text-sm py-1 border-b border-indigo-100/60 last:border-0">
                 <span className="text-muted-foreground">{label}</span>
@@ -696,12 +698,12 @@ export function SeoEnrichmentDashboard() {
               <div className="rounded-lg border border-indigo-200 bg-background p-4">
                 <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700 mb-2">Dépendances automatisation</div>
                 <Row label="Prêt" ok={ready} value={ready ? 'oui' : 'non'} />
-                <Row label="SEO_BATCH_SECRET" ok={d['seo_batch_secret_ok'] === true || d['secrets'] && (d['secrets'] as Record<string, unknown>)['SEO_BATCH_SECRET'] === true} />
-                <Row label="SUPABASE_ANON_KEY" ok={d['supabase_anon_key_ok'] === true || d['secrets'] && (d['secrets'] as Record<string, unknown>)['SUPABASE_ANON_KEY'] === true} />
-                <Row label="application_logs" ok={d['application_logs_ok'] === true || d['tables'] && (d['tables'] as Record<string, unknown>)['application_logs'] === true} />
-                <Row label="pg_net" ok={d['pg_net_ok'] === true || d['extensions'] && (d['extensions'] as Record<string, unknown>)['pg_net'] === true} />
-                <Row label="Run en cours" ok={d['run_in_progress'] === false} value={d['run_in_progress'] === true ? 'oui' : 'non'} />
-                <Row label="Cron SEO actif" ok={d['cron_seo_active'] === false} value={d['cron_seo_active'] === true ? 'oui' : 'non'} />
+                <Row label="SEO_BATCH_SECRET" ok={d['has_seo_batch_secret'] === true} value={d['has_seo_batch_secret'] === true ? 'OK' : 'manquant'} />
+                <Row label="SUPABASE_ANON_KEY" ok={d['has_anon_key'] === true} value={d['has_anon_key'] === true ? 'OK' : 'manquant'} />
+                <Row label="application_logs" ok={d['application_logs_exists'] === true} value={d['application_logs_exists'] === true ? 'OK' : 'manquant'} />
+                <Row label="pg_net" ok={d['pg_net_installed'] === true} value={d['pg_net_installed'] === true ? 'OK' : 'manquant'} />
+                <Row label="Run en cours" ok={!runRunning} value={runRunning ? `oui (${d['running_run_in_last_2h']})` : 'non'} />
+                <Row label="Cron SEO actif" ok={!cronActive} value={cronActive ? `oui — ${String(d['cron_job_name'] ?? '')}` : 'non'} />
                 {wouldCallClaude !== null && <Row label="Si lancé maintenant → appellerait Claude" value={<span className={wouldCallClaude > 0 ? 'text-amber-700' : 'text-emerald-700'}>{wouldCallClaude}</span>} />}
                 {wouldSkip !== null && <Row label="Déjà à jour, skippés sans Claude" value={<span className="text-emerald-700">{wouldSkip}</span>} />}
                 {ignored !== null && <Row label="Événements ignorés" value={ignored} />}
