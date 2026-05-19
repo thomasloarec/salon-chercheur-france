@@ -446,6 +446,14 @@ export function SeoEnrichmentDashboard() {
                   </div>
                   <div className="text-xs text-red-700 mt-1">
                     Traitement plus large. À utiliser quand les derniers batchs sont propres.
+                    {typeof counters?.score_ge_55 === 'number' && (
+                      <div className="mt-1 font-medium">
+                        {counters.score_ge_55} événement(s) prêt(s) (score ≥ 55) — le batch ne traitera que ceux-là.
+                        {counters.score_ge_55 < 20 && counters.null_score > 0 && (
+                          <> Lancez « Scorer 20 événements » pour en débloquer davantage.</>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </button>
               </AlertDialogTrigger>
@@ -455,6 +463,12 @@ export function SeoEnrichmentDashboard() {
                   <AlertDialogDescription>
                     Cette action va générer jusqu'à 20 descriptions enrichies + meta et déclenchera Vercel si du contenu public change.
                     Consomme des crédits Claude.
+                    {typeof counters?.score_ge_55 === 'number' && (
+                      <>
+                        {' '}Actuellement, <strong>{counters.score_ge_55} événement(s)</strong> ont un score ≥ 55 et seront traités
+                        (les événements avec un score inférieur ou NULL sont ignorés).
+                      </>
+                    )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -497,9 +511,9 @@ export function SeoEnrichmentDashboard() {
           tone="blue"
           items={[
             { label: 'Total éligibles', value: eligibility?.total_eligible, hint: 'Événements pouvant être enrichis (visibles, futurs, non finalisés).' },
+            { label: 'Prêts à enrichir (score ≥ 55)', value: counters?.score_ge_55, hint: 'Seuls les événements avec un score ≥ 55 sont traités par les batchs. Les autres doivent d’abord être scorés.' },
             { label: 'Sans score', value: counters?.null_score, hint: 'Score NULL = événements pas encore priorisés.' },
             { label: 'Description manquante', value: eligibility?.no_description_enrichie },
-            { label: 'Meta manquante', value: eligibility?.no_meta },
           ]}
         />
         <KpiFamily
