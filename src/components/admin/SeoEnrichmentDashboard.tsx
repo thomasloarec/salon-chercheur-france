@@ -497,9 +497,9 @@ export function SeoEnrichmentDashboard() {
           tone="blue"
           items={[
             { label: 'Total éligibles', value: eligibility?.total_eligible, hint: 'Événements pouvant être enrichis (visibles, futurs, non finalisés).' },
+            { label: 'Prêts à enrichir (score ≥ 55)', value: counters?.score_ge_55, hint: 'Seuls les événements avec un score ≥ 55 sont traités par les batchs. Les autres doivent d’abord être scorés.' },
             { label: 'Sans score', value: counters?.null_score, hint: 'Score NULL = événements pas encore priorisés.' },
             { label: 'Description manquante', value: eligibility?.no_description_enrichie },
-            { label: 'Meta manquante', value: eligibility?.no_meta },
           ]}
         />
         <KpiFamily
