@@ -69,6 +69,33 @@ interface StaleFailureInfo {
   unresolvedIds: string[];
 }
 
+interface AutoFixableInfo {
+  count: number;
+  byReason: Record<string, number>;
+  totalFailed: number;       // toutes les events en failed (y compris déjà validées manuellement)
+  failedManual: number;      // failed mais déjà validées manuellement → exclues du correcteur
+  failedNoDesc: number;      // failed mais description_enrichie null → rien à corriger
+}
+
+interface AutoFixResult {
+  ranAt: string;
+  processed: number;
+  fixed: number;
+  still_failed: number;
+  errored: number;
+  by_reason_before?: Record<string, number>;
+  results?: Array<{
+    event_id: string;
+    nom_event: string | null;
+    slug: string | null;
+    status: string;
+    reason?: string;
+    before?: { status: string; score: number };
+    after?: { status: string; score: number; decision?: string };
+  }>;
+  deploy_triggered?: boolean;
+}
+
 type BatchMode = 'dry_run' | 'test' | 'run';
 
 function statusBadge(status: string) {
@@ -143,6 +170,9 @@ export function SeoEnrichmentDashboard() {
   const [expandedRunIds, setExpandedRunIds] = useState<Set<string>>(new Set());
   const [missingDescOpen, setMissingDescOpen] = useState(false);
   const [staleFailure, setStaleFailure] = useState<StaleFailureInfo | null>(null);
+  const [autoFixable, setAutoFixable] = useState<AutoFixableInfo | null>(null);
+  const [lastAutoFix, setLastAutoFix] = useState<AutoFixResult | null>(null);
+  const [autoFixConfirmOpen, setAutoFixConfirmOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -203,6 +233,39 @@ export function SeoEnrichmentDashboard() {
         ready_for_batch: readyForBatchCount,
         desc_missing: descMissingRes.count ?? 0,
         published: publishedRes.count ?? 0,
+      });
+
+      // ─── Audit "erreurs corrigeables automatiquement" ───
+      // Source unique : events futurs visibles avec auto_validation_status='failed',
+      // pas déjà validés manuellement, et avec description_enrichie non null.
+      const { data: failedRows } = await supabase
+        .from('events')
+        .select('id, validation_mode, enrichissement_statut, description_enrichie, auto_validation_report')
+        .eq('visible', true).eq('is_test', false).gte('date_debut', today)
+        .eq('auto_validation_status', 'failed')
+        .limit(500);
+      const allFailed = (failedRows ?? []) as Array<{
+        id: string;
+        validation_mode: string | null;
+        enrichissement_statut: string | null;
+        description_enrichie: string | null;
+        auto_validation_report: Record<string, unknown> | null;
+      }>;
+      const fixable = allFailed.filter((r) => r.validation_mode !== 'manual' && !!r.description_enrichie);
+      const byReason: Record<string, number> = {};
+      for (const r of fixable) {
+        const checks = (r.auto_validation_report?.['checks'] ?? []) as Array<{ code?: string; status?: string }>;
+        const codes = Array.isArray(checks)
+          ? [...new Set(checks.filter((c) => c?.status === 'fail').map((c) => c.code ?? 'unknown'))]
+          : [];
+        for (const c of codes) byReason[c] = (byReason[c] ?? 0) + 1;
+      }
+      setAutoFixable({
+        count: fixable.length,
+        byReason,
+        totalFailed: allFailed.length,
+        failedManual: allFailed.filter((r) => r.validation_mode === 'manual').length,
+        failedNoDesc: allFailed.filter((r) => !r.description_enrichie).length,
       });
 
       // ─── Détection d'échec périmé ───
