@@ -543,10 +543,41 @@ async function enrichDescription(
   supabase: ReturnType<typeof createClient>,
   event: EventData,
   anthropicKey: string,
-): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string; auto_validation_status?: 'passed' | 'warning' | 'failed'; auto_validation_score?: number }> {
+  options: { force?: boolean } = {},
+): Promise<{ status: 'done' | 'skipped' | 'error'; reason?: string; auto_validation_status?: 'passed' | 'warning' | 'failed'; auto_validation_score?: number; current_hash?: string | null }> {
+  // ─── Garde-fou anti-retraitement (hash) ───
+  // Si description_enrichie existe, statut=valide et seo_generated_from_hash == compute_seo_source_hash(event.id),
+  // on skip immédiatement sans appeler Claude. seo_last_checked_at est mis à now() pour tracer le contrôle.
+  const evWithHash = event as EventData & { seo_generated_from_hash?: string | null };
+  let currentHash: string | null = null;
+  try {
+    const { data: hashData, error: hashErr } = await supabase.rpc('compute_seo_source_hash', { p_event_id: event.id });
+    if (hashErr) {
+      console.warn(`⚠️ [hash-guard] RPC compute_seo_source_hash failed for ${event.id}: ${hashErr.message}`);
+    } else if (typeof hashData === 'string') {
+      currentHash = hashData;
+    }
+  } catch (e) {
+    console.warn(`⚠️ [hash-guard] compute_seo_source_hash threw for ${event.id}:`, e);
+  }
+
+  const descAlreadyOk = !!(event.description_enrichie && event.description_enrichie.trim() !== '');
+  const statutValide = event.enrichissement_statut === 'valide';
+  const hashMatch = !!currentHash && !!evWithHash.seo_generated_from_hash && evWithHash.seo_generated_from_hash === currentHash;
+
+  if (!options.force && descAlreadyOk && statutValide && hashMatch) {
+    // Skip: aucun appel Claude. On rafraîchit juste seo_last_checked_at.
+    await supabase
+      .from('events')
+      .update({ seo_last_checked_at: new Date().toISOString() })
+      .eq('id', event.id);
+    console.log(`⏭️ [hash-guard] skip already_up_to_date_hash_match for ${event.nom_event}`);
+    return { status: 'skipped', reason: 'already_up_to_date_hash_match', current_hash: currentHash };
+  }
+
   const eligibility = isEligibleForDescEnrichie(event);
   if (!eligibility.eligible) {
-    return { status: 'skipped', reason: eligibility.reason };
+    return { status: 'skipped', reason: eligibility.reason, current_hash: currentHash };
   }
 
   console.log(`📝 [Desc enrichie] Appel Claude pour : ${event.nom_event}`);
@@ -627,8 +658,22 @@ async function enrichDescription(
       return { status: 'error', reason: `Erreur DB: ${updateError.message}` };
     }
 
+    // ─── Persistance hash après génération réussie ───
+    if (currentHash) {
+      const nowIso = new Date().toISOString();
+      await supabase
+        .from('events')
+        .update({
+          seo_source_hash: currentHash,
+          seo_generated_from_hash: currentHash,
+          seo_generated_at: nowIso,
+          seo_last_checked_at: nowIso,
+        })
+        .eq('id', event.id);
+    }
+
     console.log(`✅ [Desc enrichie] OK pour ${event.nom_event} (${text.length} car., ${autoValidated ? 'AUTO-VALIDÉ' : 'EN ATTENTE'})`);
-    return { status: 'done', auto_validation_status: validation.status, auto_validation_score: validation.score };
+    return { status: 'done', auto_validation_status: validation.status, auto_validation_score: validation.score, current_hash: currentHash };
 
   } catch (err) {
     console.error(`❌ [Desc enrichie] Erreur pour ${event.nom_event}:`, err);
