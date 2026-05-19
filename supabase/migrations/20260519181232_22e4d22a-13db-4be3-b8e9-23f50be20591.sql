@@ -1,0 +1,1 @@
+UPDATE seo_enrichment_runs SET status='failed', finished_at=now(), deploy_hook_error='Libéré après 504' WHERE status='running';
