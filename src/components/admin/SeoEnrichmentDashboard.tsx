@@ -445,7 +445,7 @@ export function SeoEnrichmentDashboard() {
               <AlertDialogTrigger asChild>
                 <button
                   type="button"
-                  disabled={!!actionLoading}
+                  disabled={!!actionLoading || (counters?.ready_for_batch ?? 0) === 0}
                   className="text-left border-2 border-red-200 hover:border-red-300 bg-red-50/30 rounded-lg p-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-2 font-medium text-red-900">
@@ -457,6 +457,7 @@ export function SeoEnrichmentDashboard() {
                     {typeof counters?.ready_for_batch === 'number' && (
                       <div className="mt-1 font-medium">
                         {counters.ready_for_batch} événement(s) vraiment traitable(s) — score ≥ 55 + texte manquant.
+                        {counters.ready_for_batch === 0 && <> Aucun nouveau texte à générer maintenant.</>}
                         {counters.ready_for_batch < 20 && counters.null_score > 0 && (
                           <> Lancez « Scorer 20 événements » pour en débloquer davantage.</>
                         )}
