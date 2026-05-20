@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
-  Mail, Calendar, Clock, AlertTriangle, Ban, CheckCircle2, Circle, ShieldOff, Send,
+  Mail, Calendar, Clock, AlertTriangle, Ban, CheckCircle2, Circle, ShieldOff, Send, Sparkles,
 } from 'lucide-react';
 import StopCampaignDialog from '@/components/admin/campaigns/StopCampaignDialog';
 import {
@@ -38,6 +38,8 @@ interface CampaignRow {
   hunter_poste: string | null;
   created_at: string;
   updated_at: string;
+  novelty_id?: string | null;
+  exhibitor_id?: string | null;
 }
 
 const fmtDate = (s?: string | null) =>
@@ -51,19 +53,54 @@ const ExhibitorOutreachPanel = ({ exhibitorId, campaignId, title }: Props) => {
   const { data, isLoading } = useQuery({
     queryKey: ['exhibitor-outreach', { exhibitorId, campaignId }],
     queryFn: async () => {
-      let q = supabase
-        .from('outreach_campaigns')
-        .select(`
-          id, event_id, contact_email, email_source, campaign_status, current_step,
-          last_sent_at, next_send_at, stop_reason, stop_note, stopped_at,
-          hunter_status, hunter_prenom, hunter_poste, created_at, updated_at
-        `)
-        .order('created_at', { ascending: false });
-      if (campaignId) q = q.eq('id', campaignId);
-      else if (exhibitorId) q = q.eq('exhibitor_id', exhibitorId);
-      else return { campaigns: [], eventsById: new Map(), blacklistByEmail: new Map() };
-      const { data: campaigns, error } = await q;
-      if (error) throw error;
+      const selectCols = `
+        id, event_id, exhibitor_id, novelty_id, contact_email, email_source,
+        campaign_status, current_step, last_sent_at, next_send_at,
+        stop_reason, stop_note, stopped_at, hunter_status, hunter_prenom,
+        hunter_poste, created_at, updated_at
+      `;
+
+      let campaigns: any[] = [];
+
+      if (campaignId) {
+        const { data: rows, error } = await supabase
+          .from('outreach_campaigns')
+          .select(selectCols)
+          .eq('id', campaignId)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        campaigns = rows ?? [];
+      } else if (exhibitorId) {
+        // Also pull campaigns linked via a novelty published by this exhibitor
+        // (campaigns converted before exhibitor_id was backfilled keep only novelty_id).
+        const { data: novRows } = await supabase
+          .from('novelties')
+          .select('id')
+          .eq('exhibitor_id', exhibitorId);
+        const noveltyIds = (novRows ?? []).map((n: any) => n.id);
+
+        const orParts = [`exhibitor_id.eq.${exhibitorId}`];
+        if (noveltyIds.length) {
+          orParts.push(`novelty_id.in.(${noveltyIds.join(',')})`);
+        }
+
+        const { data: rows, error } = await supabase
+          .from('outreach_campaigns')
+          .select(selectCols)
+          .or(orParts.join(','))
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+
+        // Dedupe by id (a campaign may match both clauses).
+        const seen = new Set<string>();
+        campaigns = (rows ?? []).filter((r: any) => {
+          if (seen.has(r.id)) return false;
+          seen.add(r.id);
+          return true;
+        });
+      } else {
+        return { campaigns: [], eventsById: new Map(), blacklistByEmail: new Map() };
+      }
 
       const eventIds = Array.from(new Set((campaigns ?? []).map(c => c.event_id).filter(Boolean)));
       const emails = Array.from(new Set((campaigns ?? []).map(c => c.contact_email?.toLowerCase().trim()).filter(Boolean) as string[]));
@@ -141,6 +178,24 @@ const ExhibitorOutreachPanel = ({ exhibitorId, campaignId, title }: Props) => {
                 </div>
                 <Badge variant={variant}>{campaignStatusLabel(c.campaign_status)}</Badge>
               </div>
+
+              {/* Converted banner */}
+              {c.campaign_status === 'converted' && (
+                <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-xs space-y-1">
+                  <div className="flex items-center gap-1 font-medium text-emerald-700">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Campagne convertie : nouveauté publiée
+                  </div>
+                  <div className="text-emerald-800/80">
+                    Cette entreprise a publié une nouveauté après la prospection email. Aucun nouvel email ne sera envoyé.
+                  </div>
+                  {c.novelty_id && (
+                    <div className="text-emerald-800/80">
+                      Nouveauté : <span className="font-mono">{c.novelty_id}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Contact */}
               <div className="text-sm space-y-1">
