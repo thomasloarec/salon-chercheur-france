@@ -144,23 +144,44 @@ export default function NoveltyModeration() {
     }
   };
 
+  const getFilenameFromDocUrl = (rawUrl: string) => {
+    try {
+      const path = /^https?:\/\//i.test(rawUrl) ? new URL(rawUrl).pathname : rawUrl;
+      return decodeURIComponent(path.split('/').filter(Boolean).pop() || 'document-nouveaute.pdf');
+    } catch {
+      return 'document-nouveaute.pdf';
+    }
+  };
+
+  const downloadPdfBlob = (blob: Blob, filename: string) => {
+    const blobUrl = URL.createObjectURL(new Blob([blob], { type: blob.type || 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  };
+
   const handleDownloadPdf = async (docUrl: string) => {
     const storageRef = getStorageRefFromDocUrl(docUrl);
+    const filename = getFilenameFromDocUrl(docUrl);
 
     try {
       if (storageRef) {
         const { data, error } = await supabase.storage.from(storageRef.bucket).download(storageRef.path);
         if (error || !data) throw error;
 
-        const blobUrl = URL.createObjectURL(new Blob([data], { type: data.type || 'application/pdf' }));
-        window.open(blobUrl, '_blank', 'noopener,noreferrer');
-        window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        downloadPdfBlob(data, filename);
         return;
       }
 
       const signedUrl = await getSignedResourceUrl(docUrl);
       if (!signedUrl) throw new Error('Impossible de générer le lien de téléchargement.');
-      window.open(signedUrl, '_blank', 'noopener,noreferrer');
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error('Impossible de récupérer le PDF.');
+      downloadPdfBlob(await response.blob(), filename);
     } catch (error) {
       console.error('Error downloading novelty PDF:', error);
       toast({
