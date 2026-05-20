@@ -346,9 +346,9 @@ export default function NoveltyEventCard({
               {novelty.doc_url && (
                 <Button
                   onClick={handleBrochureDownload}
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="gap-1.5 text-muted-foreground hover:text-foreground"
+                  className="gap-1.5 border-accent/40 bg-accent/10 text-accent hover:bg-accent hover:text-accent-foreground hover:border-accent"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Brochure
