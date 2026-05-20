@@ -221,7 +221,14 @@ export default function NoveltyModeration() {
                           variant="outline"
                           className="w-full"
                           onClick={async () => {
-                            const url = await getSignedResourceUrl(novelty.doc_url!);
+                            const raw = novelty.doc_url!;
+                            // Si c'est déjà une URL complète, on l'ouvre directement
+                            if (/^https?:\/\//i.test(raw)) {
+                              window.open(raw, '_blank', 'noopener,noreferrer');
+                              return;
+                            }
+                            // Sinon, on tente une URL signée (bucket privé novelty-resources)
+                            const url = await getSignedResourceUrl(raw);
                             if (url) {
                               window.open(url, '_blank', 'noopener,noreferrer');
                             } else {
