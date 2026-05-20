@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, X, User, Mail, Briefcase, Building2, Tag, CalendarDays, MapPin } from 'lucide-react';
+import { Check, X, User, Mail, Briefcase, Building2, Tag, CalendarDays, MapPin, Target } from 'lucide-react';
 import { FileText, ExternalLink, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getSignedResourceUrl } from '@/lib/novelty/uploads';
@@ -27,6 +27,59 @@ interface CreatorProfile {
 
 interface EnrichedNovelty extends Novelty {
   creator_profile?: CreatorProfile;
+}
+
+function NoveltyLeadsAdminCard({ noveltyId }: { noveltyId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-novelty-leads', noveltyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('novelty-leads', {
+        body: { novelty_id: noveltyId },
+      });
+      if (error) throw error;
+      return data as { leads: any[]; total_count: number };
+    },
+    staleTime: 30_000,
+  });
+
+  const leads = data?.leads ?? [];
+  const count = data?.total_count ?? leads.length;
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-2">
+        <h4 className="font-semibold text-sm flex items-center gap-2">
+          <Target className="h-4 w-4 text-muted-foreground" />
+          Leads générés <span className="text-xs text-muted-foreground">({count})</span>
+        </h4>
+        {isLoading ? (
+          <p className="text-xs text-muted-foreground">Chargement…</p>
+        ) : leads.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Aucun lead pour le moment.</p>
+        ) : (
+          <ul className="space-y-1.5 text-xs">
+            {leads.slice(0, 5).map((l: any) => (
+              <li key={l.id} className="border-l-2 border-primary/30 pl-2">
+                <div className="font-medium">
+                  {l.first_name} {l.last_name}
+                  {l.lead_type && (
+                    <Badge variant="outline" className="ml-2 text-[10px]">
+                      {l.lead_type === 'resource_download' ? 'Brochure' : l.lead_type === 'meeting_request' ? 'RDV' : l.lead_type}
+                    </Badge>
+                  )}
+                </div>
+                {l.email && <div className="text-muted-foreground break-all">{l.email}</div>}
+                {l.company && <div className="text-muted-foreground">{l.company}</div>}
+              </li>
+            ))}
+            {leads.length > 5 && (
+              <li className="text-muted-foreground italic">… et {leads.length - 5} autre(s)</li>
+            )}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function NoveltyModeration() {
