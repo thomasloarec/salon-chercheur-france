@@ -123,6 +123,75 @@ export default function NoveltyModeration() {
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+  const getStorageRefFromDocUrl = (rawUrl: string): { bucket: string; path: string } | null => {
+    if (!/^https?:\/\//i.test(rawUrl)) {
+      return { bucket: 'novelty-resources', path: rawUrl };
+    }
+
+    try {
+      const url = new URL(rawUrl);
+      const publicPrefix = '/storage/v1/object/public/';
+      const signedPrefix = '/storage/v1/object/sign/';
+      const matchingPrefix = url.pathname.startsWith(publicPrefix) ? publicPrefix : url.pathname.startsWith(signedPrefix) ? signedPrefix : null;
+
+      if (!matchingPrefix) return null;
+
+      const [bucket, ...pathParts] = url.pathname.slice(matchingPrefix.length).split('/');
+      const path = decodeURIComponent(pathParts.join('/'));
+      return bucket && path ? { bucket, path } : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getFilenameFromDocUrl = (rawUrl: string) => {
+    try {
+      const path = /^https?:\/\//i.test(rawUrl) ? new URL(rawUrl).pathname : rawUrl;
+      return decodeURIComponent(path.split('/').filter(Boolean).pop() || 'document-nouveaute.pdf');
+    } catch {
+      return 'document-nouveaute.pdf';
+    }
+  };
+
+  const downloadPdfBlob = (blob: Blob, filename: string) => {
+    const blobUrl = URL.createObjectURL(new Blob([blob], { type: blob.type || 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  };
+
+  const handleDownloadPdf = async (docUrl: string) => {
+    const storageRef = getStorageRefFromDocUrl(docUrl);
+    const filename = getFilenameFromDocUrl(docUrl);
+
+    try {
+      if (storageRef) {
+        const { data, error } = await supabase.storage.from(storageRef.bucket).download(storageRef.path);
+        if (error || !data) throw error;
+
+        downloadPdfBlob(data, filename);
+        return;
+      }
+
+      const signedUrl = await getSignedResourceUrl(docUrl);
+      if (!signedUrl) throw new Error('Impossible de générer le lien de téléchargement.');
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error('Impossible de récupérer le PDF.');
+      downloadPdfBlob(await response.blob(), filename);
+    } catch (error) {
+      console.error('Error downloading novelty PDF:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de télécharger le PDF soumis.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const map: Record<string, { label: string; variant: 'secondary' | 'default' | 'destructive' }> = {
       draft: { label: 'En attente', variant: 'secondary' },
@@ -220,25 +289,7 @@ export default function NoveltyModeration() {
                           size="sm"
                           variant="outline"
                           className="w-full"
-                          onClick={async () => {
-                            const raw = novelty.doc_url!;
-                            // Si c'est déjà une URL complète, on l'ouvre directement
-                            if (/^https?:\/\//i.test(raw)) {
-                              window.open(raw, '_blank', 'noopener,noreferrer');
-                              return;
-                            }
-                            // Sinon, on tente une URL signée (bucket privé novelty-resources)
-                            const url = await getSignedResourceUrl(raw);
-                            if (url) {
-                              window.open(url, '_blank', 'noopener,noreferrer');
-                            } else {
-                              toast({
-                                title: 'Erreur',
-                                description: 'Impossible de générer le lien de téléchargement.',
-                                variant: 'destructive',
-                              });
-                            }
-                          }}
+                          onClick={() => handleDownloadPdf(novelty.doc_url!)}
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Télécharger le PDF
