@@ -123,6 +123,54 @@ export default function NoveltyModeration() {
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+  const getStorageRefFromDocUrl = (rawUrl: string): { bucket: string; path: string } | null => {
+    if (!/^https?:\/\//i.test(rawUrl)) {
+      return { bucket: 'novelty-resources', path: rawUrl };
+    }
+
+    try {
+      const url = new URL(rawUrl);
+      const publicPrefix = '/storage/v1/object/public/';
+      const signedPrefix = '/storage/v1/object/sign/';
+      const matchingPrefix = url.pathname.startsWith(publicPrefix) ? publicPrefix : url.pathname.startsWith(signedPrefix) ? signedPrefix : null;
+
+      if (!matchingPrefix) return null;
+
+      const [bucket, ...pathParts] = url.pathname.slice(matchingPrefix.length).split('/');
+      const path = decodeURIComponent(pathParts.join('/'));
+      return bucket && path ? { bucket, path } : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleDownloadPdf = async (docUrl: string) => {
+    const storageRef = getStorageRefFromDocUrl(docUrl);
+
+    try {
+      if (storageRef) {
+        const { data, error } = await supabase.storage.from(storageRef.bucket).download(storageRef.path);
+        if (error || !data) throw error;
+
+        const blobUrl = URL.createObjectURL(new Blob([data], { type: data.type || 'application/pdf' }));
+        window.open(blobUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        return;
+      }
+
+      const signedUrl = await getSignedResourceUrl(docUrl);
+      if (!signedUrl) throw new Error('Impossible de générer le lien de téléchargement.');
+      window.open(signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('Error downloading novelty PDF:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de télécharger le PDF soumis.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const map: Record<string, { label: string; variant: 'secondary' | 'default' | 'destructive' }> = {
       draft: { label: 'En attente', variant: 'secondary' },
@@ -220,25 +268,7 @@ export default function NoveltyModeration() {
                           size="sm"
                           variant="outline"
                           className="w-full"
-                          onClick={async () => {
-                            const raw = novelty.doc_url!;
-                            // Si c'est déjà une URL complète, on l'ouvre directement
-                            if (/^https?:\/\//i.test(raw)) {
-                              window.open(raw, '_blank', 'noopener,noreferrer');
-                              return;
-                            }
-                            // Sinon, on tente une URL signée (bucket privé novelty-resources)
-                            const url = await getSignedResourceUrl(raw);
-                            if (url) {
-                              window.open(url, '_blank', 'noopener,noreferrer');
-                            } else {
-                              toast({
-                                title: 'Erreur',
-                                description: 'Impossible de générer le lien de téléchargement.',
-                                variant: 'destructive',
-                              });
-                            }
-                          }}
+                          onClick={() => handleDownloadPdf(novelty.doc_url!)}
                         >
                           <Download className="h-4 w-4 mr-2" />
                           Télécharger le PDF
