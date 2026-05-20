@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, X, User, Mail, Briefcase, Building2, Tag, CalendarDays, MapPin } from 'lucide-react';
+import { FileText, ExternalLink, Download } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { getSignedResourceUrl } from '@/lib/novelty/uploads';
 import { useToast } from '@/hooks/use-toast';
 import { usePremiumGrant } from '@/hooks/usePremiumGrant';
 import { PremiumStatusBadge } from './PremiumStatusBadge';
@@ -183,7 +186,19 @@ export default function NoveltyModeration() {
                         <CalendarDays className="h-4 w-4 text-muted-foreground" />
                         Événement
                       </h4>
-                      <p className="text-sm font-medium">{novelty.events?.nom_event}</p>
+                      {novelty.events?.slug ? (
+                        <Link
+                          to={`/events/${novelty.events.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+                        >
+                          {novelty.events.nom_event}
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-medium">{novelty.events?.nom_event}</p>
+                      )}
                       {novelty.events?.ville && (
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <MapPin className="h-3 w-3" /> {novelty.events.ville}
@@ -192,6 +207,38 @@ export default function NoveltyModeration() {
                       <p className="text-xs text-muted-foreground">Soumise le {formatDate(novelty.created_at)}</p>
                     </CardContent>
                   </Card>
+
+                  {/* PDF brochure */}
+                  {novelty.doc_url && (
+                    <Card>
+                      <CardContent className="p-4 space-y-2">
+                        <h4 className="font-semibold text-sm flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          Document PDF soumis
+                        </h4>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={async () => {
+                            const url = await getSignedResourceUrl(novelty.doc_url!);
+                            if (url) {
+                              window.open(url, '_blank', 'noopener,noreferrer');
+                            } else {
+                              toast({
+                                title: 'Erreur',
+                                description: 'Impossible de générer le lien de téléchargement.',
+                                variant: 'destructive',
+                              });
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Télécharger le PDF
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Creator profile */}
                   {novelty.creator_profile && (
