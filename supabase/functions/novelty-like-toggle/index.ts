@@ -143,7 +143,7 @@ serve(async (req) => {
           .filter((uid: string) => uid && uid !== user.id);
 
         if (recipients.length === 0) {
-          console.log('[like_notif] no active recipients', { novelty_id, exhibitor_id: novelty.exhibitor_id });
+          console.log('[novelty_like_notification] no active recipients', { novelty_id, exhibitor_id: novelty.exhibitor_id });
         } else {
           // Resolve actor info
           const { data: actorProfile } = await supabaseClient
@@ -178,18 +178,18 @@ serve(async (req) => {
                 }),
               });
               if (!r.ok) {
-                console.error('[like_notif] create failed', { recipient, status: r.status, body: await r.text().catch(() => '') });
+                console.error('[novelty_like_notification] create failed', { recipient_user_id: recipient, novelty_id, status: r.status, body: await r.text().catch(() => '') });
               } else {
-                console.log('[like_notif] sent', { recipient, novelty_id });
+                console.log('[novelty_like_notification] sent', { recipient_user_id: recipient, novelty_id, actor_user_id: user.id, actor_email: actorEmail });
               }
             } catch (e) {
-              console.error('[like_notif] exception', { recipient, error: String(e) });
+              console.error('[novelty_like_notification] exception', { recipient_user_id: recipient, novelty_id, error: String(e) });
             }
           }));
         }
       } catch (e) {
         // Never fail the like because of notification issues
-        console.error('[like_notif] outer exception', { error: String(e) });
+        console.error('[novelty_like_notification] outer exception', { novelty_id, error: String(e) });
       }
     }
 
