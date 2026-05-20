@@ -12,6 +12,7 @@ interface NotificationPayload {
   novelty_id?: string
   event_id?: string
   exhibitor_id?: string
+  lead_id?: string
   actor_user_id?: string
   actor_name?: string
   actor_email?: string
@@ -99,6 +100,7 @@ serve(async (req) => {
       novelty_id: payload.novelty_id,
       event_id: payload.event_id,
       exhibitor_id: payload.exhibitor_id,
+      lead_id: payload.lead_id,
       metadata: payload.metadata,
       created_at: new Date().toISOString()
     }

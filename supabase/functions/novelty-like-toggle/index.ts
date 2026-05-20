@@ -60,7 +60,7 @@ serve(async (req) => {
     // Get novelty with event info
     const { data: novelty, error: noveltyError } = await supabaseClient
       .from('novelties')
-      .select('id, event_id')
+      .select('id, event_id, exhibitor_id, title')
       .eq('id', novelty_id)
       .single();
 
@@ -128,6 +128,70 @@ serve(async (req) => {
       .from('novelty_likes')
       .select('*', { count: 'exact', head: true })
       .eq('novelty_id', novelty_id);
+
+    // Fire in-app notification only when a like was just created
+    if (liked && novelty.exhibitor_id) {
+      try {
+        const { data: members } = await supabaseClient
+          .from('exhibitor_team_members')
+          .select('user_id')
+          .eq('exhibitor_id', novelty.exhibitor_id)
+          .eq('status', 'active');
+
+        const recipients = (members ?? [])
+          .map((m: any) => m.user_id)
+          .filter((uid: string) => uid && uid !== user.id);
+
+        if (recipients.length === 0) {
+          console.log('[like_notif] no active recipients', { novelty_id, exhibitor_id: novelty.exhibitor_id });
+        } else {
+          // Resolve actor info
+          const { data: actorProfile } = await supabaseClient
+            .from('profiles')
+            .select('first_name, last_name, company')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          const actorName = [actorProfile?.first_name, actorProfile?.last_name]
+            .filter(Boolean).join(' ').trim() || 'Un utilisateur';
+          const actorEmail = user.email ?? undefined;
+          const actorCompany = actorProfile?.company ?? undefined;
+
+          const notifUrl = `${supabaseUrl}/functions/v1/notifications-create`;
+          await Promise.all(recipients.map(async (recipient: string) => {
+            try {
+              const r = await fetch(notifUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${serviceKey}`,
+                },
+                body: JSON.stringify({
+                  type: 'like',
+                  user_id: recipient,
+                  novelty_id,
+                  exhibitor_id: novelty.exhibitor_id,
+                  event_id: novelty.event_id,
+                  actor_user_id: user.id,
+                  actor_name: actorName,
+                  actor_email: actorEmail,
+                  actor_company: actorCompany,
+                }),
+              });
+              if (!r.ok) {
+                console.error('[like_notif] create failed', { recipient, status: r.status, body: await r.text().catch(() => '') });
+              } else {
+                console.log('[like_notif] sent', { recipient, novelty_id });
+              }
+            } catch (e) {
+              console.error('[like_notif] exception', { recipient, error: String(e) });
+            }
+          }));
+        }
+      } catch (e) {
+        // Never fail the like because of notification issues
+        console.error('[like_notif] outer exception', { error: String(e) });
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
