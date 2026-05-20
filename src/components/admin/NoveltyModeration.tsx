@@ -392,6 +392,9 @@ export default function NoveltyModeration() {
                     </Card>
                   )}
 
+                  {/* Leads generated */}
+                  <NoveltyLeadsAdminCard noveltyId={novelty.id} />
+
                   {/* Admin actions */}
                   <div className="space-y-2">
                     <PremiumActionButtons
