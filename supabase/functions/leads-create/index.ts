@@ -94,9 +94,9 @@ serve(async (req) => {
     }
 
     if (existingLead) {
-      console.log('[lead_duplicate_detected]', { 
+      console.log('[brochure_duplicate_detected]', { 
         novelty_id: data.novelty_id, 
-        email: data.email, 
+        actor_email: data.email, 
         existing_id: existingLead.id 
       });
       
@@ -149,6 +149,13 @@ serve(async (req) => {
       );
     }
 
+    console.log('[brochure_lead_created]', {
+      novelty_id: data.novelty_id,
+      lead_id: lead.id,
+      lead_type: dbLeadType,
+      actor_email: data.email,
+    });
+
     const response: { 
       success: boolean; 
       duplicate: boolean;
@@ -179,7 +186,7 @@ serve(async (req) => {
         const recipientIds = (members ?? []).map((m: any) => m.user_id).filter(Boolean);
 
         if (recipientIds.length === 0) {
-          console.warn('[lead_brochure_notif] no active team members', {
+          console.warn('[brochure_notification_sent] no active team members', {
             novelty_id: data.novelty_id, exhibitor_id: novelty.exhibitor_id,
           });
         } else {
@@ -195,7 +202,7 @@ serve(async (req) => {
               const { data: u } = await admin.auth.admin.getUserById(uid);
               if (u?.user?.email) recipientEmails.push({ user_id: uid, email: u.user.email });
             } catch (e) {
-              console.error('[lead_brochure_notif] getUserById failed', { uid, error: String(e) });
+              console.error('[brochure_notification_sent] getUserById failed', { recipient_user_id: uid, error: String(e) });
             }
           }
 
@@ -224,12 +231,12 @@ serve(async (req) => {
                 }),
               });
               if (!r.ok) {
-                console.error('[lead_brochure_notif] create failed', { uid, status: r.status });
+                console.error('[brochure_notification_sent] create failed', { recipient_user_id: uid, novelty_id: data.novelty_id, lead_id: lead.id, status: r.status });
               } else {
-                console.log('[lead_brochure_notif] sent', { uid, lead_id: lead.id });
+                console.log('[brochure_notification_sent]', { recipient_user_id: uid, novelty_id: data.novelty_id, lead_id: lead.id, actor_email: data.email });
               }
             } catch (e) {
-              console.error('[lead_brochure_notif] exception', { uid, error: String(e) });
+              console.error('[brochure_notification_sent] exception', { recipient_user_id: uid, novelty_id: data.novelty_id, error: String(e) });
             }
           }));
 
@@ -237,9 +244,9 @@ serve(async (req) => {
           const resendKey = Deno.env.get('RESEND_API_KEY');
           const lovableKey = Deno.env.get('LOVABLE_API_KEY');
           if (recipientEmails.length === 0) {
-            console.warn('[lead_brochure_email] no recipient emails resolved');
+            console.warn('[brochure_email_sent] no recipient emails resolved', { novelty_id: data.novelty_id, lead_id: lead.id });
           } else if (!resendKey || !lovableKey) {
-            console.warn('[lead_brochure_email] missing RESEND_API_KEY or LOVABLE_API_KEY — email skipped');
+            console.warn('[brochure_email_sent] missing RESEND_API_KEY or LOVABLE_API_KEY — email skipped', { novelty_id: data.novelty_id, lead_id: lead.id });
           } else {
             const eventName = event?.nom_event ?? '';
             const noveltyTitle = novelty.title ?? '';
@@ -277,20 +284,20 @@ serve(async (req) => {
               });
               if (!resp.ok) {
                 const t = await resp.text().catch(() => '');
-                console.error('[lead_brochure_email] resend failed', { status: resp.status, body: t.slice(0, 300) });
+                console.error('[brochure_email_sent] resend failed', { novelty_id: data.novelty_id, lead_id: lead.id, status: resp.status, body: t.slice(0, 300) });
               } else {
-                console.log('[lead_brochure_email] sent', { to: recipientEmails.map(r => r.email), lead_id: lead.id });
+                console.log('[brochure_email_sent]', { novelty_id: data.novelty_id, lead_id: lead.id, to: recipientEmails.map(r => r.email), actor_email: data.email });
               }
             } catch (e) {
-              console.error('[lead_brochure_email] exception', { error: String(e) });
+              console.error('[brochure_email_sent] exception', { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
             }
           }
         }
       } catch (e) {
-        console.error('[lead_brochure_notif] outer exception', { error: String(e) });
+        console.error('[brochure_notification_sent] outer exception', { novelty_id: data.novelty_id, error: String(e) });
       }
     } else if (data.lead_type === 'brochure_download') {
-      console.warn('[lead_brochure_notif] novelty has no exhibitor_id, skipping notifications');
+      console.warn('[brochure_notification_sent] novelty has no exhibitor_id, skipping notifications', { novelty_id: data.novelty_id });
     }
 
     return new Response(

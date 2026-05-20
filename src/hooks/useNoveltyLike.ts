@@ -38,53 +38,13 @@ export const useNoveltyLike = (noveltyId: string, eventId?: string) => {
         throw new Error('Vous devez être connecté pour liker une nouveauté');
       }
 
-      if (isLiked) {
-        // Retirer le like
-        const { error } = await supabase
-          .from('novelty_likes')
-          .delete()
-          .eq('novelty_id', noveltyId)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-        return { action: 'unliked' as const };
-      } else {
-        // Ajouter le like
-        const { error } = await supabase
-          .from('novelty_likes')
-          .insert({
-            novelty_id: noveltyId,
-            user_id: user.id,
-          });
-
-        if (error) throw error;
-
-        // Auto-ajout du salon en favori : si l'utilisateur s'intéresse à
-        // une nouveauté, le salon associé doit apparaître dans son agenda.
-        if (eventId) {
-          try {
-            const { data: existingFav } = await supabase
-              .from('favorites')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('event_uuid', eventId)
-              .maybeSingle();
-            if (!existingFav) {
-              await supabase
-                .from('favorites')
-                .insert({
-                  user_id: user.id,
-                  event_uuid: eventId,
-                  event_id: eventId,
-                } as any);
-            }
-          } catch (favErr) {
-            console.warn('Auto-favorite event failed:', favErr);
-          }
-        }
-
-        return { action: 'liked' as const };
-      }
+      // Toujours passer par l'edge function pour que la notification exposant
+      // (`new_lead_like`) soit créée côté serveur avec service role.
+      const { data, error } = await supabase.functions.invoke('novelty-like-toggle', {
+        body: { novelty_id: noveltyId },
+      });
+      if (error) throw error;
+      return { action: (data?.liked ? 'liked' : 'unliked') as 'liked' | 'unliked' };
     },
     onSuccess: (data) => {
       // Invalider les queries concernées
