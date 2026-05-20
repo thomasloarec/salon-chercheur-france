@@ -4731,6 +4731,10 @@ export type Database = {
         }[]
       }
       seo_test_hash_protection: { Args: never; Returns: Json }
+      set_seo_vault_secret: {
+        Args: { p_name: string; p_value: string }
+        Returns: Json
+      }
       start_seo_weekly_catchup: { Args: never; Returns: Json }
       toggle_favorite: { Args: { p_event: string }; Returns: undefined }
       update_existing_events_slugs: { Args: never; Returns: undefined }

@@ -685,6 +685,8 @@ export function SeoEnrichmentDashboard() {
             const scoreNull = (d['score_null_count'] as number | undefined) ?? null;
             const runRunning = ((d['running_run_in_last_2h'] as number | undefined) ?? 0) > 0;
             const cronActive = d['cron_job_active'] === true;
+            const vaultMissing =
+              d['has_seo_batch_secret'] !== true || d['has_anon_key'] !== true;
             const Row = ({ label, ok, value }: { label: string; ok?: boolean; value?: React.ReactNode }) => (
               <div className="flex items-center justify-between text-sm py-1 border-b border-indigo-100/60 last:border-0">
                 <span className="text-muted-foreground">{label}</span>
@@ -698,6 +700,15 @@ export function SeoEnrichmentDashboard() {
               <div className="rounded-lg border border-indigo-200 bg-background p-4">
                 <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700 mb-2">Dépendances automatisation</div>
                 <Row label="Prêt" ok={ready} value={ready ? 'oui' : 'non'} />
+                {vaultMissing && (
+                  <div className="mt-2 mb-3 rounded-md p-3 text-sm bg-sky-50 text-sky-900 border border-sky-200">
+                    Batch manuel depuis le dashboard opérationnel, mais automatisation SQL non prête : secrets Vault manquants
+                    ({[
+                      d['has_seo_batch_secret'] === true ? null : 'SEO_BATCH_SECRET',
+                      d['has_anon_key'] === true ? null : 'SUPABASE_ANON_KEY',
+                    ].filter(Boolean).join(', ')}).
+                  </div>
+                )}
                 <Row label="SEO_BATCH_SECRET" ok={d['has_seo_batch_secret'] === true} value={d['has_seo_batch_secret'] === true ? 'OK' : 'manquant'} />
                 <Row label="SUPABASE_ANON_KEY" ok={d['has_anon_key'] === true} value={d['has_anon_key'] === true ? 'OK' : 'manquant'} />
                 <Row label="application_logs" ok={d['application_logs_exists'] === true} value={d['application_logs_exists'] === true ? 'OK' : 'manquant'} />
