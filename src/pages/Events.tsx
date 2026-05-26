@@ -81,8 +81,6 @@ const Events = () => {
     sectors: []
   }));
 
-  const hasActiveFilters = !!(filters.sectors.length > 0 || filters.type || filters.month || filters.region);
-
   if (error) {
     return (
       <div className="min-h-screen">
