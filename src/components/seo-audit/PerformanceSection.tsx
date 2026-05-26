@@ -52,7 +52,7 @@ export default function PerformanceSection({ data }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <h2 className="text-xl font-bold">2. Core Web Vitals & Performance</h2>
+        <h2 id="performance" className="text-xl font-bold scroll-mt-20">2. Core Web Vitals & Performance</h2>
         <SeoStatusBadge status={getSectionStatus(data, 'performance')} />
       </div>
 
