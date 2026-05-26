@@ -13,7 +13,7 @@ export default function InternalLinkingSection({ data }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <h2 className="text-xl font-bold">6. Maillage Interne</h2>
+        <h2 id="maillage-interne" className="text-xl font-bold scroll-mt-20">6. Maillage Interne</h2>
         <SeoStatusBadge status={getSectionStatus(data, 'linking')} />
       </div>
 

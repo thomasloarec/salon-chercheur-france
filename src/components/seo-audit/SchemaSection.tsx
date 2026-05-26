@@ -17,7 +17,7 @@ export default function SchemaSection({ data }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <h2 className="text-xl font-bold">4. Données Structurées</h2>
+        <h2 id="donnees-structurees" className="text-xl font-bold scroll-mt-20">4. Données Structurées</h2>
         <SeoStatusBadge status={getSectionStatus(data, 'schema')} />
       </div>
 
