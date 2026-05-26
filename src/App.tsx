@@ -59,6 +59,7 @@ import Blog from '@/pages/Blog';
 import BlogArticle from '@/pages/BlogArticle';
 import NotFound from '@/pages/NotFound';
 import SectorHub from '@/pages/SectorHub';
+import SectorYearHub from '@/pages/SectorYearHub';
 import CityHub from '@/pages/CityHub';
 import './App.css';
 
