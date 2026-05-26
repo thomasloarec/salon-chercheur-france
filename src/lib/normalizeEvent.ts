@@ -25,6 +25,7 @@ export function normalizeEventRow(row: any): CanonicalEvent {
   const visible = row.visible ?? null;
   const image_url = coalesceImageUrl(row);
   const postal_code = first(row.code_postal, row.postal_code, row.zip) ?? null;
+  const affluence = first(row.affluence, row.nb_visiteurs, row.visiteurs) ?? null;
 
   return {
     id: String(id),
@@ -50,6 +51,7 @@ export function normalizeEventRow(row: any): CanonicalEvent {
     type_event: type_code,
     rue: first(row.rue, row.street, row.address_street) ?? null,
     code_postal: postal_code ? String(postal_code) : null,
+    affluence: (affluence as string | number | null) ?? null,
   };
 }
 
