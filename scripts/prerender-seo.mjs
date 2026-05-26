@@ -458,7 +458,7 @@ async function main() {
   console.log(`[prerender] shell size=${baseTemplate.length}`);
 
   let errors = 0;
-  const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0 };
+  const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0, cityYears: 0 };
 
   // 2. fetch events
   const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
@@ -572,6 +572,29 @@ async function main() {
       const built = buildCity(slug, cityLabel[slug], matches);
       await writeRoute(`/ville/${slug}`, applyToShell(baseTemplate, built));
       stats.cities++;
+
+      // 6b. city × year pages — FUTURE events only, indexable if >= 3
+      const CITY_YEAR_THRESHOLD = 3;
+      const byYear = {};
+      for (const ev of matches) {
+        if (!ev.date_debut) continue;
+        const y = new Date(ev.date_debut).getFullYear();
+        if (!Number.isFinite(y)) continue;
+        (byYear[y] = byYear[y] || []).push(ev);
+      }
+      const eligibleYears = Object.entries(byYear)
+        .filter(([, list]) => list.length >= CITY_YEAR_THRESHOLD)
+        .map(([y]) => Number(y))
+        .sort((a, b) => a - b);
+      for (const y of eligibleYears) {
+        try {
+          const evYear = byYear[y].sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
+          const others = eligibleYears.filter((yy) => yy !== y);
+          const built2 = buildCityYear(slug, cityLabel[slug], y, evYear, others);
+          await writeRoute(`/ville/${slug}/${y}`, applyToShell(baseTemplate, built2));
+          stats.cityYears++;
+        } catch (e) { errors++; console.warn('[prerender] city-year failed', slug, y, e.message); }
+      }
     } catch (e) { errors++; console.warn('[prerender] city failed', slug, e.message); }
   }
 
@@ -591,6 +614,7 @@ async function main() {
   console.log(`Sector hubs:       ${stats.sectors}`);
   console.log(`Sector×year pages: ${stats.sectorYears}`);
   console.log(`City hubs:         ${stats.cities}`);
+  console.log(`City×year pages:   ${stats.cityYears}`);
   console.log(`Errors:            ${errors}`);
   console.log(`Duration:          ${dur}s`);
   console.log('=========================\n');
