@@ -61,6 +61,13 @@ const slugifyCity = (s) =>
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+// Satellite communes are merged into the parent city hub (Chassieu→Lyon,
+// Villepinte→Paris, Bruz→Rennes…).
+const hubSlugOfCity = (s) => {
+  const raw = slugifyCity(s);
+  if (!raw) return '';
+  return (CITY_ALIASES[raw] && CITY_ALIASES[raw].slug) || raw;
+};
 
 const now = new Date().toISOString().split('T')[0];
 
