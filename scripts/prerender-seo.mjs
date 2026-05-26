@@ -379,6 +379,64 @@ function buildCity(slug, label, top) {
   return { title, description, canonical, headExtra, body };
 }
 
+function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
+  const cityLabel = label || slug.replace(/-/g, ' ');
+  const n = eventsOfYear.length;
+  const title = truncate(`Salons professionnels à ${cityLabel} en ${year} | Lotexpo`, 70);
+  const description = truncate(`${n} salons professionnels programmés à ${cityLabel} en ${year}. Consultez les dates, lieux, secteurs, exposants et informations pratiques sur Lotexpo.`, 160);
+  const evergreen = `${SITE_ORIGIN}/ville/${slug}`;
+  const self = `${SITE_ORIGIN}/ville/${slug}/${year}`;
+  const canonical = self;
+  // top sectors / venues for intro
+  const sectorCount = {};
+  const venueCount = {};
+  for (const e of eventsOfYear) {
+    const sec = e.secteur;
+    const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
+    for (const s of list) sectorCount[s] = (sectorCount[s] || 0) + 1;
+    if (e.nom_lieu) venueCount[e.nom_lieu] = (venueCount[e.nom_lieu] || 0) + 1;
+  }
+  const topSectors = Object.entries(sectorCount).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([s]) => s);
+  const topVenues = Object.entries(venueCount).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([v]) => v);
+  const introSectors = topSectors.length ? ` Principaux secteurs représentés : ${topSectors.join(', ')}.` : '';
+  const introVenues = topVenues.length ? ` Principaux lieux d'exposition : ${topVenues.join(', ')}.` : '';
+  const breadcrumb = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 3, name: `Salons à ${cityLabel}`, item: evergreen },
+      { '@type': 'ListItem', position: 4, name: `Salons à ${cityLabel} ${year}`, item: self },
+    ],
+  };
+  const itemList = {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    name: `Salons professionnels à ${cityLabel} en ${year}`,
+    numberOfItems: n,
+    itemListElement: eventsOfYear.slice(0, 50).map((e, i) => ({
+      '@type': 'ListItem', position: i + 1,
+      url: `${SITE_ORIGIN}/events/${encodeURIComponent(e.slug)}`,
+      name: e.nom_event,
+    })),
+  };
+  const headExtra = commonHead(canonical, title, description)
+    + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`
+    + `<script type="application/ld+json">${safeJsonLd(itemList)}</script>`;
+  const eventsList = eventsOfYear.slice(0, 50).map((e) =>
+    `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.nom_lieu ? ' – ' + escapeHtml(e.nom_lieu) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`
+  ).join('');
+  const otherYearsLinks = (otherYears || []).map((y) =>
+    `<a href="/ville/${slug}/${y}">${escapeHtml(String(cityLabel))} ${y}</a>`
+  ).join(' · ');
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>Salons professionnels à ${escapeHtml(String(cityLabel))} en ${year}</h1>
+    <p>Retrouvez les ${n} salons professionnels programmés à ${escapeHtml(String(cityLabel))} en ${year}.${escapeHtml(introSectors)}${escapeHtml(introVenues)} Cette page regroupe les événements à venir avec leurs dates, lieux, secteurs d'activité et liens vers les fiches détaillées.</p>
+    <ul>${eventsList}</ul>
+    <p><a href="${evergreen}">Tous les salons à ${escapeHtml(String(cityLabel))}</a>${otherYearsLinks ? ' · ' + otherYearsLinks : ''}</p>
+  </div>`;
+  return { title, description, canonical, headExtra, body };
+}
+
 // ---------- write helper ----------
 async function writeRoute(routePath, html) {
   const isRoot = routePath === '/' || routePath === '';
