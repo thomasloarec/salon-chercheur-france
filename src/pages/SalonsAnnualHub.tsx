@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { useAnnualHub, ANNUAL_HUB_THRESHOLD } from '@/hooks/useAnnualHub';
 import type { CanonicalEvent } from '@/types/lotexpo';
 import type { Event } from '@/types/event';
+import { sectorIconMap, FallbackIcon } from '@/components/filters/sectorIconMap';
+import { formatAffluence } from '@/utils/affluenceUtils';
+import { Users } from 'lucide-react';
 
 const YEAR = 2026;
 const CANONICAL = `https://lotexpo.com/salons-professionnels-${YEAR}`;
@@ -160,15 +163,23 @@ const SalonsAnnualHub = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {data.sectors.map(s => (
+                      (() => {
+                        const Icon = sectorIconMap[s.slug] ?? FallbackIcon;
+                        return (
                       <Link
                         key={s.slug}
                         to={`/secteur/${s.slug}/${YEAR}`}
                         className="group block p-5 rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">
-                            {s.label}
-                          </h3>
+                          <div className="flex items-start gap-2.5 min-w-0">
+                            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                              <Icon className="h-5 w-5" />
+                            </span>
+                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">
+                              {s.label}
+                            </h3>
+                          </div>
                           <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
@@ -180,6 +191,8 @@ const SalonsAnnualHub = () => {
                           </p>
                         )}
                       </Link>
+                        );
+                      })()
                     ))}
                   </div>
                 </section>
