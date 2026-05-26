@@ -62,6 +62,7 @@ import SectorHub from '@/pages/SectorHub';
 import SectorYearHub from '@/pages/SectorYearHub';
 import CityHub from '@/pages/CityHub';
 import CityYearHub from '@/pages/CityYearHub';
+import SalonsAnnualHub from '@/pages/SalonsAnnualHub';
 import './App.css';
 
 // Global listener for pending visit plan redirect after OAuth
@@ -156,6 +157,7 @@ function App() {
                 <Route path="/secteur/:slug/:year" element={<SectorYearHub />} />
                <Route path="/ville/:slug" element={<CityHub />} />
                <Route path="/ville/:slug/:year" element={<CityYearHub />} />
+               <Route path="/salons-professionnels-2026" element={<SalonsAnnualHub />} />
                <Route path="*" element={<NotFound />} />
               </Routes>
                 <OnboardingTour />
