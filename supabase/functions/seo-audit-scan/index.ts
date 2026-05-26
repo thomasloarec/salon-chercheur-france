@@ -284,7 +284,7 @@ async function analyzeUrls(supabase: ReturnType<typeof createClient>) {
 
   // Check thin content events
   const { data: thinEvents } = await supabase.from('events')
-    .select('slug, nom_event, description_event')
+    .select('slug, nom_event, description_event, date_debut, date_fin')
     .eq('visible', true).eq('is_test', false)
     .order('created_at', { ascending: false }).limit(50);
 
@@ -297,6 +297,9 @@ async function analyzeUrls(supabase: ReturnType<typeof createClient>) {
       url: `/events/${e.slug}`,
       name: e.nom_event as string,
       wordCount: ((e.description_event as string) || '').split(/\s+/).filter(Boolean).length,
+      type: 'event',
+      date_debut: (e.date_debut as string) || null,
+      date_fin: (e.date_fin as string) || null,
     }))
     .sort((a: { wordCount: number }, b: { wordCount: number }) => a.wordCount - b.wordCount);
 
