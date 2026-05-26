@@ -231,6 +231,7 @@ export type CanonicalEvent = {
   type_event: string | null;
   rue: string | null;
   code_postal: string | null;
+  affluence: string | number | null;
 };
 
 // Constants
