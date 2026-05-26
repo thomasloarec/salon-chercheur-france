@@ -92,9 +92,14 @@ export function useSectorHub(slug: string | undefined, options: UseSectorHubOpti
       let upcomingScoped = upcoming;
       let pastScoped = past;
       if (year !== null) {
+        // Option B: year pages only show FUTURE events of that year.
+        // For the current year this excludes already-passed editions.
+        // For past years this yields 0 events (page becomes auto-noindex).
         upcomingScoped = events.filter(e => {
           if (!e.start_date) return false;
-          return Number(String(e.start_date).slice(0, 4)) === year;
+          if (Number(String(e.start_date).slice(0, 4)) !== year) return false;
+          const end = e.end_date || e.start_date;
+          return end ? end >= todayStr : false;
         });
         pastScoped = [];
       }
