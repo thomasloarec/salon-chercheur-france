@@ -662,7 +662,73 @@ async function main() {
     } catch (e) { errors++; console.warn('[prerender] city failed', slug, e.message); }
   }
 
-  // 7. home — written LAST so it never pollutes the template
+  // 7. annual hub /salons-professionnels-2026
+  try {
+    const ANNUAL_YEAR = 2026;
+    const ANNUAL_THRESHOLD = 3;
+    const futureOfYear = upcoming.filter((e) => {
+      if (!e.date_debut) return false;
+      return new Date(e.date_debut).getFullYear() === ANNUAL_YEAR;
+    }).sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
+
+    // sectors >= threshold (canonical only)
+    const sectorAcc = {};
+    for (const e of futureOfYear) {
+      const sec = e.secteur;
+      const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
+      for (const lbl of list) {
+        const slug = slugify(String(lbl));
+        if (!CANONICAL_SECTORS.includes(slug)) continue;
+        sectorAcc[slug] = sectorAcc[slug] || { label: String(lbl), count: 0 };
+        sectorAcc[slug].count++;
+      }
+    }
+    const annualSectors = Object.entries(sectorAcc)
+      .filter(([, v]) => v.count >= ANNUAL_THRESHOLD)
+      .map(([slug, v]) => ({ slug, label: v.label, count: v.count }))
+      .sort((a, b) => b.count - a.count);
+
+    // cities >= threshold (with alias merge)
+    const cityAcc = {};
+    for (const e of futureOfYear) {
+      if (!e.ville) continue;
+      const raw = slugify(e.ville);
+      const hubSlug = cityHubSlug(e.ville);
+      if (!hubSlug) continue;
+      if (!cityAcc[hubSlug]) {
+        const aliasName = CITY_ALIASES[raw] && CITY_ALIASES[raw].name;
+        cityAcc[hubSlug] = { name: aliasName || e.ville, count: 0 };
+      }
+      if (raw === hubSlug) cityAcc[hubSlug].name = e.ville;
+      cityAcc[hubSlug].count++;
+    }
+    const annualCities = Object.entries(cityAcc)
+      .filter(([, v]) => v.count >= ANNUAL_THRESHOLD)
+      .map(([slug, v]) => ({ slug, name: v.name, count: v.count }))
+      .sort((a, b) => b.count - a.count);
+
+    // months
+    const monthMap = {};
+    const monthOrder = [];
+    for (const e of futureOfYear) {
+      if (!e.date_debut) continue;
+      const d = new Date(e.date_debut);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!(key in monthMap)) { monthMap[key] = []; monthOrder.push(key); }
+      monthMap[key].push(e);
+    }
+    const monthGroups = monthOrder.map((k) => {
+      const [y, m] = k.split('-');
+      const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      return { label, total: monthMap[k].length };
+    });
+
+    const built = buildAnnualHub(ANNUAL_YEAR, futureOfYear, annualSectors, annualCities, monthGroups);
+    await writeRoute(`/salons-professionnels-${ANNUAL_YEAR}`, applyToShell(baseTemplate, built));
+    console.log(`[prerender] annual hub: ${futureOfYear.length} events, ${annualSectors.length} sectors, ${annualCities.length} cities`);
+  } catch (e) { errors++; console.warn('[prerender] annual hub failed', e.message); }
+
+  // 8. home — written LAST so it never pollutes the template
   try {
     const built = buildHome();
     const html = applyToShell(baseTemplate, built);
