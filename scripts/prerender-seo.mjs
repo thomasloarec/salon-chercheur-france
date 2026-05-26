@@ -71,6 +71,12 @@ function safeJsonLd(obj) {
 function slugify(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
+// Satellite communes mapped onto a parent city hub (Chassieu→Lyon, etc).
+function cityHubSlug(s) {
+  const raw = slugify(s);
+  if (!raw) return '';
+  return (CITY_ALIASES[raw] && CITY_ALIASES[raw].slug) || raw;
+}
 function firstSector(secteur) {
   if (!secteur) return null;
   if (Array.isArray(secteur)) return secteur[0] ? String(secteur[0]) : null;
