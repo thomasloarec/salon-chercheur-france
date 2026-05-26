@@ -1,11 +1,12 @@
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { Loader2, Calendar, MapPin, Briefcase } from 'lucide-react';
+import { Loader2, Calendar, MapPin, Briefcase, ArrowRight, ChevronDown, Clock } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EventCard from '@/components/EventCard';
 import { Badge } from '@/components/ui/badge';
-import { useAnnualHub } from '@/hooks/useAnnualHub';
+import { Button } from '@/components/ui/button';
+import { useAnnualHub, ANNUAL_HUB_THRESHOLD } from '@/hooks/useAnnualHub';
 import type { CanonicalEvent } from '@/types/lotexpo';
 import type { Event } from '@/types/event';
 
@@ -78,34 +79,63 @@ const SalonsAnnualHub = () => {
 
       <Header />
 
-      <main className="py-8">
-        <div className="w-full px-6 mx-auto max-w-[1400px]">
-          <header className="mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-              Salons professionnels {YEAR} en France
-            </h1>
-            <p className="text-muted-foreground max-w-3xl">
-              Retrouvez les salons professionnels programmés en France en {YEAR}. Cette page
-              regroupe les événements à venir par mois, secteur et ville, avec des liens vers
-              les fiches détaillées des salons référencés sur Lotexpo.
-            </p>
-            {data && (
-              <div className="flex flex-wrap gap-3 mt-4">
-                <Badge variant="secondary" className="text-sm px-3 py-1">
-                  <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                  {data.totalCount} salon{data.totalCount > 1 ? 's' : ''} à venir
-                </Badge>
-                <Badge variant="secondary" className="text-sm px-3 py-1">
-                  <Briefcase className="h-3.5 w-3.5 mr-1.5" />
-                  {data.sectors.length} secteur{data.sectors.length > 1 ? 's' : ''}
-                </Badge>
-                <Badge variant="secondary" className="text-sm px-3 py-1">
-                  <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                  {data.cities.length} ville{data.cities.length > 1 ? 's' : ''}
-                </Badge>
+      <main>
+        {/* Hero */}
+        <section className="border-b border-border bg-gradient-to-b from-muted/40 to-background">
+          <div className="w-full px-6 mx-auto max-w-[1400px] py-12 md:py-16">
+            <div className="max-w-3xl">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-3">
+                Calendrier annuel
+              </p>
+              <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+                Salons professionnels {YEAR} en France
+              </h1>
+              <p className="text-base md:text-lg text-muted-foreground mb-6">
+                Retrouvez les salons professionnels programmés en France en {YEAR}. Explorez les
+                événements par secteur, ville ou période, puis accédez aux fiches détaillées des
+                salons référencés sur Lotexpo.
+              </p>
+              {data && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                    <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                    {data.totalCount} salon{data.totalCount > 1 ? 's' : ''} à venir
+                  </Badge>
+                  <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                    <Briefcase className="h-3.5 w-3.5 mr-1.5" />
+                    {data.sectors.length} secteur{data.sectors.length > 1 ? 's' : ''}
+                  </Badge>
+                  <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                    <MapPin className="h-3.5 w-3.5 mr-1.5" />
+                    {data.cities.length} ville{data.cities.length > 1 ? 's' : ''}
+                  </Badge>
+                  {data.periodLabel && (
+                    <Badge variant="outline" className="text-sm px-3 py-1.5">
+                      <Clock className="h-3.5 w-3.5 mr-1.5" />
+                      {data.periodLabel}
+                    </Badge>
+                  )}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <Button asChild>
+                  <a href="#secteurs">
+                    <Briefcase className="h-4 w-4 mr-2" />
+                    Explorer par secteur
+                  </a>
+                </Button>
+                <Button asChild variant="outline">
+                  <a href="#prochains">
+                    Voir les prochains salons
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </a>
+                </Button>
               </div>
-            )}
-          </header>
+            </div>
+          </div>
+        </section>
+
+        <div className="w-full px-6 mx-auto max-w-[1400px] py-12">
 
           {isLoading && (
             <div className="flex items-center justify-center py-24">
@@ -117,19 +147,38 @@ const SalonsAnnualHub = () => {
             <>
               {/* Sectors */}
               {data.sectors.length > 0 && (
-                <section className="mb-12">
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">
-                    Salons {YEAR} par secteur
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
+                <section id="secteurs" className="mb-16 scroll-mt-24">
+                  <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
+                    <div>
+                      <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                        Explorer par secteur
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        {data.sectors.length} secteurs d'activité représentés en {YEAR}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {data.sectors.map(s => (
                       <Link
                         key={s.slug}
                         to={`/secteur/${s.slug}/${YEAR}`}
-                        className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent/10 hover:border-primary/30 transition-colors text-foreground"
+                        className="group block p-5 rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
                       >
-                        Salons {s.label} {YEAR}
-                        <span className="ml-1.5 text-muted-foreground">({s.count})</span>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">
+                            {s.label}
+                          </h3>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {s.count} salon{s.count > 1 ? 's' : ''} en {YEAR}
+                        </p>
+                        {s.topCities.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {s.topCities.join(' · ')}
+                          </p>
+                        )}
                       </Link>
                     ))}
                   </div>
@@ -138,19 +187,37 @@ const SalonsAnnualHub = () => {
 
               {/* Cities */}
               {data.cities.length > 0 && (
-                <section className="mb-12">
-                  <h2 className="text-2xl font-semibold text-foreground mb-4">
-                    Salons {YEAR} par ville
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
+                <section id="villes" className="mb-16 scroll-mt-24">
+                  <div className="mb-6">
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                      Explorer par ville
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {data.cities.length} villes accueillent au moins {ANNUAL_HUB_THRESHOLD} salons en {YEAR}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {data.cities.map(c => (
                       <Link
                         key={c.slug}
                         to={`/ville/${c.slug}/${YEAR}`}
-                        className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent/10 hover:border-primary/30 transition-colors text-foreground"
+                        className="group block p-5 rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
                       >
-                        Salons professionnels à {c.name} en {YEAR}
-                        <span className="ml-1.5 text-muted-foreground">({c.count})</span>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            {c.name}
+                          </h3>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {c.count} salon{c.count > 1 ? 's' : ''} en {YEAR}
+                        </p>
+                        {c.topSectors.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {c.topSectors.join(' · ')}
+                          </p>
+                        )}
                       </Link>
                     ))}
                   </div>
@@ -159,11 +226,16 @@ const SalonsAnnualHub = () => {
 
               {/* Featured */}
               {data.featured.length > 0 && (
-                <section className="mb-12">
-                  <h2 className="text-2xl font-semibold text-foreground mb-6">
-                    Prochains salons à venir
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+                <section id="prochains" className="mb-16 scroll-mt-24">
+                  <div className="mb-6">
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                      Prochains salons professionnels {YEAR}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Les prochains événements référencés sur Lotexpo.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5">
                     {data.featured.map(e => (
                       <EventCard key={e.id} event={toEvent(e)} view="grid" />
                     ))}
@@ -171,63 +243,75 @@ const SalonsAnnualHub = () => {
                 </section>
               )}
 
-              {/* By month */}
+              {/* Calendar by month — native <details> keeps content in the DOM */}
               {data.monthGroups.length > 0 && (
-                <section className="mb-12">
-                  <h2 className="text-2xl font-semibold text-foreground mb-6">
-                    Calendrier {YEAR} mois par mois
-                  </h2>
-                  <div className="space-y-10">
-                    {data.monthGroups.map(group => (
-                      <div key={group.monthLabel} className="border-t border-border pt-8 first:border-t-0 first:pt-0">
-                        <div className="flex items-baseline justify-between mb-4 flex-wrap gap-2">
-                          <h3 className="text-xl font-semibold text-foreground capitalize">{group.monthLabel}</h3>
-                          <span className="text-sm text-muted-foreground">
-                            {group.total} salon{group.total > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        <ul className="space-y-2">
-                          {group.events.map(e => (
-                            <li key={e.id} className="flex flex-wrap gap-x-2 text-sm">
-                              <Link to={`/events/${e.slug}`} className="text-primary hover:underline font-medium">
-                                {e.title}
+                <section id="calendrier" className="mb-16 scroll-mt-24">
+                  <div className="mb-6">
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                      Calendrier {YEAR} mois par mois
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Parcourez les salons à venir mois par mois.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {data.monthGroups.map((group, idx) => (
+                      <details
+                        key={group.key}
+                        open={idx < 2}
+                        className="group rounded-lg border border-border bg-card overflow-hidden"
+                      >
+                        <summary className="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer list-none hover:bg-muted/30 transition-colors">
+                          <div className="flex items-baseline gap-3 flex-wrap">
+                            <h3 className="text-lg font-semibold text-foreground capitalize">
+                              {group.monthLabel}
+                            </h3>
+                            <span className="text-sm text-muted-foreground">
+                              {group.total} salon{group.total > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0 transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="px-5 pb-5 pt-1 border-t border-border/50">
+                          <ul className="divide-y divide-border/40">
+                            {group.events.map(e => (
+                              <li key={e.id} className="py-3 flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <Link
+                                    to={`/events/${e.slug}`}
+                                    className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                                  >
+                                    {e.title}
+                                  </Link>
+                                  {e.ville && (
+                                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                      <MapPin className="h-3 w-3" />
+                                      {e.ville}
+                                    </p>
+                                  )}
+                                </div>
+                                {e.start_date && (
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">
+                                    {new Date(e.start_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                          {group.total > group.events.length && (
+                            <p className="mt-4 text-xs text-muted-foreground">
+                              + {group.total - group.events.length} autre{group.total - group.events.length > 1 ? 's' : ''} salon{group.total - group.events.length > 1 ? 's' : ''} ce mois-ci —{' '}
+                              <Link to="/" className="text-primary hover:underline font-medium">
+                                voir tous les salons
                               </Link>
-                              {e.ville && <span className="text-muted-foreground">— {e.ville}</span>}
-                              {e.start_date && (
-                                <span className="text-muted-foreground">
-                                  ({new Date(e.start_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })})
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                        {group.total > group.events.length && (
-                          <p className="mt-3 text-xs text-muted-foreground">
-                            + {group.total - group.events.length} autre{group.total - group.events.length > 1 ? 's' : ''} salon{group.total - group.events.length > 1 ? 's' : ''} ce mois-ci —{' '}
-                            <Link to="/" className="text-primary hover:underline">voir tous les salons sur la home</Link>
-                          </p>
-                        )}
-                      </div>
+                            </p>
+                          )}
+                        </div>
+                      </details>
                     ))}
                   </div>
                 </section>
               )}
-
-              {/* Internal linking */}
-              <section className="mb-12 border-t border-border pt-8">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Explorer Lotexpo</h2>
-                <div className="flex flex-wrap gap-3 text-sm">
-                  <Link to="/" className="text-primary hover:underline">Tous les salons à venir</Link>
-                  <span className="text-muted-foreground">·</span>
-                  <Link to="/events" className="text-primary hover:underline">Calendrier complet</Link>
-                  <span className="text-muted-foreground">·</span>
-                  <Link to="/exposants" className="text-primary hover:underline">Exposants</Link>
-                  <span className="text-muted-foreground">·</span>
-                  <Link to="/nouveautes" className="text-primary hover:underline">Nouveautés</Link>
-                  <span className="text-muted-foreground">·</span>
-                  <Link to="/blog" className="text-primary hover:underline">Blog</Link>
-                </div>
-              </section>
             </>
           )}
         </div>
