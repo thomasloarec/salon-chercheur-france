@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Loader2, Calendar, Building2, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
@@ -9,7 +9,6 @@ import { useCityHub, CITY_YEAR_INDEX_THRESHOLD } from '@/hooks/useCityHub';
 import { Badge } from '@/components/ui/badge';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import type { Event } from '@/types/event';
-import { CITY_ALIASES } from '@/lib/cityAliases';
 
 function canonicalToEvent(e: any): Event {
   return {
@@ -33,11 +32,6 @@ function canonicalToEvent(e: any): Event {
 
 const CityYearHub = () => {
   const { slug, year: yearParam } = useParams<{ slug: string; year: string }>();
-  // Satellite communes redirect to their parent hub's year page.
-  const aliasParent = slug ? CITY_ALIASES[slug] : undefined;
-  if (aliasParent) {
-    return <Navigate to={`/ville/${aliasParent.slug}/${yearParam}`} replace />;
-  }
   const year = Number(yearParam);
   const yearValid = Number.isInteger(year) && year >= 2020 && year <= 2099;
 

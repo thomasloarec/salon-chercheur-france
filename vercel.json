@@ -1,5 +1,37 @@
 {
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/ville/villepinte",
+      "destination": "/ville/paris",
+      "permanent": true
+    },
+    {
+      "source": "/ville/villepinte/:year",
+      "destination": "/ville/paris/:year",
+      "permanent": true
+    },
+    {
+      "source": "/ville/chassieu",
+      "destination": "/ville/lyon",
+      "permanent": true
+    },
+    {
+      "source": "/ville/chassieu/:year",
+      "destination": "/ville/lyon/:year",
+      "permanent": true
+    },
+    {
+      "source": "/ville/bruz",
+      "destination": "/ville/rennes",
+      "permanent": true
+    },
+    {
+      "source": "/ville/bruz/:year",
+      "destination": "/ville/rennes/:year",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!assets|favicon|logos|robots\\.txt|sitemap.*\\.xml|llms\\.txt|llms-full\\.txt).*)",

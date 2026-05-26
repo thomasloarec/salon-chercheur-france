@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { CITY_ALIASES } from '@/lib/cityAliases';
 import { Loader2, Calendar, Building2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -38,12 +37,6 @@ function canonicalToEvent(e: any): Event {
 
 const CityHub = () => {
   const { slug } = useParams<{ slug: string }>();
-  // Satellite communes (Villepinte, Chassieu, Bruz…) redirect to their
-  // parent hub to avoid SEO duplication. Their events are listed there.
-  const aliasParent = slug ? CITY_ALIASES[slug] : undefined;
-  if (aliasParent) {
-    return <Navigate to={`/ville/${aliasParent.slug}`} replace />;
-  }
   const { data: hub, isLoading, error } = useCityHub(slug);
   const { data: allSectors = [] } = useSectors();
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
