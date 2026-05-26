@@ -294,12 +294,26 @@ const SalonsAnnualHub = () => {
                                   >
                                     {e.title}
                                   </Link>
-                                  {e.ville && (
-                                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                                      <MapPin className="h-3 w-3" />
-                                      {e.ville}
-                                    </p>
-                                  )}
+                                  <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                    {e.ville && (
+                                      <span className="flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        {e.ville}
+                                      </span>
+                                    )}
+                                    {(() => {
+                                      const aff = formatAffluence(e.affluence ?? undefined);
+                                      if (!e.affluence || aff === 'Affluence inconnue') return null;
+                                      const isNumeric = /^\d/.test(aff.replace(/\s/g, ''));
+                                      if (!isNumeric) return null;
+                                      return (
+                                        <span className="flex items-center gap-1" title="Affluence estimée">
+                                          <Users className="h-3 w-3" />
+                                          {aff} visiteurs
+                                        </span>
+                                      );
+                                    })()}
+                                  </div>
                                 </div>
                                 {e.start_date && (
                                   <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">
