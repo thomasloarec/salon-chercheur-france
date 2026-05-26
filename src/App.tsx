@@ -61,6 +61,7 @@ import NotFound from '@/pages/NotFound';
 import SectorHub from '@/pages/SectorHub';
 import SectorYearHub from '@/pages/SectorYearHub';
 import CityHub from '@/pages/CityHub';
+import CityYearHub from '@/pages/CityYearHub';
 import './App.css';
 
 // Global listener for pending visit plan redirect after OAuth
@@ -154,6 +155,7 @@ function App() {
                <Route path="/secteur/:slug" element={<SectorHub />} />
                 <Route path="/secteur/:slug/:year" element={<SectorYearHub />} />
                <Route path="/ville/:slug" element={<CityHub />} />
+               <Route path="/ville/:slug/:year" element={<CityYearHub />} />
                <Route path="*" element={<NotFound />} />
               </Routes>
                 <OnboardingTour />
