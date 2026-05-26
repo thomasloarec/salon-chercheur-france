@@ -88,6 +88,7 @@ function wrapIndex(items) {
 const staticPages = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
   { path: '/events', changefreq: 'daily', priority: '0.9' },
+  { path: '/salons-professionnels-2026', changefreq: 'daily', priority: '0.9' },
   { path: '/nouveautes', changefreq: 'daily', priority: '0.8' },
   { path: '/exposants', changefreq: 'weekly', priority: '0.7' },
   { path: '/blog', changefreq: 'weekly', priority: '0.7' },

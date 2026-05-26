@@ -36,6 +36,7 @@ const Footer = () => {
             <h4 className="text-lg font-semibold mb-4">Navigation</h4>
             <ul className="space-y-2">
               <li><Link to="/" className="text-gray-300 hover:text-accent transition-colors">Accueil</Link></li>
+              <li><Link to="/salons-professionnels-2026" className="text-gray-300 hover:text-accent transition-colors">Salons professionnels 2026</Link></li>
               <li><Link to="/nouveautes" className="text-gray-300 hover:text-accent transition-colors">Nouveautés</Link></li>
               <li><Link to="/exposants" className="text-gray-300 hover:text-accent transition-colors">Exposants</Link></li>
               <li><Link to="/radar-crm" className="text-gray-300 hover:text-accent transition-colors">Radar CRM <span className="text-[10px] uppercase ml-1 text-accent">Beta</span></Link></li>
