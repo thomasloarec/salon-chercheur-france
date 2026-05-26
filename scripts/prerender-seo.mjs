@@ -288,26 +288,31 @@ function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
     + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`
     + `<script type="application/ld+json">${safeJsonLd(itemList)}</script>`;
 
-  const sectorsLis = sectors.map(s =>
-    `<li><a href="/secteur/${s.slug}/${year}">Salons ${escapeHtml(s.label)} ${year}</a> (${s.count})</li>`
-  ).join('');
-  const citiesLis = cities.map(c =>
-    `<li><a href="/ville/${c.slug}/${year}">Salons professionnels à ${escapeHtml(c.name)} en ${year}</a> (${c.count})</li>`
-  ).join('');
-  const upcomingLis = eventsFuture.slice(0, 10).map(e =>
+  const sectorsLis = sectors.map(s => {
+    const cities = (s.topCities && s.topCities.length) ? ` — ${s.topCities.join(', ')}` : '';
+    return `<li><a href="/secteur/${s.slug}/${year}">Salons ${escapeHtml(s.label)} ${year}</a> (${s.count} salon${s.count > 1 ? 's' : ''})${escapeHtml(cities)}</li>`;
+  }).join('');
+  const citiesLis = cities.map(c => {
+    const sec = (c.topSectors && c.topSectors.length) ? ` — ${c.topSectors.join(', ')}` : '';
+    return `<li><a href="/ville/${c.slug}/${year}">Salons professionnels à ${escapeHtml(c.name)} en ${year}</a> (${c.count} salon${c.count > 1 ? 's' : ''})${escapeHtml(sec)}</li>`;
+  }).join('');
+  const upcomingLis = eventsFuture.slice(0, 12).map(e =>
     `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.ville ? ' – ' + escapeHtml(e.ville) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`
   ).join('');
-  const monthsLis = monthGroups.map(g =>
-    `<li><strong>${escapeHtml(g.label)}</strong> – ${g.total} salon${g.total > 1 ? 's' : ''}</li>`
-  ).join('');
+  const monthsBlocks = monthGroups.map(g => {
+    const evLis = (g.events || []).map(e =>
+      `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.ville ? ' – ' + escapeHtml(e.ville) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`
+    ).join('');
+    return `<section><h3>${escapeHtml(g.label)} – ${g.total} salon${g.total > 1 ? 's' : ''}</h3>${evLis ? `<ul>${evLis}</ul>` : ''}</section>`;
+  }).join('');
 
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>Salons professionnels ${year} en France</h1>
-    <p>Retrouvez les ${eventsFuture.length} salons professionnels programmés en France en ${year}. Cette page regroupe les événements à venir par mois, secteur et ville, avec des liens vers les fiches détaillées des salons référencés sur Lotexpo.</p>
-    ${sectorsLis ? `<h2>Salons ${year} par secteur</h2><ul>${sectorsLis}</ul>` : ''}
-    ${citiesLis ? `<h2>Salons ${year} par ville</h2><ul>${citiesLis}</ul>` : ''}
-    ${upcomingLis ? `<h2>Prochains salons à venir</h2><ul>${upcomingLis}</ul>` : ''}
-    ${monthsLis ? `<h2>Calendrier ${year} mois par mois</h2><ul>${monthsLis}</ul>` : ''}
+    <p>Retrouvez les ${eventsFuture.length} salons professionnels programmés en France en ${year}. Explorez les événements par secteur, ville ou période, puis accédez aux fiches détaillées des salons référencés sur Lotexpo.</p>
+    ${sectorsLis ? `<h2>Explorer par secteur</h2><ul>${sectorsLis}</ul>` : ''}
+    ${citiesLis ? `<h2>Explorer par ville</h2><ul>${citiesLis}</ul>` : ''}
+    ${upcomingLis ? `<h2>Prochains salons professionnels ${year}</h2><ul>${upcomingLis}</ul>` : ''}
+    ${monthsBlocks ? `<h2>Calendrier ${year} mois par mois</h2>${monthsBlocks}` : ''}
     <p><a href="/">Tous les salons à venir</a> · <a href="/events">Calendrier complet</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body };
