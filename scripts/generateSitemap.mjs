@@ -202,6 +202,38 @@ for (const ev of eligibleEvents) {
 }
 const eligibleCities = Object.entries(cityCount).filter(([, c]) => c >= 3).map(([s]) => s).sort();
 
+// City × year counts — Option B: FUTURE events only, indexable if >= 3.
+const CITY_YEAR_THRESHOLD = 3;
+const cityYearCount = {}; // { [slug]: { [year]: number } }
+const cityYearLastmod = {}; // { [slug]: { [year]: Date } }
+const cityNameBySlug = {}; // for reference (unused but cheap)
+for (const ev of eligibleEvents) {
+  if (!ev.ville || !ev.date_debut) continue;
+  const endStr = (ev.date_fin || ev.date_debut || '').slice(0, 10);
+  if (endStr < todayStr) continue; // future only
+  const cslug = slugifyCity(ev.ville);
+  if (!cslug) continue;
+  const year = new Date(ev.date_debut).getFullYear();
+  if (!Number.isFinite(year)) continue;
+  cityNameBySlug[cslug] = cityNameBySlug[cslug] || ev.ville;
+  cityYearCount[cslug] = cityYearCount[cslug] || {};
+  cityYearCount[cslug][year] = (cityYearCount[cslug][year] || 0) + 1;
+  const d = ev.updated_at ? new Date(ev.updated_at) : null;
+  if (d) {
+    cityYearLastmod[cslug] = cityYearLastmod[cslug] || {};
+    if (!cityYearLastmod[cslug][year] || d > cityYearLastmod[cslug][year]) {
+      cityYearLastmod[cslug][year] = d;
+    }
+  }
+}
+const eligibleCityYears = [];
+for (const cslug of Object.keys(cityYearCount)) {
+  for (const [year, n] of Object.entries(cityYearCount[cslug])) {
+    if (n >= CITY_YEAR_THRESHOLD) eligibleCityYears.push({ slug: cslug, year: Number(year), n });
+  }
+}
+eligibleCityYears.sort((a, b) => a.slug.localeCompare(b.slug) || a.year - b.year);
+
 // Sector × year counts (date_debut year). Indexable if count >= 3 for that sector & year.
 const SECTOR_YEAR_THRESHOLD = 3;
 const sectorYearCount = {}; // { [slug]: { [year]: number } }
@@ -246,6 +278,11 @@ const hubItems = [
     return urlBlock(`${SITE_URL}/secteur/${slug}/${year}`, lastmod, 'weekly', '0.6');
   }),
   ...eligibleCities.map((s) => urlBlock(`${SITE_URL}/ville/${s}`, cityLastmod(s), 'weekly', '0.7')),
+  ...eligibleCityYears.map(({ slug, year }) => {
+    const d = cityYearLastmod[slug]?.[year];
+    const lastmod = d ? d.toISOString().split('T')[0] : now;
+    return urlBlock(`${SITE_URL}/ville/${slug}/${year}`, lastmod, 'weekly', '0.6');
+  }),
 ];
 const hubsXml = wrapUrlset(hubItems.join('\n'));
 
@@ -281,5 +318,7 @@ console.log(`Sector hubs (deduped):                    ${uniqSectors.length}`);
 console.log(`Sector×year pages (>=${SECTOR_YEAR_THRESHOLD} events):           ${eligibleSectorYears.length}`);
 for (const sy of eligibleSectorYears) console.log(`  - /secteur/${sy.slug}/${sy.year}  (${sy.n} events)`);
 console.log(`City hubs (>=3 events):                   ${eligibleCities.length}`);
+console.log(`City×year pages (>=${CITY_YEAR_THRESHOLD} future events):       ${eligibleCityYears.length}`);
+for (const cy of eligibleCityYears) console.log(`  - /ville/${cy.slug}/${cy.year}  (${cy.n} future events)`);
 console.log('=====================\n');
 console.log('[sitemap:build] index + 4 segmented sitemaps written to public/');
