@@ -162,11 +162,10 @@ const SalonsAnnualHub = () => {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {data.sectors.map(s => (
-                      (() => {
-                        const Icon = sectorIconMap[s.slug] ?? FallbackIcon;
-                        return (
-                      <Link
+                    {data.sectors.map(s => {
+                      const Icon = sectorIconMap[s.slug] ?? FallbackIcon;
+                      return (
+                        <Link
                         key={s.slug}
                         to={`/secteur/${s.slug}/${YEAR}`}
                         className="group block p-5 rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all"
@@ -190,10 +189,9 @@ const SalonsAnnualHub = () => {
                             {s.topCities.join(' · ')}
                           </p>
                         )}
-                      </Link>
-                        );
-                      })()
-                    ))}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </section>
               )}
