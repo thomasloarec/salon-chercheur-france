@@ -681,16 +681,25 @@ async function main() {
     for (const e of futureOfYear) {
       const sec = e.secteur;
       const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
+      const raw = e.ville ? slugify(e.ville) : '';
+      const hubSlug = raw ? cityHubSlug(e.ville) : '';
+      const hubName = hubSlug
+        ? ((CITY_ALIASES[raw] && CITY_ALIASES[raw].name) || e.ville)
+        : '';
       for (const lbl of list) {
         const slug = slugify(String(lbl));
         if (!CANONICAL_SECTORS.includes(slug)) continue;
-        sectorAcc[slug] = sectorAcc[slug] || { label: String(lbl), count: 0 };
+        sectorAcc[slug] = sectorAcc[slug] || { label: String(lbl), count: 0, cityCounts: {} };
         sectorAcc[slug].count++;
+        if (hubName) sectorAcc[slug].cityCounts[hubName] = (sectorAcc[slug].cityCounts[hubName] || 0) + 1;
       }
     }
     const annualSectors = Object.entries(sectorAcc)
       .filter(([, v]) => v.count >= ANNUAL_THRESHOLD)
-      .map(([slug, v]) => ({ slug, label: v.label, count: v.count }))
+      .map(([slug, v]) => ({
+        slug, label: v.label, count: v.count,
+        topCities: Object.entries(v.cityCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n]) => n),
+      }))
       .sort((a, b) => b.count - a.count);
 
     // cities >= threshold (with alias merge)
@@ -702,14 +711,22 @@ async function main() {
       if (!hubSlug) continue;
       if (!cityAcc[hubSlug]) {
         const aliasName = CITY_ALIASES[raw] && CITY_ALIASES[raw].name;
-        cityAcc[hubSlug] = { name: aliasName || e.ville, count: 0 };
+        cityAcc[hubSlug] = { name: aliasName || e.ville, count: 0, sectorCounts: {} };
       }
       if (raw === hubSlug) cityAcc[hubSlug].name = e.ville;
       cityAcc[hubSlug].count++;
+      const sec = e.secteur;
+      const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
+      for (const lbl of list) {
+        cityAcc[hubSlug].sectorCounts[String(lbl)] = (cityAcc[hubSlug].sectorCounts[String(lbl)] || 0) + 1;
+      }
     }
     const annualCities = Object.entries(cityAcc)
       .filter(([, v]) => v.count >= ANNUAL_THRESHOLD)
-      .map(([slug, v]) => ({ slug, name: v.name, count: v.count }))
+      .map(([slug, v]) => ({
+        slug, name: v.name, count: v.count,
+        topSectors: Object.entries(v.sectorCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n]) => n),
+      }))
       .sort((a, b) => b.count - a.count);
 
     // months
@@ -725,7 +742,7 @@ async function main() {
     const monthGroups = monthOrder.map((k) => {
       const [y, m] = k.split('-');
       const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-      return { label, total: monthMap[k].length };
+      return { label, total: monthMap[k].length, events: monthMap[k].slice(0, 5) };
     });
 
     const built = buildAnnualHub(ANNUAL_YEAR, futureOfYear, annualSectors, annualCities, monthGroups);
