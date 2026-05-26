@@ -23,7 +23,7 @@ export default function OnPageSection({ data }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <h2 className="text-xl font-bold">3. Audit On-Page SEO</h2>
+        <h2 id="audit-onpage" className="text-xl font-bold scroll-mt-20">3. Audit On-Page SEO</h2>
         <SeoStatusBadge status={getSectionStatus(data, 'onpage')} />
       </div>
 
