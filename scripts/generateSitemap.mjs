@@ -94,7 +94,7 @@ const staticXml = wrapUrlset(staticPages.map((p) => urlBlock(`${SITE_URL}${p.pat
 // ----- 2. events (with full audit) -----
 const { data: events, error: eventsError } = await supabase
   .from('events')
-  .select('id, slug, updated_at, date_debut, secteur, ville, enrichissement_date, visible, is_test')
+  .select('id, slug, updated_at, date_debut, date_fin, secteur, ville, enrichissement_date, visible, is_test')
   .eq('visible', true)
   .eq('is_test', false)
   .order('date_debut', { ascending: false })
@@ -206,8 +206,12 @@ const eligibleCities = Object.entries(cityCount).filter(([, c]) => c >= 3).map((
 const SECTOR_YEAR_THRESHOLD = 3;
 const sectorYearCount = {}; // { [slug]: { [year]: number } }
 const sectorYearLastmod = {}; // { [slug]: { [year]: Date } }
+const todayStr = new Date().toISOString().slice(0, 10);
 for (const ev of eligibleEvents) {
   if (!ev.date_debut) continue;
+  // Option B: year pages only contain FUTURE events of that year.
+  const endStr = (ev.date_fin || ev.date_debut || '').slice(0, 10);
+  if (endStr < todayStr) continue;
   const year = new Date(ev.date_debut).getFullYear();
   if (!Number.isFinite(year)) continue;
   const list = Array.isArray(ev.secteur) ? ev.secteur : [];

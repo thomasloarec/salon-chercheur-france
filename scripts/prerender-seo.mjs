@@ -467,9 +467,9 @@ async function main() {
       await writeRoute(`/secteur/${slug}`, applyToShell(baseTemplate, built));
       stats.sectors++;
 
-      // 5b. sector × year pages (date_debut year, indexable if >= 3 events of any status — past or future)
+      // 5b. sector × year pages — Option B: FUTURE events only of that year, indexable if >= 3.
       const SECTOR_YEAR_THRESHOLD = 3;
-      const allForSector = events.filter((e) => {
+      const allForSector = upcoming.filter((e) => {
         const sec = e.secteur;
         const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
         return list.some((s) => slugify(String(s)) === slug);
