@@ -14,6 +14,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { CITY_ALIASES } from './cityAliases.mjs';
 
 const t0 = Date.now();
 const DIST = path.resolve('dist');
@@ -69,6 +70,12 @@ function safeJsonLd(obj) {
 }
 function slugify(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+// Satellite communes mapped onto a parent city hub (Chassieu→Lyon, etc).
+function cityHubSlug(s) {
+  const raw = slugify(s);
+  if (!raw) return '';
+  return (CITY_ALIASES[raw] && CITY_ALIASES[raw].slug) || raw;
 }
 function firstSector(secteur) {
   if (!secteur) return null;
@@ -560,14 +567,20 @@ async function main() {
   const cityLabel = {};
   for (const e of events) {
     if (!e.ville) continue;
-    const s = slugify(e.ville); if (!s) continue;
+    const raw = slugify(e.ville);
+    const s = cityHubSlug(e.ville);
+    if (!s) continue;
     cityCount[s] = (cityCount[s] || 0) + 1;
-    if (!cityLabel[s]) cityLabel[s] = e.ville;
+    // Prefer a direct (non-aliased) ville as the canonical label so
+    // /ville/lyon stays labelled "Lyon" even if a Chassieu event is seen first.
+    if (!cityLabel[s] || (raw === s && cityLabel[s] && slugify(cityLabel[s]) !== s)) {
+      cityLabel[s] = e.ville;
+    }
   }
   const eligibleCities = Object.keys(cityCount).filter((s) => cityCount[s] >= 3);
   for (const slug of eligibleCities) {
     try {
-      const matches = upcoming.filter((e) => e.ville && slugify(e.ville) === slug)
+      const matches = upcoming.filter((e) => e.ville && cityHubSlug(e.ville) === slug)
         .sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
       const built = buildCity(slug, cityLabel[slug], matches);
       await writeRoute(`/ville/${slug}`, applyToShell(baseTemplate, built));

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeEventRow } from '@/lib/normalizeEvent';
 import type { CanonicalEvent } from '@/types/lotexpo';
+import { CITY_ALIASES, CANONICAL_HUB_CITY_NAMES } from '@/lib/cityAliases';
 
 export const CITY_YEAR_INDEX_THRESHOLD = 3;
 
@@ -62,13 +63,25 @@ export function useCityHub(slug: string | undefined, options: UseCityHubOptions 
 
       const events = (data ?? []).map(normalizeEventRow);
 
-      // Find city name matching slug
-      const cityNames = new Set(events.map(e => e.ville).filter(Boolean) as string[]);
-      const cityName = Array.from(cityNames).find(c => cityNameToSlug(c) === slug);
+      // Map every event's ville to a hub slug (applying alias overrides
+      // for satellite communes like Chassieu→Lyon, Villepinte→Paris…).
+      const hubSlugOf = (v: string | null | undefined): string | null => {
+        if (!v) return null;
+        const raw = cityNameToSlug(v);
+        if (!raw) return null;
+        return CITY_ALIASES[raw]?.slug ?? raw;
+      };
 
+      // Resolve canonical city name for this hub slug.
+      // 1) Prefer an event whose own ville slug matches the hub slug
+      //    (e.g. an event in "Lyon" for the /ville/lyon hub).
+      // 2) Fallback to a hardcoded canonical name (for hubs only fed by
+      //    aliases, though normally these also have direct events).
+      const directMatch = events.find(e => e.ville && cityNameToSlug(e.ville) === slug)?.ville;
+      const cityName = directMatch ?? CANONICAL_HUB_CITY_NAMES[slug] ?? null;
       if (!cityName) return null;
 
-      const cityEvents = events.filter(e => e.ville === cityName);
+      const cityEvents = events.filter(e => hubSlugOf(e.ville) === slug);
       // Evergreen needs the city to have ≥3 events overall; year pages render
       // even at 0 (they'll be noindex below threshold) so the route stays usable.
       if (year === null && cityEvents.length < 3) return null;

@@ -12,6 +12,7 @@ import { createClient } from '@supabase/supabase-js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { CITY_ALIASES } from './cityAliases.mjs';
 
 const SITE_URL = 'https://lotexpo.com';
 const PUBLIC_DIR = path.resolve('public');
@@ -60,6 +61,13 @@ const slugifyCity = (s) =>
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+// Satellite communes are merged into the parent city hub (Chassieu→Lyon,
+// Villepinte→Paris, Bruz→Rennes…).
+const hubSlugOfCity = (s) => {
+  const raw = slugifyCity(s);
+  if (!raw) return '';
+  return (CITY_ALIASES[raw] && CITY_ALIASES[raw].slug) || raw;
+};
 
 const now = new Date().toISOString().split('T')[0];
 
@@ -185,7 +193,7 @@ function sectorLastmod(slug) {
 function cityLastmod(slug) {
   let max = null;
   for (const ev of eligibleEvents) {
-    if (ev.ville && slugifyCity(ev.ville) === slug) {
+    if (ev.ville && hubSlugOfCity(ev.ville) === slug) {
       const d = ev.updated_at ? new Date(ev.updated_at) : null;
       if (d && (!max || d > max)) max = d;
     }
@@ -196,7 +204,7 @@ function cityLastmod(slug) {
 const cityCount = {};
 for (const ev of eligibleEvents) {
   if (!ev.ville) continue;
-  const s = slugifyCity(ev.ville);
+  const s = hubSlugOfCity(ev.ville);
   if (!s) continue;
   cityCount[s] = (cityCount[s] || 0) + 1;
 }
@@ -213,7 +221,7 @@ for (const ev of eligibleEvents) {
   if (!ev.ville || !ev.date_debut) continue;
   const endStr = (ev.date_fin || ev.date_debut || '').slice(0, 10);
   if (endStr < todayStr) continue; // future only
-  const cslug = slugifyCity(ev.ville);
+  const cslug = hubSlugOfCity(ev.ville);
   if (!cslug) continue;
   const year = new Date(ev.date_debut).getFullYear();
   if (!Number.isFinite(year)) continue;
