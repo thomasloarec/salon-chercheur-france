@@ -187,6 +187,36 @@ const SectorHub = () => {
             </section>
           )}
 
+          {/* Explorer par année */}
+          {hub.yearsBreakdown.length > 0 && (
+            <section className="mb-12 border-t border-border pt-8">
+              <h2 className="text-xl font-semibold text-foreground mb-4">
+                Explorer par année
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {hub.yearsBreakdown.map(y => (
+                  y.indexable ? (
+                    <Link
+                      key={y.year}
+                      to={`/secteur/${hub.sectorSlug}/${y.year}`}
+                      className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors text-foreground"
+                    >
+                      Salons {hub.sectorLabel} {y.year} ({y.count})
+                    </Link>
+                  ) : (
+                    <span
+                      key={y.year}
+                      className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-muted/30 text-muted-foreground"
+                      title="Peu d'événements référencés"
+                    >
+                      {y.year} : peu d'événements référencés ({y.count})
+                    </span>
+                  )
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Blog articles */}
           {articles.length > 0 && (
             <section className="mb-12">

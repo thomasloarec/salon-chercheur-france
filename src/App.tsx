@@ -151,6 +151,7 @@ function App() {
               <Route path="/oauth/hubspot/test" element={<OAuthHubspotTest />} />
               <Route path="/api/oauth/hubspot/callback" element={<LegacyHubspotApiCallback />} />
                <Route path="/secteur/:slug" element={<SectorHub />} />
+                <Route path="/secteur/:slug/:year" element={<SectorYearHub />} />
                <Route path="/ville/:slug" element={<CityHub />} />
                <Route path="*" element={<NotFound />} />
               </Routes>
