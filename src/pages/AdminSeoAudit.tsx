@@ -14,6 +14,7 @@ import InternalLinkingSection from '@/components/seo-audit/InternalLinkingSectio
 import ManualChecklistSection from '@/components/seo-audit/ManualChecklistSection';
 import KeywordTrackingSection from '@/components/seo-audit/KeywordTrackingSection';
 import QuickWinsSection from '@/components/seo-audit/QuickWinsSection';
+import QuickViewSection from '@/components/seo-audit/QuickViewSection';
 import {
   Search, Zap, FileText, Code, Link2, CheckSquare, Target, Rocket,
   Download, RefreshCw, Globe
@@ -148,6 +149,15 @@ const AdminSeoAudit = () => {
           </div>
 
           {/* Sections */}
+          <QuickViewSection results={results} />
+
+          <div className="relative my-2">
+            <hr className="border-dashed" />
+            <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-background px-3 text-xs uppercase tracking-wider text-muted-foreground">
+              Analyse détaillée ↓
+            </span>
+          </div>
+
           <section id="section-crawlability"><CrawlabilitySection data={results} /></section>
           <hr className="border-dashed" />
           <section id="section-performance"><PerformanceSection data={results} /></section>
