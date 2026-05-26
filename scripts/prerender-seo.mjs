@@ -309,6 +309,57 @@ function buildSector(slug, label, top) {
   return { title, description, canonical, headExtra, body };
 }
 
+function buildSectorYear(slug, label, year, eventsOfYear, otherYears) {
+  const sectorLabel = label || slug.replace(/-/g, ' ');
+  const n = eventsOfYear.length;
+  const title = truncate(`Salons ${sectorLabel} en France en ${year} | Lotexpo`, 70);
+  const description = truncate(`${n} salons ${sectorLabel} programmés en ${year} en France. Consultez les dates, lieux, villes, exposants et informations pratiques sur Lotexpo.`, 160);
+  const evergreen = `${SITE_ORIGIN}/secteur/${slug}`;
+  const self = `${SITE_ORIGIN}/secteur/${slug}/${year}`;
+  const canonical = self;
+  // top cities for intro
+  const cityCount = {};
+  for (const e of eventsOfYear) { if (e.ville) cityCount[e.ville] = (cityCount[e.ville] || 0) + 1; }
+  const topCities = Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([c]) => c);
+  const introCities = topCities.length ? ` Principales villes représentées : ${topCities.join(', ')}.` : '';
+  const breadcrumb = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 3, name: `Salons ${sectorLabel}`, item: evergreen },
+      { '@type': 'ListItem', position: 4, name: `Salons ${sectorLabel} ${year}`, item: self },
+    ],
+  };
+  const itemList = {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    name: `Salons ${sectorLabel} en France en ${year}`,
+    numberOfItems: n,
+    itemListElement: eventsOfYear.slice(0, 50).map((e, i) => ({
+      '@type': 'ListItem', position: i + 1,
+      url: `${SITE_ORIGIN}/events/${encodeURIComponent(e.slug)}`,
+      name: e.nom_event,
+    })),
+  };
+  const headExtra = commonHead(canonical, title, description)
+    + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`
+    + `<script type="application/ld+json">${safeJsonLd(itemList)}</script>`;
+  const eventLis = eventsOfYear.slice(0, 60).map((e) =>
+    `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.ville ? ' – ' + escapeHtml(e.ville) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`,
+  ).join('');
+  const otherYearsLis = otherYears.map((y) =>
+    `<li><a href="/secteur/${slug}/${y}">Salons ${escapeHtml(sectorLabel)} ${y}</a></li>`,
+  ).join('');
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>Salons ${escapeHtml(String(sectorLabel))} en France en ${year}</h1>
+    <p>Retrouvez les ${n} salons professionnels du secteur ${escapeHtml(String(sectorLabel))} programmés en France en ${year}.${escapeHtml(introCities)} Cette page regroupe les événements de l'année avec leurs dates, villes, lieux et liens vers les fiches détaillées.</p>
+    <ul>${eventLis}</ul>
+    <p><a href="/secteur/${slug}">Voir tous les salons ${escapeHtml(String(sectorLabel))}</a></p>
+    ${otherYearsLis ? `<h2>Autres années disponibles</h2><ul>${otherYearsLis}</ul>` : ''}
+  </div>`;
+  return { title, description, canonical, headExtra, body };
+}
+
 function buildCity(slug, label, top) {
   const cityLabel = label || slug.replace(/-/g, ' ');
   const title = truncate(`Salons professionnels à ${cityLabel} | Lotexpo`, 70);
@@ -349,7 +400,7 @@ async function main() {
   console.log(`[prerender] shell size=${baseTemplate.length}`);
 
   let errors = 0;
-  const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, cities: 0 };
+  const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0 };
 
   // 2. fetch events
   const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
@@ -415,6 +466,34 @@ async function main() {
       const built = buildSector(slug, label, matches);
       await writeRoute(`/secteur/${slug}`, applyToShell(baseTemplate, built));
       stats.sectors++;
+
+      // 5b. sector × year pages (date_debut year, indexable if >= 3 events of any status — past or future)
+      const SECTOR_YEAR_THRESHOLD = 3;
+      const allForSector = events.filter((e) => {
+        const sec = e.secteur;
+        const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
+        return list.some((s) => slugify(String(s)) === slug);
+      });
+      const byYear = {};
+      for (const ev of allForSector) {
+        if (!ev.date_debut) continue;
+        const y = new Date(ev.date_debut).getFullYear();
+        if (!Number.isFinite(y)) continue;
+        (byYear[y] = byYear[y] || []).push(ev);
+      }
+      const eligibleYears = Object.entries(byYear)
+        .filter(([, list]) => list.length >= SECTOR_YEAR_THRESHOLD)
+        .map(([y]) => Number(y))
+        .sort((a, b) => a - b);
+      for (const y of eligibleYears) {
+        try {
+          const evYear = byYear[y].sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
+          const others = eligibleYears.filter((yy) => yy !== y);
+          const built2 = buildSectorYear(slug, label, y, evYear, others);
+          await writeRoute(`/secteur/${slug}/${y}`, applyToShell(baseTemplate, built2));
+          stats.sectorYears++;
+        } catch (e) { errors++; console.warn('[prerender] sector-year failed', slug, y, e.message); }
+      }
     } catch (e) { errors++; console.warn('[prerender] sector failed', slug, e.message); }
   }
 
@@ -452,6 +531,7 @@ async function main() {
   console.log(`Events w/ exh:     ${stats.eventsWithExh}`);
   console.log(`Blog articles:     ${stats.blog}`);
   console.log(`Sector hubs:       ${stats.sectors}`);
+  console.log(`Sector×year pages: ${stats.sectorYears}`);
   console.log(`City hubs:         ${stats.cities}`);
   console.log(`Errors:            ${errors}`);
   console.log(`Duration:          ${dur}s`);

@@ -4,6 +4,14 @@ import { CANONICAL_SECTORS, normalizeSectorSlug, sectorSlugToDbLabels } from '@/
 import { normalizeEventRow } from '@/lib/normalizeEvent';
 import type { CanonicalEvent } from '@/types/lotexpo';
 
+export const SECTOR_YEAR_INDEX_THRESHOLD = 3;
+
+export interface SectorYearBreakdown {
+  year: number;
+  count: number;
+  indexable: boolean;
+}
+
 export interface SectorHubData {
   sectorSlug: string;
   sectorLabel: string;
@@ -12,11 +20,21 @@ export interface SectorHubData {
   pastEvents: CanonicalEvent[];
   totalCount: number;
   topCities: string[];
+  /** For year-scoped pages: the year applied to the filter, otherwise null. */
+  year: number | null;
+  /** Breakdown of upcoming events per year (date_debut year >= today's year). */
+  yearsBreakdown: SectorYearBreakdown[];
 }
 
-export function useSectorHub(slug: string | undefined) {
+export interface UseSectorHubOptions {
+  /** When set, scopes upcomingEvents to events whose start_date is in this calendar year. */
+  year?: number | null;
+}
+
+export function useSectorHub(slug: string | undefined, options: UseSectorHubOptions = {}) {
+  const year = options.year ?? null;
   return useQuery({
-    queryKey: ['sector-hub', slug],
+    queryKey: ['sector-hub', slug, year],
     queryFn: async (): Promise<SectorHubData | null> => {
       if (!slug) return null;
 
@@ -45,6 +63,7 @@ export function useSectorHub(slug: string | undefined) {
 
       const events = (data ?? []).map(normalizeEventRow);
       const todayStr = new Date().toISOString().slice(0, 10);
+      const currentYear = new Date().getFullYear();
 
       const upcoming = events.filter(e => {
         const end = e.end_date || e.start_date;
@@ -56,9 +75,34 @@ export function useSectorHub(slug: string | undefined) {
         return end ? end < todayStr : false;
       }).reverse(); // Most recent first
 
-      // Top cities
+      // Years breakdown built from upcoming events (current year and beyond)
+      const yearCount: Record<number, number> = {};
+      upcoming.forEach(e => {
+        if (!e.start_date) return;
+        const y = Number(String(e.start_date).slice(0, 4));
+        if (!Number.isFinite(y) || y < currentYear) return;
+        yearCount[y] = (yearCount[y] || 0) + 1;
+      });
+      const yearsBreakdown: SectorYearBreakdown[] = Object.entries(yearCount)
+        .map(([y, c]) => ({ year: Number(y), count: c, indexable: c >= SECTOR_YEAR_INDEX_THRESHOLD }))
+        .sort((a, b) => a.year - b.year);
+
+      // Year-scoped mode: replace upcoming with strict-year events (past or future),
+      // and clear pastEvents to avoid mixing years on a year page.
+      let upcomingScoped = upcoming;
+      let pastScoped = past;
+      if (year !== null) {
+        upcomingScoped = events.filter(e => {
+          if (!e.start_date) return false;
+          return Number(String(e.start_date).slice(0, 4)) === year;
+        });
+        pastScoped = [];
+      }
+
+      // Top cities (scoped to current dataset for accurate cards)
+      const baseForCities = year !== null ? upcomingScoped : events;
       const cityCount: Record<string, number> = {};
-      events.forEach(e => {
+      baseForCities.forEach(e => {
         if (e.ville) {
           cityCount[e.ville] = (cityCount[e.ville] || 0) + 1;
         }
@@ -71,11 +115,15 @@ export function useSectorHub(slug: string | undefined) {
       return {
         sectorSlug: normalized,
         sectorLabel: sector.label,
-        description: `Retrouvez tous les salons professionnels du secteur ${sector.label} en France. Consultez les dates, lieux et informations pratiques pour planifier vos visites.`,
-        upcomingEvents: upcoming,
-        pastEvents: past,
+        description: year !== null
+          ? `Retrouvez les salons professionnels du secteur ${sector.label} programmés en France en ${year}. Cette page regroupe les événements de l'année avec leurs dates, villes, lieux et liens vers les fiches détaillées.`
+          : `Retrouvez tous les salons professionnels du secteur ${sector.label} en France. Consultez les dates, lieux et informations pratiques pour planifier vos visites.`,
+        upcomingEvents: upcomingScoped,
+        pastEvents: pastScoped,
         totalCount: events.length,
         topCities,
+        year,
+        yearsBreakdown,
       };
     },
     enabled: !!slug,
