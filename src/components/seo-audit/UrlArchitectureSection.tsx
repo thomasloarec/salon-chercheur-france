@@ -113,25 +113,116 @@ export default function UrlArchitectureSection({ data }: Props) {
               Contenu mince ({d.thinContent.length} pages &lt; 300 mots)
             </CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Salon</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>Mots</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {d.thinContent.slice(0, 15).map((tc: any) => (
-                  <TableRow key={tc.url}>
-                    <TableCell className="max-w-[200px] truncate">{tc.name}</TableCell>
-                    <TableCell className="font-mono text-xs">{tc.url}</TableCell>
-                    <TableCell className="text-red-600 font-semibold">{tc.wordCount}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="space-y-6 overflow-x-auto">
+            {(() => {
+              const today = new Date().toISOString().slice(0, 10);
+              const isEvent = (tc: any) =>
+                tc.type === 'event' || (tc.url || '').startsWith('/events/');
+              const events = d.thinContent.filter(isEvent);
+              const others = d.thinContent.filter((tc: any) => !isEvent(tc));
+
+              const eventDate = (tc: any) => tc.date_debut || tc.date_fin || null;
+              const sortedEvents = [...events].sort((a, b) => {
+                const da = eventDate(a);
+                const db = eventDate(b);
+                const aFuture = da ? da >= today : false;
+                const bFuture = db ? db >= today : false;
+                if (aFuture !== bFuture) return aFuture ? -1 : 1;
+                if (!da && !db) return 0;
+                if (!da) return 1;
+                if (!db) return -1;
+                // Futurs : chronologique ascendant ; Passés : descendant (plus récent en haut)
+                return aFuture ? da.localeCompare(db) : db.localeCompare(da);
+              });
+
+              const fmtDate = (iso: string | null) => {
+                if (!iso) return '—';
+                try {
+                  return new Date(iso).toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  });
+                } catch {
+                  return iso;
+                }
+              };
+
+              return (
+                <>
+                  {sortedEvents.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">
+                        Événements ({sortedEvents.length})
+                      </p>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Salon</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Statut</TableHead>
+                            <TableHead>URL</TableHead>
+                            <TableHead>Mots</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sortedEvents.slice(0, 30).map((tc: any) => {
+                            const ds = eventDate(tc);
+                            const future = ds ? ds >= today : false;
+                            return (
+                              <TableRow key={tc.url}>
+                                <TableCell className="max-w-[200px] truncate">{tc.name}</TableCell>
+                                <TableCell className="text-xs whitespace-nowrap">{fmtDate(ds)}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant="outline"
+                                    className={
+                                      future
+                                        ? 'bg-green-50 text-green-800 text-xs'
+                                        : 'bg-muted text-muted-foreground text-xs'
+                                    }
+                                  >
+                                    {future ? 'À venir' : 'Passé'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="font-mono text-xs">{tc.url}</TableCell>
+                                <TableCell className="text-red-600 font-semibold">{tc.wordCount}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+
+                  {others.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">
+                        Autres pages ({others.length})
+                      </p>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Page</TableHead>
+                            <TableHead>URL</TableHead>
+                            <TableHead>Mots</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {others.slice(0, 30).map((tc: any) => (
+                            <TableRow key={tc.url}>
+                              <TableCell className="max-w-[200px] truncate">{tc.name}</TableCell>
+                              <TableCell className="font-mono text-xs">{tc.url}</TableCell>
+                              <TableCell className="text-red-600 font-semibold">{tc.wordCount}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
