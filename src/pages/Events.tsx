@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useInfiniteEvents } from '@/hooks/useInfiniteEvents';
 import { useUrlFilters } from '@/lib/useUrlFilters';
