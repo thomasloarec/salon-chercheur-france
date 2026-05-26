@@ -244,6 +244,34 @@ const CityHub = () => {
               </div>
             </section>
           )}
+
+          {/* Explorer par année */}
+          {hub.yearsBreakdown && hub.yearsBreakdown.length > 0 && (
+            <section className="mb-12 border-t border-border pt-8">
+              <h2 className="text-xl font-semibold text-foreground mb-4">Explorer par année</h2>
+              <div className="flex flex-wrap gap-2">
+                {hub.yearsBreakdown.map(y => (
+                  y.indexable ? (
+                    <Link
+                      key={y.year}
+                      to={`/ville/${hub.citySlug}/${y.year}`}
+                      className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent/10 hover:border-primary/30 transition-colors text-foreground"
+                    >
+                      Salons à {hub.cityName} en {y.year} ({y.count})
+                    </Link>
+                  ) : (
+                    <span
+                      key={y.year}
+                      className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-muted/30 text-muted-foreground cursor-not-allowed"
+                      title="Peu d'événements référencés"
+                    >
+                      {y.year} : peu d'événements référencés ({y.count})
+                    </span>
+                  )
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
 

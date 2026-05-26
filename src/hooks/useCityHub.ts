@@ -3,6 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { normalizeEventRow } from '@/lib/normalizeEvent';
 import type { CanonicalEvent } from '@/types/lotexpo';
 
+export const CITY_YEAR_INDEX_THRESHOLD = 3;
+
+export interface CityYearBreakdown {
+  year: number;
+  count: number;
+  indexable: boolean;
+}
+
 export interface CityHubData {
   citySlug: string;
   cityName: string;
@@ -12,6 +20,10 @@ export interface CityHubData {
   totalCount: number;
   topVenues: string[];
   topSectors: string[];
+  /** For year-scoped pages: the year applied, otherwise null. */
+  year: number | null;
+  /** Breakdown of future events per year (current year and beyond). */
+  yearsBreakdown: CityYearBreakdown[];
 }
 
 /** Normalise a city name to a URL slug (lowercase, no accents, hyphens). */
@@ -24,9 +36,15 @@ export function cityNameToSlug(name: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-export function useCityHub(slug: string | undefined) {
+export interface UseCityHubOptions {
+  /** When set, scopes upcomingEvents to FUTURE events of that calendar year. */
+  year?: number | null;
+}
+
+export function useCityHub(slug: string | undefined, options: UseCityHubOptions = {}) {
+  const year = options.year ?? null;
   return useQuery({
-    queryKey: ['city-hub', slug],
+    queryKey: ['city-hub', slug, year],
     queryFn: async (): Promise<CityHubData | null> => {
       if (!slug) return null;
 
@@ -51,9 +69,12 @@ export function useCityHub(slug: string | undefined) {
       if (!cityName) return null;
 
       const cityEvents = events.filter(e => e.ville === cityName);
-      if (cityEvents.length < 3) return null; // Minimum threshold
+      // Evergreen needs the city to have ≥3 events overall; year pages render
+      // even at 0 (they'll be noindex below threshold) so the route stays usable.
+      if (year === null && cityEvents.length < 3) return null;
 
       const todayStr = new Date().toISOString().slice(0, 10);
+      const currentYear = new Date().getFullYear();
 
       const upcoming = cityEvents.filter(e => {
         const end = e.end_date || e.start_date;
@@ -65,9 +86,33 @@ export function useCityHub(slug: string | undefined) {
         return end ? end < todayStr : false;
       }).reverse();
 
+      // Years breakdown built from FUTURE events (current year and beyond).
+      const yearCount: Record<number, number> = {};
+      upcoming.forEach(e => {
+        if (!e.start_date) return;
+        const y = Number(String(e.start_date).slice(0, 4));
+        if (!Number.isFinite(y) || y < currentYear) return;
+        yearCount[y] = (yearCount[y] || 0) + 1;
+      });
+      const yearsBreakdown: CityYearBreakdown[] = Object.entries(yearCount)
+        .map(([y, c]) => ({ year: Number(y), count: c, indexable: c >= CITY_YEAR_INDEX_THRESHOLD }))
+        .sort((a, b) => a.year - b.year);
+
+      // Year-scoped mode: FUTURE events of that year only, no past block.
+      let upcomingScoped = upcoming;
+      let pastScoped = past;
+      if (year !== null) {
+        upcomingScoped = upcoming.filter(e => {
+          if (!e.start_date) return false;
+          return Number(String(e.start_date).slice(0, 4)) === year;
+        });
+        pastScoped = [];
+      }
+
       // Top venues
       const venueCount: Record<string, number> = {};
-      cityEvents.forEach(e => {
+      const venueBase = year !== null ? upcomingScoped : cityEvents;
+      venueBase.forEach(e => {
         if (e.nom_lieu) {
           venueCount[e.nom_lieu] = (venueCount[e.nom_lieu] || 0) + 1;
         }
@@ -79,7 +124,8 @@ export function useCityHub(slug: string | undefined) {
 
       // Top sectors
       const sectorCount: Record<string, number> = {};
-      cityEvents.forEach(e => {
+      const sectorBase = year !== null ? upcomingScoped : cityEvents;
+      sectorBase.forEach(e => {
         e.secteur_labels.forEach(s => {
           sectorCount[s] = (sectorCount[s] || 0) + 1;
         });
@@ -96,12 +142,16 @@ export function useCityHub(slug: string | undefined) {
       return {
         citySlug: slug,
         cityName,
-        description: `Découvrez les salons professionnels à ${cityName}. Calendrier complet, secteurs représentés et informations pratiques.${venueText}`,
-        upcomingEvents: upcoming,
-        pastEvents: past,
+        description: year !== null
+          ? `Retrouvez les salons professionnels programmés à ${cityName} en ${year}. Cette page regroupe les événements à venir avec leurs dates, lieux, secteurs d'activité et liens vers les fiches détaillées.${venueText}`
+          : `Découvrez les salons professionnels à ${cityName}. Calendrier complet, secteurs représentés et informations pratiques.${venueText}`,
+        upcomingEvents: upcomingScoped,
+        pastEvents: pastScoped,
         totalCount: cityEvents.length,
         topVenues,
         topSectors,
+        year,
+        yearsBreakdown,
       };
     },
     enabled: !!slug,
