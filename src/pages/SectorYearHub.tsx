@@ -213,6 +213,12 @@ const SectorYearHub = () => {
                 >
                   Tous les salons {hub.sectorLabel}
                 </Link>
+                <Link
+                  to="/salons-professionnels-2026"
+                  className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent/10 hover:border-primary/30 transition-colors text-foreground"
+                >
+                  Tous les salons 2026
+                </Link>
                 {otherYears.map(y => (
                   y.indexable ? (
                     <Link

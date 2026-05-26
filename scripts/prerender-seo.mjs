@@ -247,17 +247,68 @@ function buildEvent(ev, exhibitors) {
 
 function buildHome() {
   const canonical = `${SITE_ORIGIN}/`;
-  const title = 'Lotexpo | Tous les salons professionnels en France';
-  const description = 'Lotexpo centralise les salons professionnels, congrès, conventions et événements B2B en France. Identifiez les événements par secteur, ville et date, puis repérez les exposants associés.';
+  const title = 'Salons professionnels en France | Lotexpo';
+  const description = "Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Calendrier B2B complet, dates, lieux et exposants sur Lotexpo.";
   const websiteSchema = { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Lotexpo', url: SITE_ORIGIN };
   const orgSchema = { '@context': 'https://schema.org', '@type': 'Organization', name: 'Lotexpo', url: SITE_ORIGIN };
   const headExtra = commonHead(canonical, title, description)
     + `<script type="application/ld+json">${safeJsonLd(websiteSchema)}</script>`
     + `<script type="application/ld+json">${safeJsonLd(orgSchema)}</script>`;
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
-    <h1>Tous les salons professionnels en France</h1>
-    <p>Lotexpo centralise les salons professionnels, congrès, conventions et événements B2B organisés en France. La plateforme permet d'identifier rapidement les événements à venir par secteur, ville, date et type de salon, puis de repérer les exposants associés lorsqu'ils sont disponibles.</p>
-    <p><a href="/events">Voir tous les salons à venir</a></p>
+    <h1>Salons professionnels en France</h1>
+    <p>Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Lotexpo centralise les salons, congrès, conventions et événements B2B avec leurs dates, lieux et exposants associés.</p>
+    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/events">Calendrier complet</a></p>
+  </div>`;
+  return { title, description, canonical, headExtra, body };
+}
+
+function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
+  const canonical = `${SITE_ORIGIN}/salons-professionnels-${year}`;
+  const title = `Salons professionnels ${year} en France | Lotexpo`;
+  const description = `Découvrez les salons professionnels ${year} en France : dates, villes, secteurs d'activité, lieux et événements référencés sur Lotexpo.`;
+  const breadcrumb = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 3, name: `Salons professionnels ${year}`, item: canonical },
+    ],
+  };
+  const itemList = {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    name: title,
+    numberOfItems: eventsFuture.length,
+    itemListElement: eventsFuture.slice(0, 50).map((e, i) => ({
+      '@type': 'ListItem', position: i + 1,
+      url: `${SITE_ORIGIN}/events/${encodeURIComponent(e.slug)}`,
+      name: e.nom_event,
+    })),
+  };
+  const headExtra = commonHead(canonical, title, description)
+    + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`
+    + `<script type="application/ld+json">${safeJsonLd(itemList)}</script>`;
+
+  const sectorsLis = sectors.map(s =>
+    `<li><a href="/secteur/${s.slug}/${year}">Salons ${escapeHtml(s.label)} ${year}</a> (${s.count})</li>`
+  ).join('');
+  const citiesLis = cities.map(c =>
+    `<li><a href="/ville/${c.slug}/${year}">Salons professionnels à ${escapeHtml(c.name)} en ${year}</a> (${c.count})</li>`
+  ).join('');
+  const upcomingLis = eventsFuture.slice(0, 10).map(e =>
+    `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.ville ? ' – ' + escapeHtml(e.ville) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`
+  ).join('');
+  const monthsLis = monthGroups.map(g =>
+    `<li><strong>${escapeHtml(g.label)}</strong> – ${g.total} salon${g.total > 1 ? 's' : ''}</li>`
+  ).join('');
+
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>Salons professionnels ${year} en France</h1>
+    <p>Retrouvez les ${eventsFuture.length} salons professionnels programmés en France en ${year}. Cette page regroupe les événements à venir par mois, secteur et ville, avec des liens vers les fiches détaillées des salons référencés sur Lotexpo.</p>
+    ${sectorsLis ? `<h2>Salons ${year} par secteur</h2><ul>${sectorsLis}</ul>` : ''}
+    ${citiesLis ? `<h2>Salons ${year} par ville</h2><ul>${citiesLis}</ul>` : ''}
+    ${upcomingLis ? `<h2>Prochains salons à venir</h2><ul>${upcomingLis}</ul>` : ''}
+    ${monthsLis ? `<h2>Calendrier ${year} mois par mois</h2><ul>${monthsLis}</ul>` : ''}
+    <p><a href="/">Tous les salons à venir</a> · <a href="/events">Calendrier complet</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
@@ -611,7 +662,73 @@ async function main() {
     } catch (e) { errors++; console.warn('[prerender] city failed', slug, e.message); }
   }
 
-  // 7. home — written LAST so it never pollutes the template
+  // 7. annual hub /salons-professionnels-2026
+  try {
+    const ANNUAL_YEAR = 2026;
+    const ANNUAL_THRESHOLD = 3;
+    const futureOfYear = upcoming.filter((e) => {
+      if (!e.date_debut) return false;
+      return new Date(e.date_debut).getFullYear() === ANNUAL_YEAR;
+    }).sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
+
+    // sectors >= threshold (canonical only)
+    const sectorAcc = {};
+    for (const e of futureOfYear) {
+      const sec = e.secteur;
+      const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
+      for (const lbl of list) {
+        const slug = slugify(String(lbl));
+        if (!CANONICAL_SECTORS.includes(slug)) continue;
+        sectorAcc[slug] = sectorAcc[slug] || { label: String(lbl), count: 0 };
+        sectorAcc[slug].count++;
+      }
+    }
+    const annualSectors = Object.entries(sectorAcc)
+      .filter(([, v]) => v.count >= ANNUAL_THRESHOLD)
+      .map(([slug, v]) => ({ slug, label: v.label, count: v.count }))
+      .sort((a, b) => b.count - a.count);
+
+    // cities >= threshold (with alias merge)
+    const cityAcc = {};
+    for (const e of futureOfYear) {
+      if (!e.ville) continue;
+      const raw = slugify(e.ville);
+      const hubSlug = cityHubSlug(e.ville);
+      if (!hubSlug) continue;
+      if (!cityAcc[hubSlug]) {
+        const aliasName = CITY_ALIASES[raw] && CITY_ALIASES[raw].name;
+        cityAcc[hubSlug] = { name: aliasName || e.ville, count: 0 };
+      }
+      if (raw === hubSlug) cityAcc[hubSlug].name = e.ville;
+      cityAcc[hubSlug].count++;
+    }
+    const annualCities = Object.entries(cityAcc)
+      .filter(([, v]) => v.count >= ANNUAL_THRESHOLD)
+      .map(([slug, v]) => ({ slug, name: v.name, count: v.count }))
+      .sort((a, b) => b.count - a.count);
+
+    // months
+    const monthMap = {};
+    const monthOrder = [];
+    for (const e of futureOfYear) {
+      if (!e.date_debut) continue;
+      const d = new Date(e.date_debut);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!(key in monthMap)) { monthMap[key] = []; monthOrder.push(key); }
+      monthMap[key].push(e);
+    }
+    const monthGroups = monthOrder.map((k) => {
+      const [y, m] = k.split('-');
+      const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      return { label, total: monthMap[k].length };
+    });
+
+    const built = buildAnnualHub(ANNUAL_YEAR, futureOfYear, annualSectors, annualCities, monthGroups);
+    await writeRoute(`/salons-professionnels-${ANNUAL_YEAR}`, applyToShell(baseTemplate, built));
+    console.log(`[prerender] annual hub: ${futureOfYear.length} events, ${annualSectors.length} sectors, ${annualCities.length} cities`);
+  } catch (e) { errors++; console.warn('[prerender] annual hub failed', e.message); }
+
+  // 8. home — written LAST so it never pollutes the template
   try {
     const built = buildHome();
     const html = applyToShell(baseTemplate, built);

@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useInfiniteEvents } from '@/hooks/useInfiniteEvents';
 import { useUrlFilters } from '@/lib/useUrlFilters';
@@ -99,11 +100,11 @@ const Events = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
-        <title>Salons professionnels en France | Calendrier B2B – Lotexpo</title>
-        <meta name="description" content="Lotexpo référence tous les salons professionnels B2B en France. Dates, lieux, secteurs, exposants et informations pratiques en un seul site." />
+        <title>Salons professionnels en France | Lotexpo</title>
+        <meta name="description" content="Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Calendrier B2B complet, dates, lieux et exposants sur Lotexpo." />
         <link rel="canonical" href="https://lotexpo.com" />
-        <meta property="og:title" content="Salons professionnels en France | Calendrier B2B – Lotexpo" />
-        <meta property="og:description" content="Lotexpo référence tous les salons professionnels B2B en France. Dates, lieux, secteurs, exposants et informations pratiques en un seul site." />
+        <meta property="og:title" content="Salons professionnels en France | Lotexpo" />
+        <meta property="og:description" content="Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période." />
         <meta property="og:url" content="https://lotexpo.com" />
         <meta property="og:site_name" content="Lotexpo" />
         <script type="application/ld+json">
@@ -142,15 +143,24 @@ const Events = () => {
           {/* Header with results count */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
-              {isLoading ? 'Chargement...' : `${totalCount} salon(s) trouvé(s)`}
+              Salons professionnels en France
             </h1>
+            <p className="text-gray-600 mt-2 max-w-3xl text-sm md:text-base">
+              Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période.{' '}
+              <Link to="/salons-professionnels-2026" className="text-accent hover:underline font-medium whitespace-nowrap">
+                Voir les salons professionnels 2026 →
+              </Link>
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              {isLoading ? 'Chargement…' : `${totalCount} salon${totalCount > 1 ? 's' : ''} référencé${totalCount > 1 ? 's' : ''}`}
+            </p>
             {data && (
               <div className="sr-only" aria-hidden="true">
                 Chargement terminé — {totalCount} événements
               </div>
             )}
             {hasActiveFilters && (
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 mt-2 text-sm">
                 Résultats filtrés
                 {filters.sectors.length > 0 && (
                   <span className="ml-2 text-accent font-medium">
