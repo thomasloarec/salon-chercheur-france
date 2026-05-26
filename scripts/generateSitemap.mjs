@@ -202,6 +202,8 @@ for (const ev of eligibleEvents) {
 }
 const eligibleCities = Object.entries(cityCount).filter(([, c]) => c >= 3).map(([s]) => s).sort();
 
+const todayStr = new Date().toISOString().slice(0, 10);
+
 // City × year counts — Option B: FUTURE events only, indexable if >= 3.
 const CITY_YEAR_THRESHOLD = 3;
 const cityYearCount = {}; // { [slug]: { [year]: number } }
@@ -238,7 +240,6 @@ eligibleCityYears.sort((a, b) => a.slug.localeCompare(b.slug) || a.year - b.year
 const SECTOR_YEAR_THRESHOLD = 3;
 const sectorYearCount = {}; // { [slug]: { [year]: number } }
 const sectorYearLastmod = {}; // { [slug]: { [year]: Date } }
-const todayStr = new Date().toISOString().slice(0, 10);
 for (const ev of eligibleEvents) {
   if (!ev.date_debut) continue;
   // Option B: year pages only contain FUTURE events of that year.
