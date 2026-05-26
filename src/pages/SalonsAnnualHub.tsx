@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import EventCard from '@/components/EventCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useAnnualHub } from '@/hooks/useAnnualHub';
+import { useAnnualHub, ANNUAL_HUB_THRESHOLD } from '@/hooks/useAnnualHub';
 import type { CanonicalEvent } from '@/types/lotexpo';
 import type { Event } from '@/types/event';
 
