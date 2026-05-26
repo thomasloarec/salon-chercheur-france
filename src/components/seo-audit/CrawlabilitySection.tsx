@@ -11,7 +11,7 @@ export default function CrawlabilitySection({ data }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <h2 className="text-xl font-bold">1. Crawlabilité & Indexation</h2>
+        <h2 id="crawlabilite" className="text-xl font-bold scroll-mt-20">1. Crawlabilité & Indexation</h2>
         <SeoStatusBadge status={getSectionStatus(data, 'crawlability')} />
       </div>
 
