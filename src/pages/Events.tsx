@@ -159,31 +159,6 @@ const Events = () => {
                 Chargement terminé — {totalCount} événements
               </div>
             )}
-            {hasActiveFilters && (
-              <p className="text-gray-600 mt-2 text-sm">
-                Résultats filtrés
-                {filters.sectors.length > 0 && (
-                  <span className="ml-2 text-accent font-medium">
-                    • Secteur{filters.sectors.length > 1 ? 's' : ''}: {filters.sectors.join(', ')}
-                  </span>
-                )}
-                {filters.type && (
-                  <span className="ml-2 text-accent font-medium">
-                    • Type: {filters.type}
-                  </span>
-                )}
-                {filters.month && (
-                  <span className="ml-2 text-accent font-medium">
-                    • Mois: {filters.month}
-                  </span>
-                )}
-                {filters.region && (
-                  <span className="ml-2 text-accent font-medium">
-                    • Région: {filters.region}
-                  </span>
-                )}
-              </p>
-            )}
           </div>
 
           {/* Results with infinite scroll */}
