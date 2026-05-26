@@ -94,7 +94,7 @@ const staticXml = wrapUrlset(staticPages.map((p) => urlBlock(`${SITE_URL}${p.pat
 // ----- 2. events (with full audit) -----
 const { data: events, error: eventsError } = await supabase
   .from('events')
-  .select('id, slug, updated_at, date_debut, secteur, ville, enrichissement_date, visible, is_test')
+  .select('id, slug, updated_at, date_debut, date_fin, secteur, ville, enrichissement_date, visible, is_test')
   .eq('visible', true)
   .eq('is_test', false)
   .order('date_debut', { ascending: false })
