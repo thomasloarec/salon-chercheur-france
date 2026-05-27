@@ -23,6 +23,8 @@ interface DbExhibitor {
   logo_url?: string;
   approved: boolean;
   stand_info?: string;
+  /** true si la fiche existe sur Lotexpo mais pas encore rattachée à cet événement */
+  needs_participation?: boolean;
 }
 
 interface Step1ExhibitorAndUserProps {
@@ -42,6 +44,7 @@ export default function Step1ExhibitorAndUser({
   const { toast } = useToast();
   
   const [exhibitors, setExhibitors] = useState<DbExhibitor[]>([]);
+  const [globalExhibitors, setGlobalExhibitors] = useState<DbExhibitor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [loading, setLoading] = useState(false);
@@ -111,6 +114,9 @@ export default function Step1ExhibitorAndUser({
             legacy_id_exposant: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedExhibitor.id)
               ? null
               : selectedExhibitor.id,
+            // ✅ Si l'entreprise vient du catalogue Lotexpo (pas encore exposante sur l'event),
+            //    AddNoveltyStepper appellera ensure_participation avant la création.
+            needs_participation: selectedExhibitor.needs_participation === true,
           }
         : { 
             name: newExhibitorData.name, 
