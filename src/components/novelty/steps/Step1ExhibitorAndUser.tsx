@@ -606,6 +606,18 @@ export default function Step1ExhibitorAndUser({
                 </div>
               </div>
 
+              {/* Détection live : entreprise déjà présente sur Lotexpo */}
+              {resolveLoading && !candidateMatch && (
+                <p className="text-xs text-muted-foreground">Recherche d'une entreprise existante…</p>
+              )}
+              {candidateMatch && (
+                <ExistingCompanyCard match={candidateMatch} onUse={handleUseExistingMatch} />
+              )}
+
+              {/* Si une entreprise bloquée est détectée, on masque description / logo
+                  pour éviter toute saisie inutile. */}
+              {!(candidateMatch && candidateMatch.has_admin && !candidateMatch.current_user_can_create_novelty) && (
+              <>
               <div>
                 <Label htmlFor="company-description">Description de l'entreprise</Label>
                 <textarea
@@ -656,6 +668,8 @@ export default function Step1ExhibitorAndUser({
                   </label>
                 </div>
               </div>
+              </>
+              )}
             </CardContent>
           </Card>
         ) : (
