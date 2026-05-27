@@ -772,6 +772,39 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
           throw new Error(json.message || 'Quota dépassé');
         }
 
+        // ✅ Erreur de validation Zod côté serveur : on renvoie l'utilisateur à l'étape concernée
+        if (json?.code === 'ZOD_VALIDATION' && json?.details && typeof json.details === 'object') {
+          const details = json.details as Record<string, string[]>;
+          const FIELD_LABELS: Record<string, string> = {
+            reason: 'Pourquoi c\'est intéressant',
+            title: 'Titre',
+            novelty_type: 'Type de nouveauté',
+            images: 'Images',
+            brochure_pdf: 'Dossier PDF',
+          };
+          const FIELD_HINTS: Record<string, (msg: string) => string> = {
+            reason: (msg) => msg.includes('at most') ? 'Description trop longue : maximum 1000 caractères. Merci de la raccourcir.' : msg,
+            title: (msg) => msg.includes('at most') ? 'Titre trop long : maximum 120 caractères.' : msg,
+          };
+          const newFieldErrors: Record<string, string> = {};
+          const messages: string[] = [];
+          for (const [field, errs] of Object.entries(details)) {
+            const raw = Array.isArray(errs) ? errs[0] : String(errs);
+            const friendly = FIELD_HINTS[field] ? FIELD_HINTS[field](raw) : raw;
+            newFieldErrors[field] = friendly;
+            messages.push(`${FIELD_LABELS[field] || field} : ${friendly}`);
+          }
+          setFieldErrors(newFieldErrors);
+          setCurrentStep(2);
+          toast({
+            title: 'Modifications nécessaires',
+            description: messages.join(' • '),
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+
         const msg = json?.error || `HTTP ${res.status}`;
         const details = json?.details || json?.hint || json?.code || null;
         throw new Error(details ? `${msg}: ${typeof details === 'string' ? details : JSON.stringify(details)}` : msg);
