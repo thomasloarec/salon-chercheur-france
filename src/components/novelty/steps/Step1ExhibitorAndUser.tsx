@@ -255,6 +255,38 @@ export default function Step1ExhibitorAndUser({
 
       console.log('[Step1ExhibitorAndUser] Loaded exhibitors:', uniqueExhibitors.length, 'unique from', formatted.length);
       setExhibitors(uniqueExhibitors);
+
+      // ── Catalogue Lotexpo : entreprises déjà connues, hors event en cours ──
+      //    Affichées si la recherche ne renvoie rien dans les exposants de l'événement.
+      if (s) {
+        const eventExhibitorIds = new Set(uniqueExhibitors.map(e => e.id));
+        const { data: globals, error: globErr } = await supabase
+          .from('exhibitors')
+          .select('id, name, website, logo_url, approved, stand_info')
+          .ilike('name', `%${s}%`)
+          .not('name', 'ilike', '[ARCHIVED]%')
+          .order('approved', { ascending: false })
+          .order('name', { ascending: true })
+          .limit(20);
+        if (!globErr && globals) {
+          const filteredGlobals: DbExhibitor[] = globals
+            .filter(g => !eventExhibitorIds.has(g.id))
+            .map(g => ({
+              id: g.id,
+              name: g.name,
+              website: g.website || undefined,
+              logo_url: g.logo_url || undefined,
+              approved: g.approved === true,
+              stand_info: g.stand_info || undefined,
+              needs_participation: true,
+            }));
+          setGlobalExhibitors(filteredGlobals);
+        } else {
+          setGlobalExhibitors([]);
+        }
+      } else {
+        setGlobalExhibitors([]);
+      }
     } catch (error) {
       console.error('[Step1ExhibitorAndUser] Exception', error);
       toast({
