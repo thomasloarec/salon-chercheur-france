@@ -1,0 +1,1 @@
+DELETE FROM public.participation WHERE id_participation = 'daaccf22-b8c7-43bd-9a35-828f3f1df9e8' AND exhibitor_id = '1fbfea19-1f84-4836-a229-ab5a23f71cc4' AND id_event = 'c9bf2be8-6266-4e16-bf91-f35d828142fd';
