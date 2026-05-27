@@ -45,6 +45,7 @@ export default function Step2NoveltyDetails({
       formData.title.length <= 120 &&
       formData.type.length > 0 &&
       formData.reason.trim().length >= 10 &&
+      formData.reason.length <= 1000 &&
       formData.images.length <= 3;
 
     onValidationChange(isValid);
@@ -128,17 +129,18 @@ export default function Step2NoveltyDetails({
             onChange={(e) => updateField('reason', e.target.value)}
             placeholder="Expliquez en quoi votre nouveauté est remarquable et pourquoi elle intéressera les visiteurs..."
             rows={6}
-            className={fieldErrors?.reason ? "border-destructive" : ""}
+            maxLength={1000}
+            className={(fieldErrors?.reason || formData.reason.length > 1000) ? "border-destructive" : ""}
           />
           {fieldErrors?.reason && (
             <p className="text-xs text-destructive mt-1">{fieldErrors.reason}</p>
           )}
           <div className="flex justify-between mt-1">
             <p className="text-xs text-muted-foreground">
-              Mettez en avant les avantages, innovations ou bénéfices clés (min 10 caractères)
+              Mettez en avant les avantages, innovations ou bénéfices clés (10 à 1000 caractères)
             </p>
-            <p className="text-xs text-muted-foreground">
-              {formData.reason.length} caractères
+            <p className={`text-xs ${formData.reason.length > 1000 ? 'text-destructive font-medium' : formData.reason.length > 900 ? 'text-orange-600' : 'text-muted-foreground'}`}>
+              {formData.reason.length} / 1000
             </p>
           </div>
         </div>
