@@ -223,13 +223,15 @@ Deno.serve(async (req) => {
           .eq('is_test', false)
           .limit(2000)
         const rows = (candidates || []) as ExRow[]
-        // Filtrer côté JS via extract_root_domain pour comparaison stricte
-        const matches: ExRow[] = []
-        for (const c of rows) {
-          if (!c.website) continue
-          const { data: dom } = await serviceClient.rpc('extract_root_domain', { input: c.website })
-          if (typeof dom === 'string' && dom === normalizedDomain) matches.push(c)
+        // Réimplémentation TS stricte de public.extract_root_domain
+        // (strip protocole, www., chemin, query, fragment, lowercase).
+        const stripDomain = (raw: string): string => {
+          let s = raw.trim().toLowerCase()
+          s = s.replace(/^https?:\/\//, '').replace(/^www\./, '')
+          s = s.split('/')[0].split('?')[0].split('#')[0]
+          return s
         }
+        const matches: ExRow[] = rows.filter(c => c.website && stripDomain(c.website) === normalizedDomain)
         if (matches.length > 0) {
           matches.sort((a, b) => {
             const aArch = a.name?.toUpperCase().startsWith('[ARCHIVED]') ? 1 : 0
