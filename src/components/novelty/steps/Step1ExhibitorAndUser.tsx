@@ -15,6 +15,7 @@ import type { Step1Data } from '@/lib/validation/noveltySchemas';
 import { step1Schema, CONSUMER_EMAIL_DOMAINS } from '@/lib/validation/noveltySchemas';
 import type { Event } from '@/types/event';
 import { normalizeStandNumber } from '@/utils/standUtils';
+import ExistingCompanyCard, { ResolveCandidateMatch } from '@/components/novelty/ExistingCompanyCard';
 
 interface DbExhibitor {
   id: string;
@@ -69,6 +70,13 @@ export default function Step1ExhibitorAndUser({
     stand_info: '',
     logo: null as File | null
   });
+
+  // Détection live d'entreprise existante quand l'utilisateur remplit le formulaire
+  // « Créer une nouvelle entreprise ». Évite les doublons et les pertes de saisie.
+  const debouncedNewName = useDebounce(newExhibitorData.name, 500);
+  const debouncedNewWebsite = useDebounce(newExhibitorData.website, 500);
+  const [candidateMatch, setCandidateMatch] = useState<ResolveCandidateMatch | null>(null);
+  const [resolveLoading, setResolveLoading] = useState(false);
 
   // User form data (if not logged in)
   const [userData, setUserData] = useState({
@@ -300,6 +308,73 @@ export default function Step1ExhibitorAndUser({
     }
   };
 
+  // Résolution live entreprise candidate (read-only, ne crée rien)
+  useEffect(() => {
+    if (!showNewExhibitorForm) { setCandidateMatch(null); return; }
+    const name = (debouncedNewName || '').trim();
+    const website = (debouncedNewWebsite || '').trim();
+    if (name.length < 2 && website.length < 4) {
+      setCandidateMatch(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        setResolveLoading(true);
+        const { data, error } = await supabase.functions.invoke('exhibitors-manage', {
+          body: {
+            action: 'resolve_candidate',
+            name: name || undefined,
+            website: website || undefined,
+            event_id: event?.id ?? undefined,
+          },
+        });
+        if (cancelled) return;
+        if (error) { setCandidateMatch(null); return; }
+        const m = data as ResolveCandidateMatch;
+        // On n'affiche que les matchs fiables (high) ou legacy explicite
+        if (m?.match_found && (m.confidence === 'high' || m.match_type === 'legacy')) {
+          setCandidateMatch(m);
+        } else {
+          setCandidateMatch(null);
+        }
+      } catch {
+        if (!cancelled) setCandidateMatch(null);
+      } finally {
+        if (!cancelled) setResolveLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [debouncedNewName, debouncedNewWebsite, showNewExhibitorForm, event?.id]);
+
+  const handleUseExistingMatch = (m: ResolveCandidateMatch) => {
+    // Cas legacy : on garde la saisie utilisateur mais on flag legacy_id_exposant
+    if (m.match_type === 'legacy' || !m.exhibitor_id) {
+      // L'utilisateur continue avec le formulaire ; au submit, l'edge function
+      // promouvera la fiche legacy via legacy_id_exposant.
+      setNewExhibitorData(prev => ({
+        ...prev,
+        name: m.exhibitor_name || prev.name,
+        website: m.website || prev.website,
+      }));
+      // Stocker l'id legacy pour transmission (champ caché)
+      (m as any).__use_legacy = true;
+      return;
+    }
+    // Cas moderne : sélectionner directement et masquer le formulaire (skip desc/logo)
+    setSelectedExhibitor({
+      id: m.exhibitor_id,
+      name: m.exhibitor_name || '',
+      website: m.website || undefined,
+      logo_url: m.logo_url || undefined,
+      approved: m.approved,
+      needs_participation: !m.already_participating_to_event,
+    });
+    setShowNewExhibitorForm(false);
+    setCandidateMatch(null);
+    setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
+  };
+
   const handleExhibitorSelect = (exhibitor: DbExhibitor) => {
     setSelectedExhibitor(exhibitor);
     setSelectedExhibitorStandInfo(exhibitor.stand_info || '');
@@ -355,6 +430,7 @@ export default function Step1ExhibitorAndUser({
     // (sinon l'utilisateur tomberait sur une recherche vide).
     setShowNewExhibitorForm(eventHasAnyExhibitor === false);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
+    setCandidateMatch(null);
   };
 
   // Adapter l'UX selon la disponibilité d'exposants pour cet événement
