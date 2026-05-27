@@ -467,6 +467,34 @@ Deno.serve(async (req) => {
     // ACTION: approve_claim (admin only)
     // ────────────────────────────────────────────────────
     if (action === 'approve_claim') {
+      // ── placeholder, real handler below ──
+    }
+
+    // ────────────────────────────────────────────────────
+    // ACTION: ensure_participation
+    // Idempotent : crée la participation (exhibitor × event) si elle n'existe pas.
+    // Utilisé par AddNoveltyStepper quand l'utilisateur sélectionne une entreprise
+    // globale Lotexpo pas encore rattachée à l'événement courant.
+    // ────────────────────────────────────────────────────
+    if (action === 'ensure_participation') {
+      const { exhibitor_id, event_id, stand_info } = requestData
+      if (!exhibitor_id || !event_id) {
+        return jsonError('exhibitor_id and event_id are required', 400)
+      }
+      const { data: partId, error: ensureErr } = await serviceClient
+        .rpc('ensure_participation', {
+          p_exhibitor_id: exhibitor_id,
+          p_event_id: event_id,
+          p_stand_info: stand_info ?? null,
+        })
+      if (ensureErr) {
+        console.error('❌ ensure_participation RPC failed:', ensureErr)
+        return jsonError('Failed to ensure participation', 500, ensureErr)
+      }
+      return jsonOk({ id_participation: partId })
+    }
+
+    if (action === 'approve_claim') {
       if (!isAdmin) {
         return jsonError('Admin access required', 403)
       }
