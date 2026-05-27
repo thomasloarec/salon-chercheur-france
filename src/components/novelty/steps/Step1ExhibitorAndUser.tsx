@@ -23,6 +23,8 @@ interface DbExhibitor {
   logo_url?: string;
   approved: boolean;
   stand_info?: string;
+  /** true si la fiche existe sur Lotexpo mais pas encore rattachée à cet événement */
+  needs_participation?: boolean;
 }
 
 interface Step1ExhibitorAndUserProps {
@@ -42,6 +44,7 @@ export default function Step1ExhibitorAndUser({
   const { toast } = useToast();
   
   const [exhibitors, setExhibitors] = useState<DbExhibitor[]>([]);
+  const [globalExhibitors, setGlobalExhibitors] = useState<DbExhibitor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [loading, setLoading] = useState(false);
@@ -111,6 +114,9 @@ export default function Step1ExhibitorAndUser({
             legacy_id_exposant: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedExhibitor.id)
               ? null
               : selectedExhibitor.id,
+            // ✅ Si l'entreprise vient du catalogue Lotexpo (pas encore exposante sur l'event),
+            //    AddNoveltyStepper appellera ensure_participation avant la création.
+            needs_participation: selectedExhibitor.needs_participation === true,
           }
         : { 
             name: newExhibitorData.name, 
@@ -249,6 +255,38 @@ export default function Step1ExhibitorAndUser({
 
       console.log('[Step1ExhibitorAndUser] Loaded exhibitors:', uniqueExhibitors.length, 'unique from', formatted.length);
       setExhibitors(uniqueExhibitors);
+
+      // ── Catalogue Lotexpo : entreprises déjà connues, hors event en cours ──
+      //    Affichées si la recherche ne renvoie rien dans les exposants de l'événement.
+      if (s) {
+        const eventExhibitorIds = new Set(uniqueExhibitors.map(e => e.id));
+        const { data: globals, error: globErr } = await supabase
+          .from('exhibitors')
+          .select('id, name, website, logo_url, approved, stand_info')
+          .ilike('name', `%${s}%`)
+          .not('name', 'ilike', '[ARCHIVED]%')
+          .order('approved', { ascending: false })
+          .order('name', { ascending: true })
+          .limit(20);
+        if (!globErr && globals) {
+          const filteredGlobals: DbExhibitor[] = globals
+            .filter(g => !eventExhibitorIds.has(g.id))
+            .map(g => ({
+              id: g.id,
+              name: g.name,
+              website: g.website || undefined,
+              logo_url: g.logo_url || undefined,
+              approved: g.approved === true,
+              stand_info: g.stand_info || undefined,
+              needs_participation: true,
+            }));
+          setGlobalExhibitors(filteredGlobals);
+        } else {
+          setGlobalExhibitors([]);
+        }
+      } else {
+        setGlobalExhibitors([]);
+      }
     } catch (error) {
       console.error('[Step1ExhibitorAndUser] Exception', error);
       toast({
@@ -561,6 +599,11 @@ export default function Step1ExhibitorAndUser({
               <div className="text-center py-8">Chargement...</div>
             ) : (
               <div className="max-h-64 overflow-y-auto space-y-2">
+                {exhibitors.length > 0 && (
+                  <p className="text-xs font-medium text-muted-foreground px-1">
+                    Exposants déjà listés sur cet événement
+                  </p>
+                )}
                 {exhibitors.map((exhibitor) => (
                   <Card 
                     key={exhibitor.id} 
@@ -571,6 +614,31 @@ export default function Step1ExhibitorAndUser({
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">{exhibitor.name}</h4>
                         <Button size="sm">Sélectionner</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {globalExhibitors.length > 0 && (
+                  <p className="text-xs font-medium text-muted-foreground px-1 pt-2">
+                    Entreprises déjà présentes sur Lotexpo (pas encore listées sur cet événement)
+                  </p>
+                )}
+                {globalExhibitors.map((exhibitor) => (
+                  <Card
+                    key={`global-${exhibitor.id}`}
+                    className="cursor-pointer hover:bg-accent transition-colors border-dashed"
+                    onClick={() => handleExhibitorSelect(exhibitor)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{exhibitor.name}</h4>
+                          {exhibitor.website && (
+                            <p className="text-xs text-muted-foreground">{exhibitor.website}</p>
+                          )}
+                        </div>
+                        <Button size="sm" variant="outline">Sélectionner</Button>
                       </div>
                     </CardContent>
                   </Card>

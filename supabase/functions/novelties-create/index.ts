@@ -140,6 +140,31 @@ serve(async (req) => {
     }
 
     // ==========================================
+    // SAFETY NET : garantit qu'une participation existe pour ce couple
+    // (exhibitor × event). Idempotent — protège même si le frontend a oublié
+    // d'appeler ensure_participation. Aucune nouveauté ne peut être créée
+    // sans participation cohérente.
+    // ==========================================
+    {
+      const { error: ensureErr } = await admin.rpc("ensure_participation", {
+        p_exhibitor_id: data.exhibitor_id,
+        p_event_id: data.event_id,
+        p_stand_info: data.stand_info ?? null,
+      });
+      if (ensureErr) {
+        console.error("[novelties-create] ensure_participation failed:", ensureErr);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to ensure participation",
+            details: ensureErr.message,
+            code: "ENSURE_PARTICIPATION_FAILED",
+          }),
+          { status: 500, headers: corsHeaders() }
+        );
+      }
+    }
+
+    // ==========================================
     // TEAM MEMBERSHIP GUARD (Phase 3)
     // - Unmanaged exhibitor (no active owner) → anyone can submit
     // - Managed exhibitor (has active owner) → only team members or admins
