@@ -466,10 +466,6 @@ Deno.serve(async (req) => {
     // ────────────────────────────────────────────────────
     // ACTION: approve_claim (admin only)
     // ────────────────────────────────────────────────────
-    if (action === 'approve_claim') {
-      // ── placeholder, real handler below ──
-    }
-
     // ────────────────────────────────────────────────────
     // ACTION: ensure_participation
     // Idempotent : crée la participation (exhibitor × event) si elle n'existe pas.
