@@ -93,7 +93,8 @@ export const step2Schema = z.object({
   ),
   
   reason: z.string()
-    .min(10, 'Expliquez pourquoi c\'est intéressant (min 10 caractères)'),
+    .min(10, 'Expliquez pourquoi c\'est intéressant (min 10 caractères)')
+    .max(1000, 'Description trop longue (max 1000 caractères)'),
   
   images: z.array(z.union([z.instanceof(File), z.string()]))
     .max(3, 'Maximum 3 images autorisées')
