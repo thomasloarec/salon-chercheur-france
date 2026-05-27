@@ -599,6 +599,11 @@ export default function Step1ExhibitorAndUser({
               <div className="text-center py-8">Chargement...</div>
             ) : (
               <div className="max-h-64 overflow-y-auto space-y-2">
+                {exhibitors.length > 0 && (
+                  <p className="text-xs font-medium text-muted-foreground px-1">
+                    Exposants déjà listés sur cet événement
+                  </p>
+                )}
                 {exhibitors.map((exhibitor) => (
                   <Card 
                     key={exhibitor.id} 
@@ -609,6 +614,31 @@ export default function Step1ExhibitorAndUser({
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">{exhibitor.name}</h4>
                         <Button size="sm">Sélectionner</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {globalExhibitors.length > 0 && (
+                  <p className="text-xs font-medium text-muted-foreground px-1 pt-2">
+                    Entreprises déjà présentes sur Lotexpo (pas encore listées sur cet événement)
+                  </p>
+                )}
+                {globalExhibitors.map((exhibitor) => (
+                  <Card
+                    key={`global-${exhibitor.id}`}
+                    className="cursor-pointer hover:bg-accent transition-colors border-dashed"
+                    onClick={() => handleExhibitorSelect(exhibitor)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{exhibitor.name}</h4>
+                          {exhibitor.website && (
+                            <p className="text-xs text-muted-foreground">{exhibitor.website}</p>
+                          )}
+                        </div>
+                        <Button size="sm" variant="outline">Sélectionner</Button>
                       </div>
                     </CardContent>
                   </Card>
