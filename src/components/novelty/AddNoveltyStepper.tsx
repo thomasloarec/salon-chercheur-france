@@ -387,6 +387,27 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
         // Existing exhibitor with valid UUID
         exhibitorId = step1.exhibitor.id;
         console.log('📋 Exposant existant:', { id: exhibitorId });
+
+        // ── Si l'exposant a été sélectionné depuis le catalogue Lotexpo
+        //    (pas encore exposant sur cet événement), on s'assure que la
+        //    participation est créée AVANT la création de la nouveauté.
+        //    Le filet de sécurité backend (novelties-create) refera l'appel,
+        //    mais on le fait ici côté frontend pour rester rapide et explicite.
+        if ((step1.exhibitor as any).needs_participation === true) {
+          console.log('🔗 ensure_participation appelé (entreprise globale Lotexpo)');
+          const standInfo = (step1.exhibitor as any).stand_info || null;
+          const { error: ensureErr } = await supabase.functions.invoke('exhibitors-manage', {
+            body: {
+              action: 'ensure_participation',
+              exhibitor_id: exhibitorId,
+              event_id: event.id,
+              stand_info: standInfo,
+            },
+          });
+          if (ensureErr) {
+            console.error('❌ ensure_participation a échoué (sera retenté côté backend):', ensureErr);
+          }
+        }
       } else {
         // Create new exhibitor (either no ID or ID is not a valid UUID)
         // Extract properties safely - step1.exhibitor can be either type
