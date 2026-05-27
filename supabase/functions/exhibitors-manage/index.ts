@@ -165,6 +165,211 @@ Deno.serve(async (req) => {
     }
 
     // ────────────────────────────────────────────────────
+    // ACTION: resolve_candidate (read-only)
+    // Détecte si une entreprise correspondant à (name, website) existe déjà
+    // sur Lotexpo. Calcule également les droits du caller pour publier une
+    // nouveauté au nom de cette fiche. Ne crée RIEN.
+    //
+    // Matching strict :
+    //   1) Domaine : extract_root_domain(website) === extract_root_domain(input)
+    //   2) Nom normalisé : exhibitors.name_normalized = normalize_company_name(name)
+    //   3) Fallback legacy exposants : mêmes critères ; renvoyé en match_type='legacy'
+    //
+    // Autorisation (current_user_can_create_novelty) :
+    //   - true si pas d'admin (exhibitor non managé)
+    //   - OU exhibitor.owner_user_id = current_user
+    //   - OU exhibitor_team_members status='active' role IN ('owner','admin')
+    //   - OU plateforme admin
+    // ────────────────────────────────────────────────────
+    if (action === 'resolve_candidate') {
+      const rawName = typeof requestData?.name === 'string' ? requestData.name.trim() : ''
+      const rawWebsite = typeof requestData?.website === 'string' ? requestData.website.trim() : ''
+      const eventId = typeof requestData?.event_id === 'string' ? requestData.event_id : null
+
+      if (!rawName && !rawWebsite) {
+        return jsonOk({ match_found: false, match_type: null, confidence: null })
+      }
+
+      // Normaliser les inputs via les helpers SQL pour garantir une cohérence parfaite
+      let normalizedName: string | null = null
+      let normalizedDomain: string | null = null
+      try {
+        if (rawName) {
+          const { data } = await serviceClient.rpc('normalize_company_name', { input: rawName })
+          normalizedName = typeof data === 'string' && data.length > 0 ? data : null
+        }
+      } catch (e) { console.warn('resolve_candidate normalize_company_name failed', e) }
+      try {
+        if (rawWebsite) {
+          const { data } = await serviceClient.rpc('extract_root_domain', { input: rawWebsite })
+          normalizedDomain = typeof data === 'string' && data.length > 0 ? data : null
+        }
+      } catch (e) { console.warn('resolve_candidate extract_root_domain failed', e) }
+
+      type ExRow = {
+        id: string; name: string; website: string | null; logo_url: string | null;
+        approved: boolean | null; owner_user_id: string | null; verified_at: string | null;
+        is_test: boolean | null;
+      }
+      let matched: ExRow | null = null
+      let matchType: 'domain' | 'normalized_name' | 'legacy' | null = null
+
+      // 1) Match strict par domaine sur exhibitors modernes
+      if (normalizedDomain) {
+        const { data: candidates } = await serviceClient
+          .from('exhibitors')
+          .select('id, name, website, logo_url, approved, owner_user_id, verified_at, is_test')
+          .not('website', 'is', null)
+          .eq('is_test', false)
+          .limit(2000)
+        const rows = (candidates || []) as ExRow[]
+        // Réimplémentation TS stricte de public.extract_root_domain
+        // (strip protocole, www., chemin, query, fragment, lowercase).
+        const stripDomain = (raw: string): string => {
+          let s = raw.trim().toLowerCase()
+          s = s.replace(/^https?:\/\//, '').replace(/^www\./, '')
+          s = s.split('/')[0].split('?')[0].split('#')[0]
+          return s
+        }
+        const matches: ExRow[] = rows.filter(c => c.website && stripDomain(c.website) === normalizedDomain)
+        if (matches.length > 0) {
+          matches.sort((a, b) => {
+            const aArch = a.name?.toUpperCase().startsWith('[ARCHIVED]') ? 1 : 0
+            const bArch = b.name?.toUpperCase().startsWith('[ARCHIVED]') ? 1 : 0
+            if (aArch !== bArch) return aArch - bArch
+            const aApp = a.approved ? 0 : 1
+            const bApp = b.approved ? 0 : 1
+            return aApp - bApp
+          })
+          matched = matches[0]
+          matchType = 'domain'
+        }
+      }
+
+      // 2) Match strict par nom normalisé sur exhibitors modernes
+      if (!matched && normalizedName) {
+        const { data: byName } = await serviceClient
+          .from('exhibitors')
+          .select('id, name, website, logo_url, approved, owner_user_id, verified_at, is_test')
+          .eq('name_normalized', normalizedName)
+          .eq('is_test', false)
+          .not('name', 'ilike', '[ARCHIVED]%')
+          .order('approved', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (byName) { matched = byName as ExRow; matchType = 'normalized_name' }
+      }
+
+      // 3) Fallback legacy exposants (renvoyé en match_type='legacy', non sélectionnable comme moderne)
+      let legacyHit: { id_exposant: string | null; nom_exposant: string | null; website_exposant: string | null } | null = null
+      if (!matched) {
+        if (normalizedDomain) {
+          const { data: legacyByDomain } = await serviceClient
+            .from('exposants')
+            .select('id_exposant, nom_exposant, website_exposant, normalized_domain')
+            .eq('normalized_domain', normalizedDomain)
+            .limit(1)
+            .maybeSingle()
+          if (legacyByDomain) legacyHit = legacyByDomain as any
+        }
+        if (!legacyHit && normalizedName) {
+          const { data: legacyByName } = await serviceClient
+            .from('exposants')
+            .select('id_exposant, nom_exposant, website_exposant, nom_normalized')
+            .eq('nom_normalized', normalizedName)
+            .limit(1)
+            .maybeSingle()
+          if (legacyByName) legacyHit = legacyByName as any
+        }
+      }
+
+      if (!matched && !legacyHit) {
+        return jsonOk({ match_found: false, match_type: null, confidence: null })
+      }
+
+      // Cas legacy uniquement (pas de fiche moderne)
+      if (!matched && legacyHit) {
+        return jsonOk({
+          match_found: true,
+          match_type: 'legacy',
+          confidence: 'medium',
+          exhibitor_id: null,
+          exhibitor_name: legacyHit.nom_exposant,
+          website: legacyHit.website_exposant,
+          logo_url: null,
+          approved: false,
+          already_participating_to_event: false,
+          has_admin: false,
+          current_user_can_create_novelty: true,
+          block_reason: null,
+          legacy_id_exposant: legacyHit.id_exposant,
+          message: 'Entreprise trouvée dans l\'ancienne base exposants. Elle sera convertie en fiche entreprise lors de la création de la nouveauté.',
+        })
+      }
+
+      // Fiche moderne trouvée → calcul des droits
+      const ex = matched as ExRow
+
+      // Active team membership pour l'utilisateur courant
+      const { data: userMembership } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('role, status')
+        .eq('exhibitor_id', ex.id)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .in('role', ['owner', 'admin'])
+        .maybeSingle()
+
+      // Existe-t-il un autre admin actif ?
+      const { count: activeAdminCount } = await serviceClient
+        .from('exhibitor_team_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('exhibitor_id', ex.id)
+        .eq('status', 'active')
+        .in('role', ['owner', 'admin'])
+
+      const ownerIsCaller = !!(ex.owner_user_id && ex.owner_user_id === user.id)
+      const callerIsTeamAdmin = !!userMembership
+      const hasAdmin = (activeAdminCount ?? 0) > 0 || !!ex.owner_user_id || !!ex.verified_at
+      const canCreate = !hasAdmin || ownerIsCaller || callerIsTeamAdmin || isAdmin
+
+      let blockReason: string | null = null
+      if (!canCreate) {
+        blockReason = 'Cette entreprise est déjà administrée sur Lotexpo. Pour publier une nouveauté au nom de cette entreprise, vous devez être administrateur de cette fiche. Demandez à l\'administrateur actuel de vous ajouter, ou contactez Lotexpo.'
+      }
+
+      // Participation existante sur l'événement courant ?
+      let alreadyParticipating = false
+      if (eventId) {
+        const { data: existingPart } = await serviceClient
+          .from('participation')
+          .select('id_participation')
+          .eq('id_event', eventId)
+          .or(`exhibitor_id.eq.${ex.id},id_exposant.eq.${ex.id}`)
+          .limit(1)
+          .maybeSingle()
+        alreadyParticipating = !!existingPart
+      }
+
+      return jsonOk({
+        match_found: true,
+        match_type: matchType,
+        confidence: 'high',
+        exhibitor_id: ex.id,
+        exhibitor_name: ex.name,
+        website: ex.website,
+        logo_url: ex.logo_url,
+        approved: ex.approved === true,
+        verified_at: ex.verified_at,
+        already_participating_to_event: alreadyParticipating,
+        has_admin: hasAdmin,
+        current_user_is_admin: ownerIsCaller || callerIsTeamAdmin || isAdmin,
+        current_user_can_create_novelty: canCreate,
+        block_reason: blockReason,
+      })
+    }
+
+    // ────────────────────────────────────────────────────
     // ACTION: create
     // Uses serviceClient to bypass RLS (auth already verified above)
     // ────────────────────────────────────────────────────

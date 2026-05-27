@@ -169,47 +169,66 @@ serve(async (req) => {
     // - Unmanaged exhibitor (no active owner) → anyone can submit
     // - Managed exhibitor (has active owner) → only team members or admins
     // ==========================================
-    const { data: activeOwner } = await admin
-      .from("exhibitor_team_members")
-      .select("id")
-      .eq("exhibitor_id", data.exhibitor_id)
-      .eq("role", "owner")
-      .eq("status", "active")
-      .maybeSingle();
+    // EXHIBITOR_ALREADY_MANAGED guard — couvre 3 signaux d'administration :
+    //   (a) team_member actif role owner/admin
+    //   (b) exhibitors.owner_user_id non null
+    //   (c) exhibitors.verified_at non null
+    // L'utilisateur peut publier si : (a) pas d'admin du tout,
+    //  (b) il est owner_user_id, (c) il est team_member actif owner/admin,
+    //  (d) il est admin plateforme.
+    {
+      const { data: exhibitorRow } = await admin
+        .from("exhibitors")
+        .select("id, owner_user_id, verified_at")
+        .eq("id", data.exhibitor_id)
+        .maybeSingle();
 
-    if (activeOwner) {
-      // Exhibitor is managed → check if user is a team member or admin
-      const { data: membership } = await admin
+      const { count: activeAdminCount } = await admin
+        .from("exhibitor_team_members")
+        .select("id", { count: "exact", head: true })
+        .eq("exhibitor_id", data.exhibitor_id)
+        .eq("status", "active")
+        .in("role", ["owner", "admin"]);
+
+      const { data: userMembership } = await admin
         .from("exhibitor_team_members")
         .select("id")
         .eq("exhibitor_id", data.exhibitor_id)
         .eq("user_id", authenticatedUserId)
-        .in("role", ["owner", "admin"])
         .eq("status", "active")
+        .in("role", ["owner", "admin"])
         .maybeSingle();
 
-      // Check admin role
-      const { data: adminRole } = await admin
+      const { data: platformAdmin } = await admin
         .from("user_roles")
         .select("role")
         .eq("user_id", authenticatedUserId)
         .eq("role", "admin")
         .maybeSingle();
 
-      if (!membership && !adminRole) {
-        console.log("[novelties-create] REJECTED: user", authenticatedUserId, "is not a team member of managed exhibitor", data.exhibitor_id);
+      const isOwnerUser = !!(exhibitorRow?.owner_user_id && exhibitorRow.owner_user_id === authenticatedUserId);
+      const hasAdmin = (activeAdminCount ?? 0) > 0
+        || !!exhibitorRow?.owner_user_id
+        || !!exhibitorRow?.verified_at;
+      const canPublish = !hasAdmin || isOwnerUser || !!userMembership || !!platformAdmin;
+
+      if (!canPublish) {
+        console.log("[novelties-create] REJECTED EXHIBITOR_ALREADY_MANAGED", {
+          user: authenticatedUserId,
+          exhibitor: data.exhibitor_id,
+          activeAdminCount,
+          owner_user_id: exhibitorRow?.owner_user_id,
+          verified_at: exhibitorRow?.verified_at,
+        });
         return new Response(
-          JSON.stringify({ 
-            error: "Cette entreprise est déjà gérée. Seuls les membres de l'équipe peuvent publier des nouveautés.",
-            code: "TEAM_MEMBERSHIP_REQUIRED"
+          JSON.stringify({
+            error: "Cette entreprise est déjà administrée sur Lotexpo. Vous devez être administrateur de cette fiche pour publier une nouveauté en son nom.",
+            code: "EXHIBITOR_ALREADY_MANAGED",
           }),
           { status: 403, headers: corsHeaders() }
         );
       }
-
-      console.log("[novelties-create] Access granted:", membership ? "team_member" : "admin");
-    } else {
-      console.log("[novelties-create] Unmanaged exhibitor, open access for:", authenticatedUserId);
+      console.log("[novelties-create] guard ok", { hasAdmin, isOwnerUser, teamAdmin: !!userMembership, platformAdmin: !!platformAdmin });
     }
 
     // ==========================================
