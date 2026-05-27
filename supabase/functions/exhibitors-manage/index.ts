@@ -464,9 +464,6 @@ Deno.serve(async (req) => {
     }
 
     // ────────────────────────────────────────────────────
-    // ACTION: approve_claim (admin only)
-    // ────────────────────────────────────────────────────
-    // ────────────────────────────────────────────────────
     // ACTION: ensure_participation
     // Idempotent : crée la participation (exhibitor × event) si elle n'existe pas.
     // Utilisé par AddNoveltyStepper quand l'utilisateur sélectionne une entreprise
@@ -490,6 +487,9 @@ Deno.serve(async (req) => {
       return jsonOk({ id_participation: partId })
     }
 
+    // ────────────────────────────────────────────────────
+    // ACTION: approve_claim (admin only)
+    // ────────────────────────────────────────────────────
     if (action === 'approve_claim') {
       if (!isAdmin) {
         return jsonError('Admin access required', 403)
