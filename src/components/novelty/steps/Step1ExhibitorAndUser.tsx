@@ -103,8 +103,16 @@ export default function Step1ExhibitorAndUser({
     
     // Bloquer la validation si quota dépassé pour l'exposant sélectionné
     const quotaOk = !selectedExhibitor || !quota || quota.allowed;
-    
-    const isValid = hasExhibitor && hasUserData && emailValid && quotaOk;
+
+    // Bloquer si un match existant est administré par un autre utilisateur
+    const blockedByAdminMatch = !!(
+      !selectedExhibitor &&
+      candidateMatch &&
+      candidateMatch.has_admin &&
+      !candidateMatch.current_user_can_create_novelty
+    );
+
+    const isValid = hasExhibitor && hasUserData && emailValid && quotaOk && !blockedByAdminMatch;
     onValidationChange(isValid);
 
     // Update parent data - Always send valid structure
@@ -157,7 +165,7 @@ export default function Step1ExhibitorAndUser({
         }
       });
     }
-  }, [selectedExhibitor, newExhibitorData, userData, user, quota, onChange, onValidationChange, selectedExhibitorLogo, selectedExhibitorStandInfo]);
+  }, [selectedExhibitor, newExhibitorData, userData, user, quota, onChange, onValidationChange, selectedExhibitorLogo, selectedExhibitorStandInfo, candidateMatch]);
 
   // Check if email is professional
   const isProfessionalEmail = (email: string) => {
