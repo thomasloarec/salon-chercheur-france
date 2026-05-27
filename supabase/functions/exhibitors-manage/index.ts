@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
       if (!newExhibitor && name) {
         try {
           const { data: normRow } = await serviceClient
-            .rpc('normalize_company_name', { input_name: name })
+            .rpc('normalize_company_name', { input: name })
           const normalized = typeof normRow === 'string' ? normRow : null
           if (normalized) {
             const { data: byName } = await serviceClient
@@ -231,7 +231,7 @@ Deno.serve(async (req) => {
             }
           }
         } catch (e) {
-          console.warn('normalize_company_name RPC failed, skipping name dedup', e)
+          console.error('❌ normalize_company_name RPC failed, name-based dedup INACTIVE', e)
         }
       }
 
@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
             const { data: byNorm } = await serviceClient
               .from('exposants')
               .select('id, id_exposant, nom_exposant, website_exposant, exposant_description, nom_normalized')
-              .eq('nom_normalized', (await serviceClient.rpc('normalize_company_name', { input_name: name })).data || '__none__')
+              .eq('nom_normalized', (await serviceClient.rpc('normalize_company_name', { input: name })).data || '__none__')
               .limit(1)
               .maybeSingle()
             if (byNorm) legacyMatch = byNorm
@@ -334,27 +334,26 @@ Deno.serve(async (req) => {
       // approved reste false. La promotion owner se fait UNIQUEMENT via approve_claim
       // (modération admin) ou via le futur workflow validation-de-nouveauté.
       if (!newExhibitor) {
+        // ── Utilise create_exhibitor_with_lock : verrou transactionnel + dedup
+        //    (par domaine puis par nom normalisé, anti-archive / anti-test).
+        //    Retourne soit la fiche existante, soit la nouvelle fiche.
         const { data: created, error: createError } = await serviceClient
-          .from('exhibitors')
-          .insert({
-            name,
-            website: website || null,
-            description: description || null,
-            stand_info: stand_info || null,
-            logo_url: logo_url || null,
-            approved: false,
-            owner_user_id: null
+          .rpc('create_exhibitor_with_lock', {
+            p_name: name,
+            p_website: website || null,
+            p_description: description || null,
+            p_stand_info: stand_info || null,
+            p_logo_url: logo_url || null,
           })
-          .select()
-          .single()
 
         if (createError || !created) {
-          console.error('❌ Failed to create exhibitor:', createError)
+          console.error('❌ create_exhibitor_with_lock failed:', createError)
           return jsonError('Failed to create exhibitor', 500, createError)
         }
 
-        newExhibitor = created
-        console.log('✅ Exhibitor created:', newExhibitor.id)
+        newExhibitor = Array.isArray(created) ? created[0] : created
+        // La RPC peut retourner une fiche existante (réutilisation) ou une nouvelle.
+        console.log('✅ Exhibitor resolved via create_exhibitor_with_lock:', newExhibitor.id)
       }
 
 

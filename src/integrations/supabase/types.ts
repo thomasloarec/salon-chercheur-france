@@ -4395,6 +4395,60 @@ export type Database = {
       compute_seo_source_hash: { Args: { p_event_id: string }; Returns: string }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
       count_seo_enrichment_eligible: { Args: never; Returns: Json }
+      create_exhibitor_with_lock: {
+        Args: {
+          p_description: string
+          p_logo_url: string
+          p_name: string
+          p_stand_info: string
+          p_website: string
+        }
+        Returns: {
+          approved: boolean | null
+          campaign_eligible: boolean | null
+          campaign_status: string | null
+          campaign_stop_reason: string | null
+          company_size_signal: string | null
+          company_tier: string | null
+          contact_email: string | null
+          contact_poste: string | null
+          contact_prenom: string | null
+          contact_score: number | null
+          created_at: string | null
+          current_step: number | null
+          description: string | null
+          email_source: string | null
+          hunter_search_done: boolean | null
+          hunter_verify_done: boolean | null
+          id: string
+          is_generic_inbox: boolean | null
+          is_test: boolean
+          last_sent_at: string | null
+          logo_url: string | null
+          name: string
+          name_normalized: string | null
+          next_send_date: string | null
+          opt_out: boolean | null
+          outlook_conv_id: string | null
+          outlook_message_id: string | null
+          owner_user_id: string | null
+          plan: string | null
+          pre_hunter_score: number | null
+          reply_date: string | null
+          reply_status: string | null
+          slug: string | null
+          stand_info: string | null
+          updated_at: string | null
+          verified_at: string | null
+          website: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exhibitors"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_missing_outreach_campaigns: { Args: never; Returns: Json }
       create_novelty_atomic: {
         Args: {
@@ -4427,6 +4481,14 @@ export type Database = {
       }
       delete_my_radar_crm_data: { Args: never; Returns: Json }
       delete_user_account: { Args: never; Returns: Json }
+      ensure_participation: {
+        Args: {
+          p_event_id: string
+          p_exhibitor_id: string
+          p_stand_info: string
+        }
+        Returns: string
+      }
       ensure_user_radar_access: {
         Args: { _user_id: string }
         Returns: {
@@ -4452,6 +4514,7 @@ export type Database = {
       }
       export_user_data: { Args: never; Returns: Json }
       extract_event_years: { Args: { p_text: string }; Returns: number[] }
+      extract_root_domain: { Args: { input: string }; Returns: string }
       generate_event_slug: {
         Args: { event_city: string; event_name: string; event_year: number }
         Returns: string
