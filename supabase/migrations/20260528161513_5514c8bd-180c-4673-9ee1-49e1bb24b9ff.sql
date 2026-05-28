@@ -1,0 +1,1 @@
+UPDATE public.outreach_campaigns SET website = 'hapo.eu' WHERE id = 'cbe921c2-2cc2-475c-b5a4-cf38aa118ebd';
