@@ -99,7 +99,7 @@ serve(async (req) => {
     // Récupérer la nouveauté actuelle pour vérifier s'il y a un exposant en attente
     const { data: novelty, error: fetchError } = await supabaseAdmin
       .from('novelties')
-      .select('id, pending_exhibitor_id, exhibitor_id, created_by')
+      .select('id, pending_exhibitor_id, exhibitor_id, created_by, event_id, stand_info')
       .eq('id', novelty_id)
       .single();
 
@@ -203,7 +203,7 @@ serve(async (req) => {
                 id_event: noveltyData.event_id,
                 id_event_text: eventData?.id_event || null,
                 website_exposant: exhibitorData?.website || null,
-                stand_exposant: exhibitorData?.stand_info || null,
+                stand_exposant: novelty.stand_info || exhibitorData?.stand_info || null,
                 urlexpo_event: null
               });
 
@@ -231,6 +231,35 @@ serve(async (req) => {
     // Mais pour l'instant on le laisse (l'admin peut le supprimer manuellement)
     if (next_status === 'rejected' && novelty.pending_exhibitor_id) {
       console.log(`[novelties-moderate] Note: Novelty rejected but pending exhibitor ${novelty.pending_exhibitor_id} kept for review`);
+    }
+
+    // ============================================
+    // SI PUBLICATION + exposant existant (non pending) + stand_info fourni
+    // → on force le numéro de stand de la participation à la valeur saisie
+    //   dans le formulaire de nouveauté. Ce n'est appliqué qu'à l'approbation
+    //   pour éviter qu'un spam non validé n'écrase la donnée publiée.
+    // ============================================
+    if (
+      next_status === 'published' &&
+      !novelty.pending_exhibitor_id &&
+      novelty.exhibitor_id &&
+      novelty.event_id &&
+      novelty.stand_info &&
+      novelty.stand_info.trim().length > 0
+    ) {
+      const newStand = novelty.stand_info.trim();
+      const { data: updatedRows, error: standUpdateError } = await supabaseAdmin
+        .from('participation')
+        .update({ stand_exposant: newStand })
+        .eq('exhibitor_id', novelty.exhibitor_id)
+        .eq('id_event', novelty.event_id)
+        .select('id_participation');
+
+      if (standUpdateError) {
+        console.error('[novelties-moderate] Failed to update participation stand:', standUpdateError);
+      } else {
+        console.log(`[novelties-moderate] Stand updated to "${newStand}" on ${updatedRows?.length ?? 0} participation row(s)`);
+      }
     }
     
     return new Response(
