@@ -1,0 +1,1 @@
+UPDATE public.exposants SET website_exposant = 'hapo.eu' WHERE id_exposant = 'ExporecL4CxI8cWXY1v5z' AND nom_exposant = 'HAPO';
