@@ -99,7 +99,7 @@ serve(async (req) => {
     // Récupérer la nouveauté actuelle pour vérifier s'il y a un exposant en attente
     const { data: novelty, error: fetchError } = await supabaseAdmin
       .from('novelties')
-      .select('id, pending_exhibitor_id, exhibitor_id, created_by')
+      .select('id, pending_exhibitor_id, exhibitor_id, created_by, event_id, stand_info')
       .eq('id', novelty_id)
       .single();
 
@@ -203,7 +203,7 @@ serve(async (req) => {
                 id_event: noveltyData.event_id,
                 id_event_text: eventData?.id_event || null,
                 website_exposant: exhibitorData?.website || null,
-                stand_exposant: exhibitorData?.stand_info || null,
+                stand_exposant: novelty.stand_info || exhibitorData?.stand_info || null,
                 urlexpo_event: null
               });
 
