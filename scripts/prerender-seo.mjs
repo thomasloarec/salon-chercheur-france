@@ -361,7 +361,15 @@ function buildSector(slug, label, top) {
   const collectionSchema = {
     '@context': 'https://schema.org', '@type': 'CollectionPage',
     name: title, url: canonical, description,
-    hasPart: top.slice(0, 5).map((e) => ({ '@type': 'Event', name: e.nom_event, url: `${SITE_ORIGIN}/events/${e.slug}`, startDate: e.date_debut || undefined })),
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: top.slice(0, 5).map((e, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: e.nom_event,
+        url: `${SITE_ORIGIN}/events/${e.slug}`,
+      })),
+    },
   };
   const headExtra = commonHead(canonical, title, description) + `<script type="application/ld+json">${safeJsonLd(collectionSchema)}</script>`;
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
@@ -431,7 +439,15 @@ function buildCity(slug, label, top) {
   const collectionSchema = {
     '@context': 'https://schema.org', '@type': 'CollectionPage',
     name: title, url: canonical, description,
-    hasPart: top.slice(0, 5).map((e) => ({ '@type': 'Event', name: e.nom_event, url: `${SITE_ORIGIN}/events/${e.slug}`, startDate: e.date_debut || undefined })),
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: top.slice(0, 5).map((e, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: e.nom_event,
+        url: `${SITE_ORIGIN}/events/${e.slug}`,
+      })),
+    },
   };
   const headExtra = commonHead(canonical, title, description) + `<script type="application/ld+json">${safeJsonLd(collectionSchema)}</script>`;
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
