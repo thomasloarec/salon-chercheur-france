@@ -1494,6 +1494,64 @@ export type Database = {
           },
         ]
       }
+      exhibitor_public_identities: {
+        Row: {
+          canonical_name: string
+          created_at: string
+          exhibitor_id: string | null
+          id: string
+          is_active: boolean
+          legacy_exposant_id: string | null
+          public_slug: string
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          canonical_name: string
+          created_at?: string
+          exhibitor_id?: string | null
+          id?: string
+          is_active?: boolean
+          legacy_exposant_id?: string | null
+          public_slug: string
+          source_type: string
+          updated_at?: string
+        }
+        Update: {
+          canonical_name?: string
+          created_at?: string
+          exhibitor_id?: string | null
+          id?: string
+          is_active?: boolean
+          legacy_exposant_id?: string | null
+          public_slug?: string
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       exhibitor_team_members: {
         Row: {
           created_at: string
@@ -4512,6 +4570,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      exhibitor_slug_next_available: {
+        Args: { p_base: string }
+        Returns: string
+      }
+      exhibitor_slug_next_available_from: {
+        Args: { p_base: string; p_start: number }
+        Returns: string
+      }
+      exhibitor_slug_normalize: { Args: { p_name: string }; Returns: string }
       export_user_data: { Args: never; Returns: Json }
       extract_event_years: { Args: { p_text: string }; Returns: number[] }
       extract_root_domain: { Args: { input: string }; Returns: string }
