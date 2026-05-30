@@ -14,24 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _t2abis_results: {
-        Row: {
-          result: string | null
-          seq: number
-          test: string | null
-        }
-        Insert: {
-          result?: string | null
-          seq?: number
-          test?: string | null
-        }
-        Update: {
-          result?: string | null
-          seq?: number
-          test?: string | null
-        }
-        Relationships: []
-      }
       alerts: {
         Row: {
           created_at: string
