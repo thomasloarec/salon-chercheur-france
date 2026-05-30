@@ -1388,6 +1388,51 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          public_identity_id: string | null
+          public_slug: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          public_identity_id?: string | null
+          public_slug: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          public_identity_id?: string | null
+          public_slug?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_events_public_identity_id_fkey"
+            columns: ["public_identity_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_public_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_events_public_identity_id_fkey"
+            columns: ["public_identity_id"]
+            isOneToOne: false
+            referencedRelation: "public_exhibitor_profiles"
+            referencedColumns: ["public_identity_id"]
+          },
+        ]
+      }
       exhibitor_invitations: {
         Row: {
           accepted_at: string | null
@@ -4953,6 +4998,10 @@ export type Database = {
         }[]
       }
       toggle_favorite: { Args: { p_event: string }; Returns: undefined }
+      track_exhibitor_event: {
+        Args: { p_event_type: string; p_metadata?: Json; p_public_slug: string }
+        Returns: boolean
+      }
       update_existing_events_slugs: { Args: never; Returns: undefined }
       update_user_password: {
         Args: { current_password: string; new_password: string }
