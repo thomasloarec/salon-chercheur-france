@@ -4539,6 +4539,10 @@ export type Database = {
       }
       delete_my_radar_crm_data: { Args: never; Returns: Json }
       delete_user_account: { Args: never; Returns: Json }
+      ensure_exhibitor_public_identity: {
+        Args: { p_exhibitor_id?: string; p_legacy_exposant_id?: string }
+        Returns: string
+      }
       ensure_participation: {
         Args: {
           p_event_id: string
@@ -4569,6 +4573,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      exhibitor_identity_insert_safe: {
+        Args: {
+          p_base: string
+          p_exhibitor: string
+          p_force_suffix?: boolean
+          p_legacy: string
+          p_name: string
+          p_source: string
+        }
+        Returns: string
       }
       exhibitor_slug_next_available: {
         Args: { p_base: string }
@@ -4866,6 +4881,15 @@ export type Database = {
         Returns: Json
       }
       start_seo_weekly_catchup: { Args: never; Returns: Json }
+      sync_exhibitor_public_identities: {
+        Args: { p_limit?: number }
+        Returns: {
+          created_legacy: number
+          created_linked: number
+          created_modern: number
+          skipped_ambiguous: number
+        }[]
+      }
       toggle_favorite: { Args: { p_event: string }; Returns: undefined }
       update_existing_events_slugs: { Args: never; Returns: undefined }
       update_user_password: {
