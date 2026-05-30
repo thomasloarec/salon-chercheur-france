@@ -195,6 +195,9 @@ function ExhibitorHero({
   const slug = profile.public_slug || '';
   const name = profile.display_name || profile.canonical_name || 'Exposant';
   const logo = getExhibitorLogoUrl(profile.logo_url, profile.website);
+  // Normalized external links — CTAs only render for valid, absolute URLs.
+  const websiteUrl = normalizeExternalUrl(profile.website);
+  const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
 
   return (
     <Card className="rounded-2xl overflow-hidden">
@@ -258,35 +261,35 @@ function ExhibitorHero({
 
             {/* CTAs */}
             <div className="flex flex-wrap items-center gap-2 mt-4">
-              {profile.website && (
+              {websiteUrl && (
                 <Button
                   asChild
                   variant="default"
                   className="gap-2"
                   onClick={() =>
                     trackExhibitorEvent('website_click', slug, {
-                      target_url: profile.website,
+                      target_url: websiteUrl,
                     })
                   }
                 >
-                  <a href={profile.website} target="_blank" rel="noopener noreferrer">
+                  <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
                     <Globe className="h-4 w-4" />
                     Site officiel
                   </a>
                 </Button>
               )}
-              {profile.linkedin_url && (
+              {linkedinUrl && (
                 <Button
                   asChild
                   variant="outline"
                   className="gap-2"
                   onClick={() =>
                     trackExhibitorEvent('linkedin_click', slug, {
-                      target_url: profile.linkedin_url,
+                      target_url: linkedinUrl,
                     })
                   }
                 >
-                  <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer">
+                  <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
                     <Linkedin className="h-4 w-4" />
                     LinkedIn
                   </a>
