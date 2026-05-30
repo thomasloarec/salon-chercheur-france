@@ -1,11 +1,61 @@
 import { Helmet } from 'react-helmet-async';
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 
-// Site-wide OG fallback, identical to the one used by GlobalSEO.tsx.
-const OG_IMAGE_FALLBACK = 'https://lotexpo.com/favicon.png';
+// Dedicated 1200x630 Open Graph fallback for exhibitor pages.
+// Always used for og:image (never the company logo) so social previews
+// (LinkedIn, etc.) get a proper landscape card. The company logo is only
+// used inside the page and in the JSON-LD `logo` field.
+const OG_IMAGE_FALLBACK = 'https://lotexpo.com/og-exhibitor-default.png';
 
 interface ExhibitorProfileSEOProps {
   profile: PublicExhibitorProfile;
+}
+
+/** Returns a trimmed string, or null when empty / whitespace-only / nullish. */
+function cleanStr(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
+ * Builds a schema.org Organization JSON-LD object for an indexable exhibitor
+ * profile. Returns null when the profile is not eligible (handled by caller).
+ * Only public, non-sensitive fields are included; null/empty fields are
+ * omitted entirely so the output never contains `undefined`.
+ */
+function buildOrganizationJsonLd(profile: PublicExhibitorProfile) {
+  const slug = cleanStr(profile.public_slug);
+  const name = cleanStr(profile.display_name);
+  if (!slug || !name) return null;
+
+  const canonicalUrl = `https://lotexpo.com/exposants/${slug}`;
+  const website = cleanStr(profile.website);
+  const logo = cleanStr(profile.logo_url);
+  const linkedin = cleanStr(profile.linkedin_url);
+  const description = cleanStr(profile.description) || cleanStr(profile.ai_summary);
+
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': canonicalUrl,
+    name,
+    mainEntityOfPage: canonicalUrl,
+  };
+
+  // `url` = official company website (never the Lotexpo URL).
+  if (website) jsonLd.url = website;
+  if (logo) jsonLd.logo = logo;
+  if (description) jsonLd.description = description;
+
+  // `sameAs` = external identity URLs. Avoid duplicating the website that is
+  // already used as `url`.
+  const sameAs = [linkedin].filter(
+    (u): u is string => !!u && u !== website,
+  );
+  if (sameAs.length > 0) jsonLd.sameAs = sameAs;
+
+  return jsonLd;
 }
 
 /**
@@ -29,8 +79,15 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
   ).slice(0, 160);
 
   const canonicalUrl = `https://lotexpo.com/exposants/${slug}`;
-  const ogImage = profile.logo_url || OG_IMAGE_FALLBACK;
   const indexable = profile.seo_indexable === true;
+  // og:image is ALWAYS the dedicated landscape fallback — never the company
+  // logo (logos are often square/transparent and preview poorly).
+  const ogImage = OG_IMAGE_FALLBACK;
+
+  // JSON-LD only for indexable profiles with a usable name — we don't emit
+  // structured signals for noindex / thin-content pages.
+  const organizationJsonLd =
+    indexable && cleanStr(name) ? buildOrganizationJsonLd(profile) : null;
 
   return (
     <Helmet>
@@ -51,6 +108,8 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
       <meta property="og:site_name" content="Lotexpo" />
       <meta property="og:locale" content="fr_FR" />
       <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -58,6 +117,13 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
+
+      {/* JSON-LD Organization (indexable profiles only) */}
+      {organizationJsonLd && (
+        <script type="application/ld+json">
+          {JSON.stringify(organizationJsonLd)}
+        </script>
+      )}
     </Helmet>
   );
 };
