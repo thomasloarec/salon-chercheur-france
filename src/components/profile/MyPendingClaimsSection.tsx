@@ -60,7 +60,6 @@ const MyPendingClaimsSection = () => {
         {claims.map((claim) => {
           const ex = claim.exhibitor;
           const logoUrl = getExhibitorLogoUrl(ex.logo_url, undefined);
-          const exhibitorHref = ex.slug ? `/exposants/${ex.slug}` : undefined;
 
           return (
             <div
@@ -83,16 +82,7 @@ const MyPendingClaimsSection = () => {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  {exhibitorHref ? (
-                    <Link
-                      to={exhibitorHref}
-                      className="font-medium truncate hover:underline"
-                    >
-                      {ex.name}
-                    </Link>
-                  ) : (
-                    <span className="font-medium truncate">{ex.name}</span>
-                  )}
+                  <span className="font-medium truncate">{ex.name}</span>
                   <Badge variant="outline" className="text-xs border-amber-300 text-amber-800 bg-amber-100/60">
                     <Clock className="h-3 w-3 mr-1" />
                     En attente de validation
@@ -100,6 +90,9 @@ const MyPendingClaimsSection = () => {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Votre demande sera vérifiée par l'équipe Lotexpo.
+                </p>
+                <p className="text-xs italic text-muted-foreground mt-0.5">
+                  Page exposant en cours de déploiement.
                 </p>
               </div>
 
