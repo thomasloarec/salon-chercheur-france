@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   Building2,
@@ -562,15 +562,18 @@ export default function ExhibitorProfile() {
   const { slug } = useParams<{ slug: string }>();
   const { data: profile, isLoading, isError } = useExhibitorProfile(slug);
 
-  // Analytics: fire profile_view exactly once per mount.
+  // Analytics: fire profile_view exactly once per mount, as soon as a
+  // visible (non-test) profile is available. The ref guard guarantees a
+  // single call regardless of rerenders.
   const profileSlug = profile?.public_slug;
   const isVisibleProfile = !!profile && profile.is_test !== true;
+  const viewTracked = useRef(false);
   useEffect(() => {
-    if (isVisibleProfile && profileSlug) {
+    if (!viewTracked.current && isVisibleProfile && profileSlug) {
+      viewTracked.current = true;
       trackExhibitorEvent('profile_view', profileSlug);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isVisibleProfile, profileSlug]);
 
   const hasAnyActivity = useMemo(() => {
     if (!profile) return false;
