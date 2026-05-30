@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS trg_protect_exhibitor_columns ON public.exhibitors;
