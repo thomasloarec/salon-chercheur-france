@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      _rls_test_results: {
+        Row: {
+          after_val: string | null
+          before_val: string | null
+          expected: string | null
+          field: string | null
+          label: string | null
+          passed: boolean | null
+          test_no: number | null
+        }
+        Insert: {
+          after_val?: string | null
+          before_val?: string | null
+          expected?: string | null
+          field?: string | null
+          label?: string | null
+          passed?: boolean | null
+          test_no?: number | null
+        }
+        Update: {
+          after_val?: string | null
+          before_val?: string | null
+          expected?: string | null
+          field?: string | null
+          label?: string | null
+          passed?: boolean | null
+          test_no?: number | null
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           created_at: string
