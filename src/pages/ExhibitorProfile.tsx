@@ -41,6 +41,7 @@ import ExhibitorProfileSEO from '@/components/exhibitor/ExhibitorProfileSEO';
 import ExhibitorClaimModal from '@/components/exhibitor/ExhibitorClaimModal';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
+import type { Novelty } from '@/hooks/useNovelties';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 
