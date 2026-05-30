@@ -44,6 +44,7 @@ import NoveltyCard from '@/components/novelty/NoveltyCard';
 import type { Novelty } from '@/hooks/useNovelties';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
+import { normalizeExternalUrl, normalizeLinkedInUrl } from '@/lib/urlUtils';
 
 const EVENTS_PAGE_SIZE = 6;
 const NOVELTIES_PAGE_SIZE = 4;
