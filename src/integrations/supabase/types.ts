@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      _t2abis_results: {
+        Row: {
+          result: string | null
+          seq: number
+          test: string | null
+        }
+        Insert: {
+          result?: string | null
+          seq?: number
+          test?: string | null
+        }
+        Update: {
+          result?: string | null
+          seq?: number
+          test?: string | null
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           created_at: string
@@ -4433,13 +4451,6 @@ export type Database = {
       _exhibitor_ai_completeness: {
         Args: { a: Database["public"]["Tables"]["exhibitor_ai"]["Row"] }
         Returns: number
-      }
-      _t2abis_run_tests: {
-        Args: never
-        Returns: {
-          result: string
-          test: string
-        }[]
       }
       can_add_novelty: {
         Args: { p_event_id: string; p_exhibitor_id: string }
