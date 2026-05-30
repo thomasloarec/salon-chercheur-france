@@ -48,17 +48,7 @@ export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
     slug: '',
     logo_url: undefined
   };
-  
-  // 🐛 DEBUG - Vérifier le logo reçu
-  useEffect(() => {
-    console.log('🎨 NoveltyCard - Exhibitor data:', {
-      id: exhibitor.id,
-      name: exhibitor.name,
-      logo_url: exhibitor.logo_url,
-      has_logo: !!exhibitor.logo_url,
-      logo_length: exhibitor.logo_url?.length
-    });
-  }, [exhibitor]);
+
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showExhibitorModal, setShowExhibitorModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
