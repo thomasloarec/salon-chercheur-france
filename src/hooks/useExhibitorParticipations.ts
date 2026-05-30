@@ -116,6 +116,7 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
         .select('id, nom_event, slug, date_debut, date_fin, ville, url_image')
         .in('id', eventIds)
         .eq('visible', true)
+        .eq('is_test', false)
         .order('date_debut', { ascending: true });
 
       if (eventsError) {
@@ -146,11 +147,21 @@ export const useExhibitorParticipations = (exhibitorId: string, exhibitorName?: 
         })
         .filter((p): p is ExhibitorParticipation => p !== null);
 
-      // Filtrer uniquement les événements à venir
+      // Date du jour au format ISO (YYYY-MM-DD) pour comparer aux dates événement
       const today = new Date().toISOString().split('T')[0];
+
+      // Date de référence d'un événement : date_fin si présente, sinon date_debut
+      const getEndRef = (e: ExhibitorParticipation['event']): string | null =>
+        e.date_fin || e.date_debut || null;
+
+      // Un salon est "à venir" (incluant en cours) si sa date de référence >= aujourd'hui.
+      // Si date_debut ET date_fin sont absentes, l'événement n'est PAS considéré "à venir".
       return allParticipations
-        .filter(p => p.event.date_debut >= today)
-        .sort((a, b) => a.event.date_debut.localeCompare(b.event.date_debut));
+        .filter(p => {
+          const endRef = getEndRef(p.event);
+          return endRef !== null && endRef >= today;
+        })
+        .sort((a, b) => (a.event.date_debut || '').localeCompare(b.event.date_debut || ''));
     },
     enabled: !!(exhibitorId || exhibitorName),
     staleTime: 300_000, // 5 minutes
