@@ -308,6 +308,10 @@ const indexXml = wrapIndex([
   { loc: `${SITE_URL}/sitemap-events.xml`, lastmod: now },
   { loc: `${SITE_URL}/sitemap-blog.xml`, lastmod: now },
   { loc: `${SITE_URL}/sitemap-hubs.xml`, lastmod: now },
+  // Exhibitor sitemap is served dynamically by the `sitemap-exposants` edge
+  // function (proxied at /sitemap-exposants.xml via vercel.json). It is NOT
+  // written to public/ — only referenced here so crawlers discover it.
+  { loc: `${SITE_URL}/sitemap-exposants.xml`, lastmod: now },
 ]);
 await writeFile(path.join(PUBLIC_DIR, 'sitemap.xml'), indexXml, 'utf8');
 
