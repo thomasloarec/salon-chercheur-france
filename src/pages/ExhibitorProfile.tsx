@@ -435,6 +435,36 @@ function UpcomingEventsBlock({ profile }: { profile: PublicExhibitorProfile }) {
 
 /* ------------------------------ Novelties block -------------------------- */
 
+/**
+ * Wraps a NoveltyCard and records a single `novelty_click` per novelty per
+ * page mount. Clicks that originate inside the image carousel (prev/next/dots)
+ * are ignored so navigation does not generate false-positive engagement.
+ */
+function TrackedNovelty({
+  novelty,
+  slug,
+}: {
+  novelty: Novelty;
+  slug: string;
+}) {
+  const tracked = useRef(false);
+
+  const handleClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (tracked.current) return;
+    // Ignore carousel navigation (arrows / dots live inside this container).
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('[data-suppress-global-arrows="true"]')) return;
+    tracked.current = true;
+    trackExhibitorEvent('novelty_click', slug, { novelty_id: novelty.id });
+  };
+
+  return (
+    <div onClickCapture={handleClickCapture}>
+      <NoveltyCard novelty={novelty} />
+    </div>
+  );
+}
+
 function NoveltiesBlock({ profile }: { profile: PublicExhibitorProfile }) {
   const slug = profile.public_slug || '';
   const [visible, setVisible] = useState(NOVELTIES_PAGE_SIZE);
@@ -473,14 +503,7 @@ function NoveltiesBlock({ profile }: { profile: PublicExhibitorProfile }) {
         <>
           <div className="space-y-6">
             {shown.map((n) => (
-              <div
-                key={n.id}
-                onClickCapture={() =>
-                  trackExhibitorEvent('novelty_click', slug, { novelty_id: n.id })
-                }
-              >
-                <NoveltyCard novelty={n} />
-              </div>
+              <TrackedNovelty key={n.id} novelty={n} slug={slug} />
             ))}
           </div>
           {remaining > 0 && (
