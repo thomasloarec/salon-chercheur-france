@@ -4239,6 +4239,64 @@ export type Database = {
           },
         ]
       }
+      public_exhibitor_profiles: {
+        Row: {
+          ai_summary: string | null
+          canonical_name: string | null
+          created_at: string | null
+          description: string | null
+          display_name: string | null
+          exhibitor_id: string | null
+          future_participations_count: number | null
+          has_description: boolean | null
+          has_future_events: boolean | null
+          has_logo: boolean | null
+          has_published_novelties: boolean | null
+          has_website: boolean | null
+          is_active: boolean | null
+          is_claimed: boolean | null
+          is_test: boolean | null
+          is_verified: boolean | null
+          last_activity_at: string | null
+          legacy_exposant_id: string | null
+          linkedin_url: string | null
+          logo_url: string | null
+          next_event_at: string | null
+          past_participations_count: number | null
+          public_identity_id: string | null
+          public_slug: string | null
+          published_novelties_count: number | null
+          seo_indexable: boolean | null
+          seo_reason: string | null
+          source_type: string | null
+          total_participations: number | null
+          updated_at: string | null
+          website: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       v_a_enrichir: {
         Row: {
           company_name: string | null
