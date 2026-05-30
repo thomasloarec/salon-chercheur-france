@@ -1629,6 +1629,7 @@ export type Database = {
           is_generic_inbox: boolean | null
           is_test: boolean
           last_sent_at: string | null
+          linkedin_url: string | null
           logo_url: string | null
           name: string
           name_normalized: string | null
@@ -1668,6 +1669,7 @@ export type Database = {
           is_generic_inbox?: boolean | null
           is_test?: boolean
           last_sent_at?: string | null
+          linkedin_url?: string | null
           logo_url?: string | null
           name: string
           name_normalized?: string | null
@@ -1707,6 +1709,7 @@ export type Database = {
           is_generic_inbox?: boolean | null
           is_test?: boolean
           last_sent_at?: string | null
+          linkedin_url?: string | null
           logo_url?: string | null
           name?: string
           name_normalized?: string | null
@@ -4540,6 +4543,7 @@ export type Database = {
           is_generic_inbox: boolean | null
           is_test: boolean
           last_sent_at: string | null
+          linkedin_url: string | null
           logo_url: string | null
           name: string
           name_normalized: string | null
