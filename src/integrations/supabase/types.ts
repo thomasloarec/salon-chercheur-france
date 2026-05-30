@@ -4434,6 +4434,13 @@ export type Database = {
         Args: { a: Database["public"]["Tables"]["exhibitor_ai"]["Row"] }
         Returns: number
       }
+      _t2abis_run_tests: {
+        Args: never
+        Returns: {
+          result: string
+          test: string
+        }[]
+      }
       can_add_novelty: {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
