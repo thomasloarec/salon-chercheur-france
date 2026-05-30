@@ -2,11 +2,6 @@
   "cleanUrls": true,
   "redirects": [
     {
-      "source": "/sitemap-exposants.xml",
-      "destination": "https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/sitemap-exposants",
-      "permanent": false
-    },
-    {
       "source": "/ville/villepinte",
       "destination": "/ville/paris",
       "permanent": true
