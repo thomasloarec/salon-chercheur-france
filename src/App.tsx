@@ -47,6 +47,7 @@ import Agenda from '@/pages/Agenda';
 import Nouveautes from '@/pages/Nouveautes';
 import Notifications from '@/pages/Notifications';
 import Exposants from '@/pages/Exposants';
+import ExhibitorProfile from '@/pages/ExhibitorProfile';
 import PublierNouveaute from '@/pages/PublierNouveaute';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
@@ -107,6 +108,7 @@ function App() {
               <Route path="/events/:slug" element={<EventPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
             <Route path="/exposants" element={<Exposants />} />
+            <Route path="/exposants/:slug" element={<ExhibitorProfile />} />
             <Route path="/premium" element={<Exposants />} />
             <Route path="/publier-nouveaute" element={<PublierNouveaute />} />
             <Route path="/radar-crm" element={<RadarCrm />} />
