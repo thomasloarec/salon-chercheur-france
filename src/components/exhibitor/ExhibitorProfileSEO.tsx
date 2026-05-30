@@ -1,5 +1,10 @@
 import { Helmet } from 'react-helmet-async';
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
+import {
+  normalizeExternalUrl,
+  normalizeImageUrl,
+  normalizeLinkedInUrl,
+} from '@/lib/urlUtils';
 
 // Dedicated 1200x630 Open Graph fallback for exhibitor pages.
 // Always used for og:image (never the company logo) so social previews
@@ -30,9 +35,10 @@ function buildOrganizationJsonLd(profile: PublicExhibitorProfile) {
   if (!slug || !name) return null;
 
   const canonicalUrl = `https://lotexpo.com/exposants/${slug}`;
-  const website = cleanStr(profile.website);
-  const logo = cleanStr(profile.logo_url);
-  const linkedin = cleanStr(profile.linkedin_url);
+  // Normalize every external URL before injecting it into structured data.
+  const website = normalizeExternalUrl(profile.website);
+  const logo = normalizeImageUrl(profile.logo_url);
+  const linkedin = normalizeLinkedInUrl(profile.linkedin_url);
   const description = cleanStr(profile.description) || cleanStr(profile.ai_summary);
 
   const jsonLd: Record<string, unknown> = {
