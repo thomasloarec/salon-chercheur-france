@@ -26,6 +26,7 @@ import {
   useExhibitorEditableFields,
   useExhibitorOwnerUpdate,
 } from '@/hooks/useExhibitorOwnerEdit';
+import { resolveDescriptionPrefill } from '@/lib/exhibitorOwnerEdit';
 
 const DESCRIPTION_MAX = 3000;
 
@@ -69,7 +70,7 @@ export default function ExhibitorOwnerEditDrawer({
   // jamais fallback legacy, jamais la valeur calculée de la vue).
   useEffect(() => {
     if (open && editable && !initialized.current) {
-      setDescription(editable.description ?? '');
+      setDescription(resolveDescriptionPrefill(editable));
       setWebsite(editable.website ?? '');
       setLinkedin(editable.linkedin_url ?? '');
       setLogoUrl(editable.logo_url ?? null);
