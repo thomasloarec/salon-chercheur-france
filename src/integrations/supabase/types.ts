@@ -1315,6 +1315,60 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_alerts: {
+        Row: {
+          created_at: string
+          display_name_snapshot: string | null
+          id: string
+          last_notified_at: string | null
+          public_identity_id: string | null
+          public_slug: string
+          source_surface: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name_snapshot?: string | null
+          id?: string
+          last_notified_at?: string | null
+          public_identity_id?: string | null
+          public_slug: string
+          source_surface?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name_snapshot?: string | null
+          id?: string
+          last_notified_at?: string | null
+          public_identity_id?: string | null
+          public_slug?: string
+          source_surface?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_alerts_public_identity_id_fkey"
+            columns: ["public_identity_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_public_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_alerts_public_identity_id_fkey"
+            columns: ["public_identity_id"]
+            isOneToOne: false
+            referencedRelation: "public_exhibitor_profiles"
+            referencedColumns: ["public_identity_id"]
+          },
+        ]
+      }
       exhibitor_claim_requests: {
         Row: {
           created_at: string | null
@@ -4881,6 +4935,10 @@ export type Database = {
           value: string
         }[]
       }
+      get_my_exhibitor_alert_status: {
+        Args: { p_public_slug: string }
+        Returns: Json
+      }
       get_novelty_likes_count: {
         Args: { novelty_uuid: string }
         Returns: number
@@ -5187,6 +5245,14 @@ export type Database = {
         }[]
       }
       seo_test_hash_protection: { Args: never; Returns: Json }
+      set_exhibitor_alert: {
+        Args: {
+          p_enabled: boolean
+          p_public_slug: string
+          p_source_surface?: string
+        }
+        Returns: Json
+      }
       set_seo_vault_secret: {
         Args: { p_name: string; p_value: string }
         Returns: Json
