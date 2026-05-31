@@ -13,6 +13,8 @@ import type { Event } from '@/types/event';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { fetchExhibitorPublicSlugs, resolvePublicSlug } from '@/lib/exhibitorPublicSlug';
+import ExhibitorFullProfileCTA from '@/components/exhibitor/ExhibitorFullProfileCTA';
 
 interface ExhibitorsSidebarProps {
   event: Event;
