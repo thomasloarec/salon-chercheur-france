@@ -81,6 +81,17 @@ const getWebsite = (exhibitor: Exhibitor): string | undefined => {
   return exhibitor.website_final || exhibitor.website_exposant;
 };
 
+// Phase 4B-bis — description courte dans la popup (la fiche complète garde le texte intégral)
+const SHORT_DESC_LIMIT = 400;
+const truncateDescription = (text: string): { text: string; truncated: boolean } => {
+  const clean = text.trim();
+  if (clean.length <= SHORT_DESC_LIMIT) return { text: clean, truncated: false };
+  const slice = clean.slice(0, SHORT_DESC_LIMIT);
+  const lastSpace = slice.lastIndexOf(' ');
+  const cut = lastSpace > SHORT_DESC_LIMIT * 0.6 ? slice.slice(0, lastSpace) : slice;
+  return { text: cut.trimEnd() + '…', truncated: true };
+};
+
 export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({ 
   open, 
   onOpenChange, 
