@@ -8,12 +8,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Heart, Mail, MessageCircle, Plus } from 'lucide-react';
+import { Bell, Heart, Mail, MessageCircle, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
-type ActionType = 'favorite' | 'comment' | 'add-novelty';
+type ActionType = 'favorite' | 'comment' | 'add-novelty' | 'alert';
 
 interface AuthRequiredModalProps {
   open: boolean;
@@ -36,6 +36,11 @@ const AUTH_MESSAGES = {
     icon: Plus,
     title: 'Créer un compte exposant',
     description: 'Connectez-vous pour publier vos nouveautés, attirer les visiteurs et présenter vos innovations.',
+  },
+  alert: {
+    icon: Bell,
+    title: 'Connectez-vous pour créer une alerte',
+    description: 'Créez un compte ou connectez-vous pour être prévenu des prochains salons de cet exposant.',
   },
 };
 
