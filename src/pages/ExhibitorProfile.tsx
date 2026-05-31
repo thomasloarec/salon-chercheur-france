@@ -37,6 +37,7 @@ import NotFoundSEO from '@/components/seo/NotFoundSEO';
 import ExhibitorClaimModal from '@/components/exhibitor/ExhibitorClaimModal';
 import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditDrawer';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
+import { canEditExhibitorProfile } from '@/lib/exhibitorOwnerEdit';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
 import type { Novelty } from '@/hooks/useNovelties';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
@@ -111,11 +112,12 @@ function ClaimCta({ profile }: { profile: PublicExhibitorProfile }) {
   // connecté, la fiche est moderne (exhibitor_id présent), non-test, et
   // l'utilisateur est gestionnaire validé (owner direct ou team member
   // owner/admin actif). Les profils legacy purs / test n'affichent rien.
-  const canEdit =
-    !!user &&
-    isModernExhibitor &&
-    profile.is_test !== true &&
-    governance.isManager;
+  const canEdit = canEditExhibitorProfile({
+    isAuthenticated: !!user,
+    exhibitorId: profile.exhibitor_id,
+    isTest: profile.is_test,
+    isManager: governance.isManager,
+  });
 
   const handleClaimClick = () => {
     trackExhibitorEvent('claim_click', slug, {
