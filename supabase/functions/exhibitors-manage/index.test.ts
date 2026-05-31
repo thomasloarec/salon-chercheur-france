@@ -288,3 +288,37 @@ Deno.test("D6: update writes use serviceClient", async () => {
   }
   assertEquals(section.includes("serviceClient"), true);
 });
+
+// ═══════════════════════════════════════════════
+// Phase 4A-D2 — Journalisation via RPC transactionnelle
+// ═══════════════════════════════════════════════
+Deno.test("D7: update calls the transactional logging RPC (no direct .update on exhibitors)", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  assertEquals(section.includes("update_exhibitor_public_profile_with_log"), true);
+  // Plus aucun UPDATE direct de la table exhibitors dans l'action update.
+  assertEquals(section.includes(".from('exhibitors')\n        .update("), false);
+});
+
+Deno.test("D8: no-op (no changed field) skips RPC and returns noop:true", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  assertEquals(section.includes("changed_fields.length === 0"), true);
+  assertEquals(section.includes("noop: true"), true);
+});
+
+Deno.test("D9: actor_role precedence platform_admin > owner_user_id > team role", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  assertEquals(section.includes("'platform_admin'"), true);
+  assertEquals(section.includes("'owner_user_id'"), true);
+  assertEquals(section.includes("'team_owner'"), true);
+  assertEquals(section.includes("'team_admin'"), true);
+});
+
+Deno.test("D10: p_changes is built as {old,new} from normalized values", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  assertEquals(section.includes("p_changes[field] = { old: oldVal, new: newVal }"), true);
+  assertEquals(section.includes("p_changed_fields: changed_fields"), true);
+});
