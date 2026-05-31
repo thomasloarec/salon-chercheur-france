@@ -558,6 +558,17 @@ const AdminDuplicateReviews: React.FC = () => {
           </Button>
         </div>
       )}
+
+      {previewPair && (
+        <MergePreviewDialog
+          open={!!previewPair}
+          onOpenChange={(o) => !o && setPreviewPair(null)}
+          aId={previewPair.identity_a_id}
+          bId={previewPair.identity_b_id}
+          aName={previewPair.a_name}
+          bName={previewPair.b_name}
+        />
+      )}
     </div>
   );
 };
