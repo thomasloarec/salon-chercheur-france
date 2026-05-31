@@ -210,13 +210,67 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           }).filter(e => e.name)
             .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' }));
 
-          setAllExhibitors(mapped);
+          // Phase 4B — batch attach public slugs (single query, no N+1)
+          const slugMaps = await fetchExhibitorPublicSlugs(
+            mapped.map((e) => e.exhibitor_uuid || null),
+            mapped.map((e) => e.id_exposant || null),
+          );
+          const mappedWithSlugs = mapped.map((e) => {
+            const info = resolvePublicSlug(slugMaps, {
+              exhibitorId: e.exhibitor_uuid,
+              legacyId: e.id_exposant,
+            });
+            return {
+              ...e,
+              public_slug: info?.public_slug ?? null,
+              seo_indexable: info?.seo_indexable ?? false,
+              is_test: info?.is_test ?? false,
+            };
+          });
+
+          setAllExhibitors(mappedWithSlugs);
         }
       } catch (err) {
         console.error('[ExhibitorsSidebar] Error fetching all exhibitors', err);
         setAllExhibitors([]);
       }
     }
+  };
+
+  // Phase 4B — open the detail popup, carrying the prefetched public slug fields.
+  const openExhibitor = async (exhibitor: any, fromModal: boolean) => {
+    const exhibitorForDialog = {
+      id_exposant: exhibitor.id_exposant || exhibitor.id,
+      exhibitor_uuid: exhibitor.exhibitor_uuid,
+      exhibitor_name: exhibitor.exhibitor_name || exhibitor.name,
+      stand_exposant: exhibitor.stand_exposant || exhibitor.stand,
+      website_exposant: exhibitor.website_exposant,
+      exposant_description: exhibitor.exposant_description,
+      urlexpo_event: exhibitor.urlexpo_event,
+      logo_url: exhibitor.logo_url || null,
+    };
+
+    const full = await hydrateExhibitor(exhibitorForDialog);
+
+    setSelectedExhibitor({
+      id_exposant: exhibitor.id_exposant || exhibitor.id,
+      exhibitor_uuid: exhibitor.exhibitor_uuid,
+      exhibitor_name: full.exhibitor_name,
+      name_final: full.exhibitor_name,
+      stand_exposant: exhibitor.stand_exposant || exhibitor.stand,
+      website_exposant: full.website_exposant,
+      website_final: full.website_exposant,
+      exposant_description: full.exposant_description,
+      description_final: full.exposant_description,
+      ai_resume_court: full.ai_resume_court || exhibitor.ai_resume_court,
+      urlexpo_event: full.urlexpo_event,
+      logo_url: full.logo_url || null,
+      // Phase 4B — public identity (prefetched, no extra query here)
+      public_slug: exhibitor.public_slug ?? null,
+      seo_indexable: exhibitor.seo_indexable ?? false,
+      is_test: exhibitor.is_test ?? false,
+    });
+    setOpenedFromModal(fromModal);
   };
 
   const [infoOpen, setInfoOpen] = useState(false);
