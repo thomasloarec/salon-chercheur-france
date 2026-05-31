@@ -8,17 +8,23 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Heart, Mail, MessageCircle, Plus } from 'lucide-react';
+import { Bell, Heart, Mail, MessageCircle, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
-type ActionType = 'favorite' | 'comment' | 'add-novelty';
+type ActionType = 'favorite' | 'comment' | 'add-novelty' | 'alert';
 
 interface AuthRequiredModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   actionType?: ActionType;
+  /**
+   * Origin-relative path to return to after authentication (e.g. the current
+   * exhibitor profile). Forwarded to Google OAuth `redirectTo` and the /auth
+   * `redirect` param so the user lands back on the same page.
+   */
+  redirectTo?: string;
 }
 
 const AUTH_MESSAGES = {
@@ -37,18 +43,34 @@ const AUTH_MESSAGES = {
     title: 'Créer un compte exposant',
     description: 'Connectez-vous pour publier vos nouveautés, attirer les visiteurs et présenter vos innovations.',
   },
+  alert: {
+    icon: Bell,
+    title: 'Connectez-vous pour créer une alerte',
+    description: 'Créez un compte ou connectez-vous pour être prévenu des prochains salons de cet exposant.',
+  },
 };
 
-const AuthRequiredModal = ({ open, onOpenChange, actionType = 'favorite' }: AuthRequiredModalProps) => {
+const AuthRequiredModal = ({
+  open,
+  onOpenChange,
+  actionType = 'favorite',
+  redirectTo,
+}: AuthRequiredModalProps) => {
   const navigate = useNavigate();
   const message = AUTH_MESSAGES[actionType];
   const IconComponent = message.icon;
+
+  // Only allow safe, origin-relative redirect paths.
+  const safeRedirect =
+    redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+      ? redirectTo
+      : null;
 
   const handleGoogleAuth = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}${safeRedirect || '/'}`,
       },
     });
     if (error) {
@@ -58,7 +80,7 @@ const AuthRequiredModal = ({ open, onOpenChange, actionType = 'favorite' }: Auth
 
   const handleGoToAuth = () => {
     onOpenChange(false);
-    navigate('/auth');
+    navigate(safeRedirect ? `/auth?redirect=${encodeURIComponent(safeRedirect)}` : '/auth');
   };
 
   return (

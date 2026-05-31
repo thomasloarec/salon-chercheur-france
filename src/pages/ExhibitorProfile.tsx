@@ -37,6 +37,7 @@ import NotFoundSEO from '@/components/seo/NotFoundSEO';
 import ExhibitorClaimModal from '@/components/exhibitor/ExhibitorClaimModal';
 import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditDrawer';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
+import ExhibitorAlertButton from '@/components/exhibitor/ExhibitorAlertButton';
 import { canEditExhibitorProfile } from '@/lib/exhibitorOwnerEdit';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
 import type { Novelty } from '@/hooks/useNovelties';
@@ -312,6 +313,9 @@ function ExhibitorHero({
                 </Button>
               )}
               <ClaimCta profile={profile} />
+              {profile.public_slug && profile.is_test !== true && (
+                <ExhibitorAlertButton publicSlug={profile.public_slug} />
+              )}
             </div>
           </div>
         </div>
