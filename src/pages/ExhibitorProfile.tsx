@@ -96,11 +96,6 @@ function ClaimCta({ profile }: { profile: PublicExhibitorProfile }) {
   const [editOpen, setEditOpen] = useState(false);
   const slug = profile.public_slug || '';
 
-  // Profil legacy pur (pas de ligne exhibitors moderne) : NON éditable.
-  // L'édition owner est court-circuitée — aucune donnée d'édition n'est
-  // chargée pour ces profils.
-  const isModernExhibitor = !!profile.exhibitor_id;
-
   const governance = useExhibitorGovernance(
     profile.exhibitor_id || profile.legacy_exposant_id || undefined,
     profile.display_name || profile.canonical_name || undefined
