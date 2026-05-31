@@ -359,84 +359,54 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
           ) : preview.length > 0 ? (
             preview.map((exhibitor) => {
               return (
-                <button
-                  key={exhibitor.id}
-                  onClick={async () => {
-                    // ✅ CORRECTION : Utiliser les données déjà disponibles de l'edge function
-                    const exhibitorForDialog = {
-                      id_exposant: exhibitor.id_exposant || exhibitor.id,
-                      exhibitor_uuid: exhibitor.exhibitor_uuid,
-                      exhibitor_name: exhibitor.exhibitor_name || exhibitor.name,
-                      stand_exposant: exhibitor.stand_exposant || exhibitor.stand,
-                      website_exposant: exhibitor.website_exposant,  // ✅ Utiliser les données
-                      exposant_description: exhibitor.exposant_description,  // ✅ Utiliser les données
-                      urlexpo_event: exhibitor.urlexpo_event,
-                      logo_url: exhibitor.logo_url || null,
-                    };
-
-                    console.log('🔍 ExhibitorsSidebar - Données avant hydratation:', {
-                      name: exhibitorForDialog.exhibitor_name,
-                      has_description: !!exhibitorForDialog.exposant_description,
-                      has_website: !!exhibitorForDialog.website_exposant,
-                      description_length: exhibitorForDialog.exposant_description?.length || 0
-                    });
-
-                    const full = await hydrateExhibitor(exhibitorForDialog);
-                    
-                    console.log('🔍 ExhibitorsSidebar - Données après hydratation:', {
-                      name: full.exhibitor_name,
-                      has_description: !!full.exposant_description,
-                      has_website: !!full.website_exposant,
-                      description_length: full.exposant_description?.length || 0
-                    });
-
-                    // Format for ExhibitorDetailDialog
-                    setSelectedExhibitor({
-                      id_exposant: exhibitor.id_exposant || exhibitor.id,
-                      exhibitor_uuid: exhibitor.exhibitor_uuid,
-                      exhibitor_name: full.exhibitor_name,
-                      name_final: full.exhibitor_name,
-                      stand_exposant: exhibitor.stand_exposant || exhibitor.stand,
-                      website_exposant: full.website_exposant,
-                      website_final: full.website_exposant,
-                      exposant_description: full.exposant_description,
-                      description_final: full.exposant_description,
-                      ai_resume_court: full.ai_resume_court || exhibitor.ai_resume_court,
-                      urlexpo_event: full.urlexpo_event,
-                      logo_url: full.logo_url || null,
-                    });
-                    setOpenedFromModal(false);
-                  }}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
-                >
-                  <div className="w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
-                    {(() => {
-                      const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website || exhibitor.website_exposant);
-                      return resolvedLogo ? (
-                        <img 
-                          src={resolvedLogo} 
-                          alt={`${exhibitor.name} logo`}
-                          className="w-full h-full object-contain rounded"
-                        />
-                      ) : (
-                        <Building2 className="w-4 h-4 text-gray-400" />
-                      );
-                    })()}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-900 truncate">
-                      {exhibitor.exhibitor_name || exhibitor.name}
+                <div key={exhibitor.id} className="rounded-lg hover:bg-gray-50 transition-colors">
+                  <button
+                    onClick={() => openExhibitor(exhibitor, false)}
+                    className="w-full flex items-center gap-3 p-3 text-left"
+                  >
+                    <div className="w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
+                      {(() => {
+                        const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website || exhibitor.website_exposant);
+                        return resolvedLogo ? (
+                          <img 
+                            src={resolvedLogo} 
+                            alt={`${exhibitor.name} logo`}
+                            className="w-full h-full object-contain rounded"
+                          />
+                        ) : (
+                          <Building2 className="w-4 h-4 text-gray-400" />
+                        );
+                      })()}
                     </div>
-                    {(exhibitor.stand_exposant || exhibitor.stand || exhibitor.hall) && (
-                      <p className="text-xs text-gray-500 truncate">
-                        {[exhibitor.hall, (exhibitor.stand_exposant || exhibitor.stand) ? `Stand ${normalizeStandNumber(exhibitor.stand_exposant || exhibitor.stand)}` : null].filter(Boolean).join(' • ')}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                </button>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-gray-900 truncate">
+                        {exhibitor.exhibitor_name || exhibitor.name}
+                      </div>
+                      {(exhibitor.stand_exposant || exhibitor.stand || exhibitor.hall) && (
+                        <p className="text-xs text-gray-500 truncate">
+                          {[exhibitor.hall, (exhibitor.stand_exposant || exhibitor.stand) ? `Stand ${normalizeStandNumber(exhibitor.stand_exposant || exhibitor.stand)}` : null].filter(Boolean).join(' • ')}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                  </button>
+                  {/* Phase 4B — discreet crawlable link to the full public profile */}
+                  {exhibitor.public_slug && !exhibitor.is_test && (
+                    <div className="px-3 pb-2 -mt-1">
+                      <ExhibitorFullProfileCTA
+                        publicSlug={exhibitor.public_slug}
+                        seoIndexable={exhibitor.seo_indexable}
+                        isTest={exhibitor.is_test}
+                        openInNewTab
+                        variant="link"
+                        surface="event_exhibitor_list"
+                        eventSlug={event.slug}
+                      />
+                    </div>
+                  )}
+                </div>
               );
             })
           ) : null}
