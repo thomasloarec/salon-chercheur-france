@@ -4802,6 +4802,10 @@ export type Database = {
       exhibitor_slug_normalize: { Args: { p_name: string }; Returns: string }
       export_user_data: { Args: never; Returns: Json }
       extract_event_years: { Args: { p_text: string }; Returns: number[] }
+      extract_exhibitor_id_from_logo_path: {
+        Args: { object_name: string }
+        Returns: string
+      }
       extract_root_domain: { Args: { input: string }; Returns: string }
       generate_event_slug: {
         Args: { event_city: string; event_name: string; event_year: number }
