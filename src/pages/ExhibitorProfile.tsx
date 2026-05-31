@@ -21,12 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Pencil } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useExhibitorGovernance } from '@/hooks/useExhibitorGovernance';
@@ -40,6 +35,7 @@ import {
 import ExhibitorProfileSEO from '@/components/exhibitor/ExhibitorProfileSEO';
 import NotFoundSEO from '@/components/seo/NotFoundSEO';
 import ExhibitorClaimModal from '@/components/exhibitor/ExhibitorClaimModal';
+import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditDrawer';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
 import type { Novelty } from '@/hooks/useNovelties';
@@ -96,7 +92,13 @@ function ClaimCta({ profile }: { profile: PublicExhibitorProfile }) {
   const { user } = useAuth();
   const [claimOpen, setClaimOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const slug = profile.public_slug || '';
+
+  // Profil legacy pur (pas de ligne exhibitors moderne) : NON éditable.
+  // L'édition owner est court-circuitée — aucune donnée d'édition n'est
+  // chargée pour ces profils.
+  const isModernExhibitor = !!profile.exhibitor_id;
 
   const governance = useExhibitorGovernance(
     profile.exhibitor_id || profile.legacy_exposant_id || undefined,
@@ -104,6 +106,16 @@ function ClaimCta({ profile }: { profile: PublicExhibitorProfile }) {
   );
 
   const isClaimed = profile.is_claimed === true || governance.hasActiveOwner;
+
+  // Bouton "Modifier cette fiche" : visible uniquement si l'utilisateur est
+  // connecté, la fiche est moderne (exhibitor_id présent), non-test, et
+  // l'utilisateur est gestionnaire validé (owner direct ou team member
+  // owner/admin actif). Les profils legacy purs / test n'affichent rien.
+  const canEdit =
+    !!user &&
+    isModernExhibitor &&
+    profile.is_test !== true &&
+    governance.isManager;
 
   const handleClaimClick = () => {
     trackExhibitorEvent('claim_click', slug, {
@@ -120,21 +132,26 @@ function ClaimCta({ profile }: { profile: PublicExhibitorProfile }) {
     return <Skeleton className="h-9 w-44" />;
   }
 
-  // State 5: validated manager → "Modifier cette fiche" (disabled in 3A).
-  if (governance.isTeamMember) {
+  // State 5: validated manager → "Modifier cette fiche" (active, Phase 4A-C).
+  if (canEdit) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <Button variant="secondary" disabled>
-                Modifier cette fiche
-              </Button>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Édition disponible prochainement</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <>
+        <Button
+          variant="secondary"
+          className="gap-2"
+          onClick={() => setEditOpen(true)}
+        >
+          <Pencil className="h-4 w-4" />
+          Modifier cette fiche
+        </Button>
+        <ExhibitorOwnerEditDrawer
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          exhibitorId={profile.exhibitor_id as string}
+          publicSlug={profile.public_slug}
+          exhibitorName={profile.display_name || profile.canonical_name || 'Exposant'}
+        />
+      </>
     );
   }
 
