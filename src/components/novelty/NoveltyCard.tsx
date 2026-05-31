@@ -364,6 +364,11 @@ export default function NoveltyCard({
           if (!open) setHydratedExhibitor(null);
         }}
         exhibitor={hydratedExhibitor}
+        publicSlug={exhibitorPublicSlug}
+        seoIndexable={exhibitorSeoIndexable}
+        isTest={exhibitorIsTest}
+        openInNewTab={openExhibitorInNewTab}
+        surface="novelty_card"
       />
 
       {/* Auth Required Modal */}
