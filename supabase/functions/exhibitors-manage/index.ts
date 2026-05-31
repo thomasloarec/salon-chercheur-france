@@ -892,6 +892,76 @@ Deno.serve(async (req) => {
     }
 
     // ────────────────────────────────────────────────────
+    // ACTION: get_editable (read-only)
+    // Phase 4A-C — renvoie UNIQUEMENT les champs éditoriaux HUMAINS bruts
+    // de la table exhibitors pour préremplir le drawer d'édition owner.
+    //
+    // CRITIQUE : on lit directement exhibitors.description (jamais
+    // ai_summary, jamais la valeur calculée public_exhibitor_profiles.
+    // description qui COALESCE description/legacy/résumé IA). Si la valeur
+    // brute est NULL, on renvoie null → le textarea reste vide.
+    //
+    // Autorisation : strictement identique à l'action update
+    // (admin plateforme OU owner_user_id = caller OU membre actif
+    // exhibitor_team_members role IN ('owner','admin')).
+    // ────────────────────────────────────────────────────
+    if (action === 'get_editable') {
+      const exhibitor_id = typeof requestData?.exhibitor_id === 'string'
+        ? requestData.exhibitor_id
+        : undefined
+
+      if (!exhibitor_id) {
+        return jsonError('exhibitor_id is required', 400)
+      }
+
+      // La fiche doit exister comme exhibitor moderne (UUID).
+      // Les profils legacy purs (sans ligne exhibitors) ne sont pas éditables.
+      const { data: exRow, error: exErr } = await serviceClient
+        .from('exhibitors')
+        .select('id, owner_user_id, description, website, linkedin_url, logo_url')
+        .eq('id', exhibitor_id)
+        .maybeSingle()
+
+      if (exErr) {
+        console.error('❌ get_editable: exhibitor fetch error', exErr)
+        return jsonError('Failed to load exhibitor', 500)
+      }
+      if (!exRow) {
+        return jsonError('Exhibitor not found', 404)
+      }
+
+      // ── Autorisation gestionnaire (miroir de update) ──
+      let authorized = isAdmin
+      if (!authorized && exRow.owner_user_id && exRow.owner_user_id === user.id) {
+        authorized = true
+      }
+      if (!authorized) {
+        const { data: membership } = await serviceClient
+          .from('exhibitor_team_members')
+          .select('id')
+          .eq('exhibitor_id', exhibitor_id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .in('role', ['owner', 'admin'])
+          .maybeSingle()
+        authorized = !!membership
+      }
+
+      if (!authorized) {
+        return jsonError('Not authorized to view this exhibitor', 403)
+      }
+
+      // On ne renvoie QUE les 4 champs éditoriaux humains bruts.
+      return jsonOk({
+        exhibitor_id: exRow.id,
+        description: exRow.description ?? null,
+        website: exRow.website ?? null,
+        linkedin_url: exRow.linkedin_url ?? null,
+        logo_url: exRow.logo_url ?? null,
+      })
+    }
+
+    // ────────────────────────────────────────────────────
     // ACTION: update (any active team member or site admin)
     // ────────────────────────────────────────────────────
     if (action === 'update') {
