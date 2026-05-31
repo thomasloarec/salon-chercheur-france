@@ -28,6 +28,8 @@ import {
   X,
   Copy,
 } from 'lucide-react';
+import { GitMerge } from 'lucide-react';
+import MergePreviewDialog from './MergePreviewDialog';
 
 type DuplicateRow = {
   identity_a_id: string;
