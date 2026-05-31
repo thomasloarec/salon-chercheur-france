@@ -4972,6 +4972,10 @@ export type Database = {
       normalize_event_domain: { Args: { p_url: string }; Returns: string }
       normalize_event_url: { Args: { p_url: string }; Returns: string }
       parse_affluence_int: { Args: { p: string }; Returns: number }
+      preview_exhibitor_identity_merge: {
+        Args: { p_loser_identity_id: string; p_winner_identity_id: string }
+        Returns: Json
+      }
       publish_pending_event_atomic: {
         Args: { p_event_data: Json; p_id_event: string }
         Returns: Json
