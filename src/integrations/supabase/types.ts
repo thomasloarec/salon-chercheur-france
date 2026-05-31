@@ -1610,6 +1610,61 @@ export type Database = {
           },
         ]
       }
+      exhibitor_profile_change_logs: {
+        Row: {
+          actor_role: string
+          actor_user_id: string
+          changed_fields: string[]
+          changes: Json
+          created_at: string
+          exhibitor_id: string
+          id: string
+          source: string
+        }
+        Insert: {
+          actor_role: string
+          actor_user_id: string
+          changed_fields: string[]
+          changes: Json
+          created_at?: string
+          exhibitor_id: string
+          id?: string
+          source?: string
+        }
+        Update: {
+          actor_role?: string
+          actor_user_id?: string
+          changed_fields?: string[]
+          changes?: Json
+          created_at?: string
+          exhibitor_id?: string
+          id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_profile_change_logs_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_profile_change_logs_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_profile_change_logs_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       exhibitor_public_identities: {
         Row: {
           canonical_name: string
@@ -4937,6 +4992,25 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_email_blacklisted: { Args: { _email: string }; Returns: boolean }
       is_team_member: { Args: { _exhibitor_id: string }; Returns: boolean }
+      list_exhibitor_profile_change_logs: {
+        Args: { p_exhibitor_id?: string; p_limit?: number }
+        Returns: {
+          actor_role: string
+          actor_user_id: string
+          changed_fields: string[]
+          changes: Json
+          created_at: string
+          exhibitor_id: string
+          id: string
+          source: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "exhibitor_profile_change_logs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_exposants_to_enrich: {
         Args: { p_limit?: number }
         Returns: {
@@ -5131,6 +5205,24 @@ export type Database = {
       track_exhibitor_event: {
         Args: { p_event_type: string; p_metadata?: Json; p_public_slug: string }
         Returns: boolean
+      }
+      update_exhibitor_public_profile_with_log: {
+        Args: {
+          p_actor_role: string
+          p_actor_user_id: string
+          p_changed_fields: string[]
+          p_changes: Json
+          p_exhibitor_id: string
+          p_source?: string
+          p_update: Json
+        }
+        Returns: {
+          description: string
+          id: string
+          linkedin_url: string
+          logo_url: string
+          website: string
+        }[]
       }
       update_existing_events_slugs: { Args: never; Returns: undefined }
       update_user_password: {
