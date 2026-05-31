@@ -441,39 +441,9 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
         loading={allExhibitors === null}
         onSelect={async (ex) => {
           setShowAllModal(false);
-          
-          // Trouver l'exposant complet dans allExhibitors
+          // Find the full exhibitor (carries prefetched public slug fields)
           const fullEx = allExhibitors?.find(e => e.id === ex.id_exposant);
-          
-          const exhibitorForDialog = {
-            id_exposant: ex.id_exposant,
-            exhibitor_uuid: fullEx?.exhibitor_uuid,
-            exhibitor_name: ex.exhibitor_name,
-            stand_exposant: ex.stand_exposant,
-            website_exposant: fullEx?.website_exposant,
-            exposant_description: fullEx?.exposant_description,
-            urlexpo_event: fullEx?.urlexpo_event,
-            logo_url: fullEx?.logo_url || null,
-          };
-          
-          const full = await hydrateExhibitor(exhibitorForDialog);
-          
-          // Format for ExhibitorDetailDialog
-          setSelectedExhibitor({
-            id_exposant: ex.id_exposant,
-            exhibitor_uuid: fullEx?.exhibitor_uuid,
-            exhibitor_name: full.exhibitor_name,
-            name_final: full.exhibitor_name,
-            stand_exposant: ex.stand_exposant,
-            website_exposant: full.website_exposant,
-            website_final: full.website_exposant,
-            exposant_description: full.exposant_description,
-            description_final: full.exposant_description,
-            ai_resume_court: full.ai_resume_court,
-            urlexpo_event: fullEx?.urlexpo_event,
-            logo_url: full.logo_url || null,
-          });
-          setOpenedFromModal(true);
+          await openExhibitor(fullEx ?? { ...ex, id: ex.id_exposant }, true);
         }}
       />
 
