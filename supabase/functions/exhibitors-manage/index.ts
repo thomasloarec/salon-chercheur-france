@@ -1,4 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import {
+  sanitizeDescription,
+  normalizeExternalUrl,
+  normalizeLinkedInUrl,
+  validateLogoUrl,
+} from './validation.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
