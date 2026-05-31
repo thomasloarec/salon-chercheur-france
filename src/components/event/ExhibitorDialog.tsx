@@ -13,6 +13,7 @@ import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
 import { normalizeExternalUrl } from '@/lib/url';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import ExhibitorFullProfileCTA, { FullProfileSurface } from '@/components/exhibitor/ExhibitorFullProfileCTA';
 
 interface ExhibitorDialogProps {
   exhibitor: {
@@ -26,13 +27,26 @@ interface ExhibitorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onBackToAll?: () => void;
+  // Phase 4B — public profile CTA (prefetched slug, no per-card fetch)
+  publicSlug?: string | null;
+  seoIndexable?: boolean;
+  isTest?: boolean;
+  openInNewTab?: boolean;
+  surface?: FullProfileSurface;
+  eventSlug?: string;
 }
 
 export function ExhibitorDialog({ 
   exhibitor, 
   open, 
   onOpenChange,
-  onBackToAll
+  onBackToAll,
+  publicSlug,
+  seoIndexable,
+  isTest,
+  openInNewTab = false,
+  surface = 'novelty_card',
+  eventSlug,
 }: ExhibitorDialogProps) {
   const { data: participations = [], isLoading } = useExhibitorParticipations(
     exhibitor?.id || '',
@@ -106,6 +120,19 @@ export function ExhibitorDialog({
               Visiter le site web
               <ExternalLink className="ml-auto h-3 w-3" />
             </Button>
+          )}
+
+          {/* Phase 4B — full public profile CTA */}
+          {publicSlug && !isTest && (
+            <ExhibitorFullProfileCTA
+              publicSlug={publicSlug}
+              seoIndexable={seoIndexable}
+              isTest={isTest}
+              openInNewTab={openInNewTab}
+              surface={surface}
+              eventSlug={eventSlug}
+              className="w-full"
+            />
           )}
 
           {/* Chargement des participations */}

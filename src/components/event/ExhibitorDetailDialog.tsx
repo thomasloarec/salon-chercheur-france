@@ -13,6 +13,7 @@ import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
 import { useExhibitorGovernance } from '@/hooks/useExhibitorGovernance';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import ExhibitorGovernanceBanner from '@/components/exhibitor/ExhibitorGovernanceBanner';
+import ExhibitorFullProfileCTA from '@/components/exhibitor/ExhibitorFullProfileCTA';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -35,6 +36,10 @@ interface Exhibitor {
   // Radar CRM extras
   crm_company_name?: string;
   needs_review?: boolean;
+  // Phase 4B — public identity (prefetched, no extra query)
+  public_slug?: string | null;
+  seo_indexable?: boolean;
+  is_test?: boolean;
 }
 
 interface ExhibitorDetailDialogProps {
@@ -229,6 +234,15 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
                 </a>
               </Button>
             )}
+            {/* Phase 4B — full public profile CTA (new tab from event context) */}
+            <ExhibitorFullProfileCTA
+              publicSlug={e.public_slug}
+              seoIndexable={e.seo_indexable}
+              isTest={e.is_test}
+              openInNewTab
+              surface="event_exhibitor_modal"
+              eventSlug={event?.slug}
+            />
           </div>
 
           {/* Gouvernance / Claim CTA */}

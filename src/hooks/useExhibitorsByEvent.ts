@@ -1,6 +1,39 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { EventExhibitorsResponse } from '@/types/lotexpo';
+import { fetchExhibitorPublicSlugs, resolvePublicSlug } from '@/lib/exhibitorPublicSlug';
+
+/**
+ * Phase 4B — attach public_slug / seo_indexable / is_test to a list of
+ * exhibitors using a SINGLE batched query (no N+1).
+ */
+async function attachPublicSlugs(
+  response: EventExhibitorsResponse,
+): Promise<EventExhibitorsResponse> {
+  const list = response.exhibitors || [];
+  if (list.length === 0) return response;
+
+  const maps = await fetchExhibitorPublicSlugs(
+    list.map((e) => e.exhibitor_uuid || null),
+    list.map((e) => e.id_exposant || null),
+  );
+
+  return {
+    ...response,
+    exhibitors: list.map((e) => {
+      const info = resolvePublicSlug(maps, {
+        exhibitorId: e.exhibitor_uuid,
+        legacyId: e.id_exposant,
+      });
+      return {
+        ...e,
+        public_slug: info?.public_slug ?? null,
+        seo_indexable: info?.seo_indexable ?? false,
+        is_test: info?.is_test ?? false,
+      };
+    }),
+  };
+}
 
 /**
  * Hook pour récupérer les exposants d'un événement
@@ -39,7 +72,7 @@ export const useExhibitorsByEvent = (
 
         // Si succès avec des données, retourner
         if (!error && data && data.total > 0) {
-          return data as EventExhibitorsResponse;
+          return await attachPublicSlugs(data as EventExhibitorsResponse);
         }
       }
 
@@ -224,7 +257,7 @@ export const useExhibitorsByEvent = (
 
       console.log('✅ Exhibitors mappés:', exhibitors.length);
 
-      return { exhibitors, total: count || exhibitors.length };
+      return await attachPublicSlugs({ exhibitors, total: count || exhibitors.length });
     },
     enabled: !!eventSlugOrId,
     staleTime: 0,
