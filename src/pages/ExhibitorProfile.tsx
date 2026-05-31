@@ -38,6 +38,7 @@ import {
   type ExhibitorUpcomingEvent,
 } from '@/hooks/useExhibitorProfile';
 import ExhibitorProfileSEO from '@/components/exhibitor/ExhibitorProfileSEO';
+import NotFoundSEO from '@/components/seo/NotFoundSEO';
 import ExhibitorClaimModal from '@/components/exhibitor/ExhibitorClaimModal';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import NoveltyCard from '@/components/novelty/NoveltyCard';
@@ -76,6 +77,7 @@ function ProfileSkeleton() {
 function NotFoundView() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-24 text-center">
+      <NotFoundSEO title="Fiche exposant introuvable | Lotexpo" />
       <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
       <h1 className="text-2xl font-bold mb-2">Fiche exposant introuvable</h1>
       <p className="text-muted-foreground mb-6">

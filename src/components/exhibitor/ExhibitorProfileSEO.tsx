@@ -65,6 +65,44 @@ function buildOrganizationJsonLd(profile: PublicExhibitorProfile) {
 }
 
 /**
+ * Builds a schema.org BreadcrumbList JSON-LD object for an indexable exhibitor
+ * profile: Accueil > Exposants > {display_name}.
+ * Returns null when the profile lacks a usable slug/name (handled by caller).
+ * Only public, non-sensitive fields are included — no internal identifiers,
+ * no seo_reason, never `undefined`.
+ */
+function buildBreadcrumbJsonLd(profile: PublicExhibitorProfile) {
+  const slug = cleanStr(profile.public_slug);
+  const name = cleanStr(profile.display_name) || cleanStr(profile.canonical_name);
+  if (!slug || !name) return null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Accueil',
+        item: 'https://lotexpo.com/',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Exposants',
+        item: 'https://lotexpo.com/exposants',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name,
+        item: `https://lotexpo.com/exposants/${slug}`,
+      },
+    ],
+  };
+}
+
+/**
  * SEO head for the public exhibitor profile page.
  * - robots: index/follow when seo_indexable, otherwise noindex/follow.
  * - canonical: https://lotexpo.com/exposants/{public_slug}
@@ -94,6 +132,11 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
   // structured signals for noindex / thin-content pages.
   const organizationJsonLd =
     indexable && cleanStr(name) ? buildOrganizationJsonLd(profile) : null;
+
+  // BreadcrumbList only for indexable profiles — coexists with Organization,
+  // never emitted for noindex / thin-content pages.
+  const breadcrumbJsonLd =
+    indexable && cleanStr(name) ? buildBreadcrumbJsonLd(profile) : null;
 
   return (
     <Helmet>
@@ -128,6 +171,13 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
       {organizationJsonLd && (
         <script type="application/ld+json">
           {JSON.stringify(organizationJsonLd)}
+        </script>
+      )}
+
+      {/* JSON-LD BreadcrumbList (indexable profiles only) */}
+      {breadcrumbJsonLd && (
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbJsonLd)}
         </script>
       )}
     </Helmet>
