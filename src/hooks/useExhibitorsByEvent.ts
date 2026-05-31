@@ -257,7 +257,7 @@ export const useExhibitorsByEvent = (
 
       console.log('✅ Exhibitors mappés:', exhibitors.length);
 
-      return { exhibitors, total: count || exhibitors.length };
+      return await attachPublicSlugs({ exhibitors, total: count || exhibitors.length });
     },
     enabled: !!eventSlugOrId,
     staleTime: 0,
