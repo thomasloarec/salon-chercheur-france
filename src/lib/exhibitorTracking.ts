@@ -7,7 +7,9 @@ export type ExhibitorEventType =
   | 'claim_click'
   | 'event_click'
   | 'novelty_click'
-  | 'full_profile_click';
+  | 'full_profile_click'
+  | 'alert_activate'
+  | 'alert_deactivate';
 
 /**
  * Fire-and-forget analytics for public exhibitor profile pages.
