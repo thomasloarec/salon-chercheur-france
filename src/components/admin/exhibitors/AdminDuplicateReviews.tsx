@@ -514,9 +514,20 @@ const AdminDuplicateReviews: React.FC = () => {
                     <X className="h-4 w-4 mr-1" />
                     Ignorer
                   </Button>
-                  <Badge variant="outline" className="ml-auto text-muted-foreground">
-                    Fusion non disponible
-                  </Badge>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => setPreviewPair(row)}
+                    >
+                      <GitMerge className="h-4 w-4 mr-1" />
+                      Prévisualiser fusion
+                    </Button>
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Fusion non disponible
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
