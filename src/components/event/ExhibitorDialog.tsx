@@ -6,12 +6,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Calendar, MapPin, Globe, Building2, ArrowLeft } from 'lucide-react';
+import { ExternalLink, Calendar, Globe, Building2, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
 import { normalizeExternalUrl } from '@/lib/url';
-import { normalizeStandNumber } from '@/utils/standUtils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import ExhibitorFullProfileCTA, { FullProfileSurface } from '@/components/exhibitor/ExhibitorFullProfileCTA';
 
