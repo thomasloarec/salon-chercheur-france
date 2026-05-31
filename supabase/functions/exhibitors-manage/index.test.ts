@@ -121,7 +121,7 @@ Deno.test("B7: approve_claim updates exhibitor owner_user_id from claim data", a
 
 Deno.test("B8: reject_claim does NOT update exhibitors table", async () => {
   const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
-  const section = code.split("action === 'reject_claim'")[1]?.split("action === 'update'")[0];
+  const section = code.split("action === 'reject_claim'")[1]?.split("action === 'get_editable'")[0];
   assertExists(section);
   // reject should only update exhibitor_claim_requests, not exhibitors
   assertEquals(section.includes(".from('exhibitors')"), false, "reject_claim must NOT touch exhibitors table");
@@ -173,6 +173,45 @@ Deno.test("D0: Unauthenticated update returns 401", async () => {
   const body = await res.json();
   assertEquals(res.status, 401);
   assertEquals(body.error, "Authentication required");
+});
+
+// ── Phase 4A-C: get_editable (read-only, raw editorial prefill) ──
+function getEditableSection(code: string): string {
+  return code.split("action === 'get_editable'")[1]?.split("action === 'update'")[0] ?? "";
+}
+
+Deno.test("E0: Unauthenticated get_editable returns 401", async () => {
+  const res = await fetch(FUNCTION_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": ANON_KEY },
+    body: JSON.stringify({
+      action: "get_editable",
+      exhibitor_id: "00000000-0000-0000-0000-000000000000",
+    }),
+  });
+  const body = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(body.error, "Authentication required");
+});
+
+Deno.test("E1: get_editable returns ONLY raw exhibitors.description (no ai_summary)", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = getEditableSection(code);
+  assertExists(section);
+  // Reads the raw editorial column directly from exhibitors.
+  assertEquals(section.includes("description: exRow.description"), true, "must read raw exhibitors.description");
+  // Never reads/returns ai_summary nor the computed view value.
+  assertEquals(section.includes("ai_summary"), false, "must never reference ai_summary");
+  assertEquals(section.includes("public_exhibitor_profiles"), false, "must never read the computed view");
+});
+
+Deno.test("E2: get_editable enforces the same manager authorization as update", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = getEditableSection(code);
+  assertEquals(section.includes("authorized = isAdmin"), true, "must allow platform admin");
+  assertEquals(section.includes("exRow.owner_user_id === user.id"), true, "must allow owner_user_id match");
+  assertEquals(section.includes(".eq('status', 'active')"), true, "team check must require active status");
+  assertEquals(section.includes("['owner', 'admin']"), true, "team check must require owner/admin role");
 });
 
 Deno.test("D1: update authorization allows admin OR owner_user_id OR active owner/admin team member", async () => {
