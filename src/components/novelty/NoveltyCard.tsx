@@ -18,6 +18,18 @@ import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 interface NoveltyCardProps {
   novelty: Novelty;
   className?: string;
+  /**
+   * Phase 4B — when true (event-page context), the exhibitor full-profile CTA
+   * opens /exposants/:slug in a new tab to preserve the event browsing context.
+   * Default false (e.g. on the exhibitor page itself).
+   */
+  openExhibitorInNewTab?: boolean;
+  /** Prefetched public slug (batched by parent — never fetched per card). */
+  exhibitorPublicSlug?: string | null;
+  /** seo_indexable flag for the prefetched public identity. */
+  exhibitorSeoIndexable?: boolean;
+  /** is_test flag for the prefetched public identity. */
+  exhibitorIsTest?: boolean;
 }
 
 // ✅ Labels alignés avec le formulaire de création (Step2NoveltyDetails)
@@ -30,7 +42,14 @@ const NOVELTY_TYPE_LABELS: Record<string, string> = {
   Innovation: 'Innovation',
 };
 
-export default function NoveltyCard({ novelty, className }: NoveltyCardProps) {
+export default function NoveltyCard({
+  novelty,
+  className,
+  openExhibitorInNewTab = false,
+  exhibitorPublicSlug,
+  exhibitorSeoIndexable,
+  exhibitorIsTest,
+}: NoveltyCardProps) {
   const { user } = useAuth();
   const { isLiked, toggleLike, isPending } = useNoveltyLike(novelty.id);
   const { data: likesCount = 0 } = useNoveltyLikesCount(novelty.id);
