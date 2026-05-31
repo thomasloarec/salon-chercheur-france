@@ -6,12 +6,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Calendar, MapPin, Globe, Building2, ArrowLeft } from 'lucide-react';
+import { ExternalLink, Calendar, Globe, Building2, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useExhibitorParticipations } from '@/hooks/useExhibitorParticipations';
 import { normalizeExternalUrl } from '@/lib/url';
-import { normalizeStandNumber } from '@/utils/standUtils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import ExhibitorFullProfileCTA, { FullProfileSurface } from '@/components/exhibitor/ExhibitorFullProfileCTA';
 
@@ -143,62 +142,31 @@ export function ExhibitorDialog({
             </div>
           )}
 
-          {/* Liste des participations */}
+          {/* Phase 4B-bis — résumé compact (détail complet sur la fiche exposant) */}
           {!isLoading && participations.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Calendar className="h-4 w-4 text-primary" />
-                Présence sur les salons à venir
+                Présent sur {participations.length} salon
+                {participations.length > 1 ? 's' : ''} à venir
               </div>
-
-              <div className="space-y-2">
-                {participations.map((participation) => (
-                  <div
-                    key={participation.id}
-                    className="rounded-lg bg-muted/50 border p-3 space-y-2"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="font-medium text-sm flex-1 break-words">
-                        <Link 
-                          to={`/events/${participation.event.slug}`}
-                          className="hover:text-primary hover:underline transition-colors"
-                          onClick={() => onOpenChange(false)}
-                        >
-                          {participation.event.nom_event}
-                        </Link>
-                      </p>
-                      {participation.stand && (
-                        <Badge variant="secondary" className="flex-shrink-0 whitespace-nowrap">
-                          Stand {normalizeStandNumber(participation.stand)}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1 whitespace-nowrap">
-                        <Calendar className="h-3 w-3 flex-shrink-0" />
+              <ul className="space-y-1">
+                {participations.slice(0, 2).map((participation) => (
+                  <li key={participation.id}>
+                    <Link
+                      to={`/events/${participation.event.slug}`}
+                      onClick={() => onOpenChange(false)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Calendar className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{participation.event.nom_event}</span>
+                      <span className="text-xs whitespace-nowrap">
                         {format(new Date(participation.event.date_debut), 'dd MMM yyyy', { locale: fr })}
-                        {participation.event.date_fin !== participation.event.date_debut && (
-                          <> - {format(new Date(participation.event.date_fin), 'dd MMM', { locale: fr })}</>
-                        )}
                       </span>
-                      {participation.event.ville && (
-                        <span className="flex items-center gap-1 whitespace-nowrap">
-                          <MapPin className="h-3 w-3 flex-shrink-0" />
-                          {participation.event.ville}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    </Link>
+                  </li>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* Message si aucun événement à venir */}
-          {!isLoading && participations.length === 0 && (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              Aucune participation à venir pour le moment
+              </ul>
             </div>
           )}
         </div>
