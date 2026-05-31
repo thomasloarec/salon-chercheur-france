@@ -139,3 +139,32 @@ Deno.test("V21: normalizeImageUrl rejects relative and bare domains", () => {
   assertEquals(normalizeImageUrl("/logo.png"), null);
   assertEquals(normalizeImageUrl("example.com/logo.png"), null);
 });
+// ═══════════════════════════════════════════════
+// Phase 4A-D2 — Comparaison no-op normalisée (old vs new)
+// La détection de no-op de l'edge function repose sur l'égalité
+// stricte des valeurs normalisées old/new via ces mêmes helpers.
+// ═══════════════════════════════════════════════
+Deno.test("D2-noop1: horn.fr == horn.fr (no change)", () => {
+  assertEquals(normalizeExternalUrl("horn.fr"), normalizeExternalUrl("horn.fr"));
+});
+
+Deno.test("D2-noop2: https://horn.fr/ == horn.fr (no change after normalization)", () => {
+  assertEquals(normalizeExternalUrl("https://horn.fr/"), normalizeExternalUrl("horn.fr"));
+});
+
+Deno.test("D2-change: https://ancien.fr/ != nouveau.fr (real change)", () => {
+  const oldVal = normalizeExternalUrl("https://ancien.fr/");
+  const newVal = normalizeExternalUrl("nouveau.fr");
+  assertEquals(oldVal === newVal, false);
+});
+
+Deno.test("D2-noop3: description identique après strip/trim (no change)", () => {
+  assertEquals(sanitizeDescription("  Bonjour  ").value, sanitizeDescription("Bonjour").value);
+});
+
+Deno.test("D2-noop4: linkedin equivalent forms (no change)", () => {
+  assertEquals(
+    normalizeLinkedInUrl("linkedin.com/company/horn"),
+    normalizeLinkedInUrl("https://linkedin.com/company/horn"),
+  );
+});

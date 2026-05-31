@@ -990,7 +990,7 @@ Deno.serve(async (req) => {
       // Les profils legacy purs (sans ligne exhibitors) ne sont pas éditables.
       const { data: exRow, error: exErr } = await serviceClient
         .from('exhibitors')
-        .select('id, owner_user_id')
+        .select('id, owner_user_id, description, website, linkedin_url, logo_url')
         .eq('id', exhibitor_id)
         .maybeSingle()
 
@@ -1002,73 +1002,123 @@ Deno.serve(async (req) => {
         return jsonError('Exhibitor not found', 404)
       }
 
-      // ── Autorisation gestionnaire ──
+      // ── Autorisation gestionnaire + détermination de actor_role ──
+      // Précédence : admin plateforme > owner_user_id direct > rôle d'équipe.
       let authorized = isAdmin
+      let actorRole:
+        | 'platform_admin'
+        | 'owner_user_id'
+        | 'team_owner'
+        | 'team_admin'
+        | null = isAdmin ? 'platform_admin' : null
+
       // owner historique : présent uniquement dans owner_user_id, sans ligne
       // exhibitor_team_members → doit rester autorisé.
       if (!authorized && exRow.owner_user_id && exRow.owner_user_id === user.id) {
         authorized = true
+        actorRole = 'owner_user_id'
       }
       if (!authorized) {
         const { data: membership } = await serviceClient
           .from('exhibitor_team_members')
-          .select('id')
+          .select('role')
           .eq('exhibitor_id', exhibitor_id)
           .eq('user_id', user.id)
           .eq('status', 'active')
           .in('role', ['owner', 'admin'])
           .maybeSingle()
-        authorized = !!membership
+        if (membership) {
+          authorized = true
+          actorRole = membership.role === 'owner' ? 'team_owner' : 'team_admin'
+        }
       }
 
-      if (!authorized) {
+      if (!authorized || !actorRole) {
         return jsonError('Not authorized to update this exhibitor', 403)
       }
 
-      // ── Whitelist + validation serveur ──
+      // ── Normalisation old/new + détection des champs réellement modifiés ──
+      // Les valeurs ACTUELLES (brutes) et les valeurs SOUMISES passent par
+      // EXACTEMENT la même normalisation, puis sont comparées. Cela évite tout
+      // faux log : "horn.fr" vs "https://horn.fr/" sont considérés identiques.
       const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-      const updateData: Record<string, unknown> = {}
 
-      if ('description' in requestData) {
-        const result = sanitizeDescription(requestData.description)
-        if (result.error) {
-          return jsonError(result.error, 400)
+      const normalizeField = (field: string, raw: unknown): string | null => {
+        switch (field) {
+          case 'description':
+            return sanitizeDescription(raw).value
+          case 'website':
+            return normalizeExternalUrl(raw)
+          case 'linkedin_url':
+            return normalizeLinkedInUrl(raw)
+          case 'logo_url':
+            return validateLogoUrl(raw, supabaseUrl)
+          default:
+            return null
         }
-        updateData.description = result.value
       }
 
-      if ('website' in requestData) {
-        // URL invalide / texte libre → null (stratégie documentée).
-        updateData.website = normalizeExternalUrl(requestData.website)
+      const WHITELIST = ['description', 'website', 'linkedin_url', 'logo_url'] as const
+      const p_update: Record<string, string | null> = {}
+      const p_changes: Record<string, { old: string | null; new: string | null }> = {}
+      const changed_fields: string[] = []
+
+      for (const field of WHITELIST) {
+        if (!(field in requestData)) continue
+
+        // Seule erreur dure conservée : description trop longue (validation
+        // légitime, ne révèle aucune structure interne).
+        if (field === 'description') {
+          const res = sanitizeDescription(requestData.description)
+          if (res.error) {
+            return jsonError(res.error, 400)
+          }
+        }
+
+        const newVal = normalizeField(field, requestData[field])
+        const oldVal = normalizeField(field, (exRow as Record<string, unknown>)[field])
+
+        if (oldVal !== newVal) {
+          changed_fields.push(field)
+          p_update[field] = newVal
+          p_changes[field] = { old: oldVal, new: newVal }
+        }
       }
 
-      if ('linkedin_url' in requestData) {
-        // Hors company/showcase → null.
-        updateData.linkedin_url = normalizeLinkedInUrl(requestData.linkedin_url)
+      // ── No-op : aucun champ réellement modifié → AUCUNE RPC, AUCUN log ──
+      // (couvre aussi le cas "uniquement des champs hors whitelist soumis").
+      if (changed_fields.length === 0) {
+        return jsonOk({
+          id: exRow.id,
+          description: normalizeField('description', exRow.description),
+          website: normalizeField('website', exRow.website),
+          linkedin_url: normalizeField('linkedin_url', exRow.linkedin_url),
+          logo_url: normalizeField('logo_url', exRow.logo_url),
+          noop: true,
+        })
       }
 
-      if ('logo_url' in requestData) {
-        // N'accepte qu'une URL issue du bucket exhibitor-logos (SVG refusé).
-        updateData.logo_url = validateLogoUrl(requestData.logo_url, supabaseUrl)
-      }
+      // ── UPDATE + INSERT log atomiques via la RPC transactionnelle ──
+      const { data: rpcRows, error: rpcError } = await serviceClient.rpc(
+        'update_exhibitor_public_profile_with_log',
+        {
+          p_exhibitor_id: exhibitor_id,
+          p_actor_user_id: user.id,
+          p_actor_role: actorRole,
+          p_update,
+          p_changed_fields: changed_fields,
+          p_changes,
+          p_source: 'exhibitors-manage:update',
+        },
+      )
 
-      if (Object.keys(updateData).length === 0) {
-        return jsonError('No updatable fields provided', 400)
-      }
-
-      const { data: updatedExhibitor, error: updateError } = await serviceClient
-        .from('exhibitors')
-        .update(updateData)
-        .eq('id', exhibitor_id)
-        .select('id, description, website, linkedin_url, logo_url')
-        .single()
-
-      if (updateError) {
-        console.error('Error updating exhibitor:', updateError)
+      if (rpcError) {
+        console.error('Error updating exhibitor (rpc):', rpcError)
         return jsonError('Failed to update exhibitor', 500)
       }
 
-      return jsonOk(updatedExhibitor)
+      const updatedExhibitor = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows
+      return jsonOk({ ...updatedExhibitor, noop: false })
     }
 
     const resolveUserByEmail = async (
