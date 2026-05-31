@@ -28,6 +28,8 @@ import {
   X,
   Copy,
 } from 'lucide-react';
+import { GitMerge } from 'lucide-react';
+import MergePreviewDialog from './MergePreviewDialog';
 
 type DuplicateRow = {
   identity_a_id: string;
@@ -181,6 +183,8 @@ const AdminDuplicateReviews: React.FC = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 25;
+
+  const [previewPair, setPreviewPair] = useState<DuplicateRow | null>(null);
 
   const queryKey = ['exhibitor-duplicates', minScore, includeResolved];
 
@@ -510,9 +514,20 @@ const AdminDuplicateReviews: React.FC = () => {
                     <X className="h-4 w-4 mr-1" />
                     Ignorer
                   </Button>
-                  <Badge variant="outline" className="ml-auto text-muted-foreground">
-                    Fusion non disponible
-                  </Badge>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => setPreviewPair(row)}
+                    >
+                      <GitMerge className="h-4 w-4 mr-1" />
+                      Prévisualiser fusion
+                    </Button>
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Fusion non disponible
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -542,6 +557,17 @@ const AdminDuplicateReviews: React.FC = () => {
             Suivant
           </Button>
         </div>
+      )}
+
+      {previewPair && (
+        <MergePreviewDialog
+          open={!!previewPair}
+          onOpenChange={(o) => !o && setPreviewPair(null)}
+          aId={previewPair.identity_a_id}
+          bId={previewPair.identity_b_id}
+          aName={previewPair.a_name}
+          bName={previewPair.b_name}
+        />
       )}
     </div>
   );
