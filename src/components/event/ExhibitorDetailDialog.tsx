@@ -275,86 +275,37 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             isLegacyOnly={!e.exhibitor_uuid && !governance.resolvedExhibitorId}
           />
 
-          {loadingParticipations && (
-            <div className="flex items-center justify-center gap-2 py-4">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
-              <span className="text-sm text-muted-foreground">Chargement des participations...</span>
-            </div>
-          )}
-
-          {/* Liste des participations futures */}
-          {!loadingParticipations && participations.length > 0 && (
-            <div className="space-y-3 border-t pt-4">
+          {/* Phase 4B-bis — résumé compact des autres salons à venir (détail sur la fiche complète) */}
+          {!loadingParticipations && otherParticipations.length > 0 && (
+            <div className="border-t pt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Calendar className="h-4 w-4 text-primary" />
-                Présence sur les salons à venir
+                Également présent sur {otherParticipations.length} autre
+                {otherParticipations.length > 1 ? 's' : ''} salon
+                {otherParticipations.length > 1 ? 's' : ''} à venir
               </div>
-
-              <div className="space-y-2">
-                {participations.map((participation) => (
-                  <Link
-                    key={participation.id}
-                    to={`/events/${participation.event.slug}`}
-                    onClick={() => onOpenChange(false)}
-                    className="flex items-start gap-3 rounded-lg border p-2 hover:border-primary/40 hover:shadow-sm transition-all group overflow-hidden"
-                  >
-                    {/* Event image */}
-                    <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-muted">
-                      {participation.event.url_image ? (
-                        <img
-                          src={participation.event.url_image}
-                          alt={participation.event.nom_event}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Calendar className="h-6 w-6 text-muted-foreground/50" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Event info */}
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <p className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-                        {participation.event.nom_event}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 flex-shrink-0" />
-                          {format(new Date(participation.event.date_debut), 'dd MMM yyyy', { locale: fr })}
-                          {participation.event.date_fin !== participation.event.date_debut && (
-                            <> – {format(new Date(participation.event.date_fin), 'dd MMM', { locale: fr })}</>
-                          )}
-                        </span>
-                        {participation.event.ville && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3 flex-shrink-0" />
-                            {participation.event.ville}
-                          </span>
-                        )}
-                      </div>
-                      {participation.stand && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                          Stand {normalizeStandNumber(participation.stand)}
-                        </Badge>
-                      )}
-                    </div>
-                  </Link>
+              <ul className="space-y-1">
+                {otherParticipations.slice(0, 2).map((participation) => (
+                  <li key={participation.id}>
+                    <Link
+                      to={`/events/${participation.event.slug}`}
+                      onClick={() => onOpenChange(false)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Calendar className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{participation.event.nom_event}</span>
+                      <span className="text-xs whitespace-nowrap">
+                        {format(new Date(participation.event.date_debut), 'dd MMM yyyy', { locale: fr })}
+                      </span>
+                    </Link>
+                  </li>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* Message si aucun événement à venir */}
-          {!loadingParticipations && participations.length === 0 && (
-            <div className="border-t pt-4">
-              <div className="flex items-center gap-2 text-sm font-semibold mb-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                Présence sur les salons à venir
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Aucune participation à venir pour le moment
-              </p>
+              </ul>
+              {hasPublicSlug && (
+                <p className="text-xs text-muted-foreground/80">
+                  Toutes les participations sur la fiche exposant.
+                </p>
+              )}
             </div>
           )}
         </div>
