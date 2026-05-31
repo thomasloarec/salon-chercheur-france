@@ -145,7 +145,11 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
   const e = details ?? exhibitor;
   const displayName = getDisplayName(e);
   const description = getDescription(e);
+  const shortDescription = description ? truncateDescription(description) : null;
   const websiteHref = normalizeExternalUrl(getWebsite(e));
+  const hasPublicSlug = !!e.public_slug && !e.is_test;
+  // Phase 4B-bis — exclure le salon courant : les autres participations vivent sur la fiche complète
+  const otherParticipations = participations.filter((p) => p.event.id !== event?.id);
   // Valider que urlexpo_event est une vraie URL (pas un identifiant composite)
   const rawExpoUrl = e?.urlexpo_event;
   const isValidUrl = rawExpoUrl && /^https?:\/\//.test(rawExpoUrl);
