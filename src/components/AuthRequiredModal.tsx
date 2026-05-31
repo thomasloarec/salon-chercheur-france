@@ -19,6 +19,12 @@ interface AuthRequiredModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   actionType?: ActionType;
+  /**
+   * Origin-relative path to return to after authentication (e.g. the current
+   * exhibitor profile). Forwarded to Google OAuth `redirectTo` and the /auth
+   * `redirect` param so the user lands back on the same page.
+   */
+  redirectTo?: string;
 }
 
 const AUTH_MESSAGES = {
@@ -44,16 +50,27 @@ const AUTH_MESSAGES = {
   },
 };
 
-const AuthRequiredModal = ({ open, onOpenChange, actionType = 'favorite' }: AuthRequiredModalProps) => {
+const AuthRequiredModal = ({
+  open,
+  onOpenChange,
+  actionType = 'favorite',
+  redirectTo,
+}: AuthRequiredModalProps) => {
   const navigate = useNavigate();
   const message = AUTH_MESSAGES[actionType];
   const IconComponent = message.icon;
+
+  // Only allow safe, origin-relative redirect paths.
+  const safeRedirect =
+    redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+      ? redirectTo
+      : null;
 
   const handleGoogleAuth = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}${safeRedirect || '/'}`,
       },
     });
     if (error) {
@@ -63,7 +80,7 @@ const AuthRequiredModal = ({ open, onOpenChange, actionType = 'favorite' }: Auth
 
   const handleGoToAuth = () => {
     onOpenChange(false);
-    navigate('/auth');
+    navigate(safeRedirect ? `/auth?redirect=${encodeURIComponent(safeRedirect)}` : '/auth');
   };
 
   return (
