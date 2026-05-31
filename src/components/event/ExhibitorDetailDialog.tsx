@@ -221,12 +221,17 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
             </div>
           )}
 
-          {/* Description */}
-          {description && (
+          {/* Description courte (aperçu) — texte intégral sur la fiche complète */}
+          {shortDescription && (
             <div className="prose prose-sm max-w-none">
               <p className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-                {description}
+                {shortDescription.text}
               </p>
+              {shortDescription.truncated && hasPublicSlug && (
+                <p className="mt-1 text-xs text-muted-foreground/80 not-prose">
+                  Description complète sur la fiche exposant.
+                </p>
+              )}
             </div>
           )}
 
