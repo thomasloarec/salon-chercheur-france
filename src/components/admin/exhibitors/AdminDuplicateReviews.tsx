@@ -184,6 +184,8 @@ const AdminDuplicateReviews: React.FC = () => {
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
+  const [previewPair, setPreviewPair] = useState<DuplicateRow | null>(null);
+
   const queryKey = ['exhibitor-duplicates', minScore, includeResolved];
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
