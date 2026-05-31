@@ -237,10 +237,15 @@ Deno.test("D2: legacy-pure profiles (no exhibitor row) are not editable -> 404",
 Deno.test("D3: update whitelists ONLY description/website/linkedin_url/logo_url", async () => {
   const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
   const section = updateSection(code);
-  assertEquals(section.includes("'description' in requestData"), true);
-  assertEquals(section.includes("'website' in requestData"), true);
-  assertEquals(section.includes("'linkedin_url' in requestData"), true);
-  assertEquals(section.includes("'logo_url' in requestData"), true);
+  // Whitelist stricte : exactement les 4 champs publics, dans cet ordre.
+  assertEquals(
+    section.includes("['description', 'website', 'linkedin_url', 'logo_url']"),
+    true,
+  );
+  // Seuls les champs whitelistés réellement fournis sont pris en compte.
+  assertEquals(section.includes("field in requestData"), true);
+  // L'écriture passe par la RPC transactionnelle journalisée.
+  assertEquals(section.includes("update_exhibitor_public_profile_with_log"), true);
 });
 
 Deno.test("D4: forbidden fields are NEVER assigned in update payload", async () => {
