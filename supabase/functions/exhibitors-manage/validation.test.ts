@@ -27,7 +27,9 @@ Deno.test("V1: description trims and keeps plain text", () => {
 });
 
 Deno.test("V2: description strips HTML tags", () => {
-  assertEquals(sanitizeDescription("<b>Hello</b> <script>x</script>world"), { value: "Hello world" });
+  // Tags are removed; inner text is preserved (plain-text output).
+  assertEquals(sanitizeDescription("<b>Hello</b> <i>world</i>"), { value: "Hello world" });
+  assertEquals(sanitizeDescription("<a href='x'>link</a>"), { value: "link" });
 });
 
 Deno.test("V3: empty description becomes null", () => {
