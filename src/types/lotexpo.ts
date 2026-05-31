@@ -112,6 +112,11 @@ export interface EventExhibitorDTO {
   
   // Plan
   plan?: 'free' | 'paid';
+
+  // Phase 4B — public identity (batched, never per-exhibitor)
+  public_slug?: string | null;
+  seo_indexable?: boolean;
+  is_test?: boolean;
   
   // Métadonnées de debug (optionnelles)
   _source?: 'modern' | 'legacy' | 'view';
