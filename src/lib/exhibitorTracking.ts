@@ -6,7 +6,8 @@ export type ExhibitorEventType =
   | 'linkedin_click'
   | 'claim_click'
   | 'event_click'
-  | 'novelty_click';
+  | 'novelty_click'
+  | 'full_profile_click';
 
 /**
  * Fire-and-forget analytics for public exhibitor profile pages.
