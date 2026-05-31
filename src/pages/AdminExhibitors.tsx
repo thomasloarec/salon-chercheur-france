@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, ClipboardList } from 'lucide-react';
+import { Building2, ClipboardList, CopyCheck, Globe } from 'lucide-react';
 import AdminExhibitorsList from '@/components/admin/exhibitors/AdminExhibitorsList';
 import AdminClaimRequests from '@/components/admin/exhibitors/AdminClaimRequests';
 import AdminExhibitorDetailPanel from '@/components/admin/exhibitors/AdminExhibitorDetailPanel';
 import AdminNonExhibitorPanel from '@/components/admin/exhibitors/AdminNonExhibitorPanel';
+import AdminDuplicateReviews from '@/components/admin/exhibitors/AdminDuplicateReviews';
+import AdminInvalidWebsites from '@/components/admin/exhibitors/AdminInvalidWebsites';
 import { isUuid, type AdminSelection } from '@/components/admin/exhibitors/types';
 
 const AdminExhibitors = () => {
@@ -54,6 +56,14 @@ const AdminExhibitors = () => {
               <ClipboardList className="h-4 w-4" />
               Demandes de gestion
             </TabsTrigger>
+            <TabsTrigger value="duplicates" className="gap-2">
+              <CopyCheck className="h-4 w-4" />
+              Doublons exposants
+            </TabsTrigger>
+            <TabsTrigger value="invalid-websites" className="gap-2">
+              <Globe className="h-4 w-4" />
+              Websites invalides
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="exhibitors">
@@ -68,6 +78,14 @@ const AdminExhibitors = () => {
                   : console.warn('[AdminDetail] non-uuid id from claims', id)
               }
             />
+          </TabsContent>
+
+          <TabsContent value="duplicates">
+            <AdminDuplicateReviews />
+          </TabsContent>
+
+          <TabsContent value="invalid-websites">
+            <AdminInvalidWebsites />
           </TabsContent>
       </Tabs>
     </div>
