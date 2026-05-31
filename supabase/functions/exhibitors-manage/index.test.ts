@@ -121,7 +121,7 @@ Deno.test("B7: approve_claim updates exhibitor owner_user_id from claim data", a
 
 Deno.test("B8: reject_claim does NOT update exhibitors table", async () => {
   const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
-  const section = code.split("action === 'reject_claim'")[1]?.split("action === 'update'")[0];
+  const section = code.split("action === 'reject_claim'")[1]?.split("action === 'get_editable'")[0];
   assertExists(section);
   // reject should only update exhibitor_claim_requests, not exhibitors
   assertEquals(section.includes(".from('exhibitors')"), false, "reject_claim must NOT touch exhibitors table");
