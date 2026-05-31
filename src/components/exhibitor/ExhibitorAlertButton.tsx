@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Bell, BellRing, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
@@ -40,15 +40,21 @@ export default function ExhibitorAlertButton({
       await toggleAlert(nextEnabled);
       if (nextEnabled) {
         trackExhibitorEvent('alert_activate', publicSlug);
-        toast.success(
-          'Alerte activée. Vous serez prévenu des prochains salons de cet exposant.'
-        );
+        toast({
+          title: 'Alerte activée',
+          description:
+            'Vous serez prévenu des prochains salons de cet exposant.',
+        });
       } else {
         trackExhibitorEvent('alert_deactivate', publicSlug);
-        toast.success('Alerte désactivée.');
+        toast({ title: 'Alerte désactivée.' });
       }
     } catch (err) {
-      toast.error("Impossible de mettre à jour l'alerte. Veuillez réessayer.");
+      toast({
+        title: "Impossible de mettre à jour l'alerte",
+        description: 'Veuillez réessayer.',
+        variant: 'destructive',
+      });
     }
   };
 
