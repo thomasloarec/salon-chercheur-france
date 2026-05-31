@@ -1,4 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import {
+  sanitizeDescription,
+  normalizeExternalUrl,
+  normalizeLinkedInUrl,
+  validateLogoUrl,
+} from './validation.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -889,40 +895,102 @@ Deno.serve(async (req) => {
     // ACTION: update (any active team member or site admin)
     // ────────────────────────────────────────────────────
     if (action === 'update') {
-      const { exhibitor_id, description, logo_url } = requestData
+      // ──────────────────────────────────────────────────────────────
+      // Phase 4A-B — édition gestionnaire des CHAMPS PUBLICS uniquement.
+      //
+      // Whitelist STRICTE : description, website, linkedin_url, logo_url.
+      // Tout autre champ (name, slug, name_normalized, public_slug,
+      // ai_summary, seo_indexable, approved, verified_at, owner_user_id,
+      // is_test, plan, CRM/outreach, inconnus…) est IGNORÉ SILENCIEUSEMENT
+      // (pas d'erreur) pour éviter le fingerprinting de l'API et ne pas
+      // faire échouer une modification légale à cause d'un champ parasite.
+      //
+      // Autorisation : admin plateforme OU owner_user_id = caller OU
+      // membre actif exhibitor_team_members role IN ('owner','admin').
+      // ──────────────────────────────────────────────────────────────
+      const exhibitor_id = typeof requestData?.exhibitor_id === 'string'
+        ? requestData.exhibitor_id
+        : undefined
 
       if (!exhibitor_id) {
         return jsonError('exhibitor_id is required', 400)
       }
 
-      if (!isAdmin) {
-        // Allow any active team member to update description
+      // La fiche doit exister comme exhibitor moderne (UUID).
+      // Les profils legacy purs (sans ligne exhibitors) ne sont pas éditables.
+      const { data: exRow, error: exErr } = await serviceClient
+        .from('exhibitors')
+        .select('id, owner_user_id')
+        .eq('id', exhibitor_id)
+        .maybeSingle()
+
+      if (exErr) {
+        console.error('❌ update: exhibitor fetch error', exErr)
+        return jsonError('Failed to load exhibitor', 500)
+      }
+      if (!exRow) {
+        return jsonError('Exhibitor not found', 404)
+      }
+
+      // ── Autorisation gestionnaire ──
+      let authorized = isAdmin
+      // owner historique : présent uniquement dans owner_user_id, sans ligne
+      // exhibitor_team_members → doit rester autorisé.
+      if (!authorized && exRow.owner_user_id && exRow.owner_user_id === user.id) {
+        authorized = true
+      }
+      if (!authorized) {
         const { data: membership } = await serviceClient
           .from('exhibitor_team_members')
-          .select('id, role')
+          .select('id')
           .eq('exhibitor_id', exhibitor_id)
           .eq('user_id', user.id)
           .eq('status', 'active')
+          .in('role', ['owner', 'admin'])
           .maybeSingle()
-
-        if (!membership) {
-          return jsonError('Not authorized to update this exhibitor', 403)
-        }
+        authorized = !!membership
       }
 
+      if (!authorized) {
+        return jsonError('Not authorized to update this exhibitor', 403)
+      }
+
+      // ── Whitelist + validation serveur ──
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
       const updateData: Record<string, unknown> = {}
-      if (description !== undefined) updateData.description = description
-      if (logo_url !== undefined) updateData.logo_url = logo_url
+
+      if ('description' in requestData) {
+        const result = sanitizeDescription(requestData.description)
+        if (result.error) {
+          return jsonError(result.error, 400)
+        }
+        updateData.description = result.value
+      }
+
+      if ('website' in requestData) {
+        // URL invalide / texte libre → null (stratégie documentée).
+        updateData.website = normalizeExternalUrl(requestData.website)
+      }
+
+      if ('linkedin_url' in requestData) {
+        // Hors company/showcase → null.
+        updateData.linkedin_url = normalizeLinkedInUrl(requestData.linkedin_url)
+      }
+
+      if ('logo_url' in requestData) {
+        // N'accepte qu'une URL issue du bucket exhibitor-logos (SVG refusé).
+        updateData.logo_url = validateLogoUrl(requestData.logo_url, supabaseUrl)
+      }
 
       if (Object.keys(updateData).length === 0) {
-        return jsonError('No fields to update', 400)
+        return jsonError('No updatable fields provided', 400)
       }
 
       const { data: updatedExhibitor, error: updateError } = await serviceClient
         .from('exhibitors')
         .update(updateData)
         .eq('id', exhibitor_id)
-        .select()
+        .select('id, description, website, linkedin_url, logo_url')
         .single()
 
       if (updateError) {

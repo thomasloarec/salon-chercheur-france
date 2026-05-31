@@ -150,3 +150,97 @@ Deno.test("C2: Read operations (list) use authClient for RLS", async () => {
   assertExists(listSection);
   assertEquals(listSection.includes("authClient"), true, "list should use authClient for RLS-filtered reads");
 });
+
+// ═══════════════════════════════════════════════
+// PART D — Phase 4A-B: update action (auth + whitelist)
+// ═══════════════════════════════════════════════
+
+function updateSection(code: string): string {
+  // From the update handler to the next named helper/handler.
+  return code.split("action === 'update'")[1]?.split("resolveUserByEmail")[0] ?? "";
+}
+
+Deno.test("D0: Unauthenticated update returns 401", async () => {
+  const res = await fetch(FUNCTION_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": ANON_KEY },
+    body: JSON.stringify({
+      action: "update",
+      exhibitor_id: "00000000-0000-0000-0000-000000000000",
+      description: "x",
+    }),
+  });
+  const body = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(body.error, "Authentication required");
+});
+
+Deno.test("D1: update authorization allows admin OR owner_user_id OR active owner/admin team member", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  assertExists(section);
+  // admin
+  assertEquals(section.includes("authorized = isAdmin"), true, "must allow platform admin");
+  // owner_user_id (owner historique sans team member)
+  assertEquals(section.includes("exRow.owner_user_id === user.id"), true, "must allow owner_user_id match");
+  // active owner/admin team member
+  assertEquals(section.includes("exhibitor_team_members"), true);
+  assertEquals(section.includes(".eq('status', 'active')"), true, "team check must require active status");
+  assertEquals(section.includes("['owner', 'admin']"), true, "team check must require owner/admin role");
+});
+
+Deno.test("D2: legacy-pure profiles (no exhibitor row) are not editable -> 404", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  assertEquals(section.includes("Exhibitor not found"), true, "must 404 when no modern exhibitor row exists");
+});
+
+Deno.test("D3: update whitelists ONLY description/website/linkedin_url/logo_url", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  assertEquals(section.includes("'description' in requestData"), true);
+  assertEquals(section.includes("'website' in requestData"), true);
+  assertEquals(section.includes("'linkedin_url' in requestData"), true);
+  assertEquals(section.includes("'logo_url' in requestData"), true);
+});
+
+Deno.test("D4: forbidden fields are NEVER assigned in update payload", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  const forbidden = [
+    "updateData.name",
+    "updateData.display_name",
+    "updateData.name_normalized",
+    "updateData.slug",
+    "updateData.public_slug",
+    "updateData.ai_summary",
+    "updateData.seo_indexable",
+    "updateData.approved",
+    "updateData.verified_at",
+    "updateData.owner_user_id",
+    "updateData.is_test",
+    "updateData.plan",
+  ];
+  for (const f of forbidden) {
+    assertEquals(section.includes(f), false, `forbidden field must not be written: ${f}`);
+  }
+});
+
+Deno.test("D5: update uses server-side validation helpers", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  assertEquals(section.includes("sanitizeDescription("), true);
+  assertEquals(section.includes("normalizeExternalUrl("), true);
+  assertEquals(section.includes("normalizeLinkedInUrl("), true);
+  assertEquals(section.includes("validateLogoUrl("), true);
+});
+
+Deno.test("D6: update writes use serviceClient", async () => {
+  const code = await Deno.readTextFile("supabase/functions/exhibitors-manage/index.ts");
+  const section = updateSection(code);
+  const updateLines = section.split("\n").filter((l) => l.includes(".update("));
+  for (const line of updateLines) {
+    assertEquals(line.includes("authClient"), false, `UPDATE should not use authClient: ${line.trim()}`);
+  }
+  assertEquals(section.includes("serviceClient"), true);
+});
