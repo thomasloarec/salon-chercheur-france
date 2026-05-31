@@ -1388,6 +1388,77 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_duplicate_reviews: {
+        Row: {
+          confidence: string | null
+          created_at: string
+          id: string
+          identity_a_id: string
+          identity_b_id: string
+          reasons: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          score: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string
+          id?: string
+          identity_a_id: string
+          identity_b_id: string
+          reasons?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string
+          id?: string
+          identity_a_id?: string
+          identity_b_id?: string
+          reasons?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_duplicate_reviews_identity_a_id_fkey"
+            columns: ["identity_a_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_public_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_duplicate_reviews_identity_a_id_fkey"
+            columns: ["identity_a_id"]
+            isOneToOne: false
+            referencedRelation: "public_exhibitor_profiles"
+            referencedColumns: ["public_identity_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_duplicate_reviews_identity_b_id_fkey"
+            columns: ["identity_b_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_public_identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_duplicate_reviews_identity_b_id_fkey"
+            columns: ["identity_b_id"]
+            isOneToOne: false
+            referencedRelation: "public_exhibitor_profiles"
+            referencedColumns: ["public_identity_id"]
+          },
+        ]
+      }
       exhibitor_events: {
         Row: {
           created_at: string
@@ -4646,6 +4717,34 @@ export type Database = {
       }
       delete_my_radar_crm_data: { Args: never; Returns: Json }
       delete_user_account: { Args: never; Returns: Json }
+      detect_exhibitor_duplicates: {
+        Args: { p_include_resolved?: boolean; p_min_score?: number }
+        Returns: {
+          a_future: number
+          a_linkedin: string
+          a_name: string
+          a_next_event: string
+          a_participations: number
+          a_slug: string
+          a_source: string
+          a_website: string
+          b_future: number
+          b_linkedin: string
+          b_name: string
+          b_next_event: string
+          b_participations: number
+          b_slug: string
+          b_source: string
+          b_website: string
+          confidence: string
+          identity_a_id: string
+          identity_b_id: string
+          reasons: Json
+          reviewed_at: string
+          score: number
+          status: string
+        }[]
+      }
       ensure_exhibitor_public_identity: {
         Args: { p_exhibitor_id?: string; p_legacy_exposant_id?: string }
         Returns: string
@@ -4843,6 +4942,18 @@ export type Database = {
           website_exposant: string
         }[]
       }
+      list_invalid_exhibitor_websites: {
+        Args: never
+        Returns: {
+          display_name: string
+          exhibitor_id: string
+          public_identity_id: string
+          public_slug: string
+          reason: string
+          source_type: string
+          website: string
+        }[]
+      }
       log_application_event: {
         Args: {
           p_details?: Json
@@ -4886,6 +4997,17 @@ export type Database = {
         }[]
       }
       reset_event_duplicate_candidates: { Args: never; Returns: Json }
+      review_exhibitor_duplicate: {
+        Args: {
+          p_a: string
+          p_b: string
+          p_confidence?: string
+          p_reasons?: Json
+          p_score?: number
+          p_status: string
+        }
+        Returns: undefined
+      }
       run_exhibitor_ai_remap: { Args: never; Returns: Json }
       scan_event_duplicates: {
         Args: { p_id: string; p_kind: string; p_persist?: boolean }
