@@ -11,6 +11,13 @@ export interface ExhibitorGovernanceState {
   hasPendingClaim: boolean;
   /** The current user is already a team member */
   isTeamMember: boolean;
+  /** The current user is the direct owner (exhibitors.owner_user_id) */
+  isOwner: boolean;
+  /**
+   * The current user is a validated manager of this exhibitor:
+   * direct owner OR active team member (owner/admin). Drives owner-edit UI.
+   */
+  isManager: boolean;
   /** The resolved UUID from the exhibitors table (null if not found) */
   resolvedExhibitorId: string | null;
   /** Loading state */
@@ -34,7 +41,7 @@ export const useExhibitorGovernance = (
   const { data, isLoading } = useQuery({
     queryKey: ['exhibitor-governance', exhibitorId, exhibitorName, user?.id],
     queryFn: async () => {
-      const empty = { isVerified: false, hasActiveOwner: false, hasPendingClaim: false, isTeamMember: false, resolvedExhibitorId: null };
+      const empty = { isVerified: false, hasActiveOwner: false, hasPendingClaim: false, isTeamMember: false, isOwner: false, resolvedExhibitorId: null };
       if (!exhibitorId && !exhibitorName) return empty;
 
       // Step 1: Resolve to a UUID in the exhibitors table
@@ -66,7 +73,7 @@ export const useExhibitorGovernance = (
       const [verifiedRes, ownerRes, claimRes, memberRes] = await Promise.all([
         supabase
           .from('exhibitors')
-          .select('verified_at')
+          .select('verified_at, owner_user_id')
           .eq('id', uuid)
           .maybeSingle(),
 
@@ -98,6 +105,7 @@ export const useExhibitorGovernance = (
         hasActiveOwner: !!ownerRes.data,
         hasPendingClaim: !!claimRes.data,
         isTeamMember: !!memberRes.data,
+        isOwner: !!(user && verifiedRes.data?.owner_user_id && verifiedRes.data.owner_user_id === user.id),
         resolvedExhibitorId: uuid,
       };
     },
@@ -105,11 +113,16 @@ export const useExhibitorGovernance = (
     staleTime: 60_000,
   });
 
+  const isOwner = data?.isOwner ?? false;
+  const isTeamMember = data?.isTeamMember ?? false;
+
   return {
     isVerified: data?.isVerified ?? false,
     hasActiveOwner: data?.hasActiveOwner ?? false,
     hasPendingClaim: data?.hasPendingClaim ?? false,
-    isTeamMember: data?.isTeamMember ?? false,
+    isTeamMember,
+    isOwner,
+    isManager: isOwner || isTeamMember,
     resolvedExhibitorId: data?.resolvedExhibitorId ?? null,
     isLoading,
   };
