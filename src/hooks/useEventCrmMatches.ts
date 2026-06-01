@@ -54,12 +54,15 @@ type ViewRow = {
 
 export function useEventCrmMatches(
   eventId: string | undefined,
-  options?: { enabled?: boolean },
+  options?: { enabled?: boolean; userId?: string | null },
 ) {
   const enabled = (options?.enabled ?? true) && !!eventId;
 
   return useQuery<EventCrmMatchesResult>({
-    queryKey: ['event-crm-matches', eventId],
+    // userId fait partie de la clé pour isoler le cache entre utilisateurs
+    // (évite toute fuite de matches CRM d'un utilisateur A vers un utilisateur B
+    //  dans le même onglet, le cache React Query n'étant pas vidé à la déconnexion).
+    queryKey: ['event-crm-matches', eventId, options?.userId ?? null],
     enabled,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<EventCrmMatchesResult> => {
