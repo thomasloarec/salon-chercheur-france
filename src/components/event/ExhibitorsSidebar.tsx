@@ -18,11 +18,13 @@ import ExhibitorFullProfileCTA from '@/components/exhibitor/ExhibitorFullProfile
 
 interface ExhibitorsSidebarProps {
   event: Event;
+  /** 'sidebar' (défaut) : sticky dans la colonne latérale. 'main' : pleine largeur dans le contenu principal (sans sticky). */
+  variant?: 'sidebar' | 'main';
 }
 
 const MAX_PREVIEW = 7;
 
-export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
+export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: ExhibitorsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [showAllModal, setShowAllModal] = useState(false);
@@ -277,7 +279,10 @@ export default function ExhibitorsSidebar({ event }: ExhibitorsSidebarProps) {
 
   return (
     <>
-      <aside className="sticky top-24 bg-white rounded-lg shadow-sm border p-6" aria-label="Liste des exposants">
+      <aside
+        className={`bg-white rounded-lg shadow-sm border p-6 ${variant === 'sidebar' ? 'sticky top-24' : ''}`}
+        aria-label="Liste des exposants"
+      >
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-lg">
             {isLoading ? 'Exposants (...)' : total > 0 ? `Exposants (${total})` : 'Exposants'}
