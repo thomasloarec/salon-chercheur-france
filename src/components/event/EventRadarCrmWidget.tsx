@@ -48,6 +48,7 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
 
   const { data, isLoading } = useEventCrmMatches(eventId, {
     enabled: !!user && !!eventId && !isEventPast,
+    userId: user?.id ?? null,
   });
 
   // Tracking : affichage avec matches (une seule fois par événement)
