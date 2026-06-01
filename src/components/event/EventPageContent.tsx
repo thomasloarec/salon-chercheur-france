@@ -262,26 +262,77 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   </section>
                 )}
 
-                {/* D. Préparer ma visite avec l'IA — après les exposants.
+                {/* D. Préparer ma visite — carte de mise en avant sobre & premium.
                     Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
                 {exhibitorCount >= 80 && !isEventPast && (
-                  <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Sparkles className="w-5 h-5 text-primary" />
+                  <section
+                    aria-label="Préparer votre visite avec Lotexpo"
+                    className="rounded-2xl border border-primary/20 bg-card shadow-sm overflow-hidden"
+                  >
+                    <div className="grid gap-6 p-6 sm:p-8 md:grid-cols-5">
+                      {/* Colonne gauche : promesse + bénéfices + CTA */}
+                      <div className="md:col-span-3 space-y-4">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Préparation de visite
+                        </span>
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-bold tracking-tight sm:text-2xl">
+                            Préparez votre visite avec Lotexpo
+                          </h3>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            Identifiez les exposants prioritaires, repérez les nouveautés à voir
+                            et obtenez un parcours recommandé selon vos objectifs.
+                          </p>
+                        </div>
+                        <ul className="space-y-2">
+                          {[
+                            'Exposants à prioriser',
+                            'Nouveautés à découvrir',
+                            'Parcours optimisé sur place',
+                          ].map((benefit) => (
+                            <li key={benefit} className="flex items-center gap-2 text-sm text-foreground/90">
+                              <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                              {benefit}
+                            </li>
+                          ))}
+                        </ul>
+                        <Button
+                          onClick={() => setPrepareVisitOpen(true)}
+                          size="lg"
+                          className="gap-2 w-full sm:w-auto"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          Créer mon parcours de visite
+                        </Button>
                       </div>
-                      <div>
-                        <p className="font-semibold text-sm">Préparez votre visite avec l'IA</p>
-                        <p className="text-xs text-muted-foreground">
-                          Notre assistant analyse les {exhibitorCount} exposants pour créer votre parcours personnalisé
-                        </p>
+
+                      {/* Colonne droite : mini aperçu d'un parcours recommandé */}
+                      <div className="md:col-span-2">
+                        <div className="h-full rounded-xl border border-border bg-muted/40 p-4">
+                          <p className="text-xs font-medium text-muted-foreground mb-3">
+                            Aperçu de votre parcours
+                          </p>
+                          <ol className="space-y-3">
+                            {[
+                              'Stands prioritaires sélectionnés',
+                              'Nouveautés à ne pas manquer',
+                              'Itinéraire optimisé par halls',
+                            ].map((step, i) => (
+                              <li key={step} className="flex items-start gap-3">
+                                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                                  {i + 1}
+                                </span>
+                                <span className="text-sm text-foreground/80 leading-snug pt-0.5">
+                                  {step}
+                                </span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
                       </div>
                     </div>
-                    <Button onClick={() => setPrepareVisitOpen(true)} className="gap-2 whitespace-nowrap">
-                      <Sparkles className="w-4 h-4" />
-                      Préparer ma visite
-                    </Button>
-                  </div>
+                  </section>
                 )}
               </div>
 
