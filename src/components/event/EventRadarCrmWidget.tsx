@@ -161,7 +161,20 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   const visible = data.matches.slice(0, MAX_VISIBLE);
   const remaining = data.total - visible.length;
 
+  const openExhibitor = (m: (typeof data.matches)[number]) => {
+    void trackRadarEvent('crm_event_widget_results_clicked', { eventId, count: data.total });
+    setSelectedExhibitor({
+      id_exposant: m.idExposant,
+      exhibitor_name: m.exhibitorName ?? m.crmCompanyName,
+      crm_company_name: m.crmCompanyName,
+      needs_review: m.needsReview,
+      stand_exposant: m.stand ?? undefined,
+      website_exposant: m.website ?? undefined,
+    });
+  };
+
   return (
+    <>
     <WidgetShell>
       <p className="text-sm text-foreground">
         <strong>{data.total}</strong> entreprise{data.total > 1 ? 's' : ''} de votre CRM
@@ -173,13 +186,31 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
           const showExhibitor =
             m.exhibitorName &&
             m.exhibitorName.trim().toLowerCase() !== m.crmCompanyName.trim().toLowerCase();
+          const logoUrl = getExhibitorLogoUrl(null, m.website);
           return (
             <li
               key={m.crmCompanyId}
-              className="flex items-start gap-2 rounded-lg border bg-muted/30 px-2.5 py-2"
             >
-              <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <div className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => openExhibitor(m)}
+                className="w-full flex items-start gap-2 rounded-lg border bg-muted/30 px-2.5 py-2 text-left transition-colors hover:bg-muted/60 hover:border-primary/40"
+              >
+                <span className="h-7 w-7 flex-shrink-0 rounded bg-background border flex items-center justify-center overflow-hidden p-0.5">
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt={m.crmCompanyName}
+                      className="max-h-full max-w-full object-contain"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground truncate">
                   {m.crmCompanyName}
                 </p>
@@ -196,7 +227,8 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
                     <span className="text-[10px] font-medium text-amber-600">à vérifier</span>
                   )}
                 </div>
-              </div>
+                </span>
+              </button>
             </li>
           );
         })}
@@ -218,6 +250,15 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
         </Link>
       </Button>
     </WidgetShell>
+
+      {/* Popup détail existante (description, site web, autres salons…) */}
+      <ExhibitorDetailDialog
+        open={!!selectedExhibitor}
+        onOpenChange={(o) => !o && setSelectedExhibitor(null)}
+        exhibitor={selectedExhibitor as never}
+        event={event}
+      />
+    </>
   );
 };
 
