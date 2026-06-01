@@ -467,6 +467,26 @@ export default function ExhibitorsSidebar({
             </Button>
           </div>
         )}
+
+        {/* Zone de transition vers le parcours IA — uniquement en colonne principale,
+            si des exposants existent et que le parcours IA est disponible. */}
+        {isGrid && total > 0 && aiAvailable && onPrepareVisit && (
+          <div className="mt-4 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+              <span className="font-medium text-foreground">{total} exposants référencés</span> sur ce salon.
+              L'IA Lotexpo peut vous aider à identifier ceux à voir en priorité.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onPrepareVisit}
+              className="gap-1.5 whitespace-nowrap shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Créer un parcours IA
+            </Button>
+          </div>
+        )}
       </aside>
 
       {/* Modale liste complète */}
