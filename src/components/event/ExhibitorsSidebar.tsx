@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Building2, ExternalLink, Info, ChevronDown } from 'lucide-react';
+import { Search, Building2, ExternalLink, Info, ChevronDown, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,11 +20,20 @@ interface ExhibitorsSidebarProps {
   event: Event;
   /** 'sidebar' (défaut) : sticky dans la colonne latérale. 'main' : pleine largeur dans le contenu principal (sans sticky). */
   variant?: 'sidebar' | 'main';
+  /** Le parcours IA est-il disponible pour cet événement (≥ 80 exposants & à venir) ? */
+  aiAvailable?: boolean;
+  /** Ouvre le PrepareVisitWizard (même action que le bloc IA principal). */
+  onPrepareVisit?: () => void;
 }
 
 const MAX_PREVIEW = 8;
 
-export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: ExhibitorsSidebarProps) {
+export default function ExhibitorsSidebar({
+  event,
+  variant = 'sidebar',
+  aiAvailable = false,
+  onPrepareVisit,
+}: ExhibitorsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [showAllModal, setShowAllModal] = useState(false);
@@ -455,6 +464,26 @@ export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: Exhibi
               onClick={handleOpenModal}
             >
               Voir tous les exposants ({total})
+            </Button>
+          </div>
+        )}
+
+        {/* Zone de transition vers le parcours IA — uniquement en colonne principale,
+            si des exposants existent et que le parcours IA est disponible. */}
+        {isGrid && total > 0 && aiAvailable && onPrepareVisit && (
+          <div className="mt-4 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+              <span className="font-medium text-foreground">{total} exposants référencés</span> sur ce salon.
+              L'IA Lotexpo peut vous aider à identifier ceux à voir en priorité.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onPrepareVisit}
+              className="gap-1.5 whitespace-nowrap shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Créer un parcours IA
             </Button>
           </div>
         )}
