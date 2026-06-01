@@ -18,6 +18,7 @@ import { EventFaqBlock } from '@/components/event/EventFaqBlock';
 
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
+import EventRadarCrmWidget from '@/components/event/EventRadarCrmWidget';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import PrepareVisitWizard from '@/components/event/PrepareVisitWizard';
@@ -358,6 +359,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               {/* E. Sidebar : À propos de l'événement (Exposants retirés) */}
               <aside className="col-span-12 lg:col-span-4 space-y-6">
                 <EventAboutSidebar event={event} />
+                <EventRadarCrmWidget eventId={event.id} isEventPast={isEventPast} />
               </aside>
             </div>
 
