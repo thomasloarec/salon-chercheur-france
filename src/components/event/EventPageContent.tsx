@@ -359,7 +359,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               {/* E. Sidebar : À propos de l'événement (Exposants retirés) */}
               <aside className="col-span-12 lg:col-span-4 space-y-6">
                 <EventAboutSidebar event={event} />
-                <EventRadarCrmWidget eventId={event.id} isEventPast={isEventPast} />
+                <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
               </aside>
             </div>
 
