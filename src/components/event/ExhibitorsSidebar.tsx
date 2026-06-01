@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Building2, ExternalLink, Info, ChevronDown } from 'lucide-react';
+import { Search, Building2, ExternalLink, Info, ChevronDown, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,11 +20,20 @@ interface ExhibitorsSidebarProps {
   event: Event;
   /** 'sidebar' (défaut) : sticky dans la colonne latérale. 'main' : pleine largeur dans le contenu principal (sans sticky). */
   variant?: 'sidebar' | 'main';
+  /** Le parcours IA est-il disponible pour cet événement (≥ 80 exposants & à venir) ? */
+  aiAvailable?: boolean;
+  /** Ouvre le PrepareVisitWizard (même action que le bloc IA principal). */
+  onPrepareVisit?: () => void;
 }
 
 const MAX_PREVIEW = 8;
 
-export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: ExhibitorsSidebarProps) {
+export default function ExhibitorsSidebar({
+  event,
+  variant = 'sidebar',
+  aiAvailable = false,
+  onPrepareVisit,
+}: ExhibitorsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [showAllModal, setShowAllModal] = useState(false);
