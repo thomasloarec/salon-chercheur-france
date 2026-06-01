@@ -36,7 +36,7 @@ const Header = () => {
               }
             >
               <Search className="h-4 w-4" />
-              <span>Accueil</span>
+              <span>Salons</span>
             </NavLink>
             <NavLink 
               to="/nouveautes" 
@@ -136,7 +136,7 @@ const Header = () => {
                 }
                 onClick={() => setIsMenuOpen(false)}
               >
-                Accueil
+                Salons
               </NavLink>
               <NavLink
                 to="/nouveautes"

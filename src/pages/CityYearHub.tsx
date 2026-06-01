@@ -90,7 +90,7 @@ const CityYearHub = () => {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://lotexpo.com' },
+      { '@type': 'ListItem', position: 1, name: 'Salons', item: 'https://lotexpo.com' },
       { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: 'https://lotexpo.com/events' },
       { '@type': 'ListItem', position: 3, name: `Salons à ${hub.cityName}`, item: evergreenUrl },
       { '@type': 'ListItem', position: 4, name: `Salons à ${hub.cityName} ${year}`, item: selfUrl },

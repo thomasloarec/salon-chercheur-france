@@ -30,7 +30,7 @@ const Index = () => {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://lotexpo.com" },
+              { "@type": "ListItem", "position": 1, "name": "Salons", "item": "https://lotexpo.com" },
               { "@type": "ListItem", "position": 2, "name": "Comment ça marche", "item": "https://lotexpo.com/comment-ca-marche" }
             ]
           })}

@@ -66,7 +66,7 @@ function buildOrganizationJsonLd(profile: PublicExhibitorProfile) {
 
 /**
  * Builds a schema.org BreadcrumbList JSON-LD object for an indexable exhibitor
- * profile: Accueil > Exposants > {display_name}.
+ * profile: Salons > Exposants > {display_name}.
  * Returns null when the profile lacks a usable slug/name (handled by caller).
  * Only public, non-sensitive fields are included — no internal identifiers,
  * no seo_reason, never `undefined`.
@@ -83,7 +83,7 @@ function buildBreadcrumbJsonLd(profile: PublicExhibitorProfile) {
       {
         '@type': 'ListItem',
         position: 1,
-        name: 'Accueil',
+        name: 'Salons',
         item: 'https://lotexpo.com/',
       },
       {

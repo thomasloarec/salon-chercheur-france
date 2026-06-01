@@ -30,7 +30,7 @@ export default function Exposants() {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://lotexpo.com" },
+              { "@type": "ListItem", "position": 1, "name": "Salons", "item": "https://lotexpo.com" },
               { "@type": "ListItem", "position": 2, "name": "Exposants", "item": "https://lotexpo.com/exposants" }
             ]
           })}
