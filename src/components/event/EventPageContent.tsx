@@ -258,15 +258,27 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 {/* C. Exposants — déplacés sous les Nouveautés, en pleine largeur */}
                 {exhibitorCount > 0 && (
                   <section id="exposants">
-                    <ExhibitorsSidebar event={event} variant="main" />
+                    <ExhibitorsSidebar
+                      event={event}
+                      variant="main"
+                      aiAvailable={exhibitorCount >= 80 && !isEventPast}
+                      onPrepareVisit={() => setPrepareVisitOpen(true)}
+                    />
                   </section>
                 )}
 
-                {/* D. Préparer ma visite — carte de mise en avant sobre & premium.
+                {/* Connecteur visuel discret : continuité Exposants → Parcours IA */}
+                {exhibitorCount >= 80 && !isEventPast && (
+                  <div className="flex justify-center -my-3" aria-hidden="true">
+                    <ChevronDown className="w-5 h-5 text-primary/40" />
+                  </div>
+                )}
+
+                {/* D. Préparer ma visite avec l'IA — carte sobre & premium.
                     Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
                 {exhibitorCount >= 80 && !isEventPast && (
                   <section
-                    aria-label="Préparer votre visite avec Lotexpo"
+                    aria-label="Préparer votre visite avec l'IA Lotexpo"
                     className="rounded-2xl border border-primary/20 bg-card shadow-sm overflow-hidden"
                   >
                     <div className="grid gap-6 p-6 sm:p-8 md:grid-cols-5">
@@ -274,15 +286,20 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                       <div className="md:col-span-3 space-y-4">
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                           <Sparkles className="w-3.5 h-3.5" />
-                          Préparation de visite
+                          Parcours IA
                         </span>
                         <div className="space-y-2">
                           <h3 className="text-xl font-bold tracking-tight sm:text-2xl">
-                            Préparez votre visite avec Lotexpo
+                            Préparez votre visite avec l'IA Lotexpo
                           </h3>
                           <p className="text-sm text-muted-foreground leading-relaxed">
-                            Identifiez les exposants prioritaires, repérez les nouveautés à voir
-                            et obtenez un parcours recommandé selon vos objectifs.
+                            À partir des exposants référencés sur ce salon, Lotexpo vous aide à
+                            prioriser les stands à visiter, repérer les nouveautés utiles et
+                            organiser un parcours selon vos objectifs.
+                          </p>
+                          <p className="text-xs text-muted-foreground/80">
+                            Basé sur les {exhibitorCount} exposants référencés
+                            {noveltyCount > 0 ? ` et ${noveltyCount} nouveautés` : ''}.
                           </p>
                         </div>
                         <ul className="space-y-2">
@@ -303,7 +320,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                           className="gap-2 w-full sm:w-auto"
                         >
                           <Sparkles className="w-4 h-4" />
-                          Créer mon parcours de visite
+                          Générer mon parcours IA
                         </Button>
                       </div>
 
@@ -315,9 +332,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                           </p>
                           <ol className="space-y-3">
                             {[
-                              'Stands prioritaires sélectionnés',
-                              'Nouveautés à ne pas manquer',
-                              'Itinéraire optimisé par halls',
+                              noveltyCount > 0
+                                ? `${exhibitorCount} exposants et ${noveltyCount} nouveautés analysés`
+                                : `${exhibitorCount} exposants analysés`,
+                              'Stands prioritaires identifiés',
+                              'Parcours recommandé généré',
                             ].map((step, i) => (
                               <li key={step} className="flex items-start gap-3">
                                 <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
