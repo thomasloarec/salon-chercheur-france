@@ -247,37 +247,46 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
             
-            {/* A. Préparer ma visite avec l'IA — bloc stratégique, prioritaire après le hero.
-                Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
-            {exhibitorCount >= 80 && !isEventPast && (
-              <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm">Préparez votre visite avec l'IA</p>
-                    <p className="text-xs text-muted-foreground">
-                      Notre assistant analyse les {exhibitorCount} exposants pour créer votre parcours personnalisé
-                    </p>
-                  </div>
-                </div>
-                <Button onClick={() => setPrepareVisitOpen(true)} className="gap-2 whitespace-nowrap">
-                  <Sparkles className="w-4 h-4" />
-                  Préparer ma visite
-                </Button>
-              </div>
-            )}
-
-            {/* B & C. Nouveautés (gauche) + Sidebar (droite : exposants si disponibles + à propos toujours). */}
+            {/* Colonne principale : Nouveautés → Exposants → IA. Sidebar : À propos. */}
             <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 lg:col-span-8">
+              <div className="col-span-12 lg:col-span-8 space-y-8">
+                {/* B. Nouveautés — bloc principal, design inchangé */}
                 <section id="nouveautes">
                   <NoveltiesSection event={event} />
                 </section>
+
+                {/* C. Exposants — déplacés sous les Nouveautés, en pleine largeur */}
+                {exhibitorCount > 0 && (
+                  <section id="exposants">
+                    <ExhibitorsSidebar event={event} variant="main" />
+                  </section>
+                )}
+
+                {/* D. Préparer ma visite avec l'IA — après les exposants.
+                    Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
+                {exhibitorCount >= 80 && !isEventPast && (
+                  <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">Préparez votre visite avec l'IA</p>
+                        <p className="text-xs text-muted-foreground">
+                          Notre assistant analyse les {exhibitorCount} exposants pour créer votre parcours personnalisé
+                        </p>
+                      </div>
+                    </div>
+                    <Button onClick={() => setPrepareVisitOpen(true)} className="gap-2 whitespace-nowrap">
+                      <Sparkles className="w-4 h-4" />
+                      Préparer ma visite
+                    </Button>
+                  </div>
+                )}
               </div>
+
+              {/* E. Sidebar : À propos de l'événement (Exposants retirés) */}
               <aside className="col-span-12 lg:col-span-4 space-y-6">
-                {exhibitorCount > 0 && <ExhibitorsSidebar event={event} />}
                 <EventAboutSidebar event={event} />
               </aside>
             </div>
