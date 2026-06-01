@@ -24,8 +24,10 @@ import { supabase } from '@/integrations/supabase/client';
 export type EventCrmMatch = {
   crmCompanyId: string;
   crmCompanyName: string;
+  idExposant: string;
   exhibitorName: string | null;
   stand: string | null;
+  website: string | null;
   needsReview: boolean;
 };
 
@@ -47,6 +49,7 @@ type ViewRow = {
   id_exposant: string;
   nom_exposant: string | null;
   stand_exposants_list: string | null;
+  website_exposant: string | null;
 };
 
 export function useEventCrmMatches(
@@ -107,7 +110,7 @@ export function useEventCrmMatches(
       const exposantIds = Array.from(new Set(matches.map((m) => m.id_exposant)));
       const { data: vrows } = await supabase
         .from('crm_radar_participations_view')
-        .select('id_exposant, nom_exposant, stand_exposants_list')
+        .select('id_exposant, nom_exposant, stand_exposants_list, website_exposant')
         .eq('event_id', eventId as string)
         .in('id_exposant', exposantIds);
 
@@ -125,8 +128,10 @@ export function useEventCrmMatches(
         dedup.set(m.crm_company_id, {
           crmCompanyId: m.crm_company_id,
           crmCompanyName: company.company_name,
+          idExposant: m.id_exposant,
           exhibitorName: v?.nom_exposant ?? null,
           stand: v?.stand_exposants_list ?? null,
+          website: v?.website_exposant ?? null,
           needsReview: m.needs_review === true,
         });
       }
