@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Radar, Building2, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,9 +6,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEventCrmMatches } from '@/hooks/useEventCrmMatches';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
+import type { Event } from '@/types/event';
 
 interface EventRadarCrmWidgetProps {
-  eventId: string;
+  event: Event;
   /** Masqué pour les événements passés (aucun match futur pertinent). */
   isEventPast?: boolean;
 }
@@ -36,8 +39,12 @@ const WidgetShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
  * Client-only : aucune donnée privée ne touche le HTML prérendu (#seo-prerender).
  * Les requêtes CRM ne s'exécutent que pour un utilisateur connecté.
  */
-const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ eventId, isEventPast }) => {
+const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEventPast }) => {
   const { user, loading: authLoading } = useAuth();
+  const eventId = event.id;
+
+  // Exposant sélectionné -> ouverture de la popup détail existante.
+  const [selectedExhibitor, setSelectedExhibitor] = useState<Record<string, unknown> | null>(null);
 
   const { data, isLoading } = useEventCrmMatches(eventId, {
     enabled: !!user && !!eventId && !isEventPast,
