@@ -155,7 +155,7 @@ export function useSeoAudit() {
 
 async function runPageSpeedTests() {
   const pages = [
-    { name: 'Accueil', url: 'https://lotexpo.com/' },
+    { name: 'Salons', url: 'https://lotexpo.com/' },
     { name: 'Blog', url: 'https://lotexpo.com/blog' },
   ];
 

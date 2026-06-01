@@ -40,7 +40,7 @@ function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
             onClick={() => window.location.href = '/'}
             className="flex-1 bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90 transition-colors text-sm font-medium"
           >
-            Accueil
+            Salons
           </button>
         </div>
       </div>
