@@ -22,7 +22,7 @@ interface ExhibitorsSidebarProps {
   variant?: 'sidebar' | 'main';
 }
 
-const MAX_PREVIEW = 7;
+const MAX_PREVIEW = 8;
 
 export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: ExhibitorsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -277,6 +277,79 @@ export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: Exhibi
 
   const [infoOpen, setInfoOpen] = useState(false);
 
+  const isGrid = variant === 'main';
+
+  // Carte exposant compacte — réutilisée en liste (sidebar) et en grid (main)
+  const renderExhibitorCard = (exhibitor: any) => {
+    const standLabel = (exhibitor.stand_exposant || exhibitor.stand)
+      ? `Stand ${normalizeStandNumber(exhibitor.stand_exposant || exhibitor.stand)}`
+      : null;
+    const standText = [exhibitor.hall, standLabel].filter(Boolean).join(' • ');
+    const resolvedLogo = getExhibitorLogoUrl(
+      exhibitor.logo_url,
+      exhibitor.website || exhibitor.website_exposant,
+    );
+
+    return (
+      <div
+        key={exhibitor.id}
+        className={
+          isGrid
+            ? 'flex flex-col rounded-lg border bg-white hover:border-primary/40 hover:shadow-sm transition-all'
+            : 'rounded-lg hover:bg-gray-50 transition-colors'
+        }
+      >
+        <button
+          onClick={() => openExhibitor(exhibitor, false)}
+          className="w-full flex items-center gap-3 p-3 text-left"
+        >
+          <div
+            className={
+              isGrid
+                ? 'w-10 h-10 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center p-1'
+                : 'w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center'
+            }
+          >
+            {resolvedLogo ? (
+              <img
+                src={resolvedLogo}
+                alt={`${exhibitor.name} logo`}
+                className="w-full h-full object-contain rounded"
+              />
+            ) : (
+              <Building2 className={isGrid ? 'w-5 h-5 text-gray-400' : 'w-4 h-4 text-gray-400'} />
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-sm text-gray-900 truncate">
+              {exhibitor.exhibitor_name || exhibitor.name}
+            </div>
+            {standText && (
+              <p className="text-xs text-gray-500 truncate">{standText}</p>
+            )}
+          </div>
+
+          {!isGrid && <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />}
+        </button>
+        {/* Phase 4B — discreet crawlable link to the full public profile */}
+        {exhibitor.public_slug && !exhibitor.is_test && (
+          <div className="px-3 pb-2 -mt-1 mt-auto">
+            <ExhibitorFullProfileCTA
+              publicSlug={exhibitor.public_slug}
+              seoIndexable={exhibitor.seo_indexable}
+              isTest={exhibitor.is_test}
+              openInNewTab
+              variant="link"
+              surface="event_exhibitor_list"
+              eventSlug={event.slug}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <aside
@@ -342,10 +415,16 @@ export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: Exhibi
         )}
 
         {/* Content */}
-        <div className="mt-4 space-y-2">
+        <div
+          className={
+            isGrid
+              ? 'mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'
+              : 'mt-4 space-y-2'
+          }
+        >
           {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-3">
+            Array.from({ length: isGrid ? 6 : 3 }).map((_, i) => (
+              <div key={i} className={isGrid ? 'flex items-center gap-3 p-3 rounded-lg border' : 'flex items-center gap-3 p-3'}>
                 <Skeleton className="w-6 h-6 rounded" />
                 <div className="flex-1 space-y-1">
                   <Skeleton className="h-4 w-full" />
@@ -354,66 +433,15 @@ export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: Exhibi
               </div>
             ))
           ) : error ? (
-            <div className="text-center py-4">
+            <div className="text-center py-4 col-span-full">
               <p className="text-sm text-red-600">Erreur lors du chargement</p>
             </div>
           ) : preview.length === 0 && debouncedSearch ? (
-            <div className="text-center py-4">
+            <div className="text-center py-4 col-span-full">
               <p className="text-sm text-gray-500">Aucun exposant trouvé</p>
             </div>
           ) : preview.length > 0 ? (
-            preview.map((exhibitor) => {
-              return (
-                <div key={exhibitor.id} className="rounded-lg hover:bg-gray-50 transition-colors">
-                  <button
-                    onClick={() => openExhibitor(exhibitor, false)}
-                    className="w-full flex items-center gap-3 p-3 text-left"
-                  >
-                    <div className="w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center">
-                      {(() => {
-                        const resolvedLogo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website || exhibitor.website_exposant);
-                        return resolvedLogo ? (
-                          <img 
-                            src={resolvedLogo} 
-                            alt={`${exhibitor.name} logo`}
-                            className="w-full h-full object-contain rounded"
-                          />
-                        ) : (
-                          <Building2 className="w-4 h-4 text-gray-400" />
-                        );
-                      })()}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-gray-900 truncate">
-                        {exhibitor.exhibitor_name || exhibitor.name}
-                      </div>
-                      {(exhibitor.stand_exposant || exhibitor.stand || exhibitor.hall) && (
-                        <p className="text-xs text-gray-500 truncate">
-                          {[exhibitor.hall, (exhibitor.stand_exposant || exhibitor.stand) ? `Stand ${normalizeStandNumber(exhibitor.stand_exposant || exhibitor.stand)}` : null].filter(Boolean).join(' • ')}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                  </button>
-                  {/* Phase 4B — discreet crawlable link to the full public profile */}
-                  {exhibitor.public_slug && !exhibitor.is_test && (
-                    <div className="px-3 pb-2 -mt-1">
-                      <ExhibitorFullProfileCTA
-                        publicSlug={exhibitor.public_slug}
-                        seoIndexable={exhibitor.seo_indexable}
-                        isTest={exhibitor.is_test}
-                        openInNewTab
-                        variant="link"
-                        surface="event_exhibitor_list"
-                        eventSlug={event.slug}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })
+            preview.map((exhibitor) => renderExhibitorCard(exhibitor))
           ) : null}
         </div>
 
@@ -421,7 +449,7 @@ export default function ExhibitorsSidebar({ event, variant = 'sidebar' }: Exhibi
         {total > MAX_PREVIEW && (
           <div className="mt-6 pt-4 border-t">
             <Button 
-              variant="outline" 
+              variant={isGrid ? 'default' : 'outline'}
               size="sm" 
               className="w-full"
               onClick={handleOpenModal}
