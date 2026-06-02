@@ -218,10 +218,19 @@ const RadarCrmPage: React.FC = () => {
               partenaires ou concurrents exposent.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
-              <Button size="lg" onClick={() => scrollToUpload('hero_primary')}>
-                <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV ou Excel
+              <Button
+                size="lg"
+                onClick={() => scrollToUpload('hero_primary')}
+                className="w-full sm:w-auto h-auto whitespace-normal text-center"
+              >
+                <Upload className="h-4 w-4 mr-2 shrink-0" /> Importer mon fichier CSV ou Excel
               </Button>
-              <Button size="lg" variant="outline" onClick={scrollToHowItWorks}>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={scrollToHowItWorks}
+                className="w-full sm:w-auto h-auto whitespace-normal text-center"
+              >
                 Voir comment ça marche
               </Button>
             </div>
