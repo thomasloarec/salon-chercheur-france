@@ -62,17 +62,26 @@ export default function ExhibitorNovelties({
   if (!profile.exhibitor_id) {
     return (
       <section>
-        <h2 className="text-xl font-bold mb-4">Nouveautés</h2>
-        <p className="text-muted-foreground">
-          Aucune nouveauté publiée pour le moment.
-        </p>
+        <h2 className="text-xl font-bold mb-4">Nouveautés publiées</h2>
+        <div className="rounded-xl border border-dashed bg-muted/30 p-6 text-center">
+          <p className="text-muted-foreground">
+            Aucune nouveauté publiée pour le moment.
+          </p>
+        </div>
       </section>
     );
   }
 
   return (
     <section>
-      <h2 className="text-xl font-bold mb-4">Nouveautés</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold">Nouveautés publiées</h2>
+        {!isLoading && novelties.length > 0 && (
+          <span className="text-sm text-muted-foreground">
+            {novelties.length} nouveauté{novelties.length > 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, i) => (
@@ -80,9 +89,11 @@ export default function ExhibitorNovelties({
           ))}
         </div>
       ) : novelties.length === 0 ? (
-        <p className="text-muted-foreground">
-          Aucune nouveauté publiée pour le moment.
-        </p>
+        <div className="rounded-xl border border-dashed bg-muted/30 p-6 text-center">
+          <p className="text-muted-foreground">
+            Aucune nouveauté publiée pour le moment.
+          </p>
+        </div>
       ) : (
         <>
           <div className="space-y-6">

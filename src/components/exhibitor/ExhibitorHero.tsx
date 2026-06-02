@@ -47,25 +47,30 @@ export default function ExhibitorHero({
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
 
   return (
-    <Card className="rounded-2xl overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+    <Card className="rounded-2xl overflow-hidden border shadow-sm">
+      {/* Bande d'accent premium — purement décorative */}
+      <div
+        className="h-20 bg-gradient-to-r from-primary/10 via-bubble to-primary/5"
+        aria-hidden="true"
+      />
+      <CardContent className="p-6 pt-0">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-12">
           {/* Logo / avatar fallback */}
-          <div className="w-20 h-20 rounded-xl bg-white border flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-24 h-24 rounded-2xl bg-white border shadow-sm flex items-center justify-center flex-shrink-0 overflow-hidden">
             {logo ? (
               <img
                 src={logo}
                 alt={`Logo ${name}`}
-                className="max-w-full max-h-full object-contain p-1"
+                className="max-w-full max-h-full object-contain p-2"
               />
             ) : (
-              <span className="text-2xl font-bold text-muted-foreground">
+              <span className="text-3xl font-bold text-muted-foreground">
                 {name.charAt(0).toUpperCase()}
               </span>
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 sm:pb-1">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <Badge variant="outline" className="gap-1">
                 <Building2 className="h-3 w-3" />
@@ -86,68 +91,71 @@ export default function ExhibitorHero({
               <SourceBadge sourceType={profile.source_type} />
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold leading-tight mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
               {name}
             </h1>
-
-            {profile.description ? (
-              <p className="text-sm text-muted-foreground line-clamp-3">
-                {profile.description}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">
-                Cette fiche n'a pas encore été complétée par l'entreprise.
-              </p>
-            )}
-
-            {!hasAnyActivity && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Aucune participation aux salons identifiée pour le moment.
-              </p>
-            )}
-
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-2 mt-4">
-              {websiteUrl && (
-                <Button
-                  asChild
-                  variant="default"
-                  className="gap-2"
-                  onClick={() =>
-                    trackExhibitorEvent('website_click', slug, {
-                      target_url: websiteUrl,
-                    })
-                  }
-                >
-                  <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
-                    <Globe className="h-4 w-4" />
-                    Site officiel
-                  </a>
-                </Button>
-              )}
-              {linkedinUrl && (
-                <Button
-                  asChild
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() =>
-                    trackExhibitorEvent('linkedin_click', slug, {
-                      target_url: linkedinUrl,
-                    })
-                  }
-                >
-                  <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
-                    <Linkedin className="h-4 w-4" />
-                    LinkedIn
-                  </a>
-                </Button>
-              )}
-              <ExhibitorClaimCta profile={profile} />
-              {profile.public_slug && profile.is_test !== true && (
-                <ExhibitorAlertButton publicSlug={profile.public_slug} />
-              )}
-            </div>
           </div>
+        </div>
+
+        {/* Description courte — reste dans le DOM pour le SEO */}
+        {profile.description ? (
+          <p className="text-sm text-muted-foreground line-clamp-3 mt-4 max-w-3xl">
+            {profile.description}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground italic mt-4">
+            Cette fiche n'a pas encore été complétée par l'entreprise.
+          </p>
+        )}
+
+        {!hasAnyActivity && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Aucune participation aux salons identifiée pour le moment.
+          </p>
+        )}
+
+        {/* CTAs — hiérarchie : 1 action principale, le reste en secondaire.
+            Site officiel reste l'action principale quand il existe ; sinon
+            la revendication / modification devient l'action principale. */}
+        <div className="flex flex-wrap items-center gap-2 mt-5">
+          {websiteUrl && (
+            <Button
+              asChild
+              variant="default"
+              className="gap-2"
+              onClick={() =>
+                trackExhibitorEvent('website_click', slug, {
+                  target_url: websiteUrl,
+                })
+              }
+            >
+              <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
+                <Globe className="h-4 w-4" />
+                Site officiel
+              </a>
+            </Button>
+          )}
+          <ExhibitorClaimCta profile={profile} websiteAvailable={!!websiteUrl} />
+          {linkedinUrl && (
+            <Button
+              asChild
+              variant="outline"
+              className="gap-2"
+              onClick={() =>
+                trackExhibitorEvent('linkedin_click', slug, {
+                  target_url: linkedinUrl,
+                })
+              }
+            >
+              <a href={linkedinUrl} target="_blank" rel="noopener noreferrer">
+                <Linkedin className="h-4 w-4" />
+                LinkedIn
+              </a>
+            </Button>
+          )}
+          {profile.public_slug && profile.is_test !== true && (
+            <ExhibitorAlertButton publicSlug={profile.public_slug} />
+          )}
         </div>
       </CardContent>
     </Card>

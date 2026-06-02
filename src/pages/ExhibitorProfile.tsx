@@ -59,13 +59,27 @@ export default function ExhibitorProfile() {
         ) : (
           <>
             <ExhibitorProfileSEO profile={profile} />
-            <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+            <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+              {/* A. Header exposant — pleine largeur */}
               <ExhibitorHero profile={profile} hasAnyActivity={hasAnyActivity} />
+
+              {/* B. Statistiques principales — pleine largeur */}
               {hasAnyActivity && <ExhibitorStats profile={profile} />}
-              <ExhibitorUpcomingEvents profile={profile} />
-              <ExhibitorNovelties profile={profile} />
-              <ExhibitorAbout profile={profile} />
-              <ExhibitorTrustInfo profile={profile} />
+
+              {/* C. Layout 2 colonnes (desktop) / 1 colonne (mobile) */}
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-8 space-y-8">
+                  <ExhibitorUpcomingEvents profile={profile} />
+                  <ExhibitorNovelties profile={profile} />
+                  {/* À propos : ne s'affiche que si le contenu n'est pas redondant
+                      avec la description du header (sécurité SEO garantie côté composant). */}
+                  <ExhibitorAbout profile={profile} />
+                </div>
+
+                <aside className="col-span-12 lg:col-span-4 space-y-6">
+                  <ExhibitorTrustInfo profile={profile} />
+                </aside>
+              </div>
             </div>
           </>
         )}

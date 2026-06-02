@@ -15,7 +15,15 @@ import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 
 /* ------------------------------- Claim CTA ------------------------------- */
 
-export default function ExhibitorClaimCta({ profile }: { profile: PublicExhibitorProfile }) {
+export default function ExhibitorClaimCta({
+  profile,
+  websiteAvailable = false,
+}: {
+  profile: PublicExhibitorProfile;
+  /** When no official website CTA is shown, the claim/edit action becomes the
+   *  primary (default) button so the hierarchy keeps one clear main action. */
+  websiteAvailable?: boolean;
+}) {
   const { user } = useAuth();
   const [claimOpen, setClaimOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -60,7 +68,7 @@ export default function ExhibitorClaimCta({ profile }: { profile: PublicExhibito
     return (
       <>
         <Button
-          variant="secondary"
+          variant={websiteAvailable ? 'secondary' : 'default'}
           className="gap-2"
           onClick={() => setEditOpen(true)}
         >
@@ -95,7 +103,11 @@ export default function ExhibitorClaimCta({ profile }: { profile: PublicExhibito
   // States 1 & 2: not claimed → "Revendiquer cette fiche".
   return (
     <>
-      <Button variant="outline" onClick={handleClaimClick} className="gap-2">
+      <Button
+        variant={websiteAvailable ? 'outline' : 'default'}
+        onClick={handleClaimClick}
+        className="gap-2"
+      >
         <ShieldCheck className="h-4 w-4" />
         Revendiquer cette fiche
       </Button>

@@ -30,7 +30,14 @@ export default function ExhibitorUpcomingEvents({
 
   return (
     <section>
-      <h2 className="text-xl font-bold mb-4">À voir sur les salons</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold">À voir sur les salons</h2>
+        {!isLoading && events.length > 0 && (
+          <span className="text-sm text-muted-foreground">
+            {events.length} salon{events.length > 1 ? 's' : ''} à venir
+          </span>
+        )}
+      </div>
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -38,14 +45,21 @@ export default function ExhibitorUpcomingEvents({
           ))}
         </div>
       ) : events.length === 0 ? (
-        <p className="text-muted-foreground">
-          Aucun salon à venir identifié pour le moment.
-        </p>
+        <div className="rounded-xl border border-dashed bg-muted/30 p-6 text-center">
+          <p className="text-muted-foreground">
+            Aucun salon à venir identifié pour le moment.
+          </p>
+        </div>
       ) : (
         <>
           <div className="space-y-3">
-            {shown.map((e) => (
-              <ExhibitorEventCardRow key={e.id} event={e} slug={slug} />
+            {shown.map((e, i) => (
+              <ExhibitorEventCardRow
+                key={e.id}
+                event={e}
+                slug={slug}
+                featured={i === 0}
+              />
             ))}
           </div>
           {remaining > 0 && (
