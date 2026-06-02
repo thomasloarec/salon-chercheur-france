@@ -46,6 +46,13 @@ export interface ExhibitorUpcomingEvent {
   stand: string | null;
 }
 
+export type ExhibitorParticipationStatus = 'ongoing' | 'upcoming' | 'past';
+
+export interface ExhibitorParticipation extends ExhibitorUpcomingEvent {
+  status: ExhibitorParticipationStatus;
+  year: number | null;
+}
+
 /**
  * Fetches the public exhibitor profile from the `public_exhibitor_profiles`
  * view by its stable public slug. Returns null when no profile exists.
@@ -157,6 +164,117 @@ export function useExhibitorUpcomingEvents(
         date_fin: e.date_fin ?? null,
         stand: standByEventId.get(e.id as string) ?? null,
       }));
+    },
+    enabled: !!(exhibitorId || legacyExposantId),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Fetches the FULL participation history for an exhibitor (past, ongoing AND
+ * upcoming events). Links participations via legacy id (id_exposant) AND/OR
+ * modern id (exhibitor_id), merges + dedupes by event UUID, keeps only
+ * visible, non-test events. Computes a status (ongoing / upcoming / past) per
+ * event and returns the list ordered as: upcoming/ongoing first (date ASC),
+ * then past (date DESC) — same security & visibility rules as the other blocks.
+ */
+export function useExhibitorParticipationHistory(
+  exhibitorId: string | null | undefined,
+  legacyExposantId: string | null | undefined
+) {
+  return useQuery({
+    queryKey: ['exhibitor-participation-history', exhibitorId, legacyExposantId],
+    queryFn: async (): Promise<ExhibitorParticipation[]> => {
+      if (!exhibitorId && !legacyExposantId) return [];
+
+      // 1. Collect participation rows from both linking strategies and dedupe
+      //    by event UUID (anti-doublon entre exhibitor_id et id_exposant).
+      const standByEventId = new Map<string, string | null>();
+
+      const queries = [];
+      if (legacyExposantId) {
+        queries.push(
+          supabase
+            .from('participation')
+            .select('id_event, stand_exposant')
+            .eq('id_exposant', legacyExposantId)
+        );
+      }
+      if (exhibitorId) {
+        queries.push(
+          supabase
+            .from('participation')
+            .select('id_event, stand_exposant')
+            .eq('exhibitor_id', exhibitorId)
+        );
+      }
+
+      const results = await Promise.all(queries);
+      for (const res of results) {
+        for (const row of res.data ?? []) {
+          const eventUuid = (row as any).id_event as string | null;
+          if (!eventUuid) continue;
+          if (!standByEventId.has(eventUuid)) {
+            standByEventId.set(eventUuid, (row as any).stand_exposant ?? null);
+          } else if (!standByEventId.get(eventUuid) && (row as any).stand_exposant) {
+            standByEventId.set(eventUuid, (row as any).stand_exposant);
+          }
+        }
+      }
+
+      const eventUuids = Array.from(standByEventId.keys());
+      if (eventUuids.length === 0) return [];
+
+      // 2. Fetch the real events (visible, non-test) — no date filter so the
+      //    full history (incl. past editions) is returned.
+      const { data: events, error } = await supabase
+        .from('events')
+        .select('id, slug, nom_event, ville, nom_lieu, date_debut, date_fin, visible, is_test')
+        .in('id', eventUuids)
+        .eq('visible', true)
+        .eq('is_test', false);
+      if (error) throw error;
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      const items: ExhibitorParticipation[] = (events ?? []).map((e) => {
+        const start = (e.date_debut as string | null) ?? null;
+        const end = (e.date_fin as string | null) ?? start;
+        let status: ExhibitorParticipationStatus = 'past';
+        if (start) {
+          if (end && start <= today && today <= end) status = 'ongoing';
+          else if (start > today) status = 'upcoming';
+          else status = 'past';
+        } else if (end && end >= today) {
+          status = 'upcoming';
+        }
+        return {
+          id: e.id as string,
+          slug: e.slug ?? null,
+          nom_event: e.nom_event,
+          ville: e.ville ?? null,
+          nom_lieu: e.nom_lieu ?? null,
+          date_debut: start,
+          date_fin: e.date_fin ?? null,
+          stand: standByEventId.get(e.id as string) ?? null,
+          status,
+          year: start ? Number(start.slice(0, 4)) : null,
+        };
+      });
+
+      // 3. Order: upcoming/ongoing first (date ASC), then past (date DESC).
+      const rank = (s: ExhibitorParticipationStatus) => (s === 'past' ? 1 : 0);
+      items.sort((a, b) => {
+        const ra = rank(a.status);
+        const rb = rank(b.status);
+        if (ra !== rb) return ra - rb;
+        const da = a.date_debut || '';
+        const db = b.date_debut || '';
+        if (ra === 0) return da < db ? -1 : da > db ? 1 : 0; // upcoming ASC
+        return da > db ? -1 : da < db ? 1 : 0; // past DESC
+      });
+
+      return items;
     },
     enabled: !!(exhibitorId || legacyExposantId),
     staleTime: 60_000,
