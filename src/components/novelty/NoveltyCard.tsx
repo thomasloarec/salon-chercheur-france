@@ -14,6 +14,11 @@ import NoveltyInteractionBar from './NoveltyInteractionBar';
 import type { Novelty } from '@/hooks/useNovelties';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import {
+  fetchExhibitorPublicSlugs,
+  resolvePublicSlug,
+  type PublicSlugInfo,
+} from '@/lib/exhibitorPublicSlug';
 
 interface NoveltyCardProps {
   novelty: Novelty;
@@ -73,6 +78,8 @@ export default function NoveltyCard({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [hydratedExhibitor, setHydratedExhibitor] = useState<any>(null);
+  // Phase 4B — fallback slug resolution when the parent doesn't prefetch it.
+  const [resolvedSlugInfo, setResolvedSlugInfo] = useState<PublicSlugInfo | null>(null);
   
   const { data: commentsData } = useNoveltyComments(novelty.id);
   const commentsCount = commentsData?.length || 0;
