@@ -13,6 +13,9 @@ import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
 import { useToggleFavorite } from '@/hooks/useFavorites';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const NOVELTY_TYPE_LABELS = {
   Launch: 'Lancement',
@@ -307,7 +310,11 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       Voir le salon <ArrowRight className="h-3.5 w-3.5 ml-1" />
                     </Button>
                   </Link>
-                  <RemoveFromAgendaButton eventId={event.id} eventName={event.nom_event} />
+                  <RemoveFromAgendaButton
+                    eventId={event.id}
+                    eventName={event.nom_event}
+                    noveltyIds={eventNovelties.map((n: any) => n.id)}
+                  />
                 </div>
               </div>
             );
@@ -356,13 +363,42 @@ function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string
   );
 }
 
-function RemoveFromAgendaButton({ eventId, eventName }: { eventId: string; eventName: string }) {
+function RemoveFromAgendaButton({
+  eventId,
+  eventName,
+  noveltyIds = [],
+}: {
+  eventId: string;
+  eventName: string;
+  noveltyIds?: string[];
+}) {
   const toggleFavorite = useToggleFavorite();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const handleRemove = async () => {
+    setIsRemoving(true);
     try {
+      // 1. Repasser les nouveautés likées de cet événement en "non intéressé"
+      //    (sinon elles ré-injectent l'événement dans l'agenda).
+      for (const noveltyId of noveltyIds) {
+        const { error } = await supabase.functions.invoke('novelty-like-toggle', {
+          body: { novelty_id: noveltyId },
+        });
+        if (error) throw error;
+      }
+
+      // 2. Retirer l'événement des favoris (s'il y est encore).
       await toggleFavorite.mutateAsync(eventId);
+
+      // 3. Rafraîchir l'agenda et les états de like.
+      queryClient.invalidateQueries({ queryKey: ['liked-novelties', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['favorite-events', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['novelties'] });
+
       toast({
         title: 'Retiré de votre agenda',
         description: `"${eventName}" a été retiré de votre agenda.`,
@@ -373,6 +409,8 @@ function RemoveFromAgendaButton({ eventId, eventName }: { eventId: string; event
         description: 'Impossible de retirer cet événement.',
         variant: 'destructive',
       });
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -381,7 +419,7 @@ function RemoveFromAgendaButton({ eventId, eventName }: { eventId: string; event
       variant="ghost"
       size="sm"
       onClick={handleRemove}
-      disabled={toggleFavorite.isPending}
+      disabled={toggleFavorite.isPending || isRemoving}
       className="text-muted-foreground hover:text-white hover:bg-destructive/90"
     >
       <CalendarX className="h-4 w-4 mr-1.5" />
