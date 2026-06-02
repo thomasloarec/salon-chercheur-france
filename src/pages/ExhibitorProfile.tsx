@@ -12,6 +12,7 @@ import ExhibitorHero from '@/components/exhibitor/ExhibitorHero';
 import ExhibitorStats from '@/components/exhibitor/ExhibitorStats';
 import ExhibitorUpcomingEvents from '@/components/exhibitor/ExhibitorUpcomingEvents';
 import ExhibitorNovelties from '@/components/exhibitor/ExhibitorNovelties';
+import ExhibitorParticipationHistory from '@/components/exhibitor/ExhibitorParticipationHistory';
 import ExhibitorAbout from '@/components/exhibitor/ExhibitorAbout';
 import ExhibitorTrustInfo from '@/components/exhibitor/ExhibitorTrustInfo';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
@@ -71,6 +72,9 @@ export default function ExhibitorProfile() {
                 <div className="col-span-12 lg:col-span-8 space-y-8">
                   <ExhibitorUpcomingEvents profile={profile} />
                   <ExhibitorNovelties profile={profile} />
+                  {/* Historique complet des participations (passées + à venir),
+                      avec liens internes crawlables vers /events/:slug. */}
+                  <ExhibitorParticipationHistory profile={profile} />
                   {/* À propos : ne s'affiche que si le contenu n'est pas redondant
                       avec la description du header (sécurité SEO garantie côté composant). */}
                   <ExhibitorAbout profile={profile} />
