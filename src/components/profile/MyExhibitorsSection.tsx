@@ -46,9 +46,20 @@ const ExhibitorPanel = ({
   const isOwner = membership.role === 'owner';
   const ex = membership.exhibitor;
   const logoUrl = getExhibitorLogoUrl(ex.logo_url, undefined);
+  const teamSectionRef = useRef<HTMLDivElement>(null);
 
   // Public profile link: only when a non-test public slug exists.
   const publicSlug = slugInfo && !slugInfo.is_test ? slugInfo.public_slug : null;
+
+  const handleToggleTeam = () => {
+    const next = !expanded;
+    setExpanded(next);
+    if (next && teamSectionRef.current) {
+      setTimeout(() => {
+        teamSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+  };
 
   // Fetch team members when expanded
   const { data: teamMembers = [], isLoading: teamLoading, refetch: refetchTeam } = useQuery<TeamMember[]>({
