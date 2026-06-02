@@ -4924,6 +4924,14 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_event_card_stats: {
+        Args: { _event_ids: string[] }
+        Returns: {
+          event_id: string
+          exhibitor_count: number
+          novelty_count: number
+        }[]
+      }
       get_exhibitor_ai_enrichment_stats: { Args: never; Returns: Json }
       get_exhibitor_uuid: { Args: { old_id: string }; Returns: string }
       get_location_suggestions: {

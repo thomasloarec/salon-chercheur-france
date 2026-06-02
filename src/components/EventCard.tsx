@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin, EyeOff, Eye, Radio } from 'lucide-react';
+import { CalendarDays, MapPin, EyeOff, Eye, Radio, Store, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import { format } from 'date-fns';
@@ -30,6 +30,8 @@ interface EventCardProps {
   view?: 'grid';
   adminPreview?: boolean;
   onPublish?: (eventId: string) => void;
+  exhibitorCount?: number;
+  noveltyCount?: number;
 }
 
 // Utility function for date formatting
@@ -40,9 +42,13 @@ function formatDateRange(start: string, end: string) {
   return start === end ? sd : `${sd} – ${ed}`;
 }
 
-const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: EventCardProps) => {
+const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhibitorCount, noveltyCount }: EventCardProps) => {
   const { isAdmin } = useIsAdmin();
   const ongoing = isEventOngoing(event);
+
+  const hasExhibitors = !adminPreview && typeof exhibitorCount === 'number' && exhibitorCount > 0;
+  const hasNovelties = !adminPreview && typeof noveltyCount === 'number' && noveltyCount > 0;
+  const showStats = hasExhibitors || hasNovelties;
 
 
   // Use database-generated slug (tous les événements en ont un maintenant)
@@ -152,6 +158,23 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish }: Ev
             <MapPin className="h-4 w-4 shrink-0" />
             {formatAddress(event.rue, event.code_postal, event.ville) || '—'}
           </p>
+
+          {showStats && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {hasExhibitors && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                  <Store className="h-3 w-3 shrink-0" />
+                  {exhibitorCount} {exhibitorCount! > 1 ? 'exposants' : 'exposant'}
+                </span>
+              )}
+              {hasNovelties && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent">
+                  <Sparkles className="h-3 w-3 shrink-0" />
+                  {noveltyCount} {noveltyCount! > 1 ? 'nouveautés' : 'nouveauté'}
+                </span>
+              )}
+            </div>
+          )}
           
           <CardWrapper>
             <Button 
