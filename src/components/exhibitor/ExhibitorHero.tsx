@@ -4,7 +4,6 @@ import {
   Linkedin,
   BadgeCheck,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -19,18 +18,6 @@ import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 import { normalizeExternalUrl, normalizeLinkedInUrl } from '@/lib/urlUtils';
 
 /* --------------------------------- Hero --------------------------------- */
-
-function SourceBadge({ sourceType }: { sourceType: string | null }) {
-  if (sourceType === 'modern' || sourceType === 'linked') {
-    return (
-      <Badge variant="secondary" className="gap-1">
-        <Sparkles className="h-3 w-3" />
-        Profil enrichi
-      </Badge>
-    );
-  }
-  return null;
-}
 
 export default function ExhibitorHero({
   profile,
@@ -88,7 +75,6 @@ export default function ExhibitorHero({
                   Vérifiée
                 </Badge>
               )}
-              <SourceBadge sourceType={profile.source_type} />
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
