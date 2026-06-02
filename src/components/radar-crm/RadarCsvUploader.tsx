@@ -56,8 +56,9 @@ const RadarCsvUploader: React.FC<Props> = ({ onParsed }) => {
           onClick={() => inputRef.current?.click()}
           disabled={loading}
           variant="default"
+          className="w-full sm:w-auto max-w-full h-auto whitespace-normal text-center"
         >
-          <Upload className="mr-2 h-4 w-4" />
+          <Upload className="mr-2 h-4 w-4 shrink-0" />
           {loading ? 'Lecture…' : 'Importer mon fichier CSV ou Excel'}
         </Button>
         <input
