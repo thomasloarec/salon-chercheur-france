@@ -157,20 +157,29 @@ const ExhibitorPanel = ({
         {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
 
-      {/* Public profile access — always visible, primary action */}
-      <div className="px-3 pb-3 pt-0">
+      {/* Actions row — two clear paths */}
+      <div className="px-3 pb-3 pt-0 flex gap-2">
         {publicSlug ? (
-          <Button asChild className="w-full" size="sm">
+          <Button asChild variant="outline" size="sm" className="flex-1">
             <Link to={`/exposants/${publicSlug}`}>
               <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              Voir / modifier la fiche publique
+              Voir la fiche publique
             </Link>
           </Button>
         ) : (
-          <Button variant="outline" size="sm" className="w-full" disabled>
-            Fiche publique en préparation
+          <Button variant="outline" size="sm" className="flex-1" disabled>
+            Fiche en préparation
           </Button>
         )}
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1"
+          onClick={handleToggleTeam}
+        >
+          <Settings className="h-3.5 w-3.5 mr-1.5" />
+          {expanded ? 'Masquer l\'équipe' : 'Gérer l\'équipe'}
+        </Button>
       </div>
 
       {/* Expanded panel */}
