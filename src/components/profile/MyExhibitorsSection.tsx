@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Building2, ChevronDown, ChevronUp, Plus, Trash2, Crown, Users, User, ExternalLink, Info, Settings } from 'lucide-react';
+import { Building2, Plus, Trash2, Crown, Users, User, ExternalLink, Info, Settings } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -130,10 +130,7 @@ const ExhibitorPanel = ({
   return (
     <div className="border rounded-lg overflow-hidden">
       {/* Header row - always visible */}
-      <button
-        className="flex items-center gap-3 p-3 w-full hover:bg-muted/50 transition-colors text-left"
-        onClick={() => setExpanded(!expanded)}
-      >
+      <div className="flex items-center gap-3 p-3 w-full text-left">
         {logoUrl ? (
           <div className="h-10 w-10 rounded bg-background border flex items-center justify-center flex-shrink-0 p-1">
             <img src={logoUrl} alt={ex.name} className="max-w-full max-h-full object-contain" />
@@ -153,9 +150,7 @@ const ExhibitorPanel = ({
             <Badge variant="secondary" className="text-xs">{roleLabel(membership.role)}</Badge>
           </div>
         </div>
-
-        {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-      </button>
+      </div>
 
       {/* Actions row — two clear paths */}
       <div className="px-3 pb-3 pt-0 flex gap-2">
