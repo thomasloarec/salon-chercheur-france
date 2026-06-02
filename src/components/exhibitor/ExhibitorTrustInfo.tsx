@@ -2,36 +2,31 @@ import {
   BadgeCheck,
   CalendarClock,
   Globe,
+  Linkedin,
   ShieldCheck,
-  Sparkles,
-  Tag,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
-import { normalizeExternalUrl } from '@/lib/urlUtils';
+import { normalizeExternalUrl, normalizeLinkedInUrl } from '@/lib/urlUtils';
 
 /* --------------------------- Trust / info block -------------------------- */
-
-const SOURCE_TYPE_LABELS: Record<string, string> = {
-  modern: 'Fiche entreprise enrichie',
-  linked: 'Fiche reliée à un exposant identifié',
-  legacy: 'Fiche issue de notre base historique',
-};
 
 function InfoRow({
   icon: Icon,
   label,
   value,
+  muted = false,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: React.ReactNode;
+  muted?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-2.5">
+    <div className={`flex items-start gap-2.5${muted ? ' opacity-60' : ''}`}>
       <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
@@ -46,11 +41,12 @@ function InfoRow({
 /**
  * Sidebar "Informations" — trust / status block. Surfaces only data that is
  * reliably available on the profile. No fabricated location/country data.
+ * Internal-only / technical fields ("type de fiche", "enrichissement IA") are
+ * intentionally not exposed publicly.
  */
 export default function ExhibitorTrustInfo({ profile }: { profile: PublicExhibitorProfile }) {
   const websiteUrl = normalizeExternalUrl(profile.website);
-  const isAiEnriched =
-    profile.source_type === 'modern' || profile.source_type === 'linked';
+  const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
 
   return (
     <Card className="rounded-2xl lg:sticky lg:top-24">
@@ -75,6 +71,30 @@ export default function ExhibitorTrustInfo({ profile }: { profile: PublicExhibit
           />
         )}
 
+        {linkedinUrl ? (
+          <InfoRow
+            icon={Linkedin}
+            label="LinkedIn"
+            value={
+              <a
+                href={linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline break-all"
+              >
+                Voir le profil LinkedIn
+              </a>
+            }
+          />
+        ) : (
+          <InfoRow
+            icon={Linkedin}
+            label="LinkedIn"
+            value="Non renseigné"
+            muted
+          />
+        )}
+
         <InfoRow
           icon={BadgeCheck}
           label="Statut de la fiche"
@@ -85,25 +105,11 @@ export default function ExhibitorTrustInfo({ profile }: { profile: PublicExhibit
           }
         />
 
-        <InfoRow
-          icon={Tag}
-          label="Type de fiche"
-          value={SOURCE_TYPE_LABELS[profile.source_type || ''] || 'Fiche exposant'}
-        />
-
         {profile.is_verified && (
           <InfoRow
             icon={ShieldCheck}
             label="Vérification"
             value="Fiche vérifiée"
-          />
-        )}
-
-        {isAiEnriched && (
-          <InfoRow
-            icon={Sparkles}
-            label="Enrichissement"
-            value="Profil enrichi par IA"
           />
         )}
 
