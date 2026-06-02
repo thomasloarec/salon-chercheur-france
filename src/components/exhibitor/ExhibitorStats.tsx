@@ -2,7 +2,6 @@ import { Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-import { Card, CardContent } from '@/components/ui/card';
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 
 /* ------------------------------- Stats block ----------------------------- */
@@ -24,12 +23,15 @@ export default function ExhibitorStats({ profile }: { profile: PublicExhibitorPr
     <section>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {stats.map((s) => (
-          <Card key={s.label} className="rounded-xl">
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-            </CardContent>
-          </Card>
+          <div
+            key={s.label}
+            className="rounded-xl border border-bubble-border bg-bubble px-4 py-4 text-center"
+          >
+            <p className="text-2xl font-bold text-bubble-foreground">{s.value}</p>
+            <p className="text-xs text-bubble-foreground/70 mt-1 leading-snug">
+              {s.label}
+            </p>
+          </div>
         ))}
       </div>
       {profile.next_event_at && (
