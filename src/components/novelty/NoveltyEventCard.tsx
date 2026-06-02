@@ -428,6 +428,9 @@ export default function NoveltyEventCard({
             website_exposant: (exhibitor as any).website,
             website_final: (exhibitor as any).website,
             stand_exposant: standInfo || undefined,
+            public_slug: exhibitorSlugInfo?.public_slug ?? null,
+            seo_indexable: exhibitorSlugInfo?.seo_indexable,
+            is_test: exhibitorSlugInfo?.is_test,
           }}
         />
       )}
