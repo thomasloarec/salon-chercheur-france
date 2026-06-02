@@ -30,6 +30,11 @@ import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import type { Novelty } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
 import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
+import {
+  fetchExhibitorPublicSlugs,
+  resolvePublicSlug,
+  type PublicSlugInfo,
+} from '@/lib/exhibitorPublicSlug';
 
 const TYPE_LABELS: Record<string, string> = {
   Launch: 'Lancement produit',
@@ -86,6 +91,7 @@ export default function NoveltyDetailDialog({
   initialImageIndex = 0,
 }: NoveltyDetailDialogProps) {
   const [showExhibitorDialog, setShowExhibitorDialog] = useState(false);
+  const [exhibitorSlugInfo, setExhibitorSlugInfo] = useState<PublicSlugInfo | null>(null);
   const exhibitor = novelty.exhibitors ?? {
     id: novelty.exhibitor_id,
     name: 'Exposant',
@@ -316,7 +322,21 @@ export default function NoveltyDetailDialog({
             {/* Exposant — cliquable pour ouvrir la fiche complète */}
             <button
               type="button"
-              onClick={() => event && setShowExhibitorDialog(true)}
+              onClick={async () => {
+                if (!event) return;
+                setShowExhibitorDialog(true);
+                if (!exhibitorSlugInfo && novelty.exhibitor_id) {
+                  const maps = await fetchExhibitorPublicSlugs(
+                    [novelty.exhibitor_id],
+                    [novelty.exhibitor_id],
+                  );
+                  const info = resolvePublicSlug(maps, {
+                    exhibitorId: novelty.exhibitor_id,
+                    legacyId: novelty.exhibitor_id,
+                  });
+                  if (info) setExhibitorSlugInfo(info);
+                }
+              }}
               disabled={!event}
               className={cn(
                 'flex items-center gap-3 w-full text-left rounded-lg p-2 -m-2 transition-colors',
