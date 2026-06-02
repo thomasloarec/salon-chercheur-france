@@ -29,6 +29,11 @@ import NoveltyDetailDialog from './NoveltyDetailDialog';
 import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 import type { Novelty } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
+import {
+  fetchExhibitorPublicSlugs,
+  resolvePublicSlug,
+  type PublicSlugInfo,
+} from '@/lib/exhibitorPublicSlug';
 
 const TYPE_LABELS: Record<string, string> = {
   Launch: 'Lancement produit',
@@ -86,6 +91,8 @@ export default function NoveltyEventCard({
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showExhibitorDialog, setShowExhibitorDialog] = useState(false);
+  // Phase 4B — public profile slug resolved on demand (single batched query).
+  const [exhibitorSlugInfo, setExhibitorSlugInfo] = useState<PublicSlugInfo | null>(null);
 
   const exhibitor = novelty.exhibitors ?? {
     id: novelty.exhibitor_id,
@@ -264,9 +271,21 @@ export default function NoveltyEventCard({
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <button
                   type="button"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    if (event) setShowExhibitorDialog(true);
+                    if (!event) return;
+                    setShowExhibitorDialog(true);
+                    if (!exhibitorSlugInfo && novelty.exhibitor_id) {
+                      const maps = await fetchExhibitorPublicSlugs(
+                        [novelty.exhibitor_id],
+                        [novelty.exhibitor_id],
+                      );
+                      const info = resolvePublicSlug(maps, {
+                        exhibitorId: novelty.exhibitor_id,
+                        legacyId: novelty.exhibitor_id,
+                      });
+                      if (info) setExhibitorSlugInfo(info);
+                    }
                   }}
                   disabled={!event}
                   className={cn(
@@ -409,6 +428,9 @@ export default function NoveltyEventCard({
             website_exposant: (exhibitor as any).website,
             website_final: (exhibitor as any).website,
             stand_exposant: standInfo || undefined,
+            public_slug: exhibitorSlugInfo?.public_slug ?? null,
+            seo_indexable: exhibitorSlugInfo?.seo_indexable,
+            is_test: exhibitorSlugInfo?.is_test,
           }}
         />
       )}

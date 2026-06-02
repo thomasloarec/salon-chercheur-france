@@ -14,6 +14,11 @@ import NoveltyInteractionBar from './NoveltyInteractionBar';
 import type { Novelty } from '@/hooks/useNovelties';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import {
+  fetchExhibitorPublicSlugs,
+  resolvePublicSlug,
+  type PublicSlugInfo,
+} from '@/lib/exhibitorPublicSlug';
 
 interface NoveltyCardProps {
   novelty: Novelty;
@@ -73,6 +78,8 @@ export default function NoveltyCard({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [hydratedExhibitor, setHydratedExhibitor] = useState<any>(null);
+  // Phase 4B — fallback slug resolution when the parent doesn't prefetch it.
+  const [resolvedSlugInfo, setResolvedSlugInfo] = useState<PublicSlugInfo | null>(null);
   
   const { data: commentsData } = useNoveltyComments(novelty.id);
   const commentsCount = commentsData?.length || 0;
@@ -188,6 +195,20 @@ export default function NoveltyCard({
                   website: hydrated.website_exposant,
                 });
                 setShowExhibitorModal(true);
+
+                // Resolve the public profile slug if the parent didn't prefetch it.
+                if (!exhibitorPublicSlug && !resolvedSlugInfo) {
+                  const lookupId = (hydrated as any).exhibitor_uuid || exhibitor.id;
+                  const maps = await fetchExhibitorPublicSlugs(
+                    [lookupId],
+                    [exhibitor.id],
+                  );
+                  const info = resolvePublicSlug(maps, {
+                    exhibitorId: lookupId,
+                    legacyId: exhibitor.id,
+                  });
+                  if (info) setResolvedSlugInfo(info);
+                }
               }}
               className="flex items-center gap-3 hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
             >
@@ -364,9 +385,9 @@ export default function NoveltyCard({
           if (!open) setHydratedExhibitor(null);
         }}
         exhibitor={hydratedExhibitor}
-        publicSlug={exhibitorPublicSlug}
-        seoIndexable={exhibitorSeoIndexable}
-        isTest={exhibitorIsTest}
+        publicSlug={exhibitorPublicSlug ?? resolvedSlugInfo?.public_slug}
+        seoIndexable={exhibitorSeoIndexable ?? resolvedSlugInfo?.seo_indexable}
+        isTest={exhibitorIsTest ?? resolvedSlugInfo?.is_test}
         openInNewTab={openExhibitorInNewTab}
         surface="novelty_card"
       />
