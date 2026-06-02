@@ -572,8 +572,13 @@ const RadarCrmPage: React.FC = () => {
             <p className="text-sm md:text-base opacity-90 mb-6 max-w-2xl mx-auto">
               Importez votre CSV ou Excel et découvrez immédiatement les événements où vos comptes sont présents.
             </p>
-            <Button size="lg" variant="secondary" onClick={() => scrollToUpload('final_cta')}>
-              <Upload className="h-4 w-4 mr-2" /> Importer mon fichier CSV ou Excel
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => scrollToUpload('final_cta')}
+              className="w-full sm:w-auto h-auto whitespace-normal text-center"
+            >
+              <Upload className="h-4 w-4 mr-2 shrink-0" /> Importer mon fichier CSV ou Excel
             </Button>
           </div>
         </div>
