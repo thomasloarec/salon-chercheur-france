@@ -385,9 +385,9 @@ export default function NoveltyCard({
           if (!open) setHydratedExhibitor(null);
         }}
         exhibitor={hydratedExhibitor}
-        publicSlug={exhibitorPublicSlug}
-        seoIndexable={exhibitorSeoIndexable}
-        isTest={exhibitorIsTest}
+        publicSlug={exhibitorPublicSlug ?? resolvedSlugInfo?.public_slug}
+        seoIndexable={exhibitorSeoIndexable ?? resolvedSlugInfo?.seo_indexable}
+        isTest={exhibitorIsTest ?? resolvedSlugInfo?.is_test}
         openInNewTab={openExhibitorInNewTab}
         surface="novelty_card"
       />
