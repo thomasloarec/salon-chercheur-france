@@ -13,6 +13,9 @@ import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
 import { useToggleFavorite } from '@/hooks/useFavorites';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const NOVELTY_TYPE_LABELS = {
   Launch: 'Lancement',
@@ -307,7 +310,11 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       Voir le salon <ArrowRight className="h-3.5 w-3.5 ml-1" />
                     </Button>
                   </Link>
-                  <RemoveFromAgendaButton eventId={event.id} eventName={event.nom_event} />
+                  <RemoveFromAgendaButton
+                    eventId={event.id}
+                    eventName={event.nom_event}
+                    noveltyIds={eventNovelties.map((n: any) => n.id)}
+                  />
                 </div>
               </div>
             );
