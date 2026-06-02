@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Building2, ChevronDown, ChevronUp, Plus, Trash2, Crown, Users, User, ExternalLink, Info } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Building2, ChevronDown, ChevronUp, Plus, Trash2, Crown, Users, User, ExternalLink, Info, Settings } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,9 +46,20 @@ const ExhibitorPanel = ({
   const isOwner = membership.role === 'owner';
   const ex = membership.exhibitor;
   const logoUrl = getExhibitorLogoUrl(ex.logo_url, undefined);
+  const teamSectionRef = useRef<HTMLDivElement>(null);
 
   // Public profile link: only when a non-test public slug exists.
   const publicSlug = slugInfo && !slugInfo.is_test ? slugInfo.public_slug : null;
+
+  const handleToggleTeam = () => {
+    const next = !expanded;
+    setExpanded(next);
+    if (next && teamSectionRef.current) {
+      setTimeout(() => {
+        teamSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+  };
 
   // Fetch team members when expanded
   const { data: teamMembers = [], isLoading: teamLoading, refetch: refetchTeam } = useQuery<TeamMember[]>({
@@ -146,20 +157,29 @@ const ExhibitorPanel = ({
         {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
 
-      {/* Public profile access — always visible, primary action */}
-      <div className="px-3 pb-3 pt-0">
+      {/* Actions row — two clear paths */}
+      <div className="px-3 pb-3 pt-0 flex gap-2">
         {publicSlug ? (
-          <Button asChild className="w-full" size="sm">
+          <Button asChild variant="outline" size="sm" className="flex-1">
             <Link to={`/exposants/${publicSlug}`}>
               <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              Voir / modifier la fiche publique
+              Voir la fiche publique
             </Link>
           </Button>
         ) : (
-          <Button variant="outline" size="sm" className="w-full" disabled>
-            Fiche publique en préparation
+          <Button variant="outline" size="sm" className="flex-1" disabled>
+            Fiche en préparation
           </Button>
         )}
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1"
+          onClick={handleToggleTeam}
+        >
+          <Settings className="h-3.5 w-3.5 mr-1.5" />
+          {expanded ? 'Masquer l\'équipe' : 'Gérer l\'équipe'}
+        </Button>
       </div>
 
       {/* Expanded panel */}
@@ -178,7 +198,7 @@ const ExhibitorPanel = ({
           <Separator />
 
           {/* Team members */}
-          <div>
+          <div ref={teamSectionRef}>
             <div className="flex items-center gap-2 mb-3">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Équipe de gestion</span>
