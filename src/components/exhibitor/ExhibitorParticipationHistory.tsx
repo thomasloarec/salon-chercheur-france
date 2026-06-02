@@ -7,6 +7,7 @@ import { fr } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import {
   useExhibitorParticipationHistory,
@@ -59,13 +60,13 @@ function ParticipationRow({
   const place = [item.ville, item.nom_lieu].filter(Boolean).join(' · ');
 
   return (
-    <li className="relative pl-6">
+    <li className="relative pl-6 py-1">
       {/* timeline dot */}
       <span
-        className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-primary bg-background"
+        className="absolute left-0 top-2.5 h-2.5 w-2.5 rounded-full border-2 border-primary bg-background"
         aria-hidden="true"
       />
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {item.slug ? (
@@ -85,19 +86,21 @@ function ParticipationRow({
             )}
             <StatusBadge status={item.status} />
           </div>
-          <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-            <CalendarDays className="h-4 w-4 shrink-0" />
-            {formatPeriod(item.date_debut, item.date_fin) || 'Date à confirmer'}
-          </p>
-          {place && (
-            <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-              <MapPin className="h-4 w-4 shrink-0" />
-              {place}
-            </p>
-          )}
+          <div className="mt-1.5 flex flex-col gap-1 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+            <span className="flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 shrink-0" />
+              {formatPeriod(item.date_debut, item.date_fin) || 'Date à confirmer'}
+            </span>
+            {place && (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 shrink-0" />
+                {place}
+              </span>
+            )}
+          </div>
         </div>
         {item.stand && (
-          <span className="text-sm font-medium text-primary shrink-0 sm:text-right">
+          <span className="text-xs font-medium text-primary shrink-0 self-start rounded-full bg-bubble border border-bubble-border px-2.5 py-1 sm:text-right">
             Stand {item.stand}
           </span>
         )}
@@ -128,14 +131,16 @@ export default function ExhibitorParticipationHistory({
 
   if (isLoading) {
     return (
-      <section>
-        <h2 className="text-xl font-bold mb-4">Présence sur les salons</h2>
-        <div className="space-y-3">
+      <Card className="rounded-2xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl">Présence sur les salons</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-16 rounded-lg" />
           ))}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -155,39 +160,42 @@ export default function ExhibitorParticipationHistory({
   }
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Présence sur les salons</h2>
-        <span className="text-sm text-muted-foreground">
-          {items.length} participation{items.length > 1 ? 's' : ''}
-        </span>
-      </div>
-
-      <div className="space-y-6">
-        {groups.map((group) => (
-          <div key={group.year}>
-            <p className="text-sm font-semibold text-muted-foreground mb-2">
-              {group.year}
-            </p>
-            <ul className="space-y-4 border-l border-border pl-3">
-              {group.items.map((item) => (
-                <ParticipationRow key={item.id} item={item} slug={slug} />
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      {remaining > 0 && (
-        <div className="mt-4 text-center">
-          <Button
-            variant="ghost"
-            onClick={() => setVisible((v) => v + HISTORY_PAGE_SIZE)}
-          >
-            Voir {remaining} participation{remaining > 1 ? 's' : ''} de plus
-          </Button>
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-xl">Présence sur les salons</CardTitle>
+          <span className="text-sm text-muted-foreground shrink-0">
+            {items.length} participation{items.length > 1 ? 's' : ''}
+          </span>
         </div>
-      )}
-    </section>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-7">
+          {groups.map((group) => (
+            <div key={group.year}>
+              <p className="text-sm font-semibold text-foreground mb-3">
+                {group.year}
+              </p>
+              <ul className="space-y-5 border-l border-border pl-4">
+                {group.items.map((item) => (
+                  <ParticipationRow key={item.id} item={item} slug={slug} />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {remaining > 0 && (
+          <div className="mt-5 text-center">
+            <Button
+              variant="ghost"
+              onClick={() => setVisible((v) => v + HISTORY_PAGE_SIZE)}
+            >
+              Voir {remaining} participation{remaining > 1 ? 's' : ''} de plus
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

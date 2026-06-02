@@ -60,7 +60,7 @@ export default function ExhibitorProfile() {
         ) : (
           <>
             <ExhibitorProfileSEO profile={profile} />
-            <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+            <div className="max-w-6xl mx-auto px-4 pt-8 pb-16 sm:pb-20 space-y-8">
               {/* A. Header exposant — pleine largeur */}
               <ExhibitorHero profile={profile} hasAnyActivity={hasAnyActivity} />
 
