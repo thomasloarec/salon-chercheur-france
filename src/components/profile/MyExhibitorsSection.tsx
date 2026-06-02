@@ -267,6 +267,16 @@ const ExhibitorPanel = ({
 const MyExhibitorsSection = () => {
   const { data: memberships, isLoading } = useMyExhibitors();
 
+  // Batch resolve public slugs in ONE query for all managed exhibitors,
+  // from the reliable public source (public_exhibitor_profiles).
+  const exhibitorIds = (memberships ?? []).map((m) => m.exhibitor_id);
+  const { data: slugMaps } = useQuery({
+    queryKey: ['my-exhibitors-public-slugs', exhibitorIds],
+    queryFn: () => fetchExhibitorPublicSlugs(exhibitorIds, []),
+    enabled: exhibitorIds.length > 0,
+    staleTime: 60_000,
+  });
+
   if (isLoading) {
     return (
       <Card className="p-6 rounded-2xl shadow-sm">
@@ -298,7 +308,11 @@ const MyExhibitorsSection = () => {
       </h2>
       <div className="space-y-3">
         {memberships.map((m) => (
-          <ExhibitorPanel key={m.id} membership={m} />
+          <ExhibitorPanel
+            key={m.id}
+            membership={m}
+            slugInfo={resolvePublicSlug(slugMaps, { exhibitorId: m.exhibitor_id })}
+          />
         ))}
       </div>
     </Card>
