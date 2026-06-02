@@ -519,8 +519,11 @@ const RadarCrmPage: React.FC = () => {
             <ConnectorBadge name="Zoho CRM" status="Bientôt" />
           </div>
           <div className="text-center mt-6">
-            <Button onClick={() => scrollToUpload('beta_section')}>
-              <Upload className="h-4 w-4 mr-2" /> Tester la Beta avec un CSV ou Excel
+            <Button
+              onClick={() => scrollToUpload('beta_section')}
+              className="w-full sm:w-auto h-auto whitespace-normal text-center"
+            >
+              <Upload className="h-4 w-4 mr-2 shrink-0" /> Tester la Beta avec un CSV ou Excel
             </Button>
           </div>
         </div>
