@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Building2, ChevronDown, ChevronUp, Plus, Trash2, Crown, Users, User, ExternalLink, Info } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Building2, ChevronDown, ChevronUp, Plus, Trash2, Crown, Users, User, ExternalLink, Info, Settings } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
