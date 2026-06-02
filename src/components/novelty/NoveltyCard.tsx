@@ -195,6 +195,20 @@ export default function NoveltyCard({
                   website: hydrated.website_exposant,
                 });
                 setShowExhibitorModal(true);
+
+                // Resolve the public profile slug if the parent didn't prefetch it.
+                if (!exhibitorPublicSlug && !resolvedSlugInfo) {
+                  const lookupId = (hydrated as any).exhibitor_uuid || exhibitor.id;
+                  const maps = await fetchExhibitorPublicSlugs(
+                    [lookupId],
+                    [exhibitor.id],
+                  );
+                  const info = resolvePublicSlug(maps, {
+                    exhibitorId: lookupId,
+                    legacyId: exhibitor.id,
+                  });
+                  if (info) setResolvedSlugInfo(info);
+                }
               }}
               className="flex items-center gap-3 hover:bg-muted/50 rounded-md p-1 -m-1 transition-colors"
             >
