@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Building2, ChevronDown, ChevronUp, Pencil, Save, X, Plus, Trash2, Crown, Users, User } from 'lucide-react';
+import { Building2, ChevronDown, ChevronUp, Plus, Trash2, Crown, Users, User, ExternalLink, Info } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { useMyExhibitors, MyExhibitorMembership } from '@/hooks/useMyExhibitors';
+import { fetchExhibitorPublicSlugs, resolvePublicSlug, PublicSlugInfo } from '@/lib/exhibitorPublicSlug';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -30,17 +31,24 @@ interface TeamMember {
   } | null;
 }
 
-const ExhibitorPanel = ({ membership }: { membership: MyExhibitorMembership }) => {
+const ExhibitorPanel = ({
+  membership,
+  slugInfo,
+}: {
+  membership: MyExhibitorMembership;
+  slugInfo?: PublicSlugInfo;
+}) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
-  const [editingDesc, setEditingDesc] = useState(false);
-  const [descValue, setDescValue] = useState('');
   const [addEmail, setAddEmail] = useState('');
 
   const isOwner = membership.role === 'owner';
   const ex = membership.exhibitor;
   const logoUrl = getExhibitorLogoUrl(ex.logo_url, undefined);
+
+  // Public profile link: only when a non-test public slug exists.
+  const publicSlug = slugInfo && !slugInfo.is_test ? slugInfo.public_slug : null;
 
   // Fetch team members when expanded
   const { data: teamMembers = [], isLoading: teamLoading, refetch: refetchTeam } = useQuery<TeamMember[]>({
@@ -60,22 +68,6 @@ const ExhibitorPanel = ({ membership }: { membership: MyExhibitorMembership }) =
     queryClient.invalidateQueries({ queryKey: ['my-exhibitors'] });
     queryClient.invalidateQueries({ queryKey: ['exhibitor-team', ex.id] });
   };
-
-  // Update description
-  const updateDescMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.functions.invoke('exhibitors-manage', {
-        body: { action: 'update', exhibitor_id: ex.id, description: descValue },
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: 'Description mise à jour' });
-      setEditingDesc(false);
-      invalidate();
-    },
-    onError: () => toast({ title: 'Erreur lors de la sauvegarde', variant: 'destructive' }),
-  });
 
   // Add team member (owner only)
   const addMemberMutation = useMutation({
@@ -154,34 +146,33 @@ const ExhibitorPanel = ({ membership }: { membership: MyExhibitorMembership }) =
         {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
 
+      {/* Public profile access — always visible, primary action */}
+      <div className="px-3 pb-3 pt-0">
+        {publicSlug ? (
+          <Button asChild className="w-full" size="sm">
+            <Link to={`/exposants/${publicSlug}`}>
+              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+              Voir / modifier la fiche publique
+            </Link>
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="w-full" disabled>
+            Fiche publique en préparation
+          </Button>
+        )}
+      </div>
+
       {/* Expanded panel */}
       {expanded && (
         <div className="px-4 pb-4 space-y-4 border-t pt-4">
-          {/* Description */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Description</span>
-              {!editingDesc && (
-                <Button variant="ghost" size="sm" onClick={() => { setEditingDesc(true); setDescValue(ex.description || ''); }}>
-                  <Pencil className="h-3.5 w-3.5 mr-1" /> Modifier
-                </Button>
-              )}
-            </div>
-            {editingDesc ? (
-              <div className="space-y-2">
-                <Textarea value={descValue} onChange={e => setDescValue(e.target.value)} rows={4} placeholder="Décrivez votre entreprise..." />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => updateDescMutation.mutate()} disabled={updateDescMutation.isPending}>
-                    <Save className="h-3.5 w-3.5 mr-1" /> Enregistrer
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingDesc(false)}>
-                    <X className="h-3.5 w-3.5 mr-1" /> Annuler
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">{ex.description || 'Aucune description'}</p>
-            )}
+          {/* Public content edition moved to the public profile page */}
+          <div className="flex gap-2 rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
+            <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <p>
+              Pour modifier les informations publiques de cette entreprise
+              (description, logo, site web, LinkedIn), accédez à sa fiche
+              publique puis utilisez le bouton « Modifier cette fiche ».
+            </p>
           </div>
 
           <Separator />
@@ -276,6 +267,16 @@ const ExhibitorPanel = ({ membership }: { membership: MyExhibitorMembership }) =
 const MyExhibitorsSection = () => {
   const { data: memberships, isLoading } = useMyExhibitors();
 
+  // Batch resolve public slugs in ONE query for all managed exhibitors,
+  // from the reliable public source (public_exhibitor_profiles).
+  const exhibitorIds = (memberships ?? []).map((m) => m.exhibitor_id);
+  const { data: slugMaps } = useQuery({
+    queryKey: ['my-exhibitors-public-slugs', exhibitorIds],
+    queryFn: () => fetchExhibitorPublicSlugs(exhibitorIds, []),
+    enabled: exhibitorIds.length > 0,
+    staleTime: 60_000,
+  });
+
   if (isLoading) {
     return (
       <Card className="p-6 rounded-2xl shadow-sm">
@@ -307,7 +308,11 @@ const MyExhibitorsSection = () => {
       </h2>
       <div className="space-y-3">
         {memberships.map((m) => (
-          <ExhibitorPanel key={m.id} membership={m} />
+          <ExhibitorPanel
+            key={m.id}
+            membership={m}
+            slugInfo={resolvePublicSlug(slugMaps, { exhibitorId: m.exhibitor_id })}
+          />
         ))}
       </div>
     </Card>
