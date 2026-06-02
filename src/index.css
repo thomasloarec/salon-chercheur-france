@@ -59,6 +59,11 @@
     --accent-orange: 24 100% 56%;
     --light-gray: 0 0% 81%;
     --success-green: 142 71% 45%;
+
+    /* Stat bubble tokens */
+    --bubble: 214 60% 96%;
+    --bubble-foreground: 218 95% 22%;
+    --bubble-border: 214 50% 89%;
   }
 
   .dark {

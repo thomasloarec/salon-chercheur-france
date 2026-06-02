@@ -60,6 +60,11 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				bubble: {
+					DEFAULT: 'hsl(var(--bubble))',
+					foreground: 'hsl(var(--bubble-foreground))',
+					border: 'hsl(var(--bubble-border))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

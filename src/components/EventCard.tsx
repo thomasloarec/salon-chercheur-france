@@ -162,13 +162,13 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
           {showStats && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {hasExhibitors && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-bubble text-bubble-foreground border border-bubble-border">
                   <Store className="h-3 w-3 shrink-0" />
                   {exhibitorCount} {exhibitorCount! > 1 ? 'exposants' : 'exposant'}
                 </span>
               )}
               {hasNovelties && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-bubble text-bubble-foreground border border-bubble-border">
                   <Sparkles className="h-3 w-3 shrink-0" />
                   {noveltyCount} {noveltyCount! > 1 ? 'nouveautés' : 'nouveauté'}
                 </span>
