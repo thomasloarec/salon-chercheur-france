@@ -76,7 +76,7 @@ export default function NoveltyMiniCard({
       </Link>
 
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-3.5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="font-medium">
             {noveltyTypeLabel(novelty.type)}
           </Badge>
@@ -112,7 +112,7 @@ export default function NoveltyMiniCard({
         </div>
 
         <Link to={eventHref} className="block">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug transition-colors group-hover:text-primary">
+          <h3 className="line-clamp-3 text-base font-bold leading-snug tracking-tight transition-colors group-hover:text-primary">
             {novelty.title}
           </h3>
         </Link>
