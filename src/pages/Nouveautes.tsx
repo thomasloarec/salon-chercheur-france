@@ -302,8 +302,19 @@ export default function Nouveautes() {
         </section>
 
         {/* FILTRES (sticky) */}
-        <section className="sticky top-16 z-20 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <div className="container mx-auto max-w-6xl px-4 py-3">
+        <section className="sticky top-16 z-20 border-b-2 bg-background/90 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          <div className="container mx-auto max-w-6xl px-4 py-3.5">
+            <div className="mb-2.5 flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold tracking-tight">
+                Filtrer les nouveautés
+              </span>
+              {hasActiveFilters && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                  Filtres actifs
+                </span>
+              )}
+            </div>
             <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
               <SafeSelect
                 ariaLabel="Filtrer par secteur"
@@ -343,10 +354,10 @@ export default function Nouveautes() {
               />
               {hasActiveFilters && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={clearAll}
-                  className="gap-1 self-start md:ml-auto md:self-center"
+                  className="gap-1 self-start font-medium md:ml-auto md:self-center"
                 >
                   <X className="h-4 w-4" />
                   Réinitialiser
