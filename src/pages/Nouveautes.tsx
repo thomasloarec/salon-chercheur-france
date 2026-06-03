@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, X, CalendarClock, ArrowRight, Layers } from "lucide-react";
 import Header from "@/components/Header";
