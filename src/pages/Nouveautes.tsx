@@ -134,16 +134,13 @@ export default function Nouveautes() {
 
   // Compteurs hero (sur l'ensemble non filtré, donc stables).
   const heroStats = useMemo(() => {
-    const now = new Date();
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const thisWeek = allRows.filter((n) => new Date(n.created_at) >= weekAgo).length;
+    const totalNovelties = allRows.length;
     const totalEvents = uniqueCount(allRows.map((n) => n.event_id));
     const sectorsSet = new Set<string>();
     for (const n of allRows) {
       for (const s of getEventSectors(n.events?.secteur)) sectorsSet.add(s);
     }
-    return { thisWeek, totalEvents, totalSectors: sectorsSet.size };
+    return { totalNovelties, totalEvents, totalSectors: sectorsSet.size };
   }, [allRows]);
 
   // Bloc "À la une" — 1 principale + 3 à 4 secondaires, diversité de secteurs.
