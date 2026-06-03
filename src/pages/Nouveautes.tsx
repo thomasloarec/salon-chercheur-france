@@ -268,7 +268,7 @@ export default function Nouveautes() {
 
       <Header />
 
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen overflow-x-hidden bg-background">
         {/* HERO compact */}
         <section className="border-b bg-gradient-to-b from-muted/30 to-background">
           <div className="container mx-auto max-w-5xl px-4 py-7 md:py-9">
