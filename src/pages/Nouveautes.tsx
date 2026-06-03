@@ -517,30 +517,49 @@ function SalonGroup({
   const { event, items } = group;
   const visible = items.slice(0, SALON_VISIBLE);
   const days = event.date_debut ? differenceInDays(new Date(event.date_debut), new Date()) : null;
+  const proximity =
+    days === null
+      ? null
+      : days <= 0
+      ? "En cours"
+      : days === 1
+      ? "Demain"
+      : days <= 60
+      ? `Dans ${days} jours`
+      : null;
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-border/60 pb-2">
-        <div>
-          <h3 className="text-base font-bold leading-tight md:text-lg">
-            À voir avant {event.nom_event}
-          </h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+    <div className="rounded-xl border border-border/60 bg-card/40 p-4 md:p-5">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-border/60 pb-3">
+        <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-bold leading-tight tracking-tight md:text-xl">
+              {event.nom_event}
+            </h3>
+            {proximity && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                <CalendarClock className="h-3 w-3" />
+                {proximity}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
             {event.date_debut && format(new Date(event.date_debut), "dd MMM yyyy", { locale: fr })}
             {event.ville && ` · ${event.ville}`}
-            {days !== null && days >= 0 && ` · J-${days}`}
           </p>
         </div>
-        <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
-          <Link to={`/events/${event.slug}`}>
-            Voir le salon
-            <ArrowRight className="h-3 w-3" />
-          </Link>
-        </Button>
+        {event.slug && (
+          <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
+            <Link to={`/events/${event.slug}`}>
+              Voir le salon
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {visible.map((n) => (
-          <NoveltyMiniCard key={n.id} novelty={n} hideEvent />
+          <NoveltyMiniCard key={n.id} novelty={n} hideEvent className="h-full" />
         ))}
       </div>
     </div>
