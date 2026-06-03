@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, X, CalendarClock, ArrowRight, Layers } from "lucide-react";
+import { Sparkles, X, CalendarClock, ArrowRight, Layers, SlidersHorizontal } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SafeSelect } from "@/components/ui/SafeSelect";
@@ -134,16 +134,13 @@ export default function Nouveautes() {
 
   // Compteurs hero (sur l'ensemble non filtré, donc stables).
   const heroStats = useMemo(() => {
-    const now = new Date();
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const thisWeek = allRows.filter((n) => new Date(n.created_at) >= weekAgo).length;
+    const totalNovelties = allRows.length;
     const totalEvents = uniqueCount(allRows.map((n) => n.event_id));
     const sectorsSet = new Set<string>();
     for (const n of allRows) {
       for (const s of getEventSectors(n.events?.secteur)) sectorsSet.add(s);
     }
-    return { thisWeek, totalEvents, totalSectors: sectorsSet.size };
+    return { totalNovelties, totalEvents, totalSectors: sectorsSet.size };
   }, [allRows]);
 
   // Bloc "À la une" — 1 principale + 3 à 4 secondaires, diversité de secteurs.
@@ -284,17 +281,40 @@ export default function Nouveautes() {
               présentés sur les prochains salons professionnels.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-2.5">
-              <HeroStat value={heroStats.thisWeek} label="cette semaine" loading={isLoading} />
-              <HeroStat value={heroStats.totalEvents} label="salons concernés" loading={isLoading} />
-              <HeroStat value={heroStats.totalSectors} label="secteurs" loading={isLoading} />
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <HeroStat
+                value={heroStats.totalNovelties}
+                label="nouveautés"
+                loading={isLoading}
+              />
+              <HeroStat
+                value={heroStats.totalEvents}
+                label="salons concernés"
+                loading={isLoading}
+              />
+              <HeroStat
+                value={heroStats.totalSectors}
+                label="secteurs représentés"
+                loading={isLoading}
+              />
             </div>
           </div>
         </section>
 
         {/* FILTRES (sticky) */}
-        <section className="sticky top-16 z-20 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <div className="container mx-auto max-w-6xl px-4 py-3">
+        <section className="sticky top-16 z-20 border-b-2 bg-background/90 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          <div className="container mx-auto max-w-6xl px-4 py-3.5">
+            <div className="mb-2.5 flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold tracking-tight">
+                Filtrer les nouveautés
+              </span>
+              {hasActiveFilters && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                  Filtres actifs
+                </span>
+              )}
+            </div>
             <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
               <SafeSelect
                 ariaLabel="Filtrer par secteur"
@@ -334,10 +354,10 @@ export default function Nouveautes() {
               />
               {hasActiveFilters && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={clearAll}
-                  className="gap-1 self-start md:ml-auto md:self-center"
+                  className="gap-1 self-start font-medium md:ml-auto md:self-center"
                 >
                   <X className="h-4 w-4" />
                   Réinitialiser
@@ -347,7 +367,7 @@ export default function Nouveautes() {
           </div>
         </section>
 
-        <div className="container mx-auto max-w-6xl space-y-14 px-4 py-8 md:py-10">
+        <div className="container mx-auto max-w-6xl space-y-12 px-4 py-8 md:py-10">
           {isLoading ? (
             <SkeletonGrid count={4} />
           ) : error ? (
@@ -370,7 +390,7 @@ export default function Nouveautes() {
               ) : (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                   {filtered.map((n) => (
-                    <NoveltyMiniCard key={n.id} novelty={n} />
+                    <NoveltyMiniCard key={n.id} novelty={n} className="h-full" />
                   ))}
                 </div>
               )}
@@ -385,13 +405,16 @@ export default function Nouveautes() {
               {/* À VOIR AVANT LES PROCHAINS SALONS */}
               {bySalon.length > 0 && (
                 <section aria-labelledby="salons-heading">
-                  <div className="mb-5 flex items-center gap-2">
-                    <CalendarClock className="h-4 w-4 text-primary" />
-                    <h2 id="salons-heading" className="text-xl font-bold tracking-tight md:text-2xl">
+                  <div className="mb-1 flex items-center gap-2">
+                    <CalendarClock className="h-5 w-5 text-primary" />
+                    <h2 id="salons-heading" className="text-2xl font-bold tracking-tight md:text-3xl">
                       À voir avant les prochains salons
                     </h2>
                   </div>
-                  <div className="space-y-10">
+                  <p className="mb-6 text-sm text-muted-foreground">
+                    Ce que vous devez regarder si vous vous y rendez.
+                  </p>
+                  <div className="space-y-6">
                     {bySalon.map((group) => (
                       <SalonGroup key={group.event.id} group={group} />
                     ))}
@@ -401,10 +424,10 @@ export default function Nouveautes() {
 
               {/* SECTIONS PAR SECTEUR */}
               {bySector.length > 0 && (
-                <section className="space-y-10">
+                <section className="space-y-8">
                   <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
                       Explorer par secteur
                     </span>
                     <div className="h-px flex-1 bg-border" />
@@ -444,13 +467,17 @@ export default function Nouveautes() {
 
 function HeroStat({ value, label, loading }: { value: number; label: string; loading?: boolean }) {
   return (
-    <div className="flex items-baseline gap-1.5 rounded-lg border bg-card px-3 py-2">
+    <div className="flex flex-col items-center justify-center rounded-xl border bg-card px-3 py-4 text-center shadow-sm sm:items-start sm:text-left">
       {loading ? (
-        <Skeleton className="h-5 w-8" />
+        <Skeleton className="h-8 w-12" />
       ) : (
-        <span className="text-lg font-bold tabular-nums">{value}</span>
+        <span className="text-2xl font-bold tabular-nums text-primary md:text-3xl">
+          {value}
+        </span>
       )}
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="mt-0.5 text-xs font-medium text-muted-foreground md:text-sm">
+        {label}
+      </span>
     </div>
   );
 }
@@ -493,30 +520,49 @@ function SalonGroup({
   const { event, items } = group;
   const visible = items.slice(0, SALON_VISIBLE);
   const days = event.date_debut ? differenceInDays(new Date(event.date_debut), new Date()) : null;
+  const proximity =
+    days === null
+      ? null
+      : days <= 0
+      ? "En cours"
+      : days === 1
+      ? "Demain"
+      : days <= 60
+      ? `Dans ${days} jours`
+      : null;
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-border/60 pb-2">
-        <div>
-          <h3 className="text-base font-bold leading-tight md:text-lg">
-            À voir avant {event.nom_event}
-          </h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+    <div className="rounded-xl border border-border/60 bg-card/40 p-4 md:p-5">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-border/60 pb-3">
+        <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-bold leading-tight tracking-tight md:text-xl">
+              {event.nom_event}
+            </h3>
+            {proximity && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                <CalendarClock className="h-3 w-3" />
+                {proximity}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
             {event.date_debut && format(new Date(event.date_debut), "dd MMM yyyy", { locale: fr })}
             {event.ville && ` · ${event.ville}`}
-            {days !== null && days >= 0 && ` · J-${days}`}
           </p>
         </div>
-        <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
-          <Link to={`/events/${event.slug}`}>
-            Voir le salon
-            <ArrowRight className="h-3 w-3" />
-          </Link>
-        </Button>
+        {event.slug && (
+          <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
+            <Link to={`/events/${event.slug}`}>
+              Voir le salon
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {visible.map((n) => (
-          <NoveltyMiniCard key={n.id} novelty={n} hideEvent />
+          <NoveltyMiniCard key={n.id} novelty={n} hideEvent className="h-full" />
         ))}
       </div>
     </div>
@@ -555,7 +601,7 @@ function SectorGroup({
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {visible.map((n) => (
-          <NoveltyMiniCard key={n.id} novelty={n} />
+          <NoveltyMiniCard key={n.id} novelty={n} className="h-full" />
         ))}
       </div>
       {hasMore && (
