@@ -1,33 +1,25 @@
-import { useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Sparkles, X } from "lucide-react";
+import { Sparkles, X, CalendarClock, ArrowRight, Layers } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SafeSelect } from "@/components/ui/SafeSelect";
-import NoveltyWatchCard from "@/components/novelty/NoveltyWatchCard";
-import { useNoveltiesWatch, type NoveltyWatchRow, type WatchHorizon } from "@/hooks/useNoveltiesWatch";
+import NoveltyFeatured from "@/components/novelty/NoveltyFeatured";
+import NoveltyMiniCard from "@/components/novelty/NoveltyMiniCard";
+import { useNoveltiesWatch, type NoveltyWatchRow } from "@/hooks/useNoveltiesWatch";
 import { CANONICAL_SECTORS, NOVELTY_TYPES_OPTIONS } from "@/lib/noveltiesWatchOptions";
-import { fetchAllRegions } from "@/lib/filtersData";
-import { useQuery } from "@tanstack/react-query";
-import { sectorSlugToDbLabels } from "@/lib/taxonomy";
+import { isImportantNoveltyType } from "@/lib/noveltyTypeMeta";
+import { differenceInDays, format } from "date-fns";
+import { fr } from "date-fns/locale";
 
-const HORIZON_OPTIONS = [
-  { value: "30", label: "30 prochains jours" },
-  { value: "60", label: "60 prochains jours" },
-  { value: "90", label: "90 prochains jours" },
+const TEMPORALITE_OPTIONS = [
+  { value: "soon", label: "Bientôt (≤ 30 j)" },
+  { value: "month", label: "Ce mois-ci" },
+  { value: "later", label: "Plus tard" },
 ];
-
-function getHorizon(raw: string | null): WatchHorizon {
-  if (!raw) return null;
-  const n = parseInt(raw, 10);
-  if (n === 30 || n === 60 || n === 90) return n;
-  return null;
-}
 
 function uniqueCount<T>(items: T[]) {
   return new Set(items).size;
@@ -45,7 +37,50 @@ function getEventSectors(secteur: unknown): string[] {
     }
     return [secteur];
   }
+  if (typeof secteur === "object") {
+    return Object.values(secteur as Record<string, unknown>).filter(
+      (v): v is string => typeof v === "string",
+    );
+  }
   return [];
+}
+
+/** Secteur canonique principal d'une nouveauté (label), ou null. */
+function primarySector(n: NoveltyWatchRow): string | null {
+  for (const label of getEventSectors(n.events?.secteur)) {
+    const matched = CANONICAL_SECTORS.find(
+      (s) => s.label.toLowerCase() === label.toLowerCase(),
+    );
+    if (matched) return matched.label;
+  }
+  return null;
+}
+
+/**
+ * Score éditorial (sans statistiques de clic) pour le bloc "À la une".
+ * Favorise : image disponible, type fort, salon proche, publication récente,
+ * exposant avec fiche publique.
+ */
+function featuredScore(n: NoveltyWatchRow): number {
+  let score = 0;
+  if (n.media_urls?.[0]) score += 3;
+  if (isImportantNoveltyType(n.type)) score += 2;
+
+  const days = n.events?.date_debut
+    ? differenceInDays(new Date(n.events.date_debut), new Date())
+    : null;
+  if (days !== null) {
+    if (days <= 30) score += 3;
+    else if (days <= 60) score += 2;
+    else if (days <= 90) score += 1;
+  }
+
+  const pubDays = differenceInDays(new Date(), new Date(n.created_at));
+  if (pubDays <= 14) score += 2;
+  else if (pubDays <= 30) score += 1;
+
+  if (n.exhibitors?.slug) score += 1;
+  return score;
 }
 
 export default function Nouveautes() {
@@ -54,32 +89,158 @@ export default function Nouveautes() {
   const sectorParam = searchParams.get("sectors");
   const sectorSlug = sectorParam && sectorParam !== "all" ? sectorParam : null;
   const typeFilter = searchParams.get("novelty_type");
-  const horizonFilter = getHorizon(searchParams.get("horizon"));
-  const regionFilter = searchParams.get("region");
+  const eventFilter = searchParams.get("event");
+  const temporalite = searchParams.get("when");
 
-  const filters = useMemo(
-    () => ({
-      sectors: sectorSlug ? [sectorSlug] : [],
-      type: null, // type d'événement non utilisé sur cette page
-      horizon: horizonFilter,
-      region: regionFilter,
-    }),
-    [sectorSlug, horizonFilter, regionFilter]
-  );
-
-  const { data: rows = [], isLoading, error } = useNoveltiesWatch(filters);
-
-  // Filtre supplémentaire client-side : type de nouveauté (champ novelties.type)
-  const novelties = useMemo(() => {
-    if (!typeFilter) return rows;
-    return rows.filter((n) => n.type === typeFilter);
-  }, [rows, typeFilter]);
-
-  const { data: regions = [] } = useQuery({
-    queryKey: ["filters:regions"],
-    queryFn: fetchAllRegions,
-    staleTime: 5 * 60_000,
+  // Une seule source de données : toutes les nouveautés à venir (non filtrées).
+  const { data: allRows = [], isLoading, error } = useNoveltiesWatch({
+    sectors: [],
+    type: null,
+    horizon: null,
+    region: null,
   });
+
+  const hasActiveFilters = !!(sectorSlug || typeFilter || eventFilter || temporalite);
+
+  // Filtrage client-side de l'ensemble selon les filtres simples.
+  const filtered = useMemo(() => {
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    return allRows.filter((n) => {
+      if (typeFilter && n.type !== typeFilter) return false;
+      if (eventFilter && n.event_id !== eventFilter) return false;
+
+      if (sectorSlug) {
+        const slug = CANONICAL_SECTORS.find((s) => s.value === sectorSlug)?.label;
+        const evSectors = getEventSectors(n.events?.secteur).map((s) => s.toLowerCase());
+        if (!slug || !evSectors.includes(slug.toLowerCase())) return false;
+      }
+
+      if (temporalite) {
+        const d = n.events?.date_debut ? new Date(n.events.date_debut) : null;
+        if (!d) return false;
+        const days = differenceInDays(d, now);
+        const dKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (temporalite === "soon" && days > 30) return false;
+        if (temporalite === "month" && dKey !== monthKey) return false;
+        if (temporalite === "later" && d <= endOfMonth) return false;
+      }
+
+      return true;
+    });
+  }, [allRows, typeFilter, eventFilter, sectorSlug, temporalite]);
+
+  // Compteurs hero (sur l'ensemble non filtré, donc stables).
+  const heroStats = useMemo(() => {
+    const now = new Date();
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const thisWeek = allRows.filter((n) => new Date(n.created_at) >= weekAgo).length;
+    const totalEvents = uniqueCount(allRows.map((n) => n.event_id));
+    const sectorsSet = new Set<string>();
+    for (const n of allRows) {
+      for (const s of getEventSectors(n.events?.secteur)) sectorsSet.add(s);
+    }
+    return { thisWeek, totalEvents, totalSectors: sectorsSet.size };
+  }, [allRows]);
+
+  // Bloc "À la une" — 1 principale + 3 à 4 secondaires, diversité de secteurs.
+  const featured = useMemo(() => {
+    if (allRows.length < 3) return null;
+    const scored = [...allRows].sort((a, b) => {
+      const s = featuredScore(b) - featuredScore(a);
+      if (s !== 0) return s;
+      const da = a.events?.date_debut ? new Date(a.events.date_debut).getTime() : Infinity;
+      const db = b.events?.date_debut ? new Date(b.events.date_debut).getTime() : Infinity;
+      return da - db;
+    });
+    const main = scored[0];
+    const usedSectors = new Set<string>();
+    const mainSector = primarySector(main);
+    if (mainSector) usedSectors.add(mainSector);
+
+    const secondary: NoveltyWatchRow[] = [];
+    // 1er passage : diversité de secteurs.
+    for (const n of scored.slice(1)) {
+      if (secondary.length >= 4) break;
+      const sec = primarySector(n);
+      if (sec && usedSectors.has(sec)) continue;
+      secondary.push(n);
+      if (sec) usedSectors.add(sec);
+    }
+    // 2e passage : compléter si pas assez de diversité.
+    if (secondary.length < 4) {
+      for (const n of scored.slice(1)) {
+        if (secondary.length >= 4) break;
+        if (n.id === main.id || secondary.some((s) => s.id === n.id)) continue;
+        secondary.push(n);
+      }
+    }
+    if (secondary.length < 2) return null;
+    return { main, secondary, ids: new Set([main.id, ...secondary.map((s) => s.id)]) };
+  }, [allRows]);
+
+  // Reste (hors "À la une") pour les sections salon & secteur.
+  const rest = useMemo(() => {
+    if (!featured) return allRows;
+    return allRows.filter((n) => !featured.ids.has(n.id));
+  }, [allRows, featured]);
+
+  // "À voir avant les prochains salons" — groupé par salon, trié par date proche.
+  const bySalon = useMemo(() => {
+    const map = new Map<string, { event: NonNullable<NoveltyWatchRow["events"]>; items: NoveltyWatchRow[] }>();
+    for (const n of rest) {
+      if (!n.events) continue;
+      const entry = map.get(n.event_id);
+      if (entry) entry.items.push(n);
+      else map.set(n.event_id, { event: n.events, items: [n] });
+    }
+    return Array.from(map.values())
+      .sort((a, b) => {
+        const da = a.event.date_debut ? new Date(a.event.date_debut).getTime() : Infinity;
+        const db = b.event.date_debut ? new Date(b.event.date_debut).getTime() : Infinity;
+        return da - db;
+      })
+      .slice(0, 4);
+  }, [rest]);
+
+  // Sections par secteur (uniquement secteurs avec nouveautés).
+  const bySector = useMemo(() => {
+    const map = new Map<string, NoveltyWatchRow[]>();
+    for (const n of rest) {
+      const sector = primarySector(n);
+      if (!sector) continue;
+      const list = map.get(sector) ?? [];
+      list.push(n);
+      map.set(sector, list);
+    }
+    return Array.from(map.entries())
+      .map(([sector, items]) => ({
+        sector,
+        items,
+        eventCount: uniqueCount(items.map((n) => n.event_id)),
+      }))
+      .sort((a, b) => b.items.length - a.items.length);
+  }, [rest]);
+
+  // Liste des salons pour le filtre (sur l'ensemble).
+  const salonOptions = useMemo(() => {
+    const map = new Map<string, { label: string; date: number }>();
+    for (const n of allRows) {
+      if (!n.events) continue;
+      if (!map.has(n.event_id)) {
+        map.set(n.event_id, {
+          label: n.events.nom_event,
+          date: n.events.date_debut ? new Date(n.events.date_debut).getTime() : Infinity,
+        });
+      }
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => a[1].date - b[1].date)
+      .map(([value, { label }]) => ({ value, label }));
+  }, [allRows]);
 
   const updateParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -90,263 +251,180 @@ export default function Nouveautes() {
 
   const clearAll = () => {
     const next = new URLSearchParams(searchParams);
-    ["sectors", "novelty_type", "horizon", "region"].forEach((k) => next.delete(k));
+    ["sectors", "novelty_type", "event", "when"].forEach((k) => next.delete(k));
     setSearchParams(next);
   };
-
-  const hasActiveFilters = !!(sectorSlug || typeFilter || horizonFilter || regionFilter);
-
-  // Compteurs hero (basés sur l'ensemble non filtré pour rester stables)
-  const { data: allRows = [] } = useNoveltiesWatch({
-    sectors: [],
-    type: null,
-    horizon: null,
-    region: null,
-  });
-  const heroStats = useMemo(() => {
-    const totalNovelties = allRows.length;
-    const totalEvents = uniqueCount(allRows.map((n) => n.event_id));
-    const sectorsSet = new Set<string>();
-    for (const n of allRows) {
-      for (const s of getEventSectors(n.events?.secteur)) sectorsSet.add(s);
-    }
-    return { totalNovelties, totalEvents, totalSectors: sectorsSet.size };
-  }, [allRows]);
-
-  // À surveiller maintenant : 3 à 6 priorités (dates les plus proches)
-  const watchNow = useMemo(() => {
-    if (hasActiveFilters) return [];
-    return allRows.slice(0, 6);
-  }, [allRows, hasActiveFilters]);
-
-  // Veille par secteur : groupe par secteur, n'affiche que ceux qui ont >= 1 nouveauté
-  const bySector = useMemo(() => {
-    const map = new Map<string, NoveltyWatchRow[]>();
-    for (const n of novelties) {
-      const evSectors = getEventSectors(n.events?.secteur);
-      if (evSectors.length === 0) continue;
-      // On rattache la nouveauté à son secteur principal canonique uniquement
-      for (const label of evSectors) {
-        const matched = CANONICAL_SECTORS.find(
-          (s) => s.label.toLowerCase() === label.toLowerCase()
-        );
-        if (!matched) continue;
-        const list = map.get(matched.label) ?? [];
-        list.push(n);
-        map.set(matched.label, list);
-        break; // évite de dupliquer la même nouveauté dans plusieurs secteurs
-      }
-    }
-    const arr = Array.from(map.entries()).map(([sector, items]) => ({
-      sector,
-      items,
-      eventCount: uniqueCount(items.map((n) => n.event_id)),
-      nextEventDate: items
-        .map((n) => n.events?.date_debut)
-        .filter(Boolean)
-        .map((d) => new Date(d as string).getTime())
-        .sort((a, b) => a - b)[0] ?? Infinity,
-    }));
-    arr.sort((a, b) => {
-      if (b.items.length !== a.items.length) return b.items.length - a.items.length;
-      return a.nextEventDate - b.nextEventDate;
-    });
-    return arr;
-  }, [novelties]);
 
   return (
     <>
       <Helmet>
-        <title>Veille B2B — Ce que les exposants préparent | Lotexpo</title>
+        <title>Nouveautés des exposants — Veille avant salon | Lotexpo</title>
         <meta
           name="description"
-          content="Repérez les lancements, démonstrations et innovations annoncés par les exposants avant les prochains salons professionnels."
+          content="Découvrez les lancements, démonstrations et innovations que les exposants présenteront sur les prochains salons professionnels."
         />
         <link rel="canonical" href="https://lotexpo.com/nouveautes" />
       </Helmet>
 
       <Header />
 
-      <main className="min-h-screen bg-background">
-        {/* BLOC 1 — Hero éditorial */}
+      <main className="min-h-screen overflow-x-hidden bg-background">
+        {/* HERO compact */}
         <section className="border-b bg-gradient-to-b from-muted/30 to-background">
-          <div className="container mx-auto px-4 py-10 md:py-14 max-w-5xl">
-            <div className="flex items-center gap-2 text-sm text-primary mb-3">
-              <Sparkles className="h-4 w-4" />
-              <span className="font-medium uppercase tracking-wide text-xs">
-                Veille pré-événementielle
-              </span>
+          <div className="container mx-auto max-w-5xl px-4 py-7 md:py-9">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Veille pré-événementielle
             </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
-              Ce que les exposants préparent avant les prochains salons
+            <h1 className="text-2xl font-bold leading-tight tracking-tight md:text-3xl">
+              Nouveautés des exposants
             </h1>
-            <p className="mt-4 text-base md:text-lg text-muted-foreground max-w-3xl">
-              Repérez les lancements, démonstrations et innovations annoncés avant votre visite.
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
+              Découvrez les lancements, démonstrations et innovations qui seront
+              présentés sur les prochains salons professionnels.
             </p>
 
-            {/* Compteurs */}
-            <div className="mt-8 grid grid-cols-3 gap-4 max-w-2xl">
-              <HeroStat
-                value={heroStats.totalNovelties}
-                label="Nouveautés publiées"
-                loading={isLoading && allRows.length === 0}
-              />
-              <HeroStat
-                value={heroStats.totalEvents}
-                label="Salons concernés"
-                loading={isLoading && allRows.length === 0}
-              />
-              <HeroStat
-                value={heroStats.totalSectors}
-                label="Secteurs représentés"
-                loading={isLoading && allRows.length === 0}
-              />
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              <HeroStat value={heroStats.thisWeek} label="cette semaine" loading={isLoading} />
+              <HeroStat value={heroStats.totalEvents} label="salons concernés" loading={isLoading} />
+              <HeroStat value={heroStats.totalSectors} label="secteurs" loading={isLoading} />
             </div>
           </div>
         </section>
 
-        <div className="container mx-auto px-4 py-8 md:py-10 max-w-6xl space-y-14">
-          {/* BLOC 2 — À surveiller maintenant (masqué si filtres actifs) */}
-          {!hasActiveFilters && (
-            <section className="relative">
-              {/* Bloc éditorial : fond très léger, accent gauche, hiérarchie typographique forte */}
-              <div className="rounded-2xl border bg-card p-5 md:p-7 relative overflow-hidden">
-                <div className="absolute top-0 left-0 h-full w-1 bg-primary" aria-hidden />
-                <div className="mb-6 max-w-2xl">
-                  <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary mb-2">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Sélection éditoriale
-                  </div>
-                  <h2 className="text-xl md:text-2xl font-bold tracking-tight">
-                    À surveiller maintenant
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1.5">
-                    Les nouveautés des salons les plus proches, classées par échéance.
-                  </p>
-                </div>
-                {isLoading ? (
-                  <SkeletonGrid count={3} />
-                ) : watchNow.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Aucune nouveauté à surveiller pour le moment.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5">
-                    {watchNow.map((n) => (
-                      <NoveltyWatchCard key={n.id} novelty={n} variant="compact" />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* BLOC 3 — Filtres (sticky + plus structurants) */}
-          <section className="sticky top-16 z-20 -mx-4 px-4 py-3 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-y">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Affiner la veille
-              </span>
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="text-[10px] h-5">
-                  filtres actifs
-                </Badge>
-              )}
-            </div>
-            <div className="flex flex-col md:flex-row md:items-end md:flex-wrap gap-3">
-              <FilterField label="Secteur">
-                <SafeSelect
-                  ariaLabel="Filtrer par secteur"
-                  className="w-full md:w-56"
-                  placeholder="Tous les secteurs"
-                  value={sectorSlug}
-                  onChange={(v) => updateParam("sectors", v)}
-                  options={CANONICAL_SECTORS.map((s) => ({ value: s.value, label: s.label }))}
-                  allLabel="Tous les secteurs"
-                />
-              </FilterField>
-              <FilterField label="Horizon">
-                <SafeSelect
-                  ariaLabel="Filtrer par horizon temporel"
-                  className="w-full md:w-48"
-                  placeholder="Toutes dates"
-                  value={horizonFilter ? String(horizonFilter) : null}
-                  onChange={(v) => updateParam("horizon", v)}
-                  options={HORIZON_OPTIONS}
-                  allLabel="Toutes dates"
-                />
-              </FilterField>
-              <FilterField label="Type de nouveauté">
-                <SafeSelect
-                  ariaLabel="Filtrer par type de nouveauté"
-                  className="w-full md:w-48"
-                  placeholder="Tous les types"
-                  value={typeFilter}
-                  onChange={(v) => updateParam("novelty_type", v)}
-                  options={NOVELTY_TYPES_OPTIONS}
-                  allLabel="Tous les types"
-                />
-              </FilterField>
-              <FilterField label="Région">
-                <SafeSelect
-                  ariaLabel="Filtrer par région"
-                  className="w-full md:w-48"
-                  placeholder="Toutes régions"
-                  value={regionFilter}
-                  onChange={(v) => updateParam("region", v)}
-                  options={regions}
-                  allLabel="Toutes régions"
-                />
-              </FilterField>
-
+        {/* FILTRES (sticky) */}
+        <section className="sticky top-16 z-20 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+          <div className="container mx-auto max-w-6xl px-4 py-3">
+            <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+              <SafeSelect
+                ariaLabel="Filtrer par secteur"
+                className="w-full md:w-52"
+                placeholder="Tous les secteurs"
+                value={sectorSlug}
+                onChange={(v) => updateParam("sectors", v)}
+                options={CANONICAL_SECTORS.map((s) => ({ value: s.value, label: s.label }))}
+                allLabel="Tous les secteurs"
+              />
+              <SafeSelect
+                ariaLabel="Filtrer par type de nouveauté"
+                className="w-full md:w-48"
+                placeholder="Tous les types"
+                value={typeFilter}
+                onChange={(v) => updateParam("novelty_type", v)}
+                options={NOVELTY_TYPES_OPTIONS}
+                allLabel="Tous les types"
+              />
+              <SafeSelect
+                ariaLabel="Filtrer par salon"
+                className="w-full md:w-56"
+                placeholder="Tous les salons"
+                value={eventFilter}
+                onChange={(v) => updateParam("event", v)}
+                options={salonOptions}
+                allLabel="Tous les salons"
+              />
+              <SafeSelect
+                ariaLabel="Filtrer par temporalité"
+                className="w-full md:w-44"
+                placeholder="Quand ?"
+                value={temporalite}
+                onChange={(v) => updateParam("when", v)}
+                options={TEMPORALITE_OPTIONS}
+                allLabel="Toutes dates"
+              />
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={clearAll}
-                  className="md:ml-auto gap-1 self-end"
+                  className="gap-1 self-start md:ml-auto md:self-center"
                 >
                   <X className="h-4 w-4" />
                   Réinitialiser
                 </Button>
               )}
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* BLOC 4 — Veille par secteur */}
-          <section className="space-y-12">
-            {!hasActiveFilters && bySector.length > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Explorer par secteur
-                </span>
-                <div className="h-px flex-1 bg-border" />
+        <div className="container mx-auto max-w-6xl space-y-14 px-4 py-8 md:py-10">
+          {isLoading ? (
+            <SkeletonGrid count={4} />
+          ) : error ? (
+            <div className="py-12 text-center">
+              <p className="text-destructive">Erreur lors du chargement des nouveautés.</p>
+            </div>
+          ) : allRows.length === 0 ? (
+            <EmptyState />
+          ) : hasActiveFilters ? (
+            /* RÉSULTATS FILTRÉS — grille simple, pas de redirection */
+            <section>
+              <div className="mb-5 flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                <h2 className="text-xl font-bold tracking-tight">
+                  {filtered.length} nouveauté{filtered.length > 1 ? "s" : ""}
+                </h2>
               </div>
-            )}
-            {isLoading && bySector.length === 0 ? (
-              <SkeletonGrid count={4} />
-            ) : error ? (
-              <div className="text-center py-12">
-                <p className="text-destructive">Erreur lors du chargement des nouveautés.</p>
-              </div>
-            ) : bySector.length === 0 ? (
-              <EmptyState onReset={hasActiveFilters ? clearAll : undefined} />
-            ) : (
-              bySector.map((group, idx) => (
-                <SectorGroup key={group.sector} group={group} index={idx} />
-              ))
-            )}
-          </section>
+              {filtered.length === 0 ? (
+                <EmptyState onReset={clearAll} />
+              ) : (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {filtered.map((n) => (
+                    <NoveltyMiniCard key={n.id} novelty={n} />
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : (
+            <>
+              {/* À LA UNE */}
+              {featured && (
+                <NoveltyFeatured main={featured.main} secondary={featured.secondary} />
+              )}
 
-          {/* BLOC 6 — CTA exposants */}
-          <section className="rounded-2xl border bg-muted/30 p-6 md:p-8 text-center">
-            <h3 className="text-lg md:text-xl font-semibold">
-              Vous exposez prochainement ?
+              {/* À VOIR AVANT LES PROCHAINS SALONS */}
+              {bySalon.length > 0 && (
+                <section aria-labelledby="salons-heading">
+                  <div className="mb-5 flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4 text-primary" />
+                    <h2 id="salons-heading" className="text-xl font-bold tracking-tight md:text-2xl">
+                      À voir avant les prochains salons
+                    </h2>
+                  </div>
+                  <div className="space-y-10">
+                    {bySalon.map((group) => (
+                      <SalonGroup key={group.event.id} group={group} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* SECTIONS PAR SECTEUR */}
+              {bySector.length > 0 && (
+                <section className="space-y-10">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Explorer par secteur
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  {bySector.map((group, idx) => (
+                    <SectorGroup key={group.sector} group={group} index={idx} />
+                  ))}
+                </section>
+              )}
+            </>
+          )}
+
+          {/* CTA exposant */}
+          <section className="rounded-2xl border bg-muted/30 p-6 text-center md:p-8">
+            <h3 className="text-lg font-semibold md:text-xl">
+              Exposant ? Publiez votre nouveauté avant le salon.
             </h3>
-            <p className="text-sm md:text-base text-muted-foreground mt-2 max-w-2xl mx-auto">
-              Publiez votre nouveauté pour apparaître ici avant le salon et capter l'attention
-              des visiteurs en amont.
+            <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
+              Apparaissez ici en amont du salon et captez l'attention des visiteurs
+              qui préparent leur visite.
             </p>
             <div className="mt-5">
               <Button asChild>
@@ -362,45 +440,26 @@ export default function Nouveautes() {
   );
 }
 
-/* ---------- Sous-composants ---------- */
+/* ---------------------------- Sous-composants ---------------------------- */
 
-function HeroStat({
-  value,
-  label,
-  loading,
-}: {
-  value: number;
-  label: string;
-  loading?: boolean;
-}) {
+function HeroStat({ value, label, loading }: { value: number; label: string; loading?: boolean }) {
   return (
-    <div className="rounded-xl border bg-card p-4 md:p-5">
+    <div className="flex items-baseline gap-1.5 rounded-lg border bg-card px-3 py-2">
       {loading ? (
-        <Skeleton className="h-8 w-16 mb-2" />
+        <Skeleton className="h-5 w-8" />
       ) : (
-        <div className="text-2xl md:text-3xl font-bold tabular-nums">{value}</div>
+        <span className="text-lg font-bold tabular-nums">{value}</span>
       )}
-      <div className="text-xs md:text-sm text-muted-foreground mt-1">{label}</div>
-    </div>
-  );
-}
-
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-2">
-      <label className="text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap">
-        {label}
-      </label>
-      {children}
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 }
 
 function SkeletonGrid({ count }: { count: number }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={i} className="h-44 rounded-lg" />
+        <Skeleton key={i} className="aspect-[4/5] rounded-lg" />
       ))}
     </div>
   );
@@ -408,9 +467,9 @@ function SkeletonGrid({ count }: { count: number }) {
 
 function EmptyState({ onReset }: { onReset?: () => void }) {
   return (
-    <div className="rounded-xl border border-dashed py-12 px-4 text-center">
-      <h3 className="text-lg font-semibold mb-2">Aucune nouveauté ne correspond</h3>
-      <p className="text-sm text-muted-foreground mb-4">
+    <div className="rounded-xl border border-dashed px-4 py-12 text-center">
+      <h3 className="mb-2 text-lg font-semibold">Aucune nouveauté ne correspond</h3>
+      <p className="mb-4 text-sm text-muted-foreground">
         {onReset
           ? "Essayez de modifier ou de réinitialiser vos filtres."
           : "Aucune nouveauté n'est encore publiée pour les salons à venir."}
@@ -424,7 +483,47 @@ function EmptyState({ onReset }: { onReset?: () => void }) {
   );
 }
 
-const INITIAL_VISIBLE = 4;
+const SALON_VISIBLE = 3;
+
+function SalonGroup({
+  group,
+}: {
+  group: { event: NonNullable<NoveltyWatchRow["events"]>; items: NoveltyWatchRow[] };
+}) {
+  const { event, items } = group;
+  const visible = items.slice(0, SALON_VISIBLE);
+  const days = event.date_debut ? differenceInDays(new Date(event.date_debut), new Date()) : null;
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-border/60 pb-2">
+        <div>
+          <h3 className="text-base font-bold leading-tight md:text-lg">
+            À voir avant {event.nom_event}
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {event.date_debut && format(new Date(event.date_debut), "dd MMM yyyy", { locale: fr })}
+            {event.ville && ` · ${event.ville}`}
+            {days !== null && days >= 0 && ` · J-${days}`}
+          </p>
+        </div>
+        <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
+          <Link to={`/events/${event.slug}`}>
+            Voir le salon
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        </Button>
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {visible.map((n) => (
+          <NoveltyMiniCard key={n.id} novelty={n} hideEvent />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const SECTOR_VISIBLE = 4;
 
 function SectorGroup({
   group,
@@ -433,55 +532,39 @@ function SectorGroup({
   group: { sector: string; items: NoveltyWatchRow[]; eventCount: number };
   index?: number;
 }) {
-  const visible = group.items.slice(0, INITIAL_VISIBLE);
-  const hasMore = group.items.length > INITIAL_VISIBLE;
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? group.items : group.items.slice(0, SECTOR_VISIBLE);
+  const hasMore = group.items.length > SECTOR_VISIBLE;
 
   return (
     <div className="scroll-mt-32">
-      {/* En-tête de section avec accent visuel */}
-      <div className="flex items-end justify-between gap-3 mb-5 flex-wrap pb-3 border-b border-border/60">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-border/60 pb-2">
         <div className="flex items-center gap-3">
-          <div
-            className="h-9 w-1 rounded-full bg-primary/70"
-            aria-hidden
-          />
+          <div className="h-9 w-1 rounded-full bg-primary/70" aria-hidden />
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Secteur {String(index + 1).padStart(2, "0")}
             </div>
-            <h2 className="text-lg md:text-xl font-bold leading-tight">{group.sector}</h2>
-            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+            <h3 className="text-base font-bold leading-tight md:text-lg">{group.sector}</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {group.items.length} nouveauté{group.items.length > 1 ? "s" : ""} ·{" "}
-              {group.eventCount} salon{group.eventCount > 1 ? "s" : ""} concerné
-              {group.eventCount > 1 ? "s" : ""}
+              {group.eventCount} salon{group.eventCount > 1 ? "s" : ""}
             </p>
           </div>
         </div>
-        {hasMore && (
-          <Badge variant="secondary" className="font-normal">
-            {group.items.length} au total
-          </Badge>
-        )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {visible.map((n) => (
-          <NoveltyWatchCard key={n.id} novelty={n} />
+          <NoveltyMiniCard key={n.id} novelty={n} />
         ))}
       </div>
       {hasMore && (
         <div className="mt-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/nouveautes?sectors=${slugifyForLink(group.sector)}`}>
-              Voir toutes les nouveautés du secteur
-            </Link>
+          <Button variant="outline" size="sm" onClick={() => setExpanded((v) => !v)}>
+            {expanded ? "Réduire" : `Afficher plus (${group.items.length - SECTOR_VISIBLE})`}
           </Button>
         </div>
       )}
     </div>
   );
-}
-
-function slugifyForLink(label: string): string {
-  const found = CANONICAL_SECTORS.find((s) => s.label === label);
-  return found?.value ?? "all";
 }
