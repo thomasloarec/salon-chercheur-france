@@ -367,7 +367,7 @@ export default function Nouveautes() {
           </div>
         </section>
 
-        <div className="container mx-auto max-w-6xl space-y-14 px-4 py-8 md:py-10">
+        <div className="container mx-auto max-w-6xl space-y-12 px-4 py-8 md:py-10">
           {isLoading ? (
             <SkeletonGrid count={4} />
           ) : error ? (
@@ -405,13 +405,16 @@ export default function Nouveautes() {
               {/* À VOIR AVANT LES PROCHAINS SALONS */}
               {bySalon.length > 0 && (
                 <section aria-labelledby="salons-heading">
-                  <div className="mb-5 flex items-center gap-2">
-                    <CalendarClock className="h-4 w-4 text-primary" />
-                    <h2 id="salons-heading" className="text-xl font-bold tracking-tight md:text-2xl">
+                  <div className="mb-1 flex items-center gap-2">
+                    <CalendarClock className="h-5 w-5 text-primary" />
+                    <h2 id="salons-heading" className="text-2xl font-bold tracking-tight md:text-3xl">
                       À voir avant les prochains salons
                     </h2>
                   </div>
-                  <div className="space-y-10">
+                  <p className="mb-6 text-sm text-muted-foreground">
+                    Ce que vous devez regarder si vous vous y rendez.
+                  </p>
+                  <div className="space-y-6">
                     {bySalon.map((group) => (
                       <SalonGroup key={group.event.id} group={group} />
                     ))}
@@ -421,10 +424,10 @@ export default function Nouveautes() {
 
               {/* SECTIONS PAR SECTEUR */}
               {bySector.length > 0 && (
-                <section className="space-y-10">
+                <section className="space-y-8">
                   <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
                       Explorer par secteur
                     </span>
                     <div className="h-px flex-1 bg-border" />
