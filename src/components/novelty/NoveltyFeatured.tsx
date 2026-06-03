@@ -25,18 +25,21 @@ interface NoveltyFeaturedProps {
 export default function NoveltyFeatured({ main, secondary }: NoveltyFeaturedProps) {
   return (
     <section aria-labelledby="alaune-heading">
-      <div className="mb-5 flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <h2 id="alaune-heading" className="text-xl font-bold tracking-tight md:text-2xl">
+      <div className="mb-1 flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-primary" />
+        <h2 id="alaune-heading" className="text-2xl font-bold tracking-tight md:text-3xl">
           À la une
         </h2>
       </div>
+      <p className="mb-6 text-sm text-muted-foreground">
+        La sélection à ne pas manquer avant les prochains salons.
+      </p>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
         <FeaturedMain novelty={main} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {secondary.map((n) => (
-            <NoveltyMiniCard key={n.id} novelty={n} />
+            <NoveltyMiniCard key={n.id} novelty={n} className="h-full" />
           ))}
         </div>
       </div>
