@@ -453,13 +453,17 @@ export default function Nouveautes() {
 
 function HeroStat({ value, label, loading }: { value: number; label: string; loading?: boolean }) {
   return (
-    <div className="flex items-baseline gap-1.5 rounded-lg border bg-card px-3 py-2">
+    <div className="flex flex-col items-center justify-center rounded-xl border bg-card px-3 py-4 text-center shadow-sm sm:items-start sm:text-left">
       {loading ? (
-        <Skeleton className="h-5 w-8" />
+        <Skeleton className="h-8 w-12" />
       ) : (
-        <span className="text-lg font-bold tabular-nums">{value}</span>
+        <span className="text-2xl font-bold tabular-nums text-primary md:text-3xl">
+          {value}
+        </span>
       )}
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="mt-0.5 text-xs font-medium text-muted-foreground md:text-sm">
+        {label}
+      </span>
     </div>
   );
 }
