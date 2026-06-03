@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,6 @@ import { CANONICAL_SECTORS, NOVELTY_TYPES_OPTIONS } from "@/lib/noveltiesWatchOp
 import { isImportantNoveltyType } from "@/lib/noveltyTypeMeta";
 import { differenceInDays, format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useState } from "react";
 
 const TEMPORALITE_OPTIONS = [
   { value: "soon", label: "Bientôt (≤ 30 j)" },
