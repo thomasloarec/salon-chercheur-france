@@ -281,10 +281,22 @@ export default function Nouveautes() {
               présentés sur les prochains salons professionnels.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-2.5">
-              <HeroStat value={heroStats.thisWeek} label="cette semaine" loading={isLoading} />
-              <HeroStat value={heroStats.totalEvents} label="salons concernés" loading={isLoading} />
-              <HeroStat value={heroStats.totalSectors} label="secteurs" loading={isLoading} />
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <HeroStat
+                value={heroStats.totalNovelties}
+                label="nouveautés"
+                loading={isLoading}
+              />
+              <HeroStat
+                value={heroStats.totalEvents}
+                label="salons concernés"
+                loading={isLoading}
+              />
+              <HeroStat
+                value={heroStats.totalSectors}
+                label="secteurs représentés"
+                loading={isLoading}
+              />
             </div>
           </div>
         </section>
