@@ -130,18 +130,18 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
 
         <Link
           to={eventHref}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary"
+          className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground transition-colors hover:text-primary"
         >
-          <Calendar className="h-3.5 w-3.5 shrink-0 text-primary/70" />
-          <span className="truncate">{event.nom_event}</span>
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+            <span className="truncate">{event.nom_event}</span>
+          </span>
           {event.date_debut && (
-            <span className="shrink-0">
-              · {format(new Date(event.date_debut), "dd MMM yyyy", { locale: fr })}
-            </span>
+            <span>{format(new Date(event.date_debut), "dd MMM yyyy", { locale: fr })}</span>
           )}
           {event.ville && (
-            <span className="inline-flex shrink-0 items-center gap-1">
-              · <MapPin className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
               {event.ville}
             </span>
           )}
