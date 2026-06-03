@@ -52,7 +52,7 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
   const event = novelty.events;
   if (!exhibitor || !event) return null;
 
-  const image = novelty.media_urls?.[0];
+  const images = (novelty.media_urls ?? []).filter(Boolean).slice(0, 3);
   const logo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website);
   const eventHref = `/events/${event.slug}?novelty=${novelty.id}`;
 
@@ -70,22 +70,16 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
       : `J-${daysUntil}`;
 
   return (
-    <Card className="group flex flex-col overflow-hidden border-border/60 transition-all hover:border-primary/30 hover:shadow-lg sm:flex-row lg:flex-col">
+    <Card className="group flex flex-col overflow-hidden border-border/60 transition-all hover:border-primary/30 hover:shadow-lg">
       <Link
         to={eventHref}
         aria-label={`Voir ${novelty.title}`}
-        className="block shrink-0 sm:w-2/5 lg:w-full"
+        className="block"
       >
-        <NoveltyImage
-          src={image}
-          alt={novelty.title}
-          type={novelty.type}
-          fit="contain"
-          ratioClassName="aspect-[4/5] sm:h-full sm:min-h-full lg:aspect-[16/10]"
-        />
+        <FeaturedMosaic images={images} type={novelty.type} alt={novelty.title} />
       </Link>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-3 p-5">
+      <div className="flex min-w-0 flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center gap-2">
           <Badge className="font-medium">{noveltyTypeLabel(novelty.type)}</Badge>
           {countdownLabel && (
@@ -150,7 +144,7 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
           )}
         </Link>
 
-        <div className="mt-auto pt-1">
+        <div className="pt-1">
           <Button asChild size="sm" className="gap-1">
             <Link to={eventHref}>
               Voir la nouveauté
@@ -160,5 +154,77 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
         </div>
       </div>
     </Card>
+  );
+}
+
+/**
+ * Bloc visuel de la nouveauté principale, adapté au nombre d'images réellement
+ * disponibles (0 à 3). Les images verticales restent lisibles :
+ * - 0 image  → placeholder qualitatif lié au type
+ * - 1 image  → grande image entière sur fond flouté (aucun recadrage violent)
+ * - 2 images → côte à côte, principale plus large
+ * - 3 images → mosaïque éditoriale (principale 60% + 2 vignettes empilées)
+ */
+function FeaturedMosaic({
+  images,
+  type,
+  alt,
+}: {
+  images: string[];
+  type?: string | null;
+  alt: string;
+}) {
+  const count = images.length;
+
+  if (count <= 1) {
+    return (
+      <NoveltyImage
+        src={images[0]}
+        alt={alt}
+        type={type}
+        fit="contain"
+        ratioClassName="aspect-[4/3]"
+      />
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <div className="grid aspect-[4/3] grid-cols-5 gap-1 bg-muted">
+        <MosaicCell src={images[0]} alt={alt} className="col-span-3" priority />
+        <MosaicCell src={images[1]} alt={alt} className="col-span-2" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid aspect-[4/3] grid-cols-5 grid-rows-2 gap-1 bg-muted">
+      <MosaicCell src={images[0]} alt={alt} className="col-span-3 row-span-2" priority />
+      <MosaicCell src={images[1]} alt={alt} className="col-span-2" />
+      <MosaicCell src={images[2]} alt={alt} className="col-span-2" />
+    </div>
+  );
+}
+
+function MosaicCell({
+  src,
+  alt,
+  className,
+  priority,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  priority?: boolean;
+}) {
+  return (
+    <div className={cn("relative overflow-hidden bg-muted", className)}>
+      <img
+        src={src}
+        alt={alt}
+        loading={priority ? undefined : "lazy"}
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+      />
+    </div>
   );
 }
