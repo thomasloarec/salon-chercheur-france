@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, User, Bell, CalendarRange, LogOut, Radar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
 import UserMenu from './UserMenu';
 import logoLotexpo from '@/assets/logo-lotexpo.png';
 
@@ -13,6 +14,8 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, session, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { data: adminCounts } = useAdminPendingCounts();
+  const adminPendingTotal = (adminCounts?.novelties ?? 0) + (adminCounts?.claims ?? 0);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -95,6 +98,15 @@ const Header = () => {
                 <Settings className="h-4 w-4" />
                 <span>Admin</span>
                 <Badge variant="secondary" className="ml-1 text-xs">dev</Badge>
+                {adminPendingTotal > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-1 h-5 min-w-[1.25rem] px-1.5 rounded-full text-[10px] font-semibold flex items-center justify-center"
+                    aria-label={`${adminPendingTotal} notification(s) en attente`}
+                  >
+                    {adminPendingTotal > 99 ? '99+' : adminPendingTotal}
+                  </Badge>
+                )}
               </NavLink>
             )}
           </nav>
@@ -197,6 +209,15 @@ const Header = () => {
                 >
                   <span>Admin</span>
                   <Badge variant="secondary" className="ml-1 text-xs">dev</Badge>
+                  {adminPendingTotal > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="ml-1 h-5 min-w-[1.25rem] px-1.5 rounded-full text-[10px] font-semibold flex items-center justify-center"
+                      aria-label={`${adminPendingTotal} notification(s) en attente`}
+                    >
+                      {adminPendingTotal > 99 ? '99+' : adminPendingTotal}
+                    </Badge>
+                  )}
                 </NavLink>
               )}
               <div className="border-t pt-2">
