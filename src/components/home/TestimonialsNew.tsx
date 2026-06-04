@@ -27,7 +27,7 @@ const TestimonialsNew = () => {
             Ils utilisent Lotexpo
           </h2>
           <p className="text-xl text-muted-foreground">
-            Des professionnels comme vous font confiance à Lotexpo
+            Commerciaux, acheteurs, responsables marketing et visiteurs professionnels utilisent Lotexpo pour préparer leurs salons.
           </p>
         </div>
 

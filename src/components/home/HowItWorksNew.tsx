@@ -30,7 +30,7 @@ const HowItWorksNew = () => {
                       </span>
                     </div>
                     <h3 className="text-2xl font-bold text-foreground mb-3">
-                      Connaître toutes les opportunités de salons possibles
+                      Identifier les salons qui méritent votre attention
                     </h3>
                     <p className="text-muted-foreground text-lg">
                       Tous les événements B2B regroupés au même endroit. Plus de salons inconnus, plus d'opportunités manquées.

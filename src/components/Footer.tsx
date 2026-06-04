@@ -27,7 +27,7 @@ const Footer = () => {
           <div className="lg:col-span-1">
             <img src={logoLotexpo} alt="LotExpo" className="h-8 mb-4 brightness-0 invert" />
             <p className="text-gray-300 mb-4">
-              La plateforme de référence pour découvrir tous les salons professionnels en France.
+              Lotexpo centralise les salons professionnels en France et aide les entreprises à mieux préparer, suivre et valoriser leur présence sur les événements.
             </p>
           </div>
 
