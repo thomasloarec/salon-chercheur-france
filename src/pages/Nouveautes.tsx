@@ -186,9 +186,13 @@ export default function Nouveautes() {
   }, [allRows, featured]);
 
   // "À voir avant les prochains salons" — groupé par salon, trié par date proche.
+  // IMPORTANT : on regroupe sur l'ensemble des nouveautés (allRows), pas sur `rest`.
+  // Sinon une nouveauté promue dans le bloc "À la une" serait retirée de son
+  // salon, qui afficherait alors un nombre incohérent avec la page détail du
+  // salon (ex. PRÉVENTICA GRAND OUEST : 3 nouveautés réelles mais 2 affichées).
   const bySalon = useMemo(() => {
     const map = new Map<string, { event: NonNullable<NoveltyWatchRow["events"]>; items: NoveltyWatchRow[] }>();
-    for (const n of rest) {
+    for (const n of allRows) {
       if (!n.events) continue;
       const entry = map.get(n.event_id);
       if (entry) entry.items.push(n);
@@ -201,7 +205,7 @@ export default function Nouveautes() {
         return da - db;
       })
       .slice(0, 4);
-  }, [rest]);
+  }, [allRows]);
 
   // Sections par secteur (uniquement secteurs avec nouveautés).
   const bySector = useMemo(() => {
@@ -519,6 +523,7 @@ function SalonGroup({
 }) {
   const { event, items } = group;
   const visible = items.slice(0, SALON_VISIBLE);
+  const hasMore = items.length > SALON_VISIBLE;
   const days = event.date_debut ? differenceInDays(new Date(event.date_debut), new Date()) : null;
   const proximity =
     days === null
@@ -554,7 +559,7 @@ function SalonGroup({
         {event.slug && (
           <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
             <Link to={`/events/${event.slug}`}>
-              Voir le salon
+              {hasMore ? `Voir les ${items.length} nouveautés` : "Voir le salon"}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </Button>
@@ -565,6 +570,11 @@ function SalonGroup({
           <NoveltyMiniCard key={n.id} novelty={n} hideEvent className="h-full" />
         ))}
       </div>
+      {hasMore && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          {SALON_VISIBLE} nouveautés affichées sur {items.length}
+        </p>
+      )}
     </div>
   );
 }
