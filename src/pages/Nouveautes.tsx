@@ -186,9 +186,13 @@ export default function Nouveautes() {
   }, [allRows, featured]);
 
   // "À voir avant les prochains salons" — groupé par salon, trié par date proche.
+  // IMPORTANT : on regroupe sur l'ensemble des nouveautés (allRows), pas sur `rest`.
+  // Sinon une nouveauté promue dans le bloc "À la une" serait retirée de son
+  // salon, qui afficherait alors un nombre incohérent avec la page détail du
+  // salon (ex. PRÉVENTICA GRAND OUEST : 3 nouveautés réelles mais 2 affichées).
   const bySalon = useMemo(() => {
     const map = new Map<string, { event: NonNullable<NoveltyWatchRow["events"]>; items: NoveltyWatchRow[] }>();
-    for (const n of rest) {
+    for (const n of allRows) {
       if (!n.events) continue;
       const entry = map.get(n.event_id);
       if (entry) entry.items.push(n);
@@ -201,7 +205,7 @@ export default function Nouveautes() {
         return da - db;
       })
       .slice(0, 4);
-  }, [rest]);
+  }, [allRows]);
 
   // Sections par secteur (uniquement secteurs avec nouveautés).
   const bySector = useMemo(() => {
