@@ -13,7 +13,7 @@ interface MainLayoutProps {
 
 const MainLayout = ({ title, description, canonical, children }: MainLayoutProps) => {
   const fullTitle = title ? `${title} – Lotexpo` : 'Lotexpo | Tous les salons professionnels en France';
-  const metaDescription = description || 'Lotexpo référence tous les salons professionnels B2B en France. Dates, lieux, secteurs, exposants et informations pratiques en un seul site.';
+  const metaDescription = description || 'Lotexpo centralise les salons professionnels B2B en France : découvrez les événements, repérez les exposants, suivez les nouveautés et préparez vos visites ou votre présence sur les salons.';
 
   return (
     <>

@@ -15,7 +15,7 @@ interface GlobalSEOProps {
  */
 export const GlobalSEO = ({ 
   title = "Lotexpo | Tous les salons professionnels en France",
-  description = "Lotexpo référence tous les salons professionnels B2B en France. Dates, lieux, secteurs, exposants et informations pratiques en un seul site.",
+  description = "Lotexpo centralise les salons professionnels B2B en France : découvrez les événements, repérez les exposants, suivez les nouveautés et préparez vos visites ou votre présence sur les salons.",
   canonical,
   noIndex = false
 }: GlobalSEOProps) => {
