@@ -537,6 +537,8 @@ function SalonGroup({
   const { event, items } = group;
   const visible = items.slice(0, SALON_VISIBLE);
   const hasMore = items.length > SALON_VISIBLE;
+  // Layout adapté au nombre de cartes pour éviter tout emplacement vide.
+  const gridCols = visible.length <= 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3";
   const days = event.date_debut ? differenceInDays(new Date(event.date_debut), new Date()) : null;
   const proximity =
     days === null
@@ -578,7 +580,7 @@ function SalonGroup({
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className={`grid gap-4 ${gridCols}`}>
         {visible.map((n) => (
           <NoveltyMiniCard key={n.id} novelty={n} hideEvent className="h-full" />
         ))}
