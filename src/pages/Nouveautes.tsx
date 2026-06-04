@@ -185,11 +185,18 @@ export default function Nouveautes() {
     return allRows.filter((n) => !featured.ids.has(n.id));
   }, [allRows, featured]);
 
-  // "À voir avant les prochains salons" — groupé par salon, trié par date proche.
+  // "À voir avant les prochains salons" — groupé par salon.
   // IMPORTANT : on regroupe sur l'ensemble des nouveautés (allRows), pas sur `rest`.
   // Sinon une nouveauté promue dans le bloc "À la une" serait retirée de son
   // salon, qui afficherait alors un nombre incohérent avec la page détail du
   // salon (ex. PRÉVENTICA GRAND OUEST : 3 nouveautés réelles mais 2 affichées).
+  //
+  // Règles éditoriales :
+  //  - on n'affiche que les salons avec >= 2 nouveautés (un salon avec 1 seule
+  //    nouveauté paraît pauvre dans une section de veille) ;
+  //  - tri par richesse de contenu d'abord (3+ avant 2), puis par date la plus
+  //    proche, afin de mettre en avant les salons riches en nouveautés ;
+  //  - on limite à 4 salons.
   const bySalon = useMemo(() => {
     const map = new Map<string, { event: NonNullable<NoveltyWatchRow["events"]>; items: NoveltyWatchRow[] }>();
     for (const n of allRows) {
@@ -199,7 +206,13 @@ export default function Nouveautes() {
       else map.set(n.event_id, { event: n.events, items: [n] });
     }
     return Array.from(map.values())
+      .filter((g) => g.items.length >= 2)
       .sort((a, b) => {
+        // Niveau de richesse : 3 nouveautés ou plus prioritaire sur 2.
+        const tierA = a.items.length >= 3 ? 0 : 1;
+        const tierB = b.items.length >= 3 ? 0 : 1;
+        if (tierA !== tierB) return tierA - tierB;
+        // À richesse comparable : salon le plus proche d'abord.
         const da = a.event.date_debut ? new Date(a.event.date_debut).getTime() : Infinity;
         const db = b.event.date_debut ? new Date(b.event.date_debut).getTime() : Infinity;
         return da - db;
