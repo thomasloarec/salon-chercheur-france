@@ -1,168 +1,100 @@
-## Objectif
 
-Remplacer la logique "cron nocturne" par :
-- traitement **post-import** (déclenché manuellement depuis l'admin après chaque import mensuel) ;
-- **anti-retraitement Claude** par hash de la source ;
-- **visibilité** sur la consommation Claude potentielle avant tout lancement ;
-- **aucun cron actif** créé maintenant (préparation uniquement pour un éventuel rattrapage hebdomadaire futur).
+# Plan de réconciliation des identités publiques exposants
 
-Aucun appel à Claude, aucun build Vercel, aucun job pg_cron ne sera créé par cette étape.
+100 % lecture seule. Aucune fusion, suppression, désactivation, remapping ni modification de `exposants`, `exhibitors`, `participation`, `novelties`, `exhibitor_public_identities`. Seules écritures proposées : créer une RPC de **preview/dry-run** + une **table de blacklist** (vide, non active). Rien n'est exécuté ni déclenché (Vercel/Airtable/N8N/cron intouchés).
 
 ---
 
-## Migration 1 — Anti-retraitement par hash + flag ignored étendu
+## A. Modèle de données (rôles réels, vérifiés)
 
-Fichier : nouvelle migration SQL.
+- **`exposants`** (16 791 lignes) : table source legacy. Alimentée par Airtable / scraping / participations. PK technique `id` (int) ; clé métier `id_exposant` (text). Porte nom, site, description, `normalized_domain`. **Ne jamais supprimer** : casse l'upsert Airtable et les participations.
+- **`exhibitors`** (50 fiches « modernes ») : entreprises actives — owner, équipe, nouveautés, claims, leads, CRM, campagnes. UUID. **Ne jamais supprimer** une ligne portant owner / équipe / nouveauté / lead / donnée active.
+- **`exhibitor_public_identities`** (16 795 lignes, 16 792 actives) : **la seule couche qui produit une fiche publique**. Chaque ligne pointe vers `legacy_exposant_id` (→ `exposants.id_exposant`) et/ou `exhibitor_id` (→ `exhibitors.id`). `source_type` ∈ `legacy` (16 782), `modern`, `linked` (50 au total côté exhibitor). Slug unique. `is_active` pilote la visibilité.
+- **`public_exhibitor_profiles`** (vue) : **fiche publique réellement affichée**. Lit `exhibitor_public_identities WHERE is_active = true`, joint `exhibitors` (moderne) et `exposants` (legacy), agrège participations (events visibles, non-test), nouveautés publiées, owner/équipe.
+- **`participation`** : lien exposant↔événement. Référence `id_exposant` (legacy) **et/ou** `exhibitor_id` (UUID).
+- **`novelties`** : rattachées à `exhibitor_id` (UUID) uniquement.
 
-### 1.1 Colonnes ajoutées sur `events`
-- `seo_source_hash text` — hash de la source actuelle (recalculé à la lecture)
-- `seo_generated_from_hash text` — hash de la source utilisée lors de la dernière génération Claude réussie
-- `seo_generated_at timestamptz` — date du dernier appel Claude réussi
-- `seo_last_checked_at timestamptz` — date du dernier passage sans appel Claude
+**Réponses aux questions A–G**
+- **A.** Une entreprise est *uniquement* dans `exposants` tant qu'elle n'a ni claim, ni owner, ni nouveauté (cas standard import Airtable).
+- **B.** Elle apparaît dans `exhibitors` dès qu'un utilisateur revendique / publie une nouveauté / est créée via `exhibitors-manage`.
+- **C.** Oui indirectement : la création d'un exhibitor (claim/nouveauté) crée un **miroir** dans `exposants` avec `id_exposant = UUID exhibitor` (STEP 2 de `exhibitors-manage`, l.571-597).
+- **D.** Oui, c'est **légitime** : `exposants` = source, `exhibitors` = couche active. Deux lignes source ne sont PAS un bug.
+- **E.** `exposants` porte les données d'import (site, description legacy) ; `exhibitors` porte owner/équipe/nouveautés/CRM ; `exhibitor_public_identities` porte le slug public et le lien.
+- **F.** La vue `public_exhibitor_profiles`.
+- **G.** En gardant **une seule `exhibitor_public_identities` active** par entreprise (désactivation ciblée du doublon), **sans toucher aux lignes source**.
 
-Index partiel pour les recherches "à retraiter".
-
-### 1.2 Fonction `compute_seo_source_hash(p_event_id uuid) returns text`
-Hash `md5` (stable, déterministe) d'un payload JSONB normalisé :
-- `nom_event`, `slug`, `date_debut`, `date_fin`
-- `ville`, `code_postal`, `nom_lieu`, `pays`
-- `secteur` (jsonb trié), `affluence`, `tarif`
-- `description_event`, `meta_description_gen`, `url_site_officiel`
-- `exhibitors_count` = `count(participation where id_event=event.id_event)`
-
-Tout est `coalesce`é et trimmé pour éviter les faux changements (espaces, NULL vs '').
-
-### 1.3 Fonction `seo_eligible_events(p_only_post_import boolean default false)`
-Vue/fonction qui renvoie les `events` candidats avec :
-- `visible=true`, `is_test=false`, `slug` non vide, `date_debut >= CURRENT_DATE`
-- `coalesce(enrichissement_ignored,false)=false`
-- `enrichissement_score >= 55`
-- `current_hash` et un statut calculé :
-  - `up_to_date` : `description_enrichie IS NOT NULL` ET `enrichissement_statut='valide'` ET `seo_generated_from_hash = current_hash`
-  - `needs_claude` : tout le reste
-- Si `p_only_post_import=true` : ne renvoie que les events créés/modifiés depuis le dernier run réussi.
-
-### 1.4 Fonction `check_seo_automation_dependencies()` (remplace `check_seo_cron_dependencies`)
-Renvoie en plus des checks existants :
-- `would_call_claude_count` : nb d'events `needs_claude` si on lance maintenant
-- `would_skip_count` : nb d'events `up_to_date`
-- `ignored_count`
-- `score_lt_55_count`
-- `score_null_count`
-- garde tous les checks techniques (secrets vault, pg_net, application_logs, run en cours, cron job présent/actif).
-
-L'ancienne `check_seo_cron_dependencies()` est conservée comme alias (DROP + recreate qui appelle la nouvelle) pour ne rien casser.
-
-### 1.5 Étendre `enrichissement_ignored` partout
-- `score_events_batch` : déjà fait dans la migration précédente.
-- `seo_eligible_events` : intègre le filtre.
-- `seo-enrichment-batch` (edge function) : ajout du filtre `coalesce(enrichissement_ignored,false)=false` dans la sélection des candidats (côté SQL de l'edge).
+**Le vrai problème** = deux identités publiques actives pour la même entreprise, pas l'existence de deux lignes source.
 
 ---
 
-## Migration 2 — Renommage (préparation cron hebdo, NON activé)
+## B. Anti-récidive — origine du doublon (cause racine identifiée)
 
-- `start_seo_cron_run()` reste en place mais devient l'implémentation interne ;
-- création de `start_seo_weekly_catchup()` qui appelle l'edge avec `trigger_source='weekly_cron'`, `limit:20`, `deploy:true`.
-- **Aucun `cron.schedule(...)` exécuté.** Une note SQL en commentaire documente la commande à lancer manuellement plus tard si rattrapage hebdo souhaité (dimanche 02:30 UTC ≈ 03:30/04:30 Paris).
+Mécanisme reproduit sur BNBxTECH :
+1. `exhibitors-manage` (STEP 2) crée un **miroir** `exposants.id_exposant = UUID` ; la participation est créée sur ce UUID (l.616-626).
+2. Airtable importe ensuite la **vraie** entreprise (`id_exposant = ExporecD3rJ5sf4jLHnLb`, même domaine) → nouvelle ligne `exposants` (upsert clé `id_exposant`).
+3. La fonction batch **`sync_exhibitor_public_identities`** voit cette ligne legacy avec `link_count = 0` (aucune participation ne référence l'ExporecID) et **aucun match exact** `legacy_exposant_id`/`exhibitor_id::text` → **crée une 2ᵉ identité publique** `bnbxtech-2`. Elle ne compare **ni le domaine normalisé ni le nom**.
 
----
+**Fichiers / fonctions concernés**
+- `supabase/functions/exhibitors-manage/index.ts` (STEP 2, l.571-597) → crée le miroir UUID.
+- RPC `public.sync_exhibitor_public_identities` + `ensure_exhibitor_public_identity` (migration `20260530125032`) → réconcilient seulement par match exact, jamais par domaine/nom.
+- RPC `detect_exhibitor_duplicates` (migration `20260531093249`) : scoring domaine 60 / linkedin 80 / nom exact 50 / base_slug 40 / nom proche 45 / sources complémentaires +15 ; garde-fou existant : domaines partagés par >6 identités exclus.
 
-## Edge function `seo-enrichment-batch` — anti-retraitement Claude
+**Volumes mesurés (lecture seule)**
+- `exposants.id_exposant` au format UUID (miroirs) : **44** — tous (44/44) liés à une ligne `exhibitors`.
+- Miroirs UUID ayant un doublon Airtable réel **même domaine** : **6**.
+- Groupes de domaine avec ≥2 identités actives : **490** (inclut domaines événements/groupes = faux positifs).
+- Groupes mixtes **legacy ↔ modern/linked** même domaine (motif Catégorie B) : **~14**.
 
-Modifications côté code (pas SQL) :
-
-1. **Avant l'appel Claude pour chaque event** :
-   - récupérer `current_hash = compute_seo_source_hash(event.id)` (via RPC ou recalcul JS strictement équivalent → on utilise la RPC SQL pour garantir égalité).
-   - si `description_enrichie` présente ET `enrichissement_statut='valide'` ET `seo_generated_from_hash = current_hash` ET pas de `force_admin=true` dans le payload : **skip**, mettre à jour `seo_last_checked_at=now()`, comptabiliser dans `skipped_unchanged`.
-2. **Après génération Claude réussie** :
-   - écrire `seo_source_hash = seo_generated_from_hash = current_hash`, `seo_generated_at = now()`.
-3. **Filtre de sélection initial** :
-   - ajouter `coalesce(enrichissement_ignored,false)=false`.
-4. **Réponse** : ajouter compteurs `skipped_unchanged`, `called_claude`, `ignored_filtered`, `would_call_claude` (mode dry).
-5. **Nouveau mode** `mode:'post_import'` : ne traite que les events `needs_claude` créés/modifiés depuis le dernier `seo_enrichment_runs` réussi (fallback : 35 jours).
-
-Aucun changement aux règles de validation, aucun changement Vercel (Deploy Hook reste gated sur `public_changed`).
-
----
-
-## Edge function `seo-recompute-score` (déjà au plan, à confirmer comme créée)
-
-Inchangé : RPC admin wrapper de `compute_event_enrichissement_score`. Sera utilisé par le bouton "Recalculer le score" dans le dashboard. Pas dans cette étape si pas encore présent.
+**Recommandations anti-récidive (à coder AVANT toute correction de masse, hors de cette étape)**
+1. Dans `ensure/sync_exhibitor_public_identity` : avant de créer une identité legacy, chercher une identité active existante par **domaine normalisé** ou **nom normalisé** ; si trouvée → rattacher (`linked`) au lieu de créer une 2ᵉ fiche.
+2. Ne plus créer de miroir `exposants.id_exposant = UUID` qui casse l'upsert Airtable ; ou réconcilier le miroir avec l'ExporecID réel à l'arrivée de l'import.
+3. En cas d'incertitude (domaine partagé, nom proche mais domaine différent) → **file de review** (`exhibitor_duplicate_reviews`), jamais de création/désactivation auto.
 
 ---
 
-## Dashboard `/admin/events/seo` — refonte vocabulaire + action post-import
+## C. Preview Catégorie B (legacy ↔ modern/linked) — dry-run uniquement
 
-Fichier : `src/components/admin/SeoEnrichmentDashboard.tsx`.
+Critères : 1 identité `legacy` + 1 identité `linked`/`modern`, même domaine normalisé OU nom strictement identique/très proche, pas de conflit de site, **aucune** nouveauté/lead/owner/équipe/CRM sur l'identité candidate à la désactivation, aucune suppression de source.
 
-### Bloc renommé "Automatisation SEO" (anciennement "Cron SEO automatique")
-
-- Titre : **Automatisation SEO**
-- Recommandation actuelle : **Post-import recommandé**
-- Tableau récapitulatif :
-  - Manuel — ✅ disponible
-  - Post-import — ✅ disponible
-  - Hebdomadaire — ⏸ optionnel (non activé)
-  - Nocturne quotidien — ❌ non recommandé (import mensuel)
-- Bouton principal : **Traiter les nouveaux événements importés** (`mode:'post_import'`)
-- Bouton secondaire grisé : **Activer rattrapage hebdomadaire** → ouvre une confirmation expliquant la commande SQL à exécuter (pas d'exécution auto).
-
-### Carte renommée "Prêt pour automatisation récurrente"
-
-Affiche le retour de `check_seo_automation_dependencies()` :
-- ✅/❌ pour chaque check technique
-- **Si vous lancez maintenant : X événements appelleront Claude** (en gros, en orange si >0)
-- **Y événements seront skippés (déjà à jour)**
-- **Z ignorés** / **N score <55** / **M score NULL**
-
-### Confirmation avant lancement post-import
-
-`AlertDialog` qui affiche :
-- nb d'events qui appelleront Claude
-- nb skippés
-- mention "Coût estimé : ~X appels Claude, ~Y déploiements Vercel si contenu modifié"
-- bouton "Lancer" / "Annuler"
-
-### Résultat d'exécution
-
-Carte "Résultat de la dernière action" complétée avec :
-- `called_claude`, `skipped_unchanged`, `ignored_filtered`, `validated`, `failed`
-- Deploy Hook : déclenché oui/non
-- Liste des events traités avec statut avant/après
+- Groupes candidats estimés : **~14**, dont **BNBxTECH**.
+- **Exemple BNBxTECH (état réel constaté)** :
+  - `exposants` : `ExporecD3rJ5sf4jLHnLb` (Airtable réel, site `bnbxtech.com`, 0 participation) + miroir `90509172-…` (UUID, domaine `bnbxtech.com`, 1 participation).
+  - `exhibitors` : `90509172-…` (owner présent, claimé).
+  - identités : **`bnbxtech`** (`linked`, owner + participation + 1 nouveauté publiée → **à conserver**) et **`bnbxtech-2`** (`legacy`, ExporecID, 0 participation/0 dépendance → **désactivable plus tard**).
+  - **Plan théorique** (non exécuté) : garder `bnbxtech` active ; rattacher l'ExporecID réel à cette identité (réconciliation legacy↔exhibitor) pour préserver les futurs imports Airtable ; désactiver `bnbxtech-2` ; **aucune** suppression de `exposants`/`exhibitors`. Préserve nouveauté, participation, ID Airtable réel, fiche unique.
 
 ---
 
-## Ce qui n'est PAS fait dans cette étape
+## D. Preview Catégorie A_SAFE (même domaine + nom identique/proche) — dry-run uniquement
 
-- Aucun `cron.schedule(...)` n'est exécuté.
-- Aucun appel à `seo-enrichment-batch` n'est déclenché par cette migration.
-- Aucun build Vercel.
-- Aucun appel Claude.
-- Aucune modification du scoring (logique inchangée, seuls les filtres `ignored` sont étendus).
+Inclus seulement si : même domaine **non partagé/générique** (hors blacklist, hors domaines partagés par >6 identités), nom identique ou très proche, aucun signal de danger, et **aucune** nouveauté/lead/owner/équipe/CRM sur la fiche à désactiver.
+
+Exclus (→ validation manuelle, jamais auto) : **A2** (même domaine, noms différents), **D** (même nom, domaine différent), **E** (nom proche, domaine différent), **F** (présence nouveauté/lead/owner/CRM).
 
 ---
 
-## Détails techniques (résumé)
+## E. Groupes manuels
 
-| Élément | Type | Action |
-|---|---|---|
-| `events.seo_source_hash` | colonne | ADD |
-| `events.seo_generated_from_hash` | colonne | ADD |
-| `events.seo_generated_at` | colonne | ADD |
-| `events.seo_last_checked_at` | colonne | ADD |
-| `compute_seo_source_hash(uuid)` | fonction | CREATE |
-| `seo_eligible_events(boolean)` | fonction | CREATE |
-| `check_seo_automation_dependencies()` | fonction | CREATE |
-| `check_seo_cron_dependencies()` | fonction | REWRITE → alias |
-| `start_seo_weekly_catchup()` | fonction | CREATE (non programmée) |
-| `seo-enrichment-batch/index.ts` | edge | filtre ignored + skip par hash + mode post_import |
-| `SeoEnrichmentDashboard.tsx` | UI | renommage + post-import + previsions Claude |
+- **A2 / D / E** : risque de faux positif élevé (domaines d'événements, groupes, marques distinctes, homonymes) → review humaine obligatoire.
+- **F** : tout groupe touchant une donnée active (nouveauté/lead/owner/équipe/CRM des deux côtés) → review humaine, jamais d'automatisation.
+- Volumes précis renvoyés par la RPC de preview au moment de l'exécution (calcul à la volée).
 
-## Critères de validation
+---
 
-1. Avant tout lancement, le dashboard indique combien d'events appelleront Claude.
-2. Un event déjà valide avec hash inchangé ne consomme aucun crédit Claude.
-3. Un event `enrichissement_ignored=true` n'est jamais sélectionné par scoring, batch ou cron.
-4. Aucun cron actif n'existe après application.
-5. L'action "Traiter les nouveaux événements importés" fonctionne sans déclencher Claude si rien n'a changé.
+## F. Recommandation finale
+
+- **Automatisable plus tard** : seulement Catégorie B + A_SAFE strictes (réconciliation = rattachement de lien + désactivation d'identité doublon, **sans** suppression de source).
+- **Toujours manuel** : A2, D, E, F et tout domaine partagé.
+- **À corriger d'abord dans le flux** : le miroir UUID + l'absence de réconciliation par domaine/nom dans `sync_exhibitor_public_identities` — sinon le doublon réapparaît au prochain import.
+
+---
+
+## Livrables techniques de cette étape (création seule, aucune exécution)
+
+1. **Migration — RPC dry-run `admin_preview_exhibitor_identity_reconciliation()`**
+   - `SECURITY DEFINER`, `is_admin()` requis, **lecture seule** (aucun INSERT/UPDATE/DELETE sur les tables métier).
+   - Pour chaque groupe : identités publiques concernées, lignes `exposants`, lignes `exhibitors`, participations, nouveautés, leads, owner/équipe, CRM, ID Airtable réel si présent, ID UUID miroir si présent, et **statut** : `auto_reconcilable` / `manual_review` / `dangerous` / `likely_false_positive`.
+   - Pour chaque groupe : identité à **garder active**, identité **désactivable plus tard**, données à conserver dans `exposants` vs `exhibitors`, lien à créer/corriger, remap participation éventuel — **en texte de plan, sans écriture**.
+2. **Migration — table `public.exhibitor_duplicate_domain_blacklist`** (domaine, motif, créée vide) + GRANTs. **Non utilisée pour corriger** ; sert seulement à exclure les domaines partagés des futures previews. La RPC de preview la lira pour marquer `likely_false_positive`.
+
+Rien d'autre n'est créé ni exécuté. Après approbation, je livre la RPC + la table, puis on lance la preview pour obtenir les volumes exacts (C/D/E) avant toute décision de correction réelle.
