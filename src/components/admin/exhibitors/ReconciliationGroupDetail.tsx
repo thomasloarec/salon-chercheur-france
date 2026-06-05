@@ -131,11 +131,32 @@ export default function ReconciliationGroupDetail({
   group,
   open,
   onOpenChange,
+  loading = false,
 }: {
   group: ReconGroup | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  loading?: boolean;
 }) {
+  if (loading && !group) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Calcul du détail du groupe…</DialogTitle>
+            <DialogDescription>
+              Le détail complet (recommandations, dépendances, plan théorique) est calculé à la
+              demande pour éviter les timeouts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Chargement du détail…
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
   if (!group) return null;
   const statusMeta =
     STATUS_META[group.status_group] ?? { label: group.status_group, variant: 'outline' as const };
