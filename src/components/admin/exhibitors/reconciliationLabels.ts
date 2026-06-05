@@ -35,7 +35,23 @@ export const CATEGORY_META: Record<string, { label: string; hint: string }> = {
   F: { label: 'F', hint: 'Dépendances actives présentes' },
   shared_domain: { label: 'Domaine partagé', hint: 'Domaine générique/partagé' },
   other: { label: 'Autre', hint: 'Cas non classé automatiquement' },
+  mixed: { label: 'Mixte', hint: 'Groupe de 3+ identités avec données mixtes' },
+  manual: { label: 'Manuel', hint: 'Revue manuelle requise' },
+  dangerous: { label: 'Dangereux', hint: 'Données dures sur plusieurs identités' },
 };
+
+export function riskLabel(risk: string | null | undefined): { label: string; className: string } {
+  switch ((risk || '').toLowerCase()) {
+    case 'faible':
+      return { label: 'Faible', className: 'border-emerald-500 text-emerald-700 bg-emerald-50' };
+    case 'moyen':
+      return { label: 'Moyen', className: 'border-amber-500 text-amber-700 bg-amber-50' };
+    case 'eleve':
+      return { label: 'Élevé', className: 'border-destructive text-destructive bg-destructive/10' };
+    default:
+      return { label: risk || '—', className: 'border-slate-300 text-slate-600 bg-slate-50' };
+  }
+}
 
 export function statusConclusion(status: string): string {
   switch (status) {

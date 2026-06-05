@@ -4800,6 +4800,7 @@ export type Database = {
         Returns: Json
       }
       _is_uuid_text: { Args: { p_val: string }; Returns: boolean }
+      _recon_classify_group: { Args: { p_profiles: Json }; Returns: Json }
       _recon_classify_pair: {
         Args: {
           p_a: string
@@ -4849,6 +4850,56 @@ export type Database = {
           side_keep: Json
           status: string
           website_conflict: boolean
+        }[]
+      }
+      admin_preview_exhibitor_identity_reconciliation_groups: {
+        Args: {
+          p_category?: string
+          p_limit?: number
+          p_min_score?: number
+          p_offset?: number
+          p_search?: string
+          p_status?: string
+        }
+        Returns: {
+          categories: string[]
+          category_group: string
+          confidence_max: string
+          domains: string[]
+          group_key: string
+          identities: Json
+          identities_count: number
+          identities_potentially_deactivatable: Json
+          identity_ids: string[]
+          main_domain: string
+          main_name: string
+          names: string[]
+          plan_text_group: string
+          recommended_keep_identity: Json
+          recommended_keep_slug: string
+          risk_level: string
+          score_avg: number
+          score_max: number
+          sources: string[]
+          status_group: string
+          statuses: string[]
+          total_count: number
+          total_crm: number
+          total_leads: number
+          total_novelties: number
+          total_participations: number
+          total_teams: number
+          warnings: Json
+        }[]
+      }
+      admin_preview_exhibitor_identity_reconciliation_groups_breakdow: {
+        Args: { p_min_score?: number }
+        Returns: {
+          auto_reconcilable: number
+          dangerous: number
+          groups_total: number
+          likely_false_positive: number
+          manual_review: number
         }[]
       }
       admin_preview_exhibitor_identity_reconciliation_page: {

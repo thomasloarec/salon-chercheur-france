@@ -58,6 +58,55 @@ export interface ReconStatusBreakdown {
   likely_false_positive: number;
 }
 
+export interface ReconGroupsBreakdown {
+  groups_total: number;
+  auto_reconcilable: number;
+  manual_review: number;
+  dangerous: number;
+  likely_false_positive: number;
+}
+
+export interface ReconGroupIdentity extends ReconSideProfile {
+  keep_reason?: string | null;
+  deactivation_reason?: string | null;
+}
+
+export interface ReconGroup {
+  group_key: string;
+  identity_ids: string[];
+  identities_count: number;
+  names: string[] | null;
+  domains: string[] | null;
+  sources: string[] | null;
+  statuses: string[] | null;
+  categories: string[] | null;
+  score_max: number;
+  score_avg: number | null;
+  confidence_max: string;
+  status_group: string;
+  category_group: string;
+  risk_level: string;
+  main_name: string | null;
+  main_domain: string | null;
+  recommended_keep_slug: string | null;
+  recommended_keep_identity: ReconGroupIdentity | null;
+  identities: ReconGroupIdentity[] | null;
+  identities_potentially_deactivatable: ReconGroupIdentity[] | null;
+  plan_text_group: string | null;
+  warnings: string[] | null;
+  total_participations: number;
+  total_novelties: number;
+  total_leads: number;
+  total_teams: number;
+  total_crm: number;
+  total_count: number;
+}
+
+export interface ReconGroupsResult {
+  rows: ReconGroup[];
+  total: number;
+}
+
 export interface ReconPageParams {
   minScore?: number;
   status?: string | null;
@@ -156,5 +205,72 @@ export function useReconciliationPage(params: ReconPageParams, enabled = true) {
       const total = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
       return { rows, total };
     },
+  });
+}
+
+/** Server-paginated page of GROUPS; only the returned groups are enriched. */
+export function useReconciliationGroupsPage(params: ReconPageParams, enabled = true) {
+  const {
+    minScore = 60,
+    status = null,
+    category = null,
+    search = null,
+    limit = 50,
+    offset = 0,
+  } = params;
+  return useQuery({
+    queryKey: ['recon-preview-groups', minScore, status, category, search, limit, offset],
+    enabled,
+    placeholderData: keepPreviousData,
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async (): Promise<ReconGroupsResult> => {
+      const { data, error } = await supabase.rpc(
+        'admin_preview_exhibitor_identity_reconciliation_groups',
+        {
+          p_min_score: minScore,
+          p_status: status,
+          p_category: category,
+          p_search: search,
+          p_limit: limit,
+          p_offset: offset,
+        },
+      );
+      if (error) throw error;
+      const list = (data ?? []) as unknown[];
+      const rows = list.map((r) => {
+        const row = r as Record<string, unknown>;
+        return {
+          ...row,
+          identities: (row.identities as ReconGroupIdentity[]) ?? null,
+          identities_potentially_deactivatable:
+            (row.identities_potentially_deactivatable as ReconGroupIdentity[]) ?? null,
+          recommended_keep_identity:
+            (row.recommended_keep_identity as ReconGroupIdentity) ?? null,
+          warnings: (row.warnings as string[]) ?? null,
+        } as ReconGroup;
+      });
+      const total = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
+      return { rows, total };
+    },
+  });
+}
+
+/** Heavy, on-demand GROUP-level status breakdown — only runs when `enabled`. */
+export function useReconciliationGroupsBreakdown(minScore = 60, enabled = false) {
+  return useQuery({
+    queryKey: ['recon-preview-groups-breakdown', minScore],
+    enabled,
+    queryFn: async (): Promise<ReconGroupsBreakdown | null> => {
+      const { data, error } = await supabase.rpc(
+        'admin_preview_exhibitor_identity_reconciliation_groups_breakdow',
+        { p_min_score: minScore },
+      );
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row as ReconGroupsBreakdown) ?? null;
+    },
+    staleTime: 60_000,
+    retry: false,
   });
 }
