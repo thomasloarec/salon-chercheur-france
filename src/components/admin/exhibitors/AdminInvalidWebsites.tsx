@@ -22,21 +22,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { AlertCircle, ExternalLink, RefreshCw, Search, Globe } from 'lucide-react';
-
-type InvalidWebsiteRow = {
-  public_identity_id: string;
-  public_slug: string;
-  display_name: string;
-  source_type: string;
-  website: string;
-  exhibitor_id: string | null;
-  reason: string;
-};
+import { AlertCircle, ExternalLink, RefreshCw, Search, Globe, Pencil, UserMinus } from 'lucide-react';
+import CorrectWebsiteDialog, { type InvalidWebsiteRow } from './CorrectWebsiteDialog';
+import RemoveExhibitorDialog from './RemoveExhibitorDialog';
 
 const AdminInvalidWebsites: React.FC = () => {
   const [reasonFilter, setReasonFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [correctRow, setCorrectRow] = useState<InvalidWebsiteRow | null>(null);
+  const [removeRow, setRemoveRow] = useState<InvalidWebsiteRow | null>(null);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['invalid-exhibitor-websites'],
@@ -74,6 +68,7 @@ const AdminInvalidWebsites: React.FC = () => {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="outline">{data?.length ?? 0} websites invalides</Badge>
+        <Badge variant="secondary" className="gap-1 text-[10px]">Airtable à corriger</Badge>
         <Button
           variant="ghost"
           size="sm"
@@ -162,7 +157,7 @@ const AdminInvalidWebsites: React.FC = () => {
                   <TableHead>Source</TableHead>
                   <TableHead>Website brut</TableHead>
                   <TableHead>Raison</TableHead>
-                  <TableHead className="text-right">Liens</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -188,15 +183,37 @@ const AdminInvalidWebsites: React.FC = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <a
-                        href={`/exposants/${r.public_slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        Page publique
-                      </a>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1 text-xs"
+                          onClick={() => setCorrectRow(r)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Corriger
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => setRemoveRow(r)}
+                        >
+                          <UserMinus className="h-3 w-3" />
+                          Retirer du site
+                        </Button>
+                        {r.public_slug && (
+                          <a
+                            href={`/exposants/${r.public_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-1 text-xs text-primary hover:underline"
+                            title="Voir la fiche publique"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -205,6 +222,19 @@ const AdminInvalidWebsites: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      <CorrectWebsiteDialog
+        row={correctRow}
+        open={!!correctRow}
+        onOpenChange={(o) => !o && setCorrectRow(null)}
+        onSuccess={() => refetch()}
+      />
+      <RemoveExhibitorDialog
+        row={removeRow}
+        open={!!removeRow}
+        onOpenChange={(o) => !o && setRemoveRow(null)}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 };
