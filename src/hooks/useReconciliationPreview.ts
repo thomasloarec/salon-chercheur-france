@@ -107,6 +107,25 @@ export interface ReconGroupsResult {
   total: number;
 }
 
+/** Lightweight group row (no dependency profiles / classification). */
+export interface ReconGroupLight {
+  group_key: string;
+  identity_ids: string[];
+  identities_count: number;
+  names: string[] | null;
+  domains: string[] | null;
+  sources: string[] | null;
+  score_max: number;
+  score_avg: number | null;
+  confidence_max: string;
+  total_count: number;
+}
+
+export interface ReconGroupsLightResult {
+  rows: ReconGroupLight[];
+  total: number;
+}
+
 export interface ReconPageParams {
   minScore?: number;
   status?: string | null;
