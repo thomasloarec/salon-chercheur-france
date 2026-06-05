@@ -91,11 +91,16 @@ const RemoveExhibitorDialog: React.FC<Props> = ({ row, open, onOpenChange, onSuc
     setRemoving(true);
     setErrorMsg(null);
     try {
-      const { error } = await supabase.rpc('admin_remove_exhibitor_from_site', {
+      const args: {
+        p_public_identity_id: string;
+        p_reason: string;
+        p_confirm?: string;
+      } = {
         p_public_identity_id: row.public_identity_id,
         p_reason: reason.trim(),
-        ...(requiresConfirm ? { p_confirm: 'RETIRER' } : {}),
-      });
+      };
+      if (requiresConfirm) args.p_confirm = 'RETIRER';
+      const { error } = await supabase.rpc('admin_remove_exhibitor_from_site', args);
       if (error) throw error;
       toast.success('Exposant retiré du site', {
         description:
