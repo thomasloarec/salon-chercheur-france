@@ -4852,6 +4852,39 @@ export type Database = {
           website_conflict: boolean
         }[]
       }
+      admin_preview_exhibitor_identity_reconciliation_group_detail: {
+        Args: { p_identity_ids: string[]; p_min_score?: number }
+        Returns: {
+          categories: string[]
+          category_group: string
+          confidence_max: string
+          domains: string[]
+          group_key: string
+          identities: Json
+          identities_count: number
+          identities_potentially_deactivatable: Json
+          identity_ids: string[]
+          main_domain: string
+          main_name: string
+          names: string[]
+          plan_text_group: string
+          recommended_keep_identity: Json
+          recommended_keep_slug: string
+          risk_level: string
+          score_avg: number
+          score_max: number
+          sources: string[]
+          status_group: string
+          statuses: string[]
+          total_count: number
+          total_crm: number
+          total_leads: number
+          total_novelties: number
+          total_participations: number
+          total_teams: number
+          warnings: Json
+        }[]
+      }
       admin_preview_exhibitor_identity_reconciliation_groups: {
         Args: {
           p_category?: string
@@ -4900,6 +4933,21 @@ export type Database = {
           groups_total: number
           likely_false_positive: number
           manual_review: number
+        }[]
+      }
+      admin_preview_exhibitor_identity_reconciliation_groups_light: {
+        Args: { p_limit?: number; p_min_score?: number; p_offset?: number }
+        Returns: {
+          confidence_max: string
+          domains: string[]
+          group_key: string
+          identities_count: number
+          identity_ids: string[]
+          names: string[]
+          score_avg: number
+          score_max: number
+          sources: string[]
+          total_count: number
         }[]
       }
       admin_preview_exhibitor_identity_reconciliation_page: {
@@ -5004,6 +5052,39 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_search_exhibitor_identity_reconciliation_groups: {
+        Args: { p_limit?: number; p_min_score?: number; p_search: string }
+        Returns: {
+          categories: string[]
+          category_group: string
+          confidence_max: string
+          domains: string[]
+          group_key: string
+          identities: Json
+          identities_count: number
+          identities_potentially_deactivatable: Json
+          identity_ids: string[]
+          main_domain: string
+          main_name: string
+          names: string[]
+          plan_text_group: string
+          recommended_keep_identity: Json
+          recommended_keep_slug: string
+          risk_level: string
+          score_avg: number
+          score_max: number
+          sources: string[]
+          status_group: string
+          statuses: string[]
+          total_count: number
+          total_crm: number
+          total_leads: number
+          total_novelties: number
+          total_participations: number
+          total_teams: number
+          warnings: Json
+        }[]
       }
       admin_update_exhibitor_website: {
         Args: {

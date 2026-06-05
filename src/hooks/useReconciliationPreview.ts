@@ -107,6 +107,25 @@ export interface ReconGroupsResult {
   total: number;
 }
 
+/** Lightweight group row (no dependency profiles / classification). */
+export interface ReconGroupLight {
+  group_key: string;
+  identity_ids: string[];
+  identities_count: number;
+  names: string[] | null;
+  domains: string[] | null;
+  sources: string[] | null;
+  score_max: number;
+  score_avg: number | null;
+  confidence_max: string;
+  total_count: number;
+}
+
+export interface ReconGroupsLightResult {
+  rows: ReconGroupLight[];
+  total: number;
+}
+
 export interface ReconPageParams {
   minScore?: number;
   status?: string | null;
@@ -272,5 +291,104 @@ export function useReconciliationGroupsBreakdown(minScore = 60, enabled = false)
     },
     staleTime: 60_000,
     retry: false,
+  });
+}
+
+function mapFullGroup(r: unknown): ReconGroup {
+  const row = r as Record<string, unknown>;
+  return {
+    ...row,
+    identities: (row.identities as ReconGroupIdentity[]) ?? null,
+    identities_potentially_deactivatable:
+      (row.identities_potentially_deactivatable as ReconGroupIdentity[]) ?? null,
+    recommended_keep_identity:
+      (row.recommended_keep_identity as ReconGroupIdentity) ?? null,
+    warnings: (row.warnings as string[]) ?? null,
+  } as ReconGroup;
+}
+
+/**
+ * Search-first grouped view. Only builds groups around identities matching the
+ * search term, then enriches just those groups. Fast & timeout-safe.
+ */
+export function useReconciliationGroupsSearch(
+  search: string | null,
+  minScore = 60,
+  limit = 50,
+) {
+  const term = (search ?? '').trim();
+  const enabled = term.length >= 2;
+  return useQuery({
+    queryKey: ['recon-groups-search', term, minScore, limit],
+    enabled,
+    placeholderData: keepPreviousData,
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async (): Promise<ReconGroupsResult> => {
+      const { data, error } = await supabase.rpc(
+        'admin_search_exhibitor_identity_reconciliation_groups',
+        { p_search: term, p_min_score: minScore, p_limit: limit },
+      );
+      if (error) throw error;
+      const list = (data ?? []) as unknown[];
+      const rows = list.map(mapFullGroup);
+      const total = rows.length > 0 ? Number(rows[0].total_count ?? rows.length) : 0;
+      return { rows, total };
+    },
+  });
+}
+
+/**
+ * Lightweight "top priority groups" page. No dependency profiles / classification:
+ * group meta + score only. Used for the on-demand priority list.
+ */
+export function useReconciliationGroupsLight(
+  params: { minScore?: number; limit?: number; offset?: number },
+  enabled = false,
+) {
+  const { minScore = 60, limit = 50, offset = 0 } = params;
+  return useQuery({
+    queryKey: ['recon-groups-light', minScore, limit, offset],
+    enabled,
+    placeholderData: keepPreviousData,
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async (): Promise<ReconGroupsLightResult> => {
+      const { data, error } = await supabase.rpc(
+        'admin_preview_exhibitor_identity_reconciliation_groups_light',
+        { p_min_score: minScore, p_limit: limit, p_offset: offset },
+      );
+      if (error) throw error;
+      const rows = (data ?? []) as ReconGroupLight[];
+      const total = rows.length > 0 ? Number(rows[0].total_count ?? rows.length) : 0;
+      return { rows, total };
+    },
+  });
+}
+
+/**
+ * On-demand full detail for a single group. Heavy profile + classification work
+ * runs only when a group is opened.
+ */
+export function useReconciliationGroupDetail(
+  identityIds: string[] | null,
+  minScore = 60,
+) {
+  const ids = identityIds ?? [];
+  const enabled = ids.length > 0;
+  return useQuery({
+    queryKey: ['recon-group-detail', [...ids].sort().join(','), minScore],
+    enabled,
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async (): Promise<ReconGroup | null> => {
+      const { data, error } = await supabase.rpc(
+        'admin_preview_exhibitor_identity_reconciliation_group_detail',
+        { p_identity_ids: ids, p_min_score: minScore },
+      );
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ? mapFullGroup(row) : null;
+    },
   });
 }
