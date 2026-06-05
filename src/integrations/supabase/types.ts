@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_data_cleaning_logs: {
+        Row: {
+          action: string
+          admin_user_id: string | null
+          airtable_sync_required: boolean
+          created_at: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_source: string | null
+          entity_type: string
+          id: string
+          impact: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id?: string | null
+          airtable_sync_required?: boolean
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_source?: string | null
+          entity_type?: string
+          id?: string
+          impact?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string | null
+          airtable_sync_required?: boolean
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_source?: string | null
+          entity_type?: string
+          id?: string
+          impact?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          reason?: string | null
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           created_at: string
@@ -4720,6 +4768,91 @@ export type Database = {
         Args: { a: Database["public"]["Tables"]["exhibitor_ai"]["Row"] }
         Returns: number
       }
+      admin_find_website_duplicate: {
+        Args: {
+          p_domain: string
+          p_exclude_exhibitor?: string
+          p_exclude_legacy?: string
+        }
+        Returns: Json
+      }
+      admin_hard_delete_exhibitor: {
+        Args: {
+          p_confirm?: string
+          p_exhibitor_id?: string
+          p_id_exposant?: string
+          p_public_identity_id?: string
+          p_reason?: string
+          p_source?: string
+        }
+        Returns: Json
+      }
+      admin_normalize_website: { Args: { p_raw: string }; Returns: Json }
+      admin_preview_exhibitor_removal: {
+        Args: {
+          p_exhibitor_id?: string
+          p_id_exposant?: string
+          p_public_identity_id?: string
+          p_source?: string
+        }
+        Returns: Json
+      }
+      admin_preview_exhibitor_website_update: {
+        Args: {
+          p_exhibitor_id?: string
+          p_id_exposant?: string
+          p_new_website?: string
+          p_public_identity_id?: string
+          p_source?: string
+        }
+        Returns: Json
+      }
+      admin_remove_exhibitor_from_site: {
+        Args: {
+          p_confirm?: string
+          p_exhibitor_id?: string
+          p_id_exposant?: string
+          p_public_identity_id?: string
+          p_reason?: string
+          p_source?: string
+        }
+        Returns: Json
+      }
+      admin_resolve_identity: {
+        Args: {
+          p_exhibitor_id: string
+          p_id_exposant: string
+          p_public_identity_id: string
+        }
+        Returns: {
+          canonical_name: string
+          created_at: string
+          exhibitor_id: string | null
+          id: string
+          is_active: boolean
+          legacy_exposant_id: string | null
+          public_slug: string
+          source_type: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exhibitor_public_identities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_update_exhibitor_website: {
+        Args: {
+          p_exhibitor_id?: string
+          p_id_exposant?: string
+          p_new_website?: string
+          p_public_identity_id?: string
+          p_reason?: string
+          p_source?: string
+        }
+        Returns: Json
+      }
       can_add_novelty: {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
@@ -5091,6 +5224,7 @@ export type Database = {
         Returns: {
           display_name: string
           exhibitor_id: string
+          legacy_exposant_id: string
           public_identity_id: string
           public_slug: string
           reason: string
@@ -5303,6 +5437,7 @@ export type Database = {
         Args: { current_password: string; new_password: string }
         Returns: Json
       }
+      web_domain: { Args: { p_raw: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
