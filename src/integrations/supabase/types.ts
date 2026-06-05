@@ -1490,6 +1490,33 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_duplicate_domain_blacklist: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          domain: string
+          id: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          domain: string
+          id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          domain?: string
+          id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exhibitor_duplicate_reviews: {
         Row: {
           confidence: string | null
@@ -4768,6 +4795,12 @@ export type Database = {
         Args: { a: Database["public"]["Tables"]["exhibitor_ai"]["Row"] }
         Returns: number
       }
+      _exhibitor_identity_dep_profile: {
+        Args: { p_identity_id: string }
+        Returns: Json
+      }
+      _is_uuid_text: { Args: { p_val: string }; Returns: boolean }
+      _recon_norm_domain: { Args: { p_val: string }; Returns: string }
       admin_find_website_duplicate: {
         Args: {
           p_domain: string
@@ -4788,6 +4821,38 @@ export type Database = {
         Returns: Json
       }
       admin_normalize_website: { Args: { p_raw: string }; Returns: Json }
+      admin_preview_exhibitor_identity_reconciliation: {
+        Args: { p_min_score?: number }
+        Returns: {
+          category: string
+          confidence: string
+          group_key: string
+          pair_identity_ids: string[]
+          pair_key: string
+          plan_text: string
+          reasons: Json
+          recommended_deactivate_slug: string
+          recommended_keep_slug: string
+          same_domain: boolean
+          score: number
+          side_deactivate: Json
+          side_keep: Json
+          status: string
+          website_conflict: boolean
+        }[]
+      }
+      admin_preview_exhibitor_identity_reconciliation_summary: {
+        Args: { p_min_score?: number }
+        Returns: {
+          auto_reconcilable: number
+          dangerous: number
+          distinct_group_keys: number
+          likely_false_positive: number
+          manual_review: number
+          pairs_analyzed: number
+          unique_identities: number
+        }[]
+      }
       admin_preview_exhibitor_removal: {
         Args: {
           p_exhibitor_id?: string
