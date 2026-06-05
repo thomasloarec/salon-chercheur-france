@@ -30,23 +30,27 @@ import {
   RefreshCw,
   Users,
   GitMerge,
+  Sparkles,
+  Eye,
 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import {
   useReconciliationSummary,
   useReconciliationStatusBreakdown,
   useReconciliationPage,
-  useReconciliationGroupsPage,
   useReconciliationGroupsBreakdown,
+  useReconciliationGroupsSearch,
+  useReconciliationGroupsLight,
+  useReconciliationGroupDetail,
   type ReconPair,
   type ReconGroup,
+  type ReconGroupLight,
 } from '@/hooks/useReconciliationPreview';
 import {
   STATUS_META,
   CATEGORY_META,
   confidenceLabel,
   readableReasons,
-  riskLabel,
 } from './reconciliationLabels';
 import ReconciliationPairDetail from './ReconciliationPairDetail';
 import ReconciliationGroupDetail from './ReconciliationGroupDetail';
