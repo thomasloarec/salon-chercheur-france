@@ -58,6 +58,55 @@ export interface ReconStatusBreakdown {
   likely_false_positive: number;
 }
 
+export interface ReconGroupsBreakdown {
+  groups_total: number;
+  auto_reconcilable: number;
+  manual_review: number;
+  dangerous: number;
+  likely_false_positive: number;
+}
+
+export interface ReconGroupIdentity extends ReconSideProfile {
+  keep_reason?: string | null;
+  deactivation_reason?: string | null;
+}
+
+export interface ReconGroup {
+  group_key: string;
+  identity_ids: string[];
+  identities_count: number;
+  names: string[] | null;
+  domains: string[] | null;
+  sources: string[] | null;
+  statuses: string[] | null;
+  categories: string[] | null;
+  score_max: number;
+  score_avg: number | null;
+  confidence_max: string;
+  status_group: string;
+  category_group: string;
+  risk_level: string;
+  main_name: string | null;
+  main_domain: string | null;
+  recommended_keep_slug: string | null;
+  recommended_keep_identity: ReconGroupIdentity | null;
+  identities: ReconGroupIdentity[] | null;
+  identities_potentially_deactivatable: ReconGroupIdentity[] | null;
+  plan_text_group: string | null;
+  warnings: string[] | null;
+  total_participations: number;
+  total_novelties: number;
+  total_leads: number;
+  total_teams: number;
+  total_crm: number;
+  total_count: number;
+}
+
+export interface ReconGroupsResult {
+  rows: ReconGroup[];
+  total: number;
+}
+
 export interface ReconPageParams {
   minScore?: number;
   status?: string | null;
