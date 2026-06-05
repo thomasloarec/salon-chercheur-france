@@ -4800,6 +4800,16 @@ export type Database = {
         Returns: Json
       }
       _is_uuid_text: { Args: { p_val: string }; Returns: boolean }
+      _recon_classify_pair: {
+        Args: {
+          p_a: string
+          p_a_src: string
+          p_b: string
+          p_b_src: string
+          p_reasons: Json
+        }
+        Returns: Json
+      }
       _recon_norm_domain: { Args: { p_val: string }; Returns: string }
       admin_find_website_duplicate: {
         Args: {
@@ -4839,6 +4849,43 @@ export type Database = {
           side_keep: Json
           status: string
           website_conflict: boolean
+        }[]
+      }
+      admin_preview_exhibitor_identity_reconciliation_page: {
+        Args: {
+          p_category?: string
+          p_limit?: number
+          p_min_score?: number
+          p_offset?: number
+          p_search?: string
+          p_status?: string
+        }
+        Returns: {
+          category: string
+          confidence: string
+          group_key: string
+          pair_identity_ids: string[]
+          pair_key: string
+          plan_text: string
+          reasons: Json
+          recommended_deactivate_slug: string
+          recommended_keep_slug: string
+          same_domain: boolean
+          score: number
+          side_deactivate: Json
+          side_keep: Json
+          status: string
+          total_count: number
+          website_conflict: boolean
+        }[]
+      }
+      admin_preview_exhibitor_identity_reconciliation_status_breakdow: {
+        Args: { p_min_score?: number }
+        Returns: {
+          auto_reconcilable: number
+          dangerous: number
+          likely_false_positive: number
+          manual_review: number
         }[]
       }
       admin_preview_exhibitor_identity_reconciliation_summary: {

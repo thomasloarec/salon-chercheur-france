@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ReconSideProfile {
@@ -42,18 +42,37 @@ export interface ReconPair {
   reasons: Record<string, unknown> | null;
   side_keep: ReconSideProfile | null;
   side_deactivate: ReconSideProfile | null;
+  total_count: number;
 }
 
 export interface ReconSummary {
   pairs_analyzed: number;
   unique_identities: number;
   distinct_group_keys: number;
+}
+
+export interface ReconStatusBreakdown {
   auto_reconcilable: number;
   manual_review: number;
   dangerous: number;
   likely_false_positive: number;
 }
 
+export interface ReconPageParams {
+  minScore?: number;
+  status?: string | null;
+  category?: string | null;
+  search?: string | null;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ReconPageResult {
+  rows: ReconPair[];
+  total: number;
+}
+
+/** Lightweight, fast summary (no dependency profiles). */
 export function useReconciliationSummary(minScore = 60) {
   return useQuery({
     queryKey: ['recon-preview-summary', minScore],
@@ -64,22 +83,68 @@ export function useReconciliationSummary(minScore = 60) {
       );
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
-      return (row as ReconSummary) ?? null;
+      if (!row) return null;
+      return {
+        pairs_analyzed: row.pairs_analyzed ?? 0,
+        unique_identities: row.unique_identities ?? 0,
+        distinct_group_keys: row.distinct_group_keys ?? 0,
+      };
     },
     staleTime: 60_000,
+    retry: false,
   });
 }
 
-export function useReconciliationPairs(minScore = 60) {
+/** Heavy, on-demand status breakdown — only runs when `enabled` is true. */
+export function useReconciliationStatusBreakdown(minScore = 60, enabled = false) {
   return useQuery({
-    queryKey: ['recon-preview-pairs', minScore],
-    queryFn: async (): Promise<ReconPair[]> => {
+    queryKey: ['recon-preview-breakdown', minScore],
+    enabled,
+    queryFn: async (): Promise<ReconStatusBreakdown | null> => {
       const { data, error } = await supabase.rpc(
-        'admin_preview_exhibitor_identity_reconciliation',
+        'admin_preview_exhibitor_identity_reconciliation_status_breakdow',
         { p_min_score: minScore },
       );
       if (error) throw error;
-      return ((data ?? []) as unknown[]).map((r) => {
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row as ReconStatusBreakdown) ?? null;
+    },
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+/** Server-paginated page of pairs; only the returned rows are enriched. */
+export function useReconciliationPage(params: ReconPageParams, enabled = true) {
+  const {
+    minScore = 60,
+    status = null,
+    category = null,
+    search = null,
+    limit = 50,
+    offset = 0,
+  } = params;
+  return useQuery({
+    queryKey: ['recon-preview-page', minScore, status, category, search, limit, offset],
+    enabled,
+    placeholderData: keepPreviousData,
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async (): Promise<ReconPageResult> => {
+      const { data, error } = await supabase.rpc(
+        'admin_preview_exhibitor_identity_reconciliation_page',
+        {
+          p_min_score: minScore,
+          p_status: status,
+          p_category: category,
+          p_search: search,
+          p_limit: limit,
+          p_offset: offset,
+        },
+      );
+      if (error) throw error;
+      const list = (data ?? []) as unknown[];
+      const rows = list.map((r) => {
         const row = r as Record<string, unknown>;
         return {
           ...row,
@@ -88,7 +153,8 @@ export function useReconciliationPairs(minScore = 60) {
           reasons: (row.reasons as Record<string, unknown>) ?? null,
         } as ReconPair;
       });
+      const total = rows.length > 0 ? Number(rows[0].total_count ?? 0) : 0;
+      return { rows, total };
     },
-    staleTime: 60_000,
   });
 }
