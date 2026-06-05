@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  Loader2,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { ReconGroup, ReconGroupIdentity } from '@/hooks/useReconciliationPreview';
