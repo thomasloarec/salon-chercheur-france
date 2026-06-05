@@ -263,7 +263,7 @@ export function useReconciliationGroupsBreakdown(minScore = 60, enabled = false)
     enabled,
     queryFn: async (): Promise<ReconGroupsBreakdown | null> => {
       const { data, error } = await supabase.rpc(
-        'admin_preview_exhibitor_identity_reconciliation_groups_breakdown',
+        'admin_preview_exhibitor_identity_reconciliation_groups_breakdow',
         { p_min_score: minScore },
       );
       if (error) throw error;
