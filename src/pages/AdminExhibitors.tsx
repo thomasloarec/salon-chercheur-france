@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, ClipboardList, CopyCheck, Globe } from 'lucide-react';
+import { Building2, ClipboardList, CopyCheck, Globe, GitMerge } from 'lucide-react';
 import AdminExhibitorsList from '@/components/admin/exhibitors/AdminExhibitorsList';
 import AdminClaimRequests from '@/components/admin/exhibitors/AdminClaimRequests';
 import AdminExhibitorDetailPanel from '@/components/admin/exhibitors/AdminExhibitorDetailPanel';
 import AdminNonExhibitorPanel from '@/components/admin/exhibitors/AdminNonExhibitorPanel';
 import AdminDuplicateReviews from '@/components/admin/exhibitors/AdminDuplicateReviews';
 import AdminInvalidWebsites from '@/components/admin/exhibitors/AdminInvalidWebsites';
+import AdminReconciliationPreview from '@/components/admin/exhibitors/AdminReconciliationPreview';
 import { isUuid, type AdminSelection } from '@/components/admin/exhibitors/types';
 
 const AdminExhibitors = () => {
@@ -60,6 +61,10 @@ const AdminExhibitors = () => {
               <CopyCheck className="h-4 w-4" />
               Doublons exposants
             </TabsTrigger>
+            <TabsTrigger value="reconciliation" className="gap-2">
+              <GitMerge className="h-4 w-4" />
+              Réconciliation (preview)
+            </TabsTrigger>
             <TabsTrigger value="invalid-websites" className="gap-2">
               <Globe className="h-4 w-4" />
               Websites invalides
@@ -82,6 +87,10 @@ const AdminExhibitors = () => {
 
           <TabsContent value="duplicates">
             <AdminDuplicateReviews />
+          </TabsContent>
+
+          <TabsContent value="reconciliation">
+            <AdminReconciliationPreview />
           </TabsContent>
 
           <TabsContent value="invalid-websites">
