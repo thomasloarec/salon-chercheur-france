@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      _qa_cleaning_results: {
+        Row: {
+          label: string | null
+          result: Json | null
+          seq: number
+          step: string | null
+        }
+        Insert: {
+          label?: string | null
+          result?: Json | null
+          seq?: number
+          step?: string | null
+        }
+        Update: {
+          label?: string | null
+          result?: Json | null
+          seq?: number
+          step?: string | null
+        }
+        Relationships: []
+      }
       admin_data_cleaning_logs: {
         Row: {
           action: string
