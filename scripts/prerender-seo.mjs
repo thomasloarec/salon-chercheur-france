@@ -898,6 +898,28 @@ async function main() {
     console.log(`[prerender] annual hub: ${futureOfYear.length} events, ${annualSectors.length} sectors, ${annualCities.length} cities`);
   } catch (e) { errors++; console.warn('[prerender] annual hub failed', e.message); }
 
+  // 7b. exhibitor profiles (/exposants/:slug) — robots READ from seo_indexable
+  // and written HARD into the HTML. Generated for every active non-test profile.
+  for (const prof of profiles) {
+    if (!prof.public_slug) continue;
+    try {
+      const ids = new Set();
+      if (prof.exhibitor_id && eventsByExhibitorId.has(prof.exhibitor_id)) {
+        for (const id of eventsByExhibitorId.get(prof.exhibitor_id)) ids.add(id);
+      }
+      if (prof.legacy_exposant_id && eventsByLegacyId.has(prof.legacy_exposant_id)) {
+        for (const id of eventsByLegacyId.get(prof.legacy_exposant_id)) ids.add(id);
+      }
+      const evList = [...ids].map((id) => eventById.get(id)).filter(Boolean)
+        .sort((a, b) => (b.date_debut || '').localeCompare(a.date_debut || ''));
+      const built = buildExhibitor(prof, evList);
+      await writeRoute(`/exposants/${prof.public_slug}`, applyToShell(baseTemplate, built));
+      stats.exhibitors++;
+      if (prof.seo_indexable === true) stats.exhibitorsIndexable++;
+    } catch (e) { errors++; console.warn('[prerender] exhibitor failed', prof.public_slug, e.message); }
+  }
+  console.log(`[prerender] exhibitors: ${stats.exhibitors} (${stats.exhibitorsIndexable} indexable, ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
+
   // 8. home — written LAST so it never pollutes the template
   try {
     const built = buildHome();
@@ -915,6 +937,7 @@ async function main() {
   console.log(`Sector×year pages: ${stats.sectorYears}`);
   console.log(`City hubs:         ${stats.cities}`);
   console.log(`City×year pages:   ${stats.cityYears}`);
+  console.log(`Exhibitor pages:   ${stats.exhibitors} (${stats.exhibitorsIndexable} index / ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
   console.log(`Errors:            ${errors}`);
   console.log(`Duration:          ${dur}s`);
   console.log('=========================\n');
