@@ -239,7 +239,9 @@ function buildEvent(ev, exhibitors) {
   const exhibitorsBlock = (exhibitors && exhibitors.length > 0)
     ? `<section><h2>Entreprises exposantes référencées</h2>
         <p>Lotexpo recense actuellement ${exhibitors.length} entreprise${exhibitors.length > 1 ? 's' : ''} associée${exhibitors.length > 1 ? 's' : ''} à cet événement.</p>
-        <ul>${exhibitors.map((e) => `<li>${escapeHtml(e.name)}</li>`).join('')}</ul>
+        <ul>${exhibitors.map((e) => e.slug
+          ? `<li><a href="/exposants/${encodeURIComponent(e.slug)}">${escapeHtml(e.name)}</a></li>`
+          : `<li>${escapeHtml(e.name)}</li>`).join('')}</ul>
       </section>`
     : '';
 
