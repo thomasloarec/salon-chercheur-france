@@ -20,6 +20,8 @@ const t0 = Date.now();
 const DIST = path.resolve('dist');
 const SITE_ORIGIN = 'https://lotexpo.com';
 const ENV_PATH = path.resolve('.env');
+// Dedicated landscape OG card for exhibitor pages (never the company logo).
+const OG_EXHIBITOR_FALLBACK = 'https://lotexpo.com/og-exhibitor-default.png';
 
 // ---------- env loader ----------
 async function loadEnvFile() {
@@ -144,7 +146,7 @@ async function sbPaged(pathQ, pageSize = 1000) {
 // ---------- HTML injection ----------
 const HIDE_CSS = `<style id="seo-prerender-style">#seo-prerender{position:absolute;left:-99999px;top:auto;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);clip-path:inset(50%);white-space:nowrap}</style>`;
 
-function applyToShell(baseTemplate, { title, description, headExtra, body }) {
+function applyToShell(baseTemplate, { title, description, headExtra, body, robots }) {
   let html = baseTemplate;
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
   if (/<meta\s+name=["']description["'][^>]*>/i.test(html)) {
@@ -154,7 +156,14 @@ function applyToShell(baseTemplate, { title, description, headExtra, body }) {
   }
   // Strip any pre-existing canonical to avoid duplicates
   html = html.replace(/<link\s+rel=["']canonical["'][^>]*>\s*/gi, '');
-  html = html.replace(/<\/head>/i, `${headExtra}\n${HIDE_CSS}\n</head>`);
+  // When a builder dictates robots (exhibitor pages), strip any pre-existing
+  // robots meta and write the decision HARD into the HTML (crawler-visible
+  // without JS). Other builders leave robots untouched (default = indexable).
+  if (robots) {
+    html = html.replace(/<meta\s+name=["']robots["'][^>]*>\s*/gi, '');
+  }
+  const robotsTag = robots ? `<meta name="robots" content="${escapeHtml(robots)}" />\n` : '';
+  html = html.replace(/<\/head>/i, `${robotsTag}${headExtra}\n${HIDE_CSS}\n</head>`);
   if (html.includes('<div id="root">')) {
     html = html.replace('<div id="root">', `${body}\n<div id="root">`);
   } else {
@@ -230,7 +239,9 @@ function buildEvent(ev, exhibitors) {
   const exhibitorsBlock = (exhibitors && exhibitors.length > 0)
     ? `<section><h2>Entreprises exposantes référencées</h2>
         <p>Lotexpo recense actuellement ${exhibitors.length} entreprise${exhibitors.length > 1 ? 's' : ''} associée${exhibitors.length > 1 ? 's' : ''} à cet événement.</p>
-        <ul>${exhibitors.map((e) => `<li>${escapeHtml(e.name)}</li>`).join('')}</ul>
+        <ul>${exhibitors.map((e) => e.slug
+          ? `<li><a href="/exposants/${encodeURIComponent(e.slug)}">${escapeHtml(e.name)}</a></li>`
+          : `<li>${escapeHtml(e.name)}</li>`).join('')}</ul>
       </section>`
     : '';
 
@@ -516,6 +527,73 @@ function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
   return { title, description, canonical, headExtra, body };
 }
 
+// Build a static exhibitor profile page (/exposants/:slug).
+// robots decision is READ from profile.seo_indexable and written HARD into the
+// HTML. Templates mirror src/components/exhibitor/ExhibitorProfileSEO.tsx.
+// `events` = visible non-test events the exhibitor participates in (deduped).
+function buildExhibitor(profile, events) {
+  const name = profile.display_name || profile.canonical_name || 'Exposant';
+  const slug = profile.public_slug;
+  const indexable = profile.seo_indexable === true;
+  const canonical = `${SITE_ORIGIN}/exposants/${slug}`;
+  const robots = indexable ? 'index, follow' : 'noindex, follow';
+
+  const title = `${name} : salons, nouveautés et événements professionnels | Lotexpo`.slice(0, 70);
+  const description = (
+    profile.description
+      ? `Retrouvez les salons professionnels, nouveautés et informations publiques de ${name} sur Lotexpo.`
+      : `Consultez la fiche exposant de ${name} sur Lotexpo : salons professionnels associés, nouveautés et informations publiques.`
+  ).slice(0, 160);
+
+  const ogImage = OG_EXHIBITOR_FALLBACK;
+
+  // JSON-LD only for indexable profiles (no structured signals for noindex).
+  let jsonLd = '';
+  if (indexable) {
+    const cleanDesc = stripHtml(profile.description || profile.ai_summary || '');
+    const org = {
+      '@context': 'https://schema.org', '@type': 'Organization',
+      '@id': canonical, name, mainEntityOfPage: canonical,
+    };
+    if (profile.website) org.url = profile.website;
+    if (profile.logo_url) org.logo = profile.logo_url;
+    if (cleanDesc) org.description = truncate(cleanDesc, 500);
+    const sameAs = [profile.linkedin_url].filter((u) => !!u && u !== profile.website);
+    if (sameAs.length > 0) org.sameAs = sameAs;
+    const breadcrumb = {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Salons', item: `${SITE_ORIGIN}/` },
+        { '@type': 'ListItem', position: 2, name: 'Exposants', item: `${SITE_ORIGIN}/exposants` },
+        { '@type': 'ListItem', position: 3, name, item: canonical },
+      ],
+    };
+    jsonLd = `<script type="application/ld+json">${safeJsonLd(org)}</script>`
+      + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`;
+  }
+
+  const headExtra = commonHead(canonical, title, description, ogImage) + jsonLd;
+
+  const eventsList = (events && events.length > 0)
+    ? `<section><h2>Salons et événements</h2>
+        <ul>${events.slice(0, 50).map((e) =>
+          `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.ville ? ' – ' + escapeHtml(e.ville) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`,
+        ).join('')}</ul>
+      </section>`
+    : '';
+
+  const descPara = profile.description ? `<p>${escapeHtml(truncate(stripHtml(profile.description), 300))}</p>` : '';
+
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>${escapeHtml(name)}</h1>
+    ${descPara}
+    ${eventsList}
+    <p><a href="/exposants">Tous les exposants référencés</a></p>
+  </div>`;
+
+  return { title, description, canonical, headExtra, body, robots };
+}
+
 // ---------- write helper ----------
 async function writeRoute(routePath, html) {
   const isRoot = routePath === '/' || routePath === '';
@@ -537,23 +615,77 @@ async function main() {
   console.log(`[prerender] shell size=${baseTemplate.length}`);
 
   let errors = 0;
-  const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0, cityYears: 0 };
+  const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0, cityYears: 0, exhibitors: 0, exhibitorsIndexable: 0 };
 
   // 2. fetch events
   const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
   const events = await sbPaged(`events?visible=eq.true&is_test=eq.false&slug=not.is.null&select=${eventFields}&order=date_debut.desc`);
   console.log(`[prerender] events fetched: ${events.length}`);
 
+  // 2a. SAFETY: abort the whole build (non-zero exit) on implausibly low data
+  // BEFORE writing anything, so Vercel keeps the last good deploy and we never
+  // ship a partial/empty site.
+  const MIN_EVENTS = 50;
+  if (!Array.isArray(events) || events.length < MIN_EVENTS) {
+    console.error(`[prerender] FATAL: events volume implausibly low (${Array.isArray(events) ? events.length : 'null'} < ${MIN_EVENTS}). Aborting to preserve last good build.`);
+    process.exit(1);
+  }
+
+  // 2b. fetch public exhibitor profiles + participations (used by the exhibitor
+  // builder AND the event→exhibitor maillage). Done up-front so the SAFETY guard
+  // runs before any write.
+  const profileFields = 'public_slug,display_name,canonical_name,description,ai_summary,website,logo_url,linkedin_url,exhibitor_id,legacy_exposant_id,seo_indexable,is_test';
+  const profiles = (await sbPaged(`public_exhibitor_profiles?is_test=eq.false&public_slug=not.is.null&select=${profileFields}&order=public_slug.asc`))
+    .filter((p) => p.public_slug && String(p.public_slug).trim());
+  console.log(`[prerender] exhibitor profiles fetched: ${profiles.length}`);
+  const MIN_PROFILES = 1000;
+  if (profiles.length < MIN_PROFILES) {
+    console.error(`[prerender] FATAL: exhibitor profiles volume implausibly low (${profiles.length} < ${MIN_PROFILES}). Aborting to preserve last good build.`);
+    process.exit(1);
+  }
+
+  const participations = await sbPaged('participation?select=id_event,id_exposant,exhibitor_id');
+  console.log(`[prerender] participations fetched: ${participations.length}`);
+
+  // Build lookup maps (no N+1): event by id, public_slug by exhibitor key,
+  // and the set of (visible non-test) event ids per exhibitor key.
+  const eventById = new Map(events.map((e) => [e.id, e]));
+  const slugByExhibitorId = new Map();
+  const slugByLegacyId = new Map();
+  for (const p of profiles) {
+    if (p.exhibitor_id) slugByExhibitorId.set(p.exhibitor_id, p.public_slug);
+    if (p.legacy_exposant_id) slugByLegacyId.set(p.legacy_exposant_id, p.public_slug);
+  }
+  const resolveSlug = (exhibitorId, legacyId) => {
+    if (exhibitorId && slugByExhibitorId.has(exhibitorId)) return slugByExhibitorId.get(exhibitorId);
+    if (legacyId && slugByLegacyId.has(legacyId)) return slugByLegacyId.get(legacyId);
+    return null;
+  };
+  const eventsByExhibitorId = new Map();
+  const eventsByLegacyId = new Map();
+  for (const p of participations) {
+    if (!p.id_event || !eventById.has(p.id_event)) continue;
+    if (p.exhibitor_id) {
+      if (!eventsByExhibitorId.has(p.exhibitor_id)) eventsByExhibitorId.set(p.exhibitor_id, new Set());
+      eventsByExhibitorId.get(p.exhibitor_id).add(p.id_event);
+    }
+    if (p.id_exposant) {
+      if (!eventsByLegacyId.has(p.id_exposant)) eventsByLegacyId.set(p.id_exposant, new Set());
+      eventsByLegacyId.get(p.id_exposant).add(p.id_event);
+    }
+  }
+
   // 3. generate each event page (sequential to limit concurrent fetches)
   for (const ev of events) {
     if (!ev.slug) continue;
     try {
-      const parts = await sb(`participations_with_exhibitors?id_event=eq.${encodeURIComponent(ev.id)}&select=name_final,exhibitor_name,legacy_name,website_final,website_exposant&limit=20`);
+      const parts = await sb(`participations_with_exhibitors?id_event=eq.${encodeURIComponent(ev.id)}&select=name_final,exhibitor_name,legacy_name,website_final,website_exposant,exhibitor_id,id_exposant&limit=20`);
       let exhibitors = [];
       if (Array.isArray(parts) && parts.length > 0) {
         exhibitors = parts.map((p) => ({
           name: p.name_final || p.exhibitor_name || p.legacy_name || p.website_final || p.website_exposant || '',
           website: p.website_final || p.website_exposant || undefined,
+          slug: resolveSlug(p.exhibitor_id, p.id_exposant),
         })).filter((p) => p.name && p.name.trim().length > 1);
       }
       const built = buildEvent(ev, exhibitors);
@@ -766,6 +898,28 @@ async function main() {
     console.log(`[prerender] annual hub: ${futureOfYear.length} events, ${annualSectors.length} sectors, ${annualCities.length} cities`);
   } catch (e) { errors++; console.warn('[prerender] annual hub failed', e.message); }
 
+  // 7b. exhibitor profiles (/exposants/:slug) — robots READ from seo_indexable
+  // and written HARD into the HTML. Generated for every active non-test profile.
+  for (const prof of profiles) {
+    if (!prof.public_slug) continue;
+    try {
+      const ids = new Set();
+      if (prof.exhibitor_id && eventsByExhibitorId.has(prof.exhibitor_id)) {
+        for (const id of eventsByExhibitorId.get(prof.exhibitor_id)) ids.add(id);
+      }
+      if (prof.legacy_exposant_id && eventsByLegacyId.has(prof.legacy_exposant_id)) {
+        for (const id of eventsByLegacyId.get(prof.legacy_exposant_id)) ids.add(id);
+      }
+      const evList = [...ids].map((id) => eventById.get(id)).filter(Boolean)
+        .sort((a, b) => (b.date_debut || '').localeCompare(a.date_debut || ''));
+      const built = buildExhibitor(prof, evList);
+      await writeRoute(`/exposants/${prof.public_slug}`, applyToShell(baseTemplate, built));
+      stats.exhibitors++;
+      if (prof.seo_indexable === true) stats.exhibitorsIndexable++;
+    } catch (e) { errors++; console.warn('[prerender] exhibitor failed', prof.public_slug, e.message); }
+  }
+  console.log(`[prerender] exhibitors: ${stats.exhibitors} (${stats.exhibitorsIndexable} indexable, ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
+
   // 8. home — written LAST so it never pollutes the template
   try {
     const built = buildHome();
@@ -783,6 +937,7 @@ async function main() {
   console.log(`Sector×year pages: ${stats.sectorYears}`);
   console.log(`City hubs:         ${stats.cities}`);
   console.log(`City×year pages:   ${stats.cityYears}`);
+  console.log(`Exhibitor pages:   ${stats.exhibitors} (${stats.exhibitorsIndexable} index / ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
   console.log(`Errors:            ${errors}`);
   console.log(`Duration:          ${dur}s`);
   console.log('=========================\n');
