@@ -527,6 +527,73 @@ function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
   return { title, description, canonical, headExtra, body };
 }
 
+// Build a static exhibitor profile page (/exposants/:slug).
+// robots decision is READ from profile.seo_indexable and written HARD into the
+// HTML. Templates mirror src/components/exhibitor/ExhibitorProfileSEO.tsx.
+// `events` = visible non-test events the exhibitor participates in (deduped).
+function buildExhibitor(profile, events) {
+  const name = profile.display_name || profile.canonical_name || 'Exposant';
+  const slug = profile.public_slug;
+  const indexable = profile.seo_indexable === true;
+  const canonical = `${SITE_ORIGIN}/exposants/${slug}`;
+  const robots = indexable ? 'index, follow' : 'noindex, follow';
+
+  const title = `${name} : salons, nouveautés et événements professionnels | Lotexpo`.slice(0, 70);
+  const description = (
+    profile.description
+      ? `Retrouvez les salons professionnels, nouveautés et informations publiques de ${name} sur Lotexpo.`
+      : `Consultez la fiche exposant de ${name} sur Lotexpo : salons professionnels associés, nouveautés et informations publiques.`
+  ).slice(0, 160);
+
+  const ogImage = OG_EXHIBITOR_FALLBACK;
+
+  // JSON-LD only for indexable profiles (no structured signals for noindex).
+  let jsonLd = '';
+  if (indexable) {
+    const cleanDesc = stripHtml(profile.description || profile.ai_summary || '');
+    const org = {
+      '@context': 'https://schema.org', '@type': 'Organization',
+      '@id': canonical, name, mainEntityOfPage: canonical,
+    };
+    if (profile.website) org.url = profile.website;
+    if (profile.logo_url) org.logo = profile.logo_url;
+    if (cleanDesc) org.description = truncate(cleanDesc, 500);
+    const sameAs = [profile.linkedin_url].filter((u) => !!u && u !== profile.website);
+    if (sameAs.length > 0) org.sameAs = sameAs;
+    const breadcrumb = {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Salons', item: `${SITE_ORIGIN}/` },
+        { '@type': 'ListItem', position: 2, name: 'Exposants', item: `${SITE_ORIGIN}/exposants` },
+        { '@type': 'ListItem', position: 3, name, item: canonical },
+      ],
+    };
+    jsonLd = `<script type="application/ld+json">${safeJsonLd(org)}</script>`
+      + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`;
+  }
+
+  const headExtra = commonHead(canonical, title, description, ogImage) + jsonLd;
+
+  const eventsList = (events && events.length > 0)
+    ? `<section><h2>Salons et événements</h2>
+        <ul>${events.slice(0, 50).map((e) =>
+          `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.ville ? ' – ' + escapeHtml(e.ville) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`,
+        ).join('')}</ul>
+      </section>`
+    : '';
+
+  const descPara = profile.description ? `<p>${escapeHtml(truncate(stripHtml(profile.description), 300))}</p>` : '';
+
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>${escapeHtml(name)}</h1>
+    ${descPara}
+    ${eventsList}
+    <p><a href="/exposants">Tous les exposants référencés</a></p>
+  </div>`;
+
+  return { title, description, canonical, headExtra, body, robots };
+}
+
 // ---------- write helper ----------
 async function writeRoute(routePath, html) {
   const isRoot = routePath === '/' || routePath === '';
