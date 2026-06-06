@@ -146,7 +146,7 @@ async function sbPaged(pathQ, pageSize = 1000) {
 // ---------- HTML injection ----------
 const HIDE_CSS = `<style id="seo-prerender-style">#seo-prerender{position:absolute;left:-99999px;top:auto;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);clip-path:inset(50%);white-space:nowrap}</style>`;
 
-function applyToShell(baseTemplate, { title, description, headExtra, body }) {
+function applyToShell(baseTemplate, { title, description, headExtra, body, robots }) {
   let html = baseTemplate;
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
   if (/<meta\s+name=["']description["'][^>]*>/i.test(html)) {
@@ -156,7 +156,14 @@ function applyToShell(baseTemplate, { title, description, headExtra, body }) {
   }
   // Strip any pre-existing canonical to avoid duplicates
   html = html.replace(/<link\s+rel=["']canonical["'][^>]*>\s*/gi, '');
-  html = html.replace(/<\/head>/i, `${headExtra}\n${HIDE_CSS}\n</head>`);
+  // When a builder dictates robots (exhibitor pages), strip any pre-existing
+  // robots meta and write the decision HARD into the HTML (crawler-visible
+  // without JS). Other builders leave robots untouched (default = indexable).
+  if (robots) {
+    html = html.replace(/<meta\s+name=["']robots["'][^>]*>\s*/gi, '');
+  }
+  const robotsTag = robots ? `<meta name="robots" content="${escapeHtml(robots)}" />\n` : '';
+  html = html.replace(/<\/head>/i, `${robotsTag}${headExtra}\n${HIDE_CSS}\n</head>`);
   if (html.includes('<div id="root">')) {
     html = html.replace('<div id="root">', `${body}\n<div id="root">`);
   } else {
