@@ -615,23 +615,77 @@ async function main() {
   console.log(`[prerender] shell size=${baseTemplate.length}`);
 
   let errors = 0;
-  const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0, cityYears: 0 };
+  const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0, cityYears: 0, exhibitors: 0, exhibitorsIndexable: 0 };
 
   // 2. fetch events
   const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
   const events = await sbPaged(`events?visible=eq.true&is_test=eq.false&slug=not.is.null&select=${eventFields}&order=date_debut.desc`);
   console.log(`[prerender] events fetched: ${events.length}`);
 
+  // 2a. SAFETY: abort the whole build (non-zero exit) on implausibly low data
+  // BEFORE writing anything, so Vercel keeps the last good deploy and we never
+  // ship a partial/empty site.
+  const MIN_EVENTS = 50;
+  if (!Array.isArray(events) || events.length < MIN_EVENTS) {
+    console.error(`[prerender] FATAL: events volume implausibly low (${Array.isArray(events) ? events.length : 'null'} < ${MIN_EVENTS}). Aborting to preserve last good build.`);
+    process.exit(1);
+  }
+
+  // 2b. fetch public exhibitor profiles + participations (used by the exhibitor
+  // builder AND the event→exhibitor maillage). Done up-front so the SAFETY guard
+  // runs before any write.
+  const profileFields = 'public_slug,display_name,canonical_name,description,ai_summary,website,logo_url,linkedin_url,exhibitor_id,legacy_exposant_id,seo_indexable,is_test';
+  const profiles = (await sbPaged(`public_exhibitor_profiles?is_test=eq.false&public_slug=not.is.null&select=${profileFields}&order=public_slug.asc`))
+    .filter((p) => p.public_slug && String(p.public_slug).trim());
+  console.log(`[prerender] exhibitor profiles fetched: ${profiles.length}`);
+  const MIN_PROFILES = 1000;
+  if (profiles.length < MIN_PROFILES) {
+    console.error(`[prerender] FATAL: exhibitor profiles volume implausibly low (${profiles.length} < ${MIN_PROFILES}). Aborting to preserve last good build.`);
+    process.exit(1);
+  }
+
+  const participations = await sbPaged('participation?select=id_event,id_exposant,exhibitor_id');
+  console.log(`[prerender] participations fetched: ${participations.length}`);
+
+  // Build lookup maps (no N+1): event by id, public_slug by exhibitor key,
+  // and the set of (visible non-test) event ids per exhibitor key.
+  const eventById = new Map(events.map((e) => [e.id, e]));
+  const slugByExhibitorId = new Map();
+  const slugByLegacyId = new Map();
+  for (const p of profiles) {
+    if (p.exhibitor_id) slugByExhibitorId.set(p.exhibitor_id, p.public_slug);
+    if (p.legacy_exposant_id) slugByLegacyId.set(p.legacy_exposant_id, p.public_slug);
+  }
+  const resolveSlug = (exhibitorId, legacyId) => {
+    if (exhibitorId && slugByExhibitorId.has(exhibitorId)) return slugByExhibitorId.get(exhibitorId);
+    if (legacyId && slugByLegacyId.has(legacyId)) return slugByLegacyId.get(legacyId);
+    return null;
+  };
+  const eventsByExhibitorId = new Map();
+  const eventsByLegacyId = new Map();
+  for (const p of participations) {
+    if (!p.id_event || !eventById.has(p.id_event)) continue;
+    if (p.exhibitor_id) {
+      if (!eventsByExhibitorId.has(p.exhibitor_id)) eventsByExhibitorId.set(p.exhibitor_id, new Set());
+      eventsByExhibitorId.get(p.exhibitor_id).add(p.id_event);
+    }
+    if (p.id_exposant) {
+      if (!eventsByLegacyId.has(p.id_exposant)) eventsByLegacyId.set(p.id_exposant, new Set());
+      eventsByLegacyId.get(p.id_exposant).add(p.id_event);
+    }
+  }
+
   // 3. generate each event page (sequential to limit concurrent fetches)
   for (const ev of events) {
     if (!ev.slug) continue;
     try {
-      const parts = await sb(`participations_with_exhibitors?id_event=eq.${encodeURIComponent(ev.id)}&select=name_final,exhibitor_name,legacy_name,website_final,website_exposant&limit=20`);
+      const parts = await sb(`participations_with_exhibitors?id_event=eq.${encodeURIComponent(ev.id)}&select=name_final,exhibitor_name,legacy_name,website_final,website_exposant,exhibitor_id,id_exposant&limit=20`);
       let exhibitors = [];
       if (Array.isArray(parts) && parts.length > 0) {
         exhibitors = parts.map((p) => ({
           name: p.name_final || p.exhibitor_name || p.legacy_name || p.website_final || p.website_exposant || '',
           website: p.website_final || p.website_exposant || undefined,
+          slug: resolveSlug(p.exhibitor_id, p.id_exposant),
         })).filter((p) => p.name && p.name.trim().length > 1);
       }
       const built = buildEvent(ev, exhibitors);
