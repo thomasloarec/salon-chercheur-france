@@ -20,6 +20,8 @@ const t0 = Date.now();
 const DIST = path.resolve('dist');
 const SITE_ORIGIN = 'https://lotexpo.com';
 const ENV_PATH = path.resolve('.env');
+// Dedicated landscape OG card for exhibitor pages (never the company logo).
+const OG_EXHIBITOR_FALLBACK = 'https://lotexpo.com/og-exhibitor-default.png';
 
 // ---------- env loader ----------
 async function loadEnvFile() {
