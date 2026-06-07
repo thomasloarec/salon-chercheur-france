@@ -103,14 +103,14 @@ export default function LeadCaptureModal({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
-              <DialogTitle>Capture de leads pendant le salon</DialogTitle>
+              <DialogTitle>Accès illimité à vos leads avant le salon</DialogTitle>
               <Badge variant="secondary" className="text-xs">
                 <Sparkles className="h-3 w-3 mr-1" />
                 Bêta
               </Badge>
             </div>
             <DialogDescription className="text-base">
-              Créez un lien et un QR d'équipe. Vos commerciaux saisissent en 10 secondes, tout arrive ici.
+              Obtenez les coordonnées complètes des visiteurs intéressés par votre nouveauté avant le salon.
             </DialogDescription>
           </DialogHeader>
 
