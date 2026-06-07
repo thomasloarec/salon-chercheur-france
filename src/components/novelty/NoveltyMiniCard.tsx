@@ -36,7 +36,9 @@ export default function NoveltyMiniCard({
 
   const image = novelty.media_urls?.[0];
   const logo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website);
-  const eventHref = `/events/${event.slug}?novelty=${novelty.id}`;
+  const noveltyHref = novelty.slug
+    ? `/nouveautes/${novelty.slug}`
+    : `/events/${event.slug}?novelty=${novelty.id}`;
 
   const daysUntil = event.date_debut
     ? differenceInDays(new Date(event.date_debut), new Date())
@@ -60,7 +62,7 @@ export default function NoveltyMiniCard({
       )}
     >
       <Link
-        to={eventHref}
+        to={noveltyHref}
         aria-label={`Voir ${novelty.title}`}
         className={cn(
           "block shrink-0",
@@ -111,7 +113,7 @@ export default function NoveltyMiniCard({
           <span className="truncate">{exhibitor.name}</span>
         </div>
 
-        <Link to={eventHref} className="block">
+        <Link to={noveltyHref} className="block">
           <h3 className="line-clamp-3 text-base font-bold leading-snug tracking-tight transition-colors group-hover:text-primary">
             {novelty.title}
           </h3>

@@ -296,18 +296,39 @@ const hubItems = [
 ];
 const hubsXml = wrapUrlset(hubItems.join('\n'));
 
+// ----- 4b. novelties (/nouveautes/:slug) — seo_indexable only -----
+const { data: novelties, error: noveltiesError } = await supabase
+  .from('public_novelties')
+  .select('slug, updated_at, seo_indexable')
+  .eq('seo_indexable', true)
+  .not('slug', 'is', null)
+  .order('updated_at', { ascending: false })
+  .limit(5000);
+if (noveltiesError) {
+  // Non-blocking: novelties must never break the sitemap build.
+  console.warn('[sitemap:build] novelties fetch failed (non-blocking)', noveltiesError.message);
+}
+const eligibleNovelties = (novelties ?? []).filter((n) => n.slug && String(n.slug).trim());
+const noveltiesXml = wrapUrlset(
+  eligibleNovelties
+    .map((n) => urlBlock(`${SITE_URL}/nouveautes/${encodeURIComponent(n.slug)}`, formatDate(n.updated_at) || now, 'weekly', '0.6'))
+    .join('\n'),
+);
+
 // ----- 5. write files + index -----
 await mkdir(PUBLIC_DIR, { recursive: true });
 await writeFile(path.join(PUBLIC_DIR, 'sitemap-static.xml'), staticXml, 'utf8');
 await writeFile(path.join(PUBLIC_DIR, 'sitemap-events.xml'), eventsXml, 'utf8');
 await writeFile(path.join(PUBLIC_DIR, 'sitemap-blog.xml'), blogXml, 'utf8');
 await writeFile(path.join(PUBLIC_DIR, 'sitemap-hubs.xml'), hubsXml, 'utf8');
+await writeFile(path.join(PUBLIC_DIR, 'sitemap-nouveautes.xml'), noveltiesXml, 'utf8');
 
 const indexXml = wrapIndex([
   { loc: `${SITE_URL}/sitemap-static.xml`, lastmod: now },
   { loc: `${SITE_URL}/sitemap-events.xml`, lastmod: now },
   { loc: `${SITE_URL}/sitemap-blog.xml`, lastmod: now },
   { loc: `${SITE_URL}/sitemap-hubs.xml`, lastmod: now },
+  { loc: `${SITE_URL}/sitemap-nouveautes.xml`, lastmod: now },
   // Exhibitor sitemap is served dynamically by the `sitemap-exposants` edge
   // function (proxied at /sitemap-exposants.xml via vercel.json). It is NOT
   // written to public/ — only referenced here so crawlers discover it.
@@ -334,5 +355,6 @@ for (const sy of eligibleSectorYears) console.log(`  - /secteur/${sy.slug}/${sy.
 console.log(`City hubs (>=3 events):                   ${eligibleCities.length}`);
 console.log(`City×year pages (>=${CITY_YEAR_THRESHOLD} future events):       ${eligibleCityYears.length}`);
 for (const cy of eligibleCityYears) console.log(`  - /ville/${cy.slug}/${cy.year}  (${cy.n} future events)`);
+console.log(`Novelty pages (seo_indexable):            ${eligibleNovelties.length}`);
 console.log('=====================\n');
-console.log('[sitemap:build] index + 4 segmented sitemaps written to public/');
+console.log('[sitemap:build] index + 5 segmented sitemaps written to public/');

@@ -620,6 +620,94 @@ function buildExhibitor(profile, events) {
   return { title, description, canonical, headExtra, body, robots };
 }
 
+// Novelty pages (/nouveautes/:slug). Mirrors buildExhibitor: robots READ from
+// seo_indexable (never recomputed) and written HARD into the HTML. Real <img>
+// with alt are emitted in the visible #seo-prerender block so crawlers see
+// them without JS (the React carousel is a progressive enhancement on top).
+function buildNovelty(n) {
+  const slug = n.slug;
+  const exhibitorName = n.exhibitor_display_name || 'Exposant';
+  const eventName = n.event_name || '';
+  const indexable = n.seo_indexable === true;
+  const canonical = `${SITE_ORIGIN}/nouveautes/${slug}`;
+  const robots = indexable ? 'index, follow' : 'noindex, follow';
+
+  const title = truncate(
+    `${n.title} — ${exhibitorName}${eventName ? ` à ${eventName}` : ''} | Lotexpo`,
+    70,
+  );
+
+  // Description: summary → details → reasons (cleaned + truncated).
+  const reasons = [n.reason_1, n.reason_2, n.reason_3].filter(Boolean).join(' ');
+  const descSource = stripHtml(n.summary) || stripHtml(n.details) || stripHtml(reasons)
+    || `Découvrez ${n.title}, nouveauté présentée par ${exhibitorName}${eventName ? ` au salon ${eventName}` : ''} sur Lotexpo.`;
+  const description = truncate(descSource, 160);
+
+  const media = Array.isArray(n.media_urls) ? n.media_urls.filter(Boolean) : [];
+  const ogImage = media[0] || OG_EXHIBITOR_FALLBACK;
+
+  // JSON-LD only for indexable novelties (no structured signals for noindex).
+  let jsonLd = '';
+  if (indexable) {
+    const keywords = [
+      n.type ? String(n.type) : null,
+      ...(Array.isArray(n.audience_tags) ? n.audience_tags.map(String) : []),
+    ].filter(Boolean);
+    const creative = {
+      '@context': 'https://schema.org', '@type': 'CreativeWork',
+      '@id': canonical, name: n.title, url: canonical,
+      mainEntityOfPage: canonical,
+    };
+    if (media[0]) creative.image = media[0];
+    const cleanDesc = stripHtml(n.summary || n.details || reasons);
+    if (cleanDesc) creative.description = truncate(cleanDesc, 500);
+    if (keywords.length > 0) creative.keywords = keywords.join(', ');
+    if (exhibitorName) creative.creator = { '@type': 'Organization', name: exhibitorName };
+    const breadcrumb = {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+        { '@type': 'ListItem', position: 2, name: 'Nouveautés', item: `${SITE_ORIGIN}/nouveautes` },
+        { '@type': 'ListItem', position: 3, name: n.title, item: canonical },
+      ],
+    };
+    jsonLd = `<script type="application/ld+json">${safeJsonLd(creative)}</script>`
+      + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`;
+  }
+
+  const headExtra = commonHead(canonical, title, description, ogImage) + jsonLd;
+
+  const imgAlt = `${n.title} – ${exhibitorName}`;
+  const imagesBlock = media.length > 0
+    ? `<div>${media.map((u) =>
+        `<img src="${escapeHtml(u)}" alt="${escapeHtml(imgAlt)}" loading="lazy" />`).join('')}</div>`
+    : '';
+
+  const descPara = descSource ? `<p>${escapeHtml(truncate(descSource, 300))}</p>` : '';
+  const detailsPara = (stripHtml(n.details) && stripHtml(n.details) !== stripHtml(n.summary))
+    ? `<p>${escapeHtml(truncate(stripHtml(n.details), 500))}</p>` : '';
+
+  const exhibitorLink = n.exhibitor_public_slug
+    ? `<p><a href="/exposants/${encodeURIComponent(n.exhibitor_public_slug)}">Voir la fiche exposant : ${escapeHtml(exhibitorName)}</a></p>`
+    : '';
+  const eventLink = n.event_slug
+    ? `<p><a href="/events/${encodeURIComponent(n.event_slug)}">${escapeHtml(eventName || 'Voir le salon')}${n.event_ville ? ' – ' + escapeHtml(n.event_ville) : ''}</a></p>`
+    : '';
+
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>${escapeHtml(n.title)}</h1>
+    <p>${escapeHtml(exhibitorName)}${eventName ? ` — ${escapeHtml(eventName)}` : ''}</p>
+    ${imagesBlock}
+    ${descPara}
+    ${detailsPara}
+    ${exhibitorLink}
+    ${eventLink}
+    <p><a href="/nouveautes">Toutes les nouveautés des salons</a></p>
+  </div>`;
+
+  return { title, description, canonical, headExtra, body, robots };
+}
+
 // ---------- write helper ----------
 async function writeRoute(routePath, html) {
   const isRoot = routePath === '/' || routePath === '';
@@ -642,6 +730,8 @@ async function main() {
 
   let errors = 0;
   const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0, cityYears: 0, exhibitors: 0, exhibitorsIndexable: 0 };
+  stats.novelties = 0;
+  stats.noveltiesIndexable = 0;
 
   // 2. fetch events
   const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
@@ -946,6 +1036,34 @@ async function main() {
   }
   console.log(`[prerender] exhibitors: ${stats.exhibitors} (${stats.exhibitorsIndexable} indexable, ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
 
+  // 7c. novelty pages (/nouveautes/:slug) — NON-BLOCKING. Unlike the exhibitor
+  // guard (MIN_PROFILES → exit non-zero), a failure or empty fetch here only
+  // logs a warning and lets the build continue (exit 0): an outage on ~42
+  // novelty pages must never take the whole site down.
+  try {
+    const noveltyFields = 'slug,title,type,reason_1,reason_2,reason_3,audience_tags,media_urls,summary,details,seo_indexable,exhibitor_public_slug,exhibitor_display_name,event_slug,event_name,event_ville,updated_at';
+    const novelties = (await sbPaged(`public_novelties?slug=not.is.null&select=${noveltyFields}&order=updated_at.desc`))
+      .filter((n) => n.slug && String(n.slug).trim());
+    console.log(`[prerender] novelties fetched: ${novelties.length}`);
+    if (!Array.isArray(novelties) || novelties.length === 0) {
+      console.warn('[prerender] WARN: 0 novelties fetched — skipping novelty pages (non-blocking, build continues).');
+    } else {
+      for (const n of novelties) {
+        if (!n.slug) continue;
+        try {
+          const built = buildNovelty(n);
+          await writeRoute(`/nouveautes/${n.slug}`, applyToShell(baseTemplate, built));
+          stats.novelties++;
+          if (n.seo_indexable === true) stats.noveltiesIndexable++;
+        } catch (e) { errors++; console.warn('[prerender] novelty failed', n.slug, e.message); }
+      }
+      console.log(`[prerender] novelties: ${stats.novelties} (${stats.noveltiesIndexable} indexable, ${stats.novelties - stats.noveltiesIndexable} noindex)`);
+    }
+  } catch (e) {
+    // Swallowed on purpose: novelties are non-blocking.
+    console.warn('[prerender] WARN: novelty generation errored (non-blocking, build continues):', e.message);
+  }
+
   // 8. home — written LAST so it never pollutes the template
   try {
     const built = buildHome();
@@ -964,6 +1082,7 @@ async function main() {
   console.log(`City hubs:         ${stats.cities}`);
   console.log(`City×year pages:   ${stats.cityYears}`);
   console.log(`Exhibitor pages:   ${stats.exhibitors} (${stats.exhibitorsIndexable} index / ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
+  console.log(`Novelty pages:     ${stats.novelties} (${stats.noveltiesIndexable} index / ${stats.novelties - stats.noveltiesIndexable} noindex)`);
   console.log(`Errors:            ${errors}`);
   console.log(`Duration:          ${dur}s`);
   console.log('=========================\n');
