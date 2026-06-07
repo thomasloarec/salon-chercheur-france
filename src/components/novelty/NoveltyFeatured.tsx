@@ -74,7 +74,7 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
   return (
     <Card className="group flex flex-col overflow-hidden border-border/60 transition-all hover:border-primary/30 hover:shadow-lg">
       <Link
-        to={eventHref}
+        to={noveltyHref}
         aria-label={`Voir ${novelty.title}`}
         className="block"
       >
@@ -99,7 +99,7 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
           )}
         </div>
 
-        <Link to={eventHref} className="block">
+        <Link to={noveltyHref} className="block">
           <h3 className="text-xl font-bold leading-tight transition-colors group-hover:text-primary md:text-2xl">
             {novelty.title}
           </h3>
@@ -128,7 +128,7 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
         </div>
 
         <Link
-          to={eventHref}
+          to={noveltyHref}
           className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground transition-colors hover:text-primary"
         >
           <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -148,7 +148,7 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
 
         <div className="pt-1">
           <Button asChild size="sm" className="gap-1">
-            <Link to={eventHref}>
+            <Link to={noveltyHref}>
               Voir la nouveauté
               <ArrowRight className="h-3 w-3" />
             </Link>
