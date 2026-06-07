@@ -83,6 +83,7 @@ Crawl-delay: 5
 # Sitemaps
 Sitemap: https://lotexpo.com/sitemap.xml
 Sitemap: https://lotexpo.com/sitemap-exposants.xml
+Sitemap: https://lotexpo.com/sitemap-nouveautes.xml
 
 # Host directive
 Host: https://lotexpo.com
