@@ -117,28 +117,54 @@ async function sb(pathQ) {
   }
 }
 
-async function sbPaged(pathQ, pageSize = 1000) {
+// Paged REST fetch (anon key, RLS-honoring).
+// NOTE: we deliberately DO NOT send `Prefer: count=exact`. On heavy views like
+// public_exhibitor_profiles a server-side exact COUNT triggers a statement
+// timeout (Postgres 57014) → HTTP 500. We never read the count header anyway:
+// pagination stops when a page returns fewer rows than `pageSize`.
+// Each page is retried up to 3x with exponential backoff on transient 5xx.
+async function sbPaged(pathQ, pageSize = 500) {
   const all = [];
   let from = 0;
   for (;;) {
     const to = from + pageSize - 1;
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathQ}`, {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          Accept: 'application/json',
-          Range: `${from}-${to}`,
-          'Range-Unit': 'items',
-          Prefer: 'count=exact',
-        },
-      });
-      if (!res.ok) { console.warn('[prerender] paged non-200', res.status); break; }
-      const chunk = await res.json();
-      all.push(...chunk);
-      if (chunk.length < pageSize) break;
-      from += pageSize;
-    } catch (e) { console.warn('[prerender] paged threw', e.message); break; }
+    let chunk = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathQ}`, {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            Accept: 'application/json',
+            Range: `${from}-${to}`,
+            'Range-Unit': 'items',
+          },
+        });
+        if (res.ok) { chunk = await res.json(); break; }
+        // Retry only transient server errors (5xx); client errors are terminal.
+        if (res.status >= 500 && attempt < 3) {
+          const backoff = 500 * 2 ** (attempt - 1);
+          console.warn(`[prerender] paged ${res.status} (attempt ${attempt}/3), retrying in ${backoff}ms`);
+          await new Promise((r) => setTimeout(r, backoff));
+          continue;
+        }
+        console.warn('[prerender] paged non-200', res.status);
+        break;
+      } catch (e) {
+        if (attempt < 3) {
+          const backoff = 500 * 2 ** (attempt - 1);
+          console.warn(`[prerender] paged threw "${e.message}" (attempt ${attempt}/3), retrying in ${backoff}ms`);
+          await new Promise((r) => setTimeout(r, backoff));
+          continue;
+        }
+        console.warn('[prerender] paged threw', e.message);
+        break;
+      }
+    }
+    if (chunk === null) break; // page failed after retries → stop (guard will catch low volume)
+    all.push(...chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
   }
   return all;
 }
