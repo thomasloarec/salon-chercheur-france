@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
         id, 
         is_premium, 
         created_by,
-        exhibitors!inner (
+        exhibitors!novelties_exhibitor_id_fkey (
           owner_user_id
         )
       `)
