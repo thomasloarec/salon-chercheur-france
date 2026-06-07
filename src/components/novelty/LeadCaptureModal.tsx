@@ -186,13 +186,13 @@ export default function LeadCaptureModal({
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">Lien unique par salon</p>
+                <p className="font-medium">Leads illimités visibles avant le salon</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">QR à partager à l'équipe</p>
+                <p className="font-medium">Coordonnées complètes</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
