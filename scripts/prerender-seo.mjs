@@ -1082,6 +1082,7 @@ async function main() {
   console.log(`City hubs:         ${stats.cities}`);
   console.log(`City×year pages:   ${stats.cityYears}`);
   console.log(`Exhibitor pages:   ${stats.exhibitors} (${stats.exhibitorsIndexable} index / ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
+  console.log(`Novelty pages:     ${stats.novelties} (${stats.noveltiesIndexable} index / ${stats.novelties - stats.noveltiesIndexable} noindex)`);
   console.log(`Errors:            ${errors}`);
   console.log(`Duration:          ${dur}s`);
   console.log('=========================\n');
