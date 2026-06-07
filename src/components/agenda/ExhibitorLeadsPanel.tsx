@@ -23,7 +23,7 @@ export default function ExhibitorLeadsPanel({ exhibitors }: ExhibitorLeadsPanelP
 
   const exportToCsv = (leads: any[], type: 'brochure' | 'meeting') => {
     const filteredLeads = leads.filter(lead => 
-      type === 'brochure' ? lead.lead_type === 'brochure_download' : lead.lead_type === 'meeting_request'
+      type === 'brochure' ? lead.lead_type === 'resource_download' : lead.lead_type === 'meeting_request'
     );
 
     const headers = ['Nom', 'Prénom', 'Email', 'Société', 'Rôle', 'Téléphone', 'Nouveauté', 'Date'];
@@ -160,7 +160,7 @@ export default function ExhibitorLeadsPanel({ exhibitors }: ExhibitorLeadsPanelP
                   onClick={() => exportToCsv(exhibitorData.leads, 'brochure')}
                   variant="outline" 
                   size="sm"
-                  disabled={exhibitorData.leads.filter(l => l.lead_type === 'brochure_download').length === 0}
+                  disabled={exhibitorData.leads.filter(l => l.lead_type === 'resource_download').length === 0}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Export CSV
@@ -168,7 +168,7 @@ export default function ExhibitorLeadsPanel({ exhibitors }: ExhibitorLeadsPanelP
               </div>
             </CardHeader>
             <CardContent>
-              {exhibitorData.leads.filter(lead => lead.lead_type === 'brochure_download').length > 0 ? (
+              {exhibitorData.leads.filter(lead => lead.lead_type === 'resource_download').length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -180,7 +180,7 @@ export default function ExhibitorLeadsPanel({ exhibitors }: ExhibitorLeadsPanelP
                   </TableHeader>
                   <TableBody>
                     {exhibitorData.leads
-                      .filter(lead => lead.lead_type === 'brochure_download')
+                      .filter(lead => lead.lead_type === 'resource_download')
                       .map((lead) => (
                         <TableRow key={lead.id}>
                           <TableCell>
