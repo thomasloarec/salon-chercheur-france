@@ -136,22 +136,14 @@ export default function PremiumUpgradeDialog({
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium">Capture de leads pendant le salon (bêta)</p>
-                <p className="text-sm text-muted-foreground">
-                  Lien unique et QR code pour votre équipe sur le stand
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-              <div>
                 <p className="font-medium">Coordonnées complètes</p>
                 <p className="text-sm text-muted-foreground">
                   Email, téléphone, entreprise et fonction de chaque lead
                 </p>
               </div>
             </div>
+            
+            
             
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />

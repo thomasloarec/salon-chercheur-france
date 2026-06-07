@@ -63,9 +63,9 @@ export default function LeadCaptureModal({
 
       toast({
         title: 'Demande enregistrée',
-        description: topic === 'lead_capture_beta' 
-          ? 'Activation progressive — vous serez notifié(e) quand c\'est prêt.' 
-          : 'Nous vous préviendrons dès que la fonctionnalité sera disponible.',
+        description: topic === 'lead_capture_beta'
+          ? 'Un membre de l\'équipe vous recontactera sous 24h pour finaliser votre accès.'
+          : 'Un membre de l\'équipe vous recontactera sous 24h pour vous présenter l\'offre.',
       });
 
       onRequestSuccess();
@@ -103,14 +103,14 @@ export default function LeadCaptureModal({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
-              <DialogTitle>Capture de leads pendant le salon</DialogTitle>
+              <DialogTitle>Accès illimité à vos leads avant le salon</DialogTitle>
               <Badge variant="secondary" className="text-xs">
                 <Sparkles className="h-3 w-3 mr-1" />
                 Bêta
               </Badge>
             </div>
             <DialogDescription className="text-base">
-              Créez un lien et un QR d'équipe. Vos commerciaux saisissent en 10 secondes, tout arrive ici.
+              Obtenez les coordonnées complètes des visiteurs intéressés par votre nouveauté avant le salon.
             </DialogDescription>
           </DialogHeader>
 
@@ -118,22 +118,22 @@ export default function LeadCaptureModal({
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">Lien unique par salon pour votre entreprise</p>
-                <p className="text-sm text-muted-foreground">Facile à partager par email ou SMS</p>
+                <p className="font-medium">Leads illimités visibles avant le salon</p>
+                <p className="text-sm text-muted-foreground">Accédez à tous les contacts intéressés par votre nouveauté</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">QR à imprimer/partager à l'équipe</p>
-                <p className="text-sm text-muted-foreground">Sur vos badges, supports ou écrans</p>
+                <p className="font-medium">Coordonnées complètes</p>
+                <p className="text-sm text-muted-foreground">Email, téléphone, entreprise et fonction de chaque lead</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">Leads tagués "Sur salon" + export CSV</p>
-                <p className="text-sm text-muted-foreground">Distinction claire avec les leads pré-événement</p>
+                <p className="font-medium">Export CSV</p>
+                <p className="text-sm text-muted-foreground">Téléchargez vos leads pour les importer dans votre CRM</p>
               </div>
             </div>
           </div>
@@ -176,9 +176,9 @@ export default function LeadCaptureModal({
                 Inclus avec Premium (99€ HT)
               </Badge>
             </div>
-            <DialogTitle>Capture de leads pendant le salon</DialogTitle>
+            <DialogTitle>Accès illimité à vos leads avant le salon</DialogTitle>
             <DialogDescription className="text-base">
-              Centralisez vos leads avant et pendant le salon sur LotExpo. Un seul outil, moins de perte, plus de ROI.
+              Obtenez les coordonnées complètes des visiteurs intéressés par votre nouveauté et exportez vos leads.
             </DialogDescription>
           </DialogHeader>
 
@@ -186,13 +186,13 @@ export default function LeadCaptureModal({
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">Lien unique par salon</p>
+                <p className="font-medium">Leads illimités visibles avant le salon</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">QR à partager à l'équipe</p>
+                <p className="font-medium">Coordonnées complètes</p>
               </div>
             </div>
             <div className="flex items-start gap-3">

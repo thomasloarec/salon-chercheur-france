@@ -46,7 +46,7 @@ export default function LeadCaptureCard({
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-semibold text-base">
-                  Capturer des leads avant et pendant le salon (bêta)
+                  Accédez à tous vos leads avant le salon (bêta)
                 </h4>
                 <Badge variant="secondary" className="text-xs">
                   <Sparkles className="h-3 w-3 mr-1" />
@@ -55,11 +55,7 @@ export default function LeadCaptureCard({
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Débloquez les leads floutés avant le salon, puis capturez-en directement sur votre stand via un lien/QR unique partagé avec votre équipe.
-              </p>
-
-              <p className="text-xs text-muted-foreground italic">
-                Les leads seront automatiquement tagués pour distinguer ceux capturés <strong>avant</strong> et <strong>pendant</strong> le salon.
+                Débloquez les leads floutés et obtenez les coordonnées complètes des visiteurs intéressés par votre nouveauté avant le salon.
               </p>
 
               {/* CTA */}
