@@ -19,6 +19,7 @@ export interface NoveltyWatchRow {
   id: string;
   title: string;
   type: string;
+  slug: string | null;
   reason_1: string | null;
   media_urls: string[];
   doc_url: string | null;
@@ -84,7 +85,7 @@ async function fetchNoveltiesWatch({ filters }: FetchOpts): Promise<NoveltyWatch
   let q = supabase
     .from("novelties")
     .select(`
-      id, title, type, reason_1, media_urls, doc_url, created_at, event_id, exhibitor_id,
+      id, title, type, slug, reason_1, media_urls, doc_url, created_at, event_id, exhibitor_id,
       events!inner (
         id, slug, nom_event, date_debut, date_fin, type_event, secteur, visible, ville, code_postal
       ),

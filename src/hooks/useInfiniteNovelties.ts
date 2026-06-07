@@ -8,6 +8,7 @@ export interface Novelty {
   exhibitor_id: string;
   title: string;
   type: string;
+  slug?: string | null;
   reason_1?: string;
   reason_2?: string;
   reason_3?: string;
@@ -86,6 +87,7 @@ export const useInfiniteNovelties = (params: UseInfiniteNoveltiesParams = {}) =>
           exhibitor_id,
           title,
           type,
+          slug,
           reason_1,
           reason_2,
           reason_3,

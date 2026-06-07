@@ -45,6 +45,7 @@ import LegacyHubspotApiCallback from '@/pages/LegacyHubspotApiCallback';
 import ScrapingTest from '@/pages/ScrapingTest';
 import Agenda from '@/pages/Agenda';
 import Nouveautes from '@/pages/Nouveautes';
+import NoveltyDetail from '@/pages/NoveltyDetail';
 import Notifications from '@/pages/Notifications';
 import Exposants from '@/pages/Exposants';
 import ExhibitorProfile from '@/pages/ExhibitorProfile';
@@ -107,6 +108,7 @@ function App() {
               <Route path="/comment-ca-marche" element={<HowItWorks />} />
               <Route path="/events/:slug" element={<EventPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
+            <Route path="/nouveautes/:slug" element={<NoveltyDetail />} />
             <Route path="/exposants" element={<Exposants />} />
             <Route path="/exposants/:slug" element={<ExhibitorProfile />} />
             <Route path="/premium" element={<Exposants />} />
