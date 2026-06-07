@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Lock, Users, Download } from 'lucide-react';
+import { Lock, Users, Download, AlertCircle } from 'lucide-react';
 import LeadCard from './LeadCard';
 import PremiumUpgradeDialog from './PremiumUpgradeDialog';
 import { usePremiumEntitlement } from '@/hooks/usePremiumEntitlement';
@@ -36,7 +36,7 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
   const isPremium = entitlement?.isPremium ?? false;
   const canExportCSV = entitlement?.csvExport ?? false;
   
-  const { data: leadsData, isLoading } = useQuery({
+  const { data: leadsData, isLoading, isError } = useQuery({
     queryKey: ['novelty-leads', noveltyId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('novelty-leads', {
@@ -100,6 +100,16 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
     return (
       <div className="flex items-center justify-center py-4">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // Distinct error state: a failed request must not look like an empty list
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center gap-2 text-sm text-destructive bg-destructive/10 rounded-md py-3 px-4">
+        <AlertCircle className="h-4 w-4 shrink-0" />
+        <span>Impossible de charger les leads pour le moment, réessayez.</span>
       </div>
     );
   }
