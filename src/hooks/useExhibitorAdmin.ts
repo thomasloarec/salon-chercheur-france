@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export interface ExhibitorLead {
   id: string;
-  lead_type: 'brochure_download' | 'meeting_request';
+  lead_type: 'resource_download' | 'meeting_request';
   first_name: string;
   last_name: string;
   email: string;
@@ -85,7 +85,7 @@ export function useExhibitorAdmin(exhibitorId?: string) {
 
       const stats: ExhibitorStats = {
         total_likes: novelties.reduce((sum, n) => sum + (n.novelty_likes?.length || 0), 0),
-        total_downloads: leads.filter(l => l.lead_type === 'brochure_download').length,
+        total_downloads: leads.filter(l => l.lead_type === 'resource_download').length,
         total_meetings: leads.filter(l => l.lead_type === 'meeting_request').length,
         novelties_count: novelties.length,
       };

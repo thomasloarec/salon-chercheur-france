@@ -124,11 +124,24 @@ serve(async (req) => {
       );
     }
 
+    // Resolve exhibitor_id / event_id from the novelty so the SELECT policy
+    // is_team_member(exhibitor_id) can match the whole exhibitor team — not
+    // only the novelty creator. Never block lead creation if they are absent.
+    if (!novelty.exhibitor_id || !novelty.event_id) {
+      console.warn('[lead_attribution_missing]', {
+        novelty_id: data.novelty_id,
+        exhibitor_id: novelty.exhibitor_id ?? null,
+        event_id: novelty.event_id ?? null,
+      });
+    }
+
     // Create lead with mapped type
     const { data: lead, error: leadError } = await admin
       .from('leads')
       .insert([{
         novelty_id: data.novelty_id,
+        exhibitor_id: novelty.exhibitor_id ?? null,
+        event_id: novelty.event_id ?? null,
         lead_type: dbLeadType,
         first_name: data.first_name,
         last_name: data.last_name,
@@ -174,8 +187,15 @@ serve(async (req) => {
       response.download_url = novelty.doc_url;
     }
 
-    // Fire notifications + email — ONLY on real creation (not duplicate) and ONLY for brochure
-    if (data.lead_type === 'brochure_download' && novelty.exhibitor_id) {
+    // Fire notifications + email — ONLY on real creation (not duplicate).
+    // Generalized to BOTH lead types: brochure download AND meeting request.
+    // Same recipients (active exhibitor team members), same Resend service,
+    // same "no active member → log, not error" behavior. Only the signal
+    // (notification type + email subject/body) differs per lead type.
+    const isMeeting = data.lead_type === 'meeting_request';
+    const notifType = isMeeting ? 'new_lead_rdv' : 'new_lead_brochure';
+    const logTag = isMeeting ? 'rdv' : 'brochure';
+    if (novelty.exhibitor_id) {
       try {
         const { data: members } = await admin
           .from('exhibitor_team_members')
@@ -186,7 +206,7 @@ serve(async (req) => {
         const recipientIds = (members ?? []).map((m: any) => m.user_id).filter(Boolean);
 
         if (recipientIds.length === 0) {
-          console.warn('[brochure_notification_sent] no active team members', {
+          console.warn(`[${logTag}_notification_sent] no active team members`, {
             novelty_id: data.novelty_id, exhibitor_id: novelty.exhibitor_id,
           });
         } else {
@@ -202,7 +222,7 @@ serve(async (req) => {
               const { data: u } = await admin.auth.admin.getUserById(uid);
               if (u?.user?.email) recipientEmails.push({ user_id: uid, email: u.user.email });
             } catch (e) {
-              console.error('[brochure_notification_sent] getUserById failed', { recipient_user_id: uid, error: String(e) });
+              console.error(`[${logTag}_notification_sent] getUserById failed`, { recipient_user_id: uid, error: String(e) });
             }
           }
 
@@ -219,7 +239,7 @@ serve(async (req) => {
                   Authorization: `Bearer ${serviceKey}`,
                 },
                 body: JSON.stringify({
-                  type: 'new_lead_brochure',
+                  type: notifType,
                   user_id: uid,
                   novelty_id: data.novelty_id,
                   exhibitor_id: novelty.exhibitor_id,
@@ -231,36 +251,47 @@ serve(async (req) => {
                 }),
               });
               if (!r.ok) {
-                console.error('[brochure_notification_sent] create failed', { recipient_user_id: uid, novelty_id: data.novelty_id, lead_id: lead.id, status: r.status });
+                console.error(`[${logTag}_notification_sent] create failed`, { recipient_user_id: uid, novelty_id: data.novelty_id, lead_id: lead.id, status: r.status });
               } else {
-                console.log('[brochure_notification_sent]', { recipient_user_id: uid, novelty_id: data.novelty_id, lead_id: lead.id, actor_email: data.email });
+                console.log(`[${logTag}_notification_sent]`, { recipient_user_id: uid, novelty_id: data.novelty_id, lead_id: lead.id, actor_email: data.email });
               }
             } catch (e) {
-              console.error('[brochure_notification_sent] exception', { recipient_user_id: uid, novelty_id: data.novelty_id, error: String(e) });
+              console.error(`[${logTag}_notification_sent] exception`, { recipient_user_id: uid, novelty_id: data.novelty_id, error: String(e) });
             }
           }));
 
-          // 2) Resend email — only for brochure
+          // 2) Resend email — sent for both lead types
           const resendKey = Deno.env.get('RESEND_API_KEY');
           const lovableKey = Deno.env.get('LOVABLE_API_KEY');
           if (recipientEmails.length === 0) {
-            console.warn('[brochure_email_sent] no recipient emails resolved', { novelty_id: data.novelty_id, lead_id: lead.id });
+            console.warn(`[${logTag}_email_sent] no recipient emails resolved`, { novelty_id: data.novelty_id, lead_id: lead.id });
           } else if (!resendKey || !lovableKey) {
-            console.warn('[brochure_email_sent] missing RESEND_API_KEY or LOVABLE_API_KEY — email skipped', { novelty_id: data.novelty_id, lead_id: lead.id });
+            console.warn(`[${logTag}_email_sent] missing RESEND_API_KEY or LOVABLE_API_KEY — email skipped`, { novelty_id: data.novelty_id, lead_id: lead.id });
           } else {
             const eventName = event?.nom_event ?? '';
             const noveltyTitle = novelty.title ?? '';
             const leadCompany = data.company ? `<p><strong>Société :</strong> ${escapeHtml(data.company)}</p>` : '';
             const ctaUrl = 'https://lotexpo.com/agenda?tab=exposant&section=novelties&id=' + data.novelty_id + '#leads';
+            const intro = isMeeting
+              ? `Un visiteur de Lotexpo souhaite prendre rendez-vous au sujet de votre nouveauté${noveltyTitle ? ` <strong>${escapeHtml(noveltyTitle)}</strong>` : ''}${eventName ? ` (événement <strong>${escapeHtml(eventName)}</strong>)` : ''}.`
+              : `Un visiteur de Lotexpo vient de télécharger la brochure de votre nouveauté${noveltyTitle ? ` <strong>${escapeHtml(noveltyTitle)}</strong>` : ''}${eventName ? ` (événement <strong>${escapeHtml(eventName)}</strong>)` : ''}.`;
+            const heading = isMeeting ? '📅 Nouvelle demande de rendez-vous' : '🎯 Nouveau lead sur votre nouveauté';
+            const subject = isMeeting
+              ? 'Nouveau lead : demande de rendez-vous sur Lotexpo'
+              : 'Nouveau lead : téléchargement de brochure sur Lotexpo';
+            const leadNotes = isMeeting && data.notes
+              ? `<p style="margin:6px 0 0"><strong>Message :</strong> ${escapeHtml(data.notes)}</p>`
+              : '';
             const html = `
               <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:auto;color:#111">
-                <h2 style="color:#111">🎯 Nouveau lead sur votre nouveauté</h2>
+                <h2 style="color:#111">${heading}</h2>
                 <p>Bonjour,</p>
-                <p>Un visiteur de Lotexpo vient de télécharger la brochure de votre nouveauté${noveltyTitle ? ` <strong>${escapeHtml(noveltyTitle)}</strong>` : ''}${eventName ? ` (événement <strong>${escapeHtml(eventName)}</strong>)` : ''}.</p>
+                <p>${intro}</p>
                 <div style="background:#f6f6f8;border-radius:8px;padding:16px;margin:16px 0">
                   <p style="margin:0 0 6px"><strong>Nom :</strong> ${escapeHtml(actorName)}</p>
                   <p style="margin:0 0 6px"><strong>Email :</strong> ${escapeHtml(data.email)}</p>
                   ${leadCompany}
+                  ${leadNotes}
                 </div>
                 <p>
                   <a href="${ctaUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px">Consulter le lead sur Lotexpo</a>
@@ -278,26 +309,26 @@ serve(async (req) => {
                 body: JSON.stringify({
                   from: 'Lotexpo <admin@lotexpo.com>',
                   to: recipientEmails.map(r => r.email),
-                  subject: 'Nouveau lead : téléchargement de brochure sur Lotexpo',
+                  subject,
                   html,
                 }),
               });
               if (!resp.ok) {
                 const t = await resp.text().catch(() => '');
-                console.error('[brochure_email_sent] resend failed', { novelty_id: data.novelty_id, lead_id: lead.id, status: resp.status, body: t.slice(0, 300) });
+                console.error(`[${logTag}_email_sent] resend failed`, { novelty_id: data.novelty_id, lead_id: lead.id, status: resp.status, body: t.slice(0, 300) });
               } else {
-                console.log('[brochure_email_sent]', { novelty_id: data.novelty_id, lead_id: lead.id, to: recipientEmails.map(r => r.email), actor_email: data.email });
+                console.log(`[${logTag}_email_sent]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: recipientEmails.map(r => r.email), actor_email: data.email });
               }
             } catch (e) {
-              console.error('[brochure_email_sent] exception', { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
+              console.error(`[${logTag}_email_sent] exception`, { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
             }
           }
         }
       } catch (e) {
-        console.error('[brochure_notification_sent] outer exception', { novelty_id: data.novelty_id, error: String(e) });
+        console.error(`[${logTag}_notification_sent] outer exception`, { novelty_id: data.novelty_id, error: String(e) });
       }
-    } else if (data.lead_type === 'brochure_download') {
-      console.warn('[brochure_notification_sent] novelty has no exhibitor_id, skipping notifications', { novelty_id: data.novelty_id });
+    } else {
+      console.warn(`[${logTag}_notification_sent] novelty has no exhibitor_id, skipping notifications`, { novelty_id: data.novelty_id });
     }
 
     return new Response(
