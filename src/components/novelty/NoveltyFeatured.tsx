@@ -54,7 +54,9 @@ function FeaturedMain({ novelty }: { novelty: NoveltyWatchRow }) {
 
   const images = (novelty.media_urls ?? []).filter(Boolean).slice(0, 3);
   const logo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website);
-  const eventHref = `/events/${event.slug}?novelty=${novelty.id}`;
+  const noveltyHref = novelty.slug
+    ? `/nouveautes/${novelty.slug}`
+    : `/events/${event.slug}?novelty=${novelty.id}`;
 
   const daysUntil = event.date_debut
     ? differenceInDays(new Date(event.date_debut), new Date())
