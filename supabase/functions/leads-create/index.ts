@@ -124,11 +124,24 @@ serve(async (req) => {
       );
     }
 
+    // Resolve exhibitor_id / event_id from the novelty so the SELECT policy
+    // is_team_member(exhibitor_id) can match the whole exhibitor team — not
+    // only the novelty creator. Never block lead creation if they are absent.
+    if (!novelty.exhibitor_id || !novelty.event_id) {
+      console.warn('[lead_attribution_missing]', {
+        novelty_id: data.novelty_id,
+        exhibitor_id: novelty.exhibitor_id ?? null,
+        event_id: novelty.event_id ?? null,
+      });
+    }
+
     // Create lead with mapped type
     const { data: lead, error: leadError } = await admin
       .from('leads')
       .insert([{
         novelty_id: data.novelty_id,
+        exhibitor_id: novelty.exhibitor_id ?? null,
+        event_id: novelty.event_id ?? null,
         lead_type: dbLeadType,
         first_name: data.first_name,
         last_name: data.last_name,
