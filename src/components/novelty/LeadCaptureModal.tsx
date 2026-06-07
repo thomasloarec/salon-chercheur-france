@@ -176,9 +176,9 @@ export default function LeadCaptureModal({
                 Inclus avec Premium (99€ HT)
               </Badge>
             </div>
-            <DialogTitle>Capture de leads pendant le salon</DialogTitle>
+            <DialogTitle>Accès illimité à vos leads avant le salon</DialogTitle>
             <DialogDescription className="text-base">
-              Centralisez vos leads avant et pendant le salon sur LotExpo. Un seul outil, moins de perte, plus de ROI.
+              Obtenez les coordonnées complètes des visiteurs intéressés par votre nouveauté et exportez vos leads.
             </DialogDescription>
           </DialogHeader>
 
