@@ -36,7 +36,9 @@ export default function NoveltyMiniCard({
 
   const image = novelty.media_urls?.[0];
   const logo = getExhibitorLogoUrl(exhibitor.logo_url, exhibitor.website);
-  const eventHref = `/events/${event.slug}?novelty=${novelty.id}`;
+  const noveltyHref = novelty.slug
+    ? `/nouveautes/${novelty.slug}`
+    : `/events/${event.slug}?novelty=${novelty.id}`;
 
   const daysUntil = event.date_debut
     ? differenceInDays(new Date(event.date_debut), new Date())
