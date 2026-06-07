@@ -620,6 +620,94 @@ function buildExhibitor(profile, events) {
   return { title, description, canonical, headExtra, body, robots };
 }
 
+// Novelty pages (/nouveautes/:slug). Mirrors buildExhibitor: robots READ from
+// seo_indexable (never recomputed) and written HARD into the HTML. Real <img>
+// with alt are emitted in the visible #seo-prerender block so crawlers see
+// them without JS (the React carousel is a progressive enhancement on top).
+function buildNovelty(n) {
+  const slug = n.slug;
+  const exhibitorName = n.exhibitor_display_name || 'Exposant';
+  const eventName = n.event_name || '';
+  const indexable = n.seo_indexable === true;
+  const canonical = `${SITE_ORIGIN}/nouveautes/${slug}`;
+  const robots = indexable ? 'index, follow' : 'noindex, follow';
+
+  const title = truncate(
+    `${n.title} — ${exhibitorName}${eventName ? ` à ${eventName}` : ''} | Lotexpo`,
+    70,
+  );
+
+  // Description: summary → details → reasons (cleaned + truncated).
+  const reasons = [n.reason_1, n.reason_2, n.reason_3].filter(Boolean).join(' ');
+  const descSource = stripHtml(n.summary) || stripHtml(n.details) || stripHtml(reasons)
+    || `Découvrez ${n.title}, nouveauté présentée par ${exhibitorName}${eventName ? ` au salon ${eventName}` : ''} sur Lotexpo.`;
+  const description = truncate(descSource, 160);
+
+  const media = Array.isArray(n.media_urls) ? n.media_urls.filter(Boolean) : [];
+  const ogImage = media[0] || OG_EXHIBITOR_FALLBACK;
+
+  // JSON-LD only for indexable novelties (no structured signals for noindex).
+  let jsonLd = '';
+  if (indexable) {
+    const keywords = [
+      n.type ? String(n.type) : null,
+      ...(Array.isArray(n.audience_tags) ? n.audience_tags.map(String) : []),
+    ].filter(Boolean);
+    const creative = {
+      '@context': 'https://schema.org', '@type': 'CreativeWork',
+      '@id': canonical, name: n.title, url: canonical,
+      mainEntityOfPage: canonical,
+    };
+    if (media[0]) creative.image = media[0];
+    const cleanDesc = stripHtml(n.summary || n.details || reasons);
+    if (cleanDesc) creative.description = truncate(cleanDesc, 500);
+    if (keywords.length > 0) creative.keywords = keywords.join(', ');
+    if (exhibitorName) creative.creator = { '@type': 'Organization', name: exhibitorName };
+    const breadcrumb = {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+        { '@type': 'ListItem', position: 2, name: 'Nouveautés', item: `${SITE_ORIGIN}/nouveautes` },
+        { '@type': 'ListItem', position: 3, name: n.title, item: canonical },
+      ],
+    };
+    jsonLd = `<script type="application/ld+json">${safeJsonLd(creative)}</script>`
+      + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`;
+  }
+
+  const headExtra = commonHead(canonical, title, description, ogImage) + jsonLd;
+
+  const imgAlt = `${n.title} – ${exhibitorName}`;
+  const imagesBlock = media.length > 0
+    ? `<div>${media.map((u) =>
+        `<img src="${escapeHtml(u)}" alt="${escapeHtml(imgAlt)}" loading="lazy" />`).join('')}</div>`
+    : '';
+
+  const descPara = descSource ? `<p>${escapeHtml(truncate(descSource, 300))}</p>` : '';
+  const detailsPara = (stripHtml(n.details) && stripHtml(n.details) !== stripHtml(n.summary))
+    ? `<p>${escapeHtml(truncate(stripHtml(n.details), 500))}</p>` : '';
+
+  const exhibitorLink = n.exhibitor_public_slug
+    ? `<p><a href="/exposants/${encodeURIComponent(n.exhibitor_public_slug)}">Voir la fiche exposant : ${escapeHtml(exhibitorName)}</a></p>`
+    : '';
+  const eventLink = n.event_slug
+    ? `<p><a href="/events/${encodeURIComponent(n.event_slug)}">${escapeHtml(eventName || 'Voir le salon')}${n.event_ville ? ' – ' + escapeHtml(n.event_ville) : ''}</a></p>`
+    : '';
+
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>${escapeHtml(n.title)}</h1>
+    <p>${escapeHtml(exhibitorName)}${eventName ? ` — ${escapeHtml(eventName)}` : ''}</p>
+    ${imagesBlock}
+    ${descPara}
+    ${detailsPara}
+    ${exhibitorLink}
+    ${eventLink}
+    <p><a href="/nouveautes">Toutes les nouveautés des salons</a></p>
+  </div>`;
+
+  return { title, description, canonical, headExtra, body, robots };
+}
+
 // ---------- write helper ----------
 async function writeRoute(routePath, html) {
   const isRoot = routePath === '/' || routePath === '';
