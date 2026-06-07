@@ -209,6 +209,104 @@ serve(async (req) => {
           console.warn(`[${logTag}_notification_sent] no active team members`, {
             novelty_id: data.novelty_id, exhibitor_id: novelty.exhibitor_id,
           });
+
+          // ORPHAN FALLBACK — the exhibitor profile is NOT claimed (no active
+          // team member to notify). Send a single admin email so the lead is
+          // not lost. Same Resend mechanism / sender as the exhibitor path.
+          // NEVER let an email failure break lead creation.
+          try {
+            const resendKey = Deno.env.get('RESEND_API_KEY');
+            const lovableKey = Deno.env.get('LOVABLE_API_KEY');
+            if (!resendKey || !lovableKey) {
+              console.warn(`[${logTag}_admin_fallback_email] missing RESEND_API_KEY or LOVABLE_API_KEY — admin email skipped`, {
+                novelty_id: data.novelty_id, lead_id: lead.id,
+              });
+            } else {
+              const adminEmail = Deno.env.get('ADMIN_LEADS_EMAIL') ?? 'admin@lotexpo.com';
+
+              // Resolve event name (best-effort)
+              const { data: event } = novelty.event_id
+                ? await admin.from('events').select('nom_event, slug').eq('id', novelty.event_id).maybeSingle()
+                : { data: null } as any;
+
+              // Resolve exhibitor display name (best-effort).
+              // Cascade: name_final -> exhibitor_name -> legacy_name.
+              let exhibitorName = '';
+              try {
+                const { data: exh } = await admin
+                  .from('exhibitors')
+                  .select('name_final, exhibitor_name, legacy_name')
+                  .eq('id', novelty.exhibitor_id)
+                  .maybeSingle();
+                exhibitorName = (exh?.name_final || exh?.exhibitor_name || exh?.legacy_name || '').trim();
+              } catch (e) {
+                console.error(`[${logTag}_admin_fallback_email] exhibitor lookup failed`, { exhibitor_id: novelty.exhibitor_id, error: String(e) });
+              }
+
+              const actorName = `${data.first_name} ${data.last_name}`.trim();
+              const eventName = event?.nom_event ?? '';
+              const noveltyTitle = novelty.title ?? '';
+              const leadTypeLabel = isMeeting ? 'Demande de rendez-vous' : 'Téléchargement brochure';
+              const subject = isMeeting
+                ? '[Lead orphelin] Demande de rendez-vous — fiche non revendiquée'
+                : '[Lead orphelin] Téléchargement de brochure — fiche non revendiquée';
+
+              const rowCompany = data.company ? `<p style="margin:0 0 6px"><strong>Société :</strong> ${escapeHtml(data.company)}</p>` : '';
+              const rowPhone = data.phone ? `<p style="margin:0 0 6px"><strong>Téléphone :</strong> ${escapeHtml(data.phone)}</p>` : '';
+              const rowRole = data.role ? `<p style="margin:0 0 6px"><strong>Fonction :</strong> ${escapeHtml(data.role)}</p>` : '';
+              const rowNotes = data.notes ? `<p style="margin:0 0 6px"><strong>Message :</strong> ${escapeHtml(data.notes)}</p>` : '';
+
+              const html = `
+                <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:auto;color:#111">
+                  <h2 style="color:#111">🛟 Lead orphelin — ${escapeHtml(leadTypeLabel)}</h2>
+                  <p>Un nouveau lead a été généré sur Lotexpo, mais la fiche exposant concernée
+                  <strong>n'est pas encore revendiquée</strong> : aucun membre d'équipe actif n'a été prévenu.
+                  Ce message admin garantit que le lead n'est pas perdu.</p>
+                  <div style="background:#f6f6f8;border-radius:8px;padding:16px;margin:16px 0">
+                    <p style="margin:0 0 6px"><strong>Type de lead :</strong> ${escapeHtml(leadTypeLabel)}</p>
+                    <p style="margin:0 0 6px"><strong>Nouveauté :</strong> ${escapeHtml(noveltyTitle)}</p>
+                    <p style="margin:0 0 6px"><strong>Exposant :</strong> ${escapeHtml(exhibitorName || '(nom indisponible)')}</p>
+                    <p style="margin:0 0 6px"><strong>Salon :</strong> ${escapeHtml(eventName || '(non renseigné)')}</p>
+                  </div>
+                  <div style="background:#f6f6f8;border-radius:8px;padding:16px;margin:16px 0">
+                    <p style="margin:0 0 6px"><strong>Contact :</strong> ${escapeHtml(actorName)}</p>
+                    <p style="margin:0 0 6px"><strong>Email :</strong> ${escapeHtml(data.email)}</p>
+                    ${rowCompany}
+                    ${rowRole}
+                    ${rowPhone}
+                    ${rowNotes}
+                  </div>
+                  <p style="font-size:12px;color:#666;margin-top:24px">Email automatique : fiche exposant non revendiquée, aucun destinataire d'équipe disponible.</p>
+                </div>`;
+
+              try {
+                const resp = await fetch('https://connector-gateway.lovable.dev/resend/emails', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${lovableKey}`,
+                    'X-Connection-Api-Key': resendKey,
+                  },
+                  body: JSON.stringify({
+                    from: 'Lotexpo <admin@lotexpo.com>',
+                    to: [adminEmail],
+                    subject,
+                    html,
+                  }),
+                });
+                if (!resp.ok) {
+                  const t = await resp.text().catch(() => '');
+                  console.error(`[${logTag}_admin_fallback_email] resend failed`, { novelty_id: data.novelty_id, lead_id: lead.id, status: resp.status, body: t.slice(0, 300) });
+                } else {
+                  console.log(`[${logTag}_admin_fallback_email]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: adminEmail, actor_email: data.email });
+                }
+              } catch (e) {
+                console.error(`[${logTag}_admin_fallback_email] exception`, { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
+              }
+            }
+          } catch (e) {
+            console.error(`[${logTag}_admin_fallback_email] outer exception`, { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
+          }
         } else {
           // Resolve event name (best-effort)
           const { data: event } = novelty.event_id
