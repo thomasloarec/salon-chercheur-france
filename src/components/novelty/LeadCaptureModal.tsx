@@ -63,9 +63,9 @@ export default function LeadCaptureModal({
 
       toast({
         title: 'Demande enregistrée',
-        description: topic === 'lead_capture_beta' 
-          ? 'Activation progressive — vous serez notifié(e) quand c\'est prêt.' 
-          : 'Nous vous préviendrons dès que la fonctionnalité sera disponible.',
+        description: topic === 'lead_capture_beta'
+          ? 'Un membre de l\'équipe vous recontactera sous 24h pour finaliser votre accès.'
+          : 'Un membre de l\'équipe vous recontactera sous 24h pour vous présenter l\'offre.',
       });
 
       onRequestSuccess();
