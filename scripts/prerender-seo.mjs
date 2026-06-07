@@ -730,6 +730,8 @@ async function main() {
 
   let errors = 0;
   const stats = { events: 0, eventsWithExh: 0, blog: 0, sectors: 0, sectorYears: 0, cities: 0, cityYears: 0, exhibitors: 0, exhibitorsIndexable: 0 };
+  stats.novelties = 0;
+  stats.noveltiesIndexable = 0;
 
   // 2. fetch events
   const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
