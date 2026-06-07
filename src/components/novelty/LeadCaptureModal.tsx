@@ -118,22 +118,22 @@ export default function LeadCaptureModal({
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">Lien unique par salon pour votre entreprise</p>
-                <p className="text-sm text-muted-foreground">Facile à partager par email ou SMS</p>
+                <p className="font-medium">Leads illimités visibles avant le salon</p>
+                <p className="text-sm text-muted-foreground">Accédez à tous les contacts intéressés par votre nouveauté</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">QR à imprimer/partager à l'équipe</p>
-                <p className="text-sm text-muted-foreground">Sur vos badges, supports ou écrans</p>
+                <p className="font-medium">Coordonnées complètes</p>
+                <p className="text-sm text-muted-foreground">Email, téléphone, entreprise et fonction de chaque lead</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">Leads tagués "Sur salon" + export CSV</p>
-                <p className="text-sm text-muted-foreground">Distinction claire avec les leads pré-événement</p>
+                <p className="font-medium">Export CSV</p>
+                <p className="text-sm text-muted-foreground">Téléchargez vos leads pour les importer dans votre CRM</p>
               </div>
             </div>
           </div>
