@@ -39,9 +39,15 @@ export default function LeadCard({ lead, isPremium }: LeadCardProps) {
             <p className="font-medium">
               {lead.first_name} {isPremium ? lead.last_name : '***'}
             </p>
-            <Badge variant="outline" className="text-xs">
-              {lead.lead_type === 'resource_download' ? '📄 Brochure' : '🤝 RDV'}
-            </Badge>
+            {lead.lead_type === 'meeting_request' ? (
+              <Badge className="text-xs border-transparent bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950/40 dark:text-green-400">
+                🤝 Rendez-vous
+              </Badge>
+            ) : (
+              <Badge className="text-xs border-transparent bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400">
+                📄 Brochure
+              </Badge>
+            )}
           </div>
           
           {/* Contact Info */}
