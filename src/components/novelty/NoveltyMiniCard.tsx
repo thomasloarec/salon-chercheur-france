@@ -62,7 +62,7 @@ export default function NoveltyMiniCard({
       )}
     >
       <Link
-        to={eventHref}
+        to={noveltyHref}
         aria-label={`Voir ${novelty.title}`}
         className={cn(
           "block shrink-0",
@@ -113,7 +113,7 @@ export default function NoveltyMiniCard({
           <span className="truncate">{exhibitor.name}</span>
         </div>
 
-        <Link to={eventHref} className="block">
+        <Link to={noveltyHref} className="block">
           <h3 className="line-clamp-3 text-base font-bold leading-snug tracking-tight transition-colors group-hover:text-primary">
             {novelty.title}
           </h3>
