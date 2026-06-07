@@ -91,7 +91,7 @@ export default function NoveltyDetail() {
 
   const typeLabel = NOVELTY_TYPE_LABELS[novelty.type] || novelty.type;
   const images = (novelty.media_urls ?? []).filter((u) => u && isImage(u));
-  const logo = getExhibitorLogoUrl(novelty.exhibitor_logo_url ?? undefined);
+  const logo = getExhibitorLogoUrl(novelty.exhibitor_logo_url ?? undefined, undefined);
   const exhibitorName = novelty.exhibitor_display_name || 'Exposant';
   const imgAlt = `${novelty.title} – ${exhibitorName}`;
 
