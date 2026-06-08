@@ -267,7 +267,7 @@ const AdminOverview = () => {
       {/* Bloc 2 — Activité plateforme */}
       <section>
         <h2 className="text-lg font-semibold mb-3">Activité plateforme – 7 jours</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
             title="Nouveautés publiées"
             value={fmt(novelties7d?.current)}
@@ -279,6 +279,13 @@ const AdminOverview = () => {
             value={fmt(iaUses7d)}
             subtitle="7 derniers jours"
           />
+          <Link to="/admin/leads" className="block transition-opacity hover:opacity-80">
+            <MetricCard
+              title="Leads générés"
+              value={fmt(leadsStats?.totals?.total_leads)}
+              subtitle="Voir le suivi des leads →"
+            />
+          </Link>
         </div>
       </section>
 
