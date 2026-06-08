@@ -165,6 +165,9 @@ const AdminOverview = () => {
   const noveltiesDelta = novelties7d ? novelties7d.current - novelties7d.previous : null;
   const outreachEmpty = !outreachData || outreachData.empty;
 
+  // ── Leads générés (RPC admin) ──
+  const { data: leadsStats } = useAdminLeadsStats();
+
   // ── Radar CRM admin stats ──
   const { data: radarStats } = useQuery({
     queryKey: ['overview-radar-crm-stats'],
