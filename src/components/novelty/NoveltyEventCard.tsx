@@ -371,24 +371,26 @@ export default function NoveltyEventCard({
                 </Button>
               )}
 
-              {/* M'intéresse — icône favori discrète (signal léger, pas un lead) */}
+              {/* Stands à voir — bouton secondaire outline explicite (icône + texte) */}
               <Button
                 onClick={handleInterestToggle}
                 disabled={isPending}
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 className={cn(
-                  'gap-1.5 text-muted-foreground hover:text-primary',
-                  isLiked && 'text-primary',
+                  'gap-1.5',
+                  isLiked &&
+                    'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
                 )}
                 aria-pressed={isLiked}
                 aria-label={isLiked ? 'Retirer de mes stands à voir' : 'Ajouter à mes stands à voir'}
               >
                 <MapPin
-                  className={cn('h-4 w-4', isLiked && 'fill-current')}
+                  className={cn('h-3.5 w-3.5', isLiked && 'fill-current')}
                 />
+                {isLiked ? 'Dans vos stands à voir' : 'Stands à voir'}
                 {likesCount > 0 && (
-                  <span className="text-xs tabular-nums">{likesCount}</span>
+                  <span className="text-xs tabular-nums opacity-70">{likesCount}</span>
                 )}
               </Button>
 
