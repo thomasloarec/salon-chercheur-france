@@ -214,7 +214,7 @@ function commonHead(canonical, title, desc, ogImage) {
 }
 
 // ---------- builders ----------
-function buildEvent(ev, exhibitors) {
+function buildEvent(ev, exhibitors, novelties) {
   const year = ev.date_debut ? new Date(ev.date_debut).getFullYear() : new Date().getFullYear();
   const city = ev.ville || 'France';
   const title = truncate(`${ev.nom_event} ${year} | Salon professionnel à ${city} – Lotexpo`, 70);
@@ -271,6 +271,16 @@ function buildEvent(ev, exhibitors) {
       </section>`
     : '';
 
+  // Inbound maillage → novelty detail pages (model = exhibitorsBlock above).
+  // Only indexable novelties reach this list (filtered upstream). No empty section.
+  const noveltiesBlock = (novelties && novelties.length > 0)
+    ? `<section><h2>Nouveautés de cet événement</h2>
+        <p>Découvrez ${novelties.length} nouveauté${novelties.length > 1 ? 's' : ''} présentée${novelties.length > 1 ? 's' : ''} par les exposants de cet événement.</p>
+        <ul>${novelties.map((n) =>
+          `<li><a href="/nouveautes/${encodeURIComponent(n.slug)}">${escapeHtml(n.title)}${n.exhibitor_display_name ? ' – ' + escapeHtml(n.exhibitor_display_name) : ''}</a></li>`).join('')}</ul>
+      </section>`
+    : '';
+
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>${escapeHtml(ev.nom_event)} ${escapeHtml(String(year))} – ${escapeHtml(city)}</h1>
     ${bodyDesc ? `<p>${escapeHtml(bodyDesc)}</p>` : ''}
@@ -278,6 +288,7 @@ function buildEvent(ev, exhibitors) {
     ${sectorSlug ? `<p><a href="/secteur/${encodeURIComponent(sectorSlug)}">Voir les salons ${escapeHtml(sector)}</a></p>` : ''}
     ${citySlug ? `<p><a href="/ville/${encodeURIComponent(citySlug)}">Voir les salons professionnels à ${escapeHtml(ev.ville)}</a></p>` : ''}
     ${exhibitorsBlock}
+    ${noveltiesBlock}
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
