@@ -1123,7 +1123,7 @@ async function main() {
       }
       const evList = [...ids].map((id) => eventById.get(id)).filter(Boolean)
         .sort((a, b) => (b.date_debut || '').localeCompare(a.date_debut || ''));
-      const built = buildExhibitor(prof, evList);
+      const built = buildExhibitor(prof, evList, novsByExhibitor.get(prof.public_slug) || []);
       await writeRoute(`/exposants/${prof.public_slug}`, applyToShell(baseTemplate, built));
       stats.exhibitors++;
       if (prof.seo_indexable === true) stats.exhibitorsIndexable++;
