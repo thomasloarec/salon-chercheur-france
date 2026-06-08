@@ -5441,6 +5441,7 @@ export type Database = {
         Args: { event_city: string; event_name: string; event_year: number }
         Returns: string
       }
+      get_admin_leads_stats: { Args: never; Returns: Json }
       get_current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
