@@ -436,6 +436,11 @@ export default function NoveltyDetail() {
         leadType={leadType}
         brochureUrl={brochureUrl}
       />
+
+      <AuthRequiredModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+      />
     </MainLayout>
   );
 }
