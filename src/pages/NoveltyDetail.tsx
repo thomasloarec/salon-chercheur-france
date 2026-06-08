@@ -359,6 +359,23 @@ export default function NoveltyDetail() {
                     Télécharger la brochure
                   </Button>
                 )}
+                <Button
+                  onClick={handleInterestToggle}
+                  disabled={isPending}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'gap-1.5 text-muted-foreground hover:text-primary',
+                    isLiked && 'text-primary',
+                  )}
+                  aria-pressed={isLiked}
+                  aria-label={isLiked ? 'Retirer de mes stands à voir' : 'Ajouter à mes stands à voir'}
+                >
+                  <MapPin className={cn('h-4 w-4', isLiked && 'fill-current')} />
+                  {likesCount > 0 && (
+                    <span className="text-xs tabular-nums">{likesCount}</span>
+                  )}
+                </Button>
               </div>
               {hasBrochure && (
                 <p className="flex items-center gap-1 text-xs text-muted-foreground">
