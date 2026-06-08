@@ -377,6 +377,69 @@ export default function AdminOutreachDashboard() {
         )}
       </div>
 
+      {/* Per-event summary — upcoming events by default */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">Synthèse par salon</CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => setShowPastEvents(v => !v)}>
+            {showPastEvents ? 'Masquer les salons passés' : 'Afficher les salons passés'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const rows = eventAgg.filter(r => showPastEvents || r.isFuture);
+            if (rows.length === 0) return <p className="text-muted-foreground text-sm py-6 text-center">Aucun salon à venir avec des campagnes.</p>;
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="pb-2 font-medium">Salon</th>
+                      <th className="pb-2 font-medium">Date</th>
+                      <th className="pb-2 font-medium text-center">État</th>
+                      <th className="pb-2 font-medium text-center">Total</th>
+                      <th className="pb-2 font-medium text-center">Prêtes</th>
+                      <th className="pb-2 font-medium text-center">Envoyées</th>
+                      <th className="pb-2 font-medium text-center">Converties</th>
+                      <th className="pb-2 font-medium text-center">Anomalies</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(r => (
+                      <tr key={r.ev.id} className={`border-b last:border-0 cursor-pointer hover:bg-accent/30 ${!r.isFuture ? 'opacity-60' : ''}`} onClick={() => { setEventFilter(r.ev.id); setPage(0); setShowCampaignList(true); }}>
+                        <td className="py-2 font-medium">{r.ev.nom_event}</td>
+                        <td className="py-2 text-muted-foreground">{r.ev.date_debut ? format(new Date(r.ev.date_debut), 'dd MMM yyyy', { locale: fr }) : '–'}</td>
+                        <td className="py-2 text-center">{r.isFuture ? <Badge className="bg-green-500/15 text-green-700 border-green-300" variant="outline">À venir</Badge> : <Badge variant="outline">Passé</Badge>}</td>
+                        <td className="py-2 text-center">{r.total}</td>
+                        <td className="py-2 text-center">{r.ready}</td>
+                        <td className="py-2 text-center">{r.sent}</td>
+                        <td className="py-2 text-center font-medium text-green-600">{r.converted}</td>
+                        <td className="py-2 text-center">{r.anomalies > 0 ? <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">{r.anomalies}</Badge> : '–'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
+      {/* Campaign list — collapsed behind toggle */}
+      <Button variant="outline" onClick={() => setShowCampaignList(v => !v)}>
+        {showCampaignList ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+        {showCampaignList ? 'Masquer les campagnes' : `Voir toutes les campagnes (${filtered.length})`}
+      </Button>
+
+      {showCampaignList && (<>
+      {/* Quick action chips */}
+      <div className="flex gap-2 flex-wrap">
+        <Button variant={quickFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('all'); setPage(0); }}>Tout</Button>
+        <Button variant={quickFilter === 'due' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('due'); setPage(0); }}><Send className="h-3 w-3 mr-1" />À envoyer maintenant</Button>
+        <Button variant={quickFilter === 'anomalies' ? 'destructive' : 'outline'} size="sm" onClick={() => { setQuickFilter('anomalies'); setPage(0); }}><AlertCircle className="h-3 w-3 mr-1" />Anomalies ({data.campaigns.reduce((acc, c) => acc + (detectAnomalies(c, primaryByCampaign[c.id], true).length > 0 ? 1 : 0), 0)})</Button>
+        <Button variant={quickFilter === 'future' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('future'); setPage(0); }}>Salons à venir uniquement</Button>
+      </div>
+
       {/* Filters */}
       <Card>
         <CardContent className="pt-4 space-y-3">
