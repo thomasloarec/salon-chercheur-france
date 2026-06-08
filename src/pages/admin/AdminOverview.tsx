@@ -303,16 +303,19 @@ const AdminOverview = () => {
       </section>
 
       {/* Bloc 4 — Campagnes email */}
-      <section className={outreachEmpty ? 'opacity-60' : ''}>
+      <section className={outreachData?.empty ? 'opacity-60' : ''}>
         <div className="flex items-center gap-3 mb-3">
           <h2 className="text-lg font-semibold">Campagnes email</h2>
-          {outreachEmpty && (
+          {outreachData?.empty && (
             <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">Disponible bientôt</span>
           )}
         </div>
+        {outreachError && (
+          <p className="text-sm text-destructive mb-2">Impossible de charger les données des campagnes.</p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <MetricCard title="Entreprises contactées ce mois" value={outreachEmpty ? '–' : fmt(outreachData?.contacted)} subtitle="campaign_status ≠ not_started" />
-          <MetricCard title="Taux de conversion → Nouveauté" value={outreachEmpty ? '–' : `${outreachData?.rate ?? 0} %`} subtitle="converted / contactées" />
+          <MetricCard title="Campagnes converties" value={outreachLoading ? '…' : outreachError ? '–' : fmt(outreachData?.converted)} subtitle="exposants → nouveauté" />
+          <MetricCard title="Emails envoyés (7j)" value={outreachLoading ? '…' : outreachError ? '–' : fmt(outreachData?.sent7d)} subtitle="pipeline actif" />
         </div>
       </section>
 
