@@ -178,6 +178,14 @@ export default function NoveltyDetail() {
     }
   };
 
+  const handleInterestToggle = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    toggleLike();
+  };
+
   const hasBrochure = !!(novelty.doc_url || novelty.resource_url);
   const brochureUrl = novelty.doc_url || novelty.resource_url || undefined;
 
