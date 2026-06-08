@@ -341,38 +341,40 @@ export default function AdminOutreachDashboard() {
         <Button variant="outline" size="sm" onClick={() => qc.invalidateQueries({ queryKey: ['admin-outreach-dashboard-v2'] })}>Actualiser</Button>
       </div>
 
-      {/* Quick action chips */}
-      <div className="flex gap-2 flex-wrap">
-        <Button variant={quickFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('all'); setPage(0); }}>Tout</Button>
-        <Button variant={quickFilter === 'due' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('due'); setPage(0); }}><Send className="h-3 w-3 mr-1" />À envoyer maintenant</Button>
-        <Button variant={quickFilter === 'anomalies' ? 'destructive' : 'outline'} size="sm" onClick={() => { setQuickFilter('anomalies'); setPage(0); }}><AlertCircle className="h-3 w-3 mr-1" />Anomalies ({data.campaigns.reduce((acc, c) => acc + (detectAnomalies(c, primaryByCampaign[c.id], true).length > 0 ? 1 : 0), 0)})</Button>
-        <Button variant={quickFilter === 'future' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('future'); setPage(0); }}>Salons à venir uniquement</Button>
-      </div>
-
-      {/* KPIs - filtered context */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <KpiCard label="Total (filtré)" value={total} icon={Mail} />
-        <KpiCard label="À envoyer maintenant" value={counts.dueNow} icon={Send} color={counts.dueNow > 0 ? 'text-destructive' : ''} onClick={() => { setQuickFilter('due'); setPage(0); }} active={quickFilter === 'due'} />
-        <KpiCard label="Anomalies" value={counts.anomalies} icon={AlertCircle} color={counts.anomalies > 0 ? 'text-destructive' : ''} onClick={() => { setQuickFilter('anomalies'); setPage(0); }} active={quickFilter === 'anomalies'} />
-        <KpiCard label="Hunter prêts" value={counts.ready} icon={UserCheck} color="text-green-600" />
-        <KpiCard label="À enrichir" value={counts.pending} icon={Clock} color="text-amber-600" />
-        <KpiCard label="Hunter exclus" value={counts.excluded} icon={UserX} color="text-muted-foreground" />
-        <KpiCard label="Non démarré" value={counts.not_started} icon={Mail} />
-        <KpiCard label="Actives" value={counts.active} icon={Mail} color="text-blue-600" />
-        <KpiCard label="Terminées" value={counts.completed} icon={CheckCircle2} />
+      {/* Main KPIs — 5 cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <KpiCard label="Actives" value={counts.active} icon={Send} color="text-blue-600" />
         <KpiCard label="Converties" value={counts.converted} icon={CheckCircle2} color="text-green-600" />
-        <KpiCard label="Avec email" value={counts.withEmail} icon={Mail} />
-        <KpiCard label="Sans email" value={counts.withoutEmail} icon={XCircle} color="text-amber-600" />
+        <KpiCard label="Terminées" value={counts.completed} icon={CheckCircle2} />
+        <KpiCard label="À traiter" value={counts.blocked_invalid_email + counts.stopped + counts.opted_out} icon={AlertCircle} color={(counts.blocked_invalid_email + counts.stopped + counts.opted_out) > 0 ? 'text-destructive' : ''} />
+        <KpiCard label="Total" value={total} icon={Mail} />
       </div>
 
-      {/* KPIs - pilotage qualité */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <KpiCard label="Stoppées (admin)" value={counts.stopped} icon={XCircle} color="text-destructive" />
-        <KpiCard label="Email invalide" value={counts.blocked_invalid_email} icon={UserX} color="text-destructive" />
-        <KpiCard label="Opt-out" value={counts.opted_out} icon={UserX} color="text-destructive" />
-        <KpiCard label="Nouveauté publiée" value={counts.novelty_published} icon={CheckCircle2} color="text-green-600" />
-        <KpiCard label="Email introuvable" value={counts.stop_email_not_found} icon={AlertCircle} color="text-amber-600" />
-        <KpiCard label="Ne participe pas" value={counts.stop_not_attending} icon={AlertCircle} color="text-muted-foreground" />
+      {/* Detailed stats — collapsed by default */}
+      <div>
+        <Button variant="ghost" size="sm" onClick={() => setShowDetailedStats(v => !v)}>
+          {showDetailedStats ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+          Statistiques détaillées
+        </Button>
+        {showDetailedStats && (
+          <div className="mt-3 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <KpiCard label="À envoyer maintenant" value={counts.dueNow} icon={Send} color={counts.dueNow > 0 ? 'text-destructive' : ''} />
+            <KpiCard label="Anomalies" value={counts.anomalies} icon={AlertCircle} color={counts.anomalies > 0 ? 'text-destructive' : ''} />
+            <KpiCard label="Hunter prêts" value={counts.ready} icon={UserCheck} color="text-green-600" />
+            <KpiCard label="À enrichir" value={counts.pending} icon={Clock} color="text-amber-600" />
+            <KpiCard label="Hunter exclus" value={counts.excluded} icon={UserX} color="text-muted-foreground" />
+            <KpiCard label="Non démarré" value={counts.not_started} icon={Mail} />
+            <KpiCard label="Expirées" value={counts.expired} icon={Clock} color="text-muted-foreground" />
+            <KpiCard label="Avec email" value={counts.withEmail} icon={Mail} />
+            <KpiCard label="Sans email" value={counts.withoutEmail} icon={XCircle} color="text-amber-600" />
+            <KpiCard label="Stoppées (admin)" value={counts.stopped} icon={XCircle} color="text-destructive" />
+            <KpiCard label="Email invalide" value={counts.blocked_invalid_email} icon={UserX} color="text-destructive" />
+            <KpiCard label="Opt-out" value={counts.opted_out} icon={UserX} color="text-destructive" />
+            <KpiCard label="Nouveauté publiée" value={counts.novelty_published} icon={CheckCircle2} color="text-green-600" />
+            <KpiCard label="Email introuvable" value={counts.stop_email_not_found} icon={AlertCircle} color="text-amber-600" />
+            <KpiCard label="Ne participe pas" value={counts.stop_not_attending} icon={AlertCircle} color="text-muted-foreground" />
+          </div>
+        )}
       </div>
 
       {/* Filters */}
