@@ -44,7 +44,24 @@ export const useNoveltyLike = (noveltyId: string, eventId?: string) => {
         body: { novelty_id: noveltyId },
       });
       if (error) throw error;
-      return { action: (data?.liked ? 'liked' : 'unliked') as 'liked' | 'unliked' };
+      // L'edge function novelty-like-toggle ne renvoie PAS de header
+      // `Content-Type: application/json`. Avec supabase-js (functions-js 2.4.4),
+      // une réponse sans ce header est désérialisée en TEXTE brut : `data` est
+      // donc une string, et `data.liked` valait toujours `undefined` → l'action
+      // était systématiquement interprétée comme 'unliked' (toast « Retiré… »
+      // même lors d'un ajout). On parse défensivement la réponse pour lire
+      // l'action réellement effectuée côté serveur (INSERT → liked:true).
+      const payload =
+        typeof data === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(data);
+              } catch {
+                return null;
+              }
+            })()
+          : data;
+      return { action: (payload?.liked ? 'liked' : 'unliked') as 'liked' | 'unliked' };
     },
     onSuccess: (data) => {
       // Invalider les queries concernées
