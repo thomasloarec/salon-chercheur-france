@@ -382,7 +382,7 @@ export default function NoveltyEventCard({
                   isLiked && 'text-primary',
                 )}
                 aria-pressed={isLiked}
-                aria-label={isLiked ? 'Retirer de mes intérêts' : "Marquer comme m'intéresse"}
+                aria-label={isLiked ? 'Retirer de mes stands à voir' : 'Ajouter à mes stands à voir'}
               >
                 <MapPin
                   className={cn('h-4 w-4', isLiked && 'fill-current')}
