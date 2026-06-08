@@ -29,6 +29,14 @@ export const useNoveltyLike = (noveltyId: string, eventId?: string) => {
       return !!data;
     },
     enabled: !!user && !!noveltyId,
+    // Le statut "liked" doit refléter l'état réel à chaque montage du
+    // composant (la nouveauté apparaît sur plusieurs surfaces : carte
+    // événement + page détail). Avec le staleTime global (60s), la donnée
+    // était considérée "fraîche" et n'était pas re-fetchée au remontage sur
+    // une nouvelle page → le bouton gardait l'ancien statut jusqu'à un
+    // rafraîchissement manuel. On force un refetch systématique au montage.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   // Toggle like
