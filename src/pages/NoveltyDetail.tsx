@@ -30,13 +30,17 @@ import {
 } from '@/components/ui/carousel';
 import NotFoundSEO from '@/components/seo/NotFoundSEO';
 import LeadForm from '@/components/novelty/LeadForm';
+import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
 import {
   useNoveltyPublic,
   useNoveltyAround,
   NOVELTY_TYPE_LABELS,
   type PublicNovelty,
 } from '@/hooks/useNoveltyPublic';
+import { cn } from '@/lib/utils';
 
 const SITE_ORIGIN = 'https://lotexpo.com';
 
@@ -49,10 +53,18 @@ export default function NoveltyDetail() {
   const { data: novelty, isLoading, isError } = useNoveltyPublic(slug);
   const { data: around } = useNoveltyAround(novelty ?? null);
 
+  const { user } = useAuth();
+  const { isLiked, toggleLike, isPending } = useNoveltyLike(
+    novelty?.id ?? '',
+    novelty?.event_id,
+  );
+  const { data: likesCount = 0 } = useNoveltyLikesCount(novelty?.id ?? '');
+
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadType, setLeadType] =
     useState<'brochure_download' | 'meeting_request'>('meeting_request');
   const [copied, setCopied] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   if (isLoading) {
     return (
@@ -164,6 +176,14 @@ export default function NoveltyDetail() {
     } catch {
       /* clipboard unavailable — silently ignore */
     }
+  };
+
+  const handleInterestToggle = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    toggleLike();
   };
 
   const hasBrochure = !!(novelty.doc_url || novelty.resource_url);
@@ -339,6 +359,23 @@ export default function NoveltyDetail() {
                     Télécharger la brochure
                   </Button>
                 )}
+                <Button
+                  onClick={handleInterestToggle}
+                  disabled={isPending}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'gap-1.5 text-muted-foreground hover:text-primary',
+                    isLiked && 'text-primary',
+                  )}
+                  aria-pressed={isLiked}
+                  aria-label={isLiked ? 'Retirer de mes stands à voir' : 'Ajouter à mes stands à voir'}
+                >
+                  <MapPin className={cn('h-4 w-4', isLiked && 'fill-current')} />
+                  {likesCount > 0 && (
+                    <span className="text-xs tabular-nums">{likesCount}</span>
+                  )}
+                </Button>
               </div>
               {hasBrochure && (
                 <p className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -398,6 +435,11 @@ export default function NoveltyDetail() {
         noveltyId={novelty.id}
         leadType={leadType}
         brochureUrl={brochureUrl}
+      />
+
+      <AuthRequiredModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
       />
     </MainLayout>
   );
