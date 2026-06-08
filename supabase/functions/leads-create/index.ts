@@ -347,11 +347,10 @@ serve(async (req) => {
 
           // 2) Resend email — sent for both lead types
           const resendKey = Deno.env.get('RESEND_API_KEY');
-          const lovableKey = Deno.env.get('LOVABLE_API_KEY');
           if (recipientEmails.length === 0) {
             console.warn(`[${logTag}_email_sent] no recipient emails resolved`, { novelty_id: data.novelty_id, lead_id: lead.id });
-          } else if (!resendKey || !lovableKey) {
-            console.warn(`[${logTag}_email_sent] missing RESEND_API_KEY or LOVABLE_API_KEY — email skipped`, { novelty_id: data.novelty_id, lead_id: lead.id });
+          } else if (!resendKey) {
+            console.warn(`[${logTag}_email_sent] missing RESEND_API_KEY — email skipped`, { novelty_id: data.novelty_id, lead_id: lead.id });
           } else {
             const eventName = event?.nom_event ?? '';
             const noveltyTitle = novelty.title ?? '';
@@ -384,26 +383,13 @@ serve(async (req) => {
                 <p style="font-size:12px;color:#666;margin-top:24px">Cet email vous est envoyé car vous êtes membre actif de l'équipe exposant sur Lotexpo.</p>
               </div>`;
             try {
-              const resp = await fetch('https://connector-gateway.lovable.dev/resend/emails', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${lovableKey}`,
-                  'X-Connection-Api-Key': resendKey,
-                },
-                body: JSON.stringify({
-                  from: 'Lotexpo <admin@lotexpo.com>',
-                  to: recipientEmails.map(r => r.email),
-                  subject,
-                  html,
-                }),
+              const { id: emailId } = await sendResendEmail({
+                from: 'Lotexpo <admin@lotexpo.com>',
+                to: recipientEmails.map(r => r.email),
+                subject,
+                html,
               });
-              if (!resp.ok) {
-                const t = await resp.text().catch(() => '');
-                console.error(`[${logTag}_email_sent] resend failed`, { novelty_id: data.novelty_id, lead_id: lead.id, status: resp.status, body: t.slice(0, 300) });
-              } else {
-                console.log(`[${logTag}_email_sent]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: recipientEmails.map(r => r.email), actor_email: data.email });
-              }
+              console.log(`[${logTag}_email_sent]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: recipientEmails.map(r => r.email), actor_email: data.email, email_id: emailId });
             } catch (e) {
               console.error(`[${logTag}_email_sent] exception`, { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
             }
