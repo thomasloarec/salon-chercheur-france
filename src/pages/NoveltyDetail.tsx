@@ -362,18 +362,19 @@ export default function NoveltyDetail() {
                 <Button
                   onClick={handleInterestToggle}
                   disabled={isPending}
-                  variant="ghost"
-                  size="sm"
+                  variant="outline"
                   className={cn(
-                    'gap-1.5 text-muted-foreground hover:text-primary',
-                    isLiked && 'text-primary',
+                    'gap-1.5',
+                    isLiked &&
+                      'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
                   )}
                   aria-pressed={isLiked}
                   aria-label={isLiked ? 'Retirer de mes stands à voir' : 'Ajouter à mes stands à voir'}
                 >
                   <MapPin className={cn('h-4 w-4', isLiked && 'fill-current')} />
+                  {isLiked ? 'Dans vos stands à voir' : 'Stands à voir'}
                   {likesCount > 0 && (
-                    <span className="text-xs tabular-nums">{likesCount}</span>
+                    <span className="text-xs tabular-nums opacity-70">{likesCount}</span>
                   )}
                 </Button>
               </div>
