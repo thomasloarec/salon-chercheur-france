@@ -568,7 +568,7 @@ function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
 // robots decision is READ from profile.seo_indexable and written HARD into the
 // HTML. Templates mirror src/components/exhibitor/ExhibitorProfileSEO.tsx.
 // `events` = visible non-test events the exhibitor participates in (deduped).
-function buildExhibitor(profile, events) {
+function buildExhibitor(profile, events, novelties) {
   const name = profile.display_name || profile.canonical_name || 'Exposant';
   const slug = profile.public_slug;
   const indexable = profile.seo_indexable === true;
@@ -619,12 +619,23 @@ function buildExhibitor(profile, events) {
       </section>`
     : '';
 
+  // Inbound maillage → novelty detail pages (model = eventsList above).
+  // Only indexable novelties reach this list (filtered upstream). No empty section.
+  const noveltiesList = (novelties && novelties.length > 0)
+    ? `<section><h2>Nouveautés de cet exposant</h2>
+        <ul>${novelties.slice(0, 50).map((n) =>
+          `<li><a href="/nouveautes/${encodeURIComponent(n.slug)}">${escapeHtml(n.title)}${n.event_name ? ' – ' + escapeHtml(n.event_name) : ''}</a></li>`,
+        ).join('')}</ul>
+      </section>`
+    : '';
+
   const descPara = profile.description ? `<p>${escapeHtml(truncate(stripHtml(profile.description), 300))}</p>` : '';
 
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>${escapeHtml(name)}</h1>
     ${descPara}
     ${eventsList}
+    ${noveltiesList}
     <p><a href="/exposants">Tous les exposants référencés</a></p>
   </div>`;
 
