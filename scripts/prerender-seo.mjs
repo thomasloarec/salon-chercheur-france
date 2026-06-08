@@ -1131,33 +1131,37 @@ async function main() {
   }
   console.log(`[prerender] exhibitors: ${stats.exhibitors} (${stats.exhibitorsIndexable} indexable, ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
 
-  // 7c. novelty pages (/nouveautes/:slug) — NON-BLOCKING. Unlike the exhibitor
-  // guard (MIN_PROFILES → exit non-zero), a failure or empty fetch here only
-  // logs a warning and lets the build continue (exit 0): an outage on ~42
-  // novelty pages must never take the whole site down.
-  try {
-    const noveltyFields = 'slug,title,type,reason_1,reason_2,reason_3,audience_tags,media_urls,summary,details,seo_indexable,exhibitor_public_slug,exhibitor_display_name,event_slug,event_name,event_ville,updated_at';
-    const novelties = (await sbPaged(`public_novelties?slug=not.is.null&select=${noveltyFields}&order=updated_at.desc`))
-      .filter((n) => n.slug && String(n.slug).trim());
-    console.log(`[prerender] novelties fetched: ${novelties.length}`);
-    if (!Array.isArray(novelties) || novelties.length === 0) {
-      console.warn('[prerender] WARN: 0 novelties fetched — skipping novelty pages (non-blocking, build continues).');
-    } else {
-      for (const n of novelties) {
-        if (!n.slug) continue;
-        try {
-          const built = buildNovelty(n);
-          await writeRoute(`/nouveautes/${n.slug}`, applyToShell(baseTemplate, built));
-          stats.novelties++;
-          if (n.seo_indexable === true) stats.noveltiesIndexable++;
-        } catch (e) { errors++; console.warn('[prerender] novelty failed', n.slug, e.message); }
-      }
-      console.log(`[prerender] novelties: ${stats.novelties} (${stats.noveltiesIndexable} indexable, ${stats.novelties - stats.noveltiesIndexable} noindex)`);
+  // 7c. novelty detail pages (/nouveautes/:slug) — NON-BLOCKING, reusing the
+  // up-front fetch (§2d, no extra request). A failure or empty fetch only logs
+  // and lets the build continue (exit 0): an outage on the novelty pages must
+  // never take the whole site down.
+  if (!Array.isArray(novelties) || novelties.length === 0) {
+    console.warn('[prerender] WARN: 0 novelties — skipping novelty pages (non-blocking, build continues).');
+  } else {
+    for (const n of novelties) {
+      if (!n.slug) continue;
+      try {
+        const built = buildNovelty(n);
+        await writeRoute(`/nouveautes/${n.slug}`, applyToShell(baseTemplate, built));
+        stats.novelties++;
+        if (n.seo_indexable === true) stats.noveltiesIndexable++;
+      } catch (e) { errors++; console.warn('[prerender] novelty failed', n.slug, e.message); }
     }
-  } catch (e) {
-    // Swallowed on purpose: novelties are non-blocking.
-    console.warn('[prerender] WARN: novelty generation errored (non-blocking, build continues):', e.message);
+    console.log(`[prerender] novelties: ${stats.novelties} (${stats.noveltiesIndexable} indexable, ${stats.novelties - stats.noveltiesIndexable} noindex)`);
   }
+
+  // 7d. novelties index (/nouveautes) — lists every INDEXABLE novelty so the
+  // detail pages are crawlable beyond the sitemap. Built from the same fetch.
+  try {
+    const indexableNovelties = novelties.filter((n) => n.seo_indexable === true);
+    if (indexableNovelties.length > 0) {
+      const built = buildNoveltiesIndex(indexableNovelties);
+      await writeRoute('/nouveautes', applyToShell(baseTemplate, built));
+      console.log(`[prerender] novelties index: ${indexableNovelties.length} links`);
+    } else {
+      console.warn('[prerender] WARN: 0 indexable novelties — skipping /nouveautes index.');
+    }
+  } catch (e) { errors++; console.warn('[prerender] novelties index failed', e.message); }
 
   // 8. home — written LAST so it never pollutes the template
   try {
