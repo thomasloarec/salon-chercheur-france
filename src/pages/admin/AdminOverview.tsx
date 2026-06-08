@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Minus, Globe, Eye, Users, MousePointerClick, ExternalLink, FileText, Radar, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAdminLeadsStats } from '@/hooks/useAdminLeadsStats';
 
 const fmt = (v: number | null | undefined) => (v != null ? v.toLocaleString('fr-FR') : '–');
 
