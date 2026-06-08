@@ -384,7 +384,7 @@ export default function NoveltyEventCard({
                 aria-pressed={isLiked}
                 aria-label={isLiked ? 'Retirer de mes intérêts' : "Marquer comme m'intéresse"}
               >
-                <Bookmark
+                <MapPin
                   className={cn('h-4 w-4', isLiked && 'fill-current')}
                 />
                 {likesCount > 0 && (
