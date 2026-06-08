@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // Récupération des variables d'environnement Pipedrive
 const pipedriveClientId = Deno.env.get('PIPEDRIVE_CLIENT_ID');

@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // Dedicated, dynamic sitemap for public exhibitor profiles.
 // Only profiles that are REALLY indexable appear here, recomputed at request

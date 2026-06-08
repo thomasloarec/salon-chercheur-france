@@ -8,7 +8,7 @@
 // either the service role key (backend/cron) OR a valid user JWT belonging to
 // an admin (manual trigger from /admin/radar-crm). Never trust userId from the
 // payload for authorization — only as an execution filter.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
