@@ -7,13 +7,21 @@ import {
   Bookmark,
   Download,
   Images,
-  Share2,
   Check,
+  CalendarCheck,
+  Link2,
+  MoreHorizontal,
 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useAuth } from '@/contexts/AuthContext';
