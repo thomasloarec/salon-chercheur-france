@@ -172,6 +172,11 @@ export default function NoveltyEventCard({
     setShowLeadForm(true);
   };
 
+  const handleMeetingRequest = () => {
+    setLeadFormType('meeting_request');
+    setShowLeadForm(true);
+  };
+
   return (
     <>
       <Card
