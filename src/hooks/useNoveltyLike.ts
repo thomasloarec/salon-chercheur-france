@@ -57,10 +57,10 @@ export const useNoveltyLike = (noveltyId: string, eventId?: string) => {
 
       // Toast
       toast({
-        title: data.action === 'liked' ? '❤️ Ajouté aux favoris' : 'Retiré des favoris',
-        description: data.action === 'liked' 
-          ? 'Cette nouveauté apparaîtra dans votre agenda' 
-          : 'Cette nouveauté a été retirée de vos favoris',
+        title: data.action === 'liked' ? 'Ajouté à vos stands à voir' : 'Retiré de vos stands à voir',
+        description: data.action === 'liked'
+          ? 'Ce stand apparaîtra dans votre agenda'
+          : 'Ce stand a été retiré de votre liste',
       });
     },
     onError: (error: any) => {
