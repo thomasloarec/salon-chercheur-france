@@ -57,13 +57,13 @@ serve(async (req) => {
         count: count || 0, 
         userHasLiked 
       }),
-      { headers: corsHeaders }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

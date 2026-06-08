@@ -40,7 +40,7 @@ serve(async (req) => {
     if (!supabaseUrl || !serviceKey) {
       return new Response(
         JSON.stringify({ error: "Missing environment variables" }),
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -50,7 +50,7 @@ serve(async (req) => {
     if (!parsed.success) {
       return new Response(
         JSON.stringify({ error: "Validation failed", details: parsed.error.flatten() }),
-        { status: 422, headers: corsHeaders }
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -70,7 +70,7 @@ serve(async (req) => {
     if (noveltyError || !novelty) {
       return new Response(
         JSON.stringify({ error: "Novelty not found" }),
-        { status: 404, headers: corsHeaders }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -78,7 +78,7 @@ serve(async (req) => {
     if (data.lead_type === 'brochure_download' && !novelty.doc_url) {
       return new Response(
         JSON.stringify({ error: "No brochure available for this novelty" }),
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -121,7 +121,7 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify(duplicateResponse),
-        { status: 200, headers: corsHeaders }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -159,7 +159,7 @@ serve(async (req) => {
       console.error('Lead creation error:', leadError);
       return new Response(
         JSON.stringify({ error: "Failed to create lead", details: leadError.message }),
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -404,13 +404,13 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(response),
-      { status: 201, headers: corsHeaders }
+      { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
