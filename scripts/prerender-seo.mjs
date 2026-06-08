@@ -214,7 +214,7 @@ function commonHead(canonical, title, desc, ogImage) {
 }
 
 // ---------- builders ----------
-function buildEvent(ev, exhibitors) {
+function buildEvent(ev, exhibitors, novelties) {
   const year = ev.date_debut ? new Date(ev.date_debut).getFullYear() : new Date().getFullYear();
   const city = ev.ville || 'France';
   const title = truncate(`${ev.nom_event} ${year} | Salon professionnel à ${city} – Lotexpo`, 70);
@@ -271,6 +271,16 @@ function buildEvent(ev, exhibitors) {
       </section>`
     : '';
 
+  // Inbound maillage → novelty detail pages (model = exhibitorsBlock above).
+  // Only indexable novelties reach this list (filtered upstream). No empty section.
+  const noveltiesBlock = (novelties && novelties.length > 0)
+    ? `<section><h2>Nouveautés de cet événement</h2>
+        <p>Découvrez ${novelties.length} nouveauté${novelties.length > 1 ? 's' : ''} présentée${novelties.length > 1 ? 's' : ''} par les exposants de cet événement.</p>
+        <ul>${novelties.map((n) =>
+          `<li><a href="/nouveautes/${encodeURIComponent(n.slug)}">${escapeHtml(n.title)}${n.exhibitor_display_name ? ' – ' + escapeHtml(n.exhibitor_display_name) : ''}</a></li>`).join('')}</ul>
+      </section>`
+    : '';
+
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>${escapeHtml(ev.nom_event)} ${escapeHtml(String(year))} – ${escapeHtml(city)}</h1>
     ${bodyDesc ? `<p>${escapeHtml(bodyDesc)}</p>` : ''}
@@ -278,6 +288,7 @@ function buildEvent(ev, exhibitors) {
     ${sectorSlug ? `<p><a href="/secteur/${encodeURIComponent(sectorSlug)}">Voir les salons ${escapeHtml(sector)}</a></p>` : ''}
     ${citySlug ? `<p><a href="/ville/${encodeURIComponent(citySlug)}">Voir les salons professionnels à ${escapeHtml(ev.ville)}</a></p>` : ''}
     ${exhibitorsBlock}
+    ${noveltiesBlock}
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
@@ -294,7 +305,7 @@ function buildHome() {
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>Salons professionnels en France</h1>
     <p>Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Lotexpo centralise les salons, congrès, conventions et événements B2B avec leurs dates, lieux et exposants associés.</p>
-    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/events">Calendrier complet</a></p>
+    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/events">Calendrier complet</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
@@ -557,7 +568,7 @@ function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
 // robots decision is READ from profile.seo_indexable and written HARD into the
 // HTML. Templates mirror src/components/exhibitor/ExhibitorProfileSEO.tsx.
 // `events` = visible non-test events the exhibitor participates in (deduped).
-function buildExhibitor(profile, events) {
+function buildExhibitor(profile, events, novelties) {
   const name = profile.display_name || profile.canonical_name || 'Exposant';
   const slug = profile.public_slug;
   const indexable = profile.seo_indexable === true;
@@ -608,12 +619,23 @@ function buildExhibitor(profile, events) {
       </section>`
     : '';
 
+  // Inbound maillage → novelty detail pages (model = eventsList above).
+  // Only indexable novelties reach this list (filtered upstream). No empty section.
+  const noveltiesList = (novelties && novelties.length > 0)
+    ? `<section><h2>Nouveautés de cet exposant</h2>
+        <ul>${novelties.slice(0, 50).map((n) =>
+          `<li><a href="/nouveautes/${encodeURIComponent(n.slug)}">${escapeHtml(n.title)}${n.event_name ? ' – ' + escapeHtml(n.event_name) : ''}</a></li>`,
+        ).join('')}</ul>
+      </section>`
+    : '';
+
   const descPara = profile.description ? `<p>${escapeHtml(truncate(stripHtml(profile.description), 300))}</p>` : '';
 
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>${escapeHtml(name)}</h1>
     ${descPara}
     ${eventsList}
+    ${noveltiesList}
     <p><a href="/exposants">Tous les exposants référencés</a></p>
   </div>`;
 
@@ -708,6 +730,46 @@ function buildNovelty(n) {
   return { title, description, canonical, headExtra, body, robots };
 }
 
+// Novelties index (/nouveautes). Lists every INDEXABLE novelty as a crawlable
+// <a href="/nouveautes/:slug"> so detail pages are discoverable beyond the
+// sitemap. Always indexable (index, follow).
+function buildNoveltiesIndex(novelties) {
+  const canonical = `${SITE_ORIGIN}/nouveautes`;
+  const title = 'Nouveautés des salons professionnels | Lotexpo';
+  const description = "Découvrez les dernières nouveautés présentées par les exposants des salons professionnels en France : lancements, innovations et démonstrations sur Lotexpo.";
+  const robots = 'index, follow';
+  const itemList = {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    name: title,
+    numberOfItems: novelties.length,
+    itemListElement: novelties.slice(0, 100).map((n, i) => ({
+      '@type': 'ListItem', position: i + 1,
+      url: `${SITE_ORIGIN}/nouveautes/${encodeURIComponent(n.slug)}`,
+      name: n.title,
+    })),
+  };
+  const breadcrumb = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+      { '@type': 'ListItem', position: 2, name: 'Nouveautés', item: canonical },
+    ],
+  };
+  const headExtra = commonHead(canonical, title, description)
+    + `<script type="application/ld+json">${safeJsonLd(itemList)}</script>`
+    + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`;
+  const list = novelties.map((n) =>
+    `<li><a href="/nouveautes/${encodeURIComponent(n.slug)}">${escapeHtml(n.title)}</a>${n.exhibitor_display_name ? ' – ' + escapeHtml(n.exhibitor_display_name) : ''}${n.event_name ? ' (' + escapeHtml(n.event_name) + ')' : ''}</li>`,
+  ).join('');
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>Nouveautés des salons professionnels</h1>
+    <p>Retrouvez les ${novelties.length} nouveautés présentées par les exposants des salons professionnels référencés sur Lotexpo : lancements de produits, innovations, démonstrations et offres.</p>
+    <ul>${list}</ul>
+    <p><a href="/events">Calendrier des salons</a> · <a href="/exposants">Tous les exposants</a></p>
+  </div>`;
+  return { title, description, canonical, headExtra, body, robots };
+}
+
 // ---------- write helper ----------
 async function writeRoute(routePath, html) {
   const isRoot = routePath === '/' || routePath === '';
@@ -791,6 +853,39 @@ async function main() {
     }
   }
 
+  // 2d. fetch novelties UP-FRONT (single paged request, reordered from §7c).
+  // Reused three times below with NO extra requests: (a) inbound maillage into
+  // events/exhibitors, (b) detail pages, (c) the /nouveautes index.
+  // NON-BLOCKING: a failure leaves novelties=[] (no maillage) but never aborts —
+  // an outage on the novelty dataset must not take the whole site down.
+  let novelties = [];
+  try {
+    const noveltyFields = 'slug,title,type,reason_1,reason_2,reason_3,audience_tags,media_urls,summary,details,seo_indexable,exhibitor_public_slug,exhibitor_display_name,event_slug,event_name,event_ville,updated_at';
+    novelties = (await sbPaged(`public_novelties?slug=not.is.null&select=${noveltyFields}&order=updated_at.desc`))
+      .filter((n) => n.slug && String(n.slug).trim());
+    console.log(`[prerender] novelties fetched: ${novelties.length}`);
+  } catch (e) {
+    console.warn('[prerender] WARN: novelty fetch errored (non-blocking, build continues):', e.message);
+    novelties = [];
+  }
+
+  // Inbound maillage indexes. Only INDEXABLE novelties are linked (same gate as
+  // the detail pages that receive an indexable canonical) — never link a
+  // noindex/non-published novelty. Built once, reused per event/exhibitor.
+  const novsByEvent = new Map();
+  const novsByExhibitor = new Map();
+  for (const n of novelties) {
+    if (n.seo_indexable !== true) continue;
+    if (n.event_slug) {
+      if (!novsByEvent.has(n.event_slug)) novsByEvent.set(n.event_slug, []);
+      novsByEvent.get(n.event_slug).push(n);
+    }
+    if (n.exhibitor_public_slug) {
+      if (!novsByExhibitor.has(n.exhibitor_public_slug)) novsByExhibitor.set(n.exhibitor_public_slug, []);
+      novsByExhibitor.get(n.exhibitor_public_slug).push(n);
+    }
+  }
+
   // 3. generate each event page (sequential to limit concurrent fetches)
   for (const ev of events) {
     if (!ev.slug) continue;
@@ -804,7 +899,7 @@ async function main() {
           slug: resolveSlug(p.exhibitor_id, p.id_exposant),
         })).filter((p) => p.name && p.name.trim().length > 1);
       }
-      const built = buildEvent(ev, exhibitors);
+      const built = buildEvent(ev, exhibitors, novsByEvent.get(ev.slug) || []);
       const html = applyToShell(baseTemplate, built);
       await writeRoute(`/events/${ev.slug}`, html);
       stats.events++;
@@ -1028,7 +1123,7 @@ async function main() {
       }
       const evList = [...ids].map((id) => eventById.get(id)).filter(Boolean)
         .sort((a, b) => (b.date_debut || '').localeCompare(a.date_debut || ''));
-      const built = buildExhibitor(prof, evList);
+      const built = buildExhibitor(prof, evList, novsByExhibitor.get(prof.public_slug) || []);
       await writeRoute(`/exposants/${prof.public_slug}`, applyToShell(baseTemplate, built));
       stats.exhibitors++;
       if (prof.seo_indexable === true) stats.exhibitorsIndexable++;
@@ -1036,33 +1131,37 @@ async function main() {
   }
   console.log(`[prerender] exhibitors: ${stats.exhibitors} (${stats.exhibitorsIndexable} indexable, ${stats.exhibitors - stats.exhibitorsIndexable} noindex)`);
 
-  // 7c. novelty pages (/nouveautes/:slug) — NON-BLOCKING. Unlike the exhibitor
-  // guard (MIN_PROFILES → exit non-zero), a failure or empty fetch here only
-  // logs a warning and lets the build continue (exit 0): an outage on ~42
-  // novelty pages must never take the whole site down.
-  try {
-    const noveltyFields = 'slug,title,type,reason_1,reason_2,reason_3,audience_tags,media_urls,summary,details,seo_indexable,exhibitor_public_slug,exhibitor_display_name,event_slug,event_name,event_ville,updated_at';
-    const novelties = (await sbPaged(`public_novelties?slug=not.is.null&select=${noveltyFields}&order=updated_at.desc`))
-      .filter((n) => n.slug && String(n.slug).trim());
-    console.log(`[prerender] novelties fetched: ${novelties.length}`);
-    if (!Array.isArray(novelties) || novelties.length === 0) {
-      console.warn('[prerender] WARN: 0 novelties fetched — skipping novelty pages (non-blocking, build continues).');
-    } else {
-      for (const n of novelties) {
-        if (!n.slug) continue;
-        try {
-          const built = buildNovelty(n);
-          await writeRoute(`/nouveautes/${n.slug}`, applyToShell(baseTemplate, built));
-          stats.novelties++;
-          if (n.seo_indexable === true) stats.noveltiesIndexable++;
-        } catch (e) { errors++; console.warn('[prerender] novelty failed', n.slug, e.message); }
-      }
-      console.log(`[prerender] novelties: ${stats.novelties} (${stats.noveltiesIndexable} indexable, ${stats.novelties - stats.noveltiesIndexable} noindex)`);
+  // 7c. novelty detail pages (/nouveautes/:slug) — NON-BLOCKING, reusing the
+  // up-front fetch (§2d, no extra request). A failure or empty fetch only logs
+  // and lets the build continue (exit 0): an outage on the novelty pages must
+  // never take the whole site down.
+  if (!Array.isArray(novelties) || novelties.length === 0) {
+    console.warn('[prerender] WARN: 0 novelties — skipping novelty pages (non-blocking, build continues).');
+  } else {
+    for (const n of novelties) {
+      if (!n.slug) continue;
+      try {
+        const built = buildNovelty(n);
+        await writeRoute(`/nouveautes/${n.slug}`, applyToShell(baseTemplate, built));
+        stats.novelties++;
+        if (n.seo_indexable === true) stats.noveltiesIndexable++;
+      } catch (e) { errors++; console.warn('[prerender] novelty failed', n.slug, e.message); }
     }
-  } catch (e) {
-    // Swallowed on purpose: novelties are non-blocking.
-    console.warn('[prerender] WARN: novelty generation errored (non-blocking, build continues):', e.message);
+    console.log(`[prerender] novelties: ${stats.novelties} (${stats.noveltiesIndexable} indexable, ${stats.novelties - stats.noveltiesIndexable} noindex)`);
   }
+
+  // 7d. novelties index (/nouveautes) — lists every INDEXABLE novelty so the
+  // detail pages are crawlable beyond the sitemap. Built from the same fetch.
+  try {
+    const indexableNovelties = novelties.filter((n) => n.seo_indexable === true);
+    if (indexableNovelties.length > 0) {
+      const built = buildNoveltiesIndex(indexableNovelties);
+      await writeRoute('/nouveautes', applyToShell(baseTemplate, built));
+      console.log(`[prerender] novelties index: ${indexableNovelties.length} links`);
+    } else {
+      console.warn('[prerender] WARN: 0 indexable novelties — skipping /nouveautes index.');
+    }
+  } catch (e) { errors++; console.warn('[prerender] novelties index failed', e.message); }
 
   // 8. home — written LAST so it never pollutes the template
   try {
