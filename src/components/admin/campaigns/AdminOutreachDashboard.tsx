@@ -518,43 +518,6 @@ export default function AdminOutreachDashboard() {
         </CardContent>
       </Card>
 
-      {/* Per-event summary */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Synthèse par salon</CardTitle></CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="pb-2 font-medium">Salon</th>
-                  <th className="pb-2 font-medium">Date</th>
-                  <th className="pb-2 font-medium text-center">État</th>
-                  <th className="pb-2 font-medium text-center">Total</th>
-                  <th className="pb-2 font-medium text-center">Prêtes</th>
-                  <th className="pb-2 font-medium text-center">Envoyées</th>
-                  <th className="pb-2 font-medium text-center">Converties</th>
-                  <th className="pb-2 font-medium text-center">Anomalies</th>
-                </tr>
-              </thead>
-              <tbody>
-                {eventAgg.map(r => (
-                  <tr key={r.ev.id} className={`border-b last:border-0 cursor-pointer hover:bg-accent/30 ${!r.isFuture ? 'opacity-60' : ''}`} onClick={() => { setEventFilter(r.ev.id); setPage(0); }}>
-                    <td className="py-2 font-medium">{r.ev.nom_event}</td>
-                    <td className="py-2 text-muted-foreground">{r.ev.date_debut ? format(new Date(r.ev.date_debut), 'dd MMM yyyy', { locale: fr }) : '–'}</td>
-                    <td className="py-2 text-center">{r.isFuture ? <Badge className="bg-green-500/15 text-green-700 border-green-300" variant="outline">À venir</Badge> : <Badge variant="outline">Passé</Badge>}</td>
-                    <td className="py-2 text-center">{r.total}</td>
-                    <td className="py-2 text-center">{r.ready}</td>
-                    <td className="py-2 text-center">{r.sent}</td>
-                    <td className="py-2 text-center font-medium text-green-600">{r.converted}</td>
-                    <td className="py-2 text-center">{r.anomalies > 0 ? <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">{r.anomalies}</Badge> : '–'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Main table */}
       <Card>
         <CardHeader><CardTitle className="text-base">Campagnes</CardTitle></CardHeader>
@@ -629,6 +592,7 @@ export default function AdminOutreachDashboard() {
           )}
         </CardContent>
       </Card>
+      </>)}
 
       {/* Detail Sheet */}
       <Sheet open={!!selected} onOpenChange={open => !open && setSelected(null)}>
