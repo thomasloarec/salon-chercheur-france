@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Loader2, Mail, CheckCircle2, XCircle, Clock, AlertTriangle, Ban, X, Search, Copy, ExternalLink, Send, UserCheck, UserX, AlertCircle } from 'lucide-react';
+import { Loader2, Mail, CheckCircle2, XCircle, Clock, AlertTriangle, Ban, X, Search, Copy, ExternalLink, Send, UserCheck, UserX, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -185,6 +185,11 @@ export default function AdminOutreachDashboard() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
 
+  // Presentation toggles (display only)
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
+  const [showPastEvents, setShowPastEvents] = useState(false);
+  const [showCampaignList, setShowCampaignList] = useState(false);
+
   // Detail
   const [selected, setSelected] = useState<CampaignRow | null>(null);
 
@@ -273,6 +278,7 @@ export default function AdminOutreachDashboard() {
       converted: filtered.filter(x => x.c.campaign_status === 'converted').length,
       stopped: filtered.filter(x => x.c.campaign_status === 'stopped').length,
       blocked_invalid_email: filtered.filter(x => x.c.campaign_status === 'blocked_invalid_email').length,
+      expired: filtered.filter(x => x.c.campaign_status === 'expired').length,
       novelty_published: filtered.filter(x => x.c.campaign_status === 'novelty_published').length,
       stop_email_not_found: filtered.filter(x => x.c.stop_reason === 'email_not_found').length,
       stop_not_attending: filtered.filter(x => x.c.stop_reason === 'not_attending_event').length,
@@ -335,38 +341,103 @@ export default function AdminOutreachDashboard() {
         <Button variant="outline" size="sm" onClick={() => qc.invalidateQueries({ queryKey: ['admin-outreach-dashboard-v2'] })}>Actualiser</Button>
       </div>
 
+      {/* Main KPIs — 5 cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <KpiCard label="Actives" value={counts.active} icon={Send} color="text-blue-600" />
+        <KpiCard label="Converties" value={counts.converted} icon={CheckCircle2} color="text-green-600" />
+        <KpiCard label="Terminées" value={counts.completed} icon={CheckCircle2} />
+        <KpiCard label="À traiter" value={counts.blocked_invalid_email + counts.stopped + counts.opted_out} icon={AlertCircle} color={(counts.blocked_invalid_email + counts.stopped + counts.opted_out) > 0 ? 'text-destructive' : ''} />
+        <KpiCard label="Total" value={total} icon={Mail} />
+      </div>
+
+      {/* Detailed stats — collapsed by default */}
+      <div>
+        <Button variant="ghost" size="sm" onClick={() => setShowDetailedStats(v => !v)}>
+          {showDetailedStats ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+          Statistiques détaillées
+        </Button>
+        {showDetailedStats && (
+          <div className="mt-3 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <KpiCard label="À envoyer maintenant" value={counts.dueNow} icon={Send} color={counts.dueNow > 0 ? 'text-destructive' : ''} />
+            <KpiCard label="Anomalies" value={counts.anomalies} icon={AlertCircle} color={counts.anomalies > 0 ? 'text-destructive' : ''} />
+            <KpiCard label="Hunter prêts" value={counts.ready} icon={UserCheck} color="text-green-600" />
+            <KpiCard label="À enrichir" value={counts.pending} icon={Clock} color="text-amber-600" />
+            <KpiCard label="Hunter exclus" value={counts.excluded} icon={UserX} color="text-muted-foreground" />
+            <KpiCard label="Non démarré" value={counts.not_started} icon={Mail} />
+            <KpiCard label="Expirées" value={counts.expired} icon={Clock} color="text-muted-foreground" />
+            <KpiCard label="Avec email" value={counts.withEmail} icon={Mail} />
+            <KpiCard label="Sans email" value={counts.withoutEmail} icon={XCircle} color="text-amber-600" />
+            <KpiCard label="Stoppées (admin)" value={counts.stopped} icon={XCircle} color="text-destructive" />
+            <KpiCard label="Email invalide" value={counts.blocked_invalid_email} icon={UserX} color="text-destructive" />
+            <KpiCard label="Opt-out" value={counts.opted_out} icon={UserX} color="text-destructive" />
+            <KpiCard label="Nouveauté publiée" value={counts.novelty_published} icon={CheckCircle2} color="text-green-600" />
+            <KpiCard label="Email introuvable" value={counts.stop_email_not_found} icon={AlertCircle} color="text-amber-600" />
+            <KpiCard label="Ne participe pas" value={counts.stop_not_attending} icon={AlertCircle} color="text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {/* Per-event summary — upcoming events by default */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">Synthèse par salon</CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => setShowPastEvents(v => !v)}>
+            {showPastEvents ? 'Masquer les salons passés' : 'Afficher les salons passés'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const rows = eventAgg.filter(r => showPastEvents || r.isFuture);
+            if (rows.length === 0) return <p className="text-muted-foreground text-sm py-6 text-center">Aucun salon à venir avec des campagnes.</p>;
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="pb-2 font-medium">Salon</th>
+                      <th className="pb-2 font-medium">Date</th>
+                      <th className="pb-2 font-medium text-center">État</th>
+                      <th className="pb-2 font-medium text-center">Total</th>
+                      <th className="pb-2 font-medium text-center">Prêtes</th>
+                      <th className="pb-2 font-medium text-center">Envoyées</th>
+                      <th className="pb-2 font-medium text-center">Converties</th>
+                      <th className="pb-2 font-medium text-center">Anomalies</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(r => (
+                      <tr key={r.ev.id} className={`border-b last:border-0 cursor-pointer hover:bg-accent/30 ${!r.isFuture ? 'opacity-60' : ''}`} onClick={() => { setEventFilter(r.ev.id); setPage(0); setShowCampaignList(true); }}>
+                        <td className="py-2 font-medium">{r.ev.nom_event}</td>
+                        <td className="py-2 text-muted-foreground">{r.ev.date_debut ? format(new Date(r.ev.date_debut), 'dd MMM yyyy', { locale: fr }) : '–'}</td>
+                        <td className="py-2 text-center">{r.isFuture ? <Badge className="bg-green-500/15 text-green-700 border-green-300" variant="outline">À venir</Badge> : <Badge variant="outline">Passé</Badge>}</td>
+                        <td className="py-2 text-center">{r.total}</td>
+                        <td className="py-2 text-center">{r.ready}</td>
+                        <td className="py-2 text-center">{r.sent}</td>
+                        <td className="py-2 text-center font-medium text-green-600">{r.converted}</td>
+                        <td className="py-2 text-center">{r.anomalies > 0 ? <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">{r.anomalies}</Badge> : '–'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
+      {/* Campaign list — collapsed behind toggle */}
+      <Button variant="outline" onClick={() => setShowCampaignList(v => !v)}>
+        {showCampaignList ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+        {showCampaignList ? 'Masquer les campagnes' : `Voir toutes les campagnes (${filtered.length})`}
+      </Button>
+
+      {showCampaignList && (<>
       {/* Quick action chips */}
       <div className="flex gap-2 flex-wrap">
         <Button variant={quickFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('all'); setPage(0); }}>Tout</Button>
         <Button variant={quickFilter === 'due' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('due'); setPage(0); }}><Send className="h-3 w-3 mr-1" />À envoyer maintenant</Button>
         <Button variant={quickFilter === 'anomalies' ? 'destructive' : 'outline'} size="sm" onClick={() => { setQuickFilter('anomalies'); setPage(0); }}><AlertCircle className="h-3 w-3 mr-1" />Anomalies ({data.campaigns.reduce((acc, c) => acc + (detectAnomalies(c, primaryByCampaign[c.id], true).length > 0 ? 1 : 0), 0)})</Button>
         <Button variant={quickFilter === 'future' ? 'default' : 'outline'} size="sm" onClick={() => { setQuickFilter('future'); setPage(0); }}>Salons à venir uniquement</Button>
-      </div>
-
-      {/* KPIs - filtered context */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <KpiCard label="Total (filtré)" value={total} icon={Mail} />
-        <KpiCard label="À envoyer maintenant" value={counts.dueNow} icon={Send} color={counts.dueNow > 0 ? 'text-destructive' : ''} onClick={() => { setQuickFilter('due'); setPage(0); }} active={quickFilter === 'due'} />
-        <KpiCard label="Anomalies" value={counts.anomalies} icon={AlertCircle} color={counts.anomalies > 0 ? 'text-destructive' : ''} onClick={() => { setQuickFilter('anomalies'); setPage(0); }} active={quickFilter === 'anomalies'} />
-        <KpiCard label="Hunter prêts" value={counts.ready} icon={UserCheck} color="text-green-600" />
-        <KpiCard label="À enrichir" value={counts.pending} icon={Clock} color="text-amber-600" />
-        <KpiCard label="Hunter exclus" value={counts.excluded} icon={UserX} color="text-muted-foreground" />
-        <KpiCard label="Non démarré" value={counts.not_started} icon={Mail} />
-        <KpiCard label="Actives" value={counts.active} icon={Mail} color="text-blue-600" />
-        <KpiCard label="Terminées" value={counts.completed} icon={CheckCircle2} />
-        <KpiCard label="Converties" value={counts.converted} icon={CheckCircle2} color="text-green-600" />
-        <KpiCard label="Avec email" value={counts.withEmail} icon={Mail} />
-        <KpiCard label="Sans email" value={counts.withoutEmail} icon={XCircle} color="text-amber-600" />
-      </div>
-
-      {/* KPIs - pilotage qualité */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <KpiCard label="Stoppées (admin)" value={counts.stopped} icon={XCircle} color="text-destructive" />
-        <KpiCard label="Email invalide" value={counts.blocked_invalid_email} icon={UserX} color="text-destructive" />
-        <KpiCard label="Opt-out" value={counts.opted_out} icon={UserX} color="text-destructive" />
-        <KpiCard label="Nouveauté publiée" value={counts.novelty_published} icon={CheckCircle2} color="text-green-600" />
-        <KpiCard label="Email introuvable" value={counts.stop_email_not_found} icon={AlertCircle} color="text-amber-600" />
-        <KpiCard label="Ne participe pas" value={counts.stop_not_attending} icon={AlertCircle} color="text-muted-foreground" />
       </div>
 
       {/* Filters */}
@@ -447,43 +518,6 @@ export default function AdminOutreachDashboard() {
         </CardContent>
       </Card>
 
-      {/* Per-event summary */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Synthèse par salon</CardTitle></CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="pb-2 font-medium">Salon</th>
-                  <th className="pb-2 font-medium">Date</th>
-                  <th className="pb-2 font-medium text-center">État</th>
-                  <th className="pb-2 font-medium text-center">Total</th>
-                  <th className="pb-2 font-medium text-center">Prêtes</th>
-                  <th className="pb-2 font-medium text-center">Envoyées</th>
-                  <th className="pb-2 font-medium text-center">Converties</th>
-                  <th className="pb-2 font-medium text-center">Anomalies</th>
-                </tr>
-              </thead>
-              <tbody>
-                {eventAgg.map(r => (
-                  <tr key={r.ev.id} className={`border-b last:border-0 cursor-pointer hover:bg-accent/30 ${!r.isFuture ? 'opacity-60' : ''}`} onClick={() => { setEventFilter(r.ev.id); setPage(0); }}>
-                    <td className="py-2 font-medium">{r.ev.nom_event}</td>
-                    <td className="py-2 text-muted-foreground">{r.ev.date_debut ? format(new Date(r.ev.date_debut), 'dd MMM yyyy', { locale: fr }) : '–'}</td>
-                    <td className="py-2 text-center">{r.isFuture ? <Badge className="bg-green-500/15 text-green-700 border-green-300" variant="outline">À venir</Badge> : <Badge variant="outline">Passé</Badge>}</td>
-                    <td className="py-2 text-center">{r.total}</td>
-                    <td className="py-2 text-center">{r.ready}</td>
-                    <td className="py-2 text-center">{r.sent}</td>
-                    <td className="py-2 text-center font-medium text-green-600">{r.converted}</td>
-                    <td className="py-2 text-center">{r.anomalies > 0 ? <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">{r.anomalies}</Badge> : '–'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Main table */}
       <Card>
         <CardHeader><CardTitle className="text-base">Campagnes</CardTitle></CardHeader>
@@ -558,6 +592,7 @@ export default function AdminOutreachDashboard() {
           )}
         </CardContent>
       </Card>
+      </>)}
 
       {/* Detail Sheet */}
       <Sheet open={!!selected} onOpenChange={open => !open && setSelected(null)}>
