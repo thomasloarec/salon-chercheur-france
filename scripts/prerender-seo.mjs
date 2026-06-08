@@ -730,6 +730,46 @@ function buildNovelty(n) {
   return { title, description, canonical, headExtra, body, robots };
 }
 
+// Novelties index (/nouveautes). Lists every INDEXABLE novelty as a crawlable
+// <a href="/nouveautes/:slug"> so detail pages are discoverable beyond the
+// sitemap. Always indexable (index, follow).
+function buildNoveltiesIndex(novelties) {
+  const canonical = `${SITE_ORIGIN}/nouveautes`;
+  const title = 'Nouveautés des salons professionnels | Lotexpo';
+  const description = "Découvrez les dernières nouveautés présentées par les exposants des salons professionnels en France : lancements, innovations et démonstrations sur Lotexpo.";
+  const robots = 'index, follow';
+  const itemList = {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    name: title,
+    numberOfItems: novelties.length,
+    itemListElement: novelties.slice(0, 100).map((n, i) => ({
+      '@type': 'ListItem', position: i + 1,
+      url: `${SITE_ORIGIN}/nouveautes/${encodeURIComponent(n.slug)}`,
+      name: n.title,
+    })),
+  };
+  const breadcrumb = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+      { '@type': 'ListItem', position: 2, name: 'Nouveautés', item: canonical },
+    ],
+  };
+  const headExtra = commonHead(canonical, title, description)
+    + `<script type="application/ld+json">${safeJsonLd(itemList)}</script>`
+    + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`;
+  const list = novelties.map((n) =>
+    `<li><a href="/nouveautes/${encodeURIComponent(n.slug)}">${escapeHtml(n.title)}</a>${n.exhibitor_display_name ? ' – ' + escapeHtml(n.exhibitor_display_name) : ''}${n.event_name ? ' (' + escapeHtml(n.event_name) + ')' : ''}</li>`,
+  ).join('');
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>Nouveautés des salons professionnels</h1>
+    <p>Retrouvez les ${novelties.length} nouveautés présentées par les exposants des salons professionnels référencés sur Lotexpo : lancements de produits, innovations, démonstrations et offres.</p>
+    <ul>${list}</ul>
+    <p><a href="/events">Calendrier des salons</a> · <a href="/exposants">Tous les exposants</a></p>
+  </div>`;
+  return { title, description, canonical, headExtra, body, robots };
+}
+
 // ---------- write helper ----------
 async function writeRoute(routePath, html) {
   const isRoot = routePath === '/' || routePath === '';
