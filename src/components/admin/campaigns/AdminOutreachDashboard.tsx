@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Loader2, Mail, CheckCircle2, XCircle, Clock, AlertTriangle, Ban, X, Search, Copy, ExternalLink, Send, UserCheck, UserX, AlertCircle } from 'lucide-react';
+import { Loader2, Mail, CheckCircle2, XCircle, Clock, AlertTriangle, Ban, X, Search, Copy, ExternalLink, Send, UserCheck, UserX, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -185,6 +185,11 @@ export default function AdminOutreachDashboard() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
 
+  // Presentation toggles (display only)
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
+  const [showPastEvents, setShowPastEvents] = useState(false);
+  const [showCampaignList, setShowCampaignList] = useState(false);
+
   // Detail
   const [selected, setSelected] = useState<CampaignRow | null>(null);
 
@@ -273,6 +278,7 @@ export default function AdminOutreachDashboard() {
       converted: filtered.filter(x => x.c.campaign_status === 'converted').length,
       stopped: filtered.filter(x => x.c.campaign_status === 'stopped').length,
       blocked_invalid_email: filtered.filter(x => x.c.campaign_status === 'blocked_invalid_email').length,
+      expired: filtered.filter(x => x.c.campaign_status === 'expired').length,
       novelty_published: filtered.filter(x => x.c.campaign_status === 'novelty_published').length,
       stop_email_not_found: filtered.filter(x => x.c.stop_reason === 'email_not_found').length,
       stop_not_attending: filtered.filter(x => x.c.stop_reason === 'not_attending_event').length,
