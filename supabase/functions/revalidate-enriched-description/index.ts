@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { buildCorsHeaders, handleCors } from '../_shared/cors.ts';
 import { validateEnrichedDescription, type EventSource } from '../_shared/validate-enriched-description.ts';
 

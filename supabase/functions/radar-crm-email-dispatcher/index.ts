@@ -18,7 +18,7 @@
 //     not touched.
 //
 // No email cron is created. Real sends are strictly opt-in per call.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendResendEmail } from '../_shared/resend.ts';
 
 const corsHeaders = {

@@ -5,7 +5,7 @@
 //   - stamps radar_email_unsubscribed_at
 //   - marks the token as used
 // It does NOT touch internal notifications or other Lotexpo preferences.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const ORANGE = '#ff7a1f';
 const NAVY = '#06286e';
