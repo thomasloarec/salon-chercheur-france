@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Minus, Globe, Eye, Users, MousePointerClick, ExternalLink, FileText, Radar, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAdminLeadsStats } from '@/hooks/useAdminLeadsStats';
 
 const fmt = (v: number | null | undefined) => (v != null ? v.toLocaleString('fr-FR') : '–');
 
@@ -164,6 +165,9 @@ const AdminOverview = () => {
   const noveltiesDelta = novelties7d ? novelties7d.current - novelties7d.previous : null;
   const outreachEmpty = !outreachData || outreachData.empty;
 
+  // ── Leads générés (RPC admin) ──
+  const { data: leadsStats } = useAdminLeadsStats();
+
   // ── Radar CRM admin stats ──
   const { data: radarStats } = useQuery({
     queryKey: ['overview-radar-crm-stats'],
@@ -263,7 +267,7 @@ const AdminOverview = () => {
       {/* Bloc 2 — Activité plateforme */}
       <section>
         <h2 className="text-lg font-semibold mb-3">Activité plateforme – 7 jours</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
             title="Nouveautés publiées"
             value={fmt(novelties7d?.current)}
@@ -275,6 +279,13 @@ const AdminOverview = () => {
             value={fmt(iaUses7d)}
             subtitle="7 derniers jours"
           />
+          <Link to="/admin/leads" className="block transition-opacity hover:opacity-80">
+            <MetricCard
+              title="Leads générés"
+              value={fmt(leadsStats?.totals?.total_leads)}
+              subtitle="Voir le suivi des leads →"
+            />
+          </Link>
         </div>
       </section>
 
