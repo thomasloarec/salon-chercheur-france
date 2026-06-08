@@ -146,24 +146,28 @@ const AdminOverview = () => {
   });
 
   // ── Outreach ──
-  const { data: outreachData } = useQuery({
-    queryKey: ['overview-outreach'],
+  const { data: outreachData, isLoading: outreachLoading, isError: outreachError } = useQuery({
+    queryKey: ['overview-outreach-v2'],
     queryFn: async () => {
-      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-      const { data, error } = await supabase.from('outreach_campaigns')
-        .select('campaign_status').neq('campaign_status', 'not_started')
-        .gte('created_at', monthStart.toISOString());
-      if (error) return null;
-      if (!data || data.length === 0) return { contacted: 0, converted: 0, rate: null, empty: true };
-      const contacted = data.length;
-      const converted = data.filter((r: any) => r.campaign_status === 'converted').length;
-      const rate = contacted > 0 ? Math.round((converted / contacted) * 100) : 0;
-      return { contacted, converted, rate, empty: false };
+      const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const [totalRes, convertedRes, sent7dRes] = await Promise.all([
+        supabase.from('outreach_campaigns').select('*', { count: 'exact', head: true }),
+        supabase.from('outreach_campaigns').select('*', { count: 'exact', head: true }).eq('campaign_status', 'converted'),
+        supabase.from('outreach_campaigns').select('*', { count: 'exact', head: true }).gte('last_sent_at', sevenDaysAgo.toISOString()),
+      ]);
+      const errors = [totalRes.error, convertedRes.error, sent7dRes.error].filter(Boolean);
+      if (errors.length > 0) return null;
+      const total = totalRes.count ?? 0;
+      return {
+        total,
+        converted: convertedRes.count ?? 0,
+        sent7d: sent7dRes.count ?? 0,
+        empty: total === 0,
+      };
     },
   });
 
   const noveltiesDelta = novelties7d ? novelties7d.current - novelties7d.previous : null;
-  const outreachEmpty = !outreachData || outreachData.empty;
 
   // ── Leads générés (RPC admin) ──
   const { data: leadsStats } = useAdminLeadsStats();
