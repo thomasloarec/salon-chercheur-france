@@ -10,7 +10,8 @@ import {
   Download,
   CalendarCheck,
   ChevronRight,
-  Share2,
+  Link2,
+  MoreHorizontal,
   Check,
 } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
@@ -21,6 +22,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Carousel,
   CarouselContent,
