@@ -217,9 +217,8 @@ serve(async (req) => {
           // NEVER let an email failure break lead creation.
           try {
             const resendKey = Deno.env.get('RESEND_API_KEY');
-            const lovableKey = Deno.env.get('LOVABLE_API_KEY');
-            if (!resendKey || !lovableKey) {
-              console.warn(`[${logTag}_admin_fallback_email] missing RESEND_API_KEY or LOVABLE_API_KEY — admin email skipped`, {
+            if (!resendKey) {
+              console.warn(`[${logTag}_admin_fallback_email] missing RESEND_API_KEY — admin email skipped`, {
                 novelty_id: data.novelty_id, lead_id: lead.id,
               });
             } else {
@@ -281,26 +280,13 @@ serve(async (req) => {
                 </div>`;
 
               try {
-                const resp = await fetch('https://connector-gateway.lovable.dev/resend/emails', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${lovableKey}`,
-                    'X-Connection-Api-Key': resendKey,
-                  },
-                  body: JSON.stringify({
-                    from: 'Lotexpo <admin@lotexpo.com>',
-                    to: [adminEmail],
-                    subject,
-                    html,
-                  }),
+                const { id: emailId } = await sendResendEmail({
+                  from: 'Lotexpo <admin@lotexpo.com>',
+                  to: [adminEmail],
+                  subject,
+                  html,
                 });
-                if (!resp.ok) {
-                  const t = await resp.text().catch(() => '');
-                  console.error(`[${logTag}_admin_fallback_email] resend failed`, { novelty_id: data.novelty_id, lead_id: lead.id, status: resp.status, body: t.slice(0, 300) });
-                } else {
-                  console.log(`[${logTag}_admin_fallback_email]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: adminEmail, actor_email: data.email });
-                }
+                console.log(`[${logTag}_admin_fallback_email]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: adminEmail, actor_email: data.email, email_id: emailId });
               } catch (e) {
                 console.error(`[${logTag}_admin_fallback_email] exception`, { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
               }
