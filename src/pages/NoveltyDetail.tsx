@@ -30,13 +30,17 @@ import {
 } from '@/components/ui/carousel';
 import NotFoundSEO from '@/components/seo/NotFoundSEO';
 import LeadForm from '@/components/novelty/LeadForm';
+import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
 import {
   useNoveltyPublic,
   useNoveltyAround,
   NOVELTY_TYPE_LABELS,
   type PublicNovelty,
 } from '@/hooks/useNoveltyPublic';
+import { cn } from '@/lib/utils';
 
 const SITE_ORIGIN = 'https://lotexpo.com';
 
