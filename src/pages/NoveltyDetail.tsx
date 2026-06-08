@@ -53,10 +53,18 @@ export default function NoveltyDetail() {
   const { data: novelty, isLoading, isError } = useNoveltyPublic(slug);
   const { data: around } = useNoveltyAround(novelty ?? null);
 
+  const { user } = useAuth();
+  const { isLiked, toggleLike, isPending } = useNoveltyLike(
+    novelty?.id ?? '',
+    novelty?.event_id,
+  );
+  const { data: likesCount = 0 } = useNoveltyLikesCount(novelty?.id ?? '');
+
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadType, setLeadType] =
     useState<'brochure_download' | 'meeting_request'>('meeting_request');
   const [copied, setCopied] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   if (isLoading) {
     return (
