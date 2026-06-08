@@ -305,7 +305,7 @@ function buildHome() {
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>Salons professionnels en France</h1>
     <p>Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Lotexpo centralise les salons, congrès, conventions et événements B2B avec leurs dates, lieux et exposants associés.</p>
-    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/events">Calendrier complet</a></p>
+    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/events">Calendrier complet</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
