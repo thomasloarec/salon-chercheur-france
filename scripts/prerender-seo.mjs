@@ -853,6 +853,39 @@ async function main() {
     }
   }
 
+  // 2d. fetch novelties UP-FRONT (single paged request, reordered from §7c).
+  // Reused three times below with NO extra requests: (a) inbound maillage into
+  // events/exhibitors, (b) detail pages, (c) the /nouveautes index.
+  // NON-BLOCKING: a failure leaves novelties=[] (no maillage) but never aborts —
+  // an outage on the novelty dataset must not take the whole site down.
+  let novelties = [];
+  try {
+    const noveltyFields = 'slug,title,type,reason_1,reason_2,reason_3,audience_tags,media_urls,summary,details,seo_indexable,exhibitor_public_slug,exhibitor_display_name,event_slug,event_name,event_ville,updated_at';
+    novelties = (await sbPaged(`public_novelties?slug=not.is.null&select=${noveltyFields}&order=updated_at.desc`))
+      .filter((n) => n.slug && String(n.slug).trim());
+    console.log(`[prerender] novelties fetched: ${novelties.length}`);
+  } catch (e) {
+    console.warn('[prerender] WARN: novelty fetch errored (non-blocking, build continues):', e.message);
+    novelties = [];
+  }
+
+  // Inbound maillage indexes. Only INDEXABLE novelties are linked (same gate as
+  // the detail pages that receive an indexable canonical) — never link a
+  // noindex/non-published novelty. Built once, reused per event/exhibitor.
+  const novsByEvent = new Map();
+  const novsByExhibitor = new Map();
+  for (const n of novelties) {
+    if (n.seo_indexable !== true) continue;
+    if (n.event_slug) {
+      if (!novsByEvent.has(n.event_slug)) novsByEvent.set(n.event_slug, []);
+      novsByEvent.get(n.event_slug).push(n);
+    }
+    if (n.exhibitor_public_slug) {
+      if (!novsByExhibitor.has(n.exhibitor_public_slug)) novsByExhibitor.set(n.exhibitor_public_slug, []);
+      novsByExhibitor.get(n.exhibitor_public_slug).push(n);
+    }
+  }
+
   // 3. generate each event page (sequential to limit concurrent fetches)
   for (const ev of events) {
     if (!ev.slug) continue;
@@ -866,7 +899,7 @@ async function main() {
           slug: resolveSlug(p.exhibitor_id, p.id_exposant),
         })).filter((p) => p.name && p.name.trim().length > 1);
       }
-      const built = buildEvent(ev, exhibitors);
+      const built = buildEvent(ev, exhibitors, novsByEvent.get(ev.slug) || []);
       const html = applyToShell(baseTemplate, built);
       await writeRoute(`/events/${ev.slug}`, html);
       stats.events++;
