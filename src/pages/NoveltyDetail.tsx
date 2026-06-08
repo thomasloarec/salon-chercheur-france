@@ -274,16 +274,28 @@ export default function NoveltyDetail() {
                   {countdownLabel}
                 </span>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopyLink}
-                className="ml-auto gap-1.5 text-muted-foreground"
-                aria-label="Copier le lien de la nouveauté"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-                {copied ? 'Lien copié' : 'Partager'}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-auto h-8 w-8 text-muted-foreground"
+                    aria-label="Plus d'actions"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleCopyLink}>
+                    {copied ? (
+                      <Check className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Link2 className="mr-2 h-4 w-4" />
+                    )}
+                    {copied ? 'Lien copié' : 'Copier le lien'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <h1 className="text-2xl font-bold leading-tight tracking-tight md:text-3xl">
