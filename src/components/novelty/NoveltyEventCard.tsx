@@ -7,13 +7,21 @@ import {
   Bookmark,
   Download,
   Images,
-  Share2,
   Check,
+  CalendarCheck,
+  Link2,
+  MoreHorizontal,
 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -161,6 +169,11 @@ export default function NoveltyEventCard({
 
   const handleBrochureDownload = () => {
     setLeadFormType('brochure_download');
+    setShowLeadForm(true);
+  };
+
+  const handleMeetingRequest = () => {
+    setLeadFormType('meeting_request');
     setShowLeadForm(true);
   };
 
@@ -335,30 +348,17 @@ export default function NoveltyEventCard({
 
             {/* CTA */}
             <div className="flex items-center gap-2 pt-1 mt-auto flex-wrap">
-
+              {/* CTA principal — Demander un rendez-vous (chaîne de lead) */}
               <Button
-                onClick={handleInterestToggle}
-                disabled={isPending}
-                variant={isLiked ? 'default' : 'outline'}
+                onClick={handleMeetingRequest}
                 size="sm"
-                className={cn(
-                  'gap-1.5',
-                  isLiked && 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/15',
-                )}
-                aria-pressed={isLiked}
-                aria-label={isLiked ? 'Retirer de mes intérêts' : "Marquer comme m'intéresse"}
+                className="gap-1.5"
               >
-                <Bookmark
-                  className={cn('h-3.5 w-3.5', isLiked && 'fill-current')}
-                />
-                {isLiked ? 'Intéressé·e' : "M'intéresse"}
-                {likesCount > 0 && (
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    · {likesCount}
-                  </span>
-                )}
+                <CalendarCheck className="h-3.5 w-3.5" />
+                Demander un rendez-vous
               </Button>
 
+              {/* Secondaire — Télécharger la brochure (uniquement si PDF) */}
               {novelty.doc_url && (
                 <Button
                   onClick={handleBrochureDownload}
@@ -367,21 +367,57 @@ export default function NoveltyEventCard({
                   className="gap-1.5 border-accent/40 bg-accent/10 text-accent hover:bg-accent hover:text-accent-foreground hover:border-accent"
                 >
                   <Download className="h-3.5 w-3.5" />
-                  Brochure
+                  Télécharger la brochure
                 </Button>
               )}
 
+              {/* M'intéresse — icône favori discrète (signal léger, pas un lead) */}
+              <Button
+                onClick={handleInterestToggle}
+                disabled={isPending}
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'gap-1.5 text-muted-foreground hover:text-primary',
+                  isLiked && 'text-primary',
+                )}
+                aria-pressed={isLiked}
+                aria-label={isLiked ? 'Retirer de mes intérêts' : "Marquer comme m'intéresse"}
+              >
+                <Bookmark
+                  className={cn('h-4 w-4', isLiked && 'fill-current')}
+                />
+                {likesCount > 0 && (
+                  <span className="text-xs tabular-nums">{likesCount}</span>
+                )}
+              </Button>
+
+              {/* Menu "···" — actions secondaires (copier le lien) */}
               {novelty.slug && (
-                <Button
-                  onClick={handleCopyLink}
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 text-muted-foreground"
-                  aria-label="Copier le lien de la nouveauté"
-                >
-                  {copied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
-                  {copied ? 'Lien copié' : 'Copier le lien'}
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-auto h-8 w-8 text-muted-foreground"
+                      aria-label="Plus d'actions"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => handleCopyLink(e as unknown as React.MouseEvent)}
+                    >
+                      {copied ? (
+                        <Check className="mr-2 h-4 w-4" />
+                      ) : (
+                        <Link2 className="mr-2 h-4 w-4" />
+                      )}
+                      {copied ? 'Lien copié' : 'Copier le lien'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>
