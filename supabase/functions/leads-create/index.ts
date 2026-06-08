@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.1";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 // Frontend schema
 const schema = z.object({
@@ -216,9 +217,8 @@ serve(async (req) => {
           // NEVER let an email failure break lead creation.
           try {
             const resendKey = Deno.env.get('RESEND_API_KEY');
-            const lovableKey = Deno.env.get('LOVABLE_API_KEY');
-            if (!resendKey || !lovableKey) {
-              console.warn(`[${logTag}_admin_fallback_email] missing RESEND_API_KEY or LOVABLE_API_KEY — admin email skipped`, {
+            if (!resendKey) {
+              console.warn(`[${logTag}_admin_fallback_email] missing RESEND_API_KEY — admin email skipped`, {
                 novelty_id: data.novelty_id, lead_id: lead.id,
               });
             } else {
@@ -280,26 +280,13 @@ serve(async (req) => {
                 </div>`;
 
               try {
-                const resp = await fetch('https://connector-gateway.lovable.dev/resend/emails', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${lovableKey}`,
-                    'X-Connection-Api-Key': resendKey,
-                  },
-                  body: JSON.stringify({
-                    from: 'Lotexpo <admin@lotexpo.com>',
-                    to: [adminEmail],
-                    subject,
-                    html,
-                  }),
+                const { id: emailId } = await sendResendEmail({
+                  from: 'Lotexpo <admin@lotexpo.com>',
+                  to: [adminEmail],
+                  subject,
+                  html,
                 });
-                if (!resp.ok) {
-                  const t = await resp.text().catch(() => '');
-                  console.error(`[${logTag}_admin_fallback_email] resend failed`, { novelty_id: data.novelty_id, lead_id: lead.id, status: resp.status, body: t.slice(0, 300) });
-                } else {
-                  console.log(`[${logTag}_admin_fallback_email]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: adminEmail, actor_email: data.email });
-                }
+                console.log(`[${logTag}_admin_fallback_email]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: adminEmail, actor_email: data.email, email_id: emailId });
               } catch (e) {
                 console.error(`[${logTag}_admin_fallback_email] exception`, { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
               }
@@ -360,11 +347,10 @@ serve(async (req) => {
 
           // 2) Resend email — sent for both lead types
           const resendKey = Deno.env.get('RESEND_API_KEY');
-          const lovableKey = Deno.env.get('LOVABLE_API_KEY');
           if (recipientEmails.length === 0) {
             console.warn(`[${logTag}_email_sent] no recipient emails resolved`, { novelty_id: data.novelty_id, lead_id: lead.id });
-          } else if (!resendKey || !lovableKey) {
-            console.warn(`[${logTag}_email_sent] missing RESEND_API_KEY or LOVABLE_API_KEY — email skipped`, { novelty_id: data.novelty_id, lead_id: lead.id });
+          } else if (!resendKey) {
+            console.warn(`[${logTag}_email_sent] missing RESEND_API_KEY — email skipped`, { novelty_id: data.novelty_id, lead_id: lead.id });
           } else {
             const eventName = event?.nom_event ?? '';
             const noveltyTitle = novelty.title ?? '';
@@ -397,26 +383,13 @@ serve(async (req) => {
                 <p style="font-size:12px;color:#666;margin-top:24px">Cet email vous est envoyé car vous êtes membre actif de l'équipe exposant sur Lotexpo.</p>
               </div>`;
             try {
-              const resp = await fetch('https://connector-gateway.lovable.dev/resend/emails', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${lovableKey}`,
-                  'X-Connection-Api-Key': resendKey,
-                },
-                body: JSON.stringify({
-                  from: 'Lotexpo <admin@lotexpo.com>',
-                  to: recipientEmails.map(r => r.email),
-                  subject,
-                  html,
-                }),
+              const { id: emailId } = await sendResendEmail({
+                from: 'Lotexpo <admin@lotexpo.com>',
+                to: recipientEmails.map(r => r.email),
+                subject,
+                html,
               });
-              if (!resp.ok) {
-                const t = await resp.text().catch(() => '');
-                console.error(`[${logTag}_email_sent] resend failed`, { novelty_id: data.novelty_id, lead_id: lead.id, status: resp.status, body: t.slice(0, 300) });
-              } else {
-                console.log(`[${logTag}_email_sent]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: recipientEmails.map(r => r.email), actor_email: data.email });
-              }
+              console.log(`[${logTag}_email_sent]`, { novelty_id: data.novelty_id, lead_id: lead.id, to: recipientEmails.map(r => r.email), actor_email: data.email, email_id: emailId });
             } catch (e) {
               console.error(`[${logTag}_email_sent] exception`, { novelty_id: data.novelty_id, lead_id: lead.id, error: String(e) });
             }
