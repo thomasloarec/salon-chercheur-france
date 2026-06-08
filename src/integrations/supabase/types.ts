@@ -5430,6 +5430,7 @@ export type Database = {
         Returns: string
       }
       exhibitor_slug_normalize: { Args: { p_name: string }; Returns: string }
+      expire_past_campaigns: { Args: never; Returns: number }
       export_user_data: { Args: never; Returns: Json }
       extract_event_years: { Args: { p_text: string }; Returns: number[] }
       extract_exhibitor_id_from_logo_path: {
