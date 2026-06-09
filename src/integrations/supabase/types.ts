@@ -3163,6 +3163,13 @@ export type Database = {
             foreignKeyName: "outreach_contacts_outreach_campaign_id_fkey"
             columns: ["outreach_campaign_id"]
             isOneToOne: false
+            referencedRelation: "v_a_classifier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_contacts_outreach_campaign_id_fkey"
+            columns: ["outreach_campaign_id"]
+            isOneToOne: false
             referencedRelation: "v_a_enrichir"
             referencedColumns: ["id"]
           },
@@ -4743,6 +4750,24 @@ export type Database = {
             referencedColumns: ["exhibitor_uuid"]
           },
         ]
+      }
+      v_a_classifier: {
+        Row: {
+          company_name: string | null
+          id: string | null
+          website: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          id?: string | null
+          website?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          id?: string | null
+          website?: string | null
+        }
+        Relationships: []
       }
       v_a_enrichir: {
         Row: {
