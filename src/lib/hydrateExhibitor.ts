@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { cleanAiDescription } from '@/lib/exhibitorDescription';
 
 export type LightExhibitor = {
   id_exposant?: string | null;
@@ -43,7 +44,8 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
         .maybeSingle();
       
       if (aiRow?.resume_court) {
-        light = { ...light, ai_resume_court: aiRow.resume_court };
+        const cleaned = cleanAiDescription(aiRow.resume_court);
+        if (cleaned) light = { ...light, ai_resume_court: cleaned };
       }
     }
   }
