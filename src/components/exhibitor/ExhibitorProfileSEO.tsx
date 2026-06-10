@@ -5,6 +5,7 @@ import {
   normalizeImageUrl,
   normalizeLinkedInUrl,
 } from '@/lib/urlUtils';
+import { cleanAiDescription } from '@/lib/exhibitorDescription';
 
 // Dedicated 1200x630 Open Graph fallback for exhibitor pages.
 // Always used for og:image (never the company logo) so social previews
@@ -39,7 +40,8 @@ function buildOrganizationJsonLd(profile: PublicExhibitorProfile) {
   const website = normalizeExternalUrl(profile.website);
   const logo = normalizeImageUrl(profile.logo_url);
   const linkedin = normalizeLinkedInUrl(profile.linkedin_url);
-  const description = cleanStr(profile.description) || cleanStr(profile.ai_summary);
+  const description =
+    cleanAiDescription(profile.description) || cleanAiDescription(profile.ai_summary);
 
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -117,7 +119,7 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
     `${name} : salons, nouveautés et événements professionnels | Lotexpo`.slice(0, 70);
 
   const description = (
-    profile.description
+    cleanAiDescription(profile.description)
       ? `Retrouvez les salons professionnels, nouveautés et informations publiques de ${name} sur Lotexpo.`
       : `Consultez la fiche exposant de ${name} sur Lotexpo : salons professionnels associés, nouveautés et informations publiques.`
   ).slice(0, 160);
