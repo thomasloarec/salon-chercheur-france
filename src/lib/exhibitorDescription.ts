@@ -17,10 +17,10 @@ function stripAccents(value: string): string {
 const REFUSAL_PATTERNS: RegExp[] = [
   /donnees? insuffisantes/,
   /informations? insuffisantes/,
-  /impossible.*(analys|qualifi)/,
+  /impossib[^.]{0,40}(analys|qualifi)/,
   /aucune description ni contenu web/,
-  /aucun contenu de site web.*fourni/,
-  /veuillez fournir.*(description|site web)/,
+  /aucun contenu de site web[^.]{0,40}fourni/,
+  /veuillez fournir[^.]{0,40}(description|site web)/,
 ];
 
 /** Renvoie true si le texte est un message de refus généré par l'IA. */
