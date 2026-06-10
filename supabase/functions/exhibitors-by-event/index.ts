@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { isAiRefusal } from '../_shared/aiRefusal.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -172,7 +173,7 @@ Deno.serve(async (req) => {
 
             if (aiRows) {
               aiRows.forEach(row => {
-                if (row.resume_court) {
+                if (row.resume_court && !isAiRefusal(row.resume_court)) {
                   aiData[row.exhibitor_id] = row.resume_court
                 }
               })
