@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { isAiRefusal } from '../_shared/aiRefusal.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
