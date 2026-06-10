@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
 
             if (aiRows) {
               aiRows.forEach(row => {
-                if (row.resume_court) {
+                if (row.resume_court && !isAiRefusal(row.resume_court)) {
                   aiData[row.exhibitor_id] = row.resume_court
                 }
               })

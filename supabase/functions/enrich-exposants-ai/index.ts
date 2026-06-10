@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { ANTHROPIC_API_URL, buildAnthropicHeaders, getAnthropicModelFast } from '../_shared/anthropic.ts';
+import { isAiRefusal } from '../_shared/aiRefusal.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -244,11 +245,17 @@ serve(async (req) => {
         continue;
       }
 
+      // Prévention : si Claude renvoie un message de refus (« Données insuffisantes… »),
+      // on ne stocke pas ce texte — on enregistre une chaîne vide pour que la cascade
+      // de description bascule proprement vers le fallback côté affichage.
+      const rawResume = (parsed.resume_court as string) || '';
+      const safeResume = isAiRefusal(rawResume) ? '' : rawResume;
+
       const { error: insertError } = await supabaseAdmin
         .from('exhibitor_ai')
         .insert({
           exhibitor_id: exposant.id_exposant!,
-          resume_court: (parsed.resume_court as string) || '',
+          resume_court: safeResume,
           secteur_principal: (parsed.secteur_principal as string) || null,
           sous_secteurs: (parsed.sous_secteurs as string[]) ?? [],
           produits_services: (parsed.produits_services as string[]) ?? [],
