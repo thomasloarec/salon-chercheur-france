@@ -15,6 +15,7 @@ import { useProfileComplete } from '@/hooks/useProfileComplete';
 import { toast } from 'sonner';
 import { ShieldCheck, Loader2, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { resolveClaimCampaign, clearClaimCampaign } from '@/lib/claimCampaign';
 
 interface ExhibitorClaimModalProps {
   open: boolean;
@@ -23,6 +24,8 @@ interface ExhibitorClaimModalProps {
   exhibitorName: string;
   exhibitorWebsite?: string;
   idExposant?: string;
+  /** Current exhibitor slug — used to match a stored claim-campaign id. */
+  publicSlug?: string;
 }
 
 const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
@@ -32,6 +35,7 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
   exhibitorName,
   exhibitorWebsite,
   idExposant,
+  publicSlug,
 }) => {
   const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
@@ -44,6 +48,10 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
     setSubmitting(true);
 
     try {
+      // Claim-first attribution: resolve the campaign id (URL first, then
+      // sessionStorage if it belongs to this slug). null when absent/invalid.
+      const sourceCampaignId = resolveClaimCampaign(publicSlug ?? null);
+
       const { data, error } = await supabase.functions.invoke('exhibitor-claim-bridge', {
         body: {
           exhibitor_uuid: exhibitorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(exhibitorId)
@@ -52,6 +60,7 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
           id_exposant: idExposant || undefined,
           name: exhibitorName,
           website: exhibitorWebsite || undefined,
+          source_campaign_id: sourceCampaignId || undefined,
         },
       });
 
@@ -61,6 +70,9 @@ const ExhibitorClaimModal: React.FC<ExhibitorClaimModalProps> = ({
         toast.error(data.message || 'Une erreur est survenue.');
         return;
       }
+
+      // Successful submission (new or already-pending) → purge stored camp.
+      clearClaimCampaign();
 
       if (data?.already_pending) {
         toast.info('Vous avez déjà une demande en cours pour cette entreprise.');

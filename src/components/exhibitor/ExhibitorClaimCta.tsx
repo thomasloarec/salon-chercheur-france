@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Pencil } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditD
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { canEditExhibitorProfile } from '@/lib/exhibitorOwnerEdit';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
+import { readCampFromParams, persistClaimCampaign } from '@/lib/claimCampaign';
 
 /* ------------------------------- Claim CTA ------------------------------- */
 
@@ -29,6 +31,19 @@ export default function ExhibitorClaimCta({
   const [authOpen, setAuthOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const slug = profile.public_slug || '';
+  const [searchParams] = useSearchParams();
+
+  // Claim-first attribution: capture a valid ?camp= deep-link on arrival and
+  // persist it so it survives the mandatory authentication step.
+  const camp = readCampFromParams(searchParams);
+  useEffect(() => {
+    if (camp && slug) persistClaimCampaign(camp, slug);
+  }, [camp, slug]);
+
+  // Origin-relative return URL forwarded to the auth flow (keeps ?camp=).
+  const authRedirectTo = slug
+    ? `/exposants/${slug}${camp ? `?camp=${camp}` : ''}`
+    : undefined;
 
   const governance = useExhibitorGovernance(
     profile.exhibitor_id || profile.legacy_exposant_id || undefined,
@@ -119,8 +134,14 @@ export default function ExhibitorClaimCta({
         exhibitorName={profile.display_name || profile.canonical_name || ''}
         exhibitorWebsite={profile.website || undefined}
         idExposant={profile.legacy_exposant_id || undefined}
+        publicSlug={slug || undefined}
       />
-      <AuthRequiredModal open={authOpen} onOpenChange={setAuthOpen} actionType="add-novelty" />
+      <AuthRequiredModal
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        actionType="add-novelty"
+        redirectTo={authRedirectTo}
+      />
     </>
   );
 }

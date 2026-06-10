@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, redirectPath?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
 }
@@ -190,8 +190,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+  const signUp = async (email: string, password: string, redirectPath?: string) => {
+    // redirectPath is strictly origin-relative (validated by callers). Defaults
+    // to "/" so existing callers keep their exact current behavior.
+    const safePath =
+      redirectPath && redirectPath.startsWith('/') && !redirectPath.startsWith('//')
+        ? redirectPath
+        : '/';
+    const redirectUrl = `${window.location.origin}${safePath}`;
 
     const { error } = await supabase.auth.signUp({
       email,

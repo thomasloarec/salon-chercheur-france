@@ -51,6 +51,35 @@ function normalizeName(input: string): string {
     .trim()
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Sanitize an optional source_campaign_id (claim-first attribution).
+ * Returns a valid existing campaign id, or null. A missing / malformed /
+ * unknown value MUST degrade to null so it can never break the claim
+ * (and never violates the FK on exhibitor_claim_requests.source_campaign_id).
+ * Existence MUST be checked with the service-role client: outreach_campaigns
+ * RLS is admin/service_role only, so the anon+JWT client would always miss.
+ */
+async function sanitizeSourceCampaignId(
+  admin: ReturnType<typeof createClient>,
+  raw: unknown,
+): Promise<string | null> {
+  if (typeof raw !== 'string' || !UUID_RE.test(raw.trim())) return null
+  const camp = raw.trim()
+  try {
+    const { data } = await admin
+      .from('outreach_campaigns')
+      .select('id')
+      .eq('id', camp)
+      .maybeSingle()
+    return data?.id ? camp : null
+  } catch (_e) {
+    return null
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -96,6 +125,7 @@ Deno.serve(async (req) => {
       id_exposant,      // Legacy text ID (e.g. "Exporec_123")
       name,             // Display name of the exhibitor
       website,          // Website URL
+      source_campaign_id, // Optional outreach campaign id (deep-link ?camp=)
     } = body
 
     if (!name?.trim()) {
@@ -108,6 +138,9 @@ Deno.serve(async (req) => {
     const trimmedName = name.trim()
     const normalizedNameStr = normalizeName(trimmedName)
     const normalizedDomainStr = website ? normalizeDomain(website) : null
+
+    // Sanitize the attribution campaign id (format + existence). Never throws.
+    const safeSourceCampaignId = await sanitizeSourceCampaignId(supabaseAdmin, source_campaign_id)
 
     console.log(`[claim-bridge] User ${user.id} claiming: name="${trimmedName}", id_exposant="${id_exposant}", exhibitor_uuid="${exhibitor_uuid}", domain="${normalizedDomainStr}"`)
 
@@ -310,6 +343,7 @@ Deno.serve(async (req) => {
       .insert({
         exhibitor_id: resolvedUUID,
         requester_user_id: user.id,
+        source_campaign_id: safeSourceCampaignId,
       })
       .select('id')
       .single()

@@ -1623,10 +1623,32 @@ Deno.serve(async (req) => {
     // ACTION: claim (any authenticated user)
     // ────────────────────────────────────────────────────
     if (action === 'claim') {
-      const { exhibitor_id } = requestData
+      const { exhibitor_id, source_campaign_id } = requestData
 
       if (!exhibitor_id) {
         return jsonError('exhibitor_id is required', 400)
+      }
+
+      // Sanitize optional attribution campaign id (claim-first model).
+      // Format + existence check via serviceClient (outreach_campaigns RLS is
+      // admin/service_role only). A missing/malformed/unknown value degrades
+      // to null so it can never break the claim or violate the FK.
+      let safeSourceCampaignId: string | null = null
+      {
+        const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        if (typeof source_campaign_id === 'string' && uuidRe.test(source_campaign_id.trim())) {
+          const campId = source_campaign_id.trim()
+          try {
+            const { data: campRow } = await serviceClient
+              .from('outreach_campaigns')
+              .select('id')
+              .eq('id', campId)
+              .maybeSingle()
+            if (campRow?.id) safeSourceCampaignId = campId
+          } catch (_e) {
+            safeSourceCampaignId = null
+          }
+        }
       }
 
       // Check if exhibitor exists and has no owner
@@ -1649,7 +1671,8 @@ Deno.serve(async (req) => {
         .from('exhibitor_claim_requests')
         .insert({
           exhibitor_id,
-          requester_user_id: user.id
+          requester_user_id: user.id,
+          source_campaign_id: safeSourceCampaignId
         })
         .select()
         .single()
