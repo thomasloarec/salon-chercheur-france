@@ -1330,6 +1330,27 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_ai_refusal_archive: {
+        Row: {
+          archived_at: string
+          exhibitor_id: string
+          id: string
+          resume_court: string
+        }
+        Insert: {
+          archived_at?: string
+          exhibitor_id: string
+          id?: string
+          resume_court: string
+        }
+        Update: {
+          archived_at?: string
+          exhibitor_id?: string
+          id?: string
+          resume_court?: string
+        }
+        Relationships: []
+      }
       exhibitor_ai_remap_archive: {
         Row: {
           archive_id: string
@@ -5604,6 +5625,7 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      is_ai_refusal: { Args: { txt: string }; Returns: boolean }
       is_email_blacklisted: { Args: { _email: string }; Returns: boolean }
       is_team_member: { Args: { _exhibitor_id: string }; Returns: boolean }
       list_exhibitor_profile_change_logs: {
@@ -5830,6 +5852,7 @@ export type Database = {
         Args: { p_event_type: string; p_metadata?: Json; p_public_slug: string }
         Returns: boolean
       }
+      unaccent_safe: { Args: { txt: string }; Returns: string }
       update_exhibitor_public_profile_with_log: {
         Args: {
           p_actor_role: string
