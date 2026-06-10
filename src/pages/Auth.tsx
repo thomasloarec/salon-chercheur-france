@@ -124,7 +124,9 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await signUp(email, password);
+    // Propagate the validated origin-relative redirect into emailRedirectTo so
+    // the confirmation link returns to the originating page (incl. ?camp=).
+    const { error } = await signUp(email, password, safeRedirect || undefined);
     
     if (error) {
       if (error.message.includes('User already registered')) {
