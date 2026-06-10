@@ -343,6 +343,7 @@ Deno.serve(async (req) => {
       .insert({
         exhibitor_id: resolvedUUID,
         requester_user_id: user.id,
+        source_campaign_id: safeSourceCampaignId,
       })
       .select('id')
       .single()
