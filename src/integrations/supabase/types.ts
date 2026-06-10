@@ -1444,6 +1444,7 @@ export type Database = {
           exhibitor_id: string
           id: string
           requester_user_id: string
+          source_campaign_id: string | null
           status: string | null
         }
         Insert: {
@@ -1451,6 +1452,7 @@ export type Database = {
           exhibitor_id: string
           id?: string
           requester_user_id: string
+          source_campaign_id?: string | null
           status?: string | null
         }
         Update: {
@@ -1458,6 +1460,7 @@ export type Database = {
           exhibitor_id?: string
           id?: string
           requester_user_id?: string
+          source_campaign_id?: string | null
           status?: string | null
         }
         Relationships: [
@@ -1481,6 +1484,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_source_campaign_id_fkey"
+            columns: ["source_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_source_campaign_id_fkey"
+            columns: ["source_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_a_classifier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_source_campaign_id_fkey"
+            columns: ["source_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_a_enrichir"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_source_campaign_id_fkey"
+            columns: ["source_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_a_enrichir_test"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_source_campaign_id_fkey"
+            columns: ["source_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_exposants_eligibles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2936,12 +2974,15 @@ export type Database = {
       outreach_campaigns: {
         Row: {
           campaign_status: string | null
+          claim_status: string
+          claimed_at: string | null
           claude_classification: string | null
           company_name: string | null
           company_name_normalized: string | null
           contact_email: string | null
           created_at: string | null
           current_step: number | null
+          decline_reason: string | null
           email_source: string | null
           event_id: string
           exhibitor_id: string | null
@@ -2954,6 +2995,7 @@ export type Database = {
           last_sent_at: string | null
           next_send_at: string | null
           novelty_id: string | null
+          novelty_status: string
           opt_out: boolean | null
           participation_id: string | null
           reply_status: string | null
@@ -2966,12 +3008,15 @@ export type Database = {
         }
         Insert: {
           campaign_status?: string | null
+          claim_status?: string
+          claimed_at?: string | null
           claude_classification?: string | null
           company_name?: string | null
           company_name_normalized?: string | null
           contact_email?: string | null
           created_at?: string | null
           current_step?: number | null
+          decline_reason?: string | null
           email_source?: string | null
           event_id: string
           exhibitor_id?: string | null
@@ -2984,6 +3029,7 @@ export type Database = {
           last_sent_at?: string | null
           next_send_at?: string | null
           novelty_id?: string | null
+          novelty_status?: string
           opt_out?: boolean | null
           participation_id?: string | null
           reply_status?: string | null
@@ -2996,12 +3042,15 @@ export type Database = {
         }
         Update: {
           campaign_status?: string | null
+          claim_status?: string
+          claimed_at?: string | null
           claude_classification?: string | null
           company_name?: string | null
           company_name_normalized?: string | null
           contact_email?: string | null
           created_at?: string | null
           current_step?: number | null
+          decline_reason?: string | null
           email_source?: string | null
           event_id?: string
           exhibitor_id?: string | null
@@ -3014,6 +3063,7 @@ export type Database = {
           last_sent_at?: string | null
           next_send_at?: string | null
           novelty_id?: string | null
+          novelty_status?: string
           opt_out?: boolean | null
           participation_id?: string | null
           reply_status?: string | null
