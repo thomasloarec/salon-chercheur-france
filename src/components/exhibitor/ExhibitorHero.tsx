@@ -84,14 +84,16 @@ export default function ExhibitorHero({
           </div>
         </div>
 
-        {/* Description courte — reste dans le DOM pour le SEO */}
-        {profile.description ? (
+        {/* Description courte — reste dans le DOM pour le SEO.
+            Les résumés IA "refus" (ex. « Données insuffisantes… ») sont filtrés
+            et remplacés par un libellé lisible. */}
+        {cleanAiDescription(profile.description) ? (
           <p className="text-sm text-muted-foreground line-clamp-3 mt-4 max-w-3xl">
-            {profile.description}
+            {cleanAiDescription(profile.description)}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground italic mt-4">
-            Cette fiche n'a pas encore été complétée par l'entreprise.
+            {NO_DESCRIPTION_LABEL}
           </p>
         )}
 
