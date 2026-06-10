@@ -16,6 +16,7 @@ import ExhibitorClaimCta from '@/components/exhibitor/ExhibitorClaimCta';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 import { normalizeExternalUrl, normalizeLinkedInUrl } from '@/lib/urlUtils';
+import { cleanAiDescription, NO_DESCRIPTION_LABEL } from '@/lib/exhibitorDescription';
 
 /* --------------------------------- Hero --------------------------------- */
 
