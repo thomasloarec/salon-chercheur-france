@@ -36,9 +36,13 @@ interface TeamMember {
 const ExhibitorPanel = ({
   membership,
   slugInfo,
+  completion,
+  completionLoading,
 }: {
   membership: MyExhibitorMembership;
   slugInfo?: PublicSlugInfo;
+  completion?: ExhibitorCompletion;
+  completionLoading: boolean;
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
