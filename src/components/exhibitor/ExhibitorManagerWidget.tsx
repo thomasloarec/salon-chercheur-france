@@ -168,7 +168,6 @@ export default function ExhibitorManagerWidget({
   if (score >= 100 && !needsNovelty) return null;
 
   const isOwner = governance.isOwner;
-  const editLink = profile.public_slug ? `/exposants/${profile.public_slug}` : null;
 
   const items = [
     { key: 'description', label: 'Description (120 caractères min.)', points: 25, icon: FileText, done: completion.has_description, highValue: true },
