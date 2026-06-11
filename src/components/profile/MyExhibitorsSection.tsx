@@ -132,6 +132,15 @@ const ExhibitorPanel = ({
       }
       setAddEmail('');
       refetchTeam();
+      // Invitation effective → marque la page comme gérée à plusieurs.
+      // (Le fallback ≥2 membres actifs de la vue confirme aussi l'item.)
+      if (isOwner) {
+        supabase
+          .from('exhibitors')
+          .update({ governance_state: 'team' })
+          .eq('id', ex.id)
+          .then(() => invalidate());
+      }
     },
     onError: (err: any) => {
       const msg = err?.message || 'Erreur lors de l\'ajout';
