@@ -10,6 +10,8 @@ import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { useMyExhibitors, MyExhibitorMembership } from '@/hooks/useMyExhibitors';
+import { useExhibitorCompletion, ExhibitorCompletion } from '@/hooks/useExhibitorCompletion';
+import ExhibitorCompletionCard from '@/components/profile/ExhibitorCompletionCard';
 import { fetchExhibitorPublicSlugs, resolvePublicSlug, PublicSlugInfo } from '@/lib/exhibitorPublicSlug';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { supabase } from '@/integrations/supabase/client';
