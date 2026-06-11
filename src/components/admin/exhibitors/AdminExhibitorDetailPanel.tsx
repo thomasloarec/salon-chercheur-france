@@ -15,7 +15,8 @@ import {
 import { useAdminExhibitorDetail } from '@/hooks/useAdminExhibitors';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { PUBLIC_SITE_URL } from '@/lib/siteConfig';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExhibitorOutreachPanel from './ExhibitorOutreachPanel';
 import AdminExhibitorParticipationsCard from './AdminExhibitorParticipationsCard';
@@ -27,6 +28,20 @@ interface Props {
 
 const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
   const { data, isLoading } = useAdminExhibitorDetail(exhibitorId);
+  // Résout le slug public effectif (exhibitor_public_identities, exposé via la
+  // vue public_exhibitor_profiles) pour lier vers la fiche publique en prod.
+  const { data: publicSlug } = useQuery({
+    queryKey: ['admin-exhibitor-public-slug', exhibitorId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('public_exhibitor_profiles')
+        .select('public_slug')
+        .eq('exhibitor_id', exhibitorId)
+        .maybeSingle();
+      if (error) return null;
+      return (data?.public_slug as string | undefined) ?? null;
+    },
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
