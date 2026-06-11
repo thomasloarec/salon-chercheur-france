@@ -40,6 +40,11 @@ export default function ExhibitorClaimCta({
     if (camp && slug) persistClaimCampaign(camp, slug);
   }, [camp, slug]);
 
+  // Deep-link édition : ?edit=1 ouvre automatiquement le drawer d'édition
+  // pour un gestionnaire validé (utilisé par les CTA de la checklist de
+  // complétion dans « Entreprises que je gère »).
+  const wantsEdit = searchParams.get('edit') === '1';
+
   // Origin-relative return URL forwarded to the auth flow (keeps ?camp=).
   const authRedirectTo = slug
     ? `/exposants/${slug}${camp ? `?camp=${camp}` : ''}`
@@ -62,6 +67,11 @@ export default function ExhibitorClaimCta({
     isTest: profile.is_test,
     isManager: governance.isManager,
   });
+
+  // Auto-ouverture du drawer quand ?edit=1 et que l'utilisateur peut éditer.
+  useEffect(() => {
+    if (wantsEdit && canEdit) setEditOpen(true);
+  }, [wantsEdit, canEdit]);
 
   const handleClaimClick = () => {
     trackExhibitorEvent('claim_click', slug, {

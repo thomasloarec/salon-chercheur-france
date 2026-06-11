@@ -10,6 +10,8 @@ import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { useMyExhibitors, MyExhibitorMembership } from '@/hooks/useMyExhibitors';
+import { useExhibitorCompletion, ExhibitorCompletion } from '@/hooks/useExhibitorCompletion';
+import ExhibitorCompletionCard from '@/components/profile/ExhibitorCompletionCard';
 import { fetchExhibitorPublicSlugs, resolvePublicSlug, PublicSlugInfo } from '@/lib/exhibitorPublicSlug';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,9 +36,13 @@ interface TeamMember {
 const ExhibitorPanel = ({
   membership,
   slugInfo,
+  completion,
+  completionLoading,
 }: {
   membership: MyExhibitorMembership;
   slugInfo?: PublicSlugInfo;
+  completion?: ExhibitorCompletion;
+  completionLoading: boolean;
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -78,6 +84,35 @@ const ExhibitorPanel = ({
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['my-exhibitors'] });
     queryClient.invalidateQueries({ queryKey: ['exhibitor-team', ex.id] });
+    queryClient.invalidateQueries({ queryKey: ['exhibitor-completion'] });
+  };
+
+  // Gouvernance solo : owner pose governance_state='solo' (owner-only via RLS
+  // UPDATE owner_user_id=auth.uid(); le trigger protect_exhibitor_columns est
+  // en liste noire et ne bloque pas ce champ). +25 pts via la vue.
+  const governanceSoloMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('exhibitors')
+        .update({ governance_state: 'solo' })
+        .eq('id', ex.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: 'Gouvernance confirmée', description: 'Vous gérez cette page. Vous pourrez inviter des collaborateurs à tout moment.' });
+      invalidate();
+    },
+    onError: () => toast({ title: 'Erreur lors de la confirmation', variant: 'destructive' }),
+  });
+
+  // Voie « équipe » : ouvre le flux d'invitation existant. La pose de
+  // governance_state='team' se fait à l'invitation effective (onSuccess
+  // d'addMemberMutation), le fallback ≥2 membres confirme aussi l'item.
+  const handleGovernanceTeam = () => {
+    if (!expanded) handleToggleTeam();
+    else if (teamSectionRef.current) {
+      teamSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   };
 
   // Add team member (owner only)
@@ -97,6 +132,15 @@ const ExhibitorPanel = ({
       }
       setAddEmail('');
       refetchTeam();
+      // Invitation effective → marque la page comme gérée à plusieurs.
+      // (Le fallback ≥2 membres actifs de la vue confirme aussi l'item.)
+      if (isOwner) {
+        supabase
+          .from('exhibitors')
+          .update({ governance_state: 'team' })
+          .eq('id', ex.id)
+          .then(() => invalidate());
+      }
     },
     onError: (err: any) => {
       const msg = err?.message || 'Erreur lors de l\'ajout';
@@ -150,6 +194,20 @@ const ExhibitorPanel = ({
             <Badge variant="secondary" className="text-xs">{roleLabel(membership.role)}</Badge>
           </div>
         </div>
+      </div>
+
+      {/* Jauge de complétion + checklist actionnable */}
+      <div className="px-3 pb-3">
+        <ExhibitorCompletionCard
+          exhibitorId={ex.id}
+          publicSlug={publicSlug}
+          completion={completion}
+          isLoading={completionLoading}
+          isOwner={isOwner}
+          onGovernanceSolo={() => governanceSoloMutation.mutate()}
+          onGovernanceTeam={handleGovernanceTeam}
+          governanceSaving={governanceSoloMutation.isPending}
+        />
       </div>
 
       {/* Actions row — two clear paths */}
@@ -292,6 +350,10 @@ const MyExhibitorsSection = () => {
     staleTime: 60_000,
   });
 
+  // Batch read completion scores for ALL managed exhibitors in one query.
+  const { data: completionMap, isLoading: completionLoading } =
+    useExhibitorCompletion(exhibitorIds);
+
   if (isLoading) {
     return (
       <Card className="p-6 rounded-2xl shadow-sm">
@@ -327,6 +389,8 @@ const MyExhibitorsSection = () => {
             key={m.id}
             membership={m}
             slugInfo={resolvePublicSlug(slugMaps, { exhibitorId: m.exhibitor_id })}
+            completion={completionMap?.[m.exhibitor_id]}
+            completionLoading={completionLoading}
           />
         ))}
       </div>
