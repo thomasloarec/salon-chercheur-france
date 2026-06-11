@@ -350,6 +350,10 @@ const MyExhibitorsSection = () => {
     staleTime: 60_000,
   });
 
+  // Batch read completion scores for ALL managed exhibitors in one query.
+  const { data: completionMap, isLoading: completionLoading } =
+    useExhibitorCompletion(exhibitorIds);
+
   if (isLoading) {
     return (
       <Card className="p-6 rounded-2xl shadow-sm">
@@ -385,6 +389,8 @@ const MyExhibitorsSection = () => {
             key={m.id}
             membership={m}
             slugInfo={resolvePublicSlug(slugMaps, { exhibitorId: m.exhibitor_id })}
+            completion={completionMap?.[m.exhibitor_id]}
+            completionLoading={completionLoading}
           />
         ))}
       </div>
