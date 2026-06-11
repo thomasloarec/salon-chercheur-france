@@ -5671,6 +5671,29 @@ export type Database = {
         }[]
       }
       get_exhibitor_ai_enrichment_stats: { Args: never; Returns: Json }
+      get_exhibitor_completion: {
+        Args: { ids: string[] }
+        Returns: {
+          exhibitor_id: string | null
+          governance_confirmed: boolean | null
+          governance_state: string | null
+          has_description: boolean | null
+          has_linkedin: boolean | null
+          has_logo: boolean | null
+          has_upcoming_novelty: boolean | null
+          has_upcoming_participation: boolean | null
+          has_website: boolean | null
+          is_claimed: boolean | null
+          profile_score: number | null
+          tier: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "exhibitor_completion"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_exhibitor_uuid: { Args: { old_id: string }; Returns: string }
       get_location_suggestions: {
         Args: { q: string }
