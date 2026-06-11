@@ -196,6 +196,20 @@ const ExhibitorPanel = ({
         </div>
       </div>
 
+      {/* Jauge de complétion + checklist actionnable */}
+      <div className="px-3 pb-3">
+        <ExhibitorCompletionCard
+          exhibitorId={ex.id}
+          publicSlug={publicSlug}
+          completion={completion}
+          isLoading={completionLoading}
+          isOwner={isOwner}
+          onGovernanceSolo={() => governanceSoloMutation.mutate()}
+          onGovernanceTeam={handleGovernanceTeam}
+          governanceSaving={governanceSoloMutation.isPending}
+        />
+      </div>
+
       {/* Actions row — two clear paths */}
       <div className="px-3 pb-3 pt-0 flex gap-2">
         {publicSlug ? (
