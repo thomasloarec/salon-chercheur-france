@@ -838,6 +838,103 @@ Deno.serve(async (req) => {
 
       console.log('✅ Claim approved:', request_id, '→ exhibitor:', claimRequest.exhibitor_id, '→ owner:', claimRequest.requester_user_id, '→ teamPromoted:', teamPromoted)
 
+      // ────────────────────────────────────────────────────
+      // BLOC A + B: Notify the requester (in-app + email).
+      // Strictly additive side-effects. NEVER blocking: a failure here
+      // must not fail the approval. Idempotent by construction: the
+      // `claimRequest.status !== 'pending'` guard above already rejects any
+      // re-approval before reaching this point, so a replay never re-notifies.
+      // ────────────────────────────────────────────────────
+      try {
+        const PUBLIC_SITE_URL = 'https://lotexpo.com'
+
+        // Resolve exhibitor name + public slug for the link.
+        const { data: exhibitorRow } = await serviceClient
+          .from('exhibitors')
+          .select('name')
+          .eq('id', claimRequest.exhibitor_id)
+          .maybeSingle()
+        const exhibitorName = exhibitorRow?.name || 'votre entreprise'
+
+        const { data: publicProfile } = await serviceClient
+          .from('public_exhibitor_profiles')
+          .select('public_slug')
+          .eq('exhibitor_id', claimRequest.exhibitor_id)
+          .maybeSingle()
+        const publicSlug = publicProfile?.public_slug || null
+        const internalPath = publicSlug ? `/exposants/${publicSlug}` : '/profile'
+        const absoluteUrl = publicSlug
+          ? `${PUBLIC_SITE_URL}/exposants/${publicSlug}`
+          : `${PUBLIC_SITE_URL}/profile`
+
+        // ── BLOC A: in-app notification to the requester ──
+        try {
+          const { error: notifError } = await serviceClient
+            .from('notifications')
+            .insert({
+              user_id: claimRequest.requester_user_id,
+              type: 'claim_approved',
+              category: 'exhibitor',
+              title: 'Revendication approuvée',
+              message: `Votre fiche ${exhibitorName} est validée. Complétez-la pour publier vos Nouveautés et générer des leads avant vos salons.`,
+              link_url: internalPath,
+              exhibitor_id: claimRequest.exhibitor_id,
+              icon: 'badge-check',
+            })
+          if (notifError) {
+            console.error('⚠️ claim_approved notification insert failed (non-blocking):', notifError)
+          } else {
+            console.log('🔔 claim_approved notification sent to requester:', claimRequest.requester_user_id)
+          }
+        } catch (notifEx) {
+          console.error('⚠️ claim_approved notification exception (non-blocking):', notifEx)
+        }
+
+        // ── BLOC B: transactional email to the requester ──
+        try {
+          const { data: requesterAuth } = await serviceClient.auth.admin.getUserById(
+            claimRequest.requester_user_id,
+          )
+          const requesterEmail = requesterAuth?.user?.email || null
+
+          if (!requesterEmail) {
+            console.warn('⚠️ No email found for requester, skipping claim_approved email:', claimRequest.requester_user_id)
+          } else {
+            const emailResult = await sendExhibitorEmail({
+              to: requesterEmail,
+              subject: `Votre fiche ${exhibitorName} est validée sur Lotexpo`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #04316d;">
+                  <h1 style="color: #04316d; font-size: 24px; text-align: center; margin-bottom: 8px;">Votre fiche est validée 🎉</h1>
+                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                    Bonne nouvelle : votre revendication de la fiche <strong>${exhibitorName}</strong> a été approuvée. Vous en êtes désormais le gestionnaire sur Lotexpo.
+                  </p>
+                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                    Complétez votre fiche pour gagner en visibilité et <strong>publier vos Nouveautés</strong> : elles génèrent des leads qualifiés auprès des visiteurs <strong>avant même le salon</strong>.
+                  </p>
+                  <div style="text-align: center; margin: 32px 0;">
+                    <a href="${absoluteUrl}" style="background-color: #ff751f; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">Compléter ma fiche</a>
+                  </div>
+                  <p style="color: #888; font-size: 13px; text-align: center;">
+                    Ou copiez ce lien : <a href="${absoluteUrl}" style="color: #04316d;">${absoluteUrl}</a>
+                  </p>
+                </div>
+              `,
+            })
+            console.log('📧 claim_approved email result:', {
+              success: emailResult.success,
+              status: emailResult.status,
+              error: emailResult.error,
+            })
+          }
+        } catch (emailEx) {
+          console.error('⚠️ claim_approved email exception (non-blocking):', emailEx)
+        }
+      } catch (sideEffectError) {
+        // Absolute safety net: side-effects must never fail the approval.
+        console.error('⚠️ claim_approved side-effects failed (non-blocking):', sideEffectError)
+      }
+
       return jsonOk({
         status: 'approved',
         exhibitor_id: claimRequest.exhibitor_id,
