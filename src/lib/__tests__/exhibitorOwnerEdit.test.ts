@@ -43,14 +43,24 @@ describe('canEditExhibitorProfile — visibilité du bouton', () => {
 });
 
 describe('resolveDescriptionPrefill — source du préremplissage', () => {
-  it('utilise exhibitors.description quand présent', () => {
+  it('utilise exhibitors.description brut quand présent (prime sur le fallback)', () => {
     expect(resolveDescriptionPrefill({ description: 'Texte humain' })).toBe('Texte humain');
+    expect(
+      resolveDescriptionPrefill({ description: 'Texte humain' }, 'Texte IA'),
+    ).toBe('Texte humain');
   });
 
-  it('description NULL → chaîne vide (jamais de fallback IA/legacy)', () => {
+  it('raw vide → utilise le fallback affiché résolu (Bloc C)', () => {
+    expect(resolveDescriptionPrefill({ description: null }, 'Résumé IA')).toBe('Résumé IA');
+    expect(resolveDescriptionPrefill({ description: '   ' }, 'Résumé IA')).toBe('Résumé IA');
+    expect(resolveDescriptionPrefill(null, 'Résumé IA')).toBe('Résumé IA');
+  });
+
+  it('raw vide ET pas de fallback → chaîne vide', () => {
     expect(resolveDescriptionPrefill({ description: null })).toBe('');
     expect(resolveDescriptionPrefill(null)).toBe('');
     expect(resolveDescriptionPrefill(undefined)).toBe('');
+    expect(resolveDescriptionPrefill({ description: null }, '  ')).toBe('');
   });
 });
 

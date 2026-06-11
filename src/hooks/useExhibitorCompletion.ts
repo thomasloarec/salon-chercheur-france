@@ -22,6 +22,7 @@ export interface ExhibitorCompletion {
   governance_confirmed: boolean;
   governance_state: string | null;
   has_upcoming_novelty: boolean;
+  has_upcoming_participation: boolean;
   is_claimed: boolean;
 }
 
@@ -39,7 +40,7 @@ export function useExhibitorCompletion(exhibitorIds: string[]) {
       const { data, error } = await supabase
         .from('exhibitor_completion')
         .select(
-          'exhibitor_id, profile_score, tier, has_description, has_logo, has_website, has_linkedin, governance_confirmed, governance_state, has_upcoming_novelty, is_claimed',
+          'exhibitor_id, profile_score, tier, has_description, has_logo, has_website, has_linkedin, governance_confirmed, governance_state, has_upcoming_novelty, has_upcoming_participation, is_claimed',
         )
         .in('exhibitor_id', sortedIds);
 
@@ -59,6 +60,7 @@ export function useExhibitorCompletion(exhibitorIds: string[]) {
           governance_confirmed: row.governance_confirmed ?? false,
           governance_state: row.governance_state ?? null,
           has_upcoming_novelty: row.has_upcoming_novelty ?? false,
+          has_upcoming_participation: row.has_upcoming_participation ?? false,
           is_claimed: row.is_claimed ?? false,
         };
       }
