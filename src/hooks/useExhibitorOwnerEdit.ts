@@ -90,6 +90,11 @@ export function useExhibitorOwnerUpdate(publicSlug: string | null | undefined) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['exhibitor-editable-fields'] });
+      // #3 — Le widget de complétion (score/checklist/palier) lit la RPC
+      // `get_exhibitor_completion` via la clé ['exhibitor-completion', ids].
+      // On l'invalide pour que logo / description / liens fraîchement
+      // sauvegardés recalculent le score immédiatement, sans rechargement.
+      queryClient.invalidateQueries({ queryKey: ['exhibitor-completion'] });
     },
   });
 }

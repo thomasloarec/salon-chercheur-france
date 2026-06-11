@@ -874,12 +874,12 @@ Deno.serve(async (req) => {
             .insert({
               user_id: claimRequest.requester_user_id,
               type: 'claim_approved',
-              category: 'exhibitor',
+              category: 'exhibitor_mgmt',
               title: 'Revendication approuvée',
               message: `Votre fiche ${exhibitorName} est validée. Complétez-la pour publier vos Nouveautés et générer des leads avant vos salons.`,
               link_url: internalPath,
               exhibitor_id: claimRequest.exhibitor_id,
-              icon: 'badge-check',
+              icon: '🎉',
             })
           if (notifError) {
             console.error('⚠️ claim_approved notification insert failed (non-blocking):', notifError)
