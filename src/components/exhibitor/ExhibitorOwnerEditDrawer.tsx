@@ -37,6 +37,13 @@ interface ExhibitorOwnerEditDrawerProps {
   exhibitorId: string;
   publicSlug: string | null;
   exhibitorName: string;
+  /**
+   * Bloc C — description ACTUELLEMENT affichée et résolue sur la fiche publique
+   * (owner > IA > legacy, déjà nettoyée). Sert de fallback de préremplissage
+   * quand exhibitors.description brut est vide. La sauvegarde écrit toujours
+   * exhibitors.description.
+   */
+  resolvedDescription?: string | null;
 }
 
 export default function ExhibitorOwnerEditDrawer({
@@ -45,6 +52,7 @@ export default function ExhibitorOwnerEditDrawer({
   exhibitorId,
   publicSlug,
   exhibitorName,
+  resolvedDescription,
 }: ExhibitorOwnerEditDrawerProps) {
   // Charge les champs ÉDITORIAUX BRUTS (exhibitors.*) uniquement à l'ouverture.
   const { data: editable, isLoading, isError } = useExhibitorEditableFields(
@@ -70,13 +78,13 @@ export default function ExhibitorOwnerEditDrawer({
   // jamais fallback legacy, jamais la valeur calculée de la vue).
   useEffect(() => {
     if (open && editable && !initialized.current) {
-      setDescription(resolveDescriptionPrefill(editable));
+      setDescription(resolveDescriptionPrefill(editable, resolvedDescription));
       setWebsite(editable.website ?? '');
       setLinkedin(editable.linkedin_url ?? '');
       setLogoUrl(editable.logo_url ?? null);
       initialized.current = true;
     }
-  }, [open, editable]);
+  }, [open, editable, resolvedDescription]);
 
   // Réinitialisation à la fermeture.
   useEffect(() => {

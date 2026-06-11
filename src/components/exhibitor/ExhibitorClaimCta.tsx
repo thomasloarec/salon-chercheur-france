@@ -13,6 +13,7 @@ import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditD
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { canEditExhibitorProfile } from '@/lib/exhibitorOwnerEdit';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
+import { cleanAiDescription } from '@/lib/exhibitorDescription';
 import { readCampFromParams, persistClaimCampaign } from '@/lib/claimCampaign';
 
 /* ------------------------------- Claim CTA ------------------------------- */
@@ -106,6 +107,7 @@ export default function ExhibitorClaimCta({
           exhibitorId={profile.exhibitor_id as string}
           publicSlug={profile.public_slug}
           exhibitorName={profile.display_name || profile.canonical_name || 'Exposant'}
+          resolvedDescription={cleanAiDescription(profile.description)}
         />
       </>
     );
