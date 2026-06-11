@@ -68,6 +68,11 @@ export default function ExhibitorClaimCta({
     isManager: governance.isManager,
   });
 
+  // Auto-ouverture du drawer quand ?edit=1 et que l'utilisateur peut éditer.
+  useEffect(() => {
+    if (wantsEdit && canEdit) setEditOpen(true);
+  }, [wantsEdit, canEdit]);
+
   const handleClaimClick = () => {
     trackExhibitorEvent('claim_click', slug, {
       authenticated: !!user,
