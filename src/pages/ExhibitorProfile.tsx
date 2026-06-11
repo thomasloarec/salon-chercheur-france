@@ -62,10 +62,6 @@ export default function ExhibitorProfile() {
           <>
             <ExhibitorProfileSEO profile={profile} />
             <div className="max-w-6xl mx-auto px-4 pt-8 pb-16 sm:pb-20 space-y-8">
-              {/* Espace gestionnaire — visible des seuls gestionnaires de cette
-                  fiche, à affichage intelligent (Bloc B). */}
-              <ExhibitorManagerWidget profile={profile} />
-
               {/* A. Header exposant — pleine largeur */}
               <ExhibitorHero profile={profile} hasAnyActivity={hasAnyActivity} />
 
@@ -74,7 +70,7 @@ export default function ExhibitorProfile() {
 
               {/* C. Layout 2 colonnes (desktop) / 1 colonne (mobile) */}
               <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-12 lg:col-span-8 space-y-8">
+                <div className="col-span-12 lg:col-span-8 lg:order-none space-y-8">
                   <ExhibitorUpcomingEvents profile={profile} />
                   <ExhibitorNovelties profile={profile} />
                   {/* Historique complet des participations (passées + à venir),
@@ -85,7 +81,14 @@ export default function ExhibitorProfile() {
                   <ExhibitorAbout profile={profile} />
                 </div>
 
-                <aside className="col-span-12 lg:col-span-4 space-y-6">
+                {/* Sidebar droite. Sur mobile elle remonte en tête de pile
+                    (order-first) pour que l'Espace gestionnaire reste visible
+                    près du haut ; sur desktop elle reste la colonne de droite. */}
+                <aside className="col-span-12 lg:col-span-4 order-first lg:order-none space-y-6">
+                  {/* Espace gestionnaire — première carte de la sidebar, visible
+                      des seuls gestionnaires de cette fiche (Bloc B). Logique
+                      interne (visibilité / RPC) inchangée : emplacement uniquement. */}
+                  <ExhibitorManagerWidget profile={profile} />
                   <ExhibitorTrustInfo profile={profile} />
                 </aside>
               </div>
