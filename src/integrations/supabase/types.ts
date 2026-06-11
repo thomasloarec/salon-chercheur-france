@@ -1266,6 +1266,13 @@ export type Database = {
             foreignKeyName: "exhibitor_admin_claims_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_admin_claims_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
@@ -1464,6 +1471,13 @@ export type Database = {
           status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "exhibitor_claim_requests_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
           {
             foreignKeyName: "exhibitor_claim_requests_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
@@ -1734,6 +1748,13 @@ export type Database = {
             foreignKeyName: "exhibitor_invitations_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitations_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
@@ -1834,6 +1855,13 @@ export type Database = {
             foreignKeyName: "exhibitor_profile_change_logs_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_profile_change_logs_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
@@ -1888,6 +1916,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
           {
             foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
@@ -1947,6 +1982,13 @@ export type Database = {
             foreignKeyName: "exhibitor_team_members_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_team_members_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
@@ -1982,6 +2024,7 @@ export type Database = {
           current_step: number | null
           description: string | null
           email_source: string | null
+          governance_state: string | null
           hunter_search_done: boolean | null
           hunter_verify_done: boolean | null
           id: string
@@ -2022,6 +2065,7 @@ export type Database = {
           current_step?: number | null
           description?: string | null
           email_source?: string | null
+          governance_state?: string | null
           hunter_search_done?: boolean | null
           hunter_verify_done?: boolean | null
           id?: string
@@ -2062,6 +2106,7 @@ export type Database = {
           current_step?: number | null
           description?: string | null
           email_source?: string | null
+          governance_state?: string | null
           hunter_search_done?: boolean | null
           hunter_verify_done?: boolean | null
           id?: string
@@ -2429,6 +2474,13 @@ export type Database = {
             foreignKeyName: "leads_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "leads_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
@@ -2618,6 +2670,13 @@ export type Database = {
             foreignKeyName: "notifications_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "notifications_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
@@ -2769,6 +2828,13 @@ export type Database = {
             foreignKeyName: "novelties_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
@@ -2785,6 +2851,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "novelties_pending_exhibitor_id_fkey"
+            columns: ["pending_exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
           },
           {
             foreignKeyName: "novelties_pending_exhibitor_id_fkey"
@@ -3102,6 +3175,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
           },
           {
             foreignKeyName: "outreach_campaigns_exhibitor_id_fkey"
@@ -3474,6 +3554,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_entitlements_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
           },
           {
             foreignKeyName: "premium_entitlements_exhibitor_id_fkey"
@@ -4552,6 +4639,22 @@ export type Database = {
           },
         ]
       }
+      exhibitor_completion: {
+        Row: {
+          exhibitor_id: string | null
+          governance_confirmed: boolean | null
+          governance_state: string | null
+          has_description: boolean | null
+          has_linkedin: boolean | null
+          has_logo: boolean | null
+          has_upcoming_novelty: boolean | null
+          has_website: boolean | null
+          is_claimed: boolean | null
+          profile_score: number | null
+          tier: string | null
+        }
+        Relationships: []
+      }
       exhibitors_public: {
         Row: {
           approved: boolean | null
@@ -4718,6 +4821,13 @@ export type Database = {
             foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
             referencedRelation: "exhibitors"
             referencedColumns: ["id"]
           },
@@ -4798,6 +4908,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
           },
           {
             foreignKeyName: "novelties_exhibitor_id_fkey"
@@ -5379,6 +5496,7 @@ export type Database = {
           current_step: number | null
           description: string | null
           email_source: string | null
+          governance_state: string | null
           hunter_search_done: boolean | null
           hunter_verify_done: boolean | null
           id: string
