@@ -261,7 +261,7 @@ export default function ExhibitorManagerWidget({
                         </Button>
                       ) : (
                         <div className="mt-2 space-y-2">
-                          <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="flex flex-col gap-2">
                             <Button size="sm" className="h-8" onClick={() => soloMutation.mutate()} disabled={soloMutation.isPending}>
                               {soloMutation.isPending ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -270,7 +270,7 @@ export default function ExhibitorManagerWidget({
                               )}
                               Je gère seul(e)
                             </Button>
-                            <Button size="sm" variant="secondary" className="h-8" onClick={() => setInviteOpen((v) => !v)}>
+                            <Button size="sm" variant="secondary" className="h-8 w-full sm:w-auto" onClick={() => setInviteOpen((v) => !v)}>
                               <Users className="h-3.5 w-3.5 mr-1" />
                               Inviter un collaborateur
                             </Button>
