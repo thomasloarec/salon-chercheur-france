@@ -346,11 +346,9 @@ export default function ExhibitorManagerWidget({
                   <p className="text-xs text-muted-foreground">
                     Publiez une Nouveauté pour générer des leads avant l'événement.
                   </p>
-                  {editLink && (
-                    <Button asChild size="sm" className="mt-2 h-7">
-                      <Link to={editLink}>Publier une Nouveauté</Link>
-                    </Button>
-                  )}
+                  <Button asChild size="sm" className="mt-2 h-7 w-full sm:w-auto">
+                    <Link to="/publier-nouveaute">Publier une Nouveauté</Link>
+                  </Button>
                 </div>
               </div>
             </div>
