@@ -29,4 +29,3 @@ Widget affiché EN HAUT de `/exposants/{slug}` (`ExhibitorManagerWidget.tsx`, mo
 
 ## Annuaire
 - `MyExhibitorsSection` reste un annuaire simple. La jauge enterrée (`ExhibitorCompletionCard`) y a été RETIRÉE et le composant supprimé, pour éviter le doublon avec ce widget.
-++ End Patch
