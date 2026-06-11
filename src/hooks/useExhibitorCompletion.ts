@@ -37,12 +37,9 @@ export function useExhibitorCompletion(exhibitorIds: string[]) {
     queryFn: async (): Promise<ExhibitorCompletionMap> => {
       if (sortedIds.length === 0) return {};
 
-      const { data, error } = await supabase
-        .from('exhibitor_completion')
-        .select(
-          'exhibitor_id, profile_score, tier, has_description, has_logo, has_website, has_linkedin, governance_confirmed, governance_state, has_upcoming_novelty, has_upcoming_participation, is_claimed',
-        )
-        .in('exhibitor_id', sortedIds);
+      const { data, error } = await supabase.rpc('get_exhibitor_completion', {
+        ids: sortedIds,
+      });
 
       if (error) throw error;
 
