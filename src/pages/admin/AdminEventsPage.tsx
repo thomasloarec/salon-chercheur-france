@@ -3,7 +3,7 @@ import { AirtableImport } from '@/components/admin/AirtableImport';
 import { ImportErrorsPanel } from '@/components/admin/ImportErrorsPanel';
 import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
 import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
-import AdminPastEvents from '@/components/admin/AdminPastEvents';
+import AdminAllEvents from '@/components/admin/AdminAllEvents';
 import { DuplicateEventsPanel } from '@/components/admin/DuplicateEventsPanel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ const AdminEventsPage = () => {
       <PendingEventsImport />
       <DuplicateEventsPanel />
       <AirtableAntiDuplicateCheck />
-      <AdminPastEvents />
+      <AdminAllEvents />
     </div>
   );
 };

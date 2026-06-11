@@ -168,7 +168,6 @@ export default function ExhibitorManagerWidget({
   if (score >= 100 && !needsNovelty) return null;
 
   const isOwner = governance.isOwner;
-  const editLink = profile.public_slug ? `/exposants/${profile.public_slug}` : null;
 
   const items = [
     { key: 'description', label: 'Description (120 caractères min.)', points: 25, icon: FileText, done: completion.has_description, highValue: true },
@@ -261,7 +260,7 @@ export default function ExhibitorManagerWidget({
                         </Button>
                       ) : (
                         <div className="mt-2 space-y-2">
-                          <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="flex flex-col gap-2">
                             <Button size="sm" className="h-8" onClick={() => soloMutation.mutate()} disabled={soloMutation.isPending}>
                               {soloMutation.isPending ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -270,7 +269,7 @@ export default function ExhibitorManagerWidget({
                               )}
                               Je gère seul(e)
                             </Button>
-                            <Button size="sm" variant="secondary" className="h-8" onClick={() => setInviteOpen((v) => !v)}>
+                            <Button size="sm" variant="secondary" className="h-8 w-full sm:w-auto" onClick={() => setInviteOpen((v) => !v)}>
                               <Users className="h-3.5 w-3.5 mr-1" />
                               Inviter un collaborateur
                             </Button>
@@ -346,11 +345,9 @@ export default function ExhibitorManagerWidget({
                   <p className="text-xs text-muted-foreground">
                     Publiez une Nouveauté pour générer des leads avant l'événement.
                   </p>
-                  {editLink && (
-                    <Button asChild size="sm" className="mt-2 h-7">
-                      <Link to={editLink}>Publier une Nouveauté</Link>
-                    </Button>
-                  )}
+                  <Button asChild size="sm" className="mt-2 h-7 w-full sm:w-auto">
+                    <Link to="/publier-nouveaute">Publier une Nouveauté</Link>
+                  </Button>
                 </div>
               </div>
             </div>
