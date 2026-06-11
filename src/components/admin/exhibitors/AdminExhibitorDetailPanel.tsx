@@ -221,7 +221,21 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
           {/* Fiche entreprise */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Fiche entreprise</CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-base">Fiche entreprise</CardTitle>
+                {publicSlug && (
+                  <Button asChild variant="outline" size="sm">
+                    <a
+                      href={`${PUBLIC_SITE_URL}/exposants/${publicSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                      Voir la fiche publique
+                    </a>
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
