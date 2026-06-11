@@ -33,16 +33,25 @@ export function canEditExhibitorProfile(input: OwnerEditVisibilityInput): boolea
 }
 
 /**
- * Source EXACTE du préremplissage de la description : uniquement le champ
- * éditorial humain brut exhibitors.description (renvoyé par get_editable).
+ * Préremplissage de la description du drawer d'édition owner.
  *
- * Garantie critique : on n'utilise JAMAIS ai_summary, jamais la description
- * legacy (exposant_description), jamais la valeur calculée
- * public_exhibitor_profiles.description (COALESCE). Si la valeur brute est
- * NULL/vide, on renvoie '' → textarea vide.
+ * Priorité (Bloc C) :
+ *   1. exhibitors.description brut (champ éditorial humain, via get_editable) ;
+ *   2. à défaut, la description ACTUELLEMENT AFFICHÉE et résolue sur la fiche
+ *      publique (owner > IA > legacy, déjà nettoyée des refus IA) passée en
+ *      `displayedFallback` — pour qu'une fiche à description IA s'ouvre
+ *      préremplie, prête à être adoptée/ajustée.
+ *
+ * La SAUVEGARDE écrit toujours exhibitors.description (champ cible inchangé).
+ * Sans aucune description disponible (raw vide ET pas de fallback) → '' →
+ * textarea vide + placeholder.
  */
 export function resolveDescriptionPrefill(
   editable: { description: string | null } | null | undefined,
+  displayedFallback?: string | null,
 ): string {
-  return editable?.description ?? '';
+  const raw = editable?.description;
+  if (raw && raw.trim().length > 0) return raw;
+  const fallback = displayedFallback?.trim();
+  return fallback ? (displayedFallback as string) : '';
 }

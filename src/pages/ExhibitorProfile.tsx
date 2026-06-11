@@ -9,6 +9,7 @@ import ExhibitorProfileSEO from '@/components/exhibitor/ExhibitorProfileSEO';
 import ExhibitorProfileSkeleton from '@/components/exhibitor/ExhibitorProfileSkeleton';
 import ExhibitorNotFoundView from '@/components/exhibitor/ExhibitorNotFoundView';
 import ExhibitorHero from '@/components/exhibitor/ExhibitorHero';
+import ExhibitorManagerWidget from '@/components/exhibitor/ExhibitorManagerWidget';
 import ExhibitorStats from '@/components/exhibitor/ExhibitorStats';
 import ExhibitorUpcomingEvents from '@/components/exhibitor/ExhibitorUpcomingEvents';
 import ExhibitorNovelties from '@/components/exhibitor/ExhibitorNovelties';
@@ -61,6 +62,10 @@ export default function ExhibitorProfile() {
           <>
             <ExhibitorProfileSEO profile={profile} />
             <div className="max-w-6xl mx-auto px-4 pt-8 pb-16 sm:pb-20 space-y-8">
+              {/* Espace gestionnaire — visible des seuls gestionnaires de cette
+                  fiche, à affichage intelligent (Bloc B). */}
+              <ExhibitorManagerWidget profile={profile} />
+
               {/* A. Header exposant — pleine largeur */}
               <ExhibitorHero profile={profile} hasAnyActivity={hasAnyActivity} />
 

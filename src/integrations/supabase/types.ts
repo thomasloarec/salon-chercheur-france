@@ -4648,6 +4648,7 @@ export type Database = {
           has_linkedin: boolean | null
           has_logo: boolean | null
           has_upcoming_novelty: boolean | null
+          has_upcoming_participation: boolean | null
           has_website: boolean | null
           is_claimed: boolean | null
           profile_score: number | null
