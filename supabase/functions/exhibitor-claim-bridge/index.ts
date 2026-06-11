@@ -241,6 +241,30 @@ Deno.serve(async (req) => {
     // ========================================
     // STEP 2: Create modern exhibitor if needed
     // ========================================
+    // STEP 1e: Consult existing public identities (anti-duplicate hardening — FIX 2a)
+    // If a public identity already exists for this legacy page, never create a
+    // second modern record. Reuse the linked exhibitor when present; otherwise
+    // remember the orphan identity (exhibitor_id NULL) to attach it after create.
+    let orphanIdentityId: string | null = null
+    if (!resolvedUUID && id_exposant) {
+      const { data: identities } = await supabaseAdmin
+        .from('exhibitor_public_identities')
+        .select('id, exhibitor_id')
+        .eq('legacy_exposant_id', id_exposant)
+        .limit(1)
+
+      const identity = identities?.[0]
+      if (identity) {
+        if (identity.exhibitor_id) {
+          resolvedUUID = identity.exhibitor_id as string
+          console.log(`[claim-bridge] Found via public identity (legacy_exposant_id=${id_exposant}): ${resolvedUUID}`)
+        } else {
+          orphanIdentityId = identity.id as string
+          console.log(`[claim-bridge] Found orphan public identity ${orphanIdentityId} (exhibitor_id NULL) — will attach after create`)
+        }
+      }
+    }
+
     if (!resolvedUUID) {
       console.log(`[claim-bridge] Creating new exhibitor: "${trimmedName}"`)
 
@@ -308,63 +332,106 @@ Deno.serve(async (req) => {
           console.log(`[claim-bridge] Linked ${updated?.length || 0} participations to ${resolvedUUID}`)
         }
       }
+
+      // ====================================================================
+      // FIX 2b: ensure the new modern record has a resolvable public_slug.
+      // ensure_exhibitor_public_identity does NOT reconcile an orphan legacy
+      // identity (it early-returns by legacy_exposant_id without linking, or
+      // creates a colliding 'modern' slug) -> Option 1: attach explicitly.
+      // ====================================================================
+      if (orphanIdentityId) {
+        const { error: attachError } = await supabaseAdmin
+          .from('exhibitor_public_identities')
+          .update({ exhibitor_id: resolvedUUID, source_type: 'linked' })
+          .eq('id', orphanIdentityId)
+          .is('exhibitor_id', null)
+        if (attachError) {
+          console.error(`[claim-bridge] Error attaching public identity:`, attachError)
+        } else {
+          console.log(`[claim-bridge] Attached public identity ${orphanIdentityId} -> ${resolvedUUID}`)
+        }
+      } else {
+        // No pre-existing identity -> generate one centrally (keeps logic in the function).
+        const { error: ensureError } = await supabaseAdmin
+          .rpc('ensure_exhibitor_public_identity', { p_exhibitor_id: resolvedUUID })
+        if (ensureError) {
+          console.error(`[claim-bridge] Error ensuring public identity:`, ensureError)
+        } else {
+          console.log(`[claim-bridge] Ensured public identity for ${resolvedUUID}`)
+        }
+      }
     }
 
     // ========================================
-    // STEP 3: Check for existing pending claim
+    // STEP 3: Detect existing claim (ANY status)
     // ========================================
+    // An existing claim row (pending/approved/rejected) must NOT trigger a blind
+    // INSERT — that violates UNIQUE (exhibitor_id, requester_user_id) -> 500 (bug 4).
+    // We only short-circuit when the user already owns it (approved) to avoid
+    // downgrading; pending/rejected are refreshed to pending via UPSERT below.
     const { data: existingClaim } = await supabaseAdmin
       .from('exhibitor_claim_requests')
       .select('id, status')
       .eq('exhibitor_id', resolvedUUID)
       .eq('requester_user_id', user.id)
-      .eq('status', 'pending')
       .maybeSingle()
 
-    if (existingClaim) {
-      console.log(`[claim-bridge] User already has pending claim: ${existingClaim.id}`)
+    if (existingClaim?.status === 'approved') {
+      console.log(`[claim-bridge] User already owns this exhibitor (approved claim ${existingClaim.id})`)
       return new Response(
         JSON.stringify({
           success: true,
           exhibitor_id: resolvedUUID,
           claim_id: existingClaim.id,
-          already_pending: true,
-          message: 'Vous avez déjà une demande en cours pour cette entreprise.'
+          already_approved: true,
+          message: 'Vous gérez déjà cette entreprise.'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    const wasPending = existingClaim?.status === 'pending'
+
     // ========================================
-    // STEP 4: Create the claim
+    // STEP 4: Create or refresh the claim (UPSERT — FIX 1, bug 4)
     // ========================================
+    // On conflict with an existing (rejected/pending) row: reset to 'pending',
+    // refresh attribution + created_at. source_campaign_id keeps the existing
+    // sanitization (format + existence via service_role -> null otherwise).
     const { data: claim, error: claimError } = await supabaseAdmin
       .from('exhibitor_claim_requests')
-      .insert({
-        exhibitor_id: resolvedUUID,
-        requester_user_id: user.id,
-        source_campaign_id: safeSourceCampaignId,
-      })
+      .upsert(
+        {
+          exhibitor_id: resolvedUUID,
+          requester_user_id: user.id,
+          status: 'pending',
+          source_campaign_id: safeSourceCampaignId,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: 'exhibitor_id,requester_user_id' }
+      )
       .select('id')
       .single()
 
     if (claimError) {
-      console.error(`[claim-bridge] Error creating claim:`, claimError)
+      console.error(`[claim-bridge] Error upserting claim:`, claimError)
       return new Response(
         JSON.stringify({ error: 'CLAIM_FAILED', message: 'Erreur lors de la création de la demande.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`[claim-bridge] Claim created: ${claim.id} for exhibitor ${resolvedUUID}`)
+    console.log(`[claim-bridge] Claim upserted: ${claim.id} for exhibitor ${resolvedUUID} (wasPending=${wasPending})`)
 
     return new Response(
       JSON.stringify({
         success: true,
         exhibitor_id: resolvedUUID,
         claim_id: claim.id,
-        already_pending: false,
-        message: 'Votre demande a bien été envoyée.'
+        already_pending: wasPending,
+        message: wasPending
+          ? 'Vous aviez déjà une demande en cours ; elle a été actualisée.'
+          : 'Votre demande a bien été envoyée.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
