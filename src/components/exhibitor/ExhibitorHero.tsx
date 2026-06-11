@@ -17,6 +17,7 @@ import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 import { normalizeExternalUrl, normalizeLinkedInUrl } from '@/lib/urlUtils';
 import { cleanAiDescription, NO_DESCRIPTION_LABEL } from '@/lib/exhibitorDescription';
+import ExpandableText from '@/components/exhibitor/ExpandableText';
 
 /* --------------------------------- Hero --------------------------------- */
 
@@ -84,13 +85,14 @@ export default function ExhibitorHero({
           </div>
         </div>
 
-        {/* Description courte — reste dans le DOM pour le SEO.
-            Les résumés IA "refus" (ex. « Données insuffisantes… ») sont filtrés
-            et remplacés par un libellé lisible. */}
+        {/* Description — reste dans le DOM pour le SEO. Les résumés IA "refus"
+            (ex. « Données insuffisantes… ») sont filtrés et remplacés par un
+            libellé lisible. Tronquée à 3 lignes avec bascule « Voir plus ». */}
         {cleanAiDescription(profile.description) ? (
-          <p className="text-sm text-muted-foreground line-clamp-3 mt-4 max-w-3xl">
-            {cleanAiDescription(profile.description)}
-          </p>
+          <ExpandableText
+            text={cleanAiDescription(profile.description) as string}
+            className="mt-4"
+          />
         ) : (
           <p className="text-sm text-muted-foreground italic mt-4">
             {NO_DESCRIPTION_LABEL}
