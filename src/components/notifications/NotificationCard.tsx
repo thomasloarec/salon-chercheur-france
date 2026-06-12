@@ -28,6 +28,7 @@ const getNotificationIcon = (type: string): string => {
     'event_reminder_1d': '🔔',
     'radar_new_matches': '🎯',
     'claim_approved': '🎉',
+    'claim_request': '📥',
   }
   return icons[type] || '🔔'
 }
