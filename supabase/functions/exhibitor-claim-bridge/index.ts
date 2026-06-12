@@ -500,8 +500,10 @@ Deno.serve(async (req) => {
     // Fires on every transition to 'pending' (new demand OR re-claim via UPSERT):
     // the admin must be (re)prompted for any actionable request. The approved
     // short-circuit above already returned, so reaching here always means pending.
+    // Resolve display names once (shared by the admin email AND the in-app notif).
+    let exhibitorDisplayName = trimmedName
+    let requesterName = user.email ?? 'Demandeur inconnu'
     try {
-      let exhibitorDisplayName = trimmedName
       const { data: exRow } = await supabaseAdmin
         .from('exhibitors')
         .select('name')
@@ -509,7 +511,6 @@ Deno.serve(async (req) => {
         .maybeSingle()
       if (exRow?.name) exhibitorDisplayName = exRow.name as string
 
-      let requesterName = user.email ?? 'Demandeur inconnu'
       const { data: prof } = await supabaseAdmin
         .from('profiles')
         .select('first_name, last_name')
@@ -517,10 +518,55 @@ Deno.serve(async (req) => {
         .maybeSingle()
       const fullName = [prof?.first_name, prof?.last_name].filter(Boolean).join(' ').trim()
       if (fullName) requesterName = fullName
+    } catch (nameErr) {
+      console.error('[claim-bridge] Display-name resolution failed (non-blocking):', nameErr)
+    }
 
+    // Best-effort admin alert EMAIL (never blocks the claim).
+    try {
       await sendAdminClaimAlertEmail({ exhibitorName: exhibitorDisplayName, requesterName })
     } catch (alertErr) {
-      console.error('[claim-bridge] Admin alert step failed (non-blocking):', alertErr)
+      console.error('[claim-bridge] Admin alert email step failed (non-blocking):', alertErr)
+    }
+
+    // ========================================
+    // STEP 6: Best-effort admin IN-APP notification (ADDITIVE — never blocks the claim)
+    // ========================================
+    // One notification per admin, same trigger condition as the email (every
+    // transition to 'pending'). Wrapped in its own try/catch so a failure here
+    // never affects the claim creation above.
+    try {
+      const { data: admins, error: adminsErr } = await supabaseAdmin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin')
+
+      if (adminsErr) throw adminsErr
+
+      const adminIds = (admins ?? [])
+        .map((a) => a.user_id as string)
+        .filter(Boolean)
+
+      if (adminIds.length > 0) {
+        const rows = adminIds.map((adminId) => ({
+          user_id: adminId,
+          type: 'claim_request',
+          category: 'exhibitor_mgmt',
+          title: 'Nouvelle revendication à valider',
+          message: `${requesterName} demande à revendiquer la fiche ${exhibitorDisplayName}.`,
+          icon: '📥',
+          link_url: '/admin/exhibitors/claims',
+          read: false,
+        }))
+
+        const { error: notifErr } = await supabaseAdmin.from('notifications').insert(rows)
+        if (notifErr) throw notifErr
+        console.log(`[claim-bridge] Admin in-app notif inserted for ${adminIds.length} admin(s)`)
+      } else {
+        console.warn('[claim-bridge] No admin found for in-app claim notification')
+      }
+    } catch (notifErr) {
+      console.error('[claim-bridge] Admin in-app notif step failed (non-blocking):', notifErr)
     }
 
     return new Response(
