@@ -1531,6 +1531,20 @@ export type Database = {
             foreignKeyName: "exhibitor_claim_requests_source_campaign_id_fkey"
             columns: ["source_campaign_id"]
             isOneToOne: false
+            referencedRelation: "v_eligibles_nouveaute"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_source_campaign_id_fkey"
+            columns: ["source_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_revendication"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_claim_requests_source_campaign_id_fkey"
+            columns: ["source_campaign_id"]
+            isOneToOne: false
             referencedRelation: "v_exposants_eligibles"
             referencedColumns: ["id"]
           },
@@ -3048,6 +3062,7 @@ export type Database = {
         Row: {
           campaign_status: string | null
           claim_status: string
+          claim_step: number
           claimed_at: string | null
           claude_classification: string | null
           company_name: string | null
@@ -3069,6 +3084,7 @@ export type Database = {
           next_send_at: string | null
           novelty_id: string | null
           novelty_status: string
+          novelty_step: number
           opt_out: boolean | null
           participation_id: string | null
           reply_status: string | null
@@ -3082,6 +3098,7 @@ export type Database = {
         Insert: {
           campaign_status?: string | null
           claim_status?: string
+          claim_step?: number
           claimed_at?: string | null
           claude_classification?: string | null
           company_name?: string | null
@@ -3103,6 +3120,7 @@ export type Database = {
           next_send_at?: string | null
           novelty_id?: string | null
           novelty_status?: string
+          novelty_step?: number
           opt_out?: boolean | null
           participation_id?: string | null
           reply_status?: string | null
@@ -3116,6 +3134,7 @@ export type Database = {
         Update: {
           campaign_status?: string | null
           claim_status?: string
+          claim_step?: number
           claimed_at?: string | null
           claude_classification?: string | null
           company_name?: string | null
@@ -3137,6 +3156,7 @@ export type Database = {
           next_send_at?: string | null
           novelty_id?: string | null
           novelty_status?: string
+          novelty_step?: number
           opt_out?: boolean | null
           participation_id?: string | null
           reply_status?: string | null
@@ -3329,6 +3349,20 @@ export type Database = {
             columns: ["outreach_campaign_id"]
             isOneToOne: false
             referencedRelation: "v_a_enrichir_test"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_contacts_outreach_campaign_id_fkey"
+            columns: ["outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_nouveaute"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_contacts_outreach_campaign_id_fkey"
+            columns: ["outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_revendication"
             referencedColumns: ["id"]
           },
           {
@@ -5033,6 +5067,64 @@ export type Database = {
           id: string | null
           nom_event: string | null
           website: string | null
+        }
+        Relationships: []
+      }
+      v_eligibles_nouveaute: {
+        Row: {
+          company_name: string | null
+          contact_email: string | null
+          date_debut: string | null
+          event_id: string | null
+          first_name: string | null
+          id: string | null
+          next_send_at: string | null
+          nom_event: string | null
+          novelty_step: number | null
+          public_slug: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_eligibles_revendication: {
+        Row: {
+          claim_step: number | null
+          claimed_count: number | null
+          company_name: string | null
+          contact_email: string | null
+          first_name: string | null
+          id: string | null
+          next_send_at: string | null
+          nom_event: string | null
+          public_slug: string | null
         }
         Relationships: []
       }
