@@ -494,6 +494,35 @@ Deno.serve(async (req) => {
 
     console.log(`[claim-bridge] Claim upserted: ${claim.id} for exhibitor ${resolvedUUID} (wasPending=${wasPending})`)
 
+    // ========================================
+    // STEP 5: Best-effort admin alert email (ADDITIVE — never blocks the claim)
+    // ========================================
+    // Fires on every transition to 'pending' (new demand OR re-claim via UPSERT):
+    // the admin must be (re)prompted for any actionable request. The approved
+    // short-circuit above already returned, so reaching here always means pending.
+    try {
+      let exhibitorDisplayName = trimmedName
+      const { data: exRow } = await supabaseAdmin
+        .from('exhibitors')
+        .select('name')
+        .eq('id', resolvedUUID)
+        .maybeSingle()
+      if (exRow?.name) exhibitorDisplayName = exRow.name as string
+
+      let requesterName = user.email ?? 'Demandeur inconnu'
+      const { data: prof } = await supabaseAdmin
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      const fullName = [prof?.first_name, prof?.last_name].filter(Boolean).join(' ').trim()
+      if (fullName) requesterName = fullName
+
+      await sendAdminClaimAlertEmail({ exhibitorName: exhibitorDisplayName, requesterName })
+    } catch (alertErr) {
+      console.error('[claim-bridge] Admin alert step failed (non-blocking):', alertErr)
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
