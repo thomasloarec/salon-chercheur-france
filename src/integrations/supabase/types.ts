@@ -3058,6 +3058,48 @@ export type Database = {
           },
         ]
       }
+      novelty_visit_milestones: {
+        Row: {
+          created_at: string
+          email_sent_at: string | null
+          id: string
+          notified_at: string | null
+          novelty_id: string
+          threshold: number
+        }
+        Insert: {
+          created_at?: string
+          email_sent_at?: string | null
+          id?: string
+          notified_at?: string | null
+          novelty_id: string
+          threshold: number
+        }
+        Update: {
+          created_at?: string
+          email_sent_at?: string | null
+          id?: string
+          notified_at?: string | null
+          novelty_id?: string
+          threshold?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_visit_milestones_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_visit_milestones_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "public_novelties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outreach_campaigns: {
         Row: {
           campaign_status: string | null
