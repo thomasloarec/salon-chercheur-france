@@ -388,7 +388,7 @@ export default function NoveltyEventCard({
                 <MapPin
                   className={cn('h-3.5 w-3.5', isLiked && 'fill-current')}
                 />
-                {isLiked ? 'Dans vos stands à voir' : 'Stands à voir'}
+                {isLiked ? 'Dans vos stands à voir' : 'Stand à voir'}
                 {likesCount > 0 && (
                   <span className="text-xs tabular-nums opacity-70">{likesCount}</span>
                 )}
