@@ -110,3 +110,10 @@ verify_jwt = false
 
 [functions.revalidate-enriched-description]
 verify_jwt = false
+
+[functions.outreach-decline]
+# Public endpoint: the recipient clicks from their email, unauthenticated.
+# Security is enforced in code: strict reason allow-list + UUID/existence check,
+# idempotent update gated on novelty_status='active', and neutral responses
+# that never reveal whether a campaign exists.
+verify_jwt = false
