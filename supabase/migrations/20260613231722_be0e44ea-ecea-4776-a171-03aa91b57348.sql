@@ -1,0 +1,1 @@
+ALTER VIEW public.v_novelty_visit_signals SET (security_invoker = true);
