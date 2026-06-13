@@ -129,67 +129,24 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: true })
       .eq('novelty_id', novelty_id);
 
-    // Fire in-app notification only when a like was just created
-    if (liked && novelty.exhibitor_id) {
+    // PAUSED — remplacé par novelty-milestone-check, voir L3.
+    // L'ancien système de notification per-like (résolution exhibitor_team_members
+    // + boucle fetch vers notifications-create) faisait doublon avec les paliers
+    // (même signal). Il est désactivé au profit du comptage de visiteurs distincts.
+    //
+    // À la place : uniquement lorsqu'un like vient d'être ajouté (liked === true),
+    // on déclenche le contrôle de paliers en fire-and-forget. On n'exige PAS
+    // novelty.exhibitor_id : un palier peut se déclencher même sans exposant
+    // revendiqué (le repli created_by existe dans novelty-milestone-check).
+    if (liked) {
       try {
-        const { data: members } = await supabaseClient
-          .from('exhibitor_team_members')
-          .select('user_id')
-          .eq('exhibitor_id', novelty.exhibitor_id)
-          .eq('status', 'active');
-
-        const recipients = (members ?? [])
-          .map((m: any) => m.user_id)
-          .filter((uid: string) => uid && uid !== user.id);
-
-        if (recipients.length === 0) {
-          console.log('[novelty_like_notification] no active recipients', { novelty_id, exhibitor_id: novelty.exhibitor_id });
-        } else {
-          // Resolve actor info
-          const { data: actorProfile } = await supabaseClient
-            .from('profiles')
-            .select('first_name, last_name, company')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          const actorName = [actorProfile?.first_name, actorProfile?.last_name]
-            .filter(Boolean).join(' ').trim() || 'Un utilisateur';
-          const actorEmail = user.email ?? undefined;
-          const actorCompany = actorProfile?.company ?? undefined;
-
-          const notifUrl = `${supabaseUrl}/functions/v1/notifications-create`;
-          await Promise.all(recipients.map(async (recipient: string) => {
-            try {
-              const r = await fetch(notifUrl, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${serviceKey}`,
-                },
-                body: JSON.stringify({
-                  type: 'like',
-                  user_id: recipient,
-                  novelty_id,
-                  exhibitor_id: novelty.exhibitor_id,
-                  event_id: novelty.event_id,
-                  actor_user_id: user.id,
-                  actor_name: actorName,
-                  actor_email: actorEmail,
-                  actor_company: actorCompany,
-                }),
-              });
-              if (!r.ok) {
-                console.error('[novelty_like_notification] create failed', { recipient_user_id: recipient, novelty_id, status: r.status, body: await r.text().catch(() => '') });
-              } else {
-                console.log('[novelty_like_notification] sent', { recipient_user_id: recipient, novelty_id, actor_user_id: user.id, actor_email: actorEmail });
-              }
-            } catch (e) {
-              console.error('[novelty_like_notification] exception', { recipient_user_id: recipient, novelty_id, error: String(e) });
-            }
-          }));
-        }
+        await fetch(`${supabaseUrl}/functions/v1/novelty-milestone-check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+          body: JSON.stringify({ novelty_id }),
+        });
       } catch (e) {
-        // Never fail the like because of notification issues
-        console.error('[novelty_like_notification] outer exception', { novelty_id, error: String(e) });
+        console.error('milestone-check failed (non-fatal)', e);
       }
     }
 
