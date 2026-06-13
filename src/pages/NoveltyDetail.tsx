@@ -391,7 +391,7 @@ export default function NoveltyDetail() {
                   aria-label={isLiked ? 'Retirer de mes stands à voir' : 'Ajouter à mes stands à voir'}
                 >
                   <MapPin className={cn('h-4 w-4', isLiked && 'fill-current')} />
-                  {isLiked ? 'Dans vos stands à voir' : 'Stands à voir'}
+                  {isLiked ? 'Dans vos stands à voir' : 'Stand à voir'}
                   {likesCount > 0 && (
                     <span className="text-xs tabular-nums opacity-70">{likesCount}</span>
                   )}
