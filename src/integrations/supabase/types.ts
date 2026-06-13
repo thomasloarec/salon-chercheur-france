@@ -2526,6 +2526,13 @@ export type Database = {
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "leads_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
         ]
       }
       newsletter_subscriptions: {
@@ -2721,6 +2728,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
           },
         ]
       }
@@ -2939,6 +2953,13 @@ export type Database = {
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "novelty_comments_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
         ]
       }
       novelty_images: {
@@ -2978,6 +2999,13 @@ export type Database = {
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "novelty_images_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
         ]
       }
       novelty_likes: {
@@ -3013,6 +3041,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_likes_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
           },
         ]
       }
@@ -3056,6 +3091,13 @@ export type Database = {
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "novelty_stats_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: true
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
         ]
       }
       novelty_visit_milestones: {
@@ -3097,6 +3139,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_visit_milestones_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
           },
         ]
       }
@@ -3279,6 +3328,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
           },
           {
             foreignKeyName: "outreach_campaigns_participation_id_fkey"
@@ -3831,6 +3887,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_novelties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_items_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
           },
           {
             foreignKeyName: "route_items_route_id_fkey"
@@ -5230,6 +5293,79 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_novelty_visit_signals: {
+        Row: {
+          date_debut: string | null
+          distinct_visitors: number | null
+          event_id: string | null
+          exhibitor_id: string | null
+          exhibitor_name: string | null
+          highest_milestone: number | null
+          last_signal_at: string | null
+          nom_event: string | null
+          novelty_id: string | null
+          novelty_title: string | null
+          total_likes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
           },
         ]
       }
