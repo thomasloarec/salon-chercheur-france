@@ -215,6 +215,83 @@ serve(async (req) => {
         console.error("[milestone-check] notified_at update failed (non-fatal)", updateError);
       }
 
+      // ---- Email notification (best-effort) -------------------------------
+      // In-app fires from threshold 2; email only from EMAIL_MIN_THRESHOLD (5).
+      // The milestone is already locked via try_record_novelty_milestone, so
+      // reaching this block means a brand-new milestone → no double send risk.
+      if (threshold >= EMAIL_MIN_THRESHOLD) {
+        try {
+          const resendKey = Deno.env.get("RESEND_API_KEY");
+          if (!resendKey) {
+            console.warn("[milestone-check][email] missing RESEND_API_KEY — email skipped", { novelty_id, threshold });
+          } else {
+            // Resolve recipient emails via auth admin (same pattern as leads-create)
+            const recipientEmails: string[] = [];
+            for (const uid of recipients) {
+              try {
+                const { data: u } = await supabase.auth.admin.getUserById(uid);
+                if (u?.user?.email) recipientEmails.push(u.user.email);
+              } catch (e) {
+                console.error("[milestone-check][email] getUserById failed", { recipient_user_id: uid, error: String(e) });
+              }
+            }
+
+            if (recipientEmails.length === 0) {
+              console.warn("[milestone-check][email] no recipient emails resolved", { novelty_id, threshold });
+            } else {
+              const noveltyTitle = novelty.title ?? "";
+              const subject = nomEvent
+                ? `👀 ${threshold} visiteurs veulent voir votre stand sur ${nomEvent}`
+                : `👀 ${threshold} visiteurs veulent voir votre stand`;
+
+              // Reuse the exact same link_url format as the in-app notifications,
+              // prefixed with the public origin to make it clickable in email.
+              const ctaUrl = `https://lotexpo.com${linkUrl}`;
+
+              const html = `
+                <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:auto;color:#111">
+                  <h2 style="color:#111">👀 Votre stand attire l'attention</h2>
+                  <p>Bonjour,</p>
+                  <p><strong>${threshold} visiteurs</strong> ont déjà ajouté votre stand à leur parcours de visite${nomEvent ? ` sur <strong>${escapeHtml(nomEvent)}</strong>` : ""}.</p>
+                  ${noveltyTitle ? `<p>Votre nouveauté <strong>${escapeHtml(noveltyTitle)}</strong> suscite l'intérêt avant même l'ouverture du salon. C'est le moment de finaliser votre préparation !</p>` : `<p>Votre nouveauté suscite l'intérêt avant même l'ouverture du salon. C'est le moment de finaliser votre préparation !</p>`}
+                  <p>
+                    <a href="${ctaUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px">Voir ma nouveauté sur Lotexpo</a>
+                  </p>
+                  <p style="font-size:12px;color:#666;margin-top:24px">Cet email vous est envoyé car vous êtes administrateur de cette fiche exposant sur Lotexpo.</p>
+                </div>`;
+
+              // One send per recipient so co-administrators are never exposed to
+              // each other in the To. Each send is best-effort.
+              for (const email of recipientEmails) {
+                try {
+                  const { id: emailId } = await sendResendEmail({
+                    from: "Lotexpo <admin@lotexpo.com>",
+                    to: [email],
+                    subject,
+                    html,
+                  });
+                  console.log("[milestone-check][email] sent", { novelty_id, threshold, to: email, email_id: emailId });
+                } catch (e) {
+                  console.error("[milestone-check][email] send exception (non-fatal)", { novelty_id, threshold, to: email, error: String(e) });
+                }
+              }
+
+              // Audit/traçabilité: mark email_sent_at (no double send risk — milestone locked)
+              const { error: emailUpdateError } = await supabase
+                .from("novelty_visit_milestones")
+                .update({ email_sent_at: new Date().toISOString() })
+                .eq("novelty_id", novelty_id)
+                .eq("threshold", threshold);
+              if (emailUpdateError) {
+                console.error("[milestone-check][email] email_sent_at update failed (non-fatal)", emailUpdateError);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("[milestone-check][email] outer exception (non-fatal)", { novelty_id, threshold, error: String(e) });
+        }
+      }
+
       console.log("[milestone-check] notified", { novelty_id, threshold, recipients, count: n });
 
       return new Response(
