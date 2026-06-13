@@ -9,6 +9,7 @@ const corsHeaders = {
 
 // ---- Milestone logic (centralized) ------------------------------------------
 const MILESTONES = [2, 5, 10, 20];
+const EMAIL_MIN_THRESHOLD = 5; // in-app dès le palier 2, email seulement à partir de 5
 function highestThreshold(n: number): number | null {
   if (n < 2) return null;
   if (n < 5) return 2;
