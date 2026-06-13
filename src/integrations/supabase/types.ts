@@ -5076,6 +5076,7 @@ export type Database = {
           contact_email: string | null
           date_debut: string | null
           event_id: string | null
+          event_slug: string | null
           first_name: string | null
           id: string | null
           next_send_at: string | null
