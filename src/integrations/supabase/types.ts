@@ -5608,6 +5608,10 @@ export type Database = {
       }
       compute_seo_source_hash: { Args: { p_event_id: string }; Returns: string }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
+      count_novelty_distinct_visitors: {
+        Args: { p_novelty_id: string }
+        Returns: number
+      }
       count_seo_enrichment_eligible: { Args: never; Returns: Json }
       create_exhibitor_with_lock: {
         Args: {
@@ -6177,6 +6181,10 @@ export type Database = {
       toggle_favorite: { Args: { p_event: string }; Returns: undefined }
       track_exhibitor_event: {
         Args: { p_event_type: string; p_metadata?: Json; p_public_slug: string }
+        Returns: boolean
+      }
+      try_record_novelty_milestone: {
+        Args: { p_novelty_id: string; p_threshold: number }
         Returns: boolean
       }
       unaccent_safe: { Args: { txt: string }; Returns: string }
