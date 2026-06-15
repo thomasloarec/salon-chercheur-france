@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -256,6 +256,11 @@ const Auth = () => {
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground">
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
+                      </div>
+                      <div className="text-right">
+                        <Link to="/mot-de-passe-oublie" className="text-sm text-muted-foreground hover:text-foreground">
+                          Mot de passe oublié ?
+                        </Link>
                       </div>
                     </div>
 
