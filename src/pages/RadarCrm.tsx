@@ -226,7 +226,7 @@ const RadarCrmPage: React.FC = () => {
               <Button
                 size="lg"
                 onClick={() => scrollToUpload('hero_primary')}
-                className="w-full sm:w-auto h-auto whitespace-normal text-center"
+                className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
               >
                 <Upload className="h-4 w-4 mr-2 shrink-0" /> Importer mon fichier CSV ou Excel
               </Button>
@@ -234,7 +234,7 @@ const RadarCrmPage: React.FC = () => {
                 size="lg"
                 variant="outline"
                 onClick={scrollToHowItWorks}
-                className="w-full sm:w-auto h-auto whitespace-normal text-center"
+                className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
               >
                 Voir comment ça marche
               </Button>
@@ -491,7 +491,7 @@ const RadarCrmPage: React.FC = () => {
                     }}
                     disabled={submitting || missingRequired.length > 0 || !privacyAck}
                     size="lg"
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto py-3"
                   >
                     <Radar className="mr-2 h-4 w-4" />
                     {submitting ? 'Analyse en cours…' : "Lancer l'analyse Radar CRM"}
@@ -526,7 +526,7 @@ const RadarCrmPage: React.FC = () => {
           <div className="text-center mt-6">
             <Button
               onClick={() => scrollToUpload('beta_section')}
-              className="w-full sm:w-auto h-auto whitespace-normal text-center"
+              className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
             >
               <Upload className="h-4 w-4 mr-2 shrink-0" /> Tester la Beta avec un CSV ou Excel
             </Button>
@@ -581,7 +581,7 @@ const RadarCrmPage: React.FC = () => {
               size="lg"
               variant="secondary"
               onClick={() => scrollToUpload('final_cta')}
-              className="w-full sm:w-auto h-auto whitespace-normal text-center"
+              className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
             >
               <Upload className="h-4 w-4 mr-2 shrink-0" /> Importer mon fichier CSV ou Excel
             </Button>
