@@ -18,6 +18,8 @@ import EventPage from '@/pages/EventPage';
 import Favorites from '@/pages/Favorites';
 import Profile from '@/pages/Profile';
 import Auth from '@/pages/Auth';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminOverview from '@/pages/admin/AdminOverview';
 import AdminEventsPage from '@/pages/admin/AdminEventsPage';
@@ -144,6 +146,8 @@ function App() {
             </Route>
 
               <Route path="/auth" element={<Auth />} />
+              <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
+              <Route path="/reinitialiser-mot-de-passe" element={<ResetPassword />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogArticle />} />
               <Route path="/profile" element={<Profile />} />
