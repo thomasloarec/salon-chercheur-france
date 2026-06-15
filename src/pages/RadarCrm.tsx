@@ -15,7 +15,7 @@ import {
 import {
   Radar, ShieldCheck, Sparkles, Zap, ArrowRight, Target, Map, Rocket,
   Upload, FileCheck2, Search, Lock, CheckCircle2, Eye, Globe, EyeOff,
-  Building2, MapPin,
+  Building2, MapPin, Database,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -308,6 +308,30 @@ const RadarCrmPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Proof / data credibility */}
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8 md:p-10">
+          <div className="text-center max-w-2xl mx-auto mb-8">
+            <Badge variant="secondary" className="mb-3 inline-flex items-center gap-1.5">
+              <Database className="h-3.5 w-3.5" /> Donnée Lotexpo
+            </Badge>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">
+              Une base déjà exploitable pour détecter des opportunités salon
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Lotexpo recense déjà plus de 17 000 participations d'exposants à des salons
+              professionnels. Radar CRM s'appuie sur cette base pour identifier les entreprises de
+              votre fichier CRM qui seront présentes sur des événements à venir.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ProofStat value="17 000+" label="participations exposants recensées" highlight />
+            <ProofStat value="France" label="salons professionnels centralisés" />
+            <ProofStat value="CSV / Excel" label="import simple, sans connexion CRM obligatoire" />
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
       <section id="radar-how" className="max-w-5xl mx-auto px-4 py-8 scroll-mt-24">
         <h2 className="text-xl md:text-2xl font-bold text-center mb-6">Comment fonctionne Radar CRM ?</h2>
@@ -324,6 +348,63 @@ const RadarCrmPage: React.FC = () => {
           <TrustItem icon={<ShieldCheck className="h-4 w-4 text-primary" />} label="Données privées" sub="Visibles uniquement par vous." />
           <TrustItem icon={<Zap className="h-4 w-4 text-primary" />} label="Matching exact" sub="Basé sur le domaine web." />
           <TrustItem icon={<FileCheck2 className="h-4 w-4 text-primary" />} label="2 colonnes suffisent" sub="Nom + site web." />
+        </div>
+      </section>
+
+      {/* Anonymized use case */}
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <div className="grid lg:grid-cols-2 gap-8 items-center">
+          <div>
+            <Badge variant="secondary" className="mb-3">Cas d'usage anonymisé</Badge>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">
+              Préparer ses visites salon en quelques minutes
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground mb-4">
+              Une équipe commerciale importe une liste de comptes clients et prospects. Radar CRM
+              identifie les entreprises présentes sur des salons à venir, puis fait ressortir les
+              événements à prioriser pour sa prospection B2B.
+            </p>
+            <p className="text-sm md:text-base text-foreground mb-6">
+              Résultat : le commercial sait quels stands visiter, quels comptes suivre et quels
+              déplacements peuvent générer le plus d'opportunités commerciales.
+            </p>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <UseCaseStep n={1} text="Importer un fichier comptes" />
+              <UseCaseStep n={2} text="Identifier les présences salon" />
+              <UseCaseStep n={3} text="Prioriser les visites terrain" />
+            </div>
+          </div>
+
+          {/* Mini results dashboard (illustratif) */}
+          <div className="relative">
+            <div className="absolute -inset-4 bg-gradient-to-tr from-primary/15 via-accent/10 to-transparent rounded-3xl blur-2xl -z-10" />
+            <Card className="shadow-xl border-primary/10">
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                      <Radar className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold leading-tight">Exemple de résultats</p>
+                      <p className="text-xs text-muted-foreground">Scénario de démonstration</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">Exemple</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <StatTile label="entreprises analysées" value="310" />
+                  <StatTile label="détections sur salons" value="60" accent />
+                  <StatTile label="participations futures" value="12" />
+                  <StatTile label="avant le prochain salon" value="9 jours" />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Chiffres fournis à titre d'exemple anonymisé. Les résultats varient selon votre
+                  fichier CRM.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
@@ -650,6 +731,22 @@ const StatTile: React.FC<{ label: string; value: string; accent?: boolean }> = (
   <div className={`rounded-lg p-3 border ${accent ? 'bg-primary/10 border-primary/30' : 'bg-card'}`}>
     <p className={`text-xl font-bold leading-none ${accent ? 'text-primary' : ''}`}>{value}</p>
     <p className="text-[11px] text-muted-foreground mt-1">{label}</p>
+  </div>
+);
+
+const ProofStat: React.FC<{ value: string; label: string; highlight?: boolean }> = ({ value, label, highlight }) => (
+  <div className={`rounded-xl border bg-card p-6 text-center ${highlight ? 'border-primary/40 ring-1 ring-primary/20' : ''}`}>
+    <p className={`font-bold leading-none ${highlight ? 'text-3xl md:text-4xl text-primary' : 'text-2xl md:text-3xl'}`}>{value}</p>
+    <p className="text-sm text-muted-foreground mt-2">{label}</p>
+  </div>
+);
+
+const UseCaseStep: React.FC<{ n: number; text: string }> = ({ n, text }) => (
+  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
+    <span className="h-6 w-6 flex-shrink-0 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
+      {n}
+    </span>
+    <span className="text-xs font-medium leading-tight">{text}</span>
   </div>
 );
 
