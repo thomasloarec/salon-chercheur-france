@@ -158,6 +158,8 @@ const RadarCrmPage: React.FC = () => {
       clearPendingImport();
       // Rafraîchit les badges "Radar CRM" des EventCard après (ré)import.
       void queryClient.invalidateQueries({ queryKey: ['crm-event-matches', user?.id] });
+      // Invalider AUSSI le résolveur de portée, sinon le badge reste sur l'ancien import.
+      void queryClient.invalidateQueries({ queryKey: ['crm-latest-import-companies', user?.id] });
       toast({
         title: 'Analyse terminée',
         description: `${result.matchedCompaniesCount ?? 0} entreprise(s) détectée(s) sur des salons.`,
