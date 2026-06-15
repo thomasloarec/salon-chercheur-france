@@ -351,6 +351,63 @@ const RadarCrmPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Anonymized use case */}
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <div className="grid lg:grid-cols-2 gap-8 items-center">
+          <div>
+            <Badge variant="secondary" className="mb-3">Cas d'usage anonymisé</Badge>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">
+              Préparer ses visites salon en quelques minutes
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground mb-4">
+              Une équipe commerciale importe une liste de comptes clients et prospects. Radar CRM
+              identifie les entreprises présentes sur des salons à venir, puis fait ressortir les
+              événements à prioriser pour sa prospection B2B.
+            </p>
+            <p className="text-sm md:text-base text-foreground mb-6">
+              Résultat : le commercial sait quels stands visiter, quels comptes suivre et quels
+              déplacements peuvent générer le plus d'opportunités commerciales.
+            </p>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <UseCaseStep n={1} text="Importer un fichier comptes" />
+              <UseCaseStep n={2} text="Identifier les présences salon" />
+              <UseCaseStep n={3} text="Prioriser les visites terrain" />
+            </div>
+          </div>
+
+          {/* Mini results dashboard (illustratif) */}
+          <div className="relative">
+            <div className="absolute -inset-4 bg-gradient-to-tr from-primary/15 via-accent/10 to-transparent rounded-3xl blur-2xl -z-10" />
+            <Card className="shadow-xl border-primary/10">
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                      <Radar className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold leading-tight">Exemple de résultats</p>
+                      <p className="text-xs text-muted-foreground">Scénario de démonstration</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">Exemple</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <StatTile label="entreprises analysées" value="310" />
+                  <StatTile label="détections sur salons" value="60" accent />
+                  <StatTile label="participations futures" value="12" />
+                  <StatTile label="avant le prochain salon" value="9 jours" />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Chiffres fournis à titre d'exemple anonymisé. Les résultats varient selon votre
+                  fichier CRM.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Upload zone */}
       <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
         {!parsed && (
