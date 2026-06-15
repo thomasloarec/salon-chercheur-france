@@ -734,6 +734,22 @@ const StatTile: React.FC<{ label: string; value: string; accent?: boolean }> = (
   </div>
 );
 
+const ProofStat: React.FC<{ value: string; label: string; highlight?: boolean }> = ({ value, label, highlight }) => (
+  <div className={`rounded-xl border bg-card p-6 text-center ${highlight ? 'border-primary/40 ring-1 ring-primary/20' : ''}`}>
+    <p className={`font-bold leading-none ${highlight ? 'text-3xl md:text-4xl text-primary' : 'text-2xl md:text-3xl'}`}>{value}</p>
+    <p className="text-sm text-muted-foreground mt-2">{label}</p>
+  </div>
+);
+
+const UseCaseStep: React.FC<{ n: number; text: string }> = ({ n, text }) => (
+  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
+    <span className="h-6 w-6 flex-shrink-0 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
+      {n}
+    </span>
+    <span className="text-xs font-medium leading-tight">{text}</span>
+  </div>
+);
+
 const CompanyRow: React.FC<{ name: string; stand: string }> = ({ name, stand }) => (
   <div className="flex items-center justify-between">
     <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3 text-muted-foreground" /> {name}</span>
