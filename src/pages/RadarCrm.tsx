@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { queryClient } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
 import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
@@ -155,6 +156,8 @@ const RadarCrmPage: React.FC = () => {
         matchedCompanies: result.matchedCompaniesCount,
       });
       clearPendingImport();
+      // Rafraîchit les badges "Radar CRM" des EventCard après (ré)import.
+      void queryClient.invalidateQueries({ queryKey: ['crm-event-matches', user?.id] });
       toast({
         title: 'Analyse terminée',
         description: `${result.matchedCompaniesCount ?? 0} entreprise(s) détectée(s) sur des salons.`,

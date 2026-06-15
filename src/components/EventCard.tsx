@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin, EyeOff, Eye, Radio, Store, Sparkles } from 'lucide-react';
+import { CalendarDays, MapPin, EyeOff, Eye, Radio, Store, Sparkles, Radar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import { format } from 'date-fns';
@@ -11,6 +11,7 @@ import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { EventImage } from '@/components/ui/event-image';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useCrmEventMatches } from '@/hooks/useCrmEventMatches';
 
 import { cn } from '@/lib/utils';
 import FavoriteButton from './FavoriteButton';
@@ -48,7 +49,13 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
 
   const hasExhibitors = !adminPreview && typeof exhibitorCount === 'number' && exhibitorCount > 0;
   const hasNovelties = !adminPreview && typeof noveltyCount === 'number' && noveltyCount > 0;
-  const showStats = hasExhibitors || hasNovelties;
+
+  // Badge "Radar CRM" : nb d'entreprises du CRM de l'utilisateur connecté
+  // qui exposent à cet event. Invisible si anon / sans CRM / 0 match.
+  const { data: crmMatches } = useCrmEventMatches();
+  const crmCount = !adminPreview ? crmMatches?.get(event.id) : undefined;
+  const hasCrmMatches = typeof crmCount === 'number' && crmCount > 0;
+  const showStats = hasExhibitors || hasNovelties || hasCrmMatches;
 
 
   // Use database-generated slug (tous les événements en ont un maintenant)
@@ -171,6 +178,17 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-bubble text-bubble-foreground border border-bubble-border">
                   <Sparkles className="h-3 w-3 shrink-0" />
                   {noveltyCount} {noveltyCount! > 1 ? 'nouveautés' : 'nouveauté'}
+                </span>
+              )}
+              {hasCrmMatches && (
+                <span
+                  role="img"
+                  aria-label={`${crmCount} entreprise${crmCount! > 1 ? 's' : ''} de votre CRM expose${crmCount! > 1 ? 'nt' : ''} ici`}
+                  title={`${crmCount} entreprise${crmCount! > 1 ? 's' : ''} de votre CRM`}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200"
+                >
+                  <Radar className="h-3 w-3 shrink-0" aria-hidden="true" />
+                  {crmCount}
                 </span>
               )}
             </div>
