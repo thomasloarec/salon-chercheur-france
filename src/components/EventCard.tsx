@@ -180,6 +180,17 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
                   {noveltyCount} {noveltyCount! > 1 ? 'nouveautés' : 'nouveauté'}
                 </span>
               )}
+              {hasCrmMatches && (
+                <span
+                  role="img"
+                  aria-label={`${crmCount} entreprise${crmCount! > 1 ? 's' : ''} de votre CRM expose${crmCount! > 1 ? 'nt' : ''} ici`}
+                  title={`${crmCount} entreprise${crmCount! > 1 ? 's' : ''} de votre CRM`}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200"
+                >
+                  <Radar className="h-3 w-3 shrink-0" aria-hidden="true" />
+                  {crmCount}
+                </span>
+              )}
             </div>
           )}
           
