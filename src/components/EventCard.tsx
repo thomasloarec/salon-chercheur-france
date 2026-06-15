@@ -49,7 +49,13 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
 
   const hasExhibitors = !adminPreview && typeof exhibitorCount === 'number' && exhibitorCount > 0;
   const hasNovelties = !adminPreview && typeof noveltyCount === 'number' && noveltyCount > 0;
-  const showStats = hasExhibitors || hasNovelties;
+
+  // Badge "Radar CRM" : nb d'entreprises du CRM de l'utilisateur connecté
+  // qui exposent à cet event. Invisible si anon / sans CRM / 0 match.
+  const { data: crmMatches } = useCrmEventMatches();
+  const crmCount = !adminPreview ? crmMatches?.get(event.id) : undefined;
+  const hasCrmMatches = typeof crmCount === 'number' && crmCount > 0;
+  const showStats = hasExhibitors || hasNovelties || hasCrmMatches;
 
 
   // Use database-generated slug (tous les événements en ont un maintenant)
