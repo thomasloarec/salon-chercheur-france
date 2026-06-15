@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, MapPin, EyeOff, Eye, Radio, Store, Sparkles } from 'lucide-react';
+import { CalendarDays, MapPin, EyeOff, Eye, Radio, Store, Sparkles, Radar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Event } from '@/types/event';
 import { format } from 'date-fns';
@@ -11,6 +11,7 @@ import { fr } from 'date-fns/locale';
 import { generateEventSlug } from '@/utils/eventUtils';
 import { EventImage } from '@/components/ui/event-image';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useCrmEventMatches } from '@/hooks/useCrmEventMatches';
 
 import { cn } from '@/lib/utils';
 import FavoriteButton from './FavoriteButton';
