@@ -15,7 +15,7 @@ import {
 import {
   Radar, ShieldCheck, Sparkles, Zap, ArrowRight, Target, Map, Rocket,
   Upload, FileCheck2, Search, Lock, CheckCircle2, Eye, Globe, EyeOff,
-  Building2, MapPin,
+  Building2, MapPin, Database,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
