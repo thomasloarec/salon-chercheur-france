@@ -308,6 +308,30 @@ const RadarCrmPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Proof / data credibility */}
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8 md:p-10">
+          <div className="text-center max-w-2xl mx-auto mb-8">
+            <Badge variant="secondary" className="mb-3 inline-flex items-center gap-1.5">
+              <Database className="h-3.5 w-3.5" /> Donnée Lotexpo
+            </Badge>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">
+              Une base déjà exploitable pour détecter des opportunités salon
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Lotexpo recense déjà plus de 17 000 participations d'exposants à des salons
+              professionnels. Radar CRM s'appuie sur cette base pour identifier les entreprises de
+              votre fichier CRM qui seront présentes sur des événements à venir.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ProofStat value="17 000+" label="participations exposants recensées" highlight />
+            <ProofStat value="France" label="salons professionnels centralisés" />
+            <ProofStat value="CSV / Excel" label="import simple, sans connexion CRM obligatoire" />
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
       <section id="radar-how" className="max-w-5xl mx-auto px-4 py-8 scroll-mt-24">
         <h2 className="text-xl md:text-2xl font-bold text-center mb-6">Comment fonctionne Radar CRM ?</h2>
