@@ -156,6 +156,8 @@ const RadarCrmPage: React.FC = () => {
         matchedCompanies: result.matchedCompaniesCount,
       });
       clearPendingImport();
+      // Rafraîchit les badges "Radar CRM" des EventCard après (ré)import.
+      void queryClient.invalidateQueries({ queryKey: ['crm-event-matches', user?.id] });
       toast({
         title: 'Analyse terminée',
         description: `${result.matchedCompaniesCount ?? 0} entreprise(s) détectée(s) sur des salons.`,
