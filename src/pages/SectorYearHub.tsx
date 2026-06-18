@@ -69,6 +69,12 @@ const SectorYearHub = () => {
   if (error || !hub) {
     return (
       <div className="min-h-screen bg-background">
+        <Helmet>
+          <title>Salons professionnels par secteur | Lotexpo</title>
+          <meta name="description" content="Explorez les salons professionnels par secteur d'activité en France sur Lotexpo." />
+          <link rel="canonical" href="https://lotexpo.com/events" />
+          <meta name="robots" content="noindex,follow" />
+        </Helmet>
         <Header />
         <main className="py-24 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Secteur introuvable</h1>
@@ -205,7 +211,7 @@ const SectorYearHub = () => {
             <div className="text-center py-12 mb-8 bg-muted/30 rounded-lg">
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground mb-4">
-                Aucun salon {hub.sectorLabel} n'est référencé pour l'année {year}.
+                Aucun salon {hub.sectorLabel} à venir en {year}.
               </p>
               <Link to={`/secteur/${hub.sectorSlug}`} className="text-primary hover:underline">
                 Voir tous les salons {hub.sectorLabel}

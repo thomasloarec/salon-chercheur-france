@@ -77,6 +77,12 @@ const SectorHub = () => {
   if (error || !hub) {
     return (
       <div className="min-h-screen bg-background">
+        <Helmet>
+          <title>Salons professionnels par secteur | Lotexpo</title>
+          <meta name="description" content="Explorez les salons professionnels par secteur d'activité en France sur Lotexpo." />
+          <link rel="canonical" href="https://lotexpo.com/events" />
+          <meta name="robots" content="noindex,follow" />
+        </Helmet>
         <Header />
         <main className="py-24 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Secteur introuvable</h1>

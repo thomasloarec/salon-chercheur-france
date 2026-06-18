@@ -4,8 +4,6 @@ import logoLotexpo from '@/assets/logo-lotexpo.png';
 import { CANONICAL_SECTORS } from '@/lib/taxonomy';
 import { useConsent } from '@/contexts/ConsentContext';
 
-const FOOTER_SECTORS = CANONICAL_SECTORS.slice(0, 8);
-
 const FOOTER_CITIES = [
   { name: 'Paris', slug: 'paris' },
   { name: 'Lyon', slug: 'lyon' },
@@ -48,10 +46,10 @@ const Footer = () => {
           {/* Sectors */}
           <div>
             <h4 className="text-lg font-semibold mb-4">Salons par secteur</h4>
-            <ul className="space-y-2">
-              {FOOTER_SECTORS.map(s => (
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+              {CANONICAL_SECTORS.map(s => (
                 <li key={s.value}>
-                  <Link to={`/secteur/${s.value}`} className="text-gray-300 hover:text-accent transition-colors text-sm">
+                  <Link to={`/secteur/${s.value}`} className="text-gray-300 hover:text-accent transition-colors text-xs leading-snug">
                     {s.label}
                   </Link>
                 </li>

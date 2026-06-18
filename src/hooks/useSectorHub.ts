@@ -45,23 +45,26 @@ export function useSectorHub(slug: string | undefined, options: UseSectorHubOpti
       if (!sector) return null;
 
       const dbLabels = sectorSlugToDbLabels(normalized);
-      if (dbLabels.length === 0) return null;
+      // For a canonical sector we always render the page (empty state if needed).
+      // If labels are missing or the query fails, fall back to an empty dataset
+      // rather than throwing / returning null (which would yield "introuvable").
+      let events: CanonicalEvent[] = [];
+      if (dbLabels.length > 0) {
+        // Use filter with explicit JSON string to avoid encoding issues with '&' in PostgREST
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .eq('visible', true)
+          .eq('is_test', false)
+          .filter('secteur', 'cs', JSON.stringify([dbLabels[0]]))
+          .order('date_debut', { ascending: true });
 
-      // Use filter with explicit JSON string to avoid encoding issues with '&' in PostgREST
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('visible', true)
-        .eq('is_test', false)
-        .filter('secteur', 'cs', JSON.stringify([dbLabels[0]]))
-        .order('date_debut', { ascending: true });
-
-      if (error) {
-        console.error('[useSectorHub] query error:', error);
-        throw error;
+        if (error) {
+          console.error('[useSectorHub] query error:', error);
+        } else {
+          events = (data ?? []).map(normalizeEventRow);
+        }
       }
-
-      const events = (data ?? []).map(normalizeEventRow);
       const todayStr = new Date().toISOString().slice(0, 10);
       const currentYear = new Date().getFullYear();
 

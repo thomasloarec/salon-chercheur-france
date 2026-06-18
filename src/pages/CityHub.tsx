@@ -16,6 +16,16 @@ import type { Event } from '@/types/event';
 import { useState } from 'react';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
 
+/** Derive a human-readable, capitalized city name from a URL slug. */
+function cityNameFromSlug(slug?: string): string {
+  if (!slug) return 'cette ville';
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 function canonicalToEvent(e: any): Event {
   return {
     id: e.id,
@@ -110,13 +120,21 @@ const CityHub = () => {
   }
 
   if (error || !hub) {
+    const fallbackCity = cityNameFromSlug(slug);
+    const fallbackUrl = `https://lotexpo.com/ville/${slug ?? ''}`;
     return (
       <div className="min-h-screen bg-background">
+        <Helmet>
+          <title>{`Salons à ${fallbackCity} | Lotexpo`}</title>
+          <meta name="description" content={`Salons professionnels à ${fallbackCity}. Calendrier, secteurs et informations pratiques sur Lotexpo.`.slice(0, 160)} />
+          <link rel="canonical" href={fallbackUrl} />
+          <meta name="robots" content="noindex,follow" />
+        </Helmet>
         <Header />
         <main className="py-24 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Ville introuvable</h1>
-          <p className="text-muted-foreground mb-6">Aucun salon trouvé pour cette ville ou le seuil minimum n'est pas atteint.</p>
-          <Link to="/" className="text-primary hover:underline">Retour à l'accueil</Link>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Salons à {fallbackCity}</h1>
+          <p className="text-muted-foreground mb-6">Aucun salon professionnel n'est actuellement référencé à {fallbackCity}.</p>
+          <Link to="/" className="text-primary hover:underline">Voir tous les salons</Link>
         </main>
         <Footer />
       </div>
