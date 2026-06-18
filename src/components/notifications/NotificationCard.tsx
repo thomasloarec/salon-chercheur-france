@@ -109,7 +109,7 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
           !notification.read ? "bg-primary/5 border-primary/20" : "bg-background"
         )}
       >
-        <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-muted">
+        <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-muted">
           {meta.eventImage ? (
             <img src={meta.eventImage} alt={meta.eventName || 'Événement'} className="w-full h-full object-cover" />
           ) : (
@@ -120,24 +120,20 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
         </div>
 
         <div className="flex-1 space-y-2 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0 pr-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" className="text-xs">Radar CRM</Badge>
-                <p className="font-semibold text-sm">{notification.title}</p>
-                {!notification.read && (
-                  <Badge variant="default" className="text-xs flex-shrink-0">Nouveau</Badge>
-                )}
-              </div>
-              <p className="text-sm text-foreground mt-1">{notification.message}</p>
-            </div>
-            <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
-              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: fr })}
-            </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary" className="text-xs">Radar CRM</Badge>
+            {!notification.read && (
+              <Badge variant="default" className="text-xs">Nouveau</Badge>
+            )}
           </div>
+          <p className="font-semibold text-sm break-words">{notification.title}</p>
+          <p className="text-sm text-foreground break-words">{notification.message}</p>
+          <span className="block text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: fr })}
+          </span>
 
           {firstNames.length > 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground break-words">
               {firstNames.join(', ')}{remaining > 0 ? ` + ${remaining} autre${remaining > 1 ? 's' : ''}` : ''}
             </p>
           )}

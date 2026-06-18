@@ -11,11 +11,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, LogOut, CalendarRange, Bell, Radar } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useProfile } from '@/hooks/useProfile';
+import { USER_MENU_ITEMS } from '@/config/userMenuItems';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
@@ -54,33 +55,17 @@ const UserMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/profile" className="cursor-pointer">
-            <User className="mr-2 h-4 w-4" />
-            Mon profil
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/notifications" className="cursor-pointer">
-            <Bell className="mr-2 h-4 w-4" />
-            Notifications
-            {unreadCount > 0 && (
-              <Badge className="ml-auto bg-red-500">{unreadCount}</Badge>
-            )}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/agenda" className="cursor-pointer">
-            <CalendarRange className="mr-2 h-4 w-4" />
-            Mon agenda
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/radar-crm/results" className="cursor-pointer">
-            <Radar className="mr-2 h-4 w-4" />
-            Radar CRM
-          </Link>
-        </DropdownMenuItem>
+        {USER_MENU_ITEMS.map((item) => (
+          <DropdownMenuItem key={item.to} asChild>
+            <Link to={item.to} className="cursor-pointer">
+              <item.icon className="mr-2 h-4 w-4" />
+              {item.label}
+              {item.showUnreadBadge && unreadCount > 0 && (
+                <Badge className="ml-auto bg-red-500">{unreadCount}</Badge>
+              )}
+            </Link>
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
