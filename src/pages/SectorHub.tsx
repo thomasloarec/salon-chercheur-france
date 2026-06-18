@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import type { Event } from '@/types/event';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 
 function canonicalToEvent(e: any): Event {
   return {
@@ -44,6 +45,22 @@ const SectorHub = () => {
     const events = hub.upcomingEvents.map(canonicalToEvent);
     return groupEventsByMonth(events);
   }, [hub?.upcomingEvents]);
+
+  // Past events normalized once so we can reuse for stats + rendering
+  const pastEvents = useMemo(
+    () => (hub?.pastEvents ?? []).slice(0, 10).map(canonicalToEvent),
+    [hub?.pastEvents]
+  );
+
+  // Batched public stats (exposants + nouveautés) — same source as the Salons page
+  const statEventIds = useMemo(
+    () => [
+      ...groupedUpcoming.flatMap((g) => g.events.map((e) => e.id)),
+      ...pastEvents.map((e) => e.id),
+    ],
+    [groupedUpcoming, pastEvents]
+  );
+  const { data: statsMap } = useEventCardStats(statEventIds);
 
   if (isLoading) {
     return (
@@ -153,7 +170,13 @@ const SectorHub = () => {
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
                       {monthEvents.map(e => (
-                        <EventCard key={e.id} event={e} view="grid" />
+                        <EventCard
+                          key={e.id}
+                          event={e}
+                          view="grid"
+                          exhibitorCount={statsMap?.[e.id]?.exhibitor_count}
+                          noveltyCount={statsMap?.[e.id]?.novelty_count}
+                        />
                       ))}
                     </div>
                   </div>
@@ -180,8 +203,14 @@ const SectorHub = () => {
               </h2>
               <p className="text-sm text-muted-foreground mb-6">Ces salons ont déjà eu lieu.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5 opacity-75">
-                {hub.pastEvents.slice(0, 10).map(e => (
-                  <EventCard key={e.id} event={canonicalToEvent(e)} view="grid" />
+                {pastEvents.map(e => (
+                  <EventCard
+                    key={e.id}
+                    event={e}
+                    view="grid"
+                    exhibitorCount={statsMap?.[e.id]?.exhibitor_count}
+                    noveltyCount={statsMap?.[e.id]?.novelty_count}
+                  />
                 ))}
               </div>
             </section>

@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SectorTag } from '@/components/ui/sector-tag';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight, CalendarX } from 'lucide-react';
+import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight, CalendarX, Store } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useVisitPlansForUser, VisitPlan } from '@/hooks/useVisitPlan';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,9 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
   const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
   const { data: visitPlans = [] } = useVisitPlansForUser();
+
+  // Batched public stats (exposants + nouveautés) — same source as the Salons page
+  const { data: statsMap } = useEventCardStats((events ?? []).map((e) => e.id));
 
   // Index visit plans by event_id
   const plansByEvent = visitPlans.reduce((acc, plan) => {
@@ -119,6 +123,14 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
             const today = new Date();
             const eventEnd = new Date(event.date_fin || event.date_debut);
             const isPast = eventEnd < today;
+            const stat = statsMap?.[event.id];
+            const exhibitorCount = stat?.exhibitor_count ?? 0;
+            const noveltyCount = stat?.novelty_count ?? 0;
+            const sectorLabel = event.secteur
+              ? (Array.isArray(event.secteur)
+                  ? event.secteur[0]
+                  : String(event.secteur).split(',')[0].trim())
+              : null;
 
             return (
               <div key={event.id} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
@@ -132,6 +144,13 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                     />
                   )}
                   <div className="flex-1 min-w-0">
+                    {/* 1. Badge secteur */}
+                    {sectorLabel && (
+                      <div className="mb-1.5">
+                        <SectorTag label={sectorLabel} />
+                      </div>
+                    )}
+                    {/* 2. Titre */}
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link to={`/events/${event.slug}`} className="hover:text-primary transition-colors">
                         <h3 className="text-lg sm:text-xl font-semibold line-clamp-2">{event.nom_event}</h3>
@@ -143,6 +162,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                         </Badge>
                       )}
                     </div>
+                    {/* 3. Dates + lieu */}
                     <div className="text-sm text-muted-foreground mt-1">
                       {format(new Date(event.date_debut), 'dd MMM', { locale: fr })}
                       {event.date_fin !== event.date_debut && 
@@ -150,11 +170,21 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       } • {event.ville}
                       {event.nom_lieu && ` • ${event.nom_lieu}`}
                     </div>
-                    {event.secteur && (
-                      <div className="mt-2">
-                        <SectorTag 
-                          label={Array.isArray(event.secteur) ? event.secteur[0] : String(event.secteur).split(',')[0].trim()} 
-                        />
+                    {/* 4. Bulles exposants / nouveautés (si dispo) */}
+                    {(exhibitorCount > 0 || noveltyCount > 0) && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {exhibitorCount > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-bubble text-bubble-foreground border border-bubble-border">
+                            <Store className="h-3 w-3 shrink-0" />
+                            {exhibitorCount} {exhibitorCount > 1 ? 'exposants' : 'exposant'}
+                          </span>
+                        )}
+                        {noveltyCount > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-bubble text-bubble-foreground border border-bubble-border">
+                            <Sparkles className="h-3 w-3 shrink-0" />
+                            {noveltyCount} {noveltyCount > 1 ? 'nouveautés' : 'nouveauté'}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

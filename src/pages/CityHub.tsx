@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import type { Event } from '@/types/event';
 import { useState } from 'react';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 
 function canonicalToEvent(e: any): Event {
   return {
@@ -82,6 +83,13 @@ const CityHub = () => {
     if (!hub) return [];
     return filterBySector(hub.pastEvents).map(canonicalToEvent);
   }, [hub, selectedSectors]);
+
+  // Batched public stats (exposants + nouveautés) — same source as the Salons page
+  const statEventIds = useMemo(
+    () => [...filteredUpcoming, ...filteredPast].map((e) => e.id),
+    [filteredUpcoming, filteredPast]
+  );
+  const { data: statsMap } = useEventCardStats(statEventIds);
 
   // Group upcoming events by month
   const groupedUpcoming = useMemo(() => {
@@ -209,7 +217,13 @@ const CityHub = () => {
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
                       {monthEvents.map(e => (
-                        <EventCard key={e.id} event={e} view="grid" />
+                        <EventCard
+                          key={e.id}
+                          event={e}
+                          view="grid"
+                          exhibitorCount={statsMap?.[e.id]?.exhibitor_count}
+                          noveltyCount={statsMap?.[e.id]?.novelty_count}
+                        />
                       ))}
                     </div>
                   </div>
@@ -239,7 +253,13 @@ const CityHub = () => {
               <p className="text-sm text-muted-foreground mb-6">Ces salons ont déjà eu lieu.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5 opacity-75">
                 {filteredPast.slice(0, 10).map(e => (
-                  <EventCard key={e.id} event={e} view="grid" />
+                  <EventCard
+                    key={e.id}
+                    event={e}
+                    view="grid"
+                    exhibitorCount={statsMap?.[e.id]?.exhibitor_count}
+                    noveltyCount={statsMap?.[e.id]?.novelty_count}
+                  />
                 ))}
               </div>
             </section>
