@@ -451,8 +451,8 @@ async function buildPreviewForUser(
       g.event = c.event;
     }
     for (const co of c.companies) {
-      const key = companyKey(co); if (!key) continue;
-      if (g.companies.some((x) => companyKey(x) === key)) continue;
+      const key = exhibitorDedupKey(co); if (!key) continue;
+      if (g.companies.some((x) => exhibitorDedupKey(x) === key)) continue;
       g.companies.push(co);
     }
   }
