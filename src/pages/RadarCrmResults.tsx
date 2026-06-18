@@ -345,13 +345,18 @@ const RadarCrmResults: React.FC = () => {
                   <><strong className="text-foreground">{matchedCompanies.length}</strong> entreprise{matchedCompanies.length > 1 ? 's' : ''} détectée{matchedCompanies.length > 1 ? 's' : ''} sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo</>}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSettingsOpen(true)}
+                className="w-full sm:w-auto"
+              >
                 <Settings className="h-4 w-4 mr-2" /> Paramètres Radar CRM
               </Button>
               {imports && imports.length > 1 && (
                 <Select value={activeImportId ?? ''} onValueChange={setActiveImportId}>
-                  <SelectTrigger className="w-[240px] bg-card">
+                  <SelectTrigger className="w-full sm:w-[240px] max-w-full bg-card">
                     <SelectValue placeholder="Choisir un import" />
                   </SelectTrigger>
                   <SelectContent>
@@ -363,7 +368,7 @@ const RadarCrmResults: React.FC = () => {
                   </SelectContent>
                 </Select>
               )}
-              <Button asChild>
+              <Button asChild className="w-full sm:w-auto">
                 <Link to="/radar-crm">
                   <Plus className="h-4 w-4 mr-2" /> Nouveau fichier CSV
                 </Link>
@@ -388,12 +393,12 @@ const RadarCrmResults: React.FC = () => {
           ) : (
             <>
               <Tabs defaultValue="future">
-                <TabsList className="bg-card border">
+                <TabsList className="bg-card border w-full sm:w-auto justify-start flex-nowrap overflow-x-auto no-scrollbar">
                   <TabsTrigger value="future">À venir ({futureGroups.length})</TabsTrigger>
-                  <TabsTrigger value="past">
+                  <TabsTrigger value="past" className="whitespace-nowrap">
                     <History className="h-3.5 w-3.5 mr-1" /> Historique passé ({pastGroups.length})
                   </TabsTrigger>
-                  <TabsTrigger value="companies">Entreprises ({matchedCompanies.length})</TabsTrigger>
+                  <TabsTrigger value="companies" className="whitespace-nowrap">Entreprises ({matchedCompanies.length})</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="future" className="mt-5">
