@@ -170,13 +170,48 @@ Deno.serve(async (req) => {
         return jsonResp({ error: 'No valid company rows after parsing' }, 400)
       }
 
-      // 3. Insert in batches
+      // 3. Dedupe rows of THIS file by (user_id, normalized_domain) so a single
+      //    UPSERT statement never tries to update the same target row twice.
+      //    Rows without a resolvable domain (normalized_domain = null) can never
+      //    collide on the unique key, so we always keep them.
+      const nowIso = new Date().toISOString()
+      const dedupedByDomain = new Map<string, typeof companyRows[number]>()
+      const rowsWithoutDomain: typeof companyRows = []
+      for (const row of companyRows) {
+        const dom = normalizeDomainLocal((row as { website_raw: string | null }).website_raw)
+        const enriched = { ...row, updated_at: nowIso }
+        if (!dom) {
+          rowsWithoutDomain.push(enriched)
+        } else {
+          // Last occurrence wins → most recent CRM data for that domain.
+          dedupedByDomain.set(dom, enriched)
+        }
+      }
+      const rowsToWrite = [...dedupedByDomain.values(), ...rowsWithoutDomain]
+
+      // 4. UPSERT in batches on (user_id, normalized_domain). A re-import now
+      //    UPDATES the existing company instead of creating a duplicate row.
+      //    NOTE: this requires a UNIQUE constraint on
+      //    (user_id, normalized_domain). Until that constraint + the dedupe of
+      //    existing rows are applied (separate migration), Postgres rejects the
+      //    ON CONFLICT target — so we fall back to a plain INSERT to keep
+      //    imports working in the meantime.
       const BATCH = 500
-      for (let i = 0; i < companyRows.length; i += BATCH) {
-        const slice = companyRows.slice(i, i + BATCH)
-        const { error: insErr } = await serviceClient.from('crm_companies').insert(slice)
-        if (insErr) {
-          throw new Error(`Insert batch failed: ${insErr.message}`)
+      for (let i = 0; i < rowsToWrite.length; i += BATCH) {
+        const slice = rowsToWrite.slice(i, i + BATCH)
+        const { error: upsertErr } = await serviceClient
+          .from('crm_companies')
+          .upsert(slice, { onConflict: 'user_id,normalized_domain', ignoreDuplicates: false })
+        if (upsertErr) {
+          const noConstraint =
+            upsertErr.code === '42P10' ||
+            /no unique or exclusion constraint/i.test(upsertErr.message ?? '')
+          if (noConstraint) {
+            const { error: insErr } = await serviceClient.from('crm_companies').insert(slice)
+            if (insErr) throw new Error(`Insert batch failed: ${insErr.message}`)
+          } else {
+            throw new Error(`Upsert batch failed: ${upsertErr.message}`)
+          }
         }
       }
 
