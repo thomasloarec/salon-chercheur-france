@@ -95,6 +95,17 @@ function companyKey(co: any): string | null {
   return null;
 }
 
+// Dedup key per EXHIBITOR (DISTINCT ON (user_id, event_id, id_exposant)).
+// Successive CRM imports can create several crm_companies rows for the same
+// domain → several crm_company_event_matches → several metadata.companies
+// entries that all point to the SAME Lotexpo exposant. Keying on id_exposant
+// collapses them to a single entry per exhibitor per salon, matching the
+// Radar CRM page behaviour. Falls back to companyKey when id_exposant is absent.
+function exhibitorDedupKey(co: any): string | null {
+  if (co?.idExposant) return `ex:${String(co.idExposant)}`;
+  return companyKey(co);
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
