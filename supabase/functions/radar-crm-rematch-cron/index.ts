@@ -91,6 +91,31 @@ interface NewMatchRow {
   name_similarity?: number | null
 }
 
+type CompanyEntry = { crmCompanyId?: string | null; idExposant?: string | null; [k: string]: unknown }
+
+// Dedup key per EXHIBITOR (DISTINCT ON (user_id, event_id, id_exposant)).
+// Multiple crm_companies rows for the same domain (created by successive
+// imports without upsert) yield multiple matches pointing to the SAME Lotexpo
+// exposant. Keying on id_exposant keeps a single entry per exhibitor per salon.
+function exhibitorKey(c: CompanyEntry): string | null {
+  if (c?.idExposant) return `ex:${String(c.idExposant)}`
+  if (c?.crmCompanyId) return `id:${String(c.crmCompanyId)}`
+  return null
+}
+
+function dedupByExhibitor<T extends CompanyEntry>(companies: T[]): T[] {
+  const seen = new Set<string>()
+  const out: T[] = []
+  for (const c of companies) {
+    const k = exhibitorKey(c)
+    if (!k) { out.push(c); continue }
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(c)
+  }
+  return out
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
   if (req.method !== 'POST') return jsonResp({ error: 'Method not allowed' }, 405)
@@ -311,12 +336,14 @@ Deno.serve(async (req) => {
         const eventName: string = ev.nom_event ?? matches[0].nom_event ?? 'un salon'
         const groupKey = `radar_crm:${imp.user_id}:${imp.id}:${eventId}`
 
-        const companies = matches.map((m) => ({
+        // One entry per exhibitor per salon (collapse duplicate crm_companies
+        // rows that resolve to the same id_exposant).
+        const companies = dedupByExhibitor(matches.map((m) => ({
           crmCompanyId: m.crm_company_id,
           companyName: m.company_name,
           idExposant: m.id_exposant,
           stand: standMap.get(`${eventId}|${m.id_exposant}`) ?? null,
-        }))
+        })))
 
         // Look for an existing UNREAD notification with same group_key
         const { data: existing } = await supabase
@@ -330,13 +357,18 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         if (existing) {
-          // Merge companies (dedupe by crmCompanyId)
+          // Merge companies (dedupe per exhibitor: id_exposant).
           const prevCompanies: any[] = Array.isArray((existing.metadata as any)?.companies)
             ? (existing.metadata as any).companies
             : []
-          const seen = new Set<string>(prevCompanies.map((c) => c.crmCompanyId))
+          const seen = new Set<string>(
+            prevCompanies.map((c) => exhibitorKey(c)).filter((k): k is string => Boolean(k)),
+          )
           const merged = [...prevCompanies]
-          for (const c of companies) if (!seen.has(c.crmCompanyId)) { merged.push(c); seen.add(c.crmCompanyId) }
+          for (const c of companies) {
+            const k = exhibitorKey(c)
+            if (k && !seen.has(k)) { merged.push(c); seen.add(k) }
+          }
 
           const newCount = merged.length
           const message = newCount === 1
@@ -503,7 +535,8 @@ Deno.serve(async (req) => {
               }
               const ev = evMap.get(eventId) ?? {}
               const eventName: string = ev.nom_event ?? 'un salon'
-              const enrichedCompanies = companies.map((c) => ({
+              // One entry per exhibitor per salon before composing the notif.
+              const enrichedCompanies = dedupByExhibitor(companies).map((c) => ({
                 ...c,
                 stand: standMapR.get(`${eventId}|${c.idExposant}`) ?? null,
               }))

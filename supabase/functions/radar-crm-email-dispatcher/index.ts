@@ -95,6 +95,17 @@ function companyKey(co: any): string | null {
   return null;
 }
 
+// Dedup key per EXHIBITOR (DISTINCT ON (user_id, event_id, id_exposant)).
+// Successive CRM imports can create several crm_companies rows for the same
+// domain → several crm_company_event_matches → several metadata.companies
+// entries that all point to the SAME Lotexpo exposant. Keying on id_exposant
+// collapses them to a single entry per exhibitor per salon, matching the
+// Radar CRM page behaviour. Falls back to companyKey when id_exposant is absent.
+function exhibitorDedupKey(co: any): string | null {
+  if (co?.idExposant) return `ex:${String(co.idExposant)}`;
+  return companyKey(co);
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -440,8 +451,8 @@ async function buildPreviewForUser(
       g.event = c.event;
     }
     for (const co of c.companies) {
-      const key = companyKey(co); if (!key) continue;
-      if (g.companies.some((x) => companyKey(x) === key)) continue;
+      const key = exhibitorDedupKey(co); if (!key) continue;
+      if (g.companies.some((x) => exhibitorDedupKey(x) === key)) continue;
       g.companies.push(co);
     }
   }
@@ -467,7 +478,7 @@ async function buildPreviewForUser(
 
   const companyKeys = new Set<string>();
   for (const g of top) for (const co of g.companies) {
-    const k = companyKey(co); if (k) companyKeys.add(k);
+    const k = exhibitorDedupKey(co); if (k) companyKeys.add(k);
   }
   const companiesCount = companyKeys.size;
   const eventsCount = top.length;
