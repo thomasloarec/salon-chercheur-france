@@ -13,6 +13,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { CITY_ALIASES } from './cityAliases.mjs';
+import { SECTOR_YEAR_INDEX_THRESHOLD, CITY_YEAR_INDEX_THRESHOLD } from './seoThresholds.js';
 
 const SITE_URL = 'https://lotexpo.com';
 const PUBLIC_DIR = path.resolve('public');
@@ -209,12 +210,12 @@ for (const ev of eligibleEvents) {
   if (!s) continue;
   cityCount[s] = (cityCount[s] || 0) + 1;
 }
-const eligibleCities = Object.entries(cityCount).filter(([, c]) => c >= 3).map(([s]) => s).sort();
+const eligibleCities = Object.entries(cityCount).filter(([, c]) => c >= CITY_YEAR_INDEX_THRESHOLD).map(([s]) => s).sort();
 
 const todayStr = new Date().toISOString().slice(0, 10);
 
-// City × year counts — Option B: FUTURE events only, indexable if >= 3.
-const CITY_YEAR_THRESHOLD = 3;
+// City × year counts — Option B: FUTURE events only, indexable if >= threshold.
+const CITY_YEAR_THRESHOLD = CITY_YEAR_INDEX_THRESHOLD;
 const cityYearCount = {}; // { [slug]: { [year]: number } }
 const cityYearLastmod = {}; // { [slug]: { [year]: Date } }
 const cityNameBySlug = {}; // for reference (unused but cheap)
@@ -245,8 +246,8 @@ for (const cslug of Object.keys(cityYearCount)) {
 }
 eligibleCityYears.sort((a, b) => a.slug.localeCompare(b.slug) || a.year - b.year);
 
-// Sector × year counts (date_debut year). Indexable if count >= 3 for that sector & year.
-const SECTOR_YEAR_THRESHOLD = 3;
+// Sector × year counts (date_debut year). Indexable if count >= threshold for that sector & year.
+const SECTOR_YEAR_THRESHOLD = SECTOR_YEAR_INDEX_THRESHOLD;
 const sectorYearCount = {}; // { [slug]: { [year]: number } }
 const sectorYearLastmod = {}; // { [slug]: { [year]: Date } }
 for (const ev of eligibleEvents) {
