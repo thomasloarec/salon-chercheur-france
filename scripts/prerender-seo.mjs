@@ -1006,7 +1006,7 @@ async function main() {
       cityLabel[s] = e.ville;
     }
   }
-  const eligibleCities = Object.keys(cityCount).filter((s) => cityCount[s] >= 3);
+  const eligibleCities = Object.keys(cityCount).filter((s) => cityCount[s] >= CITY_YEAR_INDEX_THRESHOLD);
   for (const slug of eligibleCities) {
     try {
       const matches = upcoming.filter((e) => e.ville && cityHubSlug(e.ville) === slug)
