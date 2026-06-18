@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EventCard from '@/components/EventCard';
 import { useSectorHub, SECTOR_YEAR_INDEX_THRESHOLD } from '@/hooks/useSectorHub';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { getCityUrl } from '@/lib/cityUrl';
 import { Badge } from '@/components/ui/badge';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
@@ -42,6 +43,12 @@ const SectorYearHub = () => {
     if (!hub?.upcomingEvents?.length) return [];
     return groupEventsByMonth(hub.upcomingEvents.map(canonicalToEvent));
   }, [hub?.upcomingEvents]);
+
+  const statEventIds = useMemo(
+    () => (hub?.upcomingEvents ?? []).map((e: any) => e.id),
+    [hub?.upcomingEvents]
+  );
+  const { data: statsMap } = useEventCardStats(statEventIds);
 
   if (!yearValid) {
     return <Navigate to={`/secteur/${slug ?? ''}`} replace />;
@@ -181,7 +188,13 @@ const SectorYearHub = () => {
                     <h3 className="text-2xl font-semibold text-foreground mb-6 capitalize">{monthLabel}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
                       {monthEvents.map(e => (
-                        <EventCard key={e.id} event={e} view="grid" />
+                        <EventCard
+                          key={e.id}
+                          event={e}
+                          view="grid"
+                          exhibitorCount={statsMap?.[e.id]?.exhibitor_count}
+                          noveltyCount={statsMap?.[e.id]?.novelty_count}
+                        />
                       ))}
                     </div>
                   </div>
