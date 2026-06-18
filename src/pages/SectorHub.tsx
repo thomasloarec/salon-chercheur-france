@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import type { Event } from '@/types/event';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 
 function canonicalToEvent(e: any): Event {
   return {
@@ -44,6 +45,22 @@ const SectorHub = () => {
     const events = hub.upcomingEvents.map(canonicalToEvent);
     return groupEventsByMonth(events);
   }, [hub?.upcomingEvents]);
+
+  // Past events normalized once so we can reuse for stats + rendering
+  const pastEvents = useMemo(
+    () => (hub?.pastEvents ?? []).slice(0, 10).map(canonicalToEvent),
+    [hub?.pastEvents]
+  );
+
+  // Batched public stats (exposants + nouveautés) — same source as the Salons page
+  const statEventIds = useMemo(
+    () => [
+      ...groupedUpcoming.flatMap((g) => g.events.map((e) => e.id)),
+      ...pastEvents.map((e) => e.id),
+    ],
+    [groupedUpcoming, pastEvents]
+  );
+  const { data: statsMap } = useEventCardStats(statEventIds);
 
   if (isLoading) {
     return (
