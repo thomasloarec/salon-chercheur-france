@@ -181,8 +181,17 @@ function applyToShell(baseTemplate, { title, description, headExtra, body, robot
   } else {
     html = html.replace(/<\/head>/i, `<meta name="description" content="${escapeHtml(description)}" />\n</head>`);
   }
-  // Strip any pre-existing canonical to avoid duplicates
+  // Strip any pre-existing canonical to avoid duplicates. Every builder
+  // re-emits a single self-referent canonical via commonHead().
   html = html.replace(/<link\s+rel=["']canonical["'][^>]*>\s*/gi, '');
+  // Strip the shell's default (home) OG / Twitter meta. The shell ships
+  // og:title / og:url / og:description / og:type / og:site_name pointing at
+  // the home page; without this every prerendered route would carry BOTH the
+  // home values AND the per-route ones re-emitted by commonHead() → duplicate
+  // (and partly wrong) og:url / og:title. We remove them here so only the
+  // per-route, self-referent values remain in the static HTML.
+  html = html.replace(/<meta\s+property=["']og:[^"']*["'][^>]*>\s*/gi, '');
+  html = html.replace(/<meta\s+name=["']twitter:[^"']*["'][^>]*>\s*/gi, '');
   // When a builder dictates robots (exhibitor pages), strip any pre-existing
   // robots meta and write the decision HARD into the HTML (crawler-visible
   // without JS). Other builders leave robots untouched (default = indexable).
