@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EventCard from '@/components/EventCard';
 import { useCityHub, CITY_YEAR_INDEX_THRESHOLD } from '@/hooks/useCityHub';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { Badge } from '@/components/ui/badge';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import type { Event } from '@/types/event';
