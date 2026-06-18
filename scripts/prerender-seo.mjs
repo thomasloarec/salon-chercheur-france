@@ -15,6 +15,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { CITY_ALIASES } from './cityAliases.mjs';
+import { SECTOR_YEAR_INDEX_THRESHOLD, CITY_YEAR_INDEX_THRESHOLD } from './seoThresholds.js';
 
 const t0 = Date.now();
 const DIST = path.resolve('dist');
