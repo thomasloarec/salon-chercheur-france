@@ -161,8 +161,8 @@ const ExhibitorPanel = ({
         </div>
       </div>
 
-      {/* Actions row — two clear paths */}
-      <div className="px-3 pb-3 pt-0 flex gap-2">
+      {/* Actions row — two clear paths (stacked on mobile, inline on desktop) */}
+      <div className="px-3 pb-3 pt-0 flex flex-col sm:flex-row gap-2">
         {publicSlug ? (
           <Button asChild variant="outline" size="sm" className="flex-1">
             <Link to={`/exposants/${publicSlug}`}>
