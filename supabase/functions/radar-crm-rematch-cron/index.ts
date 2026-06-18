@@ -336,12 +336,14 @@ Deno.serve(async (req) => {
         const eventName: string = ev.nom_event ?? matches[0].nom_event ?? 'un salon'
         const groupKey = `radar_crm:${imp.user_id}:${imp.id}:${eventId}`
 
-        const companies = matches.map((m) => ({
+        // One entry per exhibitor per salon (collapse duplicate crm_companies
+        // rows that resolve to the same id_exposant).
+        const companies = dedupByExhibitor(matches.map((m) => ({
           crmCompanyId: m.crm_company_id,
           companyName: m.company_name,
           idExposant: m.id_exposant,
           stand: standMap.get(`${eventId}|${m.id_exposant}`) ?? null,
-        }))
+        })))
 
         // Look for an existing UNREAD notification with same group_key
         const { data: existing } = await supabase
@@ -355,13 +357,18 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         if (existing) {
-          // Merge companies (dedupe by crmCompanyId)
+          // Merge companies (dedupe per exhibitor: id_exposant).
           const prevCompanies: any[] = Array.isArray((existing.metadata as any)?.companies)
             ? (existing.metadata as any).companies
             : []
-          const seen = new Set<string>(prevCompanies.map((c) => c.crmCompanyId))
+          const seen = new Set<string>(
+            prevCompanies.map((c) => exhibitorKey(c)).filter((k): k is string => Boolean(k)),
+          )
           const merged = [...prevCompanies]
-          for (const c of companies) if (!seen.has(c.crmCompanyId)) { merged.push(c); seen.add(c.crmCompanyId) }
+          for (const c of companies) {
+            const k = exhibitorKey(c)
+            if (k && !seen.has(k)) { merged.push(c); seen.add(k) }
+          }
 
           const newCount = merged.length
           const message = newCount === 1
