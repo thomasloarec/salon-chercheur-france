@@ -44,6 +44,12 @@ const SectorYearHub = () => {
     return groupEventsByMonth(hub.upcomingEvents.map(canonicalToEvent));
   }, [hub?.upcomingEvents]);
 
+  const statEventIds = useMemo(
+    () => (hub?.upcomingEvents ?? []).map((e: any) => e.id),
+    [hub?.upcomingEvents]
+  );
+  const { data: statsMap } = useEventCardStats(statEventIds);
+
   if (!yearValid) {
     return <Navigate to={`/secteur/${slug ?? ''}`} replace />;
   }
