@@ -535,7 +535,8 @@ Deno.serve(async (req) => {
               }
               const ev = evMap.get(eventId) ?? {}
               const eventName: string = ev.nom_event ?? 'un salon'
-              const enrichedCompanies = companies.map((c) => ({
+              // One entry per exhibitor per salon before composing the notif.
+              const enrichedCompanies = dedupByExhibitor(companies).map((c) => ({
                 ...c,
                 stand: standMapR.get(`${eventId}|${c.idExposant}`) ?? null,
               }))
