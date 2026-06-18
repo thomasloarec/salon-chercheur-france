@@ -478,7 +478,7 @@ async function buildPreviewForUser(
 
   const companyKeys = new Set<string>();
   for (const g of top) for (const co of g.companies) {
-    const k = companyKey(co); if (k) companyKeys.add(k);
+    const k = exhibitorDedupKey(co); if (k) companyKeys.add(k);
   }
   const companiesCount = companyKeys.size;
   const eventsCount = top.length;
