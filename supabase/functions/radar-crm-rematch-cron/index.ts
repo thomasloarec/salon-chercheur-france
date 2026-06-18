@@ -91,6 +91,31 @@ interface NewMatchRow {
   name_similarity?: number | null
 }
 
+type CompanyEntry = { crmCompanyId?: string | null; idExposant?: string | null; [k: string]: unknown }
+
+// Dedup key per EXHIBITOR (DISTINCT ON (user_id, event_id, id_exposant)).
+// Multiple crm_companies rows for the same domain (created by successive
+// imports without upsert) yield multiple matches pointing to the SAME Lotexpo
+// exposant. Keying on id_exposant keeps a single entry per exhibitor per salon.
+function exhibitorKey(c: CompanyEntry): string | null {
+  if (c?.idExposant) return `ex:${String(c.idExposant)}`
+  if (c?.crmCompanyId) return `id:${String(c.crmCompanyId)}`
+  return null
+}
+
+function dedupByExhibitor<T extends CompanyEntry>(companies: T[]): T[] {
+  const seen = new Set<string>()
+  const out: T[] = []
+  for (const c of companies) {
+    const k = exhibitorKey(c)
+    if (!k) { out.push(c); continue }
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(c)
+  }
+  return out
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
   if (req.method !== 'POST') return jsonResp({ error: 'Method not allowed' }, 405)
