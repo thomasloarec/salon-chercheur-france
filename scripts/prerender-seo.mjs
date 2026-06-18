@@ -961,7 +961,8 @@ async function main() {
       stats.sectors++;
 
       // 5b. sector × year pages — Option B: FUTURE events only of that year, indexable if >= 3.
-      const SECTOR_YEAR_THRESHOLD = 3;
+      // Threshold sourced from the shared definition (scripts/seoThresholds.js).
+      const SECTOR_YEAR_THRESHOLD = SECTOR_YEAR_INDEX_THRESHOLD;
       const allForSector = upcoming.filter((e) => {
         const sec = e.secteur;
         const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
@@ -1014,8 +1015,9 @@ async function main() {
       await writeRoute(`/ville/${slug}`, applyToShell(baseTemplate, built));
       stats.cities++;
 
-      // 6b. city × year pages — FUTURE events only, indexable if >= 3
-      const CITY_YEAR_THRESHOLD = 3;
+      // 6b. city × year pages — FUTURE events only, indexable if >= threshold.
+      // Threshold sourced from the shared definition (scripts/seoThresholds.js).
+      const CITY_YEAR_THRESHOLD = CITY_YEAR_INDEX_THRESHOLD;
       const byYear = {};
       for (const ev of matches) {
         if (!ev.date_debut) continue;
