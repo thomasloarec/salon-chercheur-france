@@ -15,6 +15,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { CITY_ALIASES } from './cityAliases.mjs';
+import { SECTOR_YEAR_INDEX_THRESHOLD, CITY_YEAR_INDEX_THRESHOLD } from './seoThresholds.js';
 
 const t0 = Date.now();
 const DIST = path.resolve('dist');
@@ -431,11 +432,15 @@ function buildSector(slug, label, top) {
 function buildSectorYear(slug, label, year, eventsOfYear, otherYears) {
   const sectorLabel = label || slug.replace(/-/g, ' ');
   const n = eventsOfYear.length;
+  // Mirror React (SectorYearHub): indexable iff n >= shared threshold.
+  // Below threshold → noindex,follow + canonical points to the evergreen hub.
+  const indexable = n >= SECTOR_YEAR_INDEX_THRESHOLD;
+  const robots = indexable ? undefined : 'noindex,follow';
   const title = truncate(`Salons ${sectorLabel} en France en ${year} | Lotexpo`, 70);
   const description = truncate(`${n} salons ${sectorLabel} programmés en ${year} en France. Consultez les dates, lieux, villes, exposants et informations pratiques sur Lotexpo.`, 160);
   const evergreen = `${SITE_ORIGIN}/secteur/${slug}`;
   const self = `${SITE_ORIGIN}/secteur/${slug}/${year}`;
-  const canonical = self;
+  const canonical = indexable ? self : evergreen;
   // top cities for intro
   const cityCount = {};
   for (const e of eventsOfYear) { if (e.ville) cityCount[e.ville] = (cityCount[e.ville] || 0) + 1; }
@@ -476,11 +481,15 @@ function buildSectorYear(slug, label, year, eventsOfYear, otherYears) {
     <p><a href="/secteur/${slug}">Voir tous les salons ${escapeHtml(String(sectorLabel))}</a></p>
     ${otherYearsLis ? `<h2>Autres années disponibles</h2><ul>${otherYearsLis}</ul>` : ''}
   </div>`;
-  return { title, description, canonical, headExtra, body };
+  return { title, description, canonical, headExtra, body, robots };
 }
 
 function buildCity(slug, label, top) {
   const cityLabel = label || slug.replace(/-/g, ' ');
+  // Mirror React (CityHub): a city hub follows the indexability threshold
+  // (unlike evergreen sector hubs). Below threshold → noindex,follow.
+  const indexable = top.length >= CITY_YEAR_INDEX_THRESHOLD;
+  const robots = indexable ? undefined : 'noindex,follow';
   const title = truncate(`Salons professionnels à ${cityLabel} | Lotexpo`, 70);
   const description = truncate(`Tous les salons professionnels organisés à ${cityLabel} : ${top.length} événement${top.length > 1 ? 's' : ''} à venir, dates, secteurs et exposants sur Lotexpo.`, 160);
   const canonical = `${SITE_ORIGIN}/ville/${slug}`;
@@ -503,17 +512,21 @@ function buildCity(slug, label, top) {
     <p>Lotexpo recense ${top.length} salon${top.length > 1 ? 's' : ''} professionnel${top.length > 1 ? 's' : ''} à venir à ${escapeHtml(String(cityLabel))}.</p>
     <ul>${top.slice(0, 5).map((e) => `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.date_debut ? ' – ' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) : ''}</a></li>`).join('')}</ul>
   </div>`;
-  return { title, description, canonical, headExtra, body };
+  return { title, description, canonical, headExtra, body, robots };
 }
 
 function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
   const cityLabel = label || slug.replace(/-/g, ' ');
   const n = eventsOfYear.length;
+  // Mirror React (CityYearHub): indexable iff n >= shared threshold.
+  // Below threshold → noindex,follow + canonical points to the evergreen hub.
+  const indexable = n >= CITY_YEAR_INDEX_THRESHOLD;
+  const robots = indexable ? undefined : 'noindex,follow';
   const title = truncate(`Salons professionnels à ${cityLabel} en ${year} | Lotexpo`, 70);
   const description = truncate(`${n} salons professionnels programmés à ${cityLabel} en ${year}. Consultez les dates, lieux, secteurs, exposants et informations pratiques sur Lotexpo.`, 160);
   const evergreen = `${SITE_ORIGIN}/ville/${slug}`;
   const self = `${SITE_ORIGIN}/ville/${slug}/${year}`;
-  const canonical = self;
+  const canonical = indexable ? self : evergreen;
   // top sectors / venues for intro
   const sectorCount = {};
   const venueCount = {};
@@ -561,7 +574,7 @@ function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
     <ul>${eventsList}</ul>
     <p><a href="${evergreen}">Tous les salons à ${escapeHtml(String(cityLabel))}</a>${otherYearsLinks ? ' · ' + otherYearsLinks : ''}</p>
   </div>`;
-  return { title, description, canonical, headExtra, body };
+  return { title, description, canonical, headExtra, body, robots };
 }
 
 // Build a static exhibitor profile page (/exposants/:slug).
@@ -948,7 +961,8 @@ async function main() {
       stats.sectors++;
 
       // 5b. sector × year pages — Option B: FUTURE events only of that year, indexable if >= 3.
-      const SECTOR_YEAR_THRESHOLD = 3;
+      // Threshold sourced from the shared definition (scripts/seoThresholds.js).
+      const SECTOR_YEAR_THRESHOLD = SECTOR_YEAR_INDEX_THRESHOLD;
       const allForSector = upcoming.filter((e) => {
         const sec = e.secteur;
         const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
@@ -992,7 +1006,7 @@ async function main() {
       cityLabel[s] = e.ville;
     }
   }
-  const eligibleCities = Object.keys(cityCount).filter((s) => cityCount[s] >= 3);
+  const eligibleCities = Object.keys(cityCount).filter((s) => cityCount[s] >= CITY_YEAR_INDEX_THRESHOLD);
   for (const slug of eligibleCities) {
     try {
       const matches = upcoming.filter((e) => e.ville && cityHubSlug(e.ville) === slug)
@@ -1001,8 +1015,9 @@ async function main() {
       await writeRoute(`/ville/${slug}`, applyToShell(baseTemplate, built));
       stats.cities++;
 
-      // 6b. city × year pages — FUTURE events only, indexable if >= 3
-      const CITY_YEAR_THRESHOLD = 3;
+      // 6b. city × year pages — FUTURE events only, indexable if >= threshold.
+      // Threshold sourced from the shared definition (scripts/seoThresholds.js).
+      const CITY_YEAR_THRESHOLD = CITY_YEAR_INDEX_THRESHOLD;
       const byYear = {};
       for (const ev of matches) {
         if (!ev.date_debut) continue;
