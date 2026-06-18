@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SectorTag } from '@/components/ui/sector-tag';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight, CalendarX } from 'lucide-react';
+import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight, CalendarX, Store } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useVisitPlansForUser, VisitPlan } from '@/hooks/useVisitPlan';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,9 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
   const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
   const { data: visitPlans = [] } = useVisitPlansForUser();
+
+  // Batched public stats (exposants + nouveautés) — same source as the Salons page
+  const { data: statsMap } = useEventCardStats((events ?? []).map((e) => e.id));
 
   // Index visit plans by event_id
   const plansByEvent = visitPlans.reduce((acc, plan) => {
