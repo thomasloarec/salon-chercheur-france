@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, User, Bell, CalendarRange, LogOut, Radar } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, LogOut, Radar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
 import UserMenu from './UserMenu';
+import { USER_MENU_ITEMS } from '@/config/userMenuItems';
 import logoLotexpo from '@/assets/logo-lotexpo.png';
 
 const Header = () => {
@@ -224,42 +225,21 @@ const Header = () => {
                 {user ? (
                   <div className="space-y-1">
                     <p className="px-3 py-2 text-sm text-muted-foreground">{user.email}</p>
-                    <NavLink
-                      to="/profile"
-                      className={({ isActive }) =>
-                        `block px-3 py-2 pl-6 text-gray-700 hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
-                      }
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <span className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Mon profil
-                      </span>
-                    </NavLink>
-                    <NavLink
-                      to="/notifications"
-                      className={({ isActive }) =>
-                        `block px-3 py-2 pl-6 text-gray-700 hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
-                      }
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Bell className="h-4 w-4" />
-                        Notifications
-                      </span>
-                    </NavLink>
-                    <NavLink
-                      to="/agenda"
-                      className={({ isActive }) =>
-                        `block px-3 py-2 pl-6 text-gray-700 hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
-                      }
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <span className="flex items-center gap-2">
-                        <CalendarRange className="h-4 w-4" />
-                        Mon agenda
-                      </span>
-                    </NavLink>
+                    {USER_MENU_ITEMS.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className={({ isActive }) =>
+                          `block px-3 py-2 pl-6 text-gray-700 hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
+                        }
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <span className="flex items-center gap-2">
+                          <item.icon className="h-4 w-4" />
+                          {item.label}
+                        </span>
+                      </NavLink>
+                    ))}
                     <button
                       onClick={() => { setIsMenuOpen(false); signOut(); }}
                       className="block w-full text-left px-3 py-2 pl-6 text-gray-700 hover:text-red-600 transition-colors"
