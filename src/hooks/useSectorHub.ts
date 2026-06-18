@@ -4,7 +4,9 @@ import { CANONICAL_SECTORS, normalizeSectorSlug, sectorSlugToDbLabels } from '@/
 import { normalizeEventRow } from '@/lib/normalizeEvent';
 import type { CanonicalEvent } from '@/types/lotexpo';
 
-export const SECTOR_YEAR_INDEX_THRESHOLD = 3;
+// Single source of truth shared with the build scripts (prerender + sitemap).
+export { SECTOR_YEAR_INDEX_THRESHOLD } from '../../scripts/seoThresholds.js';
+import { SECTOR_YEAR_INDEX_THRESHOLD } from '../../scripts/seoThresholds.js';
 
 export interface SectorYearBreakdown {
   year: number;

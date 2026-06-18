@@ -4,7 +4,9 @@ import { normalizeEventRow } from '@/lib/normalizeEvent';
 import type { CanonicalEvent } from '@/types/lotexpo';
 import { CITY_ALIASES, CANONICAL_HUB_CITY_NAMES } from '@/lib/cityAliases';
 
-export const CITY_YEAR_INDEX_THRESHOLD = 3;
+// Single source of truth shared with the build scripts (prerender + sitemap).
+export { CITY_YEAR_INDEX_THRESHOLD } from '../../scripts/seoThresholds.js';
+import { CITY_YEAR_INDEX_THRESHOLD } from '../../scripts/seoThresholds.js';
 
 export interface CityYearBreakdown {
   year: number;
