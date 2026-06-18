@@ -8,6 +8,20 @@ const corsHeaders = {
 
 const MAX_ROWS = 5000
 
+// Mirror of the SQL public.normalize_domain() function so we can dedupe rows
+// inside a single uploaded file BEFORE the UPSERT. Without this, two rows that
+// resolve to the same normalized_domain would make ON CONFLICT DO UPDATE
+// affect the same row twice in one statement (cardinality_violation).
+function normalizeDomainLocal(input: string | null | undefined): string | null {
+  let s = String(input ?? '').trim().toLowerCase()
+  s = s.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '') // scheme
+  s = s.replace(/^www[0-9]?\./i, '')            // www / www2 prefix
+  s = s.replace(/[/?#].*$/, '')                 // path / query / fragment
+  s = s.replace(/:\d+$/, '')                    // port
+  s = s.replace(/\.$/, '')                      // trailing dot
+  return s.length > 0 ? s : null
+}
+
 interface MappingShape {
   company_name: string
   website_raw?: string | null
