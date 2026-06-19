@@ -117,3 +117,12 @@ verify_jwt = false
 # idempotent update gated on novelty_status='active', and neutral responses
 # that never reveal whether a campaign exists.
 verify_jwt = false
+
+[functions.widget-embed]
+# Public endpoint: rendered inside a third-party iframe that sends NO
+# Authorization header. JWT verification MUST stay disabled or the iframe
+# receives a 401 and the widget stays silently empty. Security is enforced in
+# code: ANON key only (RLS as a net), explicit visibility filters
+# (status='published', is_test=false), systematic HTML escaping, http(s)-only
+# hrefs, and a Content-Security-Policy frame-ancestors derived from the token.
+verify_jwt = false
