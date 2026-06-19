@@ -211,7 +211,7 @@ Deno.serve(async (req: Request) => {
 
   // 2. Token inconnu / révoqué → document neutre, non framable
   if (!resolved) {
-    return new Response(neutralPage(), {
+    return new Response(new TextEncoder().encode(neutralPage()), {
       status: 200,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
@@ -269,7 +269,7 @@ Deno.serve(async (req: Request) => {
     eventPassed: Boolean(resolved.event_passed),
   });
 
-  return new Response(html, {
+  return new Response(new TextEncoder().encode(html), {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
