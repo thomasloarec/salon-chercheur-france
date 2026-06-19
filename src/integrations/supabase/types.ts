@@ -4607,6 +4607,77 @@ export type Database = {
           },
         ]
       }
+      widget_tokens: {
+        Row: {
+          allowed_domains: string[]
+          created_at: string
+          event_id: string
+          id: string
+          last_seen_at: string | null
+          last_seen_domain: string | null
+          organizer_email: string | null
+          organizer_name: string | null
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_domains?: string[]
+          created_at?: string
+          event_id: string
+          id?: string
+          last_seen_at?: string | null
+          last_seen_domain?: string | null
+          organizer_email?: string | null
+          organizer_name?: string | null
+          status?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_domains?: string[]
+          created_at?: string
+          event_id?: string
+          id?: string
+          last_seen_at?: string | null
+          last_seen_domain?: string | null
+          organizer_email?: string | null
+          organizer_name?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "widget_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "widget_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "widget_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "widget_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wizard_sessions: {
         Row: {
           ai_duration_ms: number | null
@@ -6183,6 +6254,16 @@ export type Database = {
         }[]
       }
       reset_event_duplicate_candidates: { Args: never; Returns: Json }
+      resolve_widget_token: {
+        Args: { p_token: string }
+        Returns: {
+          allowed_domains: string[]
+          event_id: string
+          event_passed: boolean
+          event_slug: string
+          id_event_text: string
+        }[]
+      }
       review_exhibitor_duplicate: {
         Args: {
           p_a: string
