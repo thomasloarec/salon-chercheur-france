@@ -211,15 +211,14 @@ Deno.serve(async (req: Request) => {
 
   // 2. Token inconnu / révoqué → document neutre, non framable
   if (!resolved) {
-    return new Response(new TextEncoder().encode(neutralPage()), {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Content-Security-Policy": "frame-ancestors 'none'",
-        "X-Robots-Tag": "noindex",
-        "Cache-Control": "public, max-age=60",
-      },
-    });
+    const html = neutralPage();
+    const bytes = new TextEncoder().encode(html);
+    const headers = new Headers();
+    headers.set("Content-Type", "text/html; charset=utf-8");
+    headers.set("X-Robots-Tag", "noindex");
+    headers.set("Cache-Control", "public, max-age=300");
+    headers.set("Content-Security-Policy", "frame-ancestors 'none'");
+    return new Response(bytes, { status: 200, headers });
   }
 
   const fa = frameAncestors(resolved.allowed_domains);
@@ -268,17 +267,15 @@ Deno.serve(async (req: Request) => {
     slug: String(resolved.event_slug ?? ""),
     eventPassed: Boolean(resolved.event_passed),
   });
+  const bytes = new TextEncoder().encode(html);
+  const headers = new Headers();
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("X-Robots-Tag", "noindex");
+  headers.set("Cache-Control", "public, max-age=300");
+  headers.set("Content-Security-Policy", `frame-ancestors ${fa}`);
 
-  return new Response(new TextEncoder().encode(html), {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Content-Security-Policy": `frame-ancestors ${fa}`,
-      "X-Robots-Tag": "noindex",
-      "Cache-Control": "public, max-age=300",
-      // PAS de X-Frame-Options. PAS de Set-Cookie. PAS de Access-Control-Allow-Origin.
-    },
-  });
+  // PAS de X-Frame-Options. PAS de Set-Cookie. PAS de Access-Control-Allow-Origin.
+  return new Response(bytes, { status: 200, headers });
 });
 
 /*
