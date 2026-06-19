@@ -170,7 +170,7 @@ function page(opts: {
 
     <footer class="footer">
       Propulsé par Lotexpo ·
-      <a href="${esc(canonical)}" target="_blank" rel="noopener noreferrer">Voir tout sur Lotexpo</a>
+      <a href="${esc(canonical)}" target="_blank" rel="nofollow noopener noreferrer">Voir tout sur Lotexpo</a>
     </footer>
   </main>
 </body>
@@ -250,7 +250,7 @@ Deno.serve(async (req: Request) => {
   try {
     const { data, error } = await supabase
       .from("novelties")
-      .select("title, type, reason_1, media_urls, exhibitor:exhibitors(name)")
+      .select("title, type, reason_1, media_urls, exhibitor:exhibitors!exhibitor_id(name)")
       .eq("event_id", resolved.event_id)
       .eq("status", "published")   // filtre explicite (ceinture + bretelles)
       .eq("is_test", false)        // filtre explicite
