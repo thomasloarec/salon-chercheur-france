@@ -418,6 +418,13 @@ export type Database = {
             referencedRelation: "exposants"
             referencedColumns: ["id_exposant"]
           },
+          {
+            foreignKeyName: "crm_company_event_matches_id_exposant_fkey"
+            columns: ["id_exposant"]
+            isOneToOne: false
+            referencedRelation: "exposants_a_enrichir"
+            referencedColumns: ["id_exposant"]
+          },
         ]
       }
       crm_connections: {
@@ -556,6 +563,13 @@ export type Database = {
             columns: ["id_exposant"]
             isOneToOne: false
             referencedRelation: "exposants"
+            referencedColumns: ["id_exposant"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_id_exposant_fkey"
+            columns: ["id_exposant"]
+            isOneToOne: false
+            referencedRelation: "exposants_a_enrichir"
             referencedColumns: ["id_exposant"]
           },
         ]
@@ -4918,18 +4932,21 @@ export type Database = {
         Row: {
           exposant_description: string | null
           id: number | null
+          id_exposant: string | null
           nom_exposant: string | null
           website_exposant: string | null
         }
         Insert: {
           exposant_description?: string | null
           id?: number | null
+          id_exposant?: string | null
           nom_exposant?: string | null
           website_exposant?: string | null
         }
         Update: {
           exposant_description?: string | null
           id?: number | null
+          id_exposant?: string | null
           nom_exposant?: string | null
           website_exposant?: string | null
         }
