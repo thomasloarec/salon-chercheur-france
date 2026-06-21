@@ -342,13 +342,14 @@ const RadarCrmPage: React.FC = () => {
               Une base déjà exploitable pour détecter des opportunités salon
             </h2>
             <p className="text-sm md:text-base text-muted-foreground">
-              Lotexpo recense déjà plus de 17 000 participations d'exposants à des salons
-              professionnels. Radar CRM s'appuie sur cette base pour identifier les entreprises de
-              votre fichier CRM qui seront présentes sur des événements à venir.
+              Lotexpo recense déjà plus de {participationLabel.replace('+', '')} participations
+              d'exposants à des salons professionnels. Radar CRM s'appuie sur cette base pour
+              identifier les entreprises de votre fichier CRM qui seront présentes sur des
+              événements à venir.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ProofStat value="17 000+" label="participations exposants recensées" highlight />
+            <ProofStat value={participationLabel} label="participations exposants recensées" highlight />
             <ProofStat value="France" label="salons professionnels centralisés" />
             <ProofStat value="CSV / Excel" label="import simple, sans connexion CRM obligatoire" />
           </div>
