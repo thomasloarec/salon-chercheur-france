@@ -53,6 +53,28 @@ const RadarCrmPage: React.FC = () => {
   const [privacyAck, setPrivacyAck] = useState(false);
   const autoSubmitRef = useRef(false);
   const resumedFromPendingRef = useRef(false);
+  const [participationCount, setParticipationCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const { count, error } = await supabase
+        .from('participation')
+        .select('*', { count: 'exact', head: true });
+      if (active && !error && typeof count === 'number') {
+        setParticipationCount(count);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const participationLabel = useMemo(() => {
+    const base = participationCount ?? 17000;
+    const floored = Math.floor(base / 1000) * 1000;
+    return `${floored.toLocaleString('fr-FR')}+`;
+  }, [participationCount]);
 
   useEffect(() => {
     void trackRadarEvent('radar_page_viewed');
