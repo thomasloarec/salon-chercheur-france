@@ -24,6 +24,7 @@ import { toast } from '@/hooks/use-toast';
 import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
 import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
 import RadarPreviewTable from '@/components/radar-crm/RadarPreviewTable';
+import RadarCrmDemoVideo from '@/components/radar-crm/RadarCrmDemoVideo';
 import {
   autoDetectMapping, RADAR_FIELD_LABELS, RADAR_FIELD_REQUIRED, RadarField,
 } from '@/lib/radarCrm/columnDetection';
