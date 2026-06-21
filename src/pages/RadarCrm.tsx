@@ -336,6 +336,11 @@ const RadarCrmPage: React.FC = () => {
       {/* How it works */}
       <section id="radar-how" className="max-w-5xl mx-auto px-4 py-8 scroll-mt-24">
         <h2 className="text-xl md:text-2xl font-bold text-center mb-6">Comment fonctionne Radar CRM ?</h2>
+        <RadarCrmDemoVideo />
+        <p className="text-sm text-muted-foreground text-center max-w-3xl mx-auto mb-8">
+          En 2 minutes : importez votre fichier CRM, Radar CRM détecte automatiquement sur quels
+          salons vos comptes exposent.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Step n={1} icon={<Upload className="h-5 w-5" />} title="Importez un CSV ou Excel" text="Avec vos entreprises (nom + site web)." />
           <Step n={2} icon={<Search className="h-5 w-5" />} title="Matching automatique" text="Lotexpo détecte les correspondances par domaine." />
