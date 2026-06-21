@@ -66,7 +66,7 @@ const RadarCrmPage: React.FC = () => {
 
   const scrollToHowItWorks = () => {
     void trackRadarEvent('radar_landing_cta_clicked', { source: 'hero_secondary' });
-    document.getElementById('radar-how')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('demo-video')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
