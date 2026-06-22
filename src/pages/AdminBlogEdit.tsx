@@ -133,6 +133,7 @@ const AdminBlogEdit = () => {
   useEffect(() => {
     if (existingArticle) {
       setTitle(existingArticle.title);
+      setArticleType(existingArticle.article_type === 'generic' ? 'generic' : 'salon');
       setH1Title(existingArticle.h1_title || '');
       setSlug(existingArticle.slug);
       setSlugManual(true);
@@ -140,6 +141,7 @@ const AdminBlogEdit = () => {
       setMetaDescription(existingArticle.meta_description || '');
       setIntroText(existingArticle.intro_text || '');
       setWhyVisitText(existingArticle.why_visit_text || '');
+      setBodyText(existingArticle.body_text || '');
       setHeaderImageUrl(existingArticle.header_image_url || '');
       setStatus(existingArticle.status);
       setPublishedAt(existingArticle.published_at ? existingArticle.published_at.slice(0, 16) : '');
