@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin, ArrowRight, FileText, Users } from 'lucide-react';
 import BlogNewsletterCTA from '@/components/blog/BlogNewsletterCTA';
+import BlogRadarCrmCTA from '@/components/blog/BlogRadarCrmCTA';
+import DOMPurify from 'dompurify';
 
 interface LinkedEvent {
   id: string;
