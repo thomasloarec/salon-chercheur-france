@@ -166,6 +166,12 @@ const BlogArticle = () => {
 
   const articleTitle = article.h1_title || article.title;
 
+  // Fallback: articles without an explicit type are treated as "salon" (legacy behaviour)
+  const isGeneric = article.article_type === 'generic';
+  const sanitizedBody = isGeneric && article.body_text
+    ? DOMPurify.sanitize(article.body_text)
+    : '';
+
   return (
     <MainLayout title={articleTitle}>
       <Helmet>
