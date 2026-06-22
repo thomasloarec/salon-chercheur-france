@@ -353,6 +353,7 @@ const AdminBlogEdit = () => {
       toast({ title: 'Le titre et le slug sont requis', variant: 'destructive' });
       return;
     }
+    const isGeneric = articleType === 'generic';
     const articleData: any = {
       title,
       h1_title: h1Title || title,
@@ -360,11 +361,14 @@ const AdminBlogEdit = () => {
       meta_title: metaTitle || title,
       meta_description: metaDescription,
       intro_text: introText,
-      body_text: null, // no longer used
-      why_visit_text: whyVisitText || null,
+      article_type: articleType,
+      // Generic articles store rich HTML in body_text; salon articles keep body_text null (legacy behaviour)
+      body_text: isGeneric ? (bodyText || null) : null,
+      why_visit_text: isGeneric ? null : (whyVisitText || null),
       header_image_url: headerImageUrl || null,
       status: publishNow ? 'published' : status,
-      event_ids: selectedEventLinks,
+      // Generic articles never carry linked events
+      event_ids: isGeneric ? [] : selectedEventLinks,
       faq: faqItems.filter(f => f.question.trim() || f.answer.trim()),
       created_by: user?.id,
     };
@@ -380,7 +384,14 @@ const AdminBlogEdit = () => {
       toast({ title: publishNow ? 'Article publié !' : 'Article sauvegardé' });
       if (isNew) navigate(`/admin/blog/edit/${saved.id}`, { replace: true });
     } catch (e: any) {
-      toast({ title: 'Erreur: ' + (e.message || 'Échec de la sauvegarde'), variant: 'destructive' });
+      const isSlugConflict =
+        e?.code === '23505' || /duplicate key|unique constraint|slug/i.test(e?.message || '');
+      toast({
+        title: isSlugConflict
+          ? `Ce slug « ${slug} » est déjà utilisé. Choisissez une URL différente.`
+          : 'Erreur: ' + (e.message || 'Échec de la sauvegarde'),
+        variant: 'destructive',
+      });
     }
   };
 
