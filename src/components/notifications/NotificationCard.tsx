@@ -105,8 +105,10 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
       <div
         onClick={handleClick}
         className={cn(
-          "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50",
-          !notification.read ? "bg-primary/5 border-primary/20" : "bg-background"
+          "flex items-start gap-4 p-4 rounded-lg border transition-colors duration-300 cursor-pointer",
+          !notification.read
+            ? "bg-[#ffe8d9] hover:bg-[#ffdcc6] border-primary/20"
+            : "bg-white hover:bg-accent/50"
         )}
       >
         <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-muted">
@@ -167,8 +169,10 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
       <div 
         onClick={handleClick}
         className={cn(
-          "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50",
-          !notification.read ? "bg-primary/5 border-primary/20" : "bg-background"
+          "flex items-start gap-4 p-4 rounded-lg border transition-colors duration-300 cursor-pointer",
+          !notification.read
+            ? "bg-[#ffe8d9] hover:bg-[#ffdcc6] border-primary/20"
+            : "bg-white hover:bg-accent/50"
         )}
       >
         {/* Event image thumbnail */}
@@ -244,8 +248,10 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
     <div 
       onClick={handleClick}
       className={cn(
-        "flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer hover:bg-accent/50",
-        !notification.read ? "bg-primary/5 border-primary/20" : "bg-background"
+        "flex items-start gap-4 p-4 rounded-lg border transition-colors duration-300 cursor-pointer",
+        !notification.read
+          ? "bg-[#ffe8d9] hover:bg-[#ffdcc6] border-primary/20"
+          : "bg-white hover:bg-accent/50"
       )}
     >
       <Avatar className="h-10 w-10 flex-shrink-0">
