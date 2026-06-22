@@ -2,7 +2,7 @@ import { NotificationCard } from "@/components/notifications/NotificationCard"
 import { useNotifications } from "@/hooks/useNotifications"
 import { Button } from "@/components/ui/button"
 import { Bell, BellOff } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import MainLayout from "@/components/layout/MainLayout"
 
 export default function NotificationsPage() {
@@ -11,14 +11,8 @@ export default function NotificationsPage() {
     notifications, 
     isLoading, 
     unreadCount,
-    markAsRead,
-    markAllAsViewed
+    markAsRead
   } = useNotifications()
-  
-  // Mark all as viewed when page loads
-  useEffect(() => {
-    markAllAsViewed()
-  }, [])
   
   const displayedNotifications = notifications?.slice(0, displayLimit) || []
   const hasMore = (notifications?.length || 0) > displayLimit
