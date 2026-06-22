@@ -563,19 +563,35 @@ const AdminBlogEdit = () => {
                 maxLength={600}
               />
             </div>
-            <div>
-              <Label>Pourquoi visiter ces salons ?</Label>
-              <Textarea
-                value={whyVisitText}
-                onChange={e => setWhyVisitText(e.target.value)}
-                placeholder="Décrivez l'intérêt concret de ces salons : types d'exposants, public cible, opportunités business, tendances du secteur..."
-                className="min-h-[200px]"
-              />
-            </div>
+            {articleType === 'salon' && (
+              <div>
+                <Label>Pourquoi visiter ces salons ?</Label>
+                <Textarea
+                  value={whyVisitText}
+                  onChange={e => setWhyVisitText(e.target.value)}
+                  placeholder="Décrivez l'intérêt concret de ces salons : types d'exposants, public cible, opportunités business, tendances du secteur..."
+                  className="min-h-[200px]"
+                />
+              </div>
+            )}
+            {articleType === 'generic' && (
+              <div>
+                <Label>Contenu éditorial riche</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Corps de l'article : titres, paragraphes, gras, italique, listes, citations et liens.
+                </p>
+                <RichTextEditor
+                  value={bodyText}
+                  onChange={setBodyText}
+                  placeholder="Rédigez ici le contenu de votre article éditorial…"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Section 3: Événements liés */}
+        {/* Section 3: Événements liés (articles salons uniquement) */}
+        {articleType === 'salon' && (
         <Card>
           <CardHeader><CardTitle>Événements liés</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -700,6 +716,7 @@ const AdminBlogEdit = () => {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Section 4: FAQ */}
         <Card>
