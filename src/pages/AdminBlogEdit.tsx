@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { ArrowLeft, Sparkles, X, ChevronUp, ChevronDown, Loader2, Search, ExternalLink, Upload, ImageIcon, Plus, Trash2, GripVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSectors } from '@/hooks/useSectors';
@@ -53,6 +54,7 @@ const AdminBlogEdit = () => {
   const { toast } = useToast();
 
   // Form state
+  const [articleType, setArticleType] = useState<'salon' | 'generic'>('salon');
   const [title, setTitle] = useState('');
   const [h1Title, setH1Title] = useState('');
   const [slug, setSlug] = useState('');
@@ -61,6 +63,7 @@ const AdminBlogEdit = () => {
   const [metaDescription, setMetaDescription] = useState('');
   const [introText, setIntroText] = useState('');
   const [whyVisitText, setWhyVisitText] = useState('');
+  const [bodyText, setBodyText] = useState('');
   const [headerImageUrl, setHeaderImageUrl] = useState('');
   const [status, setStatus] = useState<'draft' | 'ready' | 'scheduled' | 'published'>('draft');
   const [publishedAt, setPublishedAt] = useState('');
