@@ -30,6 +30,7 @@ export interface BlogArticle {
   faq: BlogFaqItem[];
   why_visit_text: string | null;
   created_by: string | null;
+  article_type: 'salon' | 'generic';
 }
 
 function parseArticle(raw: any): BlogArticle {
@@ -37,6 +38,8 @@ function parseArticle(raw: any): BlogArticle {
     ...raw,
     event_ids: Array.isArray(raw.event_ids) ? raw.event_ids : [],
     faq: Array.isArray(raw.faq) ? raw.faq : [],
+    // Fallback: any article without an explicit type is treated as a "salon" article
+    article_type: raw.article_type === 'generic' ? 'generic' : 'salon',
   };
 }
 
