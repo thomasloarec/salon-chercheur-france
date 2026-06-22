@@ -244,8 +244,18 @@ const BlogArticle = () => {
           </div>
         )}
 
+        {/* 4b. Generic editorial body (generic articles only) */}
+        {isGeneric && sanitizedBody && (
+          <section className="mx-auto px-4 max-w-[720px] mb-14">
+            <div
+              className="blog-rich-content"
+              dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+            />
+          </section>
+        )}
+
         {/* 5. Events */}
-        {linkedEvents.length > 0 && (
+        {!isGeneric && linkedEvents.length > 0 && (
           <section className="mx-auto px-4 max-w-[800px] mb-14">
             <SectionTitle>{articleTitle}</SectionTitle>
             <p className="text-sm text-muted-foreground -mt-5 mb-8">
@@ -349,7 +359,7 @@ const BlogArticle = () => {
         )}
 
         {/* 6. Why visit */}
-        {article.why_visit_text && (
+        {!isGeneric && article.why_visit_text && (
           <section className="mx-auto px-4 max-w-[720px] mb-14">
             <SectionTitle>Pourquoi visiter ces salons ?</SectionTitle>
             <div className="text-base leading-[1.8] text-foreground/80">
@@ -384,6 +394,9 @@ const BlogArticle = () => {
             </div>
           </section>
         )}
+
+        {/* 7b. Radar CRM CTA (generic articles only) */}
+        {isGeneric && <BlogRadarCrmCTA />}
 
         {/* 8. Newsletter CTA */}
         <BlogNewsletterCTA />
