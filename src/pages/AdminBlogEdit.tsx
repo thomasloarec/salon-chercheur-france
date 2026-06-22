@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { ArrowLeft, Sparkles, X, ChevronUp, ChevronDown, Loader2, Search, ExternalLink, Upload, ImageIcon, Plus, Trash2, GripVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSectors } from '@/hooks/useSectors';
@@ -53,6 +54,7 @@ const AdminBlogEdit = () => {
   const { toast } = useToast();
 
   // Form state
+  const [articleType, setArticleType] = useState<'salon' | 'generic'>('salon');
   const [title, setTitle] = useState('');
   const [h1Title, setH1Title] = useState('');
   const [slug, setSlug] = useState('');
@@ -61,6 +63,7 @@ const AdminBlogEdit = () => {
   const [metaDescription, setMetaDescription] = useState('');
   const [introText, setIntroText] = useState('');
   const [whyVisitText, setWhyVisitText] = useState('');
+  const [bodyText, setBodyText] = useState('');
   const [headerImageUrl, setHeaderImageUrl] = useState('');
   const [status, setStatus] = useState<'draft' | 'ready' | 'scheduled' | 'published'>('draft');
   const [publishedAt, setPublishedAt] = useState('');
@@ -130,6 +133,7 @@ const AdminBlogEdit = () => {
   useEffect(() => {
     if (existingArticle) {
       setTitle(existingArticle.title);
+      setArticleType(existingArticle.article_type === 'generic' ? 'generic' : 'salon');
       setH1Title(existingArticle.h1_title || '');
       setSlug(existingArticle.slug);
       setSlugManual(true);
@@ -137,6 +141,7 @@ const AdminBlogEdit = () => {
       setMetaDescription(existingArticle.meta_description || '');
       setIntroText(existingArticle.intro_text || '');
       setWhyVisitText(existingArticle.why_visit_text || '');
+      setBodyText(existingArticle.body_text || '');
       setHeaderImageUrl(existingArticle.header_image_url || '');
       setStatus(existingArticle.status);
       setPublishedAt(existingArticle.published_at ? existingArticle.published_at.slice(0, 16) : '');
@@ -348,6 +353,7 @@ const AdminBlogEdit = () => {
       toast({ title: 'Le titre et le slug sont requis', variant: 'destructive' });
       return;
     }
+    const isGeneric = articleType === 'generic';
     const articleData: any = {
       title,
       h1_title: h1Title || title,
@@ -355,11 +361,14 @@ const AdminBlogEdit = () => {
       meta_title: metaTitle || title,
       meta_description: metaDescription,
       intro_text: introText,
-      body_text: null, // no longer used
-      why_visit_text: whyVisitText || null,
+      article_type: articleType,
+      // Generic articles store rich HTML in body_text; salon articles keep body_text null (legacy behaviour)
+      body_text: isGeneric ? (bodyText || null) : null,
+      why_visit_text: isGeneric ? null : (whyVisitText || null),
       header_image_url: headerImageUrl || null,
       status: publishNow ? 'published' : status,
-      event_ids: selectedEventLinks,
+      // Generic articles never carry linked events
+      event_ids: isGeneric ? [] : selectedEventLinks,
       faq: faqItems.filter(f => f.question.trim() || f.answer.trim()),
       created_by: user?.id,
     };
@@ -375,7 +384,14 @@ const AdminBlogEdit = () => {
       toast({ title: publishNow ? 'Article publié !' : 'Article sauvegardé' });
       if (isNew) navigate(`/admin/blog/edit/${saved.id}`, { replace: true });
     } catch (e: any) {
-      toast({ title: 'Erreur: ' + (e.message || 'Échec de la sauvegarde'), variant: 'destructive' });
+      const isSlugConflict =
+        e?.code === '23505' || /duplicate key|unique constraint|slug/i.test(e?.message || '');
+      toast({
+        title: isSlugConflict
+          ? `Ce slug « ${slug} » est déjà utilisé. Choisissez une URL différente.`
+          : 'Erreur: ' + (e.message || 'Échec de la sauvegarde'),
+        variant: 'destructive',
+      });
     }
   };
 
@@ -450,10 +466,31 @@ const AdminBlogEdit = () => {
           <h1 className="text-2xl font-bold flex-1">
             {isNew ? 'Nouvel article' : 'Éditer l\'article'}
           </h1>
-          <Button variant="outline" onClick={() => setAiModalOpen(true)}>
-            <Sparkles className="h-4 w-4 mr-2" /> Générer avec l'IA
-          </Button>
+          {articleType === 'salon' && (
+            <Button variant="outline" onClick={() => setAiModalOpen(true)}>
+              <Sparkles className="h-4 w-4 mr-2" /> Générer avec l'IA
+            </Button>
+          )}
         </div>
+
+        {/* Section 0: Type d'article */}
+        <Card>
+          <CardHeader><CardTitle>Type d'article</CardTitle></CardHeader>
+          <CardContent>
+            <Select value={articleType} onValueChange={v => setArticleType(v as 'salon' | 'generic')}>
+              <SelectTrigger className="max-w-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="salon">Article salons</SelectItem>
+                <SelectItem value="generic">Article générique</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-2">
+              {articleType === 'salon'
+                ? 'Article orienté sélection de salons : événements liés, commentaires par salon et section « Pourquoi visiter ces salons ? ».'
+                : 'Article éditorial libre : contenu riche dans le corps de l\'article, sans salons associés.'}
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Section 1: SEO */}
         <Card>
@@ -526,19 +563,35 @@ const AdminBlogEdit = () => {
                 maxLength={600}
               />
             </div>
-            <div>
-              <Label>Pourquoi visiter ces salons ?</Label>
-              <Textarea
-                value={whyVisitText}
-                onChange={e => setWhyVisitText(e.target.value)}
-                placeholder="Décrivez l'intérêt concret de ces salons : types d'exposants, public cible, opportunités business, tendances du secteur..."
-                className="min-h-[200px]"
-              />
-            </div>
+            {articleType === 'salon' && (
+              <div>
+                <Label>Pourquoi visiter ces salons ?</Label>
+                <Textarea
+                  value={whyVisitText}
+                  onChange={e => setWhyVisitText(e.target.value)}
+                  placeholder="Décrivez l'intérêt concret de ces salons : types d'exposants, public cible, opportunités business, tendances du secteur..."
+                  className="min-h-[200px]"
+                />
+              </div>
+            )}
+            {articleType === 'generic' && (
+              <div>
+                <Label>Contenu éditorial riche</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Corps de l'article : titres, paragraphes, gras, italique, listes, citations et liens.
+                </p>
+                <RichTextEditor
+                  value={bodyText}
+                  onChange={setBodyText}
+                  placeholder="Rédigez ici le contenu de votre article éditorial…"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Section 3: Événements liés */}
+        {/* Section 3: Événements liés (articles salons uniquement) */}
+        {articleType === 'salon' && (
         <Card>
           <CardHeader><CardTitle>Événements liés</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -663,6 +716,7 @@ const AdminBlogEdit = () => {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Section 4: FAQ */}
         <Card>
