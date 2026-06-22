@@ -136,6 +136,7 @@ export type Database = {
       }
       blog_articles: {
         Row: {
+          article_type: string
           body_text: string | null
           created_at: string | null
           created_by: string | null
@@ -158,6 +159,7 @@ export type Database = {
           why_visit_text: string | null
         }
         Insert: {
+          article_type?: string
           body_text?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -180,6 +182,7 @@ export type Database = {
           why_visit_text?: string | null
         }
         Update: {
+          article_type?: string
           body_text?: string | null
           created_at?: string | null
           created_by?: string | null
