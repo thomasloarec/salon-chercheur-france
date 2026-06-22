@@ -466,10 +466,31 @@ const AdminBlogEdit = () => {
           <h1 className="text-2xl font-bold flex-1">
             {isNew ? 'Nouvel article' : 'Éditer l\'article'}
           </h1>
-          <Button variant="outline" onClick={() => setAiModalOpen(true)}>
-            <Sparkles className="h-4 w-4 mr-2" /> Générer avec l'IA
-          </Button>
+          {articleType === 'salon' && (
+            <Button variant="outline" onClick={() => setAiModalOpen(true)}>
+              <Sparkles className="h-4 w-4 mr-2" /> Générer avec l'IA
+            </Button>
+          )}
         </div>
+
+        {/* Section 0: Type d'article */}
+        <Card>
+          <CardHeader><CardTitle>Type d'article</CardTitle></CardHeader>
+          <CardContent>
+            <Select value={articleType} onValueChange={v => setArticleType(v as 'salon' | 'generic')}>
+              <SelectTrigger className="max-w-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="salon">Article salons</SelectItem>
+                <SelectItem value="generic">Article générique</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-2">
+              {articleType === 'salon'
+                ? 'Article orienté sélection de salons : événements liés, commentaires par salon et section « Pourquoi visiter ces salons ? ».'
+                : 'Article éditorial libre : contenu riche dans le corps de l\'article, sans salons associés.'}
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Section 1: SEO */}
         <Card>
