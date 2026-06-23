@@ -365,6 +365,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </aside>
             </div>
 
+            {/* Bloc "Pourquoi visiter" — juste après les exposants, avant les suggestions */}
+            <EventWhyVisit event={event} />
+
             {/* Autres éditions de ce salon (séries) */}
             <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
 
@@ -373,9 +376,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
             {/* Événements similaires pour le maillage interne SEO */}
             <RelatedEvents event={event} limit={4} excludeIds={seriesEventIds} />
-
-            {/* Bloc "Pourquoi visiter" en bas de page */}
-            <EventWhyVisit event={event} />
 
             {/* FAQ — uniquement si faq_json rempli et événement à venir */}
             {!isEventPast && Array.isArray(event.faq_json) && event.faq_json.length > 0 && (
