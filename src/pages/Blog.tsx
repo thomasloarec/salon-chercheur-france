@@ -8,7 +8,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CalendarDays, FileText } from 'lucide-react';
 
 const Blog = () => {
-  const { data: articles, isLoading } = usePublishedArticles();
+  const { data: rawArticles, isLoading } = usePublishedArticles();
+
+  // Order by real publication date (created_at) so the most recently published
+  // articles appear first, regardless of article_type (salon or generic).
+  const articles = React.useMemo(
+    () =>
+      [...(rawArticles ?? [])].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
+    [rawArticles]
+  );
 
   return (
     <MainLayout title="Blog">
@@ -68,16 +78,13 @@ const Blog = () => {
                       </p>
                     )}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
-                      {article.published_at && (
+                      {article.created_at && (
                         <span className="flex items-center gap-1">
                           <CalendarDays className="h-3.5 w-3.5" />
-                          {new Date(article.published_at).toLocaleDateString('fr-FR', {
+                          {new Date(article.created_at).toLocaleDateString('fr-FR', {
                             day: 'numeric', month: 'long', year: 'numeric'
                           })}
                         </span>
-                      )}
-                      {article.event_ids?.length > 0 && (
-                        <span>{article.event_ids.length} événement{article.event_ids.length > 1 ? 's' : ''}</span>
                       )}
                     </div>
                   </CardContent>
