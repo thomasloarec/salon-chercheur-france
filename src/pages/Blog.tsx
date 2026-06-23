@@ -8,7 +8,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CalendarDays, FileText } from 'lucide-react';
 
 const Blog = () => {
-  const { data: articles, isLoading } = usePublishedArticles();
+  const { data: rawArticles, isLoading } = usePublishedArticles();
+
+  // Order by real publication date (created_at) so the most recently published
+  // articles appear first, regardless of article_type (salon or generic).
+  const articles = React.useMemo(
+    () =>
+      [...(rawArticles ?? [])].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
+    [rawArticles]
+  );
 
   return (
     <MainLayout title="Blog">
