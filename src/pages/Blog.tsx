@@ -78,16 +78,13 @@ const Blog = () => {
                       </p>
                     )}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
-                      {article.published_at && (
+                      {article.created_at && (
                         <span className="flex items-center gap-1">
                           <CalendarDays className="h-3.5 w-3.5" />
-                          {new Date(article.published_at).toLocaleDateString('fr-FR', {
+                          {new Date(article.created_at).toLocaleDateString('fr-FR', {
                             day: 'numeric', month: 'long', year: 'numeric'
                           })}
                         </span>
-                      )}
-                      {article.event_ids?.length > 0 && (
-                        <span>{article.event_ids.length} événement{article.event_ids.length > 1 ? 's' : ''}</span>
                       )}
                     </div>
                   </CardContent>
