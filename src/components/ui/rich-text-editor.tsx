@@ -166,8 +166,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return { toolbar };
   }, [enableImages, imageHandler]);
 
+  // When images are enabled we let Quill keep all default formats (incl. the custom
+  // image blot's style/alt/width attributes) so styling survives save/reload round-trips.
   const formats = useMemo(
-    () => (enableImages ? [...BASE_FORMATS, 'image', 'width', 'height', 'alt', 'style'] : BASE_FORMATS),
+    () => (enableImages ? undefined : BASE_FORMATS),
     [enableImages]
   );
 
