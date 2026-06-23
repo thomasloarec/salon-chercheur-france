@@ -584,6 +584,8 @@ const AdminBlogEdit = () => {
                   value={bodyText}
                   onChange={setBodyText}
                   placeholder="Rédigez ici le contenu de votre article éditorial…"
+                  bottomToolbar
+                  enableImages
                 />
               </div>
             )}
