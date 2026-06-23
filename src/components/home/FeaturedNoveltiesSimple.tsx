@@ -4,6 +4,14 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import NoveltyTile from '@/components/novelty/NoveltyTile';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Novelty {
   id: string;
@@ -31,6 +39,7 @@ interface Novelty {
 
 const FeaturedNoveltiesSimple = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const { data: novelties, isLoading } = useQuery({
     queryKey: ['featured-novelties-simple'],
@@ -100,25 +109,39 @@ const FeaturedNoveltiesSimple = () => {
   return (
     <section className="bg-muted/30 py-16 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground">
             Nouveautés à l'affiche des salons
           </h2>
           <Button 
             onClick={() => navigate('/nouveautes')}
             variant="ghost"
-            className="text-accent hover:text-accent/80"
+            className="text-accent hover:text-accent/80 self-start sm:self-auto -ml-4 sm:ml-0"
           >
             Voir toutes les Nouveautés
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {novelties.map((novelty) => (
-            <NoveltyTile key={novelty.id} novelty={novelty} />
-          ))}
-        </div>
+        {isMobile ? (
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-4">
+              {novelties.map((novelty) => (
+                <CarouselItem key={novelty.id} className="pl-4 basis-[85%]">
+                  <NoveltyTile novelty={novelty} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-0 -translate-x-1/2" />
+            <CarouselNext className="right-0 translate-x-1/2" />
+          </Carousel>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {novelties.map((novelty) => (
+              <NoveltyTile key={novelty.id} novelty={novelty} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

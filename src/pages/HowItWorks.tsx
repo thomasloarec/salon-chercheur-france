@@ -55,11 +55,11 @@ const Index = () => {
         {/* Bloc dédié aux organisateurs de salons */}
         <section className="bg-secondary py-16 px-4">
           <div className="max-w-5xl mx-auto">
-            <div className="bg-card border border-border rounded-2xl p-6 md:p-10 shadow-lg">
+            <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-10 shadow-lg overflow-hidden">
               <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
                 {/* Colonne gauche : titre + texte */}
-                <div>
-                  <div className="flex items-center gap-3 mb-5">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-3 mb-5">
                     <div className="bg-primary/10 rounded-xl p-3">
                       <Building2 className="h-6 w-6 text-primary" />
                     </div>
@@ -67,7 +67,7 @@ const Index = () => {
                       Organisateurs de salons
                     </span>
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-4 break-words">
                     Organisateurs de salons : Lotexpo renforce votre visibilité
                   </h2>
                   <div className="space-y-3 text-muted-foreground leading-relaxed text-sm md:text-base">
@@ -81,15 +81,15 @@ const Index = () => {
                       Notre objectif est simple : donner plus de visibilité à votre événement, valoriser vos exposants et rediriger les utilisateurs vers vos informations officielles.
                     </p>
                   </div>
-                  <Button asChild size="lg" className="mt-6 gap-2">
+                  <Button asChild size="lg" className="mt-6 gap-2 w-full sm:w-auto h-auto whitespace-normal text-center">
                     <Link to="/organisateurs">
-                      Découvrir les avantages pour les organisateurs <ArrowRight className="w-4 h-4" />
+                      Découvrir les avantages pour les organisateurs <ArrowRight className="w-4 h-4 flex-shrink-0" />
                     </Link>
                   </Button>
                 </div>
 
                 {/* Colonne droite : mini-cards + encadré */}
-                <div className="space-y-4">
+                <div className="space-y-4 min-w-0">
                   <div className="grid sm:grid-cols-1 gap-3">
                     {[
                       {
@@ -110,14 +110,14 @@ const Index = () => {
                     ].map((b) => (
                       <div
                         key={b.title}
-                        className="flex gap-3 items-start bg-secondary/60 border border-border rounded-xl p-4"
+                        className="flex gap-3 items-start bg-secondary/60 border border-border rounded-xl p-4 min-w-0"
                       >
                         <div className="bg-accent/10 rounded-lg p-2 flex-shrink-0">
                           <b.icon className="h-5 w-5 text-accent" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h3 className="text-sm font-semibold text-foreground">{b.title}</h3>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{b.text}</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed break-words">{b.text}</p>
                         </div>
                       </div>
                     ))}
