@@ -109,14 +109,14 @@ const FeaturedNoveltiesSimple = () => {
   return (
     <section className="bg-muted/30 py-16 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground">
             Nouveautés à l'affiche des salons
           </h2>
           <Button 
             onClick={() => navigate('/nouveautes')}
             variant="ghost"
-            className="text-accent hover:text-accent/80"
+            className="text-accent hover:text-accent/80 self-start sm:self-auto -ml-4 sm:ml-0"
           >
             Voir toutes les Nouveautés
             <ArrowRight className="ml-2 h-4 w-4" />
