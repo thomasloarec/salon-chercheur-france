@@ -384,6 +384,17 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
             {/* Articles de blog liés au secteur */}
             <SectorArticlesBlock event={event} />
+
+            {/* À propos de cette fiche — indépendance de la plateforme */}
+            <aside className="rounded-xl border border-border bg-muted/40 px-4 py-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground/80">À propos de cette fiche — </span>
+                Lotexpo est une plateforme indépendante. La présence de cet événement ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite. Les informations officielles restent celles publiées par l'organisateur sur son site.{' '}
+                <Link to="/organisateurs" className="text-primary hover:underline">
+                  Organisateurs de salons
+                </Link>
+              </p>
+            </aside>
           </div>
         </main>
 

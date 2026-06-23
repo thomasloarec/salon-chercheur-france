@@ -62,6 +62,7 @@ import AdminBlog from '@/pages/AdminBlog';
 import AdminBlogEdit from '@/pages/AdminBlogEdit';
 import Blog from '@/pages/Blog';
 import BlogArticle from '@/pages/BlogArticle';
+import Organisateurs from '@/pages/Organisateurs';
 import NotFound from '@/pages/NotFound';
 import SectorHub from '@/pages/SectorHub';
 import SectorYearHub from '@/pages/SectorYearHub';
@@ -109,6 +110,7 @@ function App() {
                 <Routes>
                 <Route path="/" element={<Events />} />
               <Route path="/comment-ca-marche" element={<HowItWorks />} />
+              <Route path="/organisateurs" element={<Organisateurs />} />
               <Route path="/events/:slug" element={<EventPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
             <Route path="/nouveautes/:slug" element={<NoveltyDetail />} />
