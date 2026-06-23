@@ -72,7 +72,7 @@ const Index = () => {
                   </h2>
                   <div className="space-y-3 text-muted-foreground leading-relaxed text-sm md:text-base">
                     <p>
-                      Lotexpo référence les salons professionnels en France pour aider les visiteurs, exposants et commerciaux à identifier les événements utiles dans leur secteur.
+                      Lotexpo référence les salons professionnels en France pour aider les visiteurs et exposants à identifier les événements utiles dans leur secteur.
                     </p>
                     <p>
                       La plateforme est indépendante : la présence d'un salon sur Lotexpo ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite.
