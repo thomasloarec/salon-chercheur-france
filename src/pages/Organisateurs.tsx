@@ -18,33 +18,38 @@ import {
   Gift,
   ArrowRight,
   CheckCircle2,
+  XCircle,
+  Check,
+  Minus,
+  BadgeEuro,
+  Target,
 } from 'lucide-react';
 
 const BENEFITS = [
   {
     icon: Eye,
     title: 'Plus de visibilité gratuite',
-    text: 'Votre événement peut être découvert par des visiteurs professionnels qui recherchent des salons par secteur, ville ou date.',
+    text: 'Votre salon peut être découvert par des visiteurs professionnels qui recherchent des événements par secteur, ville ou date.',
   },
   {
     icon: MousePointerClick,
-    title: 'Un trafic qualifié vers votre site officiel',
+    title: 'Plus de trafic vers votre site officiel',
     text: "Lotexpo peut orienter les utilisateurs vers vos pages officielles pour l'inscription, les informations pratiques ou les demandes exposants.",
   },
   {
     icon: Users,
-    title: 'Une meilleure mise en valeur de vos exposants',
+    title: 'Des exposants mieux valorisés',
     text: 'Les fiches exposants et les Nouveautés donnent plus de raisons concrètes aux visiteurs de préparer leur venue.',
   },
   {
     icon: FileText,
     title: 'Un contenu utile avant le salon',
-    text: "Les visiteurs peuvent identifier les innovations, démonstrations, produits ou services à découvrir avant même l'ouverture de l'événement.",
+    text: "Les visiteurs peuvent identifier les innovations, démonstrations, produits et services à découvrir avant même l'ouverture.",
   },
   {
     icon: Megaphone,
     title: 'Un relais complémentaire à vos actions marketing',
-    text: 'Lotexpo peut soutenir vos campagnes de communication sans remplacer vos canaux officiels.',
+    text: 'Lotexpo soutient votre communication sans remplacer vos canaux officiels.',
   },
   {
     icon: Gift,
@@ -53,79 +58,152 @@ const BENEFITS = [
   },
 ];
 
-const SECTIONS = [
+const IS_LIST = [
+  'Un annuaire spécialisé des salons professionnels en France.',
+  'Un canal de visibilité supplémentaire pour votre événement.',
+  'Un relais vers votre site officiel et vos informations pratiques.',
+  'Un espace où vos exposants peuvent publier leurs Nouveautés.',
+  'Un outil complémentaire pour attirer un public plus qualifié.',
+];
+
+const IS_NOT_LIST = [
+  'Une billetterie qui remplace votre système d\u2019inscription.',
+  'Un site officiel qui se substitue à votre communication.',
+  'Un partenaire officiel, sauf mention explicite.',
+  'Un concurrent de votre salon.',
+  'Une plateforme qui revendique l\u2019organisation de votre événement.',
+];
+
+type SectionBlock = {
+  icon: typeof Eye;
+  title: string;
+  body: React.ReactNode;
+  highlight?: string;
+  cta?: { label: string; to: string };
+};
+
+const SECTIONS: SectionBlock[] = [
   {
     icon: Eye,
     title: 'Une visibilité gratuite pour votre salon',
-    paragraphs: [
-      "Chaque page événement publiée sur Lotexpo permet à votre salon d'être découvert par des visiteurs qui recherchent des événements professionnels par secteur, ville, région, date ou type d'activité.",
-      "Cette visibilité est gratuite. Aucun paiement n'est demandé pour référencer un salon professionnel sur Lotexpo. L'objectif est de créer un point d'entrée complémentaire vers votre événement, en particulier pour les visiteurs qui ne connaissent pas encore votre marque ou qui comparent plusieurs salons avant de se déplacer.",
-      "Lotexpo ne remplace pas votre site officiel. Au contraire, la plateforme agit comme une porte d'entrée supplémentaire qui peut rediriger les utilisateurs vers vos supports officiels lorsque ces informations sont disponibles.",
-    ],
+    body: (
+      <>
+        <p>
+          Chaque page événement publiée sur Lotexpo permet à votre salon d'être découvert par des visiteurs qui recherchent des événements professionnels par secteur, ville, région, date ou type d'activité.
+        </p>
+        <p>
+          <strong className="text-foreground">Cette visibilité est entièrement gratuite.</strong> Aucun paiement n'est demandé pour référencer un salon professionnel. L'objectif est de créer un point d'entrée complémentaire vers votre événement, en particulier pour les visiteurs qui comparent plusieurs salons avant de se déplacer.
+        </p>
+      </>
+    ),
+    highlight:
+      "Lotexpo ne remplace pas votre site officiel : la plateforme agit comme une porte d'entrée supplémentaire qui redirige les utilisateurs vers vos supports officiels.",
   },
   {
     icon: TrendingUp,
     title: 'Un canal supplémentaire pour attirer un public qualifié',
-    paragraphs: [
-      "Les visiteurs qui consultent Lotexpo ne cherchent pas seulement une date ou une adresse. Ils veulent comprendre pourquoi un salon mérite leur déplacement, quels exposants seront présents et quelles nouveautés peuvent justifier une visite.",
-      "En centralisant ces informations, Lotexpo aide les visiteurs à mieux préparer leur venue. Cela bénéficie directement aux organisateurs, car un visiteur mieux informé est plus susceptible de s'inscrire, de venir sur place et de passer du temps sur le salon.",
-      "Lotexpo permet donc de renforcer l'intérêt autour de votre événement avant son ouverture, sans travail supplémentaire de votre part.",
-    ],
+    body: (
+      <>
+        <p>
+          Les visiteurs qui consultent Lotexpo ne cherchent pas seulement une date ou une adresse. Ils veulent comprendre <strong className="text-foreground">pourquoi un salon mérite leur déplacement</strong>, quels exposants seront présents et quelles nouveautés peuvent justifier une visite.
+        </p>
+        <p>
+          En centralisant ces informations, Lotexpo aide les visiteurs à mieux préparer leur venue. Un visiteur mieux informé est plus susceptible de s'inscrire, de venir sur place et de passer du temps sur le salon.
+        </p>
+      </>
+    ),
+    highlight:
+      "Résultat : plus d'intérêt autour de votre événement avant son ouverture, sans travail supplémentaire de votre part.",
   },
   {
     icon: Link2,
     title: 'Des backlinks et une meilleure présence sur le web',
-    paragraphs: [
-      "Lorsqu'une page événement renvoie vers le site officiel du salon, cela crée un point d'accès supplémentaire vers vos contenus. Cette présence peut contribuer à renforcer la visibilité globale de votre événement sur le web.",
-      "Plus un salon est mentionné sur des plateformes pertinentes, plus il augmente ses chances d'être découvert par des publics complémentaires : visiteurs professionnels, exposants potentiels, acheteurs, prescripteurs, commerciaux ou partenaires.",
-      "Lotexpo a vocation à devenir une plateforme de référence pour les salons professionnels en France. Être présent sur Lotexpo permet à votre événement d'apparaître dans un environnement spécialisé, cohérent et orienté business.",
-    ],
+    body: (
+      <>
+        <p>
+          Lorsqu'une page Lotexpo renvoie vers votre site officiel, elle crée un point d'accès supplémentaire vers vos contenus. Cette présence peut contribuer à renforcer votre visibilité globale sur le web, <strong className="text-foreground">sans se substituer à votre stratégie SEO</strong>.
+        </p>
+        <p>
+          Plus un salon est mentionné sur des plateformes pertinentes, plus il augmente ses chances d'être découvert par des publics complémentaires : visiteurs professionnels, exposants potentiels, acheteurs, prescripteurs, commerciaux ou partenaires.
+        </p>
+        <p>
+          Être présent sur Lotexpo permet à votre événement d'apparaître dans un environnement spécialisé, cohérent et orienté business.
+        </p>
+      </>
+    ),
   },
   {
     icon: Sparkles,
     title: 'Vos exposants deviennent aussi des relais de visibilité',
-    paragraphs: [
-      "Un salon vit grâce à ses exposants. C'est souvent ce qu'ils annoncent, lancent ou présentent qui donne envie aux visiteurs de se déplacer.",
-      "Lotexpo permet aux exposants de publier des Nouveautés liées à leur participation à un salon : lancement produit, démonstration, innovation, offre spéciale, conférence, animation de stand ou document à télécharger.",
-      "Chaque Nouveauté publiée peut donner une raison concrète à un visiteur de venir sur le salon. Pour l'organisateur, c'est une mécanique vertueuse : les exposants créent du contenu, ce contenu attire l'attention, et cette attention renforce l'intérêt autour de l'événement.",
-    ],
+    body: (
+      <>
+        <p>
+          Un salon vit grâce à ses exposants. Ce sont souvent leurs innovations, démonstrations, lancements produits ou temps forts qui donnent envie aux visiteurs de se déplacer.
+        </p>
+        <p>
+          Avec Lotexpo, vos exposants peuvent{' '}
+          <Link to="/nouveautes" className="text-primary font-medium underline underline-offset-2 hover:text-primary/80">
+            publier des Nouveautés
+          </Link>{' '}
+          liées à leur participation : lancement produit, démonstration, innovation, offre spéciale, conférence, animation de stand ou document à télécharger.
+        </p>
+        <p>
+          Chaque Nouveauté publiée devient une raison concrète de venir sur votre salon. Les exposants créent du contenu, ce contenu attire l'attention, et cette attention renforce l'intérêt autour de votre événement.
+        </p>
+      </>
+    ),
   },
   {
     icon: ShieldCheck,
     title: 'Un outil complémentaire, pas un concurrent',
-    paragraphs: [
-      "Lotexpo ne remplace pas le site officiel du salon, la billetterie, l'espace exposant ou les actions marketing de l'organisateur.",
-      "La plateforme agit comme une couche de visibilité supplémentaire. Elle aide les utilisateurs à découvrir les salons, à comparer les événements professionnels et à préparer leur venue. Les informations officielles restent celles de l'organisateur.",
-      "Lorsque cela est pertinent, Lotexpo peut rediriger les utilisateurs vers le site officiel de l'événement pour l'inscription, les informations pratiques ou les demandes exposants.",
-    ],
+    body: (
+      <>
+        <p>
+          Lotexpo ne remplace pas le site officiel du salon, la billetterie, l'espace exposant ou les actions marketing de l'organisateur.
+        </p>
+        <p>
+          La plateforme agit comme une couche de visibilité supplémentaire. Elle aide les utilisateurs à découvrir les salons, à comparer les événements professionnels et à préparer leur venue. <strong className="text-foreground">Les informations officielles restent celles de l'organisateur.</strong>
+        </p>
+      </>
+    ),
   },
   {
     icon: ShieldCheck,
     title: 'Un fonctionnement transparent',
-    paragraphs: [
-      "Lotexpo agrège et structure des informations publiques sur les salons professionnels afin de les rendre plus faciles à trouver et à comparer.",
-      "La présence d'un événement sur Lotexpo ne constitue pas une affiliation officielle avec l'organisateur, sauf mention explicite. Si vous représentez un salon et souhaitez corriger, compléter ou mettre à jour les informations affichées, vous pouvez nous contacter.",
-      "Notre objectif est de présenter les événements de manière utile, exacte et valorisante pour les visiteurs, les exposants et les organisateurs.",
-    ],
+    body: (
+      <>
+        <p>
+          Lotexpo agrège et structure des informations publiques sur les salons professionnels afin de les rendre plus faciles à trouver et à comparer.
+        </p>
+        <p>
+          La présence d'un événement sur Lotexpo ne constitue pas une affiliation officielle avec l'organisateur, sauf mention explicite. Si vous représentez un salon et souhaitez corriger, compléter ou mettre à jour les informations affichées, vous pouvez{' '}
+          <a
+            href="https://lotexpo.com/contact"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary font-medium underline underline-offset-2 hover:text-primary/80"
+          >
+            nous contacter
+          </a>
+          .
+        </p>
+      </>
+    ),
   },
   {
     icon: Handshake,
     title: 'Un partenariat possible avec les organisateurs',
-    paragraphs: [
-      "Les organisateurs qui souhaitent aller plus loin peuvent encourager leurs exposants à publier leurs Nouveautés sur Lotexpo avant le salon.",
-      "Cela permet de créer une dynamique de communication avant l'événement. Les exposants valorisent ce qu'ils vont présenter, les visiteurs identifient plus facilement les stands à ne pas manquer, et le salon bénéficie d'une visibilité accrue.",
-      "Lotexpo peut devenir un support complémentaire à vos campagnes exposants, newsletters, réseaux sociaux et actions de promotion.",
-    ],
+    body: (
+      <>
+        <p>
+          Les organisateurs qui souhaitent aller plus loin peuvent encourager leurs exposants à publier leurs Nouveautés sur Lotexpo avant le salon.
+        </p>
+        <p>
+          Cela crée une dynamique de communication avant l'événement : les exposants valorisent ce qu'ils vont présenter, les visiteurs identifient plus facilement les stands à ne pas manquer, et le salon bénéficie d'une visibilité accrue.
+        </p>
+      </>
+    ),
     cta: { label: 'Proposer Lotexpo à vos exposants', to: '/contact' },
-  },
-  {
-    icon: LayoutGrid,
-    title: 'Un widget pour valoriser les Nouveautés sur votre propre site',
-    paragraphs: [
-      "À terme, Lotexpo pourra proposer aux organisateurs un widget à intégrer sur leur site officiel. Ce widget permettra d'afficher automatiquement les Nouveautés publiées par les exposants de leur salon.",
-      "L'intérêt est simple : vos exposants créent du contenu sur Lotexpo, et ce contenu peut ensuite être réutilisé pour enrichir votre propre site événementiel.",
-      "C'est un fonctionnement gagnant-gagnant. Les exposants gagnent en visibilité, les visiteurs découvrent plus facilement les temps forts du salon, et l'organisateur dispose d'un contenu vivant sans devoir tout produire lui-même.",
-    ],
   },
 ];
 
@@ -221,6 +299,46 @@ const Organisateurs = () => {
                 Pour les organisateurs, Lotexpo est une opportunité gratuite de renforcer la visibilité de leur événement, de mettre en avant leurs exposants et de générer davantage d'intérêt avant l'ouverture du salon.
               </p>
             </div>
+            {/* Mini-cards badges */}
+            <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+              {[
+                {
+                  icon: BadgeEuro,
+                  title: '100% gratuit',
+                  text: 'Référencement sans frais pour les salons professionnels.',
+                },
+                {
+                  icon: ShieldCheck,
+                  title: 'Indépendant',
+                  text: "Lotexpo n'est pas affilié aux organisateurs, sauf mention explicite.",
+                },
+                {
+                  icon: Target,
+                  title: 'Visibilité qualifiée',
+                  text: 'Votre salon est découvert par des visiteurs, exposants et commerciaux.',
+                },
+              ].map((badge) => {
+                const Icon = badge.icon;
+                return (
+                  <div
+                    key={badge.title}
+                    className="bg-card border border-border rounded-2xl p-5 shadow-sm"
+                  >
+                    <div className="bg-primary/10 rounded-xl p-2.5 w-fit mb-3">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="text-sm font-bold text-foreground mb-1">{badge.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{badge.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Highlighted phrase */}
+            <div className="mt-8 max-w-3xl mx-auto rounded-2xl border-l-4 border-primary bg-primary/5 px-5 py-4 text-left">
+              <p className="text-sm md:text-base text-foreground font-medium">
+                Lotexpo ne remplace pas votre site officiel. La plateforme crée un point d'entrée supplémentaire vers votre salon, vos exposants et vos informations officielles.
+              </p>
+            </div>
             <div className="mt-8">
               <Button asChild size="lg" className="gap-2">
                 <Link to="/contact">
@@ -231,36 +349,159 @@ const Organisateurs = () => {
           </div>
         </section>
 
-        {/* Sections */}
+        {/* Lotexpo est / n'est pas */}
         <section className="py-16 px-4">
-          <div className="max-w-4xl mx-auto space-y-12">
-            {SECTIONS.map((section) => {
-              const Icon = section.icon;
-              return (
-                <article key={section.title} className="flex flex-col md:flex-row gap-5">
-                  <div className="shrink-0">
-                    <div className="bg-primary/10 rounded-2xl p-3 w-fit">
-                      <Icon className="h-7 w-7 text-primary" />
-                    </div>
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10 max-w-3xl mx-auto">
+              Une plateforme indépendante, pensée pour renforcer votre visibilité
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
+                <h3 className="text-xl font-bold text-foreground mb-5 flex items-center gap-2">
+                  <CheckCircle2 className="w-6 h-6 text-primary" />
+                  Lotexpo est
+                </h3>
+                <ul className="space-y-3">
+                  {IS_LIST.map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-muted-foreground">
+                      <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-muted/40 border border-border rounded-2xl p-6 md:p-8 shadow-sm">
+                <h3 className="text-xl font-bold text-foreground mb-5 flex items-center gap-2">
+                  <XCircle className="w-6 h-6 text-muted-foreground" />
+                  Lotexpo n'est pas
+                </h3>
+                <ul className="space-y-3">
+                  {IS_NOT_LIST.map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-muted-foreground">
+                      <Minus className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-5 text-center">
+              <p className="text-base text-foreground font-medium">
+                Notre objectif est simple : donner plus de visibilité aux salons professionnels, sans prendre la place des organisateurs.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Rhythmic sections with alternating backgrounds */}
+        {SECTIONS.map((section, index) => {
+          const Icon = section.icon;
+          const tinted = index % 2 === 1;
+          return (
+            <section
+              key={section.title}
+              className={`py-14 px-4 ${tinted ? 'bg-secondary' : 'bg-background'}`}
+            >
+              <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-5">
+                <div className="shrink-0">
+                  <div className="bg-primary/10 rounded-2xl p-3 w-fit">
+                    <Icon className="h-7 w-7 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-foreground mb-4">{section.title}</h2>
-                    <div className="space-y-3 text-muted-foreground leading-relaxed">
-                      {section.paragraphs.map((p, i) => (
-                        <p key={i}>{p}</p>
-                      ))}
-                    </div>
-                    {section.cta && (
-                      <Button asChild variant="outline" className="mt-5 gap-2">
-                        <Link to={section.cta.to}>
-                          {section.cta.label} <ArrowRight className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                    )}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-foreground mb-4">{section.title}</h2>
+                  <div className="space-y-3 text-muted-foreground leading-relaxed">
+                    {section.body}
                   </div>
-                </article>
-              );
-            })}
+                  {section.highlight && (
+                    <div className="mt-5 rounded-xl border-l-4 border-primary bg-primary/5 px-4 py-3">
+                      <p className="text-sm md:text-base text-foreground font-medium">
+                        {section.highlight}
+                      </p>
+                    </div>
+                  )}
+                  {section.cta && (
+                    <Button asChild variant="outline" className="mt-5 gap-2">
+                      <Link to={section.cta.to}>
+                        {section.cta.label} <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </section>
+          );
+        })}
+
+        {/* Widget section */}
+        <section className="py-16 px-4 bg-background">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="bg-primary/10 rounded-2xl p-3 w-fit mb-5">
+                <LayoutGrid className="h-7 w-7 text-primary" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                Affichez les Nouveautés de vos exposants directement sur votre site
+              </h2>
+              <div className="space-y-3 text-muted-foreground leading-relaxed">
+                <p>
+                  Le widget Lotexpo permet d'intégrer sur le site officiel de votre salon les Nouveautés publiées par vos exposants.
+                </p>
+                <p>
+                  Concrètement, vos exposants publient leurs temps forts sur Lotexpo : lancement produit, innovation, démonstration, conférence, animation de stand ou document à télécharger. Ces contenus peuvent ensuite être affichés sur votre propre site grâce au widget.
+                </p>
+                <p>
+                  Vous enrichissez ainsi votre site avec du contenu utile, vivant et orienté visiteurs, <strong className="text-foreground">sans devoir tout produire vous-même</strong>. Les exposants gagnent en visibilité, les visiteurs préparent mieux leur venue, et votre salon bénéficie d'un contenu plus attractif avant son ouverture.
+                </p>
+              </div>
+              <Button asChild className="mt-6 gap-2">
+                <Link to="/contact">
+                  Demander l'intégration du widget <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+            </div>
+
+            {/* Widget mockup */}
+            <div className="rounded-2xl border border-border bg-card shadow-lg overflow-hidden">
+              {/* Fake browser bar */}
+              <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-3">
+                <span className="h-3 w-3 rounded-full bg-destructive/60" />
+                <span className="h-3 w-3 rounded-full bg-yellow-400/70" />
+                <span className="h-3 w-3 rounded-full bg-green-500/60" />
+                <span className="ml-3 text-xs font-medium text-muted-foreground">
+                  Site officiel du salon
+                </span>
+              </div>
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold text-foreground">Nouveautés des exposants</h3>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { title: 'Lancement de notre gamme éco-responsable', exhibitor: 'NovaTech' },
+                    { title: 'Démonstration en direct sur le stand', exhibitor: 'AtelierPro' },
+                    { title: 'Offre spéciale réservée aux visiteurs', exhibitor: 'GreenLine' },
+                  ].map((card) => (
+                    <div
+                      key={card.title}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-background p-3"
+                    >
+                      <div className="h-12 w-12 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-foreground truncate">{card.title}</p>
+                        <p className="text-[11px] text-muted-foreground">{card.exhibitor}</p>
+                      </div>
+                      <span className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground">
+                        Découvrir
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -268,7 +509,7 @@ const Organisateurs = () => {
         <section className="bg-secondary py-16 px-4">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-12">
-              Ce que Lotexpo apporte à votre salon
+              Ce que votre salon gagne avec Lotexpo
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {BENEFITS.map((benefit) => {
@@ -290,6 +531,30 @@ const Organisateurs = () => {
           </div>
         </section>
 
+        {/* CTA before FAQ */}
+        <section className="py-16 px-4 bg-background">
+          <div className="max-w-4xl mx-auto rounded-2xl border border-border bg-secondary px-6 py-10 md:px-10 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+              Vous voulez enrichir la page de votre salon ?
+            </h2>
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
+              Si vous représentez un salon professionnel, vous pouvez nous transmettre vos informations officielles, demander une correction, proposer un partenariat ou découvrir comment intégrer le widget Lotexpo sur votre site.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild size="lg" className="gap-2">
+                <Link to="/contact">
+                  Nous contacter <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="gap-2">
+                <Link to="/nouveautes">
+                  Découvrir les Nouveautés <Sparkles className="w-4 h-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* FAQ */}
         <section className="py-16 px-4">
           <div className="max-w-3xl mx-auto">
@@ -303,7 +568,19 @@ const Organisateurs = () => {
                     <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                     {item.q}
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed pl-7">{item.a}</p>
+                  <p className="text-muted-foreground leading-relaxed pl-7">
+                    {item.q === 'Pouvons-nous corriger ou compléter les informations affichées ?' ? (
+                      <>
+                        Oui. Si vous représentez un salon et souhaitez corriger, compléter ou mettre à jour une information, vous pouvez{' '}
+                        <Link to="/contact" className="text-primary font-medium underline underline-offset-2 hover:text-primary/80">
+                          contacter Lotexpo
+                        </Link>
+                        .
+                      </>
+                    ) : (
+                      item.a
+                    )}
+                  </p>
                 </div>
               ))}
             </div>
