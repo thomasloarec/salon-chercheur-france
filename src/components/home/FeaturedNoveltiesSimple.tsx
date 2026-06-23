@@ -4,6 +4,14 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import NoveltyTile from '@/components/novelty/NoveltyTile';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Novelty {
   id: string;
@@ -31,6 +39,7 @@ interface Novelty {
 
 const FeaturedNoveltiesSimple = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const { data: novelties, isLoading } = useQuery({
     queryKey: ['featured-novelties-simple'],
@@ -114,11 +123,25 @@ const FeaturedNoveltiesSimple = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {novelties.map((novelty) => (
-            <NoveltyTile key={novelty.id} novelty={novelty} />
-          ))}
-        </div>
+        {isMobile ? (
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-4">
+              {novelties.map((novelty) => (
+                <CarouselItem key={novelty.id} className="pl-4 basis-[85%]">
+                  <NoveltyTile novelty={novelty} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-0 -translate-x-1/2" />
+            <CarouselNext className="right-0 translate-x-1/2" />
+          </Carousel>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {novelties.map((novelty) => (
+              <NoveltyTile key={novelty.id} novelty={novelty} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
