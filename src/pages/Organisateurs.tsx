@@ -531,30 +531,6 @@ const Organisateurs = () => {
           </div>
         </section>
 
-        {/* CTA before FAQ */}
-        <section className="py-16 px-4 bg-background">
-          <div className="max-w-4xl mx-auto rounded-2xl border border-border bg-secondary px-6 py-10 md:px-10 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              Vous voulez enrichir la page de votre salon ?
-            </h2>
-            <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
-              Si vous représentez un salon professionnel, vous pouvez nous transmettre vos informations officielles, demander une correction, proposer un partenariat ou découvrir comment intégrer le widget Lotexpo sur votre site.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button asChild size="lg" className="gap-2">
-                <Link to="/contact">
-                  Nous contacter <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="gap-2">
-                <Link to="/nouveautes">
-                  Découvrir les Nouveautés <Sparkles className="w-4 h-4" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
         {/* FAQ */}
         <section className="py-16 px-4">
           <div className="max-w-3xl mx-auto">
