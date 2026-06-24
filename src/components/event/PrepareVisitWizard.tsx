@@ -207,6 +207,27 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     }
   };
 
+  // Build the final keyword list at submit time:
+  // merge validated chips with whatever is still pending in the input,
+  // split on commas, trim, drop empties and case-insensitive duplicates.
+  const buildKeywords = (): string[] => {
+    const fromInput = keywordInput
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const merged = [...keywords, ...fromInput];
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const k of merged) {
+      const key = k.toLowerCase();
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        result.push(k);
+      }
+    }
+    return result;
+  };
+
   const removeKeyword = (kw: string) => {
     setKeywords(prev => prev.filter(k => k !== kw));
   };
