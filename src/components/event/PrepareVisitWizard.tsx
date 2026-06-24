@@ -783,6 +783,31 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 </div>
               ) : results ? (
                 <>
+                  {(results.prioritaires.length + results.optionnels.length) === 0 ? (
+                    /* Empty / few results state */
+                    <div className="text-center py-12 space-y-4">
+                      <p className="font-medium">
+                        Peu d'exposants correspondent précisément à vos critères.
+                      </p>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        Élargissez vos mots-clés ou changez d'objectif pour obtenir des recommandations.
+                      </p>
+                      <div className="flex justify-center pt-2">
+                        <Button onClick={handleReset} className="gap-2">
+                          <ArrowLeft className="w-4 h-4" /> Revenir au questionnaire
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                  <>
+                  {/* Seller mode banner */}
+                  {results.mode === 'seller' && (
+                    <div className="max-w-full overflow-hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 sm:p-4 text-xs sm:text-sm leading-relaxed break-words">
+                      <span className="font-medium">Mode prospection :</span> nous remontons les exposants
+                      dont l'activité suggère qu'ils pourraient être clients de votre offre — à valider sur place.
+                    </div>
+                  )}
+
                   {/* Summary banner */}
                   <div className="max-w-full overflow-hidden bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 text-center space-y-1">
                     <p className="text-xs sm:text-sm font-medium leading-relaxed break-words text-balance">
@@ -857,6 +882,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                       Modifier mes critères
                     </Button>
                   </div>
+                  </>
+                  )}
                 </>
               ) : null}
             </div>
