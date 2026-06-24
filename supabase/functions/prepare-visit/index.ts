@@ -236,8 +236,7 @@ function computeRelevance(
   let matched = 0;
   let strong = 0;
   for (const t of userTokens) {
-    if (haystack.includes(t) || t.includes(haystack) && haystack.length >= 3) matched++;
-    else if (haystack.includes(t)) matched++;
+    if (haystack.includes(t)) matched++;
     if (haystackFort.includes(t)) strong++;
   }
 
