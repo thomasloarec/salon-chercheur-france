@@ -19,12 +19,20 @@ const DURATION_CAPS: Record<string, { total: number; high: number; medium: numbe
   "Journée complète": { total: 30, high: 18, medium: 12 },
 };
 
-// Objective → keyword mapping for type_interet scoring
-const OBJECTIVE_KEYWORDS: Record<string, string> = {
-  "Trouver de nouveaux fournisseurs": "fournisseur",
-  "Identifier des partenaires": "partenaire",
-  "Faire de la veille concurrentielle": "concurrent",
-  "Découvrir les innovations du marché": "veille_techno",
+// Recall ceiling: max candidates handed to Claude (distinct from DURATION_CAPS,
+// which bounds the FINAL selection Claude returns).
+const MAX_CANDIDATES = 60;
+
+// Objective → expected tokens checked against `type_interet` (after norm).
+// Covers the 6 visitor objectives. "Rencontrer mes clients et prospects" is the
+// seller mode and has no type_interet alignment (see mode logic below).
+const OBJECTIVE_TOKENS: Record<string, string[]> = {
+  "Trouver de nouveaux fournisseurs": ["fournisseur", "achat"],
+  "Comparer des solutions": ["fournisseur", "concurrent", "achat"],
+  "Découvrir les innovations du marché": ["veille_techno", "veille"],
+  "Faire de la veille concurrentielle": ["concurrent", "veille"],
+  "Identifier des partenaires": ["partenariat", "partenaire"],
+  // "Rencontrer mes clients et prospects" -> seller mode, no type_interet alignment
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -80,6 +88,44 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Normalize free text: lowercase + strip accents + trim. */
+function norm(s: string): string {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Coerce any value to a string[] (jsonb arrays may arrive as arrays or null). */
+function toStringArray(v: any): string[] {
+  if (Array.isArray(v)) return v.filter((x) => typeof x === "string");
+  if (typeof v === "string" && v.trim()) return [v];
+  return [];
+}
+
+/** Recursively flatten any string leaves out of a jsonb value. */
+function flattenStrings(v: any): string[] {
+  if (typeof v === "string") return [v];
+  if (Array.isArray(v)) return v.flatMap(flattenStrings);
+  if (v && typeof v === "object") return Object.values(v).flatMap(flattenStrings);
+  return [];
+}
+
+/** Extract the bare domain (no scheme, no www, no path) from a website URL. */
+function extractDomain(url: string | null | undefined): string | null {
+  if (!url || typeof url !== "string") return null;
+  let u = url.trim();
+  if (!u) return null;
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+  try {
+    const host = new URL(u).hostname.replace(/^www\./i, "");
+    return host || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Tokenize user keywords: split by comma, "et", spaces for multi-word expressions.
  * Returns deduplicated lowercase tokens ≥ 3 chars plus original expressions.
@@ -129,7 +175,7 @@ async function fetchAiRowsInBatches(
     batches.map((batch) =>
       supabase
         .from("exhibitor_ai")
-        .select("exhibitor_id, secteur_principal, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
+        .select("exhibitor_id, secteur_principal, sous_secteurs, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
         .in("exhibitor_id", batch)
         .range(0, 4999),
     ),
@@ -144,56 +190,78 @@ async function fetchAiRowsInBatches(
   return aiData;
 }
 
-// ── Scoring ──────────────────────────────────────────────────────────────────
+// ── Scoring (recall stage) ────────────────────────────────────────────────────
 
-function scoreExhibitor(
+interface RelevanceMetrics {
+  relevance: number;
+  matched: number;
+  strong: number;
+  objectiveAligned: boolean;
+  roleInProfils: boolean;
+  sectorOverlap: number;
+}
+
+/**
+ * Compute the recall-stage relevance of an exhibitor for a visitor.
+ *
+ * - matched: distinct visitor tokens found in the full haystack
+ *   (secteur_principal + sous_secteurs + produits_services + mots_cles_metier + resume_court)
+ * - strong : distinct visitor tokens found in the strong haystack
+ *   (produits_services + mots_cles_metier only)
+ * - objectiveAligned: a token expected by the objective is present in type_interet
+ *   (always false in seller mode)
+ * - roleInProfils: the visitor role token appears in profils_visiteurs
+ *   (only used as a tie-breaker, and ignored in seller mode)
+ */
+function computeRelevance(
   ex: any,
-  userRole: string,
   userTokens: string[],
-  objectiveKeyword: string | undefined,
-): number {
-  let score = 0;
+  roleToken: string,
+  expectedObjectiveTokens: string[],
+  eventSectorTokens: string[],
+  mode: "buyer" | "seller",
+): RelevanceMetrics {
+  const haystackParts = [
+    ex.secteur_principal || "",
+    ...toStringArray(ex.sous_secteurs),
+    ...toStringArray(ex.produits_services),
+    ...toStringArray(ex.mots_cles_metier),
+    ex.resume_court || "",
+  ];
+  const haystack = norm(haystackParts.join(" "));
+  const haystackFort = norm(
+    [...toStringArray(ex.produits_services), ...toStringArray(ex.mots_cles_metier)].join(" "),
+  );
 
-  const profils = (ex.profils_visiteurs || []).map((p: string) => p.toLowerCase());
-  if (profils.some((p: string) => p.includes(userRole) || userRole.includes(p))) {
-    score += 3;
+  let matched = 0;
+  let strong = 0;
+  for (const t of userTokens) {
+    if (haystack.includes(t)) matched++;
+    if (haystackFort.includes(t)) strong++;
   }
 
-  const motsCles = (ex.mots_cles_metier || []).map((m: string) => m.toLowerCase());
-  let kwScore = 0;
-  for (const token of userTokens) {
-    if (motsCles.some((m: string) => m.includes(token) || token.includes(m))) {
-      kwScore += 2;
-      if (kwScore >= 6) break;
-    }
-  }
-  score += kwScore;
+  const typeInteret = toStringArray(ex.type_interet).map(norm);
+  const objectiveAligned =
+    mode === "seller"
+      ? false
+      : expectedObjectiveTokens.some((et) =>
+          typeInteret.some((ti) => ti.includes(et) || et.includes(ti)),
+        );
 
-  const textFields = [
-    (ex.secteur_principal || "").toLowerCase(),
-    ((ex.produits_services || []) as string[]).join(" ").toLowerCase(),
-    (ex.resume_court || "").toLowerCase(),
-  ].join(" ");
-  let textBonus = 0;
-  for (const token of userTokens) {
-    if (token.length >= 4 && textFields.includes(token)) {
-      textBonus += 1;
-      if (textBonus >= 2) break;
-    }
-  }
-  score += textBonus;
+  const profils = toStringArray(ex.profils_visiteurs).map(norm);
+  const roleInProfils = roleToken.length > 0 &&
+    profils.some((p) => p.includes(roleToken) || roleToken.includes(p));
 
-  if (objectiveKeyword) {
-    const types = (ex.type_interet || []).map((t: string) => t.toLowerCase());
-    if (types.some((t: string) => t.includes(objectiveKeyword))) {
-      score += 1;
-    }
+  let sectorOverlap = 0;
+  for (const st of eventSectorTokens) {
+    if (st.length >= 3 && haystack.includes(st)) sectorOverlap++;
   }
 
-  if (ex.resume_court && ex.resume_court.trim()) score += 1;
-  if (ex.secteur_principal && ex.secteur_principal !== "Non déterminé") score += 1;
+  let relevance = matched * 4 + strong * 2;
+  if (objectiveAligned) relevance += 2;
+  if (mode !== "seller" && roleInProfils) relevance += 1;
 
-  return score;
+  return { relevance, matched, strong, objectiveAligned, roleInProfils, sectorOverlap };
 }
 
 // ── Main handler ─────────────────────────────────────────────────────────────
@@ -245,7 +313,7 @@ Deno.serve(async (req) => {
     // ── GET EVENT ────────────────────────────────────────────────────────────
     const { data: eventData, error: eventError } = await supabase
       .from("events")
-      .select("id, id_event, nom_event")
+      .select("id, id_event, nom_event, secteur")
       .eq("id", eventId)
       .single();
 
@@ -348,6 +416,7 @@ Deno.serve(async (req) => {
         website: ex.website, logo_url: ex.logo_url,
         stand: standByExhibitorId[ex.id] || null,
         secteur_principal: ai.secteur_principal || null,
+        sous_secteurs: ai.sous_secteurs || [],
         produits_services: ai.produits_services || [],
         mots_cles_metier: ai.mots_cles_metier || [],
         profils_visiteurs: ai.profils_visiteurs || [],
@@ -383,6 +452,7 @@ Deno.serve(async (req) => {
         website: ex.website_exposant, logo_url: null,
         stand: standByIdExposant[ex.id_exposant] || null,
         secteur_principal: ai.secteur_principal || null,
+        sous_secteurs: ai.sous_secteurs || [],
         produits_services: ai.produits_services || [],
         mots_cles_metier: ai.mots_cles_metier || [],
         profils_visiteurs: ai.profils_visiteurs || [],
@@ -399,61 +469,114 @@ Deno.serve(async (req) => {
       `${totalAnalyzed} unique exhibitors to score`,
     );
 
-    // ══════ STEP 1: ALGORITHMIC PRE-SCORING ══════════════════════════════════
-    const userRole = role.toLowerCase();
-    const userTokens = tokenizeKeywords(keywords || []);
-    const objectiveKeyword = OBJECTIVE_KEYWORDS[objective]?.toLowerCase();
+    // ══════ STEP 1: RECALL-STAGE SCORING & CANDIDATE POOL ════════════════════
+    const cap = DURATION_CAPS[duration] || DURATION_CAPS["Journée complète"];
 
-    console.log(`🔑 prepare-visit: user tokens = [${userTokens.join(", ")}]`);
+    // Offer/demand mode: a "seller" visitor wants exhibitors likely to BUY/INTEGRATE
+    // their offer. profils_visiteurs is inverted for them, so role bonus and
+    // objective alignment are disabled in seller mode.
+    const mode: "buyer" | "seller" =
+      objective === "Rencontrer mes clients et prospects" ? "seller" : "buyer";
 
-    const scored = allExhibitors.map((ex) => ({
+    const roleToken = norm(role);
+    const rawTokens = tokenizeKeywords(keywords || []);
+    const userTokens = [...new Set(rawTokens.map(norm).filter((t) => t.length >= 3))];
+    const hasKeywords = userTokens.length > 0;
+    const expectedObjectiveTokens = (OBJECTIVE_TOKENS[objective] || []).map(norm);
+    const eventSectorTokens = [
+      ...new Set(flattenStrings(eventData.secteur).map(norm).filter((t) => t.length >= 3)),
+    ];
+
+    console.log(`🔑 prepare-visit: mode=${mode}, user tokens = [${userTokens.join(", ")}]`);
+
+    const enriched = allExhibitors.map((ex) => ({
       ...ex,
-      _score: scoreExhibitor(ex, userRole, userTokens, objectiveKeyword),
+      _m: computeRelevance(
+        ex,
+        userTokens,
+        roleToken,
+        expectedObjectiveTokens,
+        eventSectorTokens,
+        mode,
+      ),
     }));
 
-    scored.sort((a, b) => b._score - a._score);
+    let candidatesPool: any[];
+    let qualified_count: number;
+    let under_threshold: boolean;
 
-    const cap = DURATION_CAPS[duration] || DURATION_CAPS["Journée complète"];
-    const topN = scored.slice(0, cap.total).map(({ _score, ...rest }) => rest);
+    if (hasKeywords) {
+      // Hard relevance floor: only exhibitors matching >= 1 keyword qualify.
+      const qualified = enriched
+        .filter((e) => e._m.matched >= 1)
+        .sort((a, b) => b._m.relevance - a._m.relevance);
+      qualified_count = qualified.length;
+      under_threshold = qualified.length < cap.total;
+      // Never pad with non-qualified exhibitors to fill a quota.
+      candidatesPool = qualified.slice(0, MAX_CANDIDATES);
+    } else {
+      // No keywords: no hard floor. Rank by objective alignment, then event-sector
+      // overlap, then role match (tie-breaker).
+      const ranked = [...enriched].sort((a, b) => {
+        const oa = (b._m.objectiveAligned ? 1 : 0) - (a._m.objectiveAligned ? 1 : 0);
+        if (oa !== 0) return oa;
+        const so = b._m.sectorOverlap - a._m.sectorOverlap;
+        if (so !== 0) return so;
+        return (b._m.roleInProfils ? 1 : 0) - (a._m.roleInProfils ? 1 : 0);
+      });
+      qualified_count = enriched.length;
+      under_threshold = false;
+      candidatesPool = ranked.slice(0, MAX_CANDIDATES);
+    }
+
+    // ══════ STEP 2: CLAUDE SELECTS, RANKS & JUSTIFIES ════════════════════════
+    const candidates = candidatesPool.map((ex) => ({
+      id: ex.id,
+      name: ex.name,
+      secteur_principal: ex.secteur_principal,
+      sous_secteurs: toStringArray(ex.sous_secteurs),
+      produits_services: toStringArray(ex.produits_services),
+      mots_cles_metier: toStringArray(ex.mots_cles_metier),
+      resume_court: ex.resume_court || ex.description || null,
+      domain: extractDomain(ex.website),
+    }));
 
     console.log(
-      `🎯 prepare-visit: duration="${duration}", cap=${cap.total} (high=${cap.high}, medium=${cap.medium}), ` +
-      `top scores — highest=${scored[0]?._score ?? 0}, ` +
-      `lowest of topN=${scored[Math.min(cap.total - 1, scored.length - 1)]?._score ?? 0}`,
+      JSON.stringify({
+        event: eventData.id_event,
+        mode,
+        total_charges: totalAnalyzed,
+        qualified_count,
+        candidates_sent: candidates.length,
+        under_threshold,
+        top5: candidatesPool.slice(0, 5).map((e) => ({ name: e.name, relevance: e._m.relevance })),
+      }),
     );
 
-    // ══════ STEP 2: CLAUDE WRITES REASONS ONLY ═══════════════════════════════
-    const exhibitorsForPrompt = topN.map((ex) => ({
-      id: ex.id, name: ex.name,
-      secteur_principal: ex.secteur_principal,
-      resume_court: ex.resume_court || ex.description || null,
-    }));
+    const keywordsDisplay = (keywords || []).join(", ");
+    const prompt = `Tu es un expert des salons professionnels B2B qui aide un visiteur à prioriser les exposants à rencontrer.
 
-    const keywordsDisplay = (keywords || []).join(", ") || "Non précisé";
-    const prompt = `Tu es un assistant expert en salons professionnels B2B.
-
-Profil visiteur :
+Profil du visiteur :
 - Rôle : ${role}
 - Objectif : ${objective}
-- Centres d'intérêt prioritaires : ${keywordsDisplay}
-- Temps disponible : ${duration || "Non précisé"}
+- Centres d'intérêt (ce qu'il cherche) : ${keywordsDisplay || "non précisés"}
+- Temps disponible : ${duration || "non précisé"}
+${mode === "seller"
+  ? "- IMPORTANT : ce visiteur cherche des exposants susceptibles d'ACHETER ou d'INTÉGRER son offre. Ses centres d'intérêt décrivent ce qu'IL vend, pas ce qu'il veut acheter. Ne retiens que des exposants dont l'activité rend plausible qu'ils soient clients ou intégrateurs de cette offre. En cas de doute, ne l'inclus pas."
+  : ""}
 
-Voici les ${cap.total} exposants présélectionnés pour ce visiteur :
-${JSON.stringify(exhibitorsForPrompt)}
+Voici les exposants candidats présélectionnés, avec leur activité réelle :
+${JSON.stringify(candidates)}
 
-Consignes :
-1. Pour chacun, rédige une raison personnalisée en 1 phrase qui commence par "Pour un profil ${role}..." et mentionne un bénéfice concret lié à l'objectif du visiteur.
-2. Les exposants dont l'activité est directement liée aux centres d'intérêt prioritaires du visiteur (${keywordsDisplay}) doivent être marqués "high" en priorité.
-3. Marque "high" les ${cap.high} meilleurs, "medium" les ${cap.medium} autres.
-4. Ne jamais inventer d'informations absentes des données fournies.
-5. Chaque raison doit être unique et spécifique à l'exposant concerné — ne jamais mélanger les informations entre exposants.
+Ta tâche :
+1. SÉLECTIONNE uniquement les exposants RÉELLEMENT pertinents pour ce visiteur, au maximum ${cap.total}.
+2. Si moins de ${cap.total} exposants sont réellement pertinents au regard de ses centres d'intérêt, RETOURNE-EN MOINS. Ne complète JAMAIS la liste avec des exposants peu pertinents pour atteindre un quota.
+3. Marque en "high" les meilleurs (au plus ${cap.high}), les autres exposants pertinents en "medium".
+4. Pour chacun, rédige UNE phrase de justification SPÉCIFIQUE et ancrée dans son activité réelle : cite l'élément concret (un produit, un service, un mot-clé métier) qui le rend pertinent pour CE visiteur. Varie les formulations ; n'utilise aucune phrase passe-partout et ne commence pas toutes les phrases de la même manière.
+5. N'invente jamais d'information absente des données fournies. Chaque justification doit être propre à l'exposant concerné.
 
-Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avant ou après :
-{
-  "results": [
-    {"exhibitor_id": "...", "raison": "...", "priority": "high" ou "medium"}
-  ]
-}`;
+Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte avant ou après :
+{"results":[{"exhibitor_id":"...","raison":"...","priority":"high"}]}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000);
@@ -518,7 +641,7 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
     }
 
     // ══════ STEP 3: ENRICH & SPLIT RESULTS ═══════════════════════════════════
-    const exhibitorMap = new Map(topN.map((ex) => [String(ex.id), ex]));
+    const exhibitorMap = new Map(candidatesPool.map((ex) => [String(ex.id), ex]));
 
     const enrichItem = (item: any) => {
       const ex = exhibitorMap.get(String(item.exhibitor_id));
@@ -552,6 +675,10 @@ Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avan
       totalExhibitors: totalParticipations,
       analyzedExhibitors: totalAnalyzed,
       ai_duration_ms: aiDurationMs,
+      mode,
+      under_threshold,
+      qualified_count,
+      candidates_sent: candidates.length,
     };
 
     return new Response(JSON.stringify(result), {
