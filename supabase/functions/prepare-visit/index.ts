@@ -190,56 +190,79 @@ async function fetchAiRowsInBatches(
   return aiData;
 }
 
-// ── Scoring ──────────────────────────────────────────────────────────────────
+// ── Scoring (recall stage) ────────────────────────────────────────────────────
 
-function scoreExhibitor(
+interface RelevanceMetrics {
+  relevance: number;
+  matched: number;
+  strong: number;
+  objectiveAligned: boolean;
+  roleInProfils: boolean;
+  sectorOverlap: number;
+}
+
+/**
+ * Compute the recall-stage relevance of an exhibitor for a visitor.
+ *
+ * - matched: distinct visitor tokens found in the full haystack
+ *   (secteur_principal + sous_secteurs + produits_services + mots_cles_metier + resume_court)
+ * - strong : distinct visitor tokens found in the strong haystack
+ *   (produits_services + mots_cles_metier only)
+ * - objectiveAligned: a token expected by the objective is present in type_interet
+ *   (always false in seller mode)
+ * - roleInProfils: the visitor role token appears in profils_visiteurs
+ *   (only used as a tie-breaker, and ignored in seller mode)
+ */
+function computeRelevance(
   ex: any,
-  userRole: string,
   userTokens: string[],
-  objectiveKeyword: string | undefined,
-): number {
-  let score = 0;
+  roleToken: string,
+  expectedObjectiveTokens: string[],
+  eventSectorTokens: string[],
+  mode: "buyer" | "seller",
+): RelevanceMetrics {
+  const haystackParts = [
+    ex.secteur_principal || "",
+    ...toStringArray(ex.sous_secteurs),
+    ...toStringArray(ex.produits_services),
+    ...toStringArray(ex.mots_cles_metier),
+    ex.resume_court || "",
+  ];
+  const haystack = norm(haystackParts.join(" "));
+  const haystackFort = norm(
+    [...toStringArray(ex.produits_services), ...toStringArray(ex.mots_cles_metier)].join(" "),
+  );
 
-  const profils = (ex.profils_visiteurs || []).map((p: string) => p.toLowerCase());
-  if (profils.some((p: string) => p.includes(userRole) || userRole.includes(p))) {
-    score += 3;
+  let matched = 0;
+  let strong = 0;
+  for (const t of userTokens) {
+    if (haystack.includes(t) || t.includes(haystack) && haystack.length >= 3) matched++;
+    else if (haystack.includes(t)) matched++;
+    if (haystackFort.includes(t)) strong++;
   }
 
-  const motsCles = (ex.mots_cles_metier || []).map((m: string) => m.toLowerCase());
-  let kwScore = 0;
-  for (const token of userTokens) {
-    if (motsCles.some((m: string) => m.includes(token) || token.includes(m))) {
-      kwScore += 2;
-      if (kwScore >= 6) break;
-    }
-  }
-  score += kwScore;
+  const typeInteret = toStringArray(ex.type_interet).map(norm);
+  const objectiveAligned =
+    mode === "seller"
+      ? false
+      : expectedObjectiveTokens.some((et) =>
+          typeInteret.some((ti) => ti.includes(et) || et.includes(ti)),
+        );
 
-  const textFields = [
-    (ex.secteur_principal || "").toLowerCase(),
-    ((ex.produits_services || []) as string[]).join(" ").toLowerCase(),
-    (ex.resume_court || "").toLowerCase(),
-  ].join(" ");
-  let textBonus = 0;
-  for (const token of userTokens) {
-    if (token.length >= 4 && textFields.includes(token)) {
-      textBonus += 1;
-      if (textBonus >= 2) break;
-    }
-  }
-  score += textBonus;
+  const profils = toStringArray(ex.profils_visiteurs).map(norm);
+  const roleInProfils = roleToken.length > 0 &&
+    profils.some((p) => p.includes(roleToken) || roleToken.includes(p));
 
-  if (objectiveKeyword) {
-    const types = (ex.type_interet || []).map((t: string) => t.toLowerCase());
-    if (types.some((t: string) => t.includes(objectiveKeyword))) {
-      score += 1;
-    }
+  let sectorOverlap = 0;
+  for (const st of eventSectorTokens) {
+    if (st.length >= 3 && haystack.includes(st)) sectorOverlap++;
   }
 
-  if (ex.resume_court && ex.resume_court.trim()) score += 1;
-  if (ex.secteur_principal && ex.secteur_principal !== "Non déterminé") score += 1;
+  let relevance = matched * 4 + strong * 2;
+  if (objectiveAligned) relevance += 2;
+  if (mode !== "seller" && roleInProfils) relevance += 1;
 
-  return score;
+  return { relevance, matched, strong, objectiveAligned, roleInProfils, sectorOverlap };
 }
 
 // ── Main handler ─────────────────────────────────────────────────────────────
