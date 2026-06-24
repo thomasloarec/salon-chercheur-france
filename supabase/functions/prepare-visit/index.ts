@@ -469,61 +469,114 @@ Deno.serve(async (req) => {
       `${totalAnalyzed} unique exhibitors to score`,
     );
 
-    // ══════ STEP 1: ALGORITHMIC PRE-SCORING ══════════════════════════════════
-    const userRole = role.toLowerCase();
-    const userTokens = tokenizeKeywords(keywords || []);
-    const objectiveKeyword = OBJECTIVE_KEYWORDS[objective]?.toLowerCase();
+    // ══════ STEP 1: RECALL-STAGE SCORING & CANDIDATE POOL ════════════════════
+    const cap = DURATION_CAPS[duration] || DURATION_CAPS["Journée complète"];
 
-    console.log(`🔑 prepare-visit: user tokens = [${userTokens.join(", ")}]`);
+    // Offer/demand mode: a "seller" visitor wants exhibitors likely to BUY/INTEGRATE
+    // their offer. profils_visiteurs is inverted for them, so role bonus and
+    // objective alignment are disabled in seller mode.
+    const mode: "buyer" | "seller" =
+      objective === "Rencontrer mes clients et prospects" ? "seller" : "buyer";
 
-    const scored = allExhibitors.map((ex) => ({
+    const roleToken = norm(role);
+    const rawTokens = tokenizeKeywords(keywords || []);
+    const userTokens = [...new Set(rawTokens.map(norm).filter((t) => t.length >= 3))];
+    const hasKeywords = userTokens.length > 0;
+    const expectedObjectiveTokens = (OBJECTIVE_TOKENS[objective] || []).map(norm);
+    const eventSectorTokens = [
+      ...new Set(flattenStrings(eventData.secteur).map(norm).filter((t) => t.length >= 3)),
+    ];
+
+    console.log(`🔑 prepare-visit: mode=${mode}, user tokens = [${userTokens.join(", ")}]`);
+
+    const enriched = allExhibitors.map((ex) => ({
       ...ex,
-      _score: scoreExhibitor(ex, userRole, userTokens, objectiveKeyword),
+      _m: computeRelevance(
+        ex,
+        userTokens,
+        roleToken,
+        expectedObjectiveTokens,
+        eventSectorTokens,
+        mode,
+      ),
     }));
 
-    scored.sort((a, b) => b._score - a._score);
+    let candidatesPool: any[];
+    let qualified_count: number;
+    let under_threshold: boolean;
 
-    const cap = DURATION_CAPS[duration] || DURATION_CAPS["Journée complète"];
-    const topN = scored.slice(0, cap.total).map(({ _score, ...rest }) => rest);
+    if (hasKeywords) {
+      // Hard relevance floor: only exhibitors matching >= 1 keyword qualify.
+      const qualified = enriched
+        .filter((e) => e._m.matched >= 1)
+        .sort((a, b) => b._m.relevance - a._m.relevance);
+      qualified_count = qualified.length;
+      under_threshold = qualified.length < cap.total;
+      // Never pad with non-qualified exhibitors to fill a quota.
+      candidatesPool = qualified.slice(0, MAX_CANDIDATES);
+    } else {
+      // No keywords: no hard floor. Rank by objective alignment, then event-sector
+      // overlap, then role match (tie-breaker).
+      const ranked = [...enriched].sort((a, b) => {
+        const oa = (b._m.objectiveAligned ? 1 : 0) - (a._m.objectiveAligned ? 1 : 0);
+        if (oa !== 0) return oa;
+        const so = b._m.sectorOverlap - a._m.sectorOverlap;
+        if (so !== 0) return so;
+        return (b._m.roleInProfils ? 1 : 0) - (a._m.roleInProfils ? 1 : 0);
+      });
+      qualified_count = enriched.length;
+      under_threshold = false;
+      candidatesPool = ranked.slice(0, MAX_CANDIDATES);
+    }
+
+    // ══════ STEP 2: CLAUDE SELECTS, RANKS & JUSTIFIES ════════════════════════
+    const candidates = candidatesPool.map((ex) => ({
+      id: ex.id,
+      name: ex.name,
+      secteur_principal: ex.secteur_principal,
+      sous_secteurs: toStringArray(ex.sous_secteurs),
+      produits_services: toStringArray(ex.produits_services),
+      mots_cles_metier: toStringArray(ex.mots_cles_metier),
+      resume_court: ex.resume_court || ex.description || null,
+      domain: extractDomain(ex.website),
+    }));
 
     console.log(
-      `🎯 prepare-visit: duration="${duration}", cap=${cap.total} (high=${cap.high}, medium=${cap.medium}), ` +
-      `top scores — highest=${scored[0]?._score ?? 0}, ` +
-      `lowest of topN=${scored[Math.min(cap.total - 1, scored.length - 1)]?._score ?? 0}`,
+      JSON.stringify({
+        event: eventData.id_event,
+        mode,
+        total_charges: totalAnalyzed,
+        qualified_count,
+        candidates_sent: candidates.length,
+        under_threshold,
+        top5: candidatesPool.slice(0, 5).map((e) => ({ name: e.name, relevance: e._m.relevance })),
+      }),
     );
 
-    // ══════ STEP 2: CLAUDE WRITES REASONS ONLY ═══════════════════════════════
-    const exhibitorsForPrompt = topN.map((ex) => ({
-      id: ex.id, name: ex.name,
-      secteur_principal: ex.secteur_principal,
-      resume_court: ex.resume_court || ex.description || null,
-    }));
+    const keywordsDisplay = (keywords || []).join(", ");
+    const prompt = `Tu es un expert des salons professionnels B2B qui aide un visiteur à prioriser les exposants à rencontrer.
 
-    const keywordsDisplay = (keywords || []).join(", ") || "Non précisé";
-    const prompt = `Tu es un assistant expert en salons professionnels B2B.
-
-Profil visiteur :
+Profil du visiteur :
 - Rôle : ${role}
 - Objectif : ${objective}
-- Centres d'intérêt prioritaires : ${keywordsDisplay}
-- Temps disponible : ${duration || "Non précisé"}
+- Centres d'intérêt (ce qu'il cherche) : ${keywordsDisplay || "non précisés"}
+- Temps disponible : ${duration || "non précisé"}
+${mode === "seller"
+  ? "- IMPORTANT : ce visiteur cherche des exposants susceptibles d'ACHETER ou d'INTÉGRER son offre. Ses centres d'intérêt décrivent ce qu'IL vend, pas ce qu'il veut acheter. Ne retiens que des exposants dont l'activité rend plausible qu'ils soient clients ou intégrateurs de cette offre. En cas de doute, ne l'inclus pas."
+  : ""}
 
-Voici les ${cap.total} exposants présélectionnés pour ce visiteur :
-${JSON.stringify(exhibitorsForPrompt)}
+Voici les exposants candidats présélectionnés, avec leur activité réelle :
+${JSON.stringify(candidates)}
 
-Consignes :
-1. Pour chacun, rédige une raison personnalisée en 1 phrase qui commence par "Pour un profil ${role}..." et mentionne un bénéfice concret lié à l'objectif du visiteur.
-2. Les exposants dont l'activité est directement liée aux centres d'intérêt prioritaires du visiteur (${keywordsDisplay}) doivent être marqués "high" en priorité.
-3. Marque "high" les ${cap.high} meilleurs, "medium" les ${cap.medium} autres.
-4. Ne jamais inventer d'informations absentes des données fournies.
-5. Chaque raison doit être unique et spécifique à l'exposant concerné — ne jamais mélanger les informations entre exposants.
+Ta tâche :
+1. SÉLECTIONNE uniquement les exposants RÉELLEMENT pertinents pour ce visiteur, au maximum ${cap.total}.
+2. Si moins de ${cap.total} exposants sont réellement pertinents au regard de ses centres d'intérêt, RETOURNE-EN MOINS. Ne complète JAMAIS la liste avec des exposants peu pertinents pour atteindre un quota.
+3. Marque en "high" les meilleurs (au plus ${cap.high}), les autres exposants pertinents en "medium".
+4. Pour chacun, rédige UNE phrase de justification SPÉCIFIQUE et ancrée dans son activité réelle : cite l'élément concret (un produit, un service, un mot-clé métier) qui le rend pertinent pour CE visiteur. Varie les formulations ; n'utilise aucune phrase passe-partout et ne commence pas toutes les phrases de la même manière.
+5. N'invente jamais d'information absente des données fournies. Chaque justification doit être propre à l'exposant concerné.
 
-Retourne UNIQUEMENT un JSON valide sans markdown, sans backtick, sans texte avant ou après :
-{
-  "results": [
-    {"exhibitor_id": "...", "raison": "...", "priority": "high" ou "medium"}
-  ]
-}`;
+Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte avant ou après :
+{"results":[{"exhibitor_id":"...","raison":"...","priority":"high"}]}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000);
