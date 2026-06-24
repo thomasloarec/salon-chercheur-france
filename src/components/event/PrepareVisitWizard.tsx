@@ -71,6 +71,9 @@ interface Results {
   totalExhibitors: number;
   analyzedExhibitors: number;
   ai_duration_ms?: number;
+  under_threshold?: boolean;
+  qualified_count?: number;
+  mode?: string;
 }
 
 // ── Wizard Session Tracking ──────────────────────────────────────────────────
@@ -204,14 +207,39 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     }
   };
 
+  // Build the final keyword list at submit time:
+  // merge validated chips with whatever is still pending in the input,
+  // split on commas, trim, drop empties and case-insensitive duplicates.
+  const buildKeywords = (): string[] => {
+    const fromInput = keywordInput
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const merged = [...keywords, ...fromInput];
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const k of merged) {
+      const key = k.toLowerCase();
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        result.push(k);
+      }
+    }
+    return result;
+  };
+
   const removeKeyword = (kw: string) => {
     setKeywords(prev => prev.filter(k => k !== kw));
   };
 
   const handleKeywordInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && keywordInput.trim()) {
+    if ((e.key === 'Enter' || e.key === ',') && keywordInput.trim()) {
       e.preventDefault();
-      addKeyword(keywordInput);
+      keywordInput
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .forEach(addKeyword);
       setKeywordInput('');
     }
   };
@@ -222,13 +250,18 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setBannerDismissed(false);
     setLoadingComplete(false);
 
+    // Flush any pending input text into the keyword list before sending.
+    const finalKeywords = buildKeywords();
+    setKeywords(finalKeywords);
+    setKeywordInput('');
+
     try {
       const { data, error: fnError } = await supabase.functions.invoke('prepare-visit', {
         body: {
           eventId: event.id,
           role,
           objective,
-          keywords,
+          keywords: finalKeywords,
           duration,
         },
       });
@@ -750,6 +783,31 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 </div>
               ) : results ? (
                 <>
+                  {(results.prioritaires.length + results.optionnels.length) === 0 ? (
+                    /* Empty / few results state */
+                    <div className="text-center py-12 space-y-4">
+                      <p className="font-medium">
+                        Peu d'exposants correspondent précisément à vos critères.
+                      </p>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        Élargissez vos mots-clés ou changez d'objectif pour obtenir des recommandations.
+                      </p>
+                      <div className="flex justify-center pt-2">
+                        <Button onClick={handleReset} className="gap-2">
+                          <ArrowLeft className="w-4 h-4" /> Revenir au questionnaire
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                  <>
+                  {/* Seller mode banner */}
+                  {results.mode === 'seller' && (
+                    <div className="max-w-full overflow-hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 sm:p-4 text-xs sm:text-sm leading-relaxed break-words">
+                      <span className="font-medium">Mode prospection :</span> nous remontons les exposants
+                      dont l'activité suggère qu'ils pourraient être clients de votre offre — à valider sur place.
+                    </div>
+                  )}
+
                   {/* Summary banner */}
                   <div className="max-w-full overflow-hidden bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 text-center space-y-1">
                     <p className="text-xs sm:text-sm font-medium leading-relaxed break-words text-balance">
@@ -824,6 +882,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                       Modifier mes critères
                     </Button>
                   </div>
+                  </>
+                  )}
                 </>
               ) : null}
             </div>
