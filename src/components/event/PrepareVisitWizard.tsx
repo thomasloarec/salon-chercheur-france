@@ -233,9 +233,13 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   };
 
   const handleKeywordInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && keywordInput.trim()) {
+    if ((e.key === 'Enter' || e.key === ',') && keywordInput.trim()) {
       e.preventDefault();
-      addKeyword(keywordInput);
+      keywordInput
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .forEach(addKeyword);
       setKeywordInput('');
     }
   };
@@ -246,13 +250,18 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     setBannerDismissed(false);
     setLoadingComplete(false);
 
+    // Flush any pending input text into the keyword list before sending.
+    const finalKeywords = buildKeywords();
+    setKeywords(finalKeywords);
+    setKeywordInput('');
+
     try {
       const { data, error: fnError } = await supabase.functions.invoke('prepare-visit', {
         body: {
           eventId: event.id,
           role,
           objective,
-          keywords,
+          keywords: finalKeywords,
           duration,
         },
       });
