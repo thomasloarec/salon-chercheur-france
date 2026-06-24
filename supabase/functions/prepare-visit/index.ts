@@ -641,7 +641,7 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
     }
 
     // ══════ STEP 3: ENRICH & SPLIT RESULTS ═══════════════════════════════════
-    const exhibitorMap = new Map(topN.map((ex) => [String(ex.id), ex]));
+    const exhibitorMap = new Map(candidatesPool.map((ex) => [String(ex.id), ex]));
 
     const enrichItem = (item: any) => {
       const ex = exhibitorMap.get(String(item.exhibitor_id));
@@ -675,6 +675,10 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
       totalExhibitors: totalParticipations,
       analyzedExhibitors: totalAnalyzed,
       ai_duration_ms: aiDurationMs,
+      mode,
+      under_threshold,
+      qualified_count,
+      candidates_sent: candidates.length,
     };
 
     return new Response(JSON.stringify(result), {
