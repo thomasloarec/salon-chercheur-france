@@ -81,7 +81,7 @@ const Index = () => {
                       Notre objectif est simple : donner plus de visibilité à votre événement, valoriser vos exposants et rediriger les utilisateurs vers vos informations officielles.
                     </p>
                   </div>
-                  <Button asChild size="lg" className="mt-6 gap-2 w-full sm:w-auto h-auto whitespace-normal text-center">
+                  <Button asChild size="lg" className="mt-6 gap-2 w-full sm:w-auto h-auto whitespace-normal text-center py-3">
                     <Link to="/organisateurs">
                       Découvrir les avantages pour les organisateurs <ArrowRight className="w-4 h-4 flex-shrink-0" />
                     </Link>
