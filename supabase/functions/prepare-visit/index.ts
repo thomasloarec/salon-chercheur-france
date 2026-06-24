@@ -396,7 +396,7 @@ Deno.serve(async (req) => {
 
     const legacyAiData = await fetchAiRowsInBatches(
       supabase,
-      legacyExhibitors.map((e) => String(e.id)),
+      legacyExhibitors.map((e) => e.id_exposant).filter(Boolean),
     );
     const aiData = { ...modernAiData, ...legacyAiData };
 
@@ -445,7 +445,7 @@ Deno.serve(async (req) => {
       seenIds.add(key);
       seenNames.add(normalizedName);
 
-      const ai = aiData[String(ex.id)] || {};
+      const ai = aiData[ex.id_exposant] || {};
       allExhibitors.push({
         id: ex.id_exposant || String(ex.id), name,
         description: ex.exposant_description || "",
