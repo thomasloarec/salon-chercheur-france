@@ -71,6 +71,9 @@ interface Results {
   totalExhibitors: number;
   analyzedExhibitors: number;
   ai_duration_ms?: number;
+  under_threshold?: boolean;
+  qualified_count?: number;
+  mode?: string;
 }
 
 // ── Wizard Session Tracking ──────────────────────────────────────────────────
