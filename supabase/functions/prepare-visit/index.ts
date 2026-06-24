@@ -19,12 +19,20 @@ const DURATION_CAPS: Record<string, { total: number; high: number; medium: numbe
   "Journée complète": { total: 30, high: 18, medium: 12 },
 };
 
-// Objective → keyword mapping for type_interet scoring
-const OBJECTIVE_KEYWORDS: Record<string, string> = {
-  "Trouver de nouveaux fournisseurs": "fournisseur",
-  "Identifier des partenaires": "partenaire",
-  "Faire de la veille concurrentielle": "concurrent",
-  "Découvrir les innovations du marché": "veille_techno",
+// Recall ceiling: max candidates handed to Claude (distinct from DURATION_CAPS,
+// which bounds the FINAL selection Claude returns).
+const MAX_CANDIDATES = 60;
+
+// Objective → expected tokens checked against `type_interet` (after norm).
+// Covers the 6 visitor objectives. "Rencontrer mes clients et prospects" is the
+// seller mode and has no type_interet alignment (see mode logic below).
+const OBJECTIVE_TOKENS: Record<string, string[]> = {
+  "Trouver de nouveaux fournisseurs": ["fournisseur", "achat"],
+  "Comparer des solutions": ["fournisseur", "concurrent", "achat"],
+  "Découvrir les innovations du marché": ["veille_techno", "veille"],
+  "Faire de la veille concurrentielle": ["concurrent", "veille"],
+  "Identifier des partenaires": ["partenariat", "partenaire"],
+  // "Rencontrer mes clients et prospects" -> seller mode, no type_interet alignment
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
