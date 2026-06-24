@@ -313,7 +313,7 @@ Deno.serve(async (req) => {
     // ── GET EVENT ────────────────────────────────────────────────────────────
     const { data: eventData, error: eventError } = await supabase
       .from("events")
-      .select("id, id_event, nom_event")
+      .select("id, id_event, nom_event, secteur")
       .eq("id", eventId)
       .single();
 
