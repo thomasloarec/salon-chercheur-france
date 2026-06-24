@@ -88,6 +88,44 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Normalize free text: lowercase + strip accents + trim. */
+function norm(s: string): string {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Coerce any value to a string[] (jsonb arrays may arrive as arrays or null). */
+function toStringArray(v: any): string[] {
+  if (Array.isArray(v)) return v.filter((x) => typeof x === "string");
+  if (typeof v === "string" && v.trim()) return [v];
+  return [];
+}
+
+/** Recursively flatten any string leaves out of a jsonb value. */
+function flattenStrings(v: any): string[] {
+  if (typeof v === "string") return [v];
+  if (Array.isArray(v)) return v.flatMap(flattenStrings);
+  if (v && typeof v === "object") return Object.values(v).flatMap(flattenStrings);
+  return [];
+}
+
+/** Extract the bare domain (no scheme, no www, no path) from a website URL. */
+function extractDomain(url: string | null | undefined): string | null {
+  if (!url || typeof url !== "string") return null;
+  let u = url.trim();
+  if (!u) return null;
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+  try {
+    const host = new URL(u).hostname.replace(/^www\./i, "");
+    return host || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Tokenize user keywords: split by comma, "et", spaces for multi-word expressions.
  * Returns deduplicated lowercase tokens ≥ 3 chars plus original expressions.
