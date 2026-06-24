@@ -175,7 +175,7 @@ async function fetchAiRowsInBatches(
     batches.map((batch) =>
       supabase
         .from("exhibitor_ai")
-        .select("exhibitor_id, secteur_principal, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
+        .select("exhibitor_id, secteur_principal, sous_secteurs, produits_services, mots_cles_metier, profils_visiteurs, type_interet, resume_court")
         .in("exhibitor_id", batch)
         .range(0, 4999),
     ),
