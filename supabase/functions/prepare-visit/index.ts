@@ -553,6 +553,21 @@ Deno.serve(async (req) => {
       }),
     );
 
+    if (candidates.length === 0) {
+      console.log("prepare-visit: pool de candidats vide → court-circuit, aucun appel Claude");
+      return new Response(JSON.stringify({
+        prioritaires: [],
+        optionnels: [],
+        totalExhibitors: totalParticipations,
+        analyzedExhibitors: totalAnalyzed,
+        ai_duration_ms: 0,
+        mode,
+        under_threshold: true,
+        qualified_count,
+        candidates_sent: 0,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const keywordsDisplay = (keywords || []).join(", ");
     const prompt = `Tu es un expert des salons professionnels B2B qui aide un visiteur à prioriser les exposants à rencontrer.
 
@@ -633,11 +648,19 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
     try {
       recommendations = parseClaudeRecommendations(rawContent);
     } catch {
-      console.error("Failed to parse AI response:", rawContent.slice(0, 500));
-      return new Response(
-        JSON.stringify({ error: "Failed to parse AI response", raw: rawContent.slice(0, 200) }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      console.error("prepare-visit: réponse Claude non parsable (traité comme vide):", rawContent.slice(0, 500));
+      return new Response(JSON.stringify({
+        prioritaires: [],
+        optionnels: [],
+        totalExhibitors: totalParticipations,
+        analyzedExhibitors: totalAnalyzed,
+        ai_duration_ms: aiDurationMs,
+        mode,
+        under_threshold,
+        qualified_count,
+        candidates_sent: candidates.length,
+        ai_parse_failed: true,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ══════ STEP 3: ENRICH & SPLIT RESULTS ═══════════════════════════════════
