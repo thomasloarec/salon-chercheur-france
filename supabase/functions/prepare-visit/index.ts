@@ -35,6 +35,18 @@ const OBJECTIVE_TOKENS: Record<string, string[]> = {
   // "Rencontrer mes clients et prospects" -> seller mode, no type_interet alignment
 };
 
+// Objective → guidance steering Claude's FINAL selection (which exhibitors go
+// "high") and the angle of justifications. Keys = canonical objective strings.
+// Does NOT affect scoring, the relevance floor, or the candidate pool.
+const OBJECTIVE_GUIDANCE: Record<string, string> = {
+  "Trouver de nouveaux fournisseurs": "privilégie les fabricants, marques et producteurs capables de fournir ce que cherche le visiteur, plutôt que des prestataires ou des plateformes.",
+  "Comparer des solutions": "privilégie plusieurs exposants comparables sur la même catégorie, pour permettre une mise en concurrence.",
+  "Découvrir les innovations du marché": "privilégie les exposants au signal d'innovation ou de nouveauté (nouveaux produits, technologies, approches différenciantes).",
+  "Faire de la veille concurrentielle": "privilégie les acteurs représentatifs et les références du secteur du visiteur, utiles pour observer le marché.",
+  "Identifier des partenaires": "privilégie les exposants complémentaires (non strictement concurrents) avec qui une collaboration serait pertinente.",
+  "Rencontrer mes clients et prospects": "privilégie les exposants dont l'activité suggère qu'ils pourraient acheter ou intégrer l'offre du visiteur.",
+};
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function stripCodeFences(value: string): string {
