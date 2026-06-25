@@ -230,8 +230,8 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       onClick={() => togglePlanExpand(event.id)}
                       className="flex items-center justify-between w-full text-left group"
                     >
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
+                       <div className="flex items-center gap-2">
+                         <Route className="h-5 w-5 text-primary" />
                         <h4 className="font-semibold">Mes exposants à voir</h4>
                         <Badge variant="secondary" className="text-xs">
                           {(visitPlan.prioritaires?.length || 0) + (visitPlan.optionnels?.length || 0)}
