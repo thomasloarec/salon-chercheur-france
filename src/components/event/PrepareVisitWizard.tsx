@@ -156,7 +156,11 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
   const [duration, setDuration] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  // Chips de suggestion = mots-clés suggérés du salon (jsonb → string[]).
+  // Pas de fetch exhibitor_ai, pas de liste en dur de repli.
+  const suggestions: string[] = Array.isArray(event.suggested_keywords)
+    ? (event.suggested_keywords as string[])
+    : [];
   const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
