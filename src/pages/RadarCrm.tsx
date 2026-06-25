@@ -319,18 +319,18 @@ const RadarCrmPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <BenefitCard
             icon={<Target className="h-5 w-5" />}
-            title="Détectez vos comptes"
-            text="Repérez automatiquement les entreprises de votre réseau présentes sur les salons Lotexpo."
+            title="Repérez les comptes actifs sur les salons"
+            text="Détectez automatiquement les entreprises de votre CRM déjà présentes comme exposants sur des salons professionnels."
           />
           <BenefitCard
             icon={<Map className="h-5 w-5" />}
-            title="Priorisez vos déplacements"
-            text="Identifiez les événements où plusieurs prospects ou clients seront présents."
+            title="Identifiez les salons qui concentrent vos opportunités"
+            text="Ne choisissez plus vos déplacements à l'intuition. Priorisez les événements où plusieurs clients, prospects ou concurrents sont présents."
           />
           <BenefitCard
             icon={<Rocket className="h-5 w-5" />}
-            title="Passez à l'action"
-            text="Ajoutez les salons à vos favoris, préparez vos visites et contactez les bons comptes au bon moment."
+            title="Transformez la présence salon en action commerciale"
+            text="Préparez votre visite, contactez les bons comptes avant l'événement et arrivez sur place avec une vraie liste de priorités."
           />
         </div>
       </section>
