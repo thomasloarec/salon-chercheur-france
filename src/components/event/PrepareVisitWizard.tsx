@@ -1197,6 +1197,34 @@ function LoadingScreen({
 }
 
 // --- Recommendation Card ---
+// One-time mount fade-in wrapper for results cards (honours prefers-reduced-motion).
+const PREFERS_REDUCED_MOTION =
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function CascadeItem({ delay, children }: { delay: number; children: React.ReactNode }) {
+  // Starts visible when reduced motion is preferred → no animation.
+  const [shown, setShown] = useState(PREFERS_REDUCED_MOTION);
+  useEffect(() => {
+    if (PREFERS_REDUCED_MOTION) return;
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  if (PREFERS_REDUCED_MOTION) return <>{children}</>;
+  return (
+    <div
+      style={{ transitionDelay: `${delay}ms` }}
+      className={cn(
+        'transition-all duration-300 ease-out will-change-transform',
+        shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1.5'
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function RecommendationCard({
   rec,
   variant,
