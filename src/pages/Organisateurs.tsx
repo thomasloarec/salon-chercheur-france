@@ -362,7 +362,7 @@ const Organisateurs = () => {
             </div>
             <div className="mt-8">
               <Button asChild size="lg" className="gap-2">
-                <Link to="/contact">
+                <Link to="/trouver-un-salon">
                   Vérifier la fiche de mon salon <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
