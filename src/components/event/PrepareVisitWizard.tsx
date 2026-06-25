@@ -1100,10 +1100,26 @@ function LoadingScreen({
   complete: boolean;
   onComplete: () => void;
 }) {
-  // Quand le backend répond → transition vers les résultats.
-  // (Aucune simulation de pourcentage : indicateur indéterminé uniquement.)
+  // Progression ESTIMÉE par le temps écoulé (le backend ne renvoie aucun avancement).
+  // Courbe décélérante plafonnée à 90% : progress = 90 * (1 - exp(-t/12000)).
+  // À l'arrivée réelle de la réponse (complete) → saut à 100% une fois, puis onComplete.
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (complete) return; // l'effet "complete" ci-dessous prend le relais
+    const start = Date.now();
+    const id = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const value = 90 * (1 - Math.exp(-elapsed / 12000)); // plafonne à 90, jamais au-delà
+      setProgress(value);
+    }, 100);
+    return () => clearInterval(id);
+  }, [complete]);
+
+  // Quand le backend répond → barre à 100% puis transition vers les résultats.
   useEffect(() => {
     if (!complete) return;
+    setProgress(100);
     const timer = setTimeout(() => onComplete(), 500);
     return () => clearTimeout(timer);
   }, [complete, onComplete]);
@@ -1116,10 +1132,6 @@ function LoadingScreen({
     <div className="flex flex-col items-center justify-center py-14 gap-8 px-4">
       {/* Keyframes locales (indéterminé + marquee vertical) */}
       <style>{`
-        @keyframes pv-indeterminate {
-          0% { left: -40%; }
-          100% { left: 100%; }
-        }
         @keyframes pv-marquee-up {
           0% { transform: translateY(0); }
           100% { transform: translateY(-50%); }
@@ -1137,12 +1149,12 @@ function LoadingScreen({
         </p>
       </div>
 
-      {/* Indicateur d'activité INDÉTERMINÉ */}
+      {/* Barre de progression honnête (estimation temporelle, plafond 90% → 100% à l'arrivée) */}
       <div className="w-full max-w-xs space-y-3">
         <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
           <div
-            className="absolute top-0 h-full w-2/5 rounded-full bg-primary"
-            style={{ animation: 'pv-indeterminate 1.2s ease-in-out infinite' }}
+            className="absolute top-0 left-0 h-full rounded-full bg-primary transition-[width] duration-200 ease-out"
+            style={{ width: `${progress}%` }}
           />
         </div>
         <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium min-h-[1.5rem]">
