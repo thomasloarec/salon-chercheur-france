@@ -516,46 +516,45 @@ export default function Exposants() {
           <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="item-1" className="border rounded-lg px-6">
               <AccordionTrigger className="text-left hover:no-underline">
-                Comment fonctionne le Premium ?
+                Pourquoi publier une nouveauté avant le salon ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Le Premium débloque toutes les fonctionnalités pour un événement spécifique. 
-                Vous pouvez publier jusqu'à 5 nouveautés, collecter tous les leads 
-                sans limitation, et exporter vos données au format CSV pour les intégrer à votre CRM.
+                Parce que les visiteurs préparent de plus en plus leur venue en amont. Une nouveauté
+                claire leur donne une raison concrète d'ajouter votre stand à leur parcours avant même
+                l'ouverture du salon.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2" className="border rounded-lg px-6">
               <AccordionTrigger className="text-left hover:no-underline">
-                Le paiement est-il par mois ou par événement ?
+                Est-ce réservé aux entreprises avec un grand stand ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Le Premium est facturé par événement (99€ HT). Cela signifie que vous payez une fois 
-                pour obtenir tous les avantages Premium sur un salon spécifique. Si vous participez à 
-                plusieurs salons, vous pouvez activer le Premium sur chacun d'entre eux indépendamment.
+                Non. Lotexpo est justement utile aux exposants qui veulent être repérés au-delà de leur
+                emplacement physique, qu'ils aient un petit stand, un grand stand ou une visibilité
+                limitée sur le salon.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-3" className="border rounded-lg px-6">
               <AccordionTrigger className="text-left hover:no-underline">
-                Puis-je annuler à tout moment ?
+                Que puis-je publier comme nouveauté ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Le Premium étant lié à un événement spécifique et non à un abonnement, 
-                il n'y a pas de renouvellement automatique. Vous gardez l'accès Premium jusqu'à 
-                la fin de l'événement concerné. Il n'y a donc rien à annuler.
+                Vous pouvez publier un nouveau produit, une démonstration, une offre spéciale, un
+                service, une innovation, un cas client, une conférence, une animation ou tout élément
+                qui donne aux visiteurs une raison de venir vous rencontrer.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-4" className="border rounded-lg px-6">
               <AccordionTrigger className="text-left hover:no-underline">
-                Combien de leads puis-je espérer ?
+                Le Premium garantit-il des leads ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Le nombre de leads dépend de plusieurs facteurs : la qualité de vos nouveautés, 
-                l'attractivité de votre offre, et la taille de l'événement. Nos exposants Premium 
-                génèrent un traffic lors du salon et un nombre de leads toujours plus élevés que 
-                les exposants qui n'utilisent pas Lotexpo.
+                Non. Le Premium ne garantit pas un volume de contacts. Il augmente votre capacité à
+                publier, mesurer et exploiter vos signaux d'intérêt. Les résultats dépendront de votre
+                salon, de votre offre, de votre message et de votre audience.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
