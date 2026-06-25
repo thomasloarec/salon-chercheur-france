@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SectorTag } from '@/components/ui/sector-tag';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight, CalendarX, Store } from 'lucide-react';
+import { Calendar, Sparkles, Ticket, ChevronDown, ChevronUp, Building2, CheckCircle2, ArrowRight, CalendarX, Store, Route } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useVisitPlansForUser, VisitPlan } from '@/hooks/useVisitPlan';
@@ -230,8 +230,8 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       onClick={() => togglePlanExpand(event.id)}
                       className="flex items-center justify-between w-full text-left group"
                     >
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
+                       <div className="flex items-center gap-2">
+                         <Route className="h-5 w-5 text-primary" />
                         <h4 className="font-semibold">Mes exposants à voir</h4>
                         <Badge variant="secondary" className="text-xs">
                           {(visitPlan.prioritaires?.length || 0) + (visitPlan.optionnels?.length || 0)}
