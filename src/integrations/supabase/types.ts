@@ -970,6 +970,7 @@ export type Database = {
           seo_source_hash: string | null
           slug: string | null
           status_event: string | null
+          suggested_keywords: Json | null
           tarif: string | null
           type_event: string | null
           updated_at: string | null
@@ -1024,6 +1025,7 @@ export type Database = {
           seo_source_hash?: string | null
           slug?: string | null
           status_event?: string | null
+          suggested_keywords?: Json | null
           tarif?: string | null
           type_event?: string | null
           updated_at?: string | null
@@ -1078,6 +1080,7 @@ export type Database = {
           seo_source_hash?: string | null
           slug?: string | null
           status_event?: string | null
+          suggested_keywords?: Json | null
           tarif?: string | null
           type_event?: string | null
           updated_at?: string | null
@@ -6397,6 +6400,7 @@ export type Database = {
         Args: { p_only_future?: boolean }
         Returns: Json
       }
+      refresh_event_suggested_keywords: { Args: never; Returns: number }
       related_events: {
         Args: { p_event_id: string; p_limit?: number }
         Returns: {
