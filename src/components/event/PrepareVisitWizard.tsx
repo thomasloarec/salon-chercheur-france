@@ -860,7 +860,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   )}
 
                   {/* Summary banner */}
-                  <div className="max-w-full overflow-hidden bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 text-center space-y-1">
+                  <div className="max-w-full overflow-hidden bg-secondary rounded-md p-3 sm:p-4 text-center space-y-1">
                     <p className="text-xs sm:text-sm font-medium leading-relaxed break-words text-balance">
                       Basé sur votre profil, voici les{' '}
                       <span className="text-primary font-bold">{results.prioritaires.length + results.optionnels.length}</span>{' '}
@@ -876,7 +876,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   {results.prioritaires.length > 0 && (
                     <section className="min-w-0 overflow-x-hidden">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 break-words">
-                        ⭐ Vos incontournables
+                        <Star className="w-5 h-5 text-primary flex-shrink-0" /> Vos incontournables
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                         {results.prioritaires.map((rec) => (
@@ -904,7 +904,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   {results.optionnels.length > 0 && (
                     <section className="min-w-0 overflow-x-hidden">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-muted-foreground break-words">
-                        💡 À voir si vous avez le temps
+                        <Clock className="w-5 h-5 text-muted-foreground flex-shrink-0" /> À voir si vous avez le temps
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                         {results.optionnels.map((rec) => (
