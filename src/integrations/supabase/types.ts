@@ -1429,6 +1429,51 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_ai_sans_site_backup_20260625: {
+        Row: {
+          enriched_at: string | null
+          exhibitor_id: string | null
+          id: string | null
+          mots_cles_metier: Json | null
+          produits_services: Json | null
+          profils_visiteurs: Json | null
+          resume_court: string | null
+          secteur_principal: string | null
+          source_table: string | null
+          source_url: string | null
+          sous_secteurs: Json | null
+          type_interet: Json | null
+        }
+        Insert: {
+          enriched_at?: string | null
+          exhibitor_id?: string | null
+          id?: string | null
+          mots_cles_metier?: Json | null
+          produits_services?: Json | null
+          profils_visiteurs?: Json | null
+          resume_court?: string | null
+          secteur_principal?: string | null
+          source_table?: string | null
+          source_url?: string | null
+          sous_secteurs?: Json | null
+          type_interet?: Json | null
+        }
+        Update: {
+          enriched_at?: string | null
+          exhibitor_id?: string | null
+          id?: string | null
+          mots_cles_metier?: Json | null
+          produits_services?: Json | null
+          profils_visiteurs?: Json | null
+          resume_court?: string | null
+          secteur_principal?: string | null
+          source_table?: string | null
+          source_url?: string | null
+          sous_secteurs?: Json | null
+          type_interet?: Json | null
+        }
+        Relationships: []
+      }
       exhibitor_alerts: {
         Row: {
           created_at: string
@@ -2260,6 +2305,39 @@ export type Database = {
           id?: number | null
           id_exposant?: string | null
           nom_exposant?: string | null
+          website_exposant?: string | null
+        }
+        Relationships: []
+      }
+      exposants_sans_site_backup_20260625: {
+        Row: {
+          created_at: string | null
+          exposant_description: string | null
+          id: number | null
+          id_exposant: string | null
+          nom_exposant: string | null
+          nom_normalized: string | null
+          normalized_domain: string | null
+          website_exposant: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          exposant_description?: string | null
+          id?: number | null
+          id_exposant?: string | null
+          nom_exposant?: string | null
+          nom_normalized?: string | null
+          normalized_domain?: string | null
+          website_exposant?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          exposant_description?: string | null
+          id?: number | null
+          id_exposant?: string | null
+          nom_exposant?: string | null
+          nom_normalized?: string | null
+          normalized_domain?: string | null
           website_exposant?: string | null
         }
         Relationships: []
@@ -5994,6 +6072,10 @@ export type Database = {
           score: number
           status: string
         }[]
+      }
+      embed_pending_exhibitors: {
+        Args: { p_max_batches?: number }
+        Returns: number
       }
       ensure_exhibitor_public_identity: {
         Args: { p_exhibitor_id?: string; p_legacy_exposant_id?: string }
