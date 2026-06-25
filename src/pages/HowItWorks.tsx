@@ -5,6 +5,7 @@ import { Building2, ArrowRight, BadgeEuro, ShieldCheck, Users, Quote } from 'luc
 import Header from '@/components/Header';
 import HeroWithFilters from '@/components/home/HeroWithFilters';
 import StatsBar from '@/components/home/StatsBar';
+import AttentionProblem from '@/components/home/AttentionProblem';
 import RegionalEvents from '@/components/home/RegionalEvents';
 import FeaturedNoveltiesSimple from '@/components/home/FeaturedNoveltiesSimple';
 import JoinBlock from '@/components/home/JoinBlock';
@@ -43,6 +44,7 @@ const Index = () => {
       <main>
         <HeroWithFilters />
         <StatsBar />
+        <AttentionProblem />
         <RegionalEvents />
         <FeaturedNoveltiesSimple />
         <JoinBlock />
