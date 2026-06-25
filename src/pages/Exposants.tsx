@@ -200,10 +200,10 @@ export default function Exposants() {
                 <Users className="h-8 w-8 text-accent" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
-                Visibilité pré-événement
+                Être visible avant l'ouverture
               </h3>
               <p className="text-muted-foreground">
-                Les visiteurs découvrent vos innovations avant le salon et planifient de vous rendre visite
+                Votre nouveauté apparaît au moment où les visiteurs préparent leur salon, pas seulement quand ils passent devant votre stand.
               </p>
             </div>
 
@@ -212,10 +212,10 @@ export default function Exposants() {
                 <TrendingUp className="h-8 w-8 text-accent" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
-                Leads qualifiés
+                Créer une raison de passage
               </h3>
               <p className="text-muted-foreground">
-                Collectez les coordonnées de prospects réellement intéressés par vos produits
+                Une nouveauté claire transforme une fiche exposant classique en invitation concrète à venir vous rencontrer.
               </p>
             </div>
 
@@ -224,10 +224,10 @@ export default function Exposants() {
                 <BarChart3 className="h-8 w-8 text-accent" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
-                ROI mesuré
+                Mesurer l'intérêt généré
               </h3>
               <p className="text-muted-foreground">
-                Suivez les performances de vos nouveautés avec des statistiques détaillées
+                Suivez les vues, interactions ou contacts liés à vos publications pour mieux comprendre ce qui attire l'attention.
               </p>
             </div>
           </div>
