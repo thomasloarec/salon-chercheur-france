@@ -670,6 +670,10 @@ const RadarCrmPage: React.FC = () => {
           <FaqItem v="q3" q="Comment fonctionne le matching ?" a="Lotexpo compare le domaine web des entreprises de votre fichier avec les domaines des exposants référencés sur la plateforme." />
           <FaqItem v="q4" q="Pourquoi certaines entreprises ne sont-elles pas détectées ?" a="Le matching Beta repose sur une correspondance exacte du domaine web. Certains groupes utilisant des sous-domaines ou des sites pays peuvent ne pas être détectés automatiquement." />
           <FaqItem v="q5" q="Puis-je connecter directement HubSpot ou Salesforce ?" a="Pas encore. Les connexions CRM directes sont prévues dans une prochaine étape. Pour le moment, vous pouvez tester Radar CRM avec un fichier CSV ou Excel." />
+          <FaqItem v="q6" q="Pourquoi utiliser Radar CRM avant un salon professionnel ?" a="Pour identifier à l'avance les comptes de votre CRM présents sur un événement, prioriser vos déplacements et préparer vos prises de contact avant le jour du salon." />
+          <FaqItem v="q7" q="Radar CRM sert-il uniquement aux visiteurs de salons ?" a="Non. Il peut aussi servir aux équipes commerciales, dirigeants, responsables marketing, partenaires ou exposants qui veulent savoir où leurs clients, prospects ou concurrents seront présents." />
+          <FaqItem v="q8" q="Que faire si Radar CRM détecte plusieurs comptes sur un même salon ?" a="C'est précisément le signal à exploiter. Un salon où plusieurs comptes stratégiques sont présents peut justifier une visite, une prise de rendez-vous en amont ou une action commerciale ciblée." />
+          <FaqItem v="q9" q="Puis-je utiliser Radar CRM pour suivre mes concurrents ?" a="Oui. Vous pouvez importer une liste de concurrents ou d'acteurs à surveiller pour identifier les salons où ils exposent." />
         </Accordion>
       </section>
 
@@ -679,10 +683,11 @@ const RadarCrmPage: React.FC = () => {
           <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at top right, white, transparent 60%)' }} />
           <div className="relative">
             <h2 className="text-2xl md:text-3xl font-bold mb-3">
-              Prêt à transformer votre fichier CRM en opportunités salon ?
+              Vos prochains rendez-vous salon sont peut-être déjà dans votre CRM
             </h2>
             <p className="text-sm md:text-base opacity-90 mb-6 max-w-2xl mx-auto">
-              Importez votre CSV ou Excel et découvrez immédiatement les événements où vos comptes sont présents.
+              Importez votre fichier CSV ou Excel et découvrez les événements où vos clients,
+              prospects ou concurrents seront présents.
             </p>
             <Button
               size="lg"
@@ -690,7 +695,7 @@ const RadarCrmPage: React.FC = () => {
               onClick={() => scrollToUpload('final_cta')}
               className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
             >
-              <Upload className="h-4 w-4 mr-2 shrink-0" /> Importer mon fichier CSV ou Excel
+              <Upload className="h-4 w-4 mr-2 shrink-0" /> Analyser mon fichier CRM
             </Button>
           </div>
         </div>
