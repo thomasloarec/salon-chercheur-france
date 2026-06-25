@@ -812,7 +812,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                         'px-4 py-2 rounded-full text-sm font-medium border transition-all',
                         duration === d
                           ? 'bg-primary text-primary-foreground border-primary'
-                          : 'border-border hover:border-primary/40'
+                          : 'border-border text-muted-foreground hover:border-primary/40'
                       )}
                     >
                       {d}
