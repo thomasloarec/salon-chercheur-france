@@ -402,9 +402,23 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
 }
 
 // Compact exhibitor row for visit plan display
-function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string; eventId: string }) {
+function ExhibitorRow({
+  rec,
+  eventSlug,
+  eventId,
+  slugMaps,
+}: {
+  rec: any;
+  eventSlug: string;
+  eventId: string;
+  slugMaps?: PublicSlugMaps | null;
+}) {
   const logoUrl = getExhibitorLogoUrl(rec.logo_url || null, rec.website || null);
   const standNumber = rec.stand ? normalizeStandNumber(rec.stand) : null;
+  const slugInfo = resolvePublicSlug(slugMaps, {
+    exhibitorId: rec.exhibitor_id,
+    legacyId: rec.exhibitor_id,
+  });
 
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
@@ -421,6 +435,19 @@ function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string
           <p className="text-xs text-muted-foreground mt-0.5">Stand {standNumber}</p>
         )}
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.raison}</p>
+        {slugInfo && !slugInfo.is_test && (
+          <div className="mt-2">
+            <ExhibitorFullProfileCTA
+              publicSlug={slugInfo.public_slug}
+              seoIndexable={slugInfo.seo_indexable}
+              isTest={slugInfo.is_test}
+              openInNewTab
+              surface="event_exhibitor_list"
+              eventSlug={eventSlug}
+              variant="link"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
