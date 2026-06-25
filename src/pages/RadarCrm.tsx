@@ -736,6 +736,15 @@ const TrustItem: React.FC<{ icon: React.ReactNode; label: string; sub: string }>
   </div>
 );
 
+const AfterImportItem: React.FC<{ icon: React.ReactNode; text: string }> = ({ icon, text }) => (
+  <div className="flex items-start gap-2.5 p-3 rounded-lg border bg-card">
+    <span className="h-7 w-7 flex-shrink-0 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+      {icon}
+    </span>
+    <span className="text-sm font-medium leading-snug">{text}</span>
+  </div>
+);
+
 const FieldSelect: React.FC<{
   label: string;
   required?: boolean;
