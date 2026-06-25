@@ -633,8 +633,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Route className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-base sm:text-lg font-semibold truncate">Préparer ma visite avec l'IA</h2>
@@ -651,12 +651,12 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
           {/* Progress bar */}
           {typeof step === 'number' && (
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-1.5 mt-4">
               {[1, 2, 3].map(s => (
                 <div
                   key={s}
                   className={cn(
-                    'h-1 flex-1 rounded-full transition-colors',
+                    'h-[5px] flex-1 rounded-full transition-colors',
                     s <= step ? 'bg-primary' : 'bg-muted'
                   )}
                 />
