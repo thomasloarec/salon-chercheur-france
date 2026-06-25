@@ -614,10 +614,10 @@ const Organisateurs = () => {
         <section className="bg-primary text-primary-foreground py-16 px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Vous organisez un salon professionnel ?
+              Votre salon mérite d'être découvert avant le jour J
             </h2>
             <p className="text-lg text-primary-foreground/80 mb-8">
-              Lotexpo peut vous aider à renforcer gratuitement la visibilité de votre événement, valoriser vos exposants et attirer un public plus qualifié.
+              Lotexpo peut vous aider à renforcer gratuitement la visibilité de votre événement, valoriser vos exposants et rediriger les visiteurs vers vos informations officielles.
             </p>
             <Button asChild size="lg" variant="secondary" className="gap-2">
               <Link to="/contact">
