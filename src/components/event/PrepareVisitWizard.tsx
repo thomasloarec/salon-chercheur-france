@@ -8,17 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff, Route, ShoppingCart, TrendingUp, Briefcase, Megaphone, FlaskConical, Factory, CircleDashed, PackageSearch, Scale, Handshake, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff, Route, ShoppingCart, TrendingUp, Briefcase, Megaphone, FlaskConical, Factory, CircleDashed, PackageSearch, Scale, Handshake, Target, ScanLine } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisitPlan, useSaveVisitPlan, storePendingVisitPlan } from '@/hooks/useVisitPlan';
+import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { toggleFavorite } from '@/utils/toggleFavorite';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { toast } from '@/hooks/use-toast';
@@ -186,6 +186,23 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const saveVisitPlan = useSaveVisitPlan();
 
   const isFavorited = favoriteEvents.some((e: any) => e.id === event.id);
+
+  // ── Échantillon DÉCORATIF de vrais exposants pour l'écran d'analyse (marquee) ──
+  // Gate strict : ne fetch QUE quand le wizard est ouvert (slug vide => hook désactivé).
+  // Best-effort : si vide / en cours / en erreur, l'écran s'affiche sans marquee.
+  const { data: scanData } = useExhibitorsByEvent(
+    open ? (event.slug || '') : '',
+    undefined,
+    40,
+    0,
+    event.id_event,
+  );
+  const scanExhibitors: { name: string; sector?: string }[] = (scanData?.exhibitors || [])
+    .map((e: any) => ({
+      name: e.name || e.exhibitor_name || '',
+      sector: e.secteur || e.sector || undefined,
+    }))
+    .filter((e) => e.name);
 
   // ── Tracking session ref ──
   const wizardSessionId = useRef<string | null>(null);
@@ -788,6 +805,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
           {step === 'loading' && (
             <LoadingScreen
               exhibitorCount={exhibitorCount}
+              scanExhibitors={scanExhibitors}
               complete={loadingComplete}
               onComplete={() => setStep('results')}
             />
@@ -1066,82 +1084,93 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 }
 
 // --- Loading Screen ---
-const LOADING_STEPS = [
-  { threshold: 0, message: 'Analyse du salon…', icon: Search },
-  { threshold: 20, message: 'Identification des exposants les plus pertinents…', icon: Users },
-  { threshold: 45, message: 'Évaluation de la pertinence selon votre profil…', icon: BarChart3 },
-  { threshold: 70, message: 'Priorisation des exposants recommandés…', icon: Sparkles },
-  { threshold: 88, message: 'Finalisation de votre sélection personnalisée…', icon: CheckCircle2 },
-];
-
-function LoadingScreen({ exhibitorCount, complete, onComplete }: { exhibitorCount: number; complete: boolean; onComplete: () => void }) {
-  const [progress, setProgress] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const completeRef = useRef(false);
-
-  // Simulated progression
-  useEffect(() => {
-    let elapsed = 0;
-    intervalRef.current = setInterval(() => {
-      elapsed += 200;
-      setProgress((prev) => {
-        if (completeRef.current) return prev; // handled by completion effect
-        if (prev >= 93) return prev;
-        const seconds = elapsed / 1000;
-        if (seconds < 2) return Math.min(seconds * 12, 24);
-        if (seconds < 5) return 24 + (seconds - 2) * 8;
-        if (seconds < 10) return 48 + (seconds - 5) * 5.6;
-        if (seconds < 15) return 76 + (seconds - 10) * 2.4;
-        if (seconds < 25) return 88 + (seconds - 15) * 0.5;
-        return 93;
-      });
-    }, 200);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  // When backend responds → animate to 100% then transition
+function LoadingScreen({
+  exhibitorCount,
+  scanExhibitors,
+  complete,
+  onComplete,
+}: {
+  exhibitorCount: number;
+  scanExhibitors: { name: string; sector?: string }[];
+  complete: boolean;
+  onComplete: () => void;
+}) {
+  // Quand le backend répond → transition vers les résultats.
+  // (Aucune simulation de pourcentage : indicateur indéterminé uniquement.)
   useEffect(() => {
     if (!complete) return;
-    completeRef.current = true;
-    if (intervalRef.current) clearInterval(intervalRef.current);
-
-    // Quick ramp to 100%
-    setProgress(100);
     const timer = setTimeout(() => onComplete(), 500);
     return () => clearTimeout(timer);
   }, [complete, onComplete]);
 
-  const currentStep = [...LOADING_STEPS].reverse().find((s) => progress >= s.threshold) || LOADING_STEPS[0];
-  const StepIcon = currentStep.icon;
+  // Liste dupliquée pour une boucle de marquee continue.
+  const hasMarquee = scanExhibitors.length > 0;
+  const marqueeItems = hasMarquee ? [...scanExhibitors, ...scanExhibitors] : [];
 
   return (
     <div className="flex flex-col items-center justify-center py-14 gap-8 px-4">
-      <div className="relative">
-        <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
-          <Sparkles className="w-9 h-9 text-primary animate-pulse" />
-        </div>
-        <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg">
-          <span className="text-[10px] font-bold text-primary-foreground">{Math.round(progress)}%</span>
-        </div>
+      {/* Keyframes locales (indéterminé + marquee vertical) */}
+      <style>{`
+        @keyframes pv-indeterminate {
+          0% { left: -40%; }
+          100% { left: 100%; }
+        }
+        @keyframes pv-marquee-up {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
+        }
+      `}</style>
+
+      <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+        <Sparkles className="w-9 h-9 text-primary animate-pulse" />
       </div>
 
       <div className="text-center space-y-2 max-w-sm">
         <h3 className="text-lg font-semibold">Préparation de votre visite en cours</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Nous analysons les {exhibitorCount} exposants du salon pour vous proposer une sélection personnalisée.
+          <span className="font-semibold text-primary">{exhibitorCount}</span> fiches exposants analysées
         </p>
       </div>
 
+      {/* Indicateur d'activité INDÉTERMINÉ */}
       <div className="w-full max-w-xs space-y-3">
-        <Progress value={progress} className="h-2.5" />
+        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+          <div
+            className="absolute top-0 h-full w-2/5 rounded-full bg-primary"
+            style={{ animation: 'pv-indeterminate 1.2s ease-in-out infinite' }}
+          />
+        </div>
         <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium min-h-[1.5rem]">
-          <StepIcon className="w-4 h-4 flex-shrink-0" />
-          <span className="text-center">{currentStep.message}</span>
+          <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin" />
+          <span className="text-center">Analyse sémantique des profils…</span>
         </div>
       </div>
+
+      {/* Mise en scène "scan" — marquee vertical de vrais exposants (décoratif, sans verdict) */}
+      {hasMarquee && (
+        <div
+          className="w-full max-w-xs h-[150px] overflow-hidden relative"
+          aria-hidden="true"
+        >
+          <div style={{ animation: 'pv-marquee-up 12s linear infinite' }}>
+            {marqueeItems.map((ex, i) => (
+              <div
+                key={`${ex.name}-${i}`}
+                className="flex items-center gap-2 py-2 px-3 opacity-60"
+              >
+                <ScanLine className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
+                <span className="text-sm truncate">{ex.name}</span>
+                {ex.sector && (
+                  <span className="text-xs text-muted-foreground truncate">· {ex.sector}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          {/* fondus haut/bas pour un défilement propre */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-background to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background to-transparent" />
+        </div>
+      )}
 
       <p className="text-xs text-muted-foreground/70 text-center max-w-xs">
         Les grands salons peuvent demander quelques secondes supplémentaires.
