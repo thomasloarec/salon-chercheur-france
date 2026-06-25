@@ -40,6 +40,8 @@ export interface Event {
   enrichissement_statut?: string;
   enrichissement_date?: string;
   description_enrichie?: string;
+  // Mots-clés suggérés du salon (jsonb array) — alimente les chips du wizard Parcours IA
+  suggested_keywords?: string[];
 }
 
 // Export EventType for backwards compatibility
