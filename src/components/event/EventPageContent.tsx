@@ -25,7 +25,7 @@ import PrepareVisitWizard from '@/components/event/PrepareVisitWizard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Eye, Sparkles, Check, ChevronDown } from 'lucide-react';
+import { Eye, Sparkles, Check, ChevronDown, Route, Database, Clock, UserCheck, ArrowRight } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import type { Event } from '@/types/event';
 
