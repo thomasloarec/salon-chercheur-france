@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff, Route, ShoppingCart, TrendingUp, Briefcase, Megaphone, FlaskConical, Factory, CircleDashed, PackageSearch, Scale, Handshake, Target, ScanLine } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff, Route, ShoppingCart, TrendingUp, Briefcase, Megaphone, FlaskConical, Factory, CircleDashed, PackageSearch, Scale, Handshake, Target, ScanLine, Star } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
