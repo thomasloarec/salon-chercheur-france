@@ -568,6 +568,7 @@ Deno.serve(async (req) => {
     let semanticUsed = false;
     let fallbackUsed = false;
     let sellerTargetUsed = false;
+    let queryUsed = "";
 
     if (hasKeywords) {
       // Retrieval sémantique (primaire) avec repli substring (plan B)
@@ -587,6 +588,7 @@ Deno.serve(async (req) => {
         const objTerms = OBJECTIVE_QUERY_TERMS[objective] ?? "";
         p_query = (kwText + " " + objTerms).trim();
       }
+      queryUsed = p_query;
       try {
         const { data: rpcRows, error: rpcErr } = await supabase.rpc("match_exhibitors_semantic", {
           p_query,
