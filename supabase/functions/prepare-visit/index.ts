@@ -567,13 +567,26 @@ Deno.serve(async (req) => {
     let under_threshold: boolean;
     let semanticUsed = false;
     let fallbackUsed = false;
+    let sellerTargetUsed = false;
 
     if (hasKeywords) {
       // Retrieval sémantique (primaire) avec repli substring (plan B)
       const byId = new Map(allExhibitors.map((ex) => [String(ex.id), ex]));
-      const kwText = (keywords || []).join(" ").trim();
-      const objTerms = mode === "seller" ? "" : (OBJECTIVE_QUERY_TERMS[objective] ?? "");
-      const p_query = (kwText + " " + objTerms).trim();
+      let p_query: string;
+      if (mode === "seller") {
+        const offer = (keywords || []).join(" ").trim();
+        const targetProfile = await buildSellerTargetQuery(offer, eventData.nom_event, ANTHROPIC_API_KEY!);
+        if (targetProfile && targetProfile.length > 0) {
+          p_query = targetProfile;
+          sellerTargetUsed = true;
+        } else {
+          p_query = offer; // repli : comportement actuel si la transformation échoue
+        }
+      } else {
+        const kwText = (keywords || []).join(" ").trim();
+        const objTerms = OBJECTIVE_QUERY_TERMS[objective] ?? "";
+        p_query = (kwText + " " + objTerms).trim();
+      }
       try {
         const { data: rpcRows, error: rpcErr } = await supabase.rpc("match_exhibitors_semantic", {
           p_query,
