@@ -616,9 +616,11 @@ const RadarCrmPage: React.FC = () => {
         <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8">
           <div className="text-center mb-6">
             <Badge className="mb-3 bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Beta</Badge>
-            <h2 className="text-2xl font-bold mb-2">Une Beta déjà utile, bientôt connectée à votre CRM</h2>
+            <h2 className="text-2xl font-bold mb-2">Commencez sans connecter votre CRM</h2>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Radar CRM est actuellement disponible en Beta avec import CSV et Excel. Les connexions directes à vos outils CRM sont en cours de préparation.
+              Radar CRM fonctionne déjà avec un simple export CSV ou Excel. Les connexions HubSpot,
+              Salesforce, Pipedrive et Zoho CRM permettront ensuite d'automatiser l'analyse, mais
+              vous pouvez détecter vos premières opportunités dès maintenant.
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -633,7 +635,7 @@ const RadarCrmPage: React.FC = () => {
               onClick={() => scrollToUpload('beta_section')}
               className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
             >
-              <Upload className="h-4 w-4 mr-2 shrink-0" /> Tester la Beta avec un CSV ou Excel
+              <Upload className="h-4 w-4 mr-2 shrink-0" /> Tester avec un fichier CSV ou Excel
             </Button>
           </div>
         </div>
