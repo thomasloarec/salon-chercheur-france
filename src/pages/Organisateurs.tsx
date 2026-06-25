@@ -6,10 +6,8 @@ import { Button } from '@/components/ui/button';
 import {
   Eye,
   Users,
-  Link2,
   Sparkles,
   ShieldCheck,
-  Handshake,
   LayoutGrid,
   TrendingUp,
   MousePointerClick,
