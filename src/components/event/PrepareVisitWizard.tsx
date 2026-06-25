@@ -867,6 +867,19 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                       exposants à prioriser{duration ? ` pour une visite de ${duration}` : ''} parmi les{' '}
                       <span className="font-bold">{results.totalExhibitors}</span> présents.
                     </p>
+                    {(() => {
+                      // Critères réellement disponibles à l'écran résultats (state du wizard).
+                      const segments: string[] = [];
+                      const roleObjective = [role, objective].filter(Boolean).join(' · ');
+                      if (roleObjective) segments.push(roleObjective);
+                      if (keywords.length > 0) segments.push(keywords.slice(0, 3).join(', '));
+                      if (segments.length === 0) return null;
+                      return (
+                        <p className="text-[12px] sm:text-[13px] text-secondary-foreground/70 break-words">
+                          Pour : {segments.join(' · ')}
+                        </p>
+                      );
+                    })()}
                     <p className="text-xs text-muted-foreground break-words">
                       {checkedIds.size} exposant{checkedIds.size > 1 ? 's' : ''} sélectionné{checkedIds.size > 1 ? 's' : ''}
                     </p>
@@ -879,22 +892,23 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                         <Star className="w-5 h-5 text-primary flex-shrink-0" /> Vos incontournables
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
-                        {results.prioritaires.map((rec) => (
-                          <RecommendationCard
-                            key={rec.exhibitor_id}
-                            rec={rec}
-                            variant="primary"
-                            eventId={event.id}
-                            checked={checkedIds.has(rec.exhibitor_id)}
-                            onCheckedChange={(checked) => {
-                              setCheckedIds(prev => {
-                                const next = new Set(prev);
-                                if (checked) next.add(rec.exhibitor_id);
-                                else next.delete(rec.exhibitor_id);
-                                return next;
-                              });
-                            }}
-                          />
+                        {results.prioritaires.map((rec, i) => (
+                          <CascadeItem key={rec.exhibitor_id} delay={Math.min(i * 60, 700)}>
+                            <RecommendationCard
+                              rec={rec}
+                              variant="primary"
+                              eventId={event.id}
+                              checked={checkedIds.has(rec.exhibitor_id)}
+                              onCheckedChange={(checked) => {
+                                setCheckedIds(prev => {
+                                  const next = new Set(prev);
+                                  if (checked) next.add(rec.exhibitor_id);
+                                  else next.delete(rec.exhibitor_id);
+                                  return next;
+                                });
+                              }}
+                            />
+                          </CascadeItem>
                         ))}
                       </div>
                     </section>
@@ -907,22 +921,26 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                         <Clock className="w-5 h-5 text-muted-foreground flex-shrink-0" /> À voir si vous avez le temps
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
-                        {results.optionnels.map((rec) => (
-                          <RecommendationCard
+                        {results.optionnels.map((rec, i) => (
+                          <CascadeItem
                             key={rec.exhibitor_id}
-                            rec={rec}
-                            variant="secondary"
-                            eventId={event.id}
-                            checked={checkedIds.has(rec.exhibitor_id)}
-                            onCheckedChange={(checked) => {
-                              setCheckedIds(prev => {
-                                const next = new Set(prev);
-                                if (checked) next.add(rec.exhibitor_id);
-                                else next.delete(rec.exhibitor_id);
-                                return next;
-                              });
-                            }}
-                          />
+                            delay={Math.min((results.prioritaires.length + i) * 60, 700)}
+                          >
+                            <RecommendationCard
+                              rec={rec}
+                              variant="secondary"
+                              eventId={event.id}
+                              checked={checkedIds.has(rec.exhibitor_id)}
+                              onCheckedChange={(checked) => {
+                                setCheckedIds(prev => {
+                                  const next = new Set(prev);
+                                  if (checked) next.add(rec.exhibitor_id);
+                                  else next.delete(rec.exhibitor_id);
+                                  return next;
+                                });
+                              }}
+                            />
+                          </CascadeItem>
                         ))}
                       </div>
                     </section>
@@ -1197,6 +1215,34 @@ function LoadingScreen({
 }
 
 // --- Recommendation Card ---
+// One-time mount fade-in wrapper for results cards (honours prefers-reduced-motion).
+const PREFERS_REDUCED_MOTION =
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function CascadeItem({ delay, children }: { delay: number; children: React.ReactNode }) {
+  // Starts visible when reduced motion is preferred → no animation.
+  const [shown, setShown] = useState(PREFERS_REDUCED_MOTION);
+  useEffect(() => {
+    if (PREFERS_REDUCED_MOTION) return;
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  if (PREFERS_REDUCED_MOTION) return <>{children}</>;
+  return (
+    <div
+      style={{ transitionDelay: `${delay}ms` }}
+      className={cn(
+        'transition-all duration-300 ease-out will-change-transform',
+        shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1.5'
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function RecommendationCard({
   rec,
   variant,
