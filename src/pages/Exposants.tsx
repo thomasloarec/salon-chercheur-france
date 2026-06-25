@@ -241,7 +241,7 @@ export default function Exposants() {
             Comment ça marche ?
           </h2>
           <p className="text-xl text-muted-foreground text-center mb-16 max-w-3xl mx-auto">
-            3 étapes simples pour transformer votre participation en succès mesurable
+            3 étapes simples pour donner plus de visibilité à ce que vous présentez sur votre stand.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
@@ -258,10 +258,10 @@ export default function Exposants() {
                   ÉTAPE 1
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Trouvez votre salon
+                  Retrouvez votre salon
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Identifiez le salon professionnel auquel votre société participe prochainement sur notre plateforme.
+                  Identifiez l'événement auquel votre entreprise participe et accédez à votre espace exposant.
                 </p>
               </div>
             </div>
@@ -276,10 +276,10 @@ export default function Exposants() {
                   ÉTAPE 2
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Publiez votre nouveauté
+                  Publiez ce qui mérite le détour
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Démarquez-vous ! Annoncez un nouveau produit, un partenariat, une démonstration exclusive, une offre spéciale... Soyez remarquable pour attirer des visiteurs sur votre stand.
+                  Présentez un produit, une démonstration, une innovation, un service, une offre ou un temps fort prévu sur votre stand.
                 </p>
               </div>
             </div>
@@ -294,12 +294,10 @@ export default function Exposants() {
                   ÉTAPE 3
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Générez des leads avant J-0
+                  Transformez l'attention en visites utiles
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Collectez des rendez-vous et téléchargements de brochures <strong>avant l'ouverture</strong>. 
-                  Vous capitalisez déjà du ROI avant même le début du salon. 
-                  Essentiel quand la participation coûte des dizaines de milliers d'euros.
+                  Les visiteurs peuvent repérer votre nouveauté, la sauvegarder et intégrer votre stand à leur préparation.
                 </p>
               </div>
             </div>
