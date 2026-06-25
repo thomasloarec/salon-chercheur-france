@@ -25,7 +25,7 @@ import PrepareVisitWizard from '@/components/event/PrepareVisitWizard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Eye, Sparkles, Check, ChevronDown } from 'lucide-react';
+import { Eye, Sparkles, Check, ChevronDown, Route, Database, Clock, UserCheck, ArrowRight } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import type { Event } from '@/types/event';
 
@@ -280,77 +280,56 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 {exhibitorCount >= 80 && !isEventPast && (
                   <section
                     aria-label="Préparer votre visite avec l'IA Lotexpo"
-                    className="rounded-2xl border border-primary/20 bg-card shadow-sm overflow-hidden"
+                    className="rounded-lg border border-[#CFE0F7] bg-[#F2F6FD] overflow-hidden"
                   >
-                    <div className="grid gap-6 p-6 sm:p-8 md:grid-cols-5">
-                      {/* Colonne gauche : promesse + bénéfices + CTA */}
-                      <div className="md:col-span-3 space-y-4">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                          <Sparkles className="w-3.5 h-3.5" />
+                    <div className="space-y-4 px-6 py-[22px]">
+                      {/* Eyebrow : carré bleu marine + label */}
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary">
+                          <Route className="w-[18px] h-[18px] text-primary-foreground" />
+                        </span>
+                        <span className="text-xs font-medium uppercase tracking-[0.08em] text-primary">
                           Parcours IA
                         </span>
-                        <div className="space-y-2">
-                          <h3 className="text-xl font-bold tracking-tight sm:text-2xl">
-                            Préparez votre visite avec l'IA Lotexpo
-                          </h3>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            À partir des exposants référencés sur ce salon, Lotexpo vous aide à
-                            prioriser les stands à visiter, repérer les nouveautés utiles et
-                            organiser un parcours selon vos objectifs.
-                          </p>
-                          <p className="text-xs text-muted-foreground/80">
-                            Basé sur les {exhibitorCount} exposants référencés
-                            {noveltyCount > 0 ? ` et ${noveltyCount} nouveautés` : ''}.
-                          </p>
-                        </div>
-                        <ul className="space-y-2">
-                          {[
-                            'Exposants à prioriser',
-                            'Nouveautés à découvrir',
-                            'Parcours optimisé sur place',
-                          ].map((benefit) => (
-                            <li key={benefit} className="flex items-center gap-2 text-sm text-foreground/90">
-                              <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                              {benefit}
-                            </li>
-                          ))}
-                        </ul>
-                        <Button
-                          onClick={() => setPrepareVisitOpen(true)}
-                          size="lg"
-                          className="gap-2 w-full sm:w-auto"
-                        >
-                          <Sparkles className="w-4 h-4" />
-                          Générer mon parcours IA
-                        </Button>
                       </div>
 
-                      {/* Colonne droite : mini aperçu d'un parcours recommandé */}
-                      <div className="md:col-span-2">
-                        <div className="h-full rounded-xl border border-border bg-muted/40 p-4">
-                          <p className="text-xs font-medium text-muted-foreground mb-3">
-                            Aperçu de votre parcours
-                          </p>
-                          <ol className="space-y-3">
-                            {[
-                              noveltyCount > 0
-                                ? `${exhibitorCount} exposants et ${noveltyCount} nouveautés analysés`
-                                : `${exhibitorCount} exposants analysés`,
-                              'Stands prioritaires identifiés',
-                              'Parcours recommandé généré',
-                            ].map((step, i) => (
-                              <li key={step} className="flex items-start gap-3">
-                                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                  {i + 1}
-                                </span>
-                                <span className="text-sm text-foreground/80 leading-snug pt-0.5">
-                                  {step}
-                                </span>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
+                      {/* Titre + sous-titre */}
+                      <div className="space-y-1.5">
+                        <h3 className="text-[21px] font-medium leading-snug text-foreground">
+                          Votre visite de {event.nom_event}, préparée par l'IA
+                        </h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Lotexpo lit les {exhibitorCount} fiches exposants et sélectionne
+                          les stands qui comptent vraiment pour vous.
+                        </p>
                       </div>
+
+                      {/* Puces */}
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { icon: Database, label: `${exhibitorCount} exposants analysés` },
+                          { icon: Clock, label: '≈ 30 secondes' },
+                          { icon: UserCheck, label: 'adapté à votre rôle' },
+                        ].map(({ icon: Icon, label }) => (
+                          <span
+                            key={label}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#D3E0F5] bg-card px-3 py-1.5 text-xs font-medium text-primary"
+                          >
+                            <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* CTA */}
+                      <Button
+                        onClick={() => setPrepareVisitOpen(true)}
+                        size="lg"
+                        className="gap-2 w-full sm:w-auto"
+                      >
+                        Créer mon parcours
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
                     </div>
                   </section>
                 )}
