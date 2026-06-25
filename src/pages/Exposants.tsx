@@ -44,18 +44,15 @@ export default function Exposants() {
 
             {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Ne laissez plus votre{' '}
-              <span className="text-primary">emplacement</span>
+              Ne comptez plus sur le <span className="text-primary">hasard</span>
               <br />
-              décider de votre succès
+              pour attirer les bons visiteurs
             </h1>
 
-            {/* Sous-titre - Gratuité */}
+            {/* Sous-titre */}
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Publiez <strong className="text-foreground">gratuitement votre première nouveauté</strong> et commencez
-              <br className="hidden md:block" />
-              à attirer des visiteurs qualifiés{' '}
-              <strong className="text-foreground">avant l'ouverture du salon</strong>.
+              Publiez ce que vous présenterez sur votre stand et donnez aux visiteurs une raison de venir vous voir{' '}
+              <strong className="text-foreground">avant même l'ouverture du salon</strong>.
             </p>
 
             {/* CTAs */}
@@ -66,7 +63,7 @@ export default function Exposants() {
                 onClick={() => navigate('/publier-nouveaute')}
               >
                 <Megaphone className="h-5 w-5" />
-                Publier ma nouveauté
+                Publier ma première nouveauté
               </Button>
               <Button
                 size="lg"
