@@ -373,9 +373,12 @@ const Organisateurs = () => {
         {/* Lotexpo est / n'est pas */}
         <section className="py-16 px-4">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10 max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4 max-w-3xl mx-auto">
               Une plateforme indépendante, pensée pour renforcer votre visibilité
             </h2>
+            <p className="text-base md:text-lg text-muted-foreground text-center mb-10 max-w-2xl mx-auto">
+              Lotexpo clarifie son rôle pour que les organisateurs gardent la maîtrise de leur communication officielle.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
                 <h3 className="text-xl font-bold text-foreground mb-5 flex items-center gap-2">
@@ -408,8 +411,31 @@ const Organisateurs = () => {
             </div>
             <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-5 text-center">
               <p className="text-base text-foreground font-medium">
-                Notre objectif est simple : donner plus de visibilité aux salons professionnels, sans prendre la place des organisateurs.
+                Notre objectif est simple : rendre les salons professionnels plus faciles à découvrir, sans prendre la place des organisateurs.
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Le problème : attention dispersée */}
+        <section className="py-16 px-4 bg-secondary">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4 max-w-3xl mx-auto">
+              Le problème : l'attention autour d'un salon est souvent dispersée
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground text-center mb-10 max-w-3xl mx-auto">
+              Avant un salon, les visiteurs reçoivent des emails, voient des posts LinkedIn, consultent parfois le site officiel, découvrent quelques exposants ou téléchargent un programme. Mais ces informations sont rarement centralisées au moment où ils décident réellement si le salon mérite leur déplacement.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {PROBLEM_CARDS.map((card) => (
+                <div
+                  key={card.title}
+                  className="bg-card border border-border rounded-2xl p-6 shadow-sm"
+                >
+                  <h3 className="text-lg font-bold text-foreground mb-2">{card.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{card.text}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
