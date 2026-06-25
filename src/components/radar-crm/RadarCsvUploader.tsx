@@ -47,10 +47,10 @@ const RadarCsvUploader: React.FC<Props> = ({ onParsed }) => {
       >
         <FileSpreadsheet className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
         <p className="text-sm text-foreground font-medium mb-1">
-          Glissez-déposez votre fichier CSV ou Excel ici
+          Glissez votre fichier ici pour lancer l'analyse.
         </p>
         <p className="text-xs text-muted-foreground mb-4">
-          Formats acceptés : CSV, XLSX — max {MAX_ROWS.toLocaleString('fr-FR')} lignes
+          Aucune donnée n'est publiée. Formats acceptés : CSV, XLSX.
         </p>
         <Button
           onClick={() => inputRef.current?.click()}
@@ -59,7 +59,7 @@ const RadarCsvUploader: React.FC<Props> = ({ onParsed }) => {
           className="w-full sm:w-auto max-w-full h-auto whitespace-normal text-center"
         >
           <Upload className="mr-2 h-4 w-4 shrink-0" />
-          {loading ? 'Lecture…' : 'Importer mon fichier CSV ou Excel'}
+          {loading ? 'Lecture…' : 'Analyser mon fichier CRM'}
         </Button>
         <input
           ref={inputRef}
