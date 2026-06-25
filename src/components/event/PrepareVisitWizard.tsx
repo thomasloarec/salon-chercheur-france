@@ -161,6 +161,13 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const suggestions: string[] = Array.isArray(event.suggested_keywords)
     ? (event.suggested_keywords as string[])
     : [];
+  // Placeholder dynamique : 2 premières suggestions du salon, sinon repli générique.
+  const keywordPlaceholder =
+    suggestions.length >= 2
+      ? `Ex. : ${suggestions[0]}, ${suggestions[1]}…`
+      : suggestions.length === 1
+        ? `Ex. : ${suggestions[0]}…`
+        : 'Tapez un mot-clé puis Entrée…';
   const [results, setResults] = useState<Results | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
