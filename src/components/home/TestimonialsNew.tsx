@@ -1,58 +1,52 @@
-import { Quote } from 'lucide-react';
+import { Briefcase, ShoppingCart, LineChart, Store } from 'lucide-react';
+
+const USE_CASES = [
+  {
+    icon: Briefcase,
+    title: 'Commercial B2B',
+    text: "Identifiez les salons o\u00f9 vos prospects, clients ou partenaires seront pr\u00e9sents. Pr\u00e9parez vos visites en amont et concentrez votre temps sur les \u00e9v\u00e9nements qui peuvent cr\u00e9er de vraies opportunit\u00e9s commerciales.",
+  },
+  {
+    icon: ShoppingCart,
+    title: 'Acheteur ou responsable sourcing',
+    text: "Rep\u00e9rez les fournisseurs, innovations et solutions \u00e0 comparer avant votre d\u00e9placement. Lotexpo vous aide \u00e0 construire une visite plus efficace, avec moins de temps perdu sur place.",
+  },
+  {
+    icon: LineChart,
+    title: 'Responsable marketing ou veille',
+    text: "Suivez les nouveaut\u00e9s de votre secteur, d\u00e9tectez les salons \u00e0 surveiller et gardez une vision claire des \u00e9v\u00e9nements qui peuvent influencer votre march\u00e9.",
+  },
+  {
+    icon: Store,
+    title: 'Entreprise exposante',
+    text: "Publiez vos nouveaut\u00e9s pour attirer des visiteurs qualifi\u00e9s avant l\u2019ouverture du salon et donner une raison concr\u00e8te de passer sur votre stand.",
+  },
+];
 
 const TestimonialsNew = () => {
-  const testimonials = [
-    {
-      quote: "Je fais de la prospection sur les salons. Avec Lotexpo, je ne passe plus à côté des bons événements — je cible ceux qui créent vraiment des opportunités.",
-      name: "Marc D.",
-      role: "Commercial"
-    },
-    {
-      quote: "Je prépare ma veille à l'avance : je repère les nouveautés qui m'intéressent et je sais exactement quels stands voir en priorité.",
-      name: "Sophie L.",
-      role: "Responsable Marketing & Veille"
-    },
-    {
-      quote: "Je dois trouver des fournisseurs fiables rapidement. Les Nouveautés me montrent qui apporte vraiment de la valeur — je planifie un parcours efficace en 30 minutes.",
-      name: "Thomas R.",
-      role: "Acheteur / Sourcing"
-    }
-  ];
-
   return (
     <section className="bg-background py-20 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 max-w-3xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Ils utilisent Lotexpo
+            Lotexpo s&rsquo;adapte &agrave; plusieurs usages professionnels
           </h2>
           <p className="text-xl text-muted-foreground">
-            Commerciaux, acheteurs, responsables marketing et visiteurs professionnels utilisent Lotexpo pour préparer leurs salons.
+            Que vous soyez commercial, acheteur, responsable marketing ou exposant, Lotexpo vous aide &agrave; mieux exploiter les salons professionnels avant le jour J.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div 
-              key={index}
-              className="bg-card border border-border rounded-2xl p-8 relative"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {USE_CASES.map((useCase) => (
+            <div
+              key={useCase.title}
+              className="bg-card border border-border rounded-2xl p-8"
             >
-              <Quote className="h-12 w-12 text-accent/20 absolute top-6 right-6" />
-              
-              <div className="mb-6">
-                <p className="text-foreground text-lg italic leading-relaxed">
-                  "{testimonial.quote}"
-                </p>
+              <div className="bg-accent/10 rounded-xl w-14 h-14 flex items-center justify-center mb-5">
+                <useCase.icon className="h-7 w-7 text-accent" />
               </div>
-
-              <div>
-                <p className="font-semibold text-foreground">
-                  {testimonial.name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {testimonial.role}
-                </p>
-              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3">{useCase.title}</h3>
+              <p className="text-muted-foreground text-lg leading-relaxed">{useCase.text}</p>
             </div>
           ))}
         </div>
