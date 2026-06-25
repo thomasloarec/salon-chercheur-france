@@ -338,25 +338,59 @@ const RadarCrmPage: React.FC = () => {
 
       {/* Proof / data credibility */}
       <section className="max-w-6xl mx-auto px-4 py-10">
+        {/* Problem section */}
+      </section>
+
+      {/* Problem */}
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">
+            Le problème : vos opportunités salon sont invisibles dans votre CRM
+          </h2>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Un CRM vous aide à suivre vos comptes, mais il ne vous indique pas quand ces comptes
+            deviennent physiquement accessibles sur un salon professionnel.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <BenefitCard
+            icon={<AlertTriangle className="h-5 w-5" />}
+            title="Vos comptes bougent, mais votre CRM reste statique"
+            text="Un prospect peut exposer dans quelques semaines sur un salon stratégique sans que votre équipe commerciale le sache."
+          />
+          <BenefitCard
+            icon={<Compass className="h-5 w-5" />}
+            title="Les salons sont souvent choisis à l'intuition"
+            text="On décide de visiter un événement parce qu'il est connu, proche ou recommandé, pas parce que plusieurs comptes clés y seront présents."
+          />
+          <BenefitCard
+            icon={<Clock className="h-5 w-5" />}
+            title="Les commerciaux arrivent trop tard"
+            text="Quand l'information est découverte sur place, il est souvent trop tard pour préparer une visite, contacter les bons interlocuteurs ou organiser un rendez-vous."
+          />
+        </div>
+      </section>
+
+      {/* Proof / data credibility */}
+      <section className="max-w-6xl mx-auto px-4 py-10">
         <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8 md:p-10">
           <div className="text-center max-w-2xl mx-auto mb-8">
             <Badge variant="secondary" className="mb-3 inline-flex items-center gap-1.5">
               <Database className="h-3.5 w-3.5" /> Donnée Lotexpo
             </Badge>
             <h2 className="text-2xl md:text-3xl font-bold mb-3">
-              Une base déjà exploitable pour détecter des opportunités salon
+              Radar CRM s'appuie sur la donnée salon que votre CRM n'a pas
             </h2>
             <p className="text-sm md:text-base text-muted-foreground">
-              Lotexpo recense déjà plus de {participationLabel.replace('+', '')} participations
-              d'exposants à des salons professionnels. Radar CRM s'appuie sur cette base pour
-              identifier les entreprises de votre fichier CRM qui seront présentes sur des
-              événements à venir.
+              Lotexpo centralise les salons professionnels en France et les participations
+              d'exposants associées. Radar CRM croise cette donnée avec votre fichier d'entreprises
+              pour détecter les comptes présents sur des événements à venir.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ProofStat value={participationLabel} label="participations exposants recensées" highlight />
+            <ProofStat value={participationLabel} label="participations exposants détectées" highlight />
             <ProofStat value="France" label="salons professionnels centralisés" />
-            <ProofStat value="CSV / Excel" label="import simple, sans connexion CRM obligatoire" />
+            <ProofStat value="CSV / Excel" label="aucune connexion CRM nécessaire pour commencer" />
           </div>
         </div>
       </section>
