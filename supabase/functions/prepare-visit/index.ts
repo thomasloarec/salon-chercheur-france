@@ -600,7 +600,7 @@ Deno.serve(async (req) => {
         qualified_count,
         candidates_sent: candidates.length,
         under_threshold,
-        top5: candidatesPool.slice(0, 5).map((e) => ({ name: e.name, relevance: e._m.relevance })),
+        top5: candidatesPool.slice(0, 5).map((e) => ({ name: e.name, relevance: e._m?.relevance ?? null })),
         semantic_used: semanticUsed,
         fallback_used: fallbackUsed,
       }),
