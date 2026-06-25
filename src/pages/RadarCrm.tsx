@@ -437,9 +437,10 @@ const RadarCrmPage: React.FC = () => {
           <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="pt-6">
               <div className="text-center mb-5">
-                <h3 className="text-xl font-semibold mb-1">Importez votre fichier CSV ou Excel</h3>
+                <h3 className="text-xl font-semibold mb-1">Testez Radar CRM avec un simple fichier CSV ou Excel</h3>
                 <p className="text-sm text-muted-foreground">
-                  Formats acceptés : CSV, XLSX. Colonnes nécessaires : <strong>entreprise</strong> + <strong>site web</strong>.
+                  Deux colonnes suffisent : nom de l'entreprise et site web. Votre fichier reste privé
+                  et sert uniquement à détecter les correspondances avec les exposants référencés sur Lotexpo.
                 </p>
               </div>
               <RadarCsvUploader onParsed={onParsed} />
