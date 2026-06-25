@@ -59,7 +59,7 @@ const StatsBar = () => {
               </div>
             </div>
             <div className="text-muted-foreground text-lg">
-              Événements publiés
+              salons professionnels publiés
             </div>
           </div>
 
@@ -71,7 +71,7 @@ const StatsBar = () => {
               </div>
             </div>
             <div className="text-muted-foreground text-lg">
-              Exposants listés
+              exposants et participations recensés
             </div>
           </div>
 
@@ -83,7 +83,7 @@ const StatsBar = () => {
               </div>
             </div>
             <div className="text-muted-foreground text-lg">
-              Gratuit
+              gratuit pour préparer sa visite
             </div>
           </div>
         </div>

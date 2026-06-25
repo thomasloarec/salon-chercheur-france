@@ -46,9 +46,12 @@ const RegionalEvents = () => {
     return (
       <section className="bg-background py-16 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">
-            Événements en Île-de-France
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+            Exemple : repérez les salons utiles près de vous
           </h2>
+          <p className="text-muted-foreground mb-8 max-w-3xl">
+            Filtrez par secteur, région ou période pour identifier rapidement les événements professionnels qui peuvent créer des opportunités concrètes.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-96 bg-muted rounded-2xl animate-pulse" />
@@ -66,14 +69,19 @@ const RegionalEvents = () => {
   return (
     <section className="bg-background py-16 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-            Événements en Île-de-France
-          </h2>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-8">
+          <div className="max-w-3xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              Exemple : repérez les salons utiles près de vous
+            </h2>
+            <p className="text-muted-foreground">
+              Filtrez par secteur, région ou période pour identifier rapidement les événements professionnels qui peuvent créer des opportunités concrètes.
+            </p>
+          </div>
           <Button 
             onClick={() => navigate('/?region=ile-de-france')}
             variant="ghost"
-            className="text-accent hover:text-accent/80 hidden sm:flex"
+            className="text-accent hover:text-accent/80 hidden sm:flex shrink-0"
           >
             Voir tous les événements
             <ArrowRight className="ml-2 h-4 w-4" />

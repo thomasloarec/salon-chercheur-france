@@ -72,16 +72,19 @@ const HeroWithFilters = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 animate-fade-in-up">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Tous les salons professionnels
-            <span className="block text-accent">en un seul endroit</span>
+            Trouvez les salons professionnels
+            <span className="block text-accent">qui méritent vraiment votre déplacement</span>
           </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-4xl mx-auto text-gray-200">
-            Découvrez en un coup d'œil les événements B2B près de chez vous, filtrés par secteur, date et région — le tout au même endroit.
+            Lotexpo centralise les événements B2B, les exposants et les nouveautés pour vous aider à choisir les bons salons, préparer vos visites et rencontrer les bonnes personnes.
           </p>
         </div>
 
         {/* Filters Bar - 2 columns layout */}
         <div className="max-w-6xl mx-auto bg-white rounded-xl p-6 shadow-2xl animate-scale-in">
+          <p className="text-center text-sm font-medium text-muted-foreground mb-4">
+            Commencez par identifier les salons utiles à votre activité.
+          </p>
           {/* Filters in 2 columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {/* Left column */}

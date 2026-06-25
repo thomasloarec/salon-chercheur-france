@@ -6,10 +6,10 @@ const HowItWorksNew = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Remettre l'humain au centre de votre travail
+            Les salons concentrent l'attention. Lotexpo la transforme en rencontres utiles.
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Les salons professionnels sont le meilleur endroit pour créer des relations business, mais on les délaisse parce qu'ils sont difficiles à préparer. Lotexpo change la donne.
+            Un salon professionnel ne crée de la valeur que si vous savez pourquoi vous y allez, qui vous voulez rencontrer et ce que vous voulez découvrir. Lotexpo vous aide à passer d'une liste d'événements à un vrai plan d'action.
           </p>
         </div>
 
@@ -30,10 +30,10 @@ const HowItWorksNew = () => {
                       </span>
                     </div>
                     <h3 className="text-2xl font-bold text-foreground mb-3">
-                      Identifier les salons qui méritent votre attention
+                      Identifier les salons qui méritent votre déplacement
                     </h3>
                     <p className="text-muted-foreground text-lg">
-                      Tous les événements B2B regroupés au même endroit. Plus de salons inconnus, plus d'opportunités manquées.
+                      Tous les événements B2B sont regroupés au même endroit pour éviter les salons oubliés et les opportunités manquées.
                     </p>
                   </div>
                 </div>
@@ -58,10 +58,10 @@ const HowItWorksNew = () => {
                       </span>
                     </div>
                     <h3 className="text-2xl font-bold text-foreground mb-3">
-                      Faire son choix avec un maximum d'informations
+                      Repérer les exposants et nouveautés à suivre
                     </h3>
                     <p className="text-muted-foreground text-lg">
-                      Filtrez par secteur et découvrez les Nouveautés annoncées par les exposants. Décision éclairée, on ne joue plus à pile ou face.
+                      Découvrez les informations utiles avant le jour J pour savoir quels stands peuvent réellement vous intéresser.
                     </p>
                   </div>
                 </div>
@@ -86,10 +86,10 @@ const HowItWorksNew = () => {
                       </span>
                     </div>
                     <h3 className="text-2xl font-bold text-foreground mb-3">
-                      Rencontrer les gens qui comptent pour votre business
+                      Transformer votre visite en rencontres business
                     </h3>
                     <p className="text-muted-foreground text-lg">
-                      Mettez des Nouveautés en favoris, construisez votre parcours de stands. Le salon professionnel redevient un élément charnière de votre business.
+                      Sauvegardez les nouveautés, préparez votre parcours et concentrez votre temps sur les contacts qui comptent.
                     </p>
                   </div>
                 </div>

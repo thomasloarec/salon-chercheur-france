@@ -91,7 +91,7 @@ const FeaturedNoveltiesSimple = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              Nouveautés à l'affiche des salons
+              Repérez ce qui mérite votre attention avant le salon
             </h2>
           </div>
           <div className="flex items-center justify-center py-12">
@@ -109,14 +109,19 @@ const FeaturedNoveltiesSimple = () => {
   return (
     <section className="bg-muted/30 py-16 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-            Nouveautés à l'affiche des salons
-          </h2>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-8">
+          <div className="max-w-3xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              Repérez ce qui mérite votre attention avant le salon
+            </h2>
+            <p className="text-muted-foreground">
+              Les Nouveautés publiées par les exposants vous aident à identifier les stands à voir en priorité avant même l'ouverture du salon.
+            </p>
+          </div>
           <Button 
             onClick={() => navigate('/nouveautes')}
             variant="ghost"
-            className="text-accent hover:text-accent/80 self-start sm:self-auto -ml-4 sm:ml-0"
+            className="text-accent hover:text-accent/80 self-start sm:self-auto -ml-4 sm:ml-0 shrink-0"
           >
             Voir toutes les Nouveautés
             <ArrowRight className="ml-2 h-4 w-4" />

@@ -14,11 +14,11 @@ const ExhibitorsReference = () => {
           </div>
           
           <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Entreprises exposantes ?
+            Exposants : rendez votre stand visible avant l'ouverture du salon
           </h3>
           
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Publiez vos Nouveautés pour attirer des visiteurs qualifiés avant l'ouverture du salon
+            Publiez vos nouveautés sur Lotexpo pour aider les visiteurs à comprendre pourquoi ils devraient passer sur votre stand.
           </p>
 
           <Button
@@ -26,7 +26,7 @@ const ExhibitorsReference = () => {
             size="lg"
             className="bg-accent hover:bg-accent/90 text-base sm:text-lg font-semibold px-4 sm:px-8 h-12 sm:h-14 max-w-full"
           >
-            <span className="truncate">Découvrir Lotexpo pour les exposants</span>
+            <span className="truncate">Publier une nouveauté exposant</span>
             <ArrowRight className="ml-2 h-5 w-5 flex-shrink-0" />
           </Button>
         </div>

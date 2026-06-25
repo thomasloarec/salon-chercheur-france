@@ -27,11 +27,11 @@ const JoinBlock = () => {
           {/* Right: Content */}
           <div>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Rejoindre Lotexpo
+              Créez votre espace de préparation salon
             </h2>
             
             <p className="text-xl text-muted-foreground mb-8">
-              Créez votre compte gratuit pour suivre vos salons, sauvegarder les Nouveautés qui vous intéressent et planifier un parcours de stands efficace le jour J.
+              Suivez vos salons, sauvegardez les nouveautés qui vous intéressent et préparez un parcours de stands utile avant le jour J.
             </p>
 
             <div className="space-y-4 mb-8">
@@ -41,10 +41,10 @@ const JoinBlock = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground mb-1">
-                    Suivre mes salons
+                    Suivre les bons salons
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    Ajoutez vos événements favoris et recevez des notifications
+                    Ajoutez vos événements favoris et retrouvez-les facilement.
                   </p>
                 </div>
               </div>
@@ -55,10 +55,10 @@ const JoinBlock = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground mb-1">
-                    Favoris Nouveautés
+                    Sauvegarder les nouveautés utiles
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    Sauvegardez les innovations qui vous intéressent
+                    Gardez de côté les innovations, produits ou services qui méritent un passage sur stand.
                   </p>
                 </div>
               </div>
@@ -69,10 +69,10 @@ const JoinBlock = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground mb-1">
-                    Mon parcours
+                    Préparer votre parcours
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    Planifiez votre visite pour un maximum d'efficacité
+                    Construisez une liste claire des exposants à rencontrer pour ne pas perdre de temps sur place.
                   </p>
                 </div>
               </div>
@@ -83,7 +83,7 @@ const JoinBlock = () => {
               size="lg"
               className="bg-accent hover:bg-accent/90 text-lg font-semibold px-8 h-14"
             >
-              Inscription gratuite
+              Créer mon espace gratuit
             </Button>
           </div>
         </div>
