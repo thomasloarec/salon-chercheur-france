@@ -9,6 +9,13 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useVisitPlansForUser, VisitPlan } from '@/hooks/useVisitPlan';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { useQuery } from '@tanstack/react-query';
+import {
+  fetchExhibitorPublicSlugs,
+  resolvePublicSlug,
+  type PublicSlugMaps,
+} from '@/lib/exhibitorPublicSlug';
+import { ExhibitorFullProfileCTA } from '@/components/exhibitor/ExhibitorFullProfileCTA';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
@@ -41,6 +48,32 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
 
   // Batched public stats (exposants + nouveautés) — same source as the Salons page
   const { data: statsMap } = useEventCardStats((events ?? []).map((e) => e.id));
+
+  // Collect every exhibitor id referenced by the visit plans so we can resolve
+  // their public `/exposants/:slug` identities in ONE batched query (no N+1).
+  const planExhibitorIds = Array.from(
+    new Set(
+      visitPlans.flatMap((plan) =>
+        [...(plan.prioritaires || []), ...(plan.optionnels || [])]
+          .map((rec: any) => rec?.exhibitor_id)
+          .filter((id: any): id is string => typeof id === 'string' && id.length > 0),
+      ),
+    ),
+  );
+
+  const { data: slugMaps } = useQuery({
+    queryKey: ['visit-plan-exhibitor-slugs', planExhibitorIds],
+    enabled: planExhibitorIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<PublicSlugMaps> => {
+      const UUID_RE =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      // An exhibitor_id is either a modern UUID or a legacy id_exposant string.
+      const uuids = planExhibitorIds.filter((id) => UUID_RE.test(id));
+      const legacy = planExhibitorIds.filter((id) => !UUID_RE.test(id));
+      return fetchExhibitorPublicSlugs(uuids, legacy);
+    },
+  });
 
   // Index visit plans by event_id
   const plansByEvent = visitPlans.reduce((acc, plan) => {
