@@ -656,7 +656,13 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 {ROLES.map(r => (
                   <button
                     key={r}
-                    onClick={() => { setRole(r); setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200); }}
+                    onClick={() => {
+                      setRole(r);
+                      // Reset de l'objectif s'il n'est plus pertinent pour le nouveau rôle.
+                      const allowed = OBJECTIVES_BY_ROLE[r] ?? ALL_OBJECTIVES;
+                      if (objective && !allowed.includes(objective)) setObjective('');
+                      setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200);
+                    }}
                     className={cn(
                       'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
                       role === r
