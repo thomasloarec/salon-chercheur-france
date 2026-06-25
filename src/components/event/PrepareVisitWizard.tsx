@@ -51,6 +51,36 @@ const OBJECTIVES = [
   'Comparer des solutions',
 ];
 
+// Liste complète canonique (filet de sécurité pour "Autre" / rôle inconnu).
+const ALL_OBJECTIVES = OBJECTIVES;
+
+// Filtre d'affichage : objectifs pertinents par rôle (étape 1 → étape 2).
+// Les clés matchent EXACTEMENT les valeurs de rôle stockées (cf. ROLES).
+// Les chaînes d'objectif sont les chaînes canoniques verbatim.
+const OBJECTIVES_BY_ROLE: Record<string, string[]> = {
+  'Achats / Approvisionnement': [
+    'Trouver de nouveaux fournisseurs', 'Comparer des solutions',
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires'],
+  'R&D / Ingénierie': [
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires', 'Comparer des solutions', 'Trouver de nouveaux fournisseurs'],
+  'Commercial / Business Development': [
+    'Rencontrer mes clients et prospects', 'Identifier des partenaires',
+    'Faire de la veille concurrentielle', 'Découvrir les innovations du marché'],
+  'Direction / Management': [
+    'Trouver de nouveaux fournisseurs', 'Comparer des solutions',
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires', 'Rencontrer mes clients et prospects'],
+  'Production / Industrialisation': [
+    'Trouver de nouveaux fournisseurs', 'Comparer des solutions',
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires'],
+  'Marketing / Innovation': [
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires', 'Comparer des solutions'],
+};
+
 const DURATIONS = ['2h', 'Demi-journée', 'Journée complète'];
 
 type Step = 1 | 2 | 3 | 'loading' | 'results' | 'auth';
@@ -626,7 +656,13 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 {ROLES.map(r => (
                   <button
                     key={r}
-                    onClick={() => { setRole(r); setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200); }}
+                    onClick={() => {
+                      setRole(r);
+                      // Reset de l'objectif s'il n'est plus pertinent pour le nouveau rôle.
+                      const allowed = OBJECTIVES_BY_ROLE[r] ?? ALL_OBJECTIVES;
+                      if (objective && !allowed.includes(objective)) setObjective('');
+                      setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200);
+                    }}
                     className={cn(
                       'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
                       role === r
@@ -649,7 +685,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 <p className="text-sm text-muted-foreground">Choisissez l'objectif qui décrit le mieux votre visite</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {OBJECTIVES.map(o => (
+                {(OBJECTIVES_BY_ROLE[role] ?? ALL_OBJECTIVES).map(o => (
                   <button
                     key={o}
                     onClick={() => { setObjective(o); setTimeout(() => { setStep(3); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: o }); }, 200); }}
