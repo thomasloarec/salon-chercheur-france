@@ -601,6 +601,8 @@ Deno.serve(async (req) => {
         candidates_sent: candidates.length,
         under_threshold,
         top5: candidatesPool.slice(0, 5).map((e) => ({ name: e.name, relevance: e._m.relevance })),
+        semantic_used: semanticUsed,
+        fallback_used: fallbackUsed,
       }),
     );
 
@@ -616,6 +618,8 @@ Deno.serve(async (req) => {
         under_threshold: true,
         qualified_count,
         candidates_sent: 0,
+        semantic_used: semanticUsed,
+        fallback_used: fallbackUsed,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
