@@ -51,6 +51,36 @@ const OBJECTIVES = [
   'Comparer des solutions',
 ];
 
+// Liste complète canonique (filet de sécurité pour "Autre" / rôle inconnu).
+const ALL_OBJECTIVES = OBJECTIVES;
+
+// Filtre d'affichage : objectifs pertinents par rôle (étape 1 → étape 2).
+// Les clés matchent EXACTEMENT les valeurs de rôle stockées (cf. ROLES).
+// Les chaînes d'objectif sont les chaînes canoniques verbatim.
+const OBJECTIVES_BY_ROLE: Record<string, string[]> = {
+  'Achats / Approvisionnement': [
+    'Trouver de nouveaux fournisseurs', 'Comparer des solutions',
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires'],
+  'R&D / Ingénierie': [
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires', 'Comparer des solutions', 'Trouver de nouveaux fournisseurs'],
+  'Commercial / Business Development': [
+    'Rencontrer mes clients et prospects', 'Identifier des partenaires',
+    'Faire de la veille concurrentielle', 'Découvrir les innovations du marché'],
+  'Direction / Management': [
+    'Trouver de nouveaux fournisseurs', 'Comparer des solutions',
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires', 'Rencontrer mes clients et prospects'],
+  'Production / Industrialisation': [
+    'Trouver de nouveaux fournisseurs', 'Comparer des solutions',
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires'],
+  'Marketing / Innovation': [
+    'Découvrir les innovations du marché', 'Faire de la veille concurrentielle',
+    'Identifier des partenaires', 'Comparer des solutions'],
+};
+
 const DURATIONS = ['2h', 'Demi-journée', 'Journée complète'];
 
 type Step = 1 | 2 | 3 | 'loading' | 'results' | 'auth';
