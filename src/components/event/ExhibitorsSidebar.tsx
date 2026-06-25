@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Building2, ExternalLink, Info, ChevronDown, Sparkles } from 'lucide-react';
+import { Search, Building2, ExternalLink, Info, ChevronDown, Route } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -482,7 +482,7 @@ export default function ExhibitorsSidebar({
               onClick={onPrepareVisit}
               className="gap-1.5 whitespace-nowrap shrink-0"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Route className="w-3.5 h-3.5" />
               Créer un parcours IA
             </Button>
           </div>
