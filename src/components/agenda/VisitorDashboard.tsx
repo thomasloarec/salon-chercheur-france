@@ -254,7 +254,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                             </p>
                             <div className="space-y-2">
                               {visitPlan.prioritaires.map((rec: any) => (
-                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} />
+                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} slugMaps={slugMaps} />
                               ))}
                             </div>
                           </div>
@@ -268,7 +268,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                             </p>
                             <div className="space-y-2">
                               {visitPlan.optionnels.map((rec: any) => (
-                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} />
+                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} slugMaps={slugMaps} />
                               ))}
                             </div>
                           </div>
