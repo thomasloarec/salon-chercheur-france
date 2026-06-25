@@ -488,17 +488,17 @@ const Organisateurs = () => {
                 <LayoutGrid className="h-7 w-7 text-primary" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                Affichez les Nouveautés de vos exposants directement sur votre site
+                Affichez les temps forts de vos exposants sur votre site officiel
               </h2>
               <div className="space-y-3 text-muted-foreground leading-relaxed">
                 <p>
-                  Le widget Lotexpo permet d'intégrer sur le site officiel de votre salon les Nouveautés publiées par vos exposants.
-                </p>
-                <p>
-                  Concrètement, vos exposants publient leurs temps forts sur Lotexpo : lancement produit, innovation, démonstration, conférence, animation de stand ou document à télécharger. Ces contenus peuvent ensuite être affichés sur votre propre site grâce au widget.
+                  Le widget Lotexpo permet d'intégrer sur le site officiel de votre salon les Nouveautés publiées par vos exposants : lancements produits, innovations, démonstrations, conférences, animations de stand ou documents à télécharger.
                 </p>
                 <p>
                   Vous enrichissez ainsi votre site avec du contenu utile, vivant et orienté visiteurs, <strong className="text-foreground">sans devoir tout produire vous-même</strong>. Les exposants gagnent en visibilité, les visiteurs préparent mieux leur venue, et votre salon bénéficie d'un contenu plus attractif avant son ouverture.
+                </p>
+                <p>
+                  Le widget ne remplace pas vos pages officielles. Il ajoute un bloc de contenu dynamique pour mettre en avant ce que vos exposants souhaitent présenter.
                 </p>
               </div>
               <Button asChild className="mt-6 gap-2">
