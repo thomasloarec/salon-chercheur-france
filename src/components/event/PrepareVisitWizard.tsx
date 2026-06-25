@@ -892,22 +892,23 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                         <Star className="w-5 h-5 text-primary flex-shrink-0" /> Vos incontournables
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
-                        {results.prioritaires.map((rec) => (
-                          <RecommendationCard
-                            key={rec.exhibitor_id}
-                            rec={rec}
-                            variant="primary"
-                            eventId={event.id}
-                            checked={checkedIds.has(rec.exhibitor_id)}
-                            onCheckedChange={(checked) => {
-                              setCheckedIds(prev => {
-                                const next = new Set(prev);
-                                if (checked) next.add(rec.exhibitor_id);
-                                else next.delete(rec.exhibitor_id);
-                                return next;
-                              });
-                            }}
-                          />
+                        {results.prioritaires.map((rec, i) => (
+                          <CascadeItem key={rec.exhibitor_id} delay={Math.min(i * 60, 700)}>
+                            <RecommendationCard
+                              rec={rec}
+                              variant="primary"
+                              eventId={event.id}
+                              checked={checkedIds.has(rec.exhibitor_id)}
+                              onCheckedChange={(checked) => {
+                                setCheckedIds(prev => {
+                                  const next = new Set(prev);
+                                  if (checked) next.add(rec.exhibitor_id);
+                                  else next.delete(rec.exhibitor_id);
+                                  return next;
+                                });
+                              }}
+                            />
+                          </CascadeItem>
                         ))}
                       </div>
                     </section>
@@ -920,22 +921,26 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                         <Clock className="w-5 h-5 text-muted-foreground flex-shrink-0" /> À voir si vous avez le temps
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
-                        {results.optionnels.map((rec) => (
-                          <RecommendationCard
+                        {results.optionnels.map((rec, i) => (
+                          <CascadeItem
                             key={rec.exhibitor_id}
-                            rec={rec}
-                            variant="secondary"
-                            eventId={event.id}
-                            checked={checkedIds.has(rec.exhibitor_id)}
-                            onCheckedChange={(checked) => {
-                              setCheckedIds(prev => {
-                                const next = new Set(prev);
-                                if (checked) next.add(rec.exhibitor_id);
-                                else next.delete(rec.exhibitor_id);
-                                return next;
-                              });
-                            }}
-                          />
+                            delay={Math.min((results.prioritaires.length + i) * 60, 700)}
+                          >
+                            <RecommendationCard
+                              rec={rec}
+                              variant="secondary"
+                              eventId={event.id}
+                              checked={checkedIds.has(rec.exhibitor_id)}
+                              onCheckedChange={(checked) => {
+                                setCheckedIds(prev => {
+                                  const next = new Set(prev);
+                                  if (checked) next.add(rec.exhibitor_id);
+                                  else next.delete(rec.exhibitor_id);
+                                  return next;
+                                });
+                              }}
+                            />
+                          </CascadeItem>
                         ))}
                       </div>
                     </section>
