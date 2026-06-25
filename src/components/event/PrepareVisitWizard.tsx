@@ -1084,14 +1084,6 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 }
 
 // --- Loading Screen ---
-const LOADING_STEPS = [
-  { threshold: 0, message: 'Analyse du salon…', icon: Search },
-  { threshold: 20, message: 'Identification des exposants les plus pertinents…', icon: Users },
-  { threshold: 45, message: 'Évaluation de la pertinence selon votre profil…', icon: BarChart3 },
-  { threshold: 70, message: 'Priorisation des exposants recommandés…', icon: Sparkles },
-  { threshold: 88, message: 'Finalisation de votre sélection personnalisée…', icon: CheckCircle2 },
-];
-
 function LoadingScreen({
   exhibitorCount,
   scanExhibitors,
