@@ -767,9 +767,9 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 {keywords.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {keywords.map(kw => (
-                      <Badge key={kw} variant="secondary" className="gap-1 pr-1">
+                      <Badge key={kw} className="gap-1 pr-1 rounded-md bg-primary/10 text-primary hover:bg-primary/10">
                         {kw}
-                        <button onClick={() => removeKeyword(kw)} className="ml-1 hover:text-destructive">
+                        <button onClick={() => removeKeyword(kw)} className="ml-1 text-primary hover:opacity-70">
                           <X className="w-3 h-3" />
                         </button>
                       </Badge>
