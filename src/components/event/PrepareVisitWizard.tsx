@@ -711,20 +711,25 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 <p className="text-sm text-muted-foreground">Choisissez l'objectif qui décrit le mieux votre visite</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(OBJECTIVES_BY_ROLE[role] ?? ALL_OBJECTIVES).map(o => (
-                  <button
-                    key={o}
-                    onClick={() => { setObjective(o); setTimeout(() => { setStep(3); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: o }); }, 200); }}
-                    className={cn(
-                      'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
-                      objective === o
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-border hover:border-primary/40'
-                    )}
-                  >
-                    <span className="font-medium text-sm">{o}</span>
-                  </button>
-                ))}
+                {(OBJECTIVES_BY_ROLE[role] ?? ALL_OBJECTIVES).map(o => {
+                  const ObjIcon = OBJECTIVE_ICONS[o] ?? Sparkles;
+                  const selected = objective === o;
+                  return (
+                    <button
+                      key={o}
+                      onClick={() => { setObjective(o); setTimeout(() => { setStep(3); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: o }); }, 200); }}
+                      className={cn(
+                        'flex items-center gap-3 p-4 rounded-lg border bg-card text-left transition-all duration-150 cursor-pointer hover:border-primary/40 hover:shadow-sm hover:-translate-y-px',
+                        selected
+                          ? 'border-2 border-primary bg-primary/5'
+                          : 'border-border'
+                      )}
+                    >
+                      <ObjIcon className={cn('w-5 h-5 flex-shrink-0', selected ? 'text-primary' : 'text-muted-foreground')} />
+                      <span className={cn('text-sm font-medium', selected && 'text-primary')}>{o}</span>
+                    </button>
+                  );
+                })}
               </div>
               <div className="flex justify-start pt-2">
                 <Button variant="ghost" onClick={() => setStep(1)}>
