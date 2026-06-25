@@ -804,6 +804,27 @@ export type Database = {
         }
         Relationships: []
       }
+      embed_diag: {
+        Row: {
+          id: number
+          last_status: number | null
+          note: string | null
+          ts: string | null
+        }
+        Insert: {
+          id: number
+          last_status?: number | null
+          note?: string | null
+          ts?: string | null
+        }
+        Update: {
+          id?: number
+          last_status?: number | null
+          note?: string | null
+          ts?: string | null
+        }
+        Relationships: []
+      }
       event_duplicate_candidates: {
         Row: {
           created_at: string
@@ -1691,6 +1712,24 @@ export type Database = {
             referencedColumns: ["public_identity_id"]
           },
         ]
+      }
+      exhibitor_embeddings: {
+        Row: {
+          embedded_at: string | null
+          embedding: string | null
+          exhibitor_id: string
+        }
+        Insert: {
+          embedded_at?: string | null
+          embedding?: string | null
+          exhibitor_id: string
+        }
+        Update: {
+          embedded_at?: string | null
+          embedding?: string | null
+          exhibitor_id?: string
+        }
+        Relationships: []
       }
       exhibitor_events: {
         Row: {
@@ -6239,6 +6278,25 @@ export type Database = {
           p_user_id?: string
         }
         Returns: undefined
+      }
+      match_exhibitors_semantic: {
+        Args: {
+          p_event_id: string
+          p_k?: number
+          p_query: string
+          p_threshold?: number
+        }
+        Returns: {
+          exhibitor_id: string
+          mots_cles_metier: Json
+          nom_exposant: string
+          produits_services: Json
+          resume_court: string
+          secteur_principal: string
+          similarity: number
+          sous_secteurs: Json
+          website: string
+        }[]
       }
       normalize_company_name: { Args: { input: string }; Returns: string }
       normalize_domain: { Args: { input_url: string }; Returns: string }
