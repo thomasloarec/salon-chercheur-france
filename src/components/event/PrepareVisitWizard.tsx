@@ -202,59 +202,6 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
     }
   }, [open, event.id, user?.id]);
 
-  // Fetch keyword suggestions from exhibitor_ai
-  useEffect(() => {
-    if (step !== 3 || !event.id) return;
-    const fetchSuggestions = async () => {
-      try {
-        const { data: eventData } = await supabase
-          .from('events')
-          .select('id_event')
-          .eq('id', event.id)
-          .single();
-
-        if (!eventData) return;
-
-        const { data: participations } = await supabase
-          .from('participation')
-          .select('exhibitor_id')
-          .eq('id_event_text', eventData.id_event)
-          .not('exhibitor_id', 'is', null);
-
-        const ids = (participations || []).map(p => p.exhibitor_id).filter(Boolean) as string[];
-        if (ids.length === 0) return;
-
-        const { data: aiRows } = await supabase
-          .from('exhibitor_ai')
-          .select('mots_cles_metier')
-          .in('exhibitor_id', ids);
-
-        if (!aiRows) return;
-
-        const freq: Record<string, number> = {};
-        aiRows.forEach(row => {
-          const kws = row.mots_cles_metier as string[] | null;
-          if (Array.isArray(kws)) {
-            kws.forEach((k: string) => {
-              const normalized = k.trim().toLowerCase();
-              if (normalized) freq[normalized] = (freq[normalized] || 0) + 1;
-            });
-          }
-        });
-
-        const sorted = Object.entries(freq)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 12)
-          .map(([k]) => k.charAt(0).toUpperCase() + k.slice(1));
-
-        setSuggestions(sorted);
-      } catch (err) {
-        console.error('Error fetching suggestions:', err);
-      }
-    };
-    fetchSuggestions();
-  }, [step, event.id]);
-
   const addKeyword = (kw: string) => {
     const trimmed = kw.trim();
     if (trimmed && !keywords.includes(trimmed)) {
