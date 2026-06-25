@@ -307,20 +307,17 @@ const Organisateurs = () => {
           <div className="max-w-4xl mx-auto text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary mb-6">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Plateforme indépendante
+              Visibilité pré-salon
             </span>
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
-              Organisateurs de salons : donnez plus de visibilité à votre événement
+              Aidez les bons visiteurs à choisir votre salon avant même l'ouverture
             </h1>
             <div className="space-y-4 text-base md:text-lg text-muted-foreground text-left max-w-3xl mx-auto">
               <p>
-                Lotexpo référence les salons professionnels organisés en France afin d'aider les visiteurs, exposants à identifier les événements qui comptent dans leur secteur.
+                Lotexpo référence les salons professionnels en France pour aider les visiteurs, exposants et équipes commerciales à identifier les événements utiles dans leur secteur. La plateforme agit comme un point d'entrée complémentaire : elle rend votre salon plus facile à découvrir, valorise vos exposants et redirige les utilisateurs vers vos informations officielles.
               </p>
               <p>
-                La plateforme est indépendante. La présence d'un salon sur Lotexpo ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite. Notre rôle est simple : offrir une visibilité supplémentaire aux événements professionnels et orienter les utilisateurs vers les informations utiles, notamment le site officiel de chaque salon.
-              </p>
-              <p>
-                Pour les organisateurs, Lotexpo est une opportunité gratuite de renforcer la visibilité de leur événement, de mettre en avant leurs exposants et de générer davantage d'intérêt avant l'ouverture du salon.
+                Votre site officiel reste la destination de référence. Lotexpo intervient en amont, au moment où les visiteurs comparent les salons, cherchent des exposants à rencontrer et décident si le déplacement mérite leur temps.
               </p>
             </div>
             {/* Mini-cards badges */}
@@ -338,8 +335,8 @@ const Organisateurs = () => {
                 },
                 {
                   icon: Target,
-                  title: 'Visibilité qualifiée',
-                  text: 'Votre salon est découvert par des visiteurs, exposants et commerciaux.',
+                  title: 'Orienté visiteurs qualifiés',
+                  text: 'Votre salon est découvert par des professionnels qui préparent activement leur venue.',
                 },
               ].map((badge) => {
                 const Icon = badge.icon;
@@ -366,7 +363,7 @@ const Organisateurs = () => {
             <div className="mt-8">
               <Button asChild size="lg" className="gap-2">
                 <Link to="/contact">
-                  Nous contacter <ArrowRight className="w-4 h-4" />
+                  Vérifier la fiche de mon salon <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
             </div>
