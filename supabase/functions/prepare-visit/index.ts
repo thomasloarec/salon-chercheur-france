@@ -24,7 +24,7 @@ const DURATION_CAPS: Record<string, { total: number; high: number; medium: numbe
 const MAX_CANDIDATES = 60;
 
 // Semantic retrieval threshold (cosine similarity floor for match_exhibitors_semantic).
-const SEMANTIC_THRESHOLD = 0.42;
+const SEMANTIC_THRESHOLD = 0.32; // plancher absolu ; la RPC applique en plus une marge relative (max - 0.08)
 
 // Objective → extra query terms appended to keywords for the semantic search.
 // Seller mode uses keywords only (terms intentionally empty there).
