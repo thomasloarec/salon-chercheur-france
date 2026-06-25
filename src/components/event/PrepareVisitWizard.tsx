@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff, Route, ShoppingCart, TrendingUp, Briefcase, Megaphone, FlaskConical, Factory, CircleDashed, PackageSearch, Scale, Handshake, Target, ScanLine } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff, Route, ShoppingCart, TrendingUp, Briefcase, Megaphone, FlaskConical, Factory, CircleDashed, PackageSearch, Scale, Handshake, Target, ScanLine, Star } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
@@ -860,7 +860,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   )}
 
                   {/* Summary banner */}
-                  <div className="max-w-full overflow-hidden bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 text-center space-y-1">
+                  <div className="max-w-full overflow-hidden bg-secondary rounded-md p-3 sm:p-4 text-center space-y-1">
                     <p className="text-xs sm:text-sm font-medium leading-relaxed break-words text-balance">
                       Basé sur votre profil, voici les{' '}
                       <span className="text-primary font-bold">{results.prioritaires.length + results.optionnels.length}</span>{' '}
@@ -876,7 +876,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   {results.prioritaires.length > 0 && (
                     <section className="min-w-0 overflow-x-hidden">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 break-words">
-                        ⭐ Vos incontournables
+                        <Star className="w-5 h-5 text-primary flex-shrink-0" /> Vos incontournables
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                         {results.prioritaires.map((rec) => (
@@ -904,7 +904,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   {results.optionnels.length > 0 && (
                     <section className="min-w-0 overflow-x-hidden">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-muted-foreground break-words">
-                        💡 À voir si vous avez le temps
+                        <Clock className="w-5 h-5 text-muted-foreground flex-shrink-0" /> À voir si vous avez le temps
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                         {results.optionnels.map((rec) => (
@@ -1212,47 +1212,53 @@ function RecommendationCard({
 }) {
   const logoUrl = getExhibitorLogoUrl(rec.logo_url, rec.website);
   const standNumber = normalizeStandNumber(rec.stand);
+  const initials = (rec.name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
 
   return (
     <div
       className={cn(
-        'min-w-0 max-w-full overflow-hidden rounded-xl border p-4 flex flex-col gap-3 transition-shadow hover:shadow-md',
-        variant === 'primary' ? 'bg-background' : 'bg-muted/30',
+        'min-w-0 max-w-full overflow-hidden rounded-lg bg-background border-[0.5px] p-4 flex flex-col gap-3 transition-shadow hover:shadow-sm',
+        variant === 'primary' ? 'border-secondary' : 'border-border',
         !checked && 'opacity-50'
       )}
     >
-      <div className="flex items-start gap-3 min-w-0">
+      <div className="flex items-center gap-3 min-w-0">
         <Checkbox
           checked={checked}
           onCheckedChange={onCheckedChange}
-          className="mt-1 flex-shrink-0"
+          className="flex-shrink-0"
         />
-        <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
+        <div className="w-10 h-10 rounded-lg bg-secondary flex-shrink-0 flex items-center justify-center overflow-hidden text-xs font-semibold text-secondary-foreground">
           {logoUrl ? (
             <img src={logoUrl} alt={rec.name} className="w-full h-full object-contain" />
+          ) : initials ? (
+            <span>{initials}</span>
           ) : (
             <Building2 className="w-5 h-5 text-muted-foreground" />
           )}
         </div>
         <div className="flex-1 min-w-0 overflow-hidden">
-          <p className="font-semibold text-sm leading-tight break-words">{rec.name}</p>
+          <p className="text-[15px] font-medium leading-tight break-words">{rec.name}</p>
           {rec.secteur_principal && (
-            <p className="text-xs text-muted-foreground mt-0.5 break-words">{rec.secteur_principal}</p>
-          )}
-          {standNumber && (
-            <p className="text-xs text-muted-foreground mt-0.5 break-words">Stand {standNumber}</p>
+            <p className="text-[13px] text-muted-foreground mt-0.5 break-words">{rec.secteur_principal}</p>
           )}
         </div>
+        {standNumber && (
+          <span className="flex-shrink-0 text-xs font-medium px-2 py-1 rounded-md bg-primary/10 text-primary whitespace-nowrap">
+            Stand {standNumber}
+          </span>
+        )}
       </div>
 
-      <div className={cn(
-        'max-w-full min-w-0 text-xs rounded-lg p-3 leading-relaxed break-words overflow-hidden',
-        variant === 'primary'
-          ? 'bg-primary/5 text-foreground border border-primary/10'
-          : 'bg-muted/50 text-muted-foreground'
-      )}>
+      <p className="max-w-full min-w-0 text-[13.5px] leading-[1.6] text-muted-foreground break-words overflow-hidden">
         {rec.raison}
-      </div>
+      </p>
     </div>
   );
 }
