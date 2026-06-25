@@ -581,6 +581,7 @@ Deno.serve(async (req) => {
     }
 
     const keywordsDisplay = (keywords || []).join(", ");
+    const objectiveGuidance = OBJECTIVE_GUIDANCE[objective] ?? "";
     const prompt = `Tu es un expert des salons professionnels B2B qui aide un visiteur à prioriser les exposants à rencontrer.
 
 Profil du visiteur :
@@ -596,10 +597,10 @@ Voici les exposants candidats présélectionnés, avec leur activité réelle :
 ${JSON.stringify(candidates)}
 
 Ta tâche :
-1. SÉLECTIONNE uniquement les exposants RÉELLEMENT pertinents pour ce visiteur, au maximum ${cap.total}.
-2. Si moins de ${cap.total} exposants sont réellement pertinents au regard de ses centres d'intérêt, RETOURNE-EN MOINS. Ne complète JAMAIS la liste avec des exposants peu pertinents pour atteindre un quota.
-3. Marque en "high" les meilleurs (au plus ${cap.high}), les autres exposants pertinents en "medium".
-4. Pour chacun, rédige UNE phrase de justification SPÉCIFIQUE et ancrée dans son activité réelle : cite l'élément concret (un produit, un service, un mot-clé métier) qui le rend pertinent pour CE visiteur. Varie les formulations ; n'utilise aucune phrase passe-partout et ne commence pas toutes les phrases de la même manière.
+1. SÉLECTIONNE uniquement les exposants RÉELLEMENT pertinents au regard des centres d'intérêt du visiteur (ce qu'il cherche). C'est le critère premier et non négociable.
+2. Si moins de ${cap.total} exposants sont réellement pertinents, RETOURNE-EN MOINS. Ne complète jamais la liste pour atteindre un quota.
+3. PARMI les exposants pertinents retenus à l'étape 1, donne la priorité "high" (au plus ${cap.high}) à ceux qui correspondent le mieux au RÔLE et à l'OBJECTIF du visiteur ; les autres exposants pertinents passent en "medium". L'objectif sert UNIQUEMENT à ordonner et à choisir les "high" : il ne doit JAMAIS exclure un exposant pertinent pour ses centres d'intérêt, ni réduire le nombre de résultats. Pour l'objectif de ce visiteur : ${objectiveGuidance || "privilégie les exposants les plus directement utiles à son objectif."}
+4. Rédige pour chacun UNE phrase de justification spécifique, ancrée dans son activité réelle (un produit, un service, un mot-clé métier concret) ET formulée du point de vue d'un profil "${role}" et de son objectif. Varie les formulations.
 5. N'invente jamais d'information absente des données fournies. Chaque justification doit être propre à l'exposant concerné.
 
 Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte avant ou après :
