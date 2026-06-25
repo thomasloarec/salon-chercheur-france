@@ -565,10 +565,10 @@ export default function Exposants() {
       <section className="py-20 bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="container max-w-4xl mx-auto px-4 text-center space-y-8">
           <h2 className="text-4xl md:text-5xl font-bold">
-            Prêt à attirer vos premiers visiteurs qualifiés ?
+            Donnez aux visiteurs une raison de venir vous voir
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Publiez gratuitement votre première nouveauté et commencez à générer des leads avant le salon.
+            Publiez gratuitement votre première nouveauté et rendez votre présence visible avant l'ouverture du salon.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
@@ -577,7 +577,7 @@ export default function Exposants() {
               onClick={() => navigate('/publier-nouveaute')}
             >
               <Megaphone className="h-5 w-5" />
-              Publier ma nouveauté
+              Publier ma première nouveauté
             </Button>
             <Button 
               size="lg"
