@@ -781,6 +781,8 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
       under_threshold,
       qualified_count,
       candidates_sent: candidates.length,
+      semantic_used: semanticUsed,
+      fallback_used: fallbackUsed,
     };
 
     return new Response(JSON.stringify(result), {
