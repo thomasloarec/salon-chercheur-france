@@ -867,6 +867,19 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                       exposants à prioriser{duration ? ` pour une visite de ${duration}` : ''} parmi les{' '}
                       <span className="font-bold">{results.totalExhibitors}</span> présents.
                     </p>
+                    {(() => {
+                      // Critères réellement disponibles à l'écran résultats (state du wizard).
+                      const segments: string[] = [];
+                      const roleObjective = [role, objective].filter(Boolean).join(' · ');
+                      if (roleObjective) segments.push(roleObjective);
+                      if (keywords.length > 0) segments.push(keywords.slice(0, 3).join(', '));
+                      if (segments.length === 0) return null;
+                      return (
+                        <p className="text-[12px] sm:text-[13px] text-secondary-foreground/70 break-words">
+                          Pour : {segments.join(' · ')}
+                        </p>
+                      );
+                    })()}
                     <p className="text-xs text-muted-foreground break-words">
                       {checkedIds.size} exposant{checkedIds.size > 1 ? 's' : ''} sélectionné{checkedIds.size > 1 ? 's' : ''}
                     </p>
