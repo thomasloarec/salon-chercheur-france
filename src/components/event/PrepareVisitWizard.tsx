@@ -732,9 +732,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
               <div>
                 <Input
-                  placeholder={objective === 'Rencontrer mes clients et prospects'
-                    ? 'Ex. : logiciel de devis, solution IA…'
-                    : 'Ex. : coffrage, isolation, menuiserie…'}
+                  placeholder={keywordPlaceholder}
                   value={keywordInput}
                   onChange={e => setKeywordInput(e.target.value)}
                   onKeyDown={handleKeywordInputKeyDown}
