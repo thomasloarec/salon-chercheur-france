@@ -12,7 +12,8 @@ import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, X, Building2, ExternalLink, RefreshCw, Clock, CalendarPlus, Check, Bookmark, Search, Users, BarChart3, CheckCircle2, Loader2, Lock, Mail, Eye, EyeOff, Route, ShoppingCart, TrendingUp, Briefcase, Megaphone, FlaskConical, Factory, CircleDashed, PackageSearch, Scale, Handshake, Target } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
@@ -82,6 +83,26 @@ const OBJECTIVES_BY_ROLE: Record<string, string[]> = {
 };
 
 const DURATIONS = ['2h', 'Demi-journée', 'Journée complète'];
+
+// Présentation uniquement : mapping icône → valeur string (ne modifie aucune valeur).
+const ROLE_ICONS: Record<string, LucideIcon> = {
+  'Achats / Approvisionnement': ShoppingCart,
+  'Commercial / Business Development': TrendingUp,
+  'Direction / Management': Briefcase,
+  'Marketing / Innovation': Megaphone,
+  'R&D / Ingénierie': FlaskConical,
+  'Production / Industrialisation': Factory,
+  'Autre': CircleDashed,
+};
+
+const OBJECTIVE_ICONS: Record<string, LucideIcon> = {
+  'Trouver de nouveaux fournisseurs': PackageSearch,
+  'Comparer des solutions': Scale,
+  'Découvrir les innovations du marché': Sparkles,
+  'Faire de la veille concurrentielle': Eye,
+  'Identifier des partenaires': Handshake,
+  'Rencontrer mes clients et prospects': Target,
+};
 
 type Step = 1 | 2 | 3 | 'loading' | 'results' | 'auth';
 
@@ -612,8 +633,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Route className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-base sm:text-lg font-semibold truncate">Préparer ma visite avec l'IA</h2>
@@ -630,12 +651,12 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
           {/* Progress bar */}
           {typeof step === 'number' && (
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-1.5 mt-4">
               {[1, 2, 3].map(s => (
                 <div
                   key={s}
                   className={cn(
-                    'h-1 flex-1 rounded-full transition-colors',
+                    'h-[5px] flex-1 rounded-full transition-colors',
                     s <= step ? 'bg-primary' : 'bg-muted'
                   )}
                 />
@@ -653,26 +674,31 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 <p className="text-sm text-muted-foreground">Sélectionnez le profil qui correspond le mieux à votre fonction</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {ROLES.map(r => (
-                  <button
-                    key={r}
-                    onClick={() => {
-                      setRole(r);
-                      // Reset de l'objectif s'il n'est plus pertinent pour le nouveau rôle.
-                      const allowed = OBJECTIVES_BY_ROLE[r] ?? ALL_OBJECTIVES;
-                      if (objective && !allowed.includes(objective)) setObjective('');
-                      setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200);
-                    }}
-                    className={cn(
-                      'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
-                      role === r
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-border hover:border-primary/40'
-                    )}
-                  >
-                    <span className="font-medium text-sm">{r}</span>
-                  </button>
-                ))}
+                {ROLES.map(r => {
+                  const RoleIcon = ROLE_ICONS[r] ?? CircleDashed;
+                  const selected = role === r;
+                  return (
+                    <button
+                      key={r}
+                      onClick={() => {
+                        setRole(r);
+                        // Reset de l'objectif s'il n'est plus pertinent pour le nouveau rôle.
+                        const allowed = OBJECTIVES_BY_ROLE[r] ?? ALL_OBJECTIVES;
+                        if (objective && !allowed.includes(objective)) setObjective('');
+                        setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200);
+                      }}
+                      className={cn(
+                        'flex items-center gap-3 p-4 rounded-lg border bg-card text-left transition-all duration-150 cursor-pointer hover:border-primary/40 hover:shadow-sm hover:-translate-y-px',
+                        selected
+                          ? 'border-2 border-primary bg-primary/5'
+                          : 'border-border'
+                      )}
+                    >
+                      <RoleIcon className={cn('w-5 h-5 flex-shrink-0', selected ? 'text-primary' : 'text-muted-foreground')} />
+                      <span className={cn('text-sm', selected ? 'font-medium text-primary' : 'font-medium')}>{r}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -685,20 +711,25 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 <p className="text-sm text-muted-foreground">Choisissez l'objectif qui décrit le mieux votre visite</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(OBJECTIVES_BY_ROLE[role] ?? ALL_OBJECTIVES).map(o => (
-                  <button
-                    key={o}
-                    onClick={() => { setObjective(o); setTimeout(() => { setStep(3); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: o }); }, 200); }}
-                    className={cn(
-                      'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
-                      objective === o
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-border hover:border-primary/40'
-                    )}
-                  >
-                    <span className="font-medium text-sm">{o}</span>
-                  </button>
-                ))}
+                {(OBJECTIVES_BY_ROLE[role] ?? ALL_OBJECTIVES).map(o => {
+                  const ObjIcon = OBJECTIVE_ICONS[o] ?? Sparkles;
+                  const selected = objective === o;
+                  return (
+                    <button
+                      key={o}
+                      onClick={() => { setObjective(o); setTimeout(() => { setStep(3); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: o }); }, 200); }}
+                      className={cn(
+                        'flex items-center gap-3 p-4 rounded-lg border bg-card text-left transition-all duration-150 cursor-pointer hover:border-primary/40 hover:shadow-sm hover:-translate-y-px',
+                        selected
+                          ? 'border-2 border-primary bg-primary/5'
+                          : 'border-border'
+                      )}
+                    >
+                      <ObjIcon className={cn('w-5 h-5 flex-shrink-0', selected ? 'text-primary' : 'text-muted-foreground')} />
+                      <span className={cn('text-sm font-medium', selected && 'text-primary')}>{o}</span>
+                    </button>
+                  );
+                })}
               </div>
               <div className="flex justify-start pt-2">
                 <Button variant="ghost" onClick={() => setStep(1)}>
@@ -736,9 +767,9 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 {keywords.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {keywords.map(kw => (
-                      <Badge key={kw} variant="secondary" className="gap-1 pr-1">
+                      <Badge key={kw} className="gap-1 pr-1 rounded-md bg-primary/10 text-primary hover:bg-primary/10">
                         {kw}
-                        <button onClick={() => removeKeyword(kw)} className="ml-1 hover:text-destructive">
+                        <button onClick={() => removeKeyword(kw)} className="ml-1 text-primary hover:opacity-70">
                           <X className="w-3 h-3" />
                         </button>
                       </Badge>
@@ -781,7 +812,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                         'px-4 py-2 rounded-full text-sm font-medium border transition-all',
                         duration === d
                           ? 'bg-primary text-primary-foreground border-primary'
-                          : 'border-border hover:border-primary/40'
+                          : 'border-border text-muted-foreground hover:border-primary/40'
                       )}
                     >
                       {d}
