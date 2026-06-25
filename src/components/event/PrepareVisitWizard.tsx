@@ -806,6 +806,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
           {step === 'loading' && (
             <LoadingScreen
               exhibitorCount={exhibitorCount}
+              scanExhibitors={scanExhibitors}
               complete={loadingComplete}
               onComplete={() => setStep('results')}
             />
