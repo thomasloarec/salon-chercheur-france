@@ -694,16 +694,50 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
 
     const results = recommendations.results || [];
 
-    const highIds = new Set(
-      results.filter((r: any) => r.priority === "high").map((r: any) => String(r.exhibitor_id)),
-    );
+    // ── CHANGEMENT 1: DÉDOUBLONNAGE PAR exhibitor_id (avant le split) ──────────
+    // Garde la PREMIÈRE occurrence, mais privilégie "high" si un même id
+    // apparaît en high ET en medium. Ordre d'apparition préservé.
+    const dedupMap = new Map<string, any>();
+    for (const r of results) {
+      const id = String(r.exhibitor_id);
+      const existing = dedupMap.get(id);
+      if (!existing) {
+        dedupMap.set(id, r);
+      } else if (existing.priority === "medium" && r.priority === "high") {
+        dedupMap.set(id, { ...r, __order: existing.__order });
+      }
+    }
+    // Réordonne selon la première apparition de chaque id.
+    let order = 0;
+    const dedupResults: any[] = [];
+    const seenOrder = new Set<string>();
+    for (const r of results) {
+      const id = String(r.exhibitor_id);
+      if (seenOrder.has(id)) continue;
+      seenOrder.add(id);
+      const rec = dedupMap.get(id);
+      if (rec) dedupResults.push(rec);
+      order++;
+    }
 
-    const prioritaires = results
-      .filter((r: any) => r.priority === "high" && exhibitorMap.has(String(r.exhibitor_id)))
-      .map(enrichItem);
-    const optionnels = results
-      .filter((r: any) => r.priority === "medium" && exhibitorMap.has(String(r.exhibitor_id)) && !highIds.has(String(r.exhibitor_id)))
-      .map(enrichItem);
+    // ── SPLIT high / medium (sur la liste dédoublonnée) ───────────────────────
+    const validResults = dedupResults.filter((r: any) =>
+      exhibitorMap.has(String(r.exhibitor_id))
+    );
+    const highList = validResults.filter((r: any) => r.priority === "high");
+    const mediumList = validResults.filter((r: any) => r.priority === "medium");
+
+    // ── CHANGEMENT 2: CAP DUR (après le split) ────────────────────────────────
+    // prioritaires = high tronquée à cap.high ; le surplus bascule en tête de medium.
+    const highKept = highList.slice(0, cap.high);
+    const highOverflow = highList.slice(cap.high);
+    const mediumCombined = [...highOverflow, ...mediumList];
+    // optionnels = medium tronquée pour que high + medium <= cap.total.
+    const remainingTotal = Math.max(0, cap.total - highKept.length);
+    const mediumKept = mediumCombined.slice(0, remainingTotal);
+
+    const prioritaires = highKept.map(enrichItem);
+    const optionnels = mediumKept.map(enrichItem);
 
     const result = {
       prioritaires,
