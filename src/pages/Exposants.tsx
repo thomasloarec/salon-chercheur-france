@@ -439,7 +439,7 @@ export default function Exposants() {
               Premium s'adapte à votre situation
             </h2>
             <p className="text-muted-foreground text-lg">
-              Quel que soit votre profil, maximisez votre impact
+              Quel que soit votre profil, utilisez Lotexpo pour mieux préparer votre visibilité avant le salon.
             </p>
           </div>
 
@@ -452,13 +452,12 @@ export default function Exposants() {
                 </div>
                 <h3 className="text-xl font-bold">Startup innovante</h3>
                 <p className="text-sm text-muted-foreground">
-                  Vous lancez un produit révolutionnaire mais avez un petit stand en fond de hall.
+                  Vous avez une vraie nouveauté, mais un petit stand ou une faible notoriété.
                 </p>
                 <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Résultat avec Premium :</p>
+                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
                   <p className="text-sm text-muted-foreground">
-                    Votre innovation apparaît en première page, génère 50+ leads qualifiés, 
-                    et vous repartez avec un pipeline commercial de 6 mois.
+                    Vous mettez votre innovation en avant avant l'ouverture du salon et vous donnez aux visiteurs une raison concrète de vous identifier dans leur parcours.
                   </p>
                 </div>
               </CardContent>
@@ -472,13 +471,12 @@ export default function Exposants() {
                 </div>
                 <h3 className="text-xl font-bold">PME établie</h3>
                 <p className="text-sm text-muted-foreground">
-                  Vous participez à plusieurs salons par an et devez justifier chaque investissement.
+                  Vous participez à plusieurs salons par an et vous voulez mieux préparer vos actions commerciales.
                 </p>
                 <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Résultat avec Premium :</p>
+                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
                   <p className="text-sm text-muted-foreground">
-                    ROI mesuré dès J-7, planning pré-rempli, export direct vers votre CRM. 
-                    Vous optimisez votre budget événementiel avec des données concrètes.
+                    Vous suivez les performances de vos publications, exploitez les signaux d'intérêt et structurez mieux vos actions avant, pendant et après le salon.
                   </p>
                 </div>
               </CardContent>
@@ -492,13 +490,12 @@ export default function Exposants() {
                 </div>
                 <h3 className="text-xl font-bold">Grande entreprise</h3>
                 <p className="text-sm text-muted-foreground">
-                  Vous avez un grand stand mais noyé dans la masse d'exposants similaires.
+                  Vous avez plusieurs offres, divisions ou nouveautés à présenter sur un même salon.
                 </p>
                 <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Résultat avec Premium :</p>
+                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
                   <p className="text-sm text-muted-foreground">
-                    Créez le buzz avec plusieurs nouveautés Premium, segmentez vos audiences, 
-                    et générez un trafic ciblé vers votre stand.
+                    Vous pouvez mettre en avant plusieurs temps forts et aider les visiteurs à comprendre rapidement ce qui mérite un passage sur votre stand.
                   </p>
                 </div>
               </CardContent>
