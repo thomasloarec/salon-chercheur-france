@@ -41,10 +41,10 @@ const NewsletterImproved = () => {
         <div className="mb-8">
           <Mail className="h-16 w-16 text-accent mx-auto mb-4" />
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Ne manquez rien de votre secteur
+            Recevez les salons et nouveautés qui méritent votre attention
           </h2>
           <p className="text-xl text-muted-foreground">
-            Recevez chaque mois les nouveaux salons et nouveautés de vos secteurs d'activité
+            Choisissez vos secteurs et recevez chaque mois une sélection d'événements professionnels et de nouveautés à surveiller.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ const NewsletterImproved = () => {
                 disabled={isPending || !email || selectedSectors.length === 0}
                 className="w-full h-12 bg-accent hover:bg-accent/90 text-lg font-semibold"
               >
-                {isPending ? 'Inscription en cours...' : 'S\'abonner à la newsletter'}
+                {isPending ? 'Inscription en cours...' : 'Recevoir ma veille mensuelle'}
               </Button>
             </div>
           </div>
