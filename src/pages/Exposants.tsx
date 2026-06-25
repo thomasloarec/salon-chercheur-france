@@ -310,10 +310,10 @@ export default function Exposants() {
         <div className="container max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">
-              Choisissez votre niveau d'impact
+              Commencez gratuitement, amplifiez si le salon est stratégique
             </h2>
             <p className="text-muted-foreground text-lg">
-              Un seul événement bien préparé peut générer des mois de pipeline commercial
+              Publiez une première nouveauté gratuitement. Passez au Premium si vous souhaitez multiplier vos publications, suivre vos performances et exploiter davantage les signaux d'intérêt.
             </p>
           </div>
 
@@ -346,7 +346,7 @@ export default function Exposants() {
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">3 premiers leads gratuits</span>
+                      <span className="text-sm">3 premiers contacts générés gratuits</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -354,7 +354,7 @@ export default function Exposants() {
                     </div>
                     <div className="flex items-start gap-2 opacity-50">
                       <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Leads illimités</span>
+                      <span className="text-sm">Contacts générés illimités</span>
                     </div>
                     <div className="flex items-start gap-2 opacity-50">
                       <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
@@ -400,15 +400,15 @@ export default function Exposants() {
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm"><strong>Leads illimités</strong> – Collectez tous les contacts</span>
+                      <span className="text-sm"><strong>Accès complet aux contacts générés</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Export CSV de vos leads</span>
+                      <span className="text-sm">Export CSV de vos contacts</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Statistiques détaillées en temps réel</span>
+                      <span className="text-sm">Statistiques détaillées</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
