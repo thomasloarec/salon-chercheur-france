@@ -290,6 +290,41 @@ function computeRelevance(
   return { relevance, matched, strong, objectiveAligned, roleInProfils, sectorOverlap };
 }
 
+// ── Seller mode: transform the visitor's OFFER into a profile of their
+//    POTENTIAL CUSTOMERS, used as the semantic query (avoids retrieving
+//    competitors). Returns null on any failure → caller falls back to raw kw.
+async function buildSellerTargetQuery(
+  offerKeywords: string,
+  eventName: string,
+  apiKey: string,
+): Promise<string | null> {
+  const prompt = `Un visiteur d'un salon professionnel (${eventName}) VEND l'offre suivante : "${offerKeywords}".
+Il cherche à rencontrer des PROSPECTS : des entreprises exposantes susceptibles d'ACHETER ou d'INTÉGRER cette offre — surtout PAS des concurrents qui vendent la même chose.
+Décris le profil de ses clients potentiels sous forme d'une liste de mots-clés (types d'entreprises, métiers, secteurs d'activité). N'inclus jamais l'offre elle-même, ni des éditeurs/fournisseurs de solutions concurrentes.
+Réponds UNIQUEMENT par la liste de mots-clés séparés par des virgules, sans phrase ni préambule.`;
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 12000);
+    const resp = await fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: buildAnthropicHeaders(apiKey),
+      body: JSON.stringify({
+        model: PREPARE_VISIT_MODEL,
+        max_tokens: 150,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+    if (!resp.ok) return null;
+    const j = await resp.json();
+    const text = (j.content?.[0]?.text || "").trim();
+    return text.length > 0 ? text : null;
+  } catch (_e) {
+    return null;
+  }
+}
+
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -532,13 +567,28 @@ Deno.serve(async (req) => {
     let under_threshold: boolean;
     let semanticUsed = false;
     let fallbackUsed = false;
+    let sellerTargetUsed = false;
+    let queryUsed = "";
 
     if (hasKeywords) {
       // Retrieval sémantique (primaire) avec repli substring (plan B)
       const byId = new Map(allExhibitors.map((ex) => [String(ex.id), ex]));
-      const kwText = (keywords || []).join(" ").trim();
-      const objTerms = mode === "seller" ? "" : (OBJECTIVE_QUERY_TERMS[objective] ?? "");
-      const p_query = (kwText + " " + objTerms).trim();
+      let p_query: string;
+      if (mode === "seller") {
+        const offer = (keywords || []).join(" ").trim();
+        const targetProfile = await buildSellerTargetQuery(offer, eventData.nom_event, ANTHROPIC_API_KEY!);
+        if (targetProfile && targetProfile.length > 0) {
+          p_query = targetProfile;
+          sellerTargetUsed = true;
+        } else {
+          p_query = offer; // repli : comportement actuel si la transformation échoue
+        }
+      } else {
+        const kwText = (keywords || []).join(" ").trim();
+        const objTerms = OBJECTIVE_QUERY_TERMS[objective] ?? "";
+        p_query = (kwText + " " + objTerms).trim();
+      }
+      queryUsed = p_query;
       try {
         const { data: rpcRows, error: rpcErr } = await supabase.rpc("match_exhibitors_semantic", {
           p_query,
@@ -603,6 +653,8 @@ Deno.serve(async (req) => {
         top5: candidatesPool.slice(0, 5).map((e) => ({ name: e.name, relevance: e._m?.relevance ?? null })),
         semantic_used: semanticUsed,
         fallback_used: fallbackUsed,
+        seller_target_used: sellerTargetUsed,
+        query_used: queryUsed.slice(0, 200),
       }),
     );
 
@@ -620,6 +672,7 @@ Deno.serve(async (req) => {
         candidates_sent: 0,
         semantic_used: semanticUsed,
         fallback_used: fallbackUsed,
+        seller_target_used: sellerTargetUsed,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -783,6 +836,7 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
       candidates_sent: candidates.length,
       semantic_used: semanticUsed,
       fallback_used: fallbackUsed,
+      seller_target_used: sellerTargetUsed,
     };
 
     return new Response(JSON.stringify(result), {
