@@ -70,17 +70,14 @@ const Index = () => {
                     </span>
                   </div>
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-4 break-words">
-                    Organisateurs de salons : Lotexpo renforce votre visibilité
+                    Organisateurs : donnez une visibilité supplémentaire à votre salon
                   </h2>
                   <div className="space-y-3 text-muted-foreground leading-relaxed text-sm md:text-base">
                     <p>
-                      Lotexpo référence les salons professionnels en France pour aider les visiteurs et exposants à identifier les événements utiles dans leur secteur.
+                      Lotexpo aide les visiteurs à trouver votre événement, à découvrir vos exposants et à préparer leur visite. La plateforme ne remplace pas votre site officiel, elle crée un point d'entrée supplémentaire vers votre salon.
                     </p>
                     <p>
-                      La plateforme est indépendante : la présence d'un salon sur Lotexpo ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite.
-                    </p>
-                    <p>
-                      Notre objectif est simple : donner plus de visibilité à votre événement, valoriser vos exposants et rediriger les utilisateurs vers vos informations officielles.
+                      Lotexpo est une plateforme indépendante. La présence d'un salon sur Lotexpo ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite.
                     </p>
                   </div>
                   <Button asChild size="lg" className="mt-6 gap-2 w-full sm:w-auto h-auto whitespace-normal text-center py-3">
@@ -107,7 +104,7 @@ const Index = () => {
                       {
                         icon: Users,
                         title: 'Orienté visiteurs qualifiés',
-                        text: 'Vos exposants, leurs Nouveautés et votre événement gagnent en visibilité.',
+                        text: 'Vos exposants, leurs nouveautés et votre événement gagnent en visibilité auprès de visiteurs qui préparent activement leur venue.',
                       },
                     ].map((b) => (
                       <div
