@@ -230,15 +230,15 @@ const FAQ = [
   },
   {
     q: 'Pourquoi notre salon est-il présent sur Lotexpo ?',
-    a: "Lotexpo référence les salons professionnels en France afin d'aider les visiteurs et les exposants à identifier les événements utiles dans leur secteur. L'objectif est de donner plus de visibilité aux salons professionnels.",
+    a: "Lotexpo référence les salons professionnels en France afin d'aider les visiteurs, exposants et professionnels à identifier les événements utiles dans leur secteur. L'objectif est de rendre les salons plus faciles à découvrir et de rediriger les utilisateurs vers les informations officielles de chaque événement.",
+  },
+  {
+    q: 'Lotexpo remplace-t-il notre site officiel ?',
+    a: "Non. Votre site officiel reste la source de référence pour l'inscription, les informations pratiques, les conditions de participation et les communications officielles. Lotexpo agit comme un point d'entrée complémentaire.",
   },
   {
     q: 'Est-ce payant pour les organisateurs ?',
     a: "Non. Le référencement d'un salon professionnel sur Lotexpo est gratuit.",
-  },
-  {
-    q: 'Lotexpo remplace-t-il notre site officiel ?',
-    a: "Non. Lotexpo ne remplace pas le site officiel du salon. La plateforme agit comme un point d'entrée complémentaire et peut rediriger les utilisateurs vers les supports officiels de l'organisateur.",
   },
   {
     q: 'Pouvons-nous corriger ou compléter les informations affichées ?',
@@ -247,6 +247,14 @@ const FAQ = [
   {
     q: 'Pouvons-nous encourager nos exposants à publier leurs Nouveautés ?',
     a: "Oui. C'est même l'un des meilleurs usages de Lotexpo. Les exposants peuvent publier ce qu'ils présenteront sur le salon afin d'aider les visiteurs à préparer leur parcours et à identifier les stands à visiter.",
+  },
+  {
+    q: 'Lotexpo risque-t-il de détourner les visiteurs de notre site officiel ?',
+    a: "Non. Lotexpo est conçu comme un point d'entrée complémentaire. Lorsqu'un utilisateur cherche à s'inscrire, consulter les informations officielles ou contacter l'organisateur, il est redirigé vers les supports officiels du salon.",
+  },
+  {
+    q: 'Pourquoi les Nouveautés exposants sont-elles utiles pour un organisateur ?',
+    a: "Parce qu'elles donnent aux visiteurs des raisons concrètes de venir. Un salon n'est pas seulement une date et un lieu : ce sont aussi des produits, innovations, démonstrations, conférences et rencontres. Les Nouveautés rendent cette valeur plus visible avant l'ouverture.",
   },
 ];
 
