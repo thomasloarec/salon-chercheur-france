@@ -23,6 +23,20 @@ const DURATION_CAPS: Record<string, { total: number; high: number; medium: numbe
 // which bounds the FINAL selection Claude returns).
 const MAX_CANDIDATES = 60;
 
+// Semantic retrieval threshold (cosine similarity floor for match_exhibitors_semantic).
+const SEMANTIC_THRESHOLD = 0.42;
+
+// Objective → extra query terms appended to keywords for the semantic search.
+// Seller mode uses keywords only (terms intentionally empty there).
+const OBJECTIVE_QUERY_TERMS: Record<string,string> = {
+  "Trouver de nouveaux fournisseurs": "fournisseurs fabricants production sourcing",
+  "Comparer des solutions": "solutions alternatives comparables",
+  "Découvrir les innovations du marché": "innovations nouveautés technologies durables différenciantes",
+  "Faire de la veille concurrentielle": "acteurs références marché concurrents",
+  "Identifier des partenaires": "partenaires complémentaires collaboration",
+  "Rencontrer mes clients et prospects": "",
+};
+
 // Objective → expected tokens checked against `type_interet` (after norm).
 // Covers the 6 visitor objectives. "Rencontrer mes clients et prospects" is the
 // seller mode and has no type_interet alignment (see mode logic below).
