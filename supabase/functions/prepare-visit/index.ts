@@ -695,8 +695,8 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
     const results = recommendations.results || [];
 
     // ── CHANGEMENT 1: DÉDOUBLONNAGE PAR exhibitor_id (avant le split) ──────────
-    // Garde la PREMIÈRE occurrence, mais privilégie "high" si un même id
-    // apparaît en high ET en medium. Ordre d'apparition préservé.
+    // Garde la PREMIÈRE occurrence (ordre d'apparition préservé), mais privilégie
+    // "high" si un même id apparaît en high ET en medium.
     const dedupMap = new Map<string, any>();
     for (const r of results) {
       const id = String(r.exhibitor_id);
@@ -704,21 +704,10 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
       if (!existing) {
         dedupMap.set(id, r);
       } else if (existing.priority === "medium" && r.priority === "high") {
-        dedupMap.set(id, { ...r, __order: existing.__order });
+        dedupMap.set(id, r);
       }
     }
-    // Réordonne selon la première apparition de chaque id.
-    let order = 0;
-    const dedupResults: any[] = [];
-    const seenOrder = new Set<string>();
-    for (const r of results) {
-      const id = String(r.exhibitor_id);
-      if (seenOrder.has(id)) continue;
-      seenOrder.add(id);
-      const rec = dedupMap.get(id);
-      if (rec) dedupResults.push(rec);
-      order++;
-    }
+    const dedupResults = Array.from(dedupMap.values());
 
     // ── SPLIT high / medium (sur la liste dédoublonnée) ───────────────────────
     const validResults = dedupResults.filter((r: any) =>
