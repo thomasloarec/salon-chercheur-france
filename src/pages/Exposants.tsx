@@ -297,7 +297,7 @@ export default function Exposants() {
                   Transformez l'attention en visites utiles
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Les visiteurs peuvent repérer votre nouveauté, la sauvegarder et intégrer votre stand à leur préparation.
+                  Les visiteurs peuvent repérer votre nouveauté, télécharger une brochure ou demander un rendez-vous avant même le début du salon.
                 </p>
               </div>
             </div>
