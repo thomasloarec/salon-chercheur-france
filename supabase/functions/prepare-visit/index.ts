@@ -530,16 +530,41 @@ Deno.serve(async (req) => {
     let candidatesPool: any[];
     let qualified_count: number;
     let under_threshold: boolean;
+    let semanticUsed = false;
+    let fallbackUsed = false;
 
     if (hasKeywords) {
-      // Hard relevance floor: only exhibitors matching >= 1 keyword qualify.
-      const qualified = enriched
-        .filter((e) => e._m.matched >= 1)
-        .sort((a, b) => b._m.relevance - a._m.relevance);
-      qualified_count = qualified.length;
-      under_threshold = qualified.length < cap.total;
-      // Never pad with non-qualified exhibitors to fill a quota.
-      candidatesPool = qualified.slice(0, MAX_CANDIDATES);
+      // Retrieval sémantique (primaire) avec repli substring (plan B)
+      const byId = new Map(allExhibitors.map((ex) => [String(ex.id), ex]));
+      const kwText = (keywords || []).join(" ").trim();
+      const objTerms = mode === "seller" ? "" : (OBJECTIVE_QUERY_TERMS[objective] ?? "");
+      const p_query = (kwText + " " + objTerms).trim();
+      try {
+        const { data: rpcRows, error: rpcErr } = await supabase.rpc("match_exhibitors_semantic", {
+          p_query,
+          p_event_id: eventId,
+          p_threshold: SEMANTIC_THRESHOLD,
+          p_k: MAX_CANDIDATES,
+        });
+        if (rpcErr) throw rpcErr;
+        const pool = (rpcRows ?? [])
+          .map((r: any) => byId.get(String(r.exhibitor_id)))
+          .filter(Boolean);
+        candidatesPool = pool;
+        qualified_count = pool.length;
+        under_threshold = pool.length < cap.total;
+        semanticUsed = true;
+      } catch (e) {
+        console.error("prepare-visit: retrieval sémantique indisponible, repli substring:", e);
+        fallbackUsed = true;
+        // CHEMIN EXISTANT (substring) — identique à l'ancien corps de la branche :
+        const qualified = enriched
+          .filter((e) => e._m.matched >= 1)
+          .sort((a, b) => b._m.relevance - a._m.relevance);
+        qualified_count = qualified.length;
+        under_threshold = qualified.length < cap.total;
+        candidatesPool = qualified.slice(0, MAX_CANDIDATES);
+      }
     } else {
       // No keywords: no hard floor. Rank by objective alignment, then event-sector
       // overlap, then role match (tie-breaker).
