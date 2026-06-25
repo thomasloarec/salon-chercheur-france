@@ -169,6 +169,9 @@ const EventPage = () => {
           enrichissement_statut: eventData.enrichissement_statut,
           enrichissement_date: eventData.enrichissement_date,
           description_enrichie: eventData.description_enrichie,
+          suggested_keywords: Array.isArray(eventData.suggested_keywords)
+            ? (eventData.suggested_keywords as string[])
+            : [],
         };
         
         setEvent(typedEvent);
