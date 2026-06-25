@@ -336,11 +336,6 @@ const RadarCrmPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Proof / data credibility */}
-      <section className="max-w-6xl mx-auto px-4 py-10">
-        {/* Problem section */}
-      </section>
-
       {/* Problem */}
       <section className="max-w-6xl mx-auto px-4 py-10">
         <div className="text-center max-w-2xl mx-auto mb-8">
