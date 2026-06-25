@@ -188,6 +188,23 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
 
   const isFavorited = favoriteEvents.some((e: any) => e.id === event.id);
 
+  // ── Échantillon DÉCORATIF de vrais exposants pour l'écran d'analyse (marquee) ──
+  // Gate strict : ne fetch QUE quand le wizard est ouvert (slug vide => hook désactivé).
+  // Best-effort : si vide / en cours / en erreur, l'écran s'affiche sans marquee.
+  const { data: scanData } = useExhibitorsByEvent(
+    open ? (event.slug || '') : '',
+    undefined,
+    40,
+    0,
+    event.id_event,
+  );
+  const scanExhibitors: { name: string; sector?: string }[] = (scanData?.exhibitors || [])
+    .map((e: any) => ({
+      name: e.name || e.exhibitor_name || '',
+      sector: e.secteur || e.sector || undefined,
+    }))
+    .filter((e) => e.name);
+
   // ── Tracking session ref ──
   const wizardSessionId = useRef<string | null>(null);
 
