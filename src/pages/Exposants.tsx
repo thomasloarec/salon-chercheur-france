@@ -396,7 +396,7 @@ export default function Exposants() {
                   <div className="space-y-3">
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm"><strong>Nouveautés illimitées</strong></span>
+                      <span className="text-sm"><strong>5 Nouveautés par événement</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
