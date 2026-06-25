@@ -9,6 +9,13 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useVisitPlansForUser, VisitPlan } from '@/hooks/useVisitPlan';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { useQuery } from '@tanstack/react-query';
+import {
+  fetchExhibitorPublicSlugs,
+  resolvePublicSlug,
+  type PublicSlugMaps,
+} from '@/lib/exhibitorPublicSlug';
+import { ExhibitorFullProfileCTA } from '@/components/exhibitor/ExhibitorFullProfileCTA';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
@@ -41,6 +48,32 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
 
   // Batched public stats (exposants + nouveautés) — same source as the Salons page
   const { data: statsMap } = useEventCardStats((events ?? []).map((e) => e.id));
+
+  // Collect every exhibitor id referenced by the visit plans so we can resolve
+  // their public `/exposants/:slug` identities in ONE batched query (no N+1).
+  const planExhibitorIds = Array.from(
+    new Set(
+      visitPlans.flatMap((plan) =>
+        [...(plan.prioritaires || []), ...(plan.optionnels || [])]
+          .map((rec: any) => rec?.exhibitor_id)
+          .filter((id: any): id is string => typeof id === 'string' && id.length > 0),
+      ),
+    ),
+  );
+
+  const { data: slugMaps } = useQuery({
+    queryKey: ['visit-plan-exhibitor-slugs', planExhibitorIds],
+    enabled: planExhibitorIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<PublicSlugMaps> => {
+      const UUID_RE =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      // An exhibitor_id is either a modern UUID or a legacy id_exposant string.
+      const uuids = planExhibitorIds.filter((id) => UUID_RE.test(id));
+      const legacy = planExhibitorIds.filter((id) => !UUID_RE.test(id));
+      return fetchExhibitorPublicSlugs(uuids, legacy);
+    },
+  });
 
   // Index visit plans by event_id
   const plansByEvent = visitPlans.reduce((acc, plan) => {
@@ -221,7 +254,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                             </p>
                             <div className="space-y-2">
                               {visitPlan.prioritaires.map((rec: any) => (
-                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} />
+                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} slugMaps={slugMaps} />
                               ))}
                             </div>
                           </div>
@@ -235,7 +268,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                             </p>
                             <div className="space-y-2">
                               {visitPlan.optionnels.map((rec: any) => (
-                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} />
+                                <ExhibitorRow key={rec.exhibitor_id} rec={rec} eventSlug={event.slug} eventId={event.id} slugMaps={slugMaps} />
                               ))}
                             </div>
                           </div>
@@ -369,9 +402,23 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
 }
 
 // Compact exhibitor row for visit plan display
-function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string; eventId: string }) {
+function ExhibitorRow({
+  rec,
+  eventSlug,
+  eventId,
+  slugMaps,
+}: {
+  rec: any;
+  eventSlug: string;
+  eventId: string;
+  slugMaps?: PublicSlugMaps | null;
+}) {
   const logoUrl = getExhibitorLogoUrl(rec.logo_url || null, rec.website || null);
   const standNumber = rec.stand ? normalizeStandNumber(rec.stand) : null;
+  const slugInfo = resolvePublicSlug(slugMaps, {
+    exhibitorId: rec.exhibitor_id,
+    legacyId: rec.exhibitor_id,
+  });
 
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
@@ -388,6 +435,19 @@ function ExhibitorRow({ rec, eventSlug, eventId }: { rec: any; eventSlug: string
           <p className="text-xs text-muted-foreground mt-0.5">Stand {standNumber}</p>
         )}
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{rec.raison}</p>
+        {slugInfo && !slugInfo.is_test && (
+          <div className="mt-2">
+            <ExhibitorFullProfileCTA
+              publicSlug={slugInfo.public_slug}
+              seoIndexable={slugInfo.seo_indexable}
+              isTest={slugInfo.is_test}
+              openInNewTab
+              surface="event_exhibitor_list"
+              eventSlug={eventSlug}
+              variant="link"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
