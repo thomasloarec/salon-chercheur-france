@@ -290,6 +290,41 @@ function computeRelevance(
   return { relevance, matched, strong, objectiveAligned, roleInProfils, sectorOverlap };
 }
 
+// ── Seller mode: transform the visitor's OFFER into a profile of their
+//    POTENTIAL CUSTOMERS, used as the semantic query (avoids retrieving
+//    competitors). Returns null on any failure → caller falls back to raw kw.
+async function buildSellerTargetQuery(
+  offerKeywords: string,
+  eventName: string,
+  apiKey: string,
+): Promise<string | null> {
+  const prompt = `Un visiteur d'un salon professionnel (${eventName}) VEND l'offre suivante : "${offerKeywords}".
+Il cherche à rencontrer des PROSPECTS : des entreprises exposantes susceptibles d'ACHETER ou d'INTÉGRER cette offre — surtout PAS des concurrents qui vendent la même chose.
+Décris le profil de ses clients potentiels sous forme d'une liste de mots-clés (types d'entreprises, métiers, secteurs d'activité). N'inclus jamais l'offre elle-même, ni des éditeurs/fournisseurs de solutions concurrentes.
+Réponds UNIQUEMENT par la liste de mots-clés séparés par des virgules, sans phrase ni préambule.`;
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 12000);
+    const resp = await fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: buildAnthropicHeaders(apiKey),
+      body: JSON.stringify({
+        model: PREPARE_VISIT_MODEL,
+        max_tokens: 150,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+    if (!resp.ok) return null;
+    const j = await resp.json();
+    const text = (j.content?.[0]?.text || "").trim();
+    return text.length > 0 ? text : null;
+  } catch (_e) {
+    return null;
+  }
+}
+
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
