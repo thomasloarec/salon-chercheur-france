@@ -712,13 +712,23 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold mb-1">Quels thèmes vous intéressent ?</h3>
-                <p className="text-sm text-muted-foreground">Ajoutez des mots-clés pour affiner les recommandations</p>
+                <h3 className="text-xl font-semibold mb-1">
+                  {objective === 'Rencontrer mes clients et prospects'
+                    ? 'Que proposez-vous ?'
+                    : 'Quels thèmes vous intéressent ?'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {objective === 'Rencontrer mes clients et prospects'
+                    ? 'Décrivez votre offre — on trouve les exposants susceptibles de devenir vos clients.'
+                    : 'Listez les produits, matériaux ou solutions que vous recherchez.'}
+                </p>
               </div>
 
               <div>
                 <Input
-                  placeholder="Tapez un mot-clé puis Entrée..."
+                  placeholder={objective === 'Rencontrer mes clients et prospects'
+                    ? 'Ex. : logiciel de devis, solution IA…'
+                    : 'Ex. : coffrage, isolation, menuiserie…'}
                   value={keywordInput}
                   onChange={e => setKeywordInput(e.target.value)}
                   onKeyDown={handleKeywordInputKeyDown}
