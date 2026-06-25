@@ -84,6 +84,26 @@ const OBJECTIVES_BY_ROLE: Record<string, string[]> = {
 
 const DURATIONS = ['2h', 'Demi-journée', 'Journée complète'];
 
+// Présentation uniquement : mapping icône → valeur string (ne modifie aucune valeur).
+const ROLE_ICONS: Record<string, LucideIcon> = {
+  'Achats / Approvisionnement': ShoppingCart,
+  'Commercial / Business Development': TrendingUp,
+  'Direction / Management': Briefcase,
+  'Marketing / Innovation': Megaphone,
+  'R&D / Ingénierie': FlaskConical,
+  'Production / Industrialisation': Factory,
+  'Autre': CircleDashed,
+};
+
+const OBJECTIVE_ICONS: Record<string, LucideIcon> = {
+  'Trouver de nouveaux fournisseurs': PackageSearch,
+  'Comparer des solutions': Scale,
+  'Découvrir les innovations du marché': Sparkles,
+  'Faire de la veille concurrentielle': Eye,
+  'Identifier des partenaires': Handshake,
+  'Rencontrer mes clients et prospects': Target,
+};
+
 type Step = 1 | 2 | 3 | 'loading' | 'results' | 'auth';
 
 interface Recommendation {
