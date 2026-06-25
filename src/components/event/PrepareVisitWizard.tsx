@@ -1212,47 +1212,53 @@ function RecommendationCard({
 }) {
   const logoUrl = getExhibitorLogoUrl(rec.logo_url, rec.website);
   const standNumber = normalizeStandNumber(rec.stand);
+  const initials = (rec.name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
 
   return (
     <div
       className={cn(
-        'min-w-0 max-w-full overflow-hidden rounded-xl border p-4 flex flex-col gap-3 transition-shadow hover:shadow-md',
-        variant === 'primary' ? 'bg-background' : 'bg-muted/30',
+        'min-w-0 max-w-full overflow-hidden rounded-lg bg-background border-[0.5px] p-4 flex flex-col gap-3 transition-shadow hover:shadow-sm',
+        variant === 'primary' ? 'border-secondary' : 'border-border',
         !checked && 'opacity-50'
       )}
     >
-      <div className="flex items-start gap-3 min-w-0">
+      <div className="flex items-center gap-3 min-w-0">
         <Checkbox
           checked={checked}
           onCheckedChange={onCheckedChange}
-          className="mt-1 flex-shrink-0"
+          className="flex-shrink-0"
         />
-        <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
+        <div className="w-10 h-10 rounded-lg bg-secondary flex-shrink-0 flex items-center justify-center overflow-hidden text-xs font-semibold text-secondary-foreground">
           {logoUrl ? (
             <img src={logoUrl} alt={rec.name} className="w-full h-full object-contain" />
+          ) : initials ? (
+            <span>{initials}</span>
           ) : (
             <Building2 className="w-5 h-5 text-muted-foreground" />
           )}
         </div>
         <div className="flex-1 min-w-0 overflow-hidden">
-          <p className="font-semibold text-sm leading-tight break-words">{rec.name}</p>
+          <p className="text-[15px] font-medium leading-tight break-words">{rec.name}</p>
           {rec.secteur_principal && (
-            <p className="text-xs text-muted-foreground mt-0.5 break-words">{rec.secteur_principal}</p>
-          )}
-          {standNumber && (
-            <p className="text-xs text-muted-foreground mt-0.5 break-words">Stand {standNumber}</p>
+            <p className="text-[13px] text-muted-foreground mt-0.5 break-words">{rec.secteur_principal}</p>
           )}
         </div>
+        {standNumber && (
+          <span className="flex-shrink-0 text-xs font-medium px-2 py-1 rounded-md bg-primary/10 text-primary whitespace-nowrap">
+            Stand {standNumber}
+          </span>
+        )}
       </div>
 
-      <div className={cn(
-        'max-w-full min-w-0 text-xs rounded-lg p-3 leading-relaxed break-words overflow-hidden',
-        variant === 'primary'
-          ? 'bg-primary/5 text-foreground border border-primary/10'
-          : 'bg-muted/50 text-muted-foreground'
-      )}>
+      <p className="max-w-full min-w-0 text-[13.5px] leading-[1.6] text-muted-foreground break-words overflow-hidden">
         {rec.raison}
-      </div>
+      </p>
     </div>
   );
 }
