@@ -28,22 +28,22 @@ import {
 const BENEFITS = [
   {
     icon: Eye,
-    title: 'Plus de visibilité gratuite',
+    title: 'Plus de visibilité pré-salon',
     text: 'Votre salon peut être découvert par des visiteurs professionnels qui recherchent des événements par secteur, ville ou date.',
   },
   {
     icon: MousePointerClick,
     title: 'Plus de trafic vers votre site officiel',
-    text: "Lotexpo peut orienter les utilisateurs vers vos pages officielles pour l'inscription, les informations pratiques ou les demandes exposants.",
+    text: "Lotexpo oriente les utilisateurs vers vos pages officielles pour l'inscription, les informations pratiques ou les demandes exposants.",
   },
   {
     icon: Users,
     title: 'Des exposants mieux valorisés',
-    text: 'Les fiches exposants et les Nouveautés donnent plus de raisons concrètes aux visiteurs de préparer leur venue.',
+    text: "Les Nouveautés donnent aux visiteurs des raisons concrètes de s'intéresser aux stands avant le salon.",
   },
   {
     icon: FileText,
-    title: 'Un contenu utile avant le salon',
+    title: 'Une préparation de visite plus utile',
     text: "Les visiteurs peuvent identifier les innovations, démonstrations, produits et services à découvrir avant même l'ouverture.",
   },
   {
@@ -60,10 +60,10 @@ const BENEFITS = [
 
 const IS_LIST = [
   'Un annuaire spécialisé des salons professionnels en France.',
-  'Un canal de visibilité supplémentaire pour votre événement.',
-  'Un relais vers votre site officiel et vos informations pratiques.',
+  'Un point d\u2019entrée complémentaire vers votre événement.',
+  'Un relais vers votre site officiel, votre billetterie et vos informations pratiques.',
   'Un espace où vos exposants peuvent publier leurs Nouveautés.',
-  'Un outil complémentaire pour attirer un public plus qualifié.',
+  'Un outil d\u2019aide à la préparation de visite pour un public professionnel.',
 ];
 
 const IS_NOT_LIST = [
@@ -72,6 +72,21 @@ const IS_NOT_LIST = [
   'Un partenaire officiel, sauf mention explicite.',
   'Un concurrent de votre salon.',
   'Une plateforme qui revendique l\u2019organisation de votre événement.',
+];
+
+const PROBLEM_CARDS = [
+  {
+    title: 'Les visiteurs comparent plusieurs salons',
+    text: "Un professionnel ne choisit pas toujours un salon parce qu'il connaît son nom. Il compare les secteurs, les dates, les exposants, les nouveautés et l'intérêt concret du déplacement.",
+  },
+  {
+    title: 'Les exposants communiquent chacun de leur côté',
+    text: 'Chaque exposant annonce ses produits, démonstrations ou temps forts sur ses propres canaux. Lotexpo permet de regrouper ces signaux autour de votre événement.',
+  },
+  {
+    title: 'Les bonnes raisons de venir ne sont pas toujours visibles',
+    text: "Un salon peut être très pertinent, mais si les visiteurs ne voient pas rapidement ce qu'ils pourront y découvrir, ils peuvent passer à côté.",
+  },
 ];
 
 type SectionBlock = {
@@ -85,52 +100,51 @@ type SectionBlock = {
 const SECTIONS: SectionBlock[] = [
   {
     icon: Eye,
-    title: 'Une visibilité gratuite pour votre salon',
+    title: 'Une visibilité gratuite au moment où les visiteurs préparent leur venue',
     body: (
       <>
         <p>
-          Chaque page événement publiée sur Lotexpo permet à votre salon d'être découvert par des visiteurs qui recherchent des événements professionnels par secteur, ville, région, date ou type d'activité.
+          Chaque page événement publiée sur Lotexpo permet à votre salon d'être découvert par des visiteurs qui recherchent des événements professionnels par secteur, ville, région, date ou type d'activité. Cette visibilité est gratuite et agit en complément de vos actions de communication.
         </p>
         <p>
-          <strong className="text-foreground">Cette visibilité est entièrement gratuite.</strong> Aucun paiement n'est demandé pour référencer un salon professionnel. L'objectif est de créer un point d'entrée complémentaire vers votre événement, en particulier pour les visiteurs qui comparent plusieurs salons avant de se déplacer.
+          L'objectif n'est pas de détourner les visiteurs de votre site officiel, mais de créer un point d'entrée supplémentaire vers votre événement. Lorsqu'un utilisateur veut s'inscrire, vérifier les informations pratiques ou contacter l'organisateur, Lotexpo le renvoie vers vos supports officiels.
         </p>
       </>
     ),
     highlight:
-      "Lotexpo ne remplace pas votre site officiel : la plateforme agit comme une porte d'entrée supplémentaire qui redirige les utilisateurs vers vos supports officiels.",
+      "Votre site officiel reste la source de référence. Lotexpo aide simplement davantage de visiteurs qualifiés à y arriver.",
   },
   {
     icon: TrendingUp,
-    title: 'Un canal supplémentaire pour attirer un public qualifié',
+    title: "Un canal supplémentaire pour transformer l'intérêt en intention de visite",
     body: (
       <>
         <p>
           Les visiteurs qui consultent Lotexpo ne cherchent pas seulement une date ou une adresse. Ils veulent comprendre <strong className="text-foreground">pourquoi un salon mérite leur déplacement</strong>, quels exposants seront présents et quelles nouveautés peuvent justifier une visite.
         </p>
         <p>
-          En centralisant ces informations, Lotexpo aide les visiteurs à mieux préparer leur venue. Un visiteur mieux informé est plus susceptible de s'inscrire, de venir sur place et de passer du temps sur le salon.
+          En centralisant ces informations, Lotexpo aide les visiteurs à passer d'une attention vague à une intention de visite plus claire. Un visiteur qui sait pourquoi il vient est plus susceptible de s'inscrire, de se déplacer et de passer du temps utile sur le salon.
         </p>
       </>
     ),
     highlight:
-      "Résultat : plus d'intérêt autour de votre événement avant son ouverture, sans travail supplémentaire de votre part.",
+      "Résultat : votre événement gagne en visibilité avant son ouverture, auprès de visiteurs qui cherchent activement des salons à fort intérêt professionnel.",
   },
   {
     icon: Link2,
-    title: 'Des backlinks et une meilleure présence sur le web',
+    title: 'Un point d\u2019entrée web supplémentaire vers votre site officiel',
     body: (
       <>
         <p>
-          Lorsqu'une page Lotexpo renvoie vers votre site officiel, elle crée un point d'accès supplémentaire vers vos contenus. Cette présence peut contribuer à renforcer votre visibilité globale sur le web, <strong className="text-foreground">sans se substituer à votre stratégie SEO</strong>.
+          Une page Lotexpo crée une présence complémentaire pour votre salon dans un environnement spécialisé, orienté événements professionnels. Elle permet à des visiteurs, exposants potentiels, acheteurs, commerciaux ou partenaires de découvrir votre événement lorsqu'ils recherchent des salons par secteur, ville ou période.
         </p>
         <p>
-          Plus un salon est mentionné sur des plateformes pertinentes, plus il augmente ses chances d'être découvert par des publics complémentaires : visiteurs professionnels, exposants potentiels, acheteurs, prescripteurs, commerciaux ou partenaires.
-        </p>
-        <p>
-          Être présent sur Lotexpo permet à votre événement d'apparaître dans un environnement spécialisé, cohérent et orienté business.
+          Lotexpo ne cherche pas à remplacer votre référencement naturel. La plateforme ajoute simplement une porte d'entrée supplémentaire vers vos informations officielles, dans un contexte où les utilisateurs comparent plusieurs événements avant de faire leur choix.
         </p>
       </>
     ),
+    highlight:
+      'Plus votre salon est visible dans des environnements cohérents et spécialisés, plus il augmente ses chances d\u2019être découvert par des publics complémentaires.',
   },
   {
     icon: Sparkles,
@@ -138,20 +152,19 @@ const SECTIONS: SectionBlock[] = [
     body: (
       <>
         <p>
-          Un salon vit grâce à ses exposants. Ce sont souvent leurs innovations, démonstrations, lancements produits ou temps forts qui donnent envie aux visiteurs de se déplacer.
+          Un salon vit grâce à ses exposants. Ce sont souvent leurs innovations, démonstrations, lancements produits, conférences, offres spéciales ou animations de stand qui donnent aux visiteurs une raison concrète de se déplacer.
         </p>
         <p>
           Avec Lotexpo, vos exposants peuvent{' '}
           <Link to="/nouveautes" className="text-primary font-medium underline underline-offset-2 hover:text-primary/80">
             publier des Nouveautés
           </Link>{' '}
-          liées à leur participation : lancement produit, démonstration, innovation, offre spéciale, conférence, animation de stand ou document à télécharger.
-        </p>
-        <p>
-          Chaque Nouveauté publiée devient une raison concrète de venir sur votre salon. Les exposants créent du contenu, ce contenu attire l'attention, et cette attention renforce l'intérêt autour de votre événement.
+          liées à leur participation. Chaque Nouveauté devient un signal pré-salon : elle aide les visiteurs à comprendre ce qu'ils pourront découvrir et à préparer leur parcours.
         </p>
       </>
     ),
+    highlight:
+      "Les exposants créent du contenu utile, les visiteurs identifient plus facilement les stands à ne pas manquer, et votre salon bénéficie d'une attention mieux structurée avant son ouverture.",
   },
   {
     icon: ShieldCheck,
@@ -159,13 +172,15 @@ const SECTIONS: SectionBlock[] = [
     body: (
       <>
         <p>
-          Lotexpo ne remplace pas le site officiel du salon, la billetterie, l'espace exposant ou les actions marketing de l'organisateur.
+          Lotexpo ne remplace ni le site officiel du salon, ni la billetterie, ni l'espace exposant, ni les actions marketing de l'organisateur. La plateforme agit comme une couche de découverte et de préparation en amont.
         </p>
         <p>
-          La plateforme agit comme une couche de visibilité supplémentaire. Elle aide les utilisateurs à découvrir les salons, à comparer les événements professionnels et à préparer leur venue. <strong className="text-foreground">Les informations officielles restent celles de l'organisateur.</strong>
+          Votre site officiel reste l'endroit où les visiteurs doivent retrouver les informations contractuelles, les modalités d'inscription, les informations pratiques et les communications officielles. Lotexpo sert à aider davantage de professionnels à découvrir votre salon et à comprendre pourquoi il peut les intéresser.
         </p>
       </>
     ),
+    highlight:
+      "En résumé : Lotexpo ne capte pas l'attention à votre place. Il aide à canaliser une attention déjà dispersée vers votre événement.",
   },
   {
     icon: ShieldCheck,
@@ -173,7 +188,7 @@ const SECTIONS: SectionBlock[] = [
     body: (
       <>
         <p>
-          Lotexpo agrège et structure des informations publiques sur les salons professionnels afin de les rendre plus faciles à trouver et à comparer.
+          Lotexpo agrège et structure des informations publiques sur les salons professionnels afin de les rendre plus faciles à trouver, comparer et préparer.
         </p>
         <p>
           La présence d'un événement sur Lotexpo ne constitue pas une affiliation officielle avec l'organisateur, sauf mention explicite. Si vous représentez un salon et souhaitez corriger, compléter ou mettre à jour les informations affichées, vous pouvez{' '}
@@ -189,21 +204,22 @@ const SECTIONS: SectionBlock[] = [
         </p>
       </>
     ),
+    cta: { label: 'Demander une correction', to: '/contact' },
   },
   {
     icon: Handshake,
-    title: 'Un partenariat possible avec les organisateurs',
+    title: 'Un partenariat possible pour mieux valoriser vos exposants',
     body: (
       <>
         <p>
-          Les organisateurs qui souhaitent aller plus loin peuvent encourager leurs exposants à publier leurs Nouveautés sur Lotexpo avant le salon.
+          Les organisateurs qui souhaitent aller plus loin peuvent encourager leurs exposants à publier leurs Nouveautés sur Lotexpo avant le salon. Cette démarche ne remplace pas votre communication officielle : elle crée une couche supplémentaire de contenu utile pour les visiteurs.
         </p>
         <p>
-          Cela crée une dynamique de communication avant l'événement : les exposants valorisent ce qu'ils vont présenter, les visiteurs identifient plus facilement les stands à ne pas manquer, et le salon bénéficie d'une visibilité accrue.
+          Plus vos exposants publient ce qu'ils présenteront, plus les visiteurs peuvent préparer leur parcours. Votre salon devient alors plus lisible, plus vivant et plus concret avant même l'ouverture.
         </p>
       </>
     ),
-    cta: { label: 'Proposer Lotexpo à vos exposants', to: '/contact' },
+    cta: { label: 'Proposer Lotexpo à mes exposants', to: '/contact' },
   },
 ];
 
@@ -214,15 +230,15 @@ const FAQ = [
   },
   {
     q: 'Pourquoi notre salon est-il présent sur Lotexpo ?',
-    a: "Lotexpo référence les salons professionnels en France afin d'aider les visiteurs et les exposants à identifier les événements utiles dans leur secteur. L'objectif est de donner plus de visibilité aux salons professionnels.",
+    a: "Lotexpo référence les salons professionnels en France afin d'aider les visiteurs, exposants et professionnels à identifier les événements utiles dans leur secteur. L'objectif est de rendre les salons plus faciles à découvrir et de rediriger les utilisateurs vers les informations officielles de chaque événement.",
+  },
+  {
+    q: 'Lotexpo remplace-t-il notre site officiel ?',
+    a: "Non. Votre site officiel reste la source de référence pour l'inscription, les informations pratiques, les conditions de participation et les communications officielles. Lotexpo agit comme un point d'entrée complémentaire.",
   },
   {
     q: 'Est-ce payant pour les organisateurs ?',
     a: "Non. Le référencement d'un salon professionnel sur Lotexpo est gratuit.",
-  },
-  {
-    q: 'Lotexpo remplace-t-il notre site officiel ?',
-    a: "Non. Lotexpo ne remplace pas le site officiel du salon. La plateforme agit comme un point d'entrée complémentaire et peut rediriger les utilisateurs vers les supports officiels de l'organisateur.",
   },
   {
     q: 'Pouvons-nous corriger ou compléter les informations affichées ?',
@@ -231,6 +247,14 @@ const FAQ = [
   {
     q: 'Pouvons-nous encourager nos exposants à publier leurs Nouveautés ?',
     a: "Oui. C'est même l'un des meilleurs usages de Lotexpo. Les exposants peuvent publier ce qu'ils présenteront sur le salon afin d'aider les visiteurs à préparer leur parcours et à identifier les stands à visiter.",
+  },
+  {
+    q: 'Lotexpo risque-t-il de détourner les visiteurs de notre site officiel ?',
+    a: "Non. Lotexpo est conçu comme un point d'entrée complémentaire. Lorsqu'un utilisateur cherche à s'inscrire, consulter les informations officielles ou contacter l'organisateur, il est redirigé vers les supports officiels du salon.",
+  },
+  {
+    q: 'Pourquoi les Nouveautés exposants sont-elles utiles pour un organisateur ?',
+    a: "Parce qu'elles donnent aux visiteurs des raisons concrètes de venir. Un salon n'est pas seulement une date et un lieu : ce sont aussi des produits, innovations, démonstrations, conférences et rencontres. Les Nouveautés rendent cette valeur plus visible avant l'ouverture.",
   },
 ];
 
@@ -283,20 +307,17 @@ const Organisateurs = () => {
           <div className="max-w-4xl mx-auto text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary mb-6">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Plateforme indépendante
+              Visibilité pré-salon
             </span>
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
-              Organisateurs de salons : donnez plus de visibilité à votre événement
+              Aidez les bons visiteurs à choisir votre salon avant même l'ouverture
             </h1>
             <div className="space-y-4 text-base md:text-lg text-muted-foreground text-left max-w-3xl mx-auto">
               <p>
-                Lotexpo référence les salons professionnels organisés en France afin d'aider les visiteurs, exposants à identifier les événements qui comptent dans leur secteur.
+                Lotexpo référence les salons professionnels en France pour aider les visiteurs, exposants et équipes commerciales à identifier les événements utiles dans leur secteur. La plateforme agit comme un point d'entrée complémentaire : elle rend votre salon plus facile à découvrir, valorise vos exposants et redirige les utilisateurs vers vos informations officielles.
               </p>
               <p>
-                La plateforme est indépendante. La présence d'un salon sur Lotexpo ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite. Notre rôle est simple : offrir une visibilité supplémentaire aux événements professionnels et orienter les utilisateurs vers les informations utiles, notamment le site officiel de chaque salon.
-              </p>
-              <p>
-                Pour les organisateurs, Lotexpo est une opportunité gratuite de renforcer la visibilité de leur événement, de mettre en avant leurs exposants et de générer davantage d'intérêt avant l'ouverture du salon.
+                Votre site officiel reste la destination de référence. Lotexpo intervient en amont, au moment où les visiteurs comparent les salons, cherchent des exposants à rencontrer et décident si le déplacement mérite leur temps.
               </p>
             </div>
             {/* Mini-cards badges */}
@@ -314,8 +335,8 @@ const Organisateurs = () => {
                 },
                 {
                   icon: Target,
-                  title: 'Visibilité qualifiée',
-                  text: 'Votre salon est découvert par des visiteurs, exposants et commerciaux.',
+                  title: 'Orienté visiteurs qualifiés',
+                  text: 'Votre salon est découvert par des professionnels qui préparent activement leur venue.',
                 },
               ].map((badge) => {
                 const Icon = badge.icon;
@@ -342,7 +363,7 @@ const Organisateurs = () => {
             <div className="mt-8">
               <Button asChild size="lg" className="gap-2">
                 <Link to="/contact">
-                  Nous contacter <ArrowRight className="w-4 h-4" />
+                  Vérifier la fiche de mon salon <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
             </div>
@@ -352,9 +373,12 @@ const Organisateurs = () => {
         {/* Lotexpo est / n'est pas */}
         <section className="py-16 px-4">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10 max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4 max-w-3xl mx-auto">
               Une plateforme indépendante, pensée pour renforcer votre visibilité
             </h2>
+            <p className="text-base md:text-lg text-muted-foreground text-center mb-10 max-w-2xl mx-auto">
+              Lotexpo clarifie son rôle pour que les organisateurs gardent la maîtrise de leur communication officielle.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
                 <h3 className="text-xl font-bold text-foreground mb-5 flex items-center gap-2">
@@ -387,8 +411,31 @@ const Organisateurs = () => {
             </div>
             <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-5 text-center">
               <p className="text-base text-foreground font-medium">
-                Notre objectif est simple : donner plus de visibilité aux salons professionnels, sans prendre la place des organisateurs.
+                Notre objectif est simple : rendre les salons professionnels plus faciles à découvrir, sans prendre la place des organisateurs.
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Le problème : attention dispersée */}
+        <section className="py-16 px-4 bg-secondary">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4 max-w-3xl mx-auto">
+              Le problème : l'attention autour d'un salon est souvent dispersée
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground text-center mb-10 max-w-3xl mx-auto">
+              Avant un salon, les visiteurs reçoivent des emails, voient des posts LinkedIn, consultent parfois le site officiel, découvrent quelques exposants ou téléchargent un programme. Mais ces informations sont rarement centralisées au moment où ils décident réellement si le salon mérite leur déplacement.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {PROBLEM_CARDS.map((card) => (
+                <div
+                  key={card.title}
+                  className="bg-card border border-border rounded-2xl p-6 shadow-sm"
+                >
+                  <h3 className="text-lg font-bold text-foreground mb-2">{card.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{card.text}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -441,17 +488,17 @@ const Organisateurs = () => {
                 <LayoutGrid className="h-7 w-7 text-primary" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                Affichez les Nouveautés de vos exposants directement sur votre site
+                Affichez les temps forts de vos exposants sur votre site officiel
               </h2>
               <div className="space-y-3 text-muted-foreground leading-relaxed">
                 <p>
-                  Le widget Lotexpo permet d'intégrer sur le site officiel de votre salon les Nouveautés publiées par vos exposants.
-                </p>
-                <p>
-                  Concrètement, vos exposants publient leurs temps forts sur Lotexpo : lancement produit, innovation, démonstration, conférence, animation de stand ou document à télécharger. Ces contenus peuvent ensuite être affichés sur votre propre site grâce au widget.
+                  Le widget Lotexpo permet d'intégrer sur le site officiel de votre salon les Nouveautés publiées par vos exposants : lancements produits, innovations, démonstrations, conférences, animations de stand ou documents à télécharger.
                 </p>
                 <p>
                   Vous enrichissez ainsi votre site avec du contenu utile, vivant et orienté visiteurs, <strong className="text-foreground">sans devoir tout produire vous-même</strong>. Les exposants gagnent en visibilité, les visiteurs préparent mieux leur venue, et votre salon bénéficie d'un contenu plus attractif avant son ouverture.
+                </p>
+                <p>
+                  Le widget ne remplace pas vos pages officielles. Il ajoute un bloc de contenu dynamique pour mettre en avant ce que vos exposants souhaitent présenter.
                 </p>
               </div>
               <Button asChild className="mt-6 gap-2">
@@ -567,10 +614,10 @@ const Organisateurs = () => {
         <section className="bg-primary text-primary-foreground py-16 px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Vous organisez un salon professionnel ?
+              Votre salon mérite d'être découvert avant le jour J
             </h2>
             <p className="text-lg text-primary-foreground/80 mb-8">
-              Lotexpo peut vous aider à renforcer gratuitement la visibilité de votre événement, valoriser vos exposants et attirer un public plus qualifié.
+              Lotexpo peut vous aider à renforcer gratuitement la visibilité de votre événement, valoriser vos exposants et rediriger les visiteurs vers vos informations officielles.
             </p>
             <Button asChild size="lg" variant="secondary" className="gap-2">
               <Link to="/contact">
