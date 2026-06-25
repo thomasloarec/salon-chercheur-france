@@ -653,6 +653,8 @@ Deno.serve(async (req) => {
         top5: candidatesPool.slice(0, 5).map((e) => ({ name: e.name, relevance: e._m?.relevance ?? null })),
         semantic_used: semanticUsed,
         fallback_used: fallbackUsed,
+        seller_target_used: sellerTargetUsed,
+        query_used: queryUsed.slice(0, 200),
       }),
     );
 
@@ -670,6 +672,7 @@ Deno.serve(async (req) => {
         candidates_sent: 0,
         semantic_used: semanticUsed,
         fallback_used: fallbackUsed,
+        seller_target_used: sellerTargetUsed,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -833,6 +836,7 @@ Retourne UNIQUEMENT un JSON valide, sans markdown, sans backtick, sans texte ava
       candidates_sent: candidates.length,
       semantic_used: semanticUsed,
       fallback_used: fallbackUsed,
+      seller_target_used: sellerTargetUsed,
     };
 
     return new Response(JSON.stringify(result), {
