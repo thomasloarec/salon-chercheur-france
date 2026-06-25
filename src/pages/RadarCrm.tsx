@@ -392,16 +392,32 @@ const RadarCrmPage: React.FC = () => {
 
       {/* How it works */}
       <section id="radar-how" className="max-w-5xl mx-auto px-4 py-8 scroll-mt-24">
-        <h2 className="text-xl md:text-2xl font-bold text-center mb-6">Comment fonctionne Radar CRM ?</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-center mb-6">
+          En 2 minutes, voyez comment un fichier CRM devient un plan de visite salon
+        </h2>
         <RadarCrmDemoVideo />
         <p className="text-sm text-muted-foreground text-center max-w-3xl mx-auto mb-8">
-          En 2 minutes : importez votre fichier CRM, Radar CRM détecte automatiquement sur quels
-          salons vos comptes exposent.
+          Importez une liste d'entreprises, détectez celles qui exposent, puis classez les salons où
+          vos comptes sont présents. L'objectif n'est pas seulement de savoir qui expose, mais de
+          décider où concentrer vos efforts commerciaux.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Step n={1} icon={<Upload className="h-5 w-5" />} title="Importez un CSV ou Excel" text="Avec vos entreprises (nom + site web)." />
           <Step n={2} icon={<Search className="h-5 w-5" />} title="Matching automatique" text="Lotexpo détecte les correspondances par domaine." />
           <Step n={3} icon={<Radar className="h-5 w-5" />} title="Plan d'action" text="Consultez les salons à venir et les comptes à rencontrer." />
+        </div>
+      </section>
+
+      {/* After import — light teaser */}
+      <section className="max-w-5xl mx-auto px-4 py-6">
+        <h2 className="text-lg md:text-xl font-semibold text-center mb-5">
+          Après l'import, Radar CRM vous montre :
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <AfterImportItem icon={<Building2 className="h-4 w-4" />} text="Les entreprises de votre CRM détectées sur des salons" />
+          <AfterImportItem icon={<Users className="h-4 w-4" />} text="Les salons où plusieurs comptes sont présents" />
+          <AfterImportItem icon={<CalendarClock className="h-4 w-4" />} text="Les prochaines dates à surveiller" />
+          <AfterImportItem icon={<PhoneCall className="h-4 w-4" />} text="Les comptes à contacter avant votre déplacement" />
         </div>
       </section>
 
