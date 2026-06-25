@@ -44,18 +44,15 @@ export default function Exposants() {
 
             {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Ne laissez plus votre{' '}
-              <span className="text-primary">emplacement</span>
+              Ne comptez plus sur le <span className="text-primary">hasard</span>
               <br />
-              décider de votre succès
+              pour attirer les bons visiteurs
             </h1>
 
-            {/* Sous-titre - Gratuité */}
+            {/* Sous-titre */}
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Publiez <strong className="text-foreground">gratuitement votre première nouveauté</strong> et commencez
-              <br className="hidden md:block" />
-              à attirer des visiteurs qualifiés{' '}
-              <strong className="text-foreground">avant l'ouverture du salon</strong>.
+              Publiez ce que vous présenterez sur votre stand et donnez aux visiteurs une raison de venir vous voir{' '}
+              <strong className="text-foreground">avant même l'ouverture du salon</strong>.
             </p>
 
             {/* CTAs */}
@@ -66,7 +63,7 @@ export default function Exposants() {
                 onClick={() => navigate('/publier-nouveaute')}
               >
                 <Megaphone className="h-5 w-5" />
-                Publier ma nouveauté
+                Publier ma première nouveauté
               </Button>
               <Button
                 size="lg"
@@ -125,28 +122,28 @@ export default function Exposants() {
               </div>
               
               <h2 className="text-3xl font-bold leading-tight">
-                Pourquoi 80% des exposants repartent des salons déçus ?
+                Pourquoi tant d'exposants repartent avec le sentiment d'avoir subi leur salon ?
               </h2>
 
               <div className="space-y-4">
                 <div className="p-4 bg-background border border-border rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Mauvais emplacement :</strong> Votre stand est mal placé, peu visible
+                    <strong className="text-foreground">Les visiteurs ne savent pas pourquoi venir vous voir :</strong> Votre nom apparaît dans une liste d'exposants, mais votre valeur n'est pas toujours visible avant le salon.
                   </p>
                 </div>
                 <div className="p-4 bg-background border border-border rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Trafic aléatoire :</strong> Les visiteurs passent devant sans s'arrêter
+                    <strong className="text-foreground">Le trafic dans les allées reste imprévisible :</strong> Même avec un bon stand, vous dépendez du passage, du timing et de la curiosité des visiteurs.
                   </p>
                 </div>
                 <div className="p-4 bg-background border border-border rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">ROI incertain :</strong> Impossible de prévoir le retour sur les 30k€ investis
+                    <strong className="text-foreground">Vos temps forts sont découverts trop tard :</strong> Démonstration, lancement produit, offre spéciale, expertise métier : si les visiteurs l'apprennent sur place, beaucoup ne passeront jamais.
                   </p>
                 </div>
                 <div className="p-4 bg-background border border-border rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Équipe démotivée :</strong> Vos commerciaux attendent des visiteurs qui ne viennent pas
+                    <strong className="text-foreground">Le retour commercial est difficile à préparer :</strong> Sans signaux d'intérêt avant le salon, vos équipes arrivent souvent sans priorités claires.
                   </p>
                 </div>
               </div>
@@ -160,29 +157,29 @@ export default function Exposants() {
               </div>
               
               <h2 className="text-3xl font-bold leading-tight">
-                Créez votre propre trafic qualifié
+                Créez une intention de visite avant le salon
               </h2>
 
               <div className="space-y-4">
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Visibilité maximale :</strong> Vos nouveautés sont visibles par tous les futurs visiteurs du salon.
+                    <strong className="text-foreground">Avant le salon :</strong> Vos nouveautés sont visibles quand les visiteurs préparent leur parcours.
                   </p>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Leads qualifiés :</strong> Collectez contacts et RDV avant l'ouverture
+                    <strong className="text-foreground">Pendant le salon :</strong> Les visiteurs savent déjà pourquoi passer sur votre stand.
                   </p>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Planning pré-rempli :</strong> Arrivez avec vos rendez-vous déjà planifiés
+                    <strong className="text-foreground">Après le salon :</strong> Vous mesurez les signaux d'intérêt générés par vos publications.
                   </p>
                 </div>
               </div>
               <div className="p-4 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-950 dark:to-primary/10 border border-green-200 dark:border-green-800 rounded-lg">
                 <p className="text-sm font-semibold text-green-900 dark:text-green-100">
-                  ✨ Résultat : Salon rentabilisé dès le premier jour, équipe motivée, budget optimisé.
+                  ✨ Résultat : votre présence n'est plus seulement passive. Vous donnez aux visiteurs une raison claire de vous intégrer à leur parcours.
                 </p>
               </div>
             </div>
@@ -203,10 +200,10 @@ export default function Exposants() {
                 <Users className="h-8 w-8 text-accent" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
-                Visibilité pré-événement
+                Être visible avant l'ouverture
               </h3>
               <p className="text-muted-foreground">
-                Les visiteurs découvrent vos innovations avant le salon et planifient de vous rendre visite
+                Votre nouveauté apparaît au moment où les visiteurs préparent leur salon, pas seulement quand ils passent devant votre stand.
               </p>
             </div>
 
@@ -215,10 +212,10 @@ export default function Exposants() {
                 <TrendingUp className="h-8 w-8 text-accent" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
-                Leads qualifiés
+                Créer une raison de passage
               </h3>
               <p className="text-muted-foreground">
-                Collectez les coordonnées de prospects réellement intéressés par vos produits
+                Une nouveauté claire transforme une fiche exposant classique en invitation concrète à venir vous rencontrer.
               </p>
             </div>
 
@@ -227,10 +224,10 @@ export default function Exposants() {
                 <BarChart3 className="h-8 w-8 text-accent" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
-                ROI mesuré
+                Mesurer l'intérêt généré
               </h3>
               <p className="text-muted-foreground">
-                Suivez les performances de vos nouveautés avec des statistiques détaillées
+                Suivez les vues, interactions ou contacts liés à vos publications pour mieux comprendre ce qui attire l'attention.
               </p>
             </div>
           </div>
@@ -244,7 +241,7 @@ export default function Exposants() {
             Comment ça marche ?
           </h2>
           <p className="text-xl text-muted-foreground text-center mb-16 max-w-3xl mx-auto">
-            3 étapes simples pour transformer votre participation en succès mesurable
+            3 étapes simples pour donner plus de visibilité à ce que vous présentez sur votre stand.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
@@ -261,10 +258,10 @@ export default function Exposants() {
                   ÉTAPE 1
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Trouvez votre salon
+                  Retrouvez votre salon
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Identifiez le salon professionnel auquel votre société participe prochainement sur notre plateforme.
+                  Identifiez l'événement auquel votre entreprise participe et accédez à votre espace exposant.
                 </p>
               </div>
             </div>
@@ -279,10 +276,10 @@ export default function Exposants() {
                   ÉTAPE 2
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Publiez votre nouveauté
+                  Publiez ce qui mérite le détour
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Démarquez-vous ! Annoncez un nouveau produit, un partenariat, une démonstration exclusive, une offre spéciale... Soyez remarquable pour attirer des visiteurs sur votre stand.
+                  Présentez un produit, une démonstration, une innovation, un service, une offre ou un temps fort prévu sur votre stand.
                 </p>
               </div>
             </div>
@@ -297,12 +294,10 @@ export default function Exposants() {
                   ÉTAPE 3
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Générez des leads avant J-0
+                  Transformez l'attention en visites utiles
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Collectez des rendez-vous et téléchargements de brochures <strong>avant l'ouverture</strong>. 
-                  Vous capitalisez déjà du ROI avant même le début du salon. 
-                  Essentiel quand la participation coûte des dizaines de milliers d'euros.
+                  Les visiteurs peuvent repérer votre nouveauté, la sauvegarder et intégrer votre stand à leur préparation.
                 </p>
               </div>
             </div>
@@ -315,10 +310,10 @@ export default function Exposants() {
         <div className="container max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-3">
-              Choisissez votre niveau d'impact
+              Commencez gratuitement, amplifiez si le salon est stratégique
             </h2>
             <p className="text-muted-foreground text-lg">
-              Un seul événement bien préparé peut générer des mois de pipeline commercial
+              Publiez une première nouveauté gratuitement. Passez au Premium si vous souhaitez multiplier vos publications, suivre vos performances et exploiter davantage les signaux d'intérêt.
             </p>
           </div>
 
@@ -351,7 +346,7 @@ export default function Exposants() {
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">3 premiers leads gratuits</span>
+                      <span className="text-sm">3 premiers contacts générés gratuits</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -359,7 +354,7 @@ export default function Exposants() {
                     </div>
                     <div className="flex items-start gap-2 opacity-50">
                       <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Leads illimités</span>
+                      <span className="text-sm">Contacts générés illimités</span>
                     </div>
                     <div className="flex items-start gap-2 opacity-50">
                       <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
@@ -405,15 +400,15 @@ export default function Exposants() {
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm"><strong>Leads illimités</strong> – Collectez tous les contacts</span>
+                      <span className="text-sm"><strong>Accès complet aux contacts générés</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Export CSV de vos leads</span>
+                      <span className="text-sm">Export CSV de vos contacts</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Statistiques détaillées en temps réel</span>
+                      <span className="text-sm">Statistiques détaillées</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -444,7 +439,7 @@ export default function Exposants() {
               Premium s'adapte à votre situation
             </h2>
             <p className="text-muted-foreground text-lg">
-              Quel que soit votre profil, maximisez votre impact
+              Quel que soit votre profil, utilisez Lotexpo pour mieux préparer votre visibilité avant le salon.
             </p>
           </div>
 
@@ -457,13 +452,12 @@ export default function Exposants() {
                 </div>
                 <h3 className="text-xl font-bold">Startup innovante</h3>
                 <p className="text-sm text-muted-foreground">
-                  Vous lancez un produit révolutionnaire mais avez un petit stand en fond de hall.
+                  Vous avez une vraie nouveauté, mais un petit stand ou une faible notoriété.
                 </p>
                 <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Résultat avec Premium :</p>
+                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
                   <p className="text-sm text-muted-foreground">
-                    Votre innovation apparaît en première page, génère 50+ leads qualifiés, 
-                    et vous repartez avec un pipeline commercial de 6 mois.
+                    Vous mettez votre innovation en avant avant l'ouverture du salon et vous donnez aux visiteurs une raison concrète de vous identifier dans leur parcours.
                   </p>
                 </div>
               </CardContent>
@@ -477,13 +471,12 @@ export default function Exposants() {
                 </div>
                 <h3 className="text-xl font-bold">PME établie</h3>
                 <p className="text-sm text-muted-foreground">
-                  Vous participez à plusieurs salons par an et devez justifier chaque investissement.
+                  Vous participez à plusieurs salons par an et vous voulez mieux préparer vos actions commerciales.
                 </p>
                 <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Résultat avec Premium :</p>
+                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
                   <p className="text-sm text-muted-foreground">
-                    ROI mesuré dès J-7, planning pré-rempli, export direct vers votre CRM. 
-                    Vous optimisez votre budget événementiel avec des données concrètes.
+                    Vous suivez les performances de vos publications, exploitez les signaux d'intérêt et structurez mieux vos actions avant, pendant et après le salon.
                   </p>
                 </div>
               </CardContent>
@@ -497,13 +490,12 @@ export default function Exposants() {
                 </div>
                 <h3 className="text-xl font-bold">Grande entreprise</h3>
                 <p className="text-sm text-muted-foreground">
-                  Vous avez un grand stand mais noyé dans la masse d'exposants similaires.
+                  Vous avez plusieurs offres, divisions ou nouveautés à présenter sur un même salon.
                 </p>
                 <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Résultat avec Premium :</p>
+                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
                   <p className="text-sm text-muted-foreground">
-                    Créez le buzz avec plusieurs nouveautés Premium, segmentez vos audiences, 
-                    et générez un trafic ciblé vers votre stand.
+                    Vous pouvez mettre en avant plusieurs temps forts et aider les visiteurs à comprendre rapidement ce qui mérite un passage sur votre stand.
                   </p>
                 </div>
               </CardContent>
@@ -524,46 +516,45 @@ export default function Exposants() {
           <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="item-1" className="border rounded-lg px-6">
               <AccordionTrigger className="text-left hover:no-underline">
-                Comment fonctionne le Premium ?
+                Pourquoi publier une nouveauté avant le salon ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Le Premium débloque toutes les fonctionnalités pour un événement spécifique. 
-                Vous pouvez publier jusqu'à 5 nouveautés, collecter tous les leads 
-                sans limitation, et exporter vos données au format CSV pour les intégrer à votre CRM.
+                Parce que les visiteurs préparent de plus en plus leur venue en amont. Une nouveauté
+                claire leur donne une raison concrète d'ajouter votre stand à leur parcours avant même
+                l'ouverture du salon.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2" className="border rounded-lg px-6">
               <AccordionTrigger className="text-left hover:no-underline">
-                Le paiement est-il par mois ou par événement ?
+                Est-ce réservé aux entreprises avec un grand stand ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Le Premium est facturé par événement (99€ HT). Cela signifie que vous payez une fois 
-                pour obtenir tous les avantages Premium sur un salon spécifique. Si vous participez à 
-                plusieurs salons, vous pouvez activer le Premium sur chacun d'entre eux indépendamment.
+                Non. Lotexpo est justement utile aux exposants qui veulent être repérés au-delà de leur
+                emplacement physique, qu'ils aient un petit stand, un grand stand ou une visibilité
+                limitée sur le salon.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-3" className="border rounded-lg px-6">
               <AccordionTrigger className="text-left hover:no-underline">
-                Puis-je annuler à tout moment ?
+                Que puis-je publier comme nouveauté ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Le Premium étant lié à un événement spécifique et non à un abonnement, 
-                il n'y a pas de renouvellement automatique. Vous gardez l'accès Premium jusqu'à 
-                la fin de l'événement concerné. Il n'y a donc rien à annuler.
+                Vous pouvez publier un nouveau produit, une démonstration, une offre spéciale, un
+                service, une innovation, un cas client, une conférence, une animation ou tout élément
+                qui donne aux visiteurs une raison de venir vous rencontrer.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-4" className="border rounded-lg px-6">
               <AccordionTrigger className="text-left hover:no-underline">
-                Combien de leads puis-je espérer ?
+                Le Premium garantit-il des leads ?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Le nombre de leads dépend de plusieurs facteurs : la qualité de vos nouveautés, 
-                l'attractivité de votre offre, et la taille de l'événement. Nos exposants Premium 
-                génèrent un traffic lors du salon et un nombre de leads toujours plus élevés que 
-                les exposants qui n'utilisent pas Lotexpo.
+                Non. Le Premium ne garantit pas un volume de contacts. Il augmente votre capacité à
+                publier, mesurer et exploiter vos signaux d'intérêt. Les résultats dépendront de votre
+                salon, de votre offre, de votre message et de votre audience.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -574,10 +565,10 @@ export default function Exposants() {
       <section className="py-20 bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="container max-w-4xl mx-auto px-4 text-center space-y-8">
           <h2 className="text-4xl md:text-5xl font-bold">
-            Prêt à attirer vos premiers visiteurs qualifiés ?
+            Donnez aux visiteurs une raison de venir vous voir
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Publiez gratuitement votre première nouveauté et commencez à générer des leads avant le salon.
+            Publiez gratuitement votre première nouveauté et rendez votre présence visible avant l'ouverture du salon.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
@@ -586,7 +577,7 @@ export default function Exposants() {
               onClick={() => navigate('/publier-nouveaute')}
             >
               <Megaphone className="h-5 w-5" />
-              Publier ma nouveauté
+              Publier ma première nouveauté
             </Button>
             <Button 
               size="lg"
