@@ -674,26 +674,31 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 <p className="text-sm text-muted-foreground">Sélectionnez le profil qui correspond le mieux à votre fonction</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {ROLES.map(r => (
-                  <button
-                    key={r}
-                    onClick={() => {
-                      setRole(r);
-                      // Reset de l'objectif s'il n'est plus pertinent pour le nouveau rôle.
-                      const allowed = OBJECTIVES_BY_ROLE[r] ?? ALL_OBJECTIVES;
-                      if (objective && !allowed.includes(objective)) setObjective('');
-                      setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200);
-                    }}
-                    className={cn(
-                      'p-4 rounded-xl border-2 text-left transition-all hover:shadow-md',
-                      role === r
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-border hover:border-primary/40'
-                    )}
-                  >
-                    <span className="font-medium text-sm">{r}</span>
-                  </button>
-                ))}
+                {ROLES.map(r => {
+                  const RoleIcon = ROLE_ICONS[r] ?? CircleDashed;
+                  const selected = role === r;
+                  return (
+                    <button
+                      key={r}
+                      onClick={() => {
+                        setRole(r);
+                        // Reset de l'objectif s'il n'est plus pertinent pour le nouveau rôle.
+                        const allowed = OBJECTIVES_BY_ROLE[r] ?? ALL_OBJECTIVES;
+                        if (objective && !allowed.includes(objective)) setObjective('');
+                        setTimeout(() => { setStep(2); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step1', role: r }); }, 200);
+                      }}
+                      className={cn(
+                        'flex items-center gap-3 p-4 rounded-lg border bg-card text-left transition-all duration-150 cursor-pointer hover:border-primary/40 hover:shadow-sm hover:-translate-y-px',
+                        selected
+                          ? 'border-2 border-primary bg-primary/5'
+                          : 'border-border'
+                      )}
+                    >
+                      <RoleIcon className={cn('w-5 h-5 flex-shrink-0', selected ? 'text-primary' : 'text-muted-foreground')} />
+                      <span className={cn('text-sm', selected ? 'font-medium text-primary' : 'font-medium')}>{r}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
