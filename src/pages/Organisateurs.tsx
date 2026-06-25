@@ -185,7 +185,7 @@ const SECTIONS: SectionBlock[] = [
 
 const FAQ = [
   {
-    q: 'Lotexpo est-il affilié à notre salon ?',
+    q: 'Lotexpo est-il affilié aux salons référencés ?',
     a: "Non. Lotexpo est une plateforme indépendante. La présence d'un événement sur Lotexpo ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite.",
   },
   {
