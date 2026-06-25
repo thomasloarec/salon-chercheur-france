@@ -238,12 +238,13 @@ const RadarCrmPage: React.FC = () => {
               <Sparkles className="h-3.5 w-3.5" /> Beta
             </Badge>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
-              Transformez votre fichier CRM en{' '}
-              <span className="text-primary">plan d'action salon</span>
+              Vos prospects exposent déjà sur des salons.{' '}
+              <span className="text-primary">Votre CRM ne vous dit pas où.</span>
             </h1>
             <p className="text-base md:text-lg text-muted-foreground mb-8">
-              Importez votre fichier CSV ou Excel et découvrez les salons où vos prospects, clients,
-              partenaires ou concurrents exposent.
+              Importez votre fichier CRM et découvrez automatiquement sur quels salons vos clients,
+              prospects, partenaires ou concurrents seront présents. Radar CRM transforme une liste
+              d'entreprises en plan d'action terrain.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
               <Button
@@ -251,7 +252,7 @@ const RadarCrmPage: React.FC = () => {
                 onClick={() => scrollToUpload('hero_primary')}
                 className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
               >
-                <Upload className="h-4 w-4 mr-2 shrink-0" /> Importer mon fichier CSV ou Excel
+                <Upload className="h-4 w-4 mr-2 shrink-0" /> Analyser mon fichier CRM
               </Button>
               <Button
                 size="lg"
@@ -259,9 +260,12 @@ const RadarCrmPage: React.FC = () => {
                 onClick={scrollToHowItWorks}
                 className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
               >
-                Voir comment ça marche
+                Voir un exemple de résultat
               </Button>
             </div>
+            <p className="text-sm font-medium text-foreground mb-3">
+              Votre CRM vous dit qui cibler. Radar CRM vous dit où les rencontrer.
+            </p>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
               <Lock className="h-3.5 w-3.5" /> Analyse sécurisée. Vos données restent privées. Matching basé sur les sites web.
             </p>
