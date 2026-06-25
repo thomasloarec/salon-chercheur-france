@@ -685,7 +685,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 <p className="text-sm text-muted-foreground">Choisissez l'objectif qui décrit le mieux votre visite</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {OBJECTIVES.map(o => (
+                {(OBJECTIVES_BY_ROLE[role] ?? ALL_OBJECTIVES).map(o => (
                   <button
                     key={o}
                     onClick={() => { setObjective(o); setTimeout(() => { setStep(3); if (wizardSessionId.current) updateWizardSession(wizardSessionId.current, { step_reached: 'step2', objectif: o }); }, 200); }}
