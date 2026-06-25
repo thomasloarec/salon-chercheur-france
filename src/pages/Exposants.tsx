@@ -122,28 +122,28 @@ export default function Exposants() {
               </div>
               
               <h2 className="text-3xl font-bold leading-tight">
-                Pourquoi 80% des exposants repartent des salons déçus ?
+                Pourquoi tant d'exposants repartent avec le sentiment d'avoir subi leur salon ?
               </h2>
 
               <div className="space-y-4">
                 <div className="p-4 bg-background border border-border rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Mauvais emplacement :</strong> Votre stand est mal placé, peu visible
+                    <strong className="text-foreground">Les visiteurs ne savent pas pourquoi venir vous voir :</strong> Votre nom apparaît dans une liste d'exposants, mais votre valeur n'est pas toujours visible avant le salon.
                   </p>
                 </div>
                 <div className="p-4 bg-background border border-border rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Trafic aléatoire :</strong> Les visiteurs passent devant sans s'arrêter
+                    <strong className="text-foreground">Le trafic dans les allées reste imprévisible :</strong> Même avec un bon stand, vous dépendez du passage, du timing et de la curiosité des visiteurs.
                   </p>
                 </div>
                 <div className="p-4 bg-background border border-border rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">ROI incertain :</strong> Impossible de prévoir le retour sur les 30k€ investis
+                    <strong className="text-foreground">Vos temps forts sont découverts trop tard :</strong> Démonstration, lancement produit, offre spéciale, expertise métier : si les visiteurs l'apprennent sur place, beaucoup ne passeront jamais.
                   </p>
                 </div>
                 <div className="p-4 bg-background border border-border rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Équipe démotivée :</strong> Vos commerciaux attendent des visiteurs qui ne viennent pas
+                    <strong className="text-foreground">Le retour commercial est difficile à préparer :</strong> Sans signaux d'intérêt avant le salon, vos équipes arrivent souvent sans priorités claires.
                   </p>
                 </div>
               </div>
@@ -157,29 +157,29 @@ export default function Exposants() {
               </div>
               
               <h2 className="text-3xl font-bold leading-tight">
-                Créez votre propre trafic qualifié
+                Créez une intention de visite avant le salon
               </h2>
 
               <div className="space-y-4">
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Visibilité maximale :</strong> Vos nouveautés sont visibles par tous les futurs visiteurs du salon.
+                    <strong className="text-foreground">Avant le salon :</strong> Vos nouveautés sont visibles quand les visiteurs préparent leur parcours.
                   </p>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Leads qualifiés :</strong> Collectez contacts et RDV avant l'ouverture
+                    <strong className="text-foreground">Pendant le salon :</strong> Les visiteurs savent déjà pourquoi passer sur votre stand.
                   </p>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-sm">
-                    <strong className="text-foreground">Planning pré-rempli :</strong> Arrivez avec vos rendez-vous déjà planifiés
+                    <strong className="text-foreground">Après le salon :</strong> Vous mesurez les signaux d'intérêt générés par vos publications.
                   </p>
                 </div>
               </div>
               <div className="p-4 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-950 dark:to-primary/10 border border-green-200 dark:border-green-800 rounded-lg">
                 <p className="text-sm font-semibold text-green-900 dark:text-green-100">
-                  ✨ Résultat : Salon rentabilisé dès le premier jour, équipe motivée, budget optimisé.
+                  ✨ Résultat : votre présence n'est plus seulement passive. Vous donnez aux visiteurs une raison claire de vous intégrer à leur parcours.
                 </p>
               </div>
             </div>
