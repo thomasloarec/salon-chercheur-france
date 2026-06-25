@@ -28,22 +28,22 @@ import {
 const BENEFITS = [
   {
     icon: Eye,
-    title: 'Plus de visibilité gratuite',
+    title: 'Plus de visibilité pré-salon',
     text: 'Votre salon peut être découvert par des visiteurs professionnels qui recherchent des événements par secteur, ville ou date.',
   },
   {
     icon: MousePointerClick,
     title: 'Plus de trafic vers votre site officiel',
-    text: "Lotexpo peut orienter les utilisateurs vers vos pages officielles pour l'inscription, les informations pratiques ou les demandes exposants.",
+    text: "Lotexpo oriente les utilisateurs vers vos pages officielles pour l'inscription, les informations pratiques ou les demandes exposants.",
   },
   {
     icon: Users,
     title: 'Des exposants mieux valorisés',
-    text: 'Les fiches exposants et les Nouveautés donnent plus de raisons concrètes aux visiteurs de préparer leur venue.',
+    text: "Les Nouveautés donnent aux visiteurs des raisons concrètes de s'intéresser aux stands avant le salon.",
   },
   {
     icon: FileText,
-    title: 'Un contenu utile avant le salon',
+    title: 'Une préparation de visite plus utile',
     text: "Les visiteurs peuvent identifier les innovations, démonstrations, produits et services à découvrir avant même l'ouverture.",
   },
   {
@@ -60,10 +60,10 @@ const BENEFITS = [
 
 const IS_LIST = [
   'Un annuaire spécialisé des salons professionnels en France.',
-  'Un canal de visibilité supplémentaire pour votre événement.',
-  'Un relais vers votre site officiel et vos informations pratiques.',
+  'Un point d\u2019entrée complémentaire vers votre événement.',
+  'Un relais vers votre site officiel, votre billetterie et vos informations pratiques.',
   'Un espace où vos exposants peuvent publier leurs Nouveautés.',
-  'Un outil complémentaire pour attirer un public plus qualifié.',
+  'Un outil d\u2019aide à la préparation de visite pour un public professionnel.',
 ];
 
 const IS_NOT_LIST = [
@@ -72,6 +72,21 @@ const IS_NOT_LIST = [
   'Un partenaire officiel, sauf mention explicite.',
   'Un concurrent de votre salon.',
   'Une plateforme qui revendique l\u2019organisation de votre événement.',
+];
+
+const PROBLEM_CARDS = [
+  {
+    title: 'Les visiteurs comparent plusieurs salons',
+    text: "Un professionnel ne choisit pas toujours un salon parce qu'il connaît son nom. Il compare les secteurs, les dates, les exposants, les nouveautés et l'intérêt concret du déplacement.",
+  },
+  {
+    title: 'Les exposants communiquent chacun de leur côté',
+    text: 'Chaque exposant annonce ses produits, démonstrations ou temps forts sur ses propres canaux. Lotexpo permet de regrouper ces signaux autour de votre événement.',
+  },
+  {
+    title: 'Les bonnes raisons de venir ne sont pas toujours visibles',
+    text: "Un salon peut être très pertinent, mais si les visiteurs ne voient pas rapidement ce qu'ils pourront y découvrir, ils peuvent passer à côté.",
+  },
 ];
 
 type SectionBlock = {
