@@ -40,6 +40,13 @@ export default function AddNoveltyButton({
   const noveltiesOpenDate = new Date(event.date_debut);
   noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 90);
 
+  // Vérifier si l'événement est terminé : la publication reste possible
+  // jusqu'au dernier jour du salon inclus (date_fin, sinon date_debut).
+  // Passée cette date (à partir du lendemain), le bouton disparaît.
+  const eventEndDate = new Date(event.date_fin || event.date_debut);
+  eventEndDate.setHours(23, 59, 59, 999);
+  const isPastEvent = new Date() > eventEndDate;
+
   const handleClick = () => {
     // Not logged in - show auth modal
     if (!user) {
@@ -51,6 +58,11 @@ export default function AddNoveltyButton({
     // novelties-create, RLS). The button only opens the flow.
     setIsModalOpen(true);
   };
+
+  // Événement terminé : on masque complètement le bouton de publication.
+  if (isPastEvent) {
+    return null;
+  }
 
   // Si période de pré-lancement, afficher bouton désactivé avec tooltip explicatif
   if (isPreLaunch) {
