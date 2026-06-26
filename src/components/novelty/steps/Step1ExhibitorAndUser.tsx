@@ -454,6 +454,7 @@ export default function Step1ExhibitorAndUser({
     setShowNewExhibitorForm(eventHasAnyExhibitor === false);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
     setCandidateMatch(null);
+    setConfirmedLegacyMatch(null);
   };
 
   // Adapter l'UX selon la disponibilité d'exposants pour cet événement
