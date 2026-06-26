@@ -32,6 +32,47 @@ export function normalizeUrl(url: string): string {
 }
 
 /**
+ * Convertit une description en texte brut (avec sauts de ligne) en HTML
+ * afin de préserver les paragraphes lors de l'affichage (rendu via
+ * dangerouslySetInnerHTML côté front).
+ *
+ * - Si le texte contient déjà du HTML de bloc (<p>, <br>, <div>, <ul>, <ol>,
+ *   <h1..h6>), on le renvoie tel quel (idempotent, pas de double-encodage).
+ * - Sinon : on découpe sur les lignes vides pour créer des <p>, et on
+ *   remplace les sauts de ligne simples par <br> à l'intérieur d'un paragraphe.
+ */
+export function formatDescriptionHtml(input: string | null | undefined): string | null {
+  if (input == null) return null;
+  const text = String(input);
+  if (text.trim() === '') return null;
+
+  // Déjà du HTML de bloc → ne pas retoucher
+  if (/<\s*(p|br|div|ul|ol|li|h[1-6])\b/i.test(text)) {
+    return text;
+  }
+
+  // Normaliser les fins de ligne
+  const normalized = text.replace(/\r\n?/g, '\n');
+
+  const escapeHtml = (s: string) =>
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+  const paragraphs = normalized
+    .split(/\n{2,}/) // lignes vides = séparateur de paragraphe
+    .map((p) => p.trim())
+    .filter((p) => p !== '');
+
+  if (paragraphs.length === 0) return null;
+
+  return paragraphs
+    .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
+/**
  * Mapping vers les valeurs autorisées par la contrainte CHECK
  */
 const EVENT_TYPE_ALLOWED = ['salon', 'conference', 'congres', 'convention', 'ceremonie'];
