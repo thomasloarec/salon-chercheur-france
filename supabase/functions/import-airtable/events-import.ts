@@ -1,4 +1,4 @@
-import { normalizeDate, normalizeEventType } from '../_shared/normalization-utils.ts';
+import { normalizeDate, normalizeEventType, formatDescriptionHtml } from '../_shared/normalization-utils.ts';
 import type { 
   AirtableEventRecord, 
   EventImportResult, 
@@ -124,7 +124,9 @@ export async function importEvents(supabaseClient: any, airtableConfig: Airtable
       secteur: fields['secteur'] || '',
       url_image: fields['url_image'] || null,
       url_site_officiel: fields['url_site_officiel'] || null,
-      description_event: fields['description_event'] || null,
+      // Préserver les sauts de ligne / paragraphes en convertissant le texte
+      // brut d'Airtable en HTML (rendu via dangerouslySetInnerHTML côté front)
+      description_event: formatDescriptionHtml(fields['description_event']),
       // Garder l'affluence exactement comme dans Airtable (ex: "45.000")
       affluence: fields['affluence'] && String(fields['affluence']).trim() !== '' ? String(fields['affluence']).trim() : null,
       tarif: fields['tarif'] || null,
