@@ -857,8 +857,8 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
       setSubmissionResult({
         success: true,
         message: isNewExhibitor 
-          ? 'Votre nouveauté et votre fiche exposant ont été soumises et seront publiées après validation par l\'équipe LotExpo.'
-          : 'Votre nouveauté a été soumise et sera publiée après validation par l\'équipe LotExpo.',
+          ? 'Votre nouveauté et votre fiche exposant ont été soumises et seront publiées après validation par l\'équipe Lotexpo.'
+          : 'Votre nouveauté a été soumise et sera publiée après validation par l\'équipe Lotexpo.',
         noveltyId: novelty.id
       });
       
