@@ -631,11 +631,42 @@ export default function Step1ExhibitorAndUser({
               </div>
 
               {/* Détection live : entreprise déjà présente sur Lotexpo */}
-              {resolveLoading && !candidateMatch && (
-                <p className="text-xs text-muted-foreground">Recherche d'une entreprise existante…</p>
-              )}
-              {candidateMatch && (
-                <ExistingCompanyCard match={candidateMatch} onUse={handleUseExistingMatch} />
+              {confirmedLegacyMatch ? (
+                <div className="rounded-lg border border-primary bg-primary/5 p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium">Entreprise sélectionnée</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        <span className="font-medium text-foreground">{confirmedLegacyMatch.exhibitor_name}</span>
+                        {confirmedLegacyMatch.website && (
+                          <span> — {confirmedLegacyMatch.website}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Cette entreprise déjà connue de Lotexpo sera réutilisée (aucun doublon ne sera créé). Complétez les informations ci-dessous, puis continuez.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmedLegacyMatch(null)}
+                    className="w-full sm:w-auto"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Choisir une autre entreprise
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {resolveLoading && !candidateMatch && (
+                    <p className="text-xs text-muted-foreground">Recherche d'une entreprise existante…</p>
+                  )}
+                  {candidateMatch && (
+                    <ExistingCompanyCard match={candidateMatch} onUse={handleUseExistingMatch} />
+                  )}
+                </>
               )}
 
               {/* Si une entreprise bloquée est détectée, on masque description / logo
