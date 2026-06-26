@@ -323,6 +323,8 @@ export default function Step1ExhibitorAndUser({
   // Résolution live entreprise candidate (read-only, ne crée rien)
   useEffect(() => {
     if (!showNewExhibitorForm) { setCandidateMatch(null); return; }
+    // Une entreprise « ancienne base » a déjà été confirmée : on ne ré-affiche pas la suggestion.
+    if (confirmedLegacyMatch) { setCandidateMatch(null); return; }
     const name = (debouncedNewName || '').trim();
     const website = (debouncedNewWebsite || '').trim();
     if (name.length < 2 && website.length < 4) {
@@ -357,7 +359,7 @@ export default function Step1ExhibitorAndUser({
       }
     })();
     return () => { cancelled = true; };
-  }, [debouncedNewName, debouncedNewWebsite, showNewExhibitorForm, event?.id]);
+  }, [debouncedNewName, debouncedNewWebsite, showNewExhibitorForm, event?.id, confirmedLegacyMatch]);
 
   const handleUseExistingMatch = (m: ResolveCandidateMatch) => {
     // Cas legacy : on garde la saisie utilisateur mais on flag legacy_id_exposant
@@ -369,8 +371,13 @@ export default function Step1ExhibitorAndUser({
         name: m.exhibitor_name || prev.name,
         website: m.website || prev.website,
       }));
-      // Stocker l'id legacy pour transmission (champ caché)
-      (m as any).__use_legacy = true;
+      // Confirmation visible + masquage de la suggestion
+      setConfirmedLegacyMatch(m);
+      setCandidateMatch(null);
+      toast({
+        title: 'Entreprise sélectionnée',
+        description: `${m.exhibitor_name || 'Cette entreprise'} sera réutilisée. Complétez les informations ci-dessous puis continuez.`,
+      });
       return;
     }
     // Cas moderne : sélectionner directement et masquer le formulaire (skip desc/logo)
@@ -385,6 +392,10 @@ export default function Step1ExhibitorAndUser({
     setShowNewExhibitorForm(false);
     setCandidateMatch(null);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
+    toast({
+      title: 'Entreprise sélectionnée',
+      description: `${m.exhibitor_name || 'Cette entreprise'} a bien été sélectionnée.`,
+    });
   };
 
   const handleExhibitorSelect = (exhibitor: DbExhibitor) => {
