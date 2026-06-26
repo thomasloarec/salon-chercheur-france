@@ -43,9 +43,9 @@ export function NoveltyNotificationDialog({
 
   const { mutate: subscribe, isPending: isSubmitting } = useNoveltyNotificationSubscribe();
 
-  // Calculer la date d'ouverture des nouveautés (J-60)
+  // Calculer la date d'ouverture des nouveautés (J-90)
   const noveltiesOpenDate = new Date(eventDate);
-  noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 60);
+  noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 90);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

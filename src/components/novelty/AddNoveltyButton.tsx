@@ -34,11 +34,11 @@ export default function AddNoveltyButton({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Vérifier si on est en période de pré-lancement (plus de 60 jours avant l'événement)
+  // Vérifier si on est en période de pré-lancement (plus de 90 jours avant l'événement)
   const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
-  const isPreLaunch = daysUntilEvent > 60;
+  const isPreLaunch = daysUntilEvent > 90;
   const noveltiesOpenDate = new Date(event.date_debut);
-  noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 60);
+  noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 90);
 
   const handleClick = () => {
     // Not logged in - show auth modal
@@ -74,7 +74,7 @@ export default function AddNoveltyButton({
             <p className="text-sm">
               La publication de nouveautés ouvrira le{' '}
               <strong>{format(noveltiesOpenDate, 'dd MMMM yyyy', { locale: fr })}</strong>
-              {' '}(60 jours avant l'événement)
+              {' '}(90 jours avant l'événement)
             </p>
           </TooltipContent>
         </Tooltip>

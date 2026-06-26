@@ -17,11 +17,11 @@ export function NoveltiesPreLaunchBanner({
   onNotifyMe 
 }: NoveltiesPreLaunchBannerProps) {
   const daysUntilEvent = differenceInDays(new Date(eventDate), new Date());
-  const daysUntilNovelties = Math.max(0, daysUntilEvent - 60);
+  const daysUntilNovelties = Math.max(0, daysUntilEvent - 90);
   
-  // Date d'ouverture des nouveautés (J-60)
+  // Date d'ouverture des nouveautés (J-90)
   const noveltiesOpenDate = new Date(eventDate);
-  noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 60);
+  noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 90);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/5">
@@ -92,7 +92,7 @@ export function NoveltiesPreLaunchBanner({
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
             <Lock className="h-4 w-4" />
             <span>
-              <strong>Exposants :</strong> La publication de nouveautés ouvrira 60 jours avant l'événement
+              <strong>Exposants :</strong> La publication de nouveautés ouvrira 90 jours avant l'événement
             </span>
           </p>
         </div>

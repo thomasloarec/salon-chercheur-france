@@ -71,7 +71,7 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     new Date(event.date_debut),
     new Date(),
   );
-  const isPreLaunch = daysUntilEvent > 60;
+  const isPreLaunch = daysUntilEvent > 90;
 
   const allNovelties = data?.pages.flatMap((page) => page.data) ?? [];
   const total = data?.pages[0]?.total ?? 0;
