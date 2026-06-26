@@ -78,6 +78,9 @@ export default function Step1ExhibitorAndUser({
   const debouncedNewWebsite = useDebounce(newExhibitorData.website, 500);
   const [candidateMatch, setCandidateMatch] = useState<ResolveCandidateMatch | null>(null);
   const [resolveLoading, setResolveLoading] = useState(false);
+  // Match « ancienne base » confirmé par l'utilisateur (clic sur « Utiliser cette entreprise »).
+  // Sert à afficher une confirmation claire + permettre de revenir en arrière.
+  const [confirmedLegacyMatch, setConfirmedLegacyMatch] = useState<ResolveCandidateMatch | null>(null);
 
   // User form data (if not logged in)
   const [userData, setUserData] = useState({
