@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Building, Upload, X, AlertCircle } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -77,6 +78,9 @@ export default function Step1ExhibitorAndUser({
   const debouncedNewWebsite = useDebounce(newExhibitorData.website, 500);
   const [candidateMatch, setCandidateMatch] = useState<ResolveCandidateMatch | null>(null);
   const [resolveLoading, setResolveLoading] = useState(false);
+  // Match « ancienne base » confirmé par l'utilisateur (clic sur « Utiliser cette entreprise »).
+  // Sert à afficher une confirmation claire + permettre de revenir en arrière.
+  const [confirmedLegacyMatch, setConfirmedLegacyMatch] = useState<ResolveCandidateMatch | null>(null);
 
   // User form data (if not logged in)
   const [userData, setUserData] = useState({
@@ -319,6 +323,8 @@ export default function Step1ExhibitorAndUser({
   // Résolution live entreprise candidate (read-only, ne crée rien)
   useEffect(() => {
     if (!showNewExhibitorForm) { setCandidateMatch(null); return; }
+    // Une entreprise « ancienne base » a déjà été confirmée : on ne ré-affiche pas la suggestion.
+    if (confirmedLegacyMatch) { setCandidateMatch(null); return; }
     const name = (debouncedNewName || '').trim();
     const website = (debouncedNewWebsite || '').trim();
     if (name.length < 2 && website.length < 4) {
@@ -353,7 +359,7 @@ export default function Step1ExhibitorAndUser({
       }
     })();
     return () => { cancelled = true; };
-  }, [debouncedNewName, debouncedNewWebsite, showNewExhibitorForm, event?.id]);
+  }, [debouncedNewName, debouncedNewWebsite, showNewExhibitorForm, event?.id, confirmedLegacyMatch]);
 
   const handleUseExistingMatch = (m: ResolveCandidateMatch) => {
     // Cas legacy : on garde la saisie utilisateur mais on flag legacy_id_exposant
@@ -365,8 +371,13 @@ export default function Step1ExhibitorAndUser({
         name: m.exhibitor_name || prev.name,
         website: m.website || prev.website,
       }));
-      // Stocker l'id legacy pour transmission (champ caché)
-      (m as any).__use_legacy = true;
+      // Confirmation visible + masquage de la suggestion
+      setConfirmedLegacyMatch(m);
+      setCandidateMatch(null);
+      toast({
+        title: 'Entreprise sélectionnée',
+        description: `${m.exhibitor_name || 'Cette entreprise'} sera réutilisée. Complétez les informations ci-dessous puis continuez.`,
+      });
       return;
     }
     // Cas moderne : sélectionner directement et masquer le formulaire (skip desc/logo)
@@ -381,6 +392,10 @@ export default function Step1ExhibitorAndUser({
     setShowNewExhibitorForm(false);
     setCandidateMatch(null);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
+    toast({
+      title: 'Entreprise sélectionnée',
+      description: `${m.exhibitor_name || 'Cette entreprise'} a bien été sélectionnée.`,
+    });
   };
 
   const handleExhibitorSelect = (exhibitor: DbExhibitor) => {
@@ -439,6 +454,7 @@ export default function Step1ExhibitorAndUser({
     setShowNewExhibitorForm(eventHasAnyExhibitor === false);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
     setCandidateMatch(null);
+    setConfirmedLegacyMatch(null);
   };
 
   // Adapter l'UX selon la disponibilité d'exposants pour cet événement
@@ -615,11 +631,42 @@ export default function Step1ExhibitorAndUser({
               </div>
 
               {/* Détection live : entreprise déjà présente sur Lotexpo */}
-              {resolveLoading && !candidateMatch && (
-                <p className="text-xs text-muted-foreground">Recherche d'une entreprise existante…</p>
-              )}
-              {candidateMatch && (
-                <ExistingCompanyCard match={candidateMatch} onUse={handleUseExistingMatch} />
+              {confirmedLegacyMatch ? (
+                <div className="rounded-lg border border-primary bg-primary/5 p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium">Entreprise sélectionnée</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        <span className="font-medium text-foreground">{confirmedLegacyMatch.exhibitor_name}</span>
+                        {confirmedLegacyMatch.website && (
+                          <span> — {confirmedLegacyMatch.website}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Cette entreprise déjà connue de Lotexpo sera réutilisée (aucun doublon ne sera créé). Complétez les informations ci-dessous, puis continuez.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmedLegacyMatch(null)}
+                    className="w-full sm:w-auto"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Choisir une autre entreprise
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {resolveLoading && !candidateMatch && (
+                    <p className="text-xs text-muted-foreground">Recherche d'une entreprise existante…</p>
+                  )}
+                  {candidateMatch && (
+                    <ExistingCompanyCard match={candidateMatch} onUse={handleUseExistingMatch} />
+                  )}
+                </>
               )}
 
               {/* Si une entreprise bloquée est détectée, on masque description / logo
