@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Radar, Building2, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -7,6 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEventCrmMatches } from '@/hooks/useEventCrmMatches';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import {
+  fetchExhibitorPublicSlugs,
+  resolvePublicSlug,
+  type PublicSlugMaps,
+} from '@/lib/exhibitorPublicSlug';
 import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
 import type { Event } from '@/types/event';
 
@@ -49,6 +55,26 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   const { data, isLoading } = useEventCrmMatches(eventId, {
     enabled: !!user && !!eventId && !isEventPast,
     userId: user?.id ?? null,
+  });
+
+  // Résolution batchée des fiches publiques (/exposants/:slug) des exposants matchés,
+  // pour pouvoir afficher le bouton « Voir la fiche complète » dans la popup détail.
+  const matchedExposantIds =
+    data?.status === 'has_matches'
+      ? Array.from(new Set(data.matches.map((m) => m.idExposant).filter(Boolean)))
+      : [];
+
+  const { data: slugMaps } = useQuery({
+    queryKey: ['crm-widget-exhibitor-slugs', eventId, matchedExposantIds],
+    enabled: matchedExposantIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<PublicSlugMaps> => {
+      const UUID_RE =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuids = matchedExposantIds.filter((id) => UUID_RE.test(id));
+      const legacy = matchedExposantIds.filter((id) => !UUID_RE.test(id));
+      return fetchExhibitorPublicSlugs(uuids, legacy);
+    },
   });
 
   // Tracking : affichage avec matches (une seule fois par événement)
@@ -164,6 +190,7 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
 
   const openExhibitor = (m: (typeof data.matches)[number]) => {
     void trackRadarEvent('crm_event_widget_results_clicked', { eventId, count: data.total });
+    const slugInfo = resolvePublicSlug(slugMaps, { legacyId: m.idExposant, exhibitorId: m.idExposant });
     setSelectedExhibitor({
       id_exposant: m.idExposant,
       exhibitor_name: m.exhibitorName ?? m.crmCompanyName,
@@ -171,6 +198,9 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
       needs_review: m.needsReview,
       stand_exposant: m.stand ?? undefined,
       website_exposant: m.website ?? undefined,
+      public_slug: slugInfo?.public_slug ?? null,
+      seo_indexable: slugInfo?.seo_indexable,
+      is_test: slugInfo?.is_test,
     });
   };
 
