@@ -6318,6 +6318,7 @@ export type Database = {
         Args: { p_public_slug: string }
         Returns: Json
       }
+      get_my_radar_view: { Args: { p_import_id?: string }; Returns: Json }
       get_novelty_likes_count: {
         Args: { novelty_uuid: string }
         Returns: number
@@ -6555,6 +6556,10 @@ export type Database = {
         }[]
       }
       reset_event_duplicate_candidates: { Args: never; Returns: Json }
+      resolve_radar_account_for_user: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       resolve_widget_token: {
         Args: { p_token: string }
         Returns: {
