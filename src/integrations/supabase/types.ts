@@ -284,6 +284,7 @@ export type Database = {
           notes: string | null
           owner_email: string | null
           owner_name: string | null
+          radar_account_id: string
           updated_at: string | null
           user_id: string
           website_raw: string | null
@@ -299,6 +300,7 @@ export type Database = {
           notes?: string | null
           owner_email?: string | null
           owner_name?: string | null
+          radar_account_id: string
           updated_at?: string | null
           user_id: string
           website_raw?: string | null
@@ -314,6 +316,7 @@ export type Database = {
           notes?: string | null
           owner_email?: string | null
           owner_name?: string | null
+          radar_account_id?: string
           updated_at?: string | null
           user_id?: string
           website_raw?: string | null
@@ -324,6 +327,13 @@ export type Database = {
             columns: ["import_id"]
             isOneToOne: false
             referencedRelation: "crm_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_companies_radar_account_id_fkey"
+            columns: ["radar_account_id"]
+            isOneToOne: false
+            referencedRelation: "radar_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -340,6 +350,7 @@ export type Database = {
           name_similarity: number | null
           needs_review: boolean
           normalized_domain: string
+          radar_account_id: string
           review_reason: string | null
           user_id: string
         }
@@ -354,6 +365,7 @@ export type Database = {
           name_similarity?: number | null
           needs_review?: boolean
           normalized_domain: string
+          radar_account_id: string
           review_reason?: string | null
           user_id: string
         }
@@ -368,6 +380,7 @@ export type Database = {
           name_similarity?: number | null
           needs_review?: boolean
           normalized_domain?: string
+          radar_account_id?: string
           review_reason?: string | null
           user_id?: string
         }
@@ -427,6 +440,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "exposants_a_enrichir"
             referencedColumns: ["id_exposant"]
+          },
+          {
+            foreignKeyName: "crm_company_event_matches_radar_account_id_fkey"
+            columns: ["radar_account_id"]
+            isOneToOne: false
+            referencedRelation: "radar_accounts"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -584,6 +604,7 @@ export type Database = {
           file_name: string | null
           id: string
           matched_companies_count: number | null
+          radar_account_id: string
           source_type: string
           status: string
           suspicious_rate: number | null
@@ -598,6 +619,7 @@ export type Database = {
           file_name?: string | null
           id?: string
           matched_companies_count?: number | null
+          radar_account_id: string
           source_type?: string
           status?: string
           suspicious_rate?: number | null
@@ -612,6 +634,7 @@ export type Database = {
           file_name?: string | null
           id?: string
           matched_companies_count?: number | null
+          radar_account_id?: string
           source_type?: string
           status?: string
           suspicious_rate?: number | null
@@ -620,7 +643,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_imports_radar_account_id_fkey"
+            columns: ["radar_account_id"]
+            isOneToOne: false
+            referencedRelation: "radar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_notification_preferences: {
         Row: {
@@ -3904,6 +3935,51 @@ export type Database = {
           },
         ]
       }
+      radar_accounts: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          name: string
+          plan: string
+          realtime_alerts: boolean
+          rows_limit: number
+          seats_limit: number
+          seed_user_id: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name: string
+          plan?: string
+          realtime_alerts?: boolean
+          rows_limit?: number
+          seats_limit?: number
+          seed_user_id?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          plan?: string
+          realtime_alerts?: boolean
+          rows_limit?: number
+          seats_limit?: number
+          seed_user_id?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       radar_email_log: {
         Row: {
           companies_count: number
@@ -3972,6 +4048,50 @@ export type Database = {
           visibility_mode?: string
         }
         Relationships: []
+      }
+      radar_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          last_seen_at: string | null
+          radar_account_id: string
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          last_seen_at?: string | null
+          radar_account_id: string
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          last_seen_at?: string | null
+          radar_account_id?: string
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_members_radar_account_id_fkey"
+            columns: ["radar_account_id"]
+            isOneToOne: false
+            referencedRelation: "radar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regions: {
         Row: {
@@ -6248,6 +6368,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
       get_top_novelties_per_event: {
@@ -6295,6 +6416,7 @@ export type Database = {
       }
       get_user_id_by_email: { Args: { p_email: string }; Returns: string }
       has_active_owner: { Args: { _exhibitor_id: string }; Returns: boolean }
+      has_radar_access: { Args: { p_user_id?: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -6309,6 +6431,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_ai_refusal: { Args: { txt: string }; Returns: boolean }
       is_email_blacklisted: { Args: { _email: string }; Returns: boolean }
+      is_radar_member: {
+        Args: { p_account_id: string; p_user_id?: string }
+        Returns: boolean
+      }
       is_team_member: { Args: { _exhibitor_id: string }; Returns: boolean }
       list_exhibitor_profile_change_logs: {
         Args: { p_exhibitor_id?: string; p_limit?: number }
@@ -6381,6 +6507,17 @@ export type Database = {
           similarity: number
           sous_secteurs: Json
           website: string
+        }[]
+      }
+      my_radar_status: {
+        Args: never
+        Returns: {
+          days_left: number
+          has_access: boolean
+          plan: string
+          radar_account_id: string
+          status: string
+          trial_ends_at: string
         }[]
       }
       normalize_company_name: { Args: { input: string }; Returns: string }
