@@ -368,35 +368,37 @@ const RadarCrmResults: React.FC = () => {
                 )}
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSettingsOpen(true)}
-                className="w-full sm:w-auto"
-              >
-                <Settings className="h-4 w-4 mr-2" /> Paramètres Radar CRM
-              </Button>
-              {imports && imports.length > 1 && (
-                <Select value={activeImportId ?? ''} onValueChange={setActiveImportId}>
-                  <SelectTrigger className="w-full sm:w-[240px] max-w-full bg-card">
-                    <SelectValue placeholder="Choisir un import" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {imports.map((imp) => (
-                      <SelectItem key={imp.id} value={imp.id}>
-                        {imp.file_name ?? 'Sans nom'} — {formatDate(imp.created_at)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <Button asChild className="w-full sm:w-auto">
-                <Link to="/radar-crm">
-                  <Plus className="h-4 w-4 mr-2" /> Nouveau fichier CSV
-                </Link>
-              </Button>
-            </div>
+            {!isLocked && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSettingsOpen(true)}
+                  className="w-full sm:w-auto"
+                >
+                  <Settings className="h-4 w-4 mr-2" /> Paramètres Radar CRM
+                </Button>
+                {imports && imports.length > 1 && (
+                  <Select value={activeImportId ?? ''} onValueChange={setActiveImportId}>
+                    <SelectTrigger className="w-full sm:w-[240px] max-w-full bg-card">
+                      <SelectValue placeholder="Choisir un import" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {imports.map((imp) => (
+                        <SelectItem key={imp.id} value={imp.id}>
+                          {imp.file_name ?? 'Sans nom'} — {formatDate(imp.created_at)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Button asChild className="w-full sm:w-auto">
+                  <Link to="/radar-crm">
+                    <Plus className="h-4 w-4 mr-2" /> Nouveau fichier CSV
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Trial banner */}
