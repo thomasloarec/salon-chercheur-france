@@ -120,6 +120,7 @@ interface EventGroup {
   url_image: string | null;
   days_until: number | null;
   is_future: boolean;
+  company_count: number;
   companies: Array<{
     company: Company;
     id_exposant: string;
@@ -130,6 +131,34 @@ interface EventGroup {
   }>;
 }
 
+/** Map a RPC event payload to the existing EventGroup shape used by all cards. */
+const mapEventToGroup = (e: RadarViewEvent): EventGroup => ({
+  event_id: e.event_id,
+  slug: e.slug,
+  nom_event: e.nom_event ?? 'Événement',
+  date_debut: e.date_debut,
+  date_fin: e.date_fin,
+  ville: e.ville,
+  nom_lieu: e.nom_lieu,
+  url_image: e.url_image,
+  days_until: e.days_until_event,
+  is_future: e.is_future_event ?? false,
+  company_count: e.company_count,
+  companies: (e.companies ?? []).map((c) => ({
+    company: {
+      id: c.crm_company_id,
+      company_name: c.company_name ?? '',
+      website_raw: c.website_raw,
+      normalized_domain: c.normalized_domain,
+    },
+    id_exposant: c.id_exposant ?? '',
+    nom_exposant: c.nom_exposant,
+    stand: c.stand_exposants_list,
+    needs_review: c.needs_review === true,
+    name_similarity: c.name_similarity ?? null,
+  })),
+});
+
 const RadarCrmResults: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -137,19 +166,19 @@ const RadarCrmResults: React.FC = () => {
   const [imports, setImports] = useState<Import[] | null>(null);
   const [activeImportId, setActiveImportId] = useState<string | null>(searchParams.get('importId'));
   const highlightedEventId = searchParams.get('eventId');
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [viewRows, setViewRows] = useState<ParticipationViewRow[]>([]);
+  const [radarView, setRadarView] = useState<RadarView | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [openExhibitor, setOpenExhibitor] = useState<{
     exhibitor: any;
     event: any;
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
 
   const reloadAll = async () => {
     setActiveImportId(null);
-    setCompanies([]); setMatches([]); setViewRows([]);
+    setRadarView(null);
     const { data } = await supabase
       .from('crm_imports')
       .select('id, file_name, status, total_rows, matched_companies_count, unmatched_companies_count, created_at')
@@ -181,87 +210,56 @@ const RadarCrmResults: React.FC = () => {
     })();
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load detail for active import
+  // Load the full radar view for the active import via the server-side RPC.
+  // The RPC enforces entitlement/gating: in a locked state it returns
+  // `companies: []` while keeping `company_count` and `summary` populated.
   useEffect(() => {
     if (!activeImportId || !user) return;
     setLoading(true);
+    setError(null);
     (async () => {
-      const { data: comps } = await supabase
-        .from('crm_companies')
-        .select('id, company_name, website_raw, normalized_domain')
-        .eq('import_id', activeImportId);
-      const compList = (comps ?? []) as Company[];
-      setCompanies(compList);
-
-      if (compList.length === 0) {
-        setMatches([]); setViewRows([]); setLoading(false);
+      const { data, error: rpcError } = await supabase.rpc('get_my_radar_view', {
+        p_import_id: activeImportId ?? null,
+      });
+      if (rpcError) {
+        console.error('[RadarCRM] get_my_radar_view failed:', rpcError);
+        setError(rpcError.message);
+        setRadarView(null);
+        toast({
+          title: 'Erreur de chargement',
+          description: "Impossible de charger votre Radar CRM. Réessayez dans un instant.",
+          variant: 'destructive',
+        });
+        setLoading(false);
         return;
       }
-      const { data: mts } = await supabase
-        .from('crm_company_event_matches')
-        .select('id, crm_company_id, id_exposant, event_id, normalized_domain, needs_review, name_similarity, review_reason')
-        .in('crm_company_id', compList.map((c) => c.id));
-      const matchList = (mts ?? []) as Match[];
-      setMatches(matchList);
-
-      if (matchList.length > 0) {
-        const eventIds = Array.from(new Set(matchList.map((m) => m.event_id)));
-        const exposantIds = Array.from(new Set(matchList.map((m) => m.id_exposant)));
-        const { data: vrows } = await supabase
-          .from('crm_radar_participations_view')
-          .select('id_exposant, nom_exposant, event_id, nom_event, type_event, date_debut, date_fin, ville, nom_lieu, stand_exposants_list, is_future_event, days_until_event, url_image, slug')
-          .in('event_id', eventIds)
-          .in('id_exposant', exposantIds);
-        setViewRows((vrows ?? []) as ParticipationViewRow[]);
-      } else {
-        setViewRows([]);
-      }
+      setRadarView((data as unknown as RadarView) ?? null);
       setLoading(false);
     })();
   }, [activeImportId, user]);
 
-  const companyMap = useMemo(() => new Map(companies.map((c) => [c.id, c])), [companies]);
-  const viewMap = useMemo(
-    () => new Map(viewRows.map((v) => [`${v.event_id}|${v.id_exposant}`, v])),
-    [viewRows],
+  const status: RadarStatus = radarView?.status ?? 'none';
+  const isLocked = status === 'trial_expired' || status === 'free';
+  const isTrial = status === 'trial_active';
+  const daysLeft = radarView?.days_left ?? null;
+  const summary = radarView?.summary;
+
+  const eventGroups: EventGroup[] = useMemo(
+    () => (radarView?.events ?? []).map(mapEventToGroup),
+    [radarView],
   );
 
-  const eventGroups: EventGroup[] = useMemo(() => {
-    const groups = new Map<string, EventGroup>();
-    for (const m of matches) {
-      const v = viewMap.get(`${m.event_id}|${m.id_exposant}`);
-      const c = companyMap.get(m.crm_company_id);
-      if (!c || !v) continue;
-      let g = groups.get(m.event_id);
-      if (!g) {
-        g = {
-          event_id: m.event_id,
-          slug: v.slug,
-          nom_event: v.nom_event ?? 'Événement',
-          date_debut: v.date_debut,
-          date_fin: v.date_fin,
-          ville: v.ville,
-          nom_lieu: v.nom_lieu,
-          url_image: v.url_image,
-          days_until: v.days_until_event,
-          is_future: v.is_future_event ?? false,
-          companies: [],
-        };
-        groups.set(m.event_id, g);
-      }
-      if (!g.companies.find((x) => x.company.id === c.id)) {
-        g.companies.push({
-          company: c,
-          id_exposant: m.id_exposant,
-          nom_exposant: v.nom_exposant ?? null,
-          stand: v.stand_exposants_list ?? null,
-          needs_review: m.needs_review === true,
-          name_similarity: m.name_similarity ?? null,
-        });
+  // Unique detected companies derived from the event groups (full-access only;
+  // empty in a locked state since the RPC strips company identities).
+  const matchedCompanies = useMemo(() => {
+    const map = new Map<string, Company>();
+    for (const g of eventGroups) {
+      for (const c of g.companies) {
+        if (!map.has(c.company.id)) map.set(c.company.id, c.company);
       }
     }
-    return Array.from(groups.values());
-  }, [matches, viewMap, companyMap]);
+    return Array.from(map.values());
+  }, [eventGroups]);
 
   const futureGroups = useMemo(
     () => eventGroups.filter((g) => g.is_future)
@@ -274,7 +272,7 @@ const RadarCrmResults: React.FC = () => {
         const da = a.days_until ?? 9999;
         const db = b.days_until ?? 9999;
         if (da !== db) return da - db;
-        return b.companies.length - a.companies.length;
+        return b.company_count - a.company_count;
       }),
     [eventGroups, highlightedEventId],
   );
@@ -294,14 +292,11 @@ const RadarCrmResults: React.FC = () => {
     }
   }, [highlightedEventId, loading, eventGroups]);
 
-  const matchedCompanyIds = useMemo(() => new Set(matches.map((m) => m.crm_company_id)), [matches]);
-  const matchedCompanies = useMemo(() => companies.filter((c) => matchedCompanyIds.has(c.id)), [companies, matchedCompanyIds]);
-  const unmatchedCompanies = useMemo(() => companies.filter((c) => !matchedCompanyIds.has(c.id)), [companies, matchedCompanyIds]);
-
-  const futureParticipations = useMemo(
-    () => matches.filter((m) => viewMap.get(`${m.event_id}|${m.id_exposant}`)?.is_future_event).length,
-    [matches, viewMap],
-  );
+  // KPI values come straight from the server-aggregated summary.
+  const kpiAnalyzed = summary?.companies_analyzed ?? 0;
+  const kpiDetected = summary?.companies_detected ?? matchedCompanies.length;
+  const kpiFutureSalons = summary?.future_salons ?? futureGroups.length;
+  const kpiFutureParticipations = summary?.future_participations ?? 0;
 
   const onClickEvent = (g: EventGroup) => {
     void trackRadarEvent('crm_event_detail_clicked', { eventId: g.event_id });
@@ -365,7 +360,7 @@ const RadarCrmResults: React.FC = () => {
               </div>
               <p className="text-foreground/70 text-sm md:text-base">
                 {loading ? 'Analyse en cours…' :
-                  <><strong className="text-foreground">{matchedCompanies.length}</strong> entreprise{matchedCompanies.length > 1 ? 's' : ''} détectée{matchedCompanies.length > 1 ? 's' : ''} sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo</>}
+                  <><strong className="text-foreground">{kpiDetected}</strong> entreprise{kpiDetected > 1 ? 's' : ''} détectée{kpiDetected > 1 ? 's' : ''} sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo</>}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
@@ -399,12 +394,17 @@ const RadarCrmResults: React.FC = () => {
             </div>
           </div>
 
+          {/* Trial banner */}
+          {isTrial && !loading && (
+            <TrialBanner daysLeft={daysLeft} detected={kpiDetected} />
+          )}
+
           {/* Hero stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label="Entreprises analysées" value={companies.length} />
-            <StatCard label="Entreprises détectées" value={matchedCompanies.length} accent="success" />
-            <StatCard label="Salons à venir" value={futureGroups.length} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
-            <StatCard label="Participations futures" value={futureParticipations} />
+            <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
+            <StatCard label="Entreprises détectées" value={kpiDetected} accent="success" />
+            <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
+            <StatCard label="Participations futures" value={kpiFutureParticipations} />
           </div>
 
           {loading ? (
@@ -413,6 +413,14 @@ const RadarCrmResults: React.FC = () => {
               <Skeleton className="h-32 w-full" />
               <Skeleton className="h-32 w-full" />
             </div>
+          ) : error ? (
+            <RadarErrorState onRetry={() => setActiveImportId((id) => id)} />
+          ) : isLocked ? (
+            <LockedView
+              futureGroups={futureGroups}
+              pastGroups={pastGroups}
+              onRequestAccess={() => setAccessOpen(true)}
+            />
           ) : (
             <>
               <Tabs defaultValue="future">
@@ -426,7 +434,7 @@ const RadarCrmResults: React.FC = () => {
 
                 <TabsContent value="future" className="mt-5">
                   {futureGroups.length === 0 ? (
-                    <NoFutureMatches companiesCount={companies.length} matchedCount={matchedCompanies.length} />
+                    <NoFutureMatches companiesCount={kpiAnalyzed} matchedCount={kpiDetected} />
                   ) : (
                     <div className="space-y-3">
                       {futureGroups.map((g) => (
@@ -491,61 +499,6 @@ const RadarCrmResults: React.FC = () => {
                   </AccordionItem>
                 </Accordion>
               )}
-
-              {/* Unmatched (collapsible secondary block) */}
-              {unmatchedCompanies.length > 0 && (
-                <Card className="bg-muted/40 border-dashed">
-                  <CardContent className="pt-6">
-                    <Accordion
-                      type="single"
-                      collapsible
-                      onValueChange={(v) => {
-                        if (!v) return;
-                        void trackRadarEvent('crm_unmatched_list_opened', { count: unmatchedCompanies.length });
-                        void trackRadarEvent('crm_unmatched_viewed', { count: unmatchedCompanies.length, source: 'radar_crm' });
-                      }}
-                    >
-                      <AccordionItem value="unmatched" className="border-none">
-                        <AccordionTrigger className="hover:no-underline py-2">
-                          <div className="flex items-start gap-3 text-left">
-                            <AlertCircle className="h-5 w-5 text-foreground/50 mt-0.5" />
-                            <div>
-                              <p className="font-semibold text-base text-foreground">
-                                Entreprises non détectées dans Lotexpo
-                              </p>
-                              <p className="text-sm text-foreground/70 font-normal">
-                                {unmatchedCompanies.length} entreprise{unmatchedCompanies.length > 1 ? 's' : ''} sans correspondance exposant.
-                              </p>
-                            </div>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <p className="text-xs text-foreground/70 bg-background rounded p-3 mb-3">
-                            Le matching MVP est basé sur une correspondance exacte du domaine web.
-                            Les groupes utilisant des sous-domaines ou des sites pays peuvent ne pas être détectés.
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {unmatchedCompanies.slice(0, 60).map((c) => (
-                              <div key={c.id} className="flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1">
-                                <CompanyAvatar company={c} size="xs" />
-                                <span className="text-sm font-medium text-foreground">{c.company_name}</span>
-                                {c.normalized_domain && (
-                                  <span className="text-xs text-foreground/50">{c.normalized_domain}</span>
-                                )}
-                              </div>
-                            ))}
-                            {unmatchedCompanies.length > 60 && (
-                              <span className="text-xs text-foreground/60 self-center">
-                                + {unmatchedCompanies.length - 60} autres
-                              </span>
-                            )}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </CardContent>
-                </Card>
-              )}
             </>
           )}
         </div>
@@ -564,6 +517,7 @@ const RadarCrmResults: React.FC = () => {
         onOpenChange={setSettingsOpen}
         onDataDeleted={() => { void reloadAll(); }}
       />
+      <AccessRequestDialog open={accessOpen} onOpenChange={setAccessOpen} />
     </MainLayout>
   );
 };
