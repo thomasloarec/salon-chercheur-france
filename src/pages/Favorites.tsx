@@ -17,13 +17,13 @@ const Favorites = () => {
   if (!user) {
     return (
       <MainLayout title="Mes événements favoris">
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-muted/30 flex items-center justify-center">
           <div className="text-center">
-            <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-600 mb-2">
+            <Heart className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
+            <h2 className="heading-display text-2xl text-foreground mb-2">
               Connectez-vous pour voir vos favoris
             </h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-muted-foreground mb-6">
               Sauvegardez vos événements préférés pour les retrouver facilement
             </p>
             <Button asChild>
@@ -38,9 +38,9 @@ const Favorites = () => {
   if (error) {
     return (
       <MainLayout title="Mes événements favoris">
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-muted/30 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600">Erreur lors du chargement des favoris</p>
+            <p className="text-destructive">Erreur lors du chargement des favoris</p>
           </div>
         </div>
       </MainLayout>
@@ -49,14 +49,14 @@ const Favorites = () => {
 
   return (
     <MainLayout title="Mes événements favoris">
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
-              <Heart className="h-8 w-8 text-red-500" />
+            <h1 className="heading-display text-3xl text-foreground flex items-center gap-2">
+              <Heart className="h-8 w-8 text-accent" />
               Mes événements favoris
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-muted-foreground mt-2">
               {isLoading ? 'Chargement...' : `${favorites?.length || 0} événement(s) sauvegardé(s)`}
             </p>
           </div>
@@ -64,13 +64,13 @@ const Favorites = () => {
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
-                  <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div key={i} className="bg-card rounded-lg p-6 animate-pulse">
+                  <div className="h-48 bg-muted rounded-lg mb-4"></div>
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-1/2 mb-4"></div>
                   <div className="space-y-2">
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                    <div className="h-3 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-muted rounded"></div>
+                    <div className="h-3 bg-muted rounded"></div>
                   </div>
                 </div>
               ))}
@@ -120,11 +120,11 @@ const Favorites = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              <Calendar className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">
                 Aucun favori pour le moment
               </h3>
-              <p className="text-gray-500 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Explorez nos événements et ajoutez-les à vos favoris
               </p>
               <Button asChild>

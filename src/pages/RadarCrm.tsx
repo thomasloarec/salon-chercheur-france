@@ -304,10 +304,10 @@ const RadarCrmPage: React.FC = () => {
         />
         <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 grid lg:grid-cols-2 gap-10 items-center">
           <div>
-            <Badge className="mb-5 inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">
+            <Badge className="mb-5 inline-flex items-center gap-1.5 bg-accent/10 text-accent hover:bg-accent/10 border-accent/20">
               <Sparkles className="h-3.5 w-3.5" /> Beta
             </Badge>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
+            <h1 className="heading-display text-3xl sm:text-4xl md:text-5xl tracking-tight mb-4 leading-tight">
               Vos prospects exposent déjà sur des salons.{' '}
               <span className="text-primary">Votre CRM ne vous dit pas où.</span>
             </h1>
@@ -370,7 +370,7 @@ const RadarCrmPage: React.FC = () => {
                       <p className="font-semibold text-sm">SEPEM Brest</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Brest · Dans 9 jours</p>
                     </div>
-                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 text-[10px]">3 comptes</Badge>
+                    <Badge className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 text-[10px]">3 comptes</Badge>
                   </div>
                   <div className="space-y-1.5 text-xs">
                     <CompanyRow name="OSE" stand="A56" />
@@ -408,7 +408,7 @@ const RadarCrmPage: React.FC = () => {
       {/* Problem */}
       <section className="max-w-6xl mx-auto px-4 py-10">
         <div className="text-center max-w-2xl mx-auto mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">
+          <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule [&::before]:mx-auto">
             Le problème : vos opportunités salon sont invisibles dans votre CRM
           </h2>
           <p className="text-sm md:text-base text-muted-foreground">
@@ -442,7 +442,7 @@ const RadarCrmPage: React.FC = () => {
             <Badge variant="secondary" className="mb-3 inline-flex items-center gap-1.5">
               <Database className="h-3.5 w-3.5" /> Donnée Lotexpo
             </Badge>
-            <h2 className="text-2xl md:text-3xl font-bold mb-3">
+            <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule [&::before]:mx-auto">
               Radar CRM s'appuie sur la donnée salon que votre CRM n'a pas
             </h2>
             <p className="text-sm md:text-base text-muted-foreground">
@@ -461,7 +461,7 @@ const RadarCrmPage: React.FC = () => {
 
       {/* How it works */}
       <section id="radar-how" className="max-w-5xl mx-auto px-4 py-8 scroll-mt-24">
-        <h2 className="text-xl md:text-2xl font-bold text-center mb-6">
+        <h2 className="heading-display text-xl md:text-2xl text-center mb-6 section-rule [&::before]:mx-auto">
           En 2 minutes, voyez comment un fichier CRM devient un plan de visite salon
         </h2>
         <RadarCrmDemoVideo />
@@ -479,7 +479,7 @@ const RadarCrmPage: React.FC = () => {
 
       {/* After import — light teaser */}
       <section className="max-w-5xl mx-auto px-4 py-6">
-        <h2 className="text-lg md:text-xl font-semibold text-center mb-5">
+        <h2 className="heading-display text-lg md:text-xl text-center mb-5">
           Après l'import, Radar CRM vous montre :
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -697,8 +697,8 @@ const RadarCrmPage: React.FC = () => {
       <section className="max-w-6xl mx-auto px-4 py-12">
         <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8">
           <div className="text-center mb-6">
-            <Badge className="mb-3 bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Beta</Badge>
-            <h2 className="text-2xl font-bold mb-2">Commencez sans connecter votre CRM</h2>
+            <Badge className="mb-3 bg-accent/10 text-accent hover:bg-accent/10 border-accent/20">Beta</Badge>
+            <h2 className="heading-display text-2xl mb-2 section-rule [&::before]:mx-auto">Commencez sans connecter votre CRM</h2>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
               Radar CRM fonctionne déjà avec un simple export CSV ou Excel. Les connexions HubSpot,
               Salesforce, Pipedrive et Zoho CRM permettront ensuite d'automatiser l'analyse, mais
@@ -728,7 +728,7 @@ const RadarCrmPage: React.FC = () => {
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
             <Badge variant="secondary" className="mb-3"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Confidentialité</Badge>
-            <h2 className="text-2xl font-bold mb-3">Vos données CRM restent privées</h2>
+            <h2 className="heading-display text-2xl mb-3 section-rule">Vos données CRM restent privées</h2>
             <p className="text-sm text-muted-foreground">
               Votre fichier est associé uniquement à votre compte. Lotexpo utilise les sites web
               des entreprises pour rechercher des correspondances avec les exposants référencés.
@@ -745,7 +745,7 @@ const RadarCrmPage: React.FC = () => {
 
       {/* FAQ */}
       <section className="max-w-3xl mx-auto px-4 py-12">
-        <h2 className="text-2xl font-bold text-center mb-6">Questions fréquentes</h2>
+        <h2 className="heading-display text-2xl text-center mb-6 section-rule [&::before]:mx-auto">Questions fréquentes</h2>
         <Accordion type="single" collapsible className="w-full">
           <FaqItem v="q1" q="Quel format de fichier est accepté ?" a="Radar CRM accepte les fichiers CSV et Excel (.xlsx). Le fichier doit contenir au minimum le nom de l'entreprise et son site web." />
           <FaqItem v="q2" q="Quelles colonnes sont nécessaires ?" a="Le fichier doit contenir au minimum le nom de l'entreprise et son site web." />
@@ -764,7 +764,7 @@ const RadarCrmPage: React.FC = () => {
         <div className="rounded-2xl bg-primary text-primary-foreground p-10 text-center relative overflow-hidden">
           <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at top right, white, transparent 60%)' }} />
           <div className="relative">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3">
+            <h2 className="heading-display text-2xl md:text-3xl mb-3">
               Vos prochains rendez-vous salon sont peut-être déjà dans votre CRM
             </h2>
             <p className="text-sm md:text-base opacity-90 mb-6 max-w-2xl mx-auto">
@@ -856,14 +856,14 @@ const FieldSelect: React.FC<{
 
 const StatTile: React.FC<{ label: string; value: string; accent?: boolean }> = ({ label, value, accent }) => (
   <div className={`rounded-lg p-3 border ${accent ? 'bg-primary/10 border-primary/30' : 'bg-card'}`}>
-    <p className={`text-xl font-bold leading-none ${accent ? 'text-primary' : ''}`}>{value}</p>
+    <p className={`font-display text-xl font-semibold leading-none tracking-tight ${accent ? 'text-primary' : ''}`}>{value}</p>
     <p className="text-[11px] text-muted-foreground mt-1">{label}</p>
   </div>
 );
 
 const ProofStat: React.FC<{ value: string; label: string; highlight?: boolean }> = ({ value, label, highlight }) => (
   <div className={`rounded-xl border bg-card p-6 text-center ${highlight ? 'border-primary/40 ring-1 ring-primary/20' : ''}`}>
-    <p className={`font-bold leading-none ${highlight ? 'text-3xl md:text-4xl text-primary' : 'text-2xl md:text-3xl'}`}>{value}</p>
+    <p className={`font-display font-semibold leading-none tracking-tight ${highlight ? 'text-3xl md:text-4xl text-primary' : 'text-2xl md:text-3xl'}`}>{value}</p>
     <p className="text-sm text-muted-foreground mt-2">{label}</p>
   </div>
 );
@@ -885,9 +885,9 @@ const CompanyRow: React.FC<{ name: string; stand: string }> = ({ name, stand }) 
 );
 
 const ConnectorBadge: React.FC<{ name: string; status: string; available?: boolean }> = ({ name, status, available }) => (
-  <div className={`rounded-lg border bg-card p-3 text-center ${available ? 'border-emerald-300 ring-1 ring-emerald-200' : ''}`}>
+  <div className={`rounded-lg border bg-card p-3 text-center ${available ? 'border-primary/40 ring-1 ring-primary/20' : ''}`}>
     <p className="font-semibold text-sm">{name}</p>
-    <p className={`text-[11px] mt-1 ${available ? 'text-emerald-700' : 'text-muted-foreground'}`}>
+    <p className={`text-[11px] mt-1 ${available ? 'text-primary' : 'text-muted-foreground'}`}>
       {available && <CheckCircle2 className="inline h-3 w-3 mr-1" />}
       {status}
     </p>

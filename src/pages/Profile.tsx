@@ -78,14 +78,14 @@ const Profile = () => {
   if (loading || profileLoading) {
     return (
       <MainLayout title="Mon profil">
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-muted/30 py-8">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+              <h1 className="heading-display text-3xl text-foreground flex items-center gap-2">
                 <User className="h-8 w-8" />
                 Mon profil
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-muted-foreground mt-2">
                 Gérez vos informations personnelles et vos préférences
               </p>
             </div>
@@ -139,14 +139,14 @@ const Profile = () => {
 
   return (
     <MainLayout title="Mon profil">
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-muted/30 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
+            <h1 className="heading-display text-3xl text-foreground flex items-center gap-2">
               <User className="h-8 w-8" />
               Mon profil
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-muted-foreground mt-2">
               Gérez vos informations personnelles et vos préférences
             </p>
           </div>
@@ -171,7 +171,7 @@ const Profile = () => {
 
                 <div className="flex items-center gap-2 mb-4">
                   <Progress value={profileProgress} className="flex-1" />
-                  <span className="text-sm text-gray-600 font-medium">
+                  <span className="text-sm text-muted-foreground font-medium">
                     {profileProgress}% complété
                   </span>
                 </div>
@@ -189,7 +189,7 @@ const Profile = () => {
                 <div className="space-y-2">
                   <Label htmlFor="first_name">Prénom *</Label>
                   {isLoading ? (
-                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-10 bg-muted rounded animate-pulse" />
                   ) : (
                     <Input
                       id="first_name"
@@ -202,7 +202,7 @@ const Profile = () => {
                 <div className="space-y-2">
                   <Label htmlFor="last_name">Nom *</Label>
                   {isLoading ? (
-                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-10 bg-muted rounded animate-pulse" />
                   ) : (
                     <Input
                       id="last_name"
@@ -215,7 +215,7 @@ const Profile = () => {
                 <div className="space-y-2">
                   <Label htmlFor="job_title">Fonction / Poste</Label>
                   {isLoading ? (
-                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-10 bg-muted rounded animate-pulse" />
                   ) : (
                     <Input
                       id="job_title"
@@ -228,7 +228,7 @@ const Profile = () => {
                 <div className="space-y-2">
                   <Label htmlFor="company">Entreprise</Label>
                   {isLoading ? (
-                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-10 bg-muted rounded animate-pulse" />
                   ) : (
                     <Input
                       id="company"
@@ -241,7 +241,7 @@ const Profile = () => {
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="primary_sector">Secteur d'activité principal</Label>
                   {isLoading ? (
-                    <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-10 bg-muted rounded animate-pulse" />
                   ) : (
                      <SafeSelect
                       ariaLabel="Secteur principal"
@@ -276,12 +276,12 @@ const Profile = () => {
               <div className="mb-4">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h2 className="text-xl font-semibold">Newsletters sectorielles</h2>
-                  <Badge variant="outline" className="text-green-600 border-green-200 flex-shrink-0">
+                  <Badge variant="outline" className="text-primary border-primary/20 flex-shrink-0">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     {badgeText}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   {headerText}
                 </p>
               </div>
@@ -291,22 +291,22 @@ const Profile = () => {
                   Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-32 mb-1 animate-pulse" />
-                        <div className="h-3 bg-gray-200 rounded w-48 animate-pulse" />
+                        <div className="h-4 bg-muted rounded w-32 mb-1 animate-pulse" />
+                        <div className="h-3 bg-muted rounded w-48 animate-pulse" />
                       </div>
-                      <div className="h-6 w-11 bg-gray-200 rounded-full animate-pulse" />
+                      <div className="h-6 w-11 bg-muted rounded-full animate-pulse" />
                     </div>
                   ))
                 ) : (
                   sectors.map((sector) => (
                     <div
                       key={sector.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       <div>
                         <p className="font-medium">{sector.name}</p>
                         {sector.description && (
-                          <p className="text-sm text-gray-600">{sector.description}</p>
+                          <p className="text-sm text-muted-foreground">{sector.description}</p>
                         )}
                       </div>
                       <Switch
@@ -324,12 +324,12 @@ const Profile = () => {
             <Card className="p-6 rounded-2xl shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Accès au compte</h2>
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-3 min-w-0">
-                    <Mail className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                    <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="font-medium">Adresse email</p>
-                      <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                     </div>
                   </div>
                   <Button
@@ -341,12 +341,12 @@ const Profile = () => {
                     Modifier
                   </Button>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Lock className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                    <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
                       <p className="font-medium">Mot de passe</p>
-                      <p className="text-sm text-gray-600">••••••••</p>
+                      <p className="text-sm text-muted-foreground">••••••••</p>
                     </div>
                   </div>
                   <Button
@@ -365,12 +365,12 @@ const Profile = () => {
             <Card className="p-6 rounded-2xl shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Gestion des données</h2>
               <div className="w-full">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-red-200 rounded-lg bg-red-50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                   <div className="flex items-center gap-3">
-                    <Trash2 className="h-5 w-5 text-red-500 flex-shrink-0" />
+                    <Trash2 className="h-5 w-5 text-destructive flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-red-800">Supprimer mon compte</p>
-                      <p className="text-sm text-red-600">
+                      <p className="font-medium text-destructive">Supprimer mon compte</p>
+                      <p className="text-sm text-destructive/80">
                         Cette action est irréversible
                       </p>
                     </div>
