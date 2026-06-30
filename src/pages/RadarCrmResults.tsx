@@ -92,6 +92,7 @@ interface RadarView {
   summary: {
     companies_analyzed: number;
     companies_detected: number;
+    future_companies: number;
     future_salons: number;
     future_participations: number;
   };
