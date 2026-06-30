@@ -431,8 +431,26 @@ async function buildPreviewForUser(
     return { preview: null, skip, alreadyEmailedCount, skipCounters };
   }
 
-  const groupedMap = new Map<string, GroupedEvent>();
+  // ---- TRIAGE (account-level star/ignore prefs) ----
+  const triageAccountId = await resolveActiveAccountId(supabase, userId);
+  const companyPrefs = await loadCompanyPrefs(supabase, triageAccountId);
+  const triagedCandidates: typeof filteredCandidates = [];
   for (const c of filteredCandidates) {
+    const keep: any[] = [];
+    for (const co of c.companies) {
+      const key = companyPrefKey(co);
+      const status = key ? companyPrefs.get(key) : undefined;
+      if (status === 'ignored') continue;                  // user said "ignore" → exclude
+      keep.push({ ...co, isStarred: status === 'starred' });
+    }
+    if (keep.length > 0) triagedCandidates.push({ ...c, companies: keep });
+  }
+  if (triagedCandidates.length === 0) {
+    return { preview: null, skip: 'no_eligible', alreadyEmailedCount, skipCounters };
+  }
+
+  const groupedMap = new Map<string, GroupedEvent>();
+  for (const c of triagedCandidates) {
     const eid = c.event.id as string;
     const meta = (c.notification.metadata ?? {}) as Record<string, unknown>;
     const importId =
