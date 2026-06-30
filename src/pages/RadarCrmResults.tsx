@@ -18,7 +18,7 @@ import {
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
   CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
-  CalendarCheck, Settings, Lock, Mail, Clock,
+  CalendarCheck, Settings, Lock, Mail, Clock, Star, EyeOff, Eye,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
@@ -56,6 +56,9 @@ type Company = {
  */
 type RadarStatus = 'paid' | 'beta' | 'trial_active' | 'trial_expired' | 'free' | 'none';
 
+/** Per-account watch preference (P1-c triage). */
+type Pref = 'starred' | 'ignored' | 'normal';
+
 interface RadarViewCompany {
   crm_company_id: string;
   company_name: string | null;
@@ -66,6 +69,7 @@ interface RadarViewCompany {
   stand_exposants_list: string | null;
   needs_review: boolean | null;
   name_similarity: number | null;
+  pref_status: Pref | null;
 }
 
 interface RadarViewEvent {
@@ -95,6 +99,8 @@ interface RadarView {
     future_companies: number;
     future_salons: number;
     future_participations: number;
+    starred?: number;
+    ignored?: number;
   };
   events: RadarViewEvent[];
 }
@@ -130,6 +136,7 @@ interface EventGroup {
     stand: string | null;
     needs_review: boolean;
     name_similarity: number | null;
+    pref_status: Pref | null;
   }>;
 }
 
@@ -158,6 +165,7 @@ const mapEventToGroup = (e: RadarViewEvent): EventGroup => ({
     stand: c.stand_exposants_list,
     needs_review: c.needs_review === true,
     name_similarity: c.name_similarity ?? null,
+    pref_status: c.pref_status ?? null,
   })),
 });
 
@@ -254,6 +262,45 @@ const RadarCrmResults: React.FC = () => {
     [radarView],
   );
 
+  // ── Triage « étoile / ignorer » (P1-c) ──────────────────────────────
+  // pref_status de base (lu depuis la RPC), indexé par crm_company_id.
+  const prefByCompany = useMemo(() => {
+    const m: Record<string, Pref> = {};
+    for (const g of eventGroups) {
+      for (const c of g.companies) {
+        if (c.pref_status) m[c.company.id] = c.pref_status;
+      }
+    }
+    return m;
+  }, [eventGroups]);
+
+  // Surcouche optimiste : appliquée immédiatement, réconciliée à chaque rechargement.
+  const [prefOverrides, setPrefOverrides] = useState<Record<string, Pref>>({});
+  // On efface les overrides quand une nouvelle vue arrive (les statuts viennent alors de la base).
+  useEffect(() => { setPrefOverrides({}); }, [radarView]);
+
+  const getPref = (companyId: string): Pref =>
+    prefOverrides[companyId] ?? prefByCompany[companyId] ?? 'normal';
+
+  const setPref = async (companyId: string, next: Pref) => {
+    const prev = getPref(companyId);
+    if (prev === next) return;
+    setPrefOverrides((o) => ({ ...o, [companyId]: next }));
+    const { error: rpcErr } = await supabase.rpc('set_radar_company_pref', {
+      p_crm_company_id: companyId,
+      p_status: next,
+    });
+    if (rpcErr) {
+      console.error('[RadarCRM] set_radar_company_pref failed:', rpcErr);
+      setPrefOverrides((o) => ({ ...o, [companyId]: prev }));
+      toast({
+        title: 'Action impossible',
+        description: "Impossible de mettre à jour ce compte. Réessayez dans un instant.",
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Unique detected companies derived from the event groups (full-access only;
   // empty in a locked state since the RPC strips company identities).
   const matchedCompanies = useMemo(() => {
@@ -294,6 +341,34 @@ const RadarCrmResults: React.FC = () => {
     if (fut.length === 0) return null;
     return fut.reduce((min, g) => ((g.days_until ?? 9999) < (min.days_until ?? 9999) ? g : min));
   }, [eventGroups]);
+
+  // Encart héros « ancré sur la priorité » :
+  //  - s'il existe un compte étoilé avec un salon à venir → le plus imminent d'entre eux ;
+  //  - sinon → le salon le plus imminent (libellé explicite).
+  const featured = useMemo(() => {
+    let best: { event: EventGroup; company: Company; days: number } | null = null;
+    for (const g of eventGroups) {
+      if (!g.is_future || g.days_until == null) continue;
+      for (const c of g.companies) {
+        const eff = prefOverrides[c.company.id] ?? prefByCompany[c.company.id] ?? 'normal';
+        if (eff !== 'starred') continue;
+        if (!best || (g.days_until ?? 9999) < best.days) {
+          best = { event: g, company: c.company, days: g.days_until ?? 9999 };
+        }
+      }
+    }
+    if (best) return { event: best.event, company: best.company, isPriority: true };
+    if (nextEvent) return { event: nextEvent, company: null as Company | null, isPriority: false };
+    return null;
+  }, [eventGroups, nextEvent, prefOverrides, prefByCompany]);
+
+  // Nombre de comptes étoilés (statut effectif) pour la ligne « Radar actif ».
+  const starredCount = useMemo(
+    () => matchedCompanies.filter(
+      (c) => (prefOverrides[c.id] ?? prefByCompany[c.id] ?? 'normal') === 'starred',
+    ).length,
+    [matchedCompanies, prefOverrides, prefByCompany],
+  );
 
   // Scroll to highlighted event once results are rendered.
   useEffect(() => {
@@ -450,7 +525,8 @@ const RadarCrmResults: React.FC = () => {
                 analyzed={kpiAnalyzed}
                 futureCompanies={summary?.future_companies ?? 0}
                 futureSalons={kpiFutureSalons}
-                nextEvent={nextEvent}
+                featured={featured}
+                starredCount={starredCount}
                 onClickEvent={onClickEvent}
                 onOpenSettings={() => setSettingsOpen(true)}
               />
@@ -469,6 +545,8 @@ const RadarCrmResults: React.FC = () => {
                     groups={eventGroups}
                     companies={matchedCompanies}
                     onClickEvent={onClickEvent}
+                    getPref={getPref}
+                    onSetPref={setPref}
                   />
                 </TabsContent>
 
@@ -489,6 +567,7 @@ const RadarCrmResults: React.FC = () => {
                           <EventCard
                             group={g}
                             importId={activeImportId}
+                            getPref={getPref}
                             onView={() => onClickEvent(g)}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
@@ -561,11 +640,14 @@ const RadarActiveBanner: React.FC<{
   analyzed: number;
   futureCompanies: number;
   futureSalons: number;
-  nextEvent: EventGroup | null;
+  featured: { event: EventGroup; company: Company | null; isPriority: boolean } | null;
+  starredCount: number;
   onClickEvent: (g: EventGroup) => void;
   onOpenSettings: () => void;
-}> = ({ analyzed, futureCompanies, futureSalons, nextEvent, onClickEvent, onOpenSettings }) => {
-  const days = nextEvent?.days_until != null ? Math.max(0, nextEvent.days_until) : null;
+}> = ({ analyzed, futureCompanies, futureSalons, featured, starredCount, onClickEvent, onOpenSettings }) => {
+  const ev = featured?.event ?? null;
+  const isPriority = featured?.isPriority ?? false;
+  const days = ev?.days_until != null ? Math.max(0, ev.days_until) : null;
   return (
     <Card className="bg-card border-primary/20">
       <CardContent className="py-4 space-y-3">
@@ -580,30 +662,42 @@ const RadarActiveBanner: React.FC<{
               On surveille <strong className="text-foreground">{analyzed}</strong> compte{analyzed > 1 ? 's' : ''} de votre CRM.{' '}
               <strong className="text-foreground">{futureCompanies}</strong> exposeront sur{' '}
               <strong className="text-foreground">{futureSalons}</strong> salon{futureSalons > 1 ? 's' : ''} à venir.
+              {starredCount > 0 && (
+                <> Vous suivez <strong className="text-foreground">{starredCount}</strong> compte{starredCount > 1 ? 's' : ''} en priorité.</>
+              )}
             </p>
           </div>
         </div>
 
-        {nextEvent && (
+        {ev && (
           <button
             type="button"
-            onClick={() => onClickEvent(nextEvent)}
-            disabled={!nextEvent.slug}
+            onClick={() => onClickEvent(ev)}
+            disabled={!ev.slug}
             className="w-full text-left rounded-lg border border-accent/40 bg-accent/10 p-3 transition-colors hover:bg-accent/15 disabled:opacity-60"
           >
             <p className="text-[10px] font-bold uppercase tracking-wide text-accent flex items-center gap-1">
-              <Flame className="h-3 w-3" /> À ne pas rater
+              {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
+              {isPriority ? 'Compte prioritaire' : 'Prochain salon'}
             </p>
-            <p className="text-sm font-semibold text-foreground mt-1">
-              {nextEvent.nom_event}
-              {days != null && (
-                <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>
-              )}
-            </p>
-            <p className="text-xs text-foreground/70 mt-0.5">
-              {nextEvent.company_count} de vos comptes y exposent
-              {nextEvent.ville ? ` · ${nextEvent.ville}` : ''}
-            </p>
+            {isPriority && featured?.company ? (
+              <p className="text-sm font-semibold text-foreground mt-1">
+                <span className="text-accent">{featured.company.company_name}</span> expose à {ev.nom_event}
+                {days != null && <span className="ml-1">dans {days} jour{days > 1 ? 's' : ''}</span>}
+                {ev.ville ? ` · ${ev.ville}` : ''}
+              </p>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-foreground mt-1">
+                  Prochain salon où vos comptes exposent : {ev.nom_event}
+                  {days != null && <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>}
+                </p>
+                <p className="text-xs text-foreground/70 mt-0.5">
+                  {ev.company_count} de vos comptes y exposent
+                  {ev.ville ? ` · ${ev.ville}` : ''}
+                </p>
+              </>
+            )}
           </button>
         )}
 
@@ -676,18 +770,21 @@ const CompanyChip: React.FC<{
   stand?: string | null;
   nomExposant?: string | null;
   needsReview?: boolean;
+  starred?: boolean;
   onClick: () => void;
-}> = ({ company, stand, nomExposant, needsReview, onClick }) => (
+}> = ({ company, stand, nomExposant, needsReview, starred, onClick }) => (
   <button
     type="button"
     onClick={onClick}
     className={cn(
       'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1 transition-all hover:bg-primary/5',
+      starred && 'border-amber-400 bg-amber-50/60',
       needsReview ? 'border-amber-500/60 hover:border-amber-500' : 'border-border hover:border-primary',
     )}
     title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
     <CompanyAvatar company={company} size="xs" />
+    {starred && <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" aria-label="Compte prioritaire" />}
     <span className="flex flex-col items-start leading-tight">
       <span className="text-sm font-semibold text-foreground group-hover:text-primary">
         {nomExposant ?? company.company_name}
@@ -763,6 +860,7 @@ const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null 
 const EventCard: React.FC<{
   group: EventGroup;
   importId?: string | null;
+  getPref?: (companyId: string) => Pref;
   onView: () => void;
   onCompanyClick: (
     c: Company,
@@ -771,7 +869,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, onView, onCompanyClick }) => {
+}> = ({ group, importId, getPref, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -836,6 +934,7 @@ const EventCard: React.FC<{
                   stand={stand}
                   nomExposant={nom_exposant}
                   needsReview={needs_review}
+                  starred={getPref?.(company.id) === 'starred'}
                   onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
                 />
               ))}
@@ -917,7 +1016,10 @@ const PastEventCard: React.FC<{
 /** Company "account" cards — modern CRM look */
 const CompanyAccountsList: React.FC<{
   groups: EventGroup[]; companies: Company[]; onClickEvent: (g: EventGroup) => void;
-}> = ({ groups, companies, onClickEvent }) => {
+  getPref: (companyId: string) => Pref;
+  onSetPref: (companyId: string, next: Pref) => void;
+}> = ({ groups, companies, onClickEvent, getPref, onSetPref }) => {
+  const [ignoredOpen, setIgnoredOpen] = useState(false);
   if (companies.length === 0) {
     return (
       <EmptyText label="Aucun mouvement détecté pour l'instant — Radar continue de surveiller vos comptes. Dès qu'un de vos comptes s'inscrit à un salon, vous le verrez ici et serez alerté." />
@@ -938,17 +1040,74 @@ const CompanyAccountsList: React.FC<{
     return (a.future[0]?.days_until ?? 9999) - (b.future[0]?.days_until ?? 9999);
   });
 
-  return (
+  // Trois groupes dérivés du statut effectif (override ?? base).
+  const starred = enriched.filter((e) => getPref(e.c.id) === 'starred');
+  const ignored = enriched.filter((e) => getPref(e.c.id) === 'ignored');
+  const following = enriched.filter((e) => getPref(e.c.id) === 'normal');
+
+  const Grid: React.FC<{ items: typeof enriched; dimmed?: boolean }> = ({ items, dimmed }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      {enriched.map(({ c, future, past }) => (
+      {items.map(({ c, future, past }) => (
         <CompanyAccountCard
           key={c.id}
           company={c}
           future={future}
           past={past}
           onClickEvent={onClickEvent}
+          pref={getPref(c.id)}
+          onSetPref={(next) => onSetPref(c.id, next)}
+          dimmed={dimmed}
         />
       ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Prioritaires (étoilés) */}
+      {starred.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
+              Prioritaires ({starred.length})
+            </h2>
+          </div>
+          <Grid items={starred} />
+        </section>
+      )}
+
+      {/* À suivre */}
+      {following.length > 0 ? (
+        <section className="space-y-3">
+          {starred.length > 0 && (
+            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground/70">
+              À suivre ({following.length})
+            </h2>
+          )}
+          <Grid items={following} />
+        </section>
+      ) : (
+        starred.length === 0 && (
+          <EmptyText label="Tous vos comptes sont rangés." />
+        )
+      )}
+
+      {/* Ignorés (repliés par défaut) */}
+      {ignored.length > 0 && (
+        <section className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setIgnoredOpen((o) => !o)}
+            className="flex items-center gap-1.5 text-sm font-medium text-foreground/60 hover:text-foreground"
+          >
+            {ignoredOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <EyeOff className="h-4 w-4" />
+            {ignored.length} compte{ignored.length > 1 ? 's' : ''} ignoré{ignored.length > 1 ? 's' : ''}
+          </button>
+          {ignoredOpen && <Grid items={ignored} dimmed />}
+        </section>
+      )}
     </div>
   );
 };
@@ -959,7 +1118,10 @@ const CompanyAccountCard: React.FC<{
   future: EventGroup[];
   past: EventGroup[];
   onClickEvent: (g: EventGroup) => void;
-}> = ({ company, future, past, onClickEvent }) => {
+  pref: Pref;
+  onSetPref: (next: Pref) => void;
+  dimmed?: boolean;
+}> = ({ company, future, past, onClickEvent, pref, onSetPref, dimmed }) => {
   const INITIAL = 3;
   const [expF, setExpF] = useState(false);
   const [expP, setExpP] = useState(false);
@@ -1006,7 +1168,13 @@ const CompanyAccountCard: React.FC<{
   };
 
   return (
-    <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all">
+    <Card className={cn(
+      'h-full transition-all',
+      dimmed
+        ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
+        : 'hover:shadow-md hover:border-primary/40',
+      pref === 'starred' && 'border-amber-400/70 bg-amber-50/30',
+    )}>
       <CardContent className="pt-5 space-y-3">
         <div className="flex items-start gap-3">
           <CompanyAvatar company={company} size="md" />
@@ -1017,7 +1185,41 @@ const CompanyAccountCard: React.FC<{
               {company.normalized_domain ?? company.website_raw ?? ''}
             </p>
           </div>
+          {/* Contrôles triage étoile / ignorer */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              type="button"
+              aria-label={pref === 'starred' ? 'Retirer des prioritaires' : 'Marquer comme prioritaire'}
+              title={pref === 'starred' ? 'Retirer des prioritaires' : 'Marquer comme prioritaire'}
+              onClick={() => onSetPref(pref === 'starred' ? 'normal' : 'starred')}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors"
+            >
+              <Star className={cn('h-4 w-4', pref === 'starred' ? 'text-amber-500 fill-amber-500' : 'text-foreground/40')} />
+            </button>
+            <button
+              type="button"
+              aria-label={pref === 'ignored' ? 'Ne plus ignorer' : 'Ignorer ce compte'}
+              title={pref === 'ignored' ? 'Ne plus ignorer' : 'Ignorer ce compte'}
+              onClick={() => onSetPref(pref === 'ignored' ? 'normal' : 'ignored')}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors"
+            >
+              {pref === 'ignored'
+                ? <Eye className="h-4 w-4 text-foreground/50" />
+                : <EyeOff className="h-4 w-4 text-foreground/40" />}
+            </button>
+          </div>
         </div>
+
+        {dimmed && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => onSetPref('normal')}
+          >
+            <Eye className="h-3.5 w-3.5 mr-1.5" /> Ne plus ignorer
+          </Button>
+        )}
 
         <div className="flex gap-4 text-sm">
           <div>

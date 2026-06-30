@@ -4036,6 +4036,44 @@ export type Database = {
         }
         Relationships: []
       }
+      radar_company_prefs: {
+        Row: {
+          company_key: string
+          created_at: string
+          id: string
+          radar_account_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          company_key: string
+          created_at?: string
+          id?: string
+          radar_account_id: string
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          company_key?: string
+          created_at?: string
+          id?: string
+          radar_account_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_company_prefs_radar_account_id_fkey"
+            columns: ["radar_account_id"]
+            isOneToOne: false
+            referencedRelation: "radar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       radar_email_log: {
         Row: {
           companies_count: number
@@ -6637,6 +6675,10 @@ export type Database = {
         Args: { p_event_data: Json; p_id_event: string }
         Returns: Json
       }
+      radar_company_key: {
+        Args: { p_domain: string; p_name: string }
+        Returns: string
+      }
       rebuild_event_duplicate_candidates: {
         Args: { p_only_future?: boolean }
         Returns: Json
@@ -6788,6 +6830,10 @@ export type Database = {
           p_source_surface?: string
         }
         Returns: Json
+      }
+      set_radar_company_pref: {
+        Args: { p_crm_company_id: string; p_status: string }
+        Returns: string
       }
       set_seo_vault_secret: {
         Args: { p_name: string; p_value: string }
