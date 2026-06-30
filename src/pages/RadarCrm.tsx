@@ -78,6 +78,50 @@ const RadarCrmPage: React.FC = () => {
     return `${floored.toLocaleString('fr-FR')}+`;
   }, [participationCount]);
 
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [radarStatus, setRadarStatus] = useState<{
+    status: string;
+    has_access: boolean;
+    loaded: boolean;
+  }>({ status: 'none', has_access: false, loaded: false });
+
+  const isRadarLocked = useMemo(() => {
+    const lockedStatuses = ['trial_expired', 'free'];
+    return radarStatus.loaded && lockedStatuses.includes(radarStatus.status);
+  }, [radarStatus]);
+
+  useEffect(() => {
+    if (isRadarLocked) {
+      setParsed(null);
+      setMapping({});
+      clearPendingImport();
+    }
+  }, [isRadarLocked]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setRadarStatus({ status: 'none', has_access: false, loaded: true });
+      return;
+    }
+    let active = true;
+    void (async () => {
+      const { data, error } = await supabase.rpc('my_radar_status');
+      if (!active) return;
+      if (error || !data || data.length === 0) {
+        setRadarStatus({ status: 'none', has_access: false, loaded: true });
+      } else {
+        const row = data[0];
+        setRadarStatus({
+          status: row.status ?? 'none',
+          has_access: row.has_access ?? false,
+          loaded: true,
+        });
+      }
+    })();
+    return () => { active = false; };
+  }, [authLoading, user]);
+
   useEffect(() => {
     void trackRadarEvent('radar_page_viewed');
     void trackRadarEvent('radar_landing_viewed');
