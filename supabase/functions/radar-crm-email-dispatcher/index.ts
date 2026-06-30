@@ -147,6 +147,7 @@ type PreviewBuild = {
   subject: string;
   eventsCount: number;
   companiesCount: number;
+  starredCount: number;
   notificationIds: string[];
   eventIds: string[];
   importIds: string[];
