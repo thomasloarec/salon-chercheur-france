@@ -8,6 +8,7 @@ import RadarCrmRematchPanel from '@/components/admin/RadarCrmRematchPanel';
 import RadarCrmCronStatus from '@/components/admin/RadarCrmCronStatus';
 import RadarCrmEmailPreviewPanel from '@/components/admin/RadarCrmEmailPreviewPanel';
 import RadarCrmBetaBatchPanel from '@/components/admin/RadarCrmBetaBatchPanel';
+import RadarCrmAccessManager from '@/components/admin/RadarCrmAccessManager';
 
 type Stats = {
   totalImports: number;
@@ -89,6 +90,8 @@ const AdminRadarCrm: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      <RadarCrmAccessManager />
 
       <RadarCrmCronStatus />
       <RadarCrmRematchPanel />
