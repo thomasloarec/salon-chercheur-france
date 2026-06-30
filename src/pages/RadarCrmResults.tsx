@@ -361,8 +361,11 @@ const RadarCrmResults: React.FC = () => {
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">Votre Radar CRM</h1>
               </div>
               <p className="text-foreground/70 text-sm md:text-base">
-                {loading ? 'Analyse en cours…' :
-                  <><strong className="text-foreground">{kpiDetected}</strong> entreprise{kpiDetected > 1 ? 's' : ''} détectée{kpiDetected > 1 ? 's' : ''} sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo</>}
+                {loading ? 'Analyse en cours…' : isLocked ? (
+                  <>Votre Radar CRM est prêt — débloquez l'accès pour découvrir vos détections</>
+                ) : (
+                  <><strong className="text-foreground">{kpiDetected}</strong> entreprise{kpiDetected > 1 ? 's' : ''} détectée{kpiDetected > 1 ? 's' : ''} sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo</>
+                )}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
@@ -401,13 +404,15 @@ const RadarCrmResults: React.FC = () => {
             <TrialBanner daysLeft={daysLeft} detected={kpiDetected} />
           )}
 
-          {/* Hero stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
-            <StatCard label="Entreprises détectées" value={kpiDetected} accent="success" />
-            <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
-            <StatCard label="Participations futures" value={kpiFutureParticipations} />
-          </div>
+          {/* Hero stats — masquées en état verrouillé (remplacées par le bandeau agrégé du paywall) */}
+          {!isLocked && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
+              <StatCard label="Entreprises détectées" value={kpiDetected} accent="success" />
+              <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
+              <StatCard label="Participations futures" value={kpiFutureParticipations} />
+            </div>
+          )}
 
           {loading ? (
             <div className="space-y-3">
