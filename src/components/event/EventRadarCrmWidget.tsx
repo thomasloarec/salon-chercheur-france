@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Radar, Building2, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Radar, Building2, ArrowRight, Loader2, AlertCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,7 +52,7 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   // Exposant sélectionné -> ouverture de la popup détail existante.
   const [selectedExhibitor, setSelectedExhibitor] = useState<Record<string, unknown> | null>(null);
 
-  const { data, isLoading } = useEventCrmMatches(eventId, {
+  const { data, isLoading, isError, refetch } = useEventCrmMatches(eventId, {
     enabled: !!user && !!eventId && !isEventPast,
     userId: user?.id ?? null,
   });
@@ -123,6 +123,21 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
 
   if (!data) return null;
 
+  // État d'erreur — la RPC gatée a échoué : on l'affiche, jamais un widget vide trompeur.
+  if (isError) {
+    return (
+      <WidgetShell>
+        <div className="flex items-start gap-2 text-sm text-muted-foreground">
+          <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+          Impossible de charger vos correspondances CRM pour le moment.
+        </div>
+        <Button variant="outline" size="sm" className="w-full" onClick={() => void refetch()}>
+          Réessayer
+        </Button>
+      </WidgetShell>
+    );
+  }
+
   // État 2 — connecté, aucun import CRM
   if (data.status === 'no_imports') {
     return (
@@ -179,6 +194,45 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
         </p>
         <Button asChild variant="ghost" size="sm" className="w-full justify-start px-0">
           <Link to="/radar-crm/results" className="text-primary">Voir mon Radar CRM</Link>
+        </Button>
+      </WidgetShell>
+    );
+  }
+
+  // État verrouillé — accès expiré/free : la RPC renvoie `companies: []` mais
+  // `total > 0`. On affiche le nombre + pastilles floutées sans aucun nom,
+  // cohérent avec l'état verrouillé de la page Radar CRM.
+  if (data.status === 'locked') {
+    const placeholders = Math.min(data.total, MAX_VISIBLE);
+    return (
+      <WidgetShell>
+        <p className="text-sm text-foreground">
+          <strong>{data.total}</strong> entreprise{data.total > 1 ? 's' : ''} de votre CRM
+          {data.total > 1 ? ' exposent' : ' expose'} sur ce salon
+        </p>
+        <ul className="space-y-2" aria-hidden="true">
+          {Array.from({ length: placeholders }).map((_, i) => (
+            <li
+              key={i}
+              className="flex items-center gap-2 rounded-lg border bg-muted/30 px-2.5 py-2"
+            >
+              <span className="h-7 w-7 flex-shrink-0 rounded bg-muted blur-[1px]" />
+              <span className="h-3 flex-1 rounded bg-muted blur-[1px]" style={{ maxWidth: `${60 + ((i * 13) % 30)}%` }} />
+              <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-muted-foreground">
+          Débloquez pour voir quelles entreprises exposent et préparer vos rendez-vous.
+        </p>
+        <Button asChild size="sm" className="w-full">
+          <Link
+            to="/radar-crm/results"
+            onClick={() => void trackRadarEvent('crm_access_requested', { source: 'event_widget', eventId })}
+          >
+            <Lock className="h-4 w-4 mr-1.5" />
+            Débloquer
+          </Link>
         </Button>
       </WidgetShell>
     );
