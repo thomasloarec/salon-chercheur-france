@@ -43,7 +43,7 @@ export default function Exposants() {
           <div className="text-center space-y-6 max-w-3xl mx-auto">
 
             {/* Headline */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+            <h1 className="heading-display text-3xl md:text-4xl lg:text-5xl text-foreground leading-tight">
               Ne comptez plus sur le <span className="text-primary">hasard</span>
               <br />
               pour attirer les bons visiteurs
@@ -121,7 +121,7 @@ export default function Exposants() {
                 <span className="text-sm font-semibold">Le problème</span>
               </div>
               
-              <h2 className="text-3xl font-bold leading-tight">
+              <h2 className="section-rule heading-display text-3xl text-foreground leading-tight">
                 Pourquoi tant d'exposants repartent avec le sentiment d'avoir subi leur salon ?
               </h2>
 
@@ -151,12 +151,12 @@ export default function Exposants() {
 
             {/* Solution */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <Check className="h-5 w-5 text-primary" />
-                <span className="text-sm font-semibold text-green-900 dark:text-green-100">La solution Lotexpo</span>
+                <span className="text-sm font-semibold text-primary">La solution Lotexpo</span>
               </div>
               
-              <h2 className="text-3xl font-bold leading-tight">
+              <h2 className="section-rule heading-display text-3xl text-foreground leading-tight">
                 Créez une intention de visite avant le salon
               </h2>
 
@@ -177,8 +177,8 @@ export default function Exposants() {
                   </p>
                 </div>
               </div>
-              <div className="p-4 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-950 dark:to-primary/10 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <p className="text-sm font-semibold text-foreground">
                   ✨ Résultat : votre présence n'est plus seulement passive. Vous donnez aux visiteurs une raison claire de vous intégrer à leur parcours.
                 </p>
               </div>
@@ -190,7 +190,7 @@ export default function Exposants() {
       {/* Benefits Section - Pourquoi publier vos nouveautés */}
       <section className="bg-background py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-foreground mb-16">
+          <h2 className="heading-display text-3xl md:text-4xl text-center text-foreground mb-16 section-rule [&::before]:mx-auto">
             Pourquoi publier vos nouveautés sur Lotexpo ?
           </h2>
 
@@ -237,7 +237,7 @@ export default function Exposants() {
       {/* How It Works Section */}
       <section className="py-20 px-4 bg-background">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-foreground mb-4">
+          <h2 className="heading-display text-3xl md:text-4xl text-center text-foreground mb-4 section-rule [&::before]:mx-auto">
             Comment ça marche ?
           </h2>
           <p className="text-xl text-muted-foreground text-center mb-16 max-w-3xl mx-auto">
@@ -309,7 +309,7 @@ export default function Exposants() {
       <section id="pricing" className="py-20">
         <div className="container max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">
+            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
               Commencez gratuitement, amplifiez si le salon est stratégique
             </h2>
             <p className="text-muted-foreground text-lg">
@@ -435,7 +435,7 @@ export default function Exposants() {
       <section className="py-20 bg-muted/30">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">
+            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
               Premium s'adapte à votre situation
             </h2>
             <p className="text-muted-foreground text-lg">
@@ -508,7 +508,7 @@ export default function Exposants() {
       <section className="py-20">
         <div className="container max-w-3xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">
+            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
               Questions fréquentes
             </h2>
           </div>
@@ -564,7 +564,7 @@ export default function Exposants() {
       {/* Final CTA Section */}
       <section className="py-20 bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="container max-w-4xl mx-auto px-4 text-center space-y-8">
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="heading-display text-3xl md:text-4xl text-foreground section-rule [&::before]:mx-auto">
             Donnez aux visiteurs une raison de venir vous voir
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
