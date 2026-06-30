@@ -437,18 +437,18 @@ const RadarCrmResults: React.FC = () => {
 
   return (
     <MainLayout title="Mon Radar CRM | Lotexpo">
-      <div className="bg-muted/20 min-h-[calc(100vh-200px)]">
-        <div className="max-w-6xl mx-auto px-4 py-8 md:py-10 space-y-6">
+      <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
+        <div className="max-w-6xl mx-auto px-4 py-10 md:py-14 space-y-10 md:space-y-12">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-3 mb-2">
                 <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
                   <Radar className="h-5 w-5" />
                 </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">Votre Radar CRM</h1>
+                <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Votre Radar CRM</h1>
               </div>
-              <p className="text-foreground/70 text-sm md:text-base">
+              <p className="text-muted-foreground text-sm md:text-base max-w-xl">
                 {loading ? 'Analyse en cours…' : isLocked ? (
                   <>Votre Radar CRM est prêt — débloquez l'accès pour découvrir vos détections</>
                 ) : (
