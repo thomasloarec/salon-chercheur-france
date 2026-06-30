@@ -909,7 +909,7 @@ const EventCard: React.FC<{
         </div>
 
         {/* Body */}
-        <div className="flex-1 p-4 flex flex-col gap-3 min-w-0">
+        <div className="flex-1 p-5 md:p-6 flex flex-col gap-4 min-w-0">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="font-semibold text-lg leading-snug text-foreground line-clamp-2">{group.nom_event}</h3>
