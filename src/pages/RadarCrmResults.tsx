@@ -540,7 +540,7 @@ const RadarCrmResults: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="companies" className="mt-5">
+                <TabsContent value="companies" className="mt-8">
                   <CompanyAccountsList
                     groups={eventGroups}
                     companies={matchedCompanies}
@@ -550,11 +550,11 @@ const RadarCrmResults: React.FC = () => {
                   />
                 </TabsContent>
 
-                <TabsContent value="future" className="mt-5">
+                <TabsContent value="future" className="mt-8">
                   {futureGroups.length === 0 ? (
                     <NoFutureMatches companiesCount={kpiAnalyzed} matchedCount={kpiDetected} />
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-5">
                       {futureGroups.map((g) => (
                         <div
                           key={g.event_id}
@@ -578,11 +578,11 @@ const RadarCrmResults: React.FC = () => {
                   )}
                 </TabsContent>
 
-                <TabsContent value="past" className="mt-5">
+                <TabsContent value="past" className="mt-8">
                   {pastGroups.length === 0 ? (
                     <EmptyText label="Aucun salon passé détecté pour vos comptes surveillés." />
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-5">
                       {pastGroups.map((g) => (
                         <PastEventCard
                           key={g.event_id}
