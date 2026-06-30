@@ -155,15 +155,37 @@ const RadarCrmAccessManager: React.FC = () => {
 
   const approveRequest = async (req: RadarAccessRequestRow) => {
     setBusyId(req.request_id);
-    const { error } = await supabase.rpc('admin_approve_access_request', {
+
+    // 1) Approval (source of truth) — unchanged.
+    const { error: approveErr } = await supabase.rpc('admin_approve_access_request', {
       p_request_id: req.request_id,
     });
-    setBusyId(null);
-    if (error) {
-      toast.error(error.message);
+    if (approveErr) {
+      setBusyId(null);
+      toast.error(approveErr.message);
       return;
     }
-    toast.success('Demande approuvée — compte passé en Payant');
+
+    // 2) Confirmation email (best-effort — never blocks approval).
+    let emailSent = false;
+    try {
+      const { data, error } = await supabase.functions.invoke('notify-radar-access-approved', {
+        body: { request_id: req.request_id },
+      });
+      emailSent = !error && (data as any)?.emailSent === true;
+    } catch {
+      emailSent = false;
+    }
+
+    setBusyId(null);
+
+    // 3) Toast depends on email result; approval itself succeeded.
+    if (emailSent) {
+      toast.success('Demande approuvée — email de confirmation envoyé.');
+    } else {
+      toast.warning("Demande approuvée — l'email de confirmation n'a pas pu être envoyé.");
+    }
+
     await Promise.all([loadRequests(), loadAccounts()]);
   };
 
