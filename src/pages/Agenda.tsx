@@ -67,13 +67,13 @@ const Agenda = () => {
   if (!user) {
     return (
       <MainLayout title="Mon agenda">
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-muted/30 flex items-center justify-center">
           <div className="text-center">
-            <CalendarRange className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-600 mb-2">
+            <CalendarRange className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
+            <h2 className="heading-display text-2xl text-foreground mb-2">
               Connectez-vous pour voir votre agenda
             </h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-muted-foreground mb-6">
               Organisez vos salons professionnels dans votre agenda personnel
             </p>
             <Button asChild>
@@ -88,9 +88,9 @@ const Agenda = () => {
   if (error) {
     return (
       <MainLayout title="Mon agenda">
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-muted/30 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600">Erreur lors du chargement de votre agenda</p>
+            <p className="text-destructive">Erreur lors du chargement de votre agenda</p>
           </div>
         </div>
       </MainLayout>
@@ -99,18 +99,18 @@ const Agenda = () => {
 
   return (
     <MainLayout title="Mon agenda">
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header avec Role Switcher */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-4 flex items-center gap-2">
+            <h1 className="heading-display text-3xl text-foreground mb-4 flex items-center gap-2">
               <CalendarRange className="h-8 w-8" />
               Mon agenda
             </h1>
             
             {/* Role Switcher - seulement si l'utilisateur est aussi exposant */}
             {hasExhibitorAccess ? (
-              <div className="inline-flex rounded-lg border bg-white p-1 gap-1">
+              <div className="inline-flex rounded-lg border bg-card p-1 gap-1">
                 <button
                   onClick={() => setActiveRole('visitor')}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
@@ -143,11 +143,11 @@ const Agenda = () => {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   {isLoading ? 'Chargement...' : `${upcomingOrOngoingEvents.length} salon(s) dans votre agenda`}
                 </p>
                 {nextEvent && (
-                  <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
+                  <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5">
                     Prochain : {format(new Date(nextEvent.date_debut), 'dd MMM yyyy', { locale: fr })}
                   </Badge>
                 )}
