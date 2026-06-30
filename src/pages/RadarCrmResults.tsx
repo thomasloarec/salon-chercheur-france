@@ -778,7 +778,7 @@ const CompanyChip: React.FC<{
     type="button"
     onClick={onClick}
     className={cn(
-      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1 transition-all hover:bg-primary/5',
+      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1.5 transition-all hover:bg-primary/5',
       starred && 'border-accent/50 bg-secondary/50',
       needsReview ? 'border-border hover:border-primary' : 'border-border hover:border-primary',
     )}
