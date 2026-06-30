@@ -968,7 +968,7 @@ const CompanyAccountCard: React.FC<{
   const futureMore = future.length - futureShown.length;
   const pastMore = past.length - pastShown.length;
 
-  const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
+  const renderRow = (g: EventGroup, tone: 'future' | 'past', isNext = false) => {
     const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
     return (
       <button
@@ -982,9 +982,21 @@ const CompanyAccountCard: React.FC<{
             : 'bg-muted/40 hover:bg-muted border'
         }`}
       >
-        <p className={`text-sm font-medium truncate ${tone === 'future' ? 'text-foreground' : 'text-foreground/80'}`}>
-          {g.nom_event}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className={`text-sm font-medium truncate ${tone === 'future' ? 'text-foreground' : 'text-foreground/80'}`}>
+            {g.nom_event}
+          </p>
+          {tone === 'future' && g.days_until != null && (
+            <Badge
+              className={cn(
+                'shrink-0 border-none',
+                isNext ? 'bg-accent text-accent-foreground' : 'bg-foreground/80 text-background',
+              )}
+            >
+              J-{Math.max(0, g.days_until)}
+            </Badge>
+          )}
+        </div>
         <p className="text-[11px] text-foreground/60 mt-0.5 truncate">
           {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
           {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
@@ -1023,7 +1035,7 @@ const CompanyAccountCard: React.FC<{
             <p className="text-[10px] font-bold uppercase tracking-wide text-primary">
               Salons à venir
             </p>
-            {futureShown.map((g) => renderRow(g, 'future'))}
+            {futureShown.map((g, i) => renderRow(g, 'future', i === 0))}
             {futureMore > 0 && (
               <button
                 type="button"
