@@ -972,7 +972,7 @@ const PastEventCard: React.FC<{
   ) => void;
 }> = ({ group, onView, onCompanyClick }) => {
   return (
-    <Card className="overflow-hidden hover:shadow-sm transition-all bg-card">
+    <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm transition-all bg-card">
       <div className="flex flex-col sm:flex-row">
         <div className="relative w-full sm:w-[140px] sm:min-w-[140px] h-[110px] sm:h-auto bg-muted overflow-hidden">
           {group.url_image ? (
@@ -983,36 +983,40 @@ const PastEventCard: React.FC<{
             </div>
           )}
         </div>
-        <div className="flex-1 p-4 min-w-0">
-          <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+        <div className="flex-1 p-5 flex flex-col gap-3 min-w-0">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="font-bold text-base text-foreground leading-tight">{group.nom_event}</h3>
-              <p className="text-xs text-foreground/60 mt-0.5">
+              <h3 className="font-semibold text-base text-foreground leading-tight">{group.nom_event}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {formatDate(group.date_debut)}{group.ville ? ` · ${group.ville}` : ''}
               </p>
             </div>
-            <Badge variant="secondary" className="font-semibold">
+            <Badge className="bg-muted text-muted-foreground border-none font-medium">
               {group.companies.length} compte{group.companies.length > 1 ? 's' : ''}
             </Badge>
           </div>
-          <p className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5">
-            Entreprises détectées
-          </p>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
-              <CompanyChip
-                key={company.id}
-                company={company}
-                stand={stand}
-                nomExposant={nom_exposant}
-                needsReview={needs_review}
-                onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
-              />
-            ))}
+          <div className="bg-secondary/40 border border-border/60 rounded-lg p-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Entreprises détectées
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
+                <CompanyChip
+                  key={company.id}
+                  company={company}
+                  stand={stand}
+                  nomExposant={nom_exposant}
+                  needsReview={needs_review}
+                  onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
+                />
+              ))}
+            </div>
           </div>
-          <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary -ml-2">
-            Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
-          </Button>
+          <div className="mt-auto">
+            <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary hover:text-primary hover:bg-primary/5 -ml-2">
+              Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
