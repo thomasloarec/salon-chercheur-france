@@ -1177,7 +1177,7 @@ const CompanyAccountCard: React.FC<{
       dimmed
         ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
         : 'hover:shadow-md hover:border-primary/40',
-      pref === 'starred' && 'border-amber-400/70 bg-amber-50/30',
+      pref === 'starred' && 'border-accent/50 bg-secondary/40',
     )}>
       <CardContent className="pt-5 space-y-3">
         <div className="flex items-start gap-3">
@@ -1198,7 +1198,7 @@ const CompanyAccountCard: React.FC<{
               onClick={() => onSetPref(pref === 'starred' ? 'normal' : 'starred')}
               className="p-1.5 rounded-md hover:bg-muted transition-colors"
             >
-              <Star className={cn('h-4 w-4', pref === 'starred' ? 'text-amber-500 fill-amber-500' : 'text-foreground/40')} />
+              <Star className={cn('h-4 w-4', pref === 'starred' ? 'text-accent fill-accent' : 'text-foreground/40')} />
             </button>
             <button
               type="button"
