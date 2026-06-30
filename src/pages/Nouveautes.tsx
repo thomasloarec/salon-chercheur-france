@@ -290,7 +290,7 @@ export default function Nouveautes() {
               <Sparkles className="h-3.5 w-3.5" />
               Veille pré-événementielle
             </div>
-            <h1 className="text-2xl font-bold leading-tight tracking-tight md:text-3xl">
+            <h1 className="heading-display text-2xl leading-tight text-foreground md:text-3xl">
               Nouveautés des exposants
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
@@ -421,10 +421,11 @@ export default function Nouveautes() {
 
               {/* À VOIR AVANT LES PROCHAINS SALONS */}
               {bySalon.length > 0 && (
-                <section aria-labelledby="salons-heading">
+              <section aria-labelledby="salons-heading">
+                  <div className="section-rule" />
                   <div className="mb-1 flex items-center gap-2">
                     <CalendarClock className="h-5 w-5 text-primary" />
-                    <h2 id="salons-heading" className="text-2xl font-bold tracking-tight md:text-3xl">
+                    <h2 id="salons-heading" className="heading-display text-2xl text-foreground md:text-3xl">
                       À voir avant les prochains salons
                     </h2>
                   </div>
@@ -458,8 +459,8 @@ export default function Nouveautes() {
           )}
 
           {/* CTA exposant */}
-          <section className="rounded-2xl border bg-muted/30 p-6 text-center md:p-8">
-            <h3 className="text-lg font-semibold md:text-xl">
+          <section className="rounded-2xl border border-border/60 bg-muted/30 p-8 text-center md:p-10">
+            <h3 className="text-lg font-semibold text-foreground md:text-xl">
               Exposant ? Publiez votre nouveauté avant le salon.
             </h3>
             <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
