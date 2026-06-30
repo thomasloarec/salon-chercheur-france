@@ -10,15 +10,17 @@ import { supabase } from '@/integrations/supabase/client';
  * Confidentialité :
  * - Aucune requête n'est exécutée si `enabled` est false (utilisateur non connecté
  *   ou eventId manquant). L'appelant DOIT passer `enabled: !!user && !!eventId`.
- * - Utilise uniquement les tables protégées par RLS (`user_id = auth.uid()`).
- *   Aucun service_role, aucun contournement RLS.
+ * - Les NOMS des entreprises/exposants ne sont JAMAIS lus en direct : ils
+ *   proviennent de la RPC server-side gatée `get_my_radar_view`, qui renvoie
+ *   `companies: []` lorsque le compte est verrouillé (essai expiré / free).
+ *   Le verrou d'entitlement est donc appliqué côté serveur, comme sur la page
+ *   principale Radar CRM. Un utilisateur verrouillé ne reçoit aucun nom.
  *
  * Règle "dernier import" :
- * - On récupère le dernier import (created_at desc).
- * - Si ce dernier import est `uploaded`/`processing` -> état "processing".
- * - Si `failed` -> état "failed".
- * - Si `completed` -> on cherche les matches sur cet import uniquement
- *   (pas de matches issus d'anciens imports), filtrés sur l'événement courant.
+ * - On récupère le dernier import (created_at desc) UNIQUEMENT pour distinguer
+ *   les états de cycle de vie (no_imports / processing / failed). Cette requête
+ *   ne lit que `status` (pas de noms).
+ * - Si `completed` -> on appelle la RPC gatée et on isole l'événement courant.
  */
 
 export type EventCrmMatch = {
@@ -36,21 +38,35 @@ export type EventCrmMatchesResult =
   | { status: 'processing'; matches: []; total: 0; importId: string }
   | { status: 'failed'; matches: []; total: 0; importId: string }
   | { status: 'no_matches'; matches: []; total: 0; importId: string }
-  | { status: 'has_matches'; matches: EventCrmMatch[]; total: number; importId: string };
+  | { status: 'has_matches'; matches: EventCrmMatch[]; total: number; importId: string }
+  | { status: 'locked'; matches: []; total: number; importId: string };
 
 type ImportRow = { id: string; status: string; created_at: string };
-type CompanyRow = { id: string; company_name: string };
-type MatchRow = {
+
+/**
+ * Forme (partielle) renvoyée par la RPC server-side gatée `get_my_radar_view`.
+ * Typée localement car la RPC est `Json` dans les types Supabase générés.
+ */
+interface RadarViewCompany {
   crm_company_id: string;
-  id_exposant: string;
-  needs_review: boolean | null;
-};
-type ViewRow = {
-  id_exposant: string;
+  company_name: string | null;
+  website_raw: string | null;
+  normalized_domain: string | null;
+  id_exposant: string | null;
   nom_exposant: string | null;
   stand_exposants_list: string | null;
-  website_exposant: string | null;
-};
+  needs_review: boolean | null;
+  name_similarity: number | null;
+}
+interface RadarViewEvent {
+  event_id: string;
+  company_count: number;
+  companies: RadarViewCompany[];
+}
+interface RadarView {
+  has_access: boolean;
+  events: RadarViewEvent[];
+}
 
 export function useEventCrmMatches(
   eventId: string | undefined,
@@ -66,7 +82,8 @@ export function useEventCrmMatches(
     enabled,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<EventCrmMatchesResult> => {
-      // 1. Dernier import de l'utilisateur (RLS: user_id = auth.uid())
+      // 1. Dernier import de l'utilisateur (RLS: user_id = auth.uid()).
+      //    Sert uniquement à distinguer no_imports / processing / failed.
       const { data: importsData } = await supabase
         .from('crm_imports')
         .select('id, status, created_at')
@@ -85,69 +102,62 @@ export function useEventCrmMatches(
         return { status: 'failed', matches: [], total: 0, importId: latest.id };
       }
 
-      // 2. Entreprises CRM du dernier import terminé
-      const { data: comps } = await supabase
-        .from('crm_companies')
-        .select('id, company_name')
-        .eq('import_id', latest.id);
-
-      const companies = (comps ?? []) as CompanyRow[];
-      if (companies.length === 0) {
-        return { status: 'no_matches', matches: [], total: 0, importId: latest.id };
+      // 2. Vue Radar gatée côté serveur (entitlement appliqué dans la RPC).
+      //    En cas d'erreur, on PROPAGE pour que le widget affiche un état
+      //    d'erreur visible (pas de silent failure / widget vide trompeur).
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_radar_view', {
+        p_import_id: latest.id,
+      });
+      if (rpcError) {
+        console.error('[RadarCRM] get_my_radar_view (event widget) failed:', rpcError);
+        throw rpcError;
       }
-      const companyMap = new Map(companies.map((c) => [c.id, c]));
 
-      // 3. Matches sur CET événement uniquement, limités à cet import
-      const { data: mts } = await supabase
-        .from('crm_company_event_matches')
-        .select('crm_company_id, id_exposant, needs_review')
-        .eq('event_id', eventId as string)
-        .in('crm_company_id', companies.map((c) => c.id));
-
-      const matches = (mts ?? []) as MatchRow[];
-      if (matches.length === 0) {
+      const view = (rpcData as unknown as RadarView) ?? null;
+      if (!view) {
         return { status: 'no_matches', matches: [], total: 0, importId: latest.id };
       }
 
-      // 4. Détails exposant (nom / stand) via la vue publique
-      const exposantIds = Array.from(new Set(matches.map((m) => m.id_exposant)));
-      const { data: vrows } = await supabase
-        .from('crm_radar_participations_view')
-        .select('id_exposant, nom_exposant, stand_exposants_list, website_exposant')
-        .eq('event_id', eventId as string)
-        .in('id_exposant', exposantIds);
+      const ev = (view.events ?? []).find((e) => e.event_id === eventId);
+      const companyCount = ev?.company_count ?? 0;
 
-      const viewMap = new Map(
-        ((vrows ?? []) as ViewRow[]).map((v) => [v.id_exposant, v]),
-      );
+      // Aucune entreprise détectée sur cet événement.
+      if (companyCount === 0) {
+        return { status: 'no_matches', matches: [], total: 0, importId: latest.id };
+      }
 
-      // 5. Déduplication par crm_company_id
+      // Compte verrouillé : la RPC renvoie `companies: []` mais `company_count > 0`.
+      if (!view.has_access) {
+        return { status: 'locked', matches: [], total: companyCount, importId: latest.id };
+      }
+
+      // Accès complet : on mappe les entreprises gatées vers la forme du widget,
+      // dédupliquées par crm_company_id.
       const dedup = new Map<string, EventCrmMatch>();
-      for (const m of matches) {
-        const company = companyMap.get(m.crm_company_id);
-        if (!company) continue;
-        if (dedup.has(m.crm_company_id)) continue;
-        const v = viewMap.get(m.id_exposant);
-        dedup.set(m.crm_company_id, {
-          crmCompanyId: m.crm_company_id,
-          crmCompanyName: company.company_name,
-          idExposant: m.id_exposant,
-          exhibitorName: v?.nom_exposant ?? null,
-          stand: v?.stand_exposants_list ?? null,
-          website: v?.website_exposant ?? null,
-          needsReview: m.needs_review === true,
+      for (const c of ev?.companies ?? []) {
+        if (!c.crm_company_id || dedup.has(c.crm_company_id)) continue;
+        dedup.set(c.crm_company_id, {
+          crmCompanyId: c.crm_company_id,
+          crmCompanyName: c.company_name ?? '',
+          idExposant: c.id_exposant ?? '',
+          exhibitorName: c.nom_exposant ?? null,
+          stand: c.stand_exposants_list ?? null,
+          website: c.website_raw ?? null,
+          needsReview: c.needs_review === true,
         });
       }
 
       const list = Array.from(dedup.values());
       if (list.length === 0) {
+        // Accès mais aucune entreprise exploitable : on retombe en verrouillé
+        // visuel basé sur le compte serveur pour rester cohérent.
         return { status: 'no_matches', matches: [], total: 0, importId: latest.id };
       }
 
       return {
         status: 'has_matches',
         matches: list,
-        total: list.length,
+        total: companyCount,
         importId: latest.id,
       };
     },
