@@ -2,31 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://lotexpo.com/secteur/agroalimentaire-boissons</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/automobile-mobilite</loc>
-    <lastmod>2026-06-02</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/btp-construction</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/commerce-distribution</loc>
-    <lastmod>2026-06-01</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/cosmetique-bien-etre</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -38,91 +38,103 @@
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/energie-environnement</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/industrie-production</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/mode-textile</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/sante-medical</loc>
-    <lastmod>2026-06-15</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/technologie-innovation</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/tourisme-evenementiel</loc>
-    <lastmod>2026-05-18</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/finance-assurance-immobilier</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/services-entreprises-rh</loc>
-    <lastmod>2026-06-18</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/secteur-public-collectivites</loc>
-    <lastmod>2026-06-06</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/agroalimentaire-boissons/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/secteur/agroalimentaire-boissons/2027</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/automobile-mobilite/2026</loc>
-    <lastmod>2026-06-02</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/btp-construction/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/commerce-distribution/2026</loc>
-    <lastmod>2026-06-01</lastmod>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/secteur/commerce-distribution/2027</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/cosmetique-bien-etre/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/energie-environnement/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -134,13 +146,13 @@
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/finance-assurance-immobilier/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/industrie-production/2026</loc>
-    <lastmod>2026-06-02</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -152,31 +164,31 @@
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/mode-textile/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/sante-medical/2026</loc>
-    <lastmod>2026-06-15</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/secteur-public-collectivites/2026</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/technologie-innovation/2026</loc>
-    <lastmod>2026-06-02</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/secteur/tourisme-evenementiel/2026</loc>
-    <lastmod>2026-05-18</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -188,7 +200,7 @@
   </url>
   <url>
     <loc>https://lotexpo.com/ville/aussonne</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -199,8 +211,14 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/ville/biarritz</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/ville/bordeaux</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -212,7 +230,7 @@
   </url>
   <url>
     <loc>https://lotexpo.com/ville/cannes</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -223,14 +241,20 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/ville/decines-charpieu</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/ville/douai-cedex</loc>
-    <lastmod>2026-01-13</lastmod>
+    <lastmod>2026-06-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/grenoble</loc>
-    <lastmod>2026-05-18</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -260,31 +284,31 @@
   </url>
   <url>
     <loc>https://lotexpo.com/ville/le-bourget</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/le-grand-quevilly</loc>
-    <lastmod>2026-03-01</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/lille</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/lyon</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/marseille</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -295,32 +319,44 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/ville/metz</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/ville/nantes</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/nice</loc>
-    <lastmod>2026-02-13</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/paris</loc>
-    <lastmod>2026-06-02</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/puteaux</loc>
-    <lastmod>2026-06-02</lastmod>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/ville/reims</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/rennes</loc>
-    <lastmod>2026-06-15</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -332,19 +368,25 @@
   </url>
   <url>
     <loc>https://lotexpo.com/ville/toulouse</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/ville/aussonne/2026</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/ville/bordeaux/2026</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/cannes/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -355,8 +397,8 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/ville/la-rochelle/2026</loc>
-    <lastmod>2026-05-18</lastmod>
+    <loc>https://lotexpo.com/ville/grenoble/2026</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -367,44 +409,50 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/ville/le-bourget/2026</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/ville/lille/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/lyon/2026</loc>
-    <lastmod>2026-05-21</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/marseille/2026</loc>
-    <lastmod>2026-02-09</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/nantes/2026</loc>
-    <lastmod>2026-05-19</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/paris/2026</loc>
-    <lastmod>2026-06-02</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/puteaux/2026</loc>
-    <lastmod>2026-06-02</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/ville/rennes/2026</loc>
-    <lastmod>2026-06-15</lastmod>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
