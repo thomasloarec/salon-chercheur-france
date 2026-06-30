@@ -743,6 +743,7 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
     const companiesChips = g.companies.map((co: any) => {
       const primary = co.exhibitorName ?? co.companyName ?? '—';
       const name = escapeHtml(String(primary));
+      const isStarred = co.isStarred === true;
       const crmName = co.exhibitorName && co.companyName && co.companyName !== co.exhibitorName
         ? escapeHtml(String(co.companyName))
         : '';
@@ -755,15 +756,20 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
       const logoCell = fav
         ? `<img src="${escapeHtml(fav)}" alt="${name}" width="32" height="32" style="display:block;width:32px;height:32px;border-radius:6px;border:1px solid ${BORDER};background:#fff;object-fit:contain;" />`
         : `<div style="width:32px;height:32px;border-radius:6px;background:${ORANGE};color:#fff;font-weight:700;font-size:13px;line-height:32px;text-align:center;">${escapeHtml(companyInitials(String(primary)))}</div>`;
+      const chipBg = isStarred ? ORANGE_SOFT : '#fff';
+      const chipBorder = isStarred ? ORANGE : BORDER;
+      const starredBadge = isStarred
+        ? `<span style="display:inline-block;padding:3px 8px;margin-left:6px;background:${ORANGE};color:#fff;border-radius:999px;font-size:11px;font-weight:700;">★ Prioritaire</span>`
+        : '';
       return `
         <tr><td style="padding:6px 0;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;background:#fff;border:1px solid ${BORDER};border-radius:10px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;background:${chipBg};border:1px solid ${chipBorder};border-radius:10px;">
             <tr>
               <td width="44" style="padding:10px 0 10px 12px;vertical-align:top;">${logoCell}</td>
               <td style="padding:10px 12px;vertical-align:top;">
                 <div style="font-size:14px;font-weight:700;color:${TEXT};word-break:break-word;line-height:1.3;">${name}</div>
                 ${subLine}
-                <div style="margin-top:6px;"><span style="display:inline-block;padding:3px 8px;background:${ORANGE_SOFT};color:${ORANGE_DARK};border-radius:999px;font-size:11px;font-weight:600;">Présent dans votre CRM</span></div>
+                <div style="margin-top:6px;"><span style="display:inline-block;padding:3px 8px;background:${ORANGE_SOFT};color:${ORANGE_DARK};border-radius:999px;font-size:11px;font-weight:600;">Présent dans votre CRM</span>${starredBadge}</div>
               </td>
             </tr>
           </table>
