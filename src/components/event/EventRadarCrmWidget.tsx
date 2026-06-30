@@ -199,25 +199,23 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
     );
   }
 
-  // État verrouillé — accès expiré/free : la RPC renvoie `companies: []` mais
-  // `total > 0`. On affiche le nombre + pastilles floutées sans aucun nom,
-  // cohérent avec l'état verrouillé de la page Radar CRM.
+  // État verrouillé — accès expiré/free : la RPC dédiée ne renvoie NI compteur NI
+  // identités, seulement `has_matches`. On affiche un message générique sans nombre
+  // + pastilles floutées génériques, cohérent avec le paywall de la page Radar CRM.
   if (data.status === 'locked') {
-    const placeholders = Math.min(data.total, MAX_VISIBLE);
     return (
       <WidgetShell>
         <p className="text-sm text-foreground">
-          <strong>{data.total}</strong> entreprise{data.total > 1 ? 's' : ''} de votre CRM
-          {data.total > 1 ? ' exposent' : ' expose'} sur ce salon
+          Une ou plusieurs entreprises de votre CRM exposent à ce salon.
         </p>
         <ul className="space-y-2" aria-hidden="true">
-          {Array.from({ length: placeholders }).map((_, i) => (
+          {Array.from({ length: 2 }).map((_, i) => (
             <li
               key={i}
               className="flex items-center gap-2 rounded-lg border bg-muted/30 px-2.5 py-2"
             >
               <span className="h-7 w-7 flex-shrink-0 rounded bg-muted blur-[1px]" />
-              <span className="h-3 flex-1 rounded bg-muted blur-[1px]" style={{ maxWidth: `${60 + ((i * 13) % 30)}%` }} />
+              <span className="h-3 flex-1 rounded bg-muted blur-[1px]" style={{ maxWidth: `${60 + i * 20}%` }} />
               <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             </li>
           ))}
