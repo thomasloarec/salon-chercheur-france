@@ -51,7 +51,7 @@ export default function ExhibitorTrustInfo({ profile }: { profile: PublicExhibit
   return (
     <Card className="rounded-2xl lg:sticky lg:top-24">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Informations</CardTitle>
+        <CardTitle className="heading-display text-base">Informations</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {websiteUrl && (

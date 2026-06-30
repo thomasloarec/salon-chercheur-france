@@ -62,7 +62,7 @@ export default function ExhibitorNovelties({
   if (!profile.exhibitor_id) {
     return (
       <section>
-        <h2 className="text-xl font-bold mb-4">Nouveautés publiées</h2>
+        <h2 className="heading-display section-rule text-xl font-bold mb-4">Nouveautés publiées</h2>
         <div className="rounded-xl border border-dashed bg-muted/30 p-6 text-center">
           <p className="text-muted-foreground">
             Aucune nouveauté publiée pour le moment.
@@ -75,7 +75,7 @@ export default function ExhibitorNovelties({
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Nouveautés publiées</h2>
+        <h2 className="heading-display section-rule text-xl font-bold">Nouveautés publiées</h2>
         {!isLoading && novelties.length > 0 && (
           <span className="text-sm text-muted-foreground">
             {novelties.length} nouveauté{novelties.length > 1 ? 's' : ''}

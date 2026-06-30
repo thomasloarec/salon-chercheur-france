@@ -133,7 +133,7 @@ export default function ExhibitorParticipationHistory({
     return (
       <Card className="rounded-2xl">
         <CardHeader className="pb-3">
-          <CardTitle className="text-xl">Présence sur les salons</CardTitle>
+          <CardTitle className="heading-display text-xl">Présence sur les salons</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -163,7 +163,7 @@ export default function ExhibitorParticipationHistory({
     <Card className="rounded-2xl">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-xl">Présence sur les salons</CardTitle>
+          <CardTitle className="heading-display text-xl">Présence sur les salons</CardTitle>
           <span className="text-sm text-muted-foreground shrink-0">
             {items.length} participation{items.length > 1 ? 's' : ''}
           </span>
