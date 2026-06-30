@@ -725,19 +725,19 @@ const StatCard: React.FC<{
   // Les autres cartes restent neutres (blanc, bordure fine), chiffre en navy ou foreground.
   const tone =
     accent === 'accent' ? 'border-accent/30 bg-secondary/40' :
-    'bg-card';
+    'bg-card border-border/60';
   const valueTone =
     accent === 'accent'  ? 'text-accent' :
     accent === 'primary' ? 'text-primary' :
     'text-foreground';
   return (
-    <Card className={tone}>
-      <CardContent className="pt-5 pb-5">
-        <div className="flex items-center gap-1.5 text-xs text-foreground/70 mb-1 font-medium">
+    <Card className={cn('shadow-none', tone)}>
+      <CardContent className="px-5 pt-6 pb-6">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2 font-medium">
           {icon}<span>{label}</span>
         </div>
-        <p className={`text-2xl font-bold leading-tight ${valueTone}`}>{value}</p>
-        {sub && <p className="text-xs text-foreground/60 mt-1 truncate" title={sub}>{sub}</p>}
+        <p className={`font-display text-3xl font-semibold leading-none tracking-tight ${valueTone}`}>{value}</p>
+        {sub && <p className="text-xs text-muted-foreground mt-1.5 truncate" title={sub}>{sub}</p>}
       </CardContent>
     </Card>
   );
