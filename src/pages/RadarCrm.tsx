@@ -782,6 +782,11 @@ const RadarCrmPage: React.FC = () => {
           </div>
         </div>
       </section>
+      <AccessRequestDialog
+        open={requestDialogOpen}
+        onOpenChange={setRequestDialogOpen}
+        source="locked_upload"
+      />
     </MainLayout>
   );
 };
