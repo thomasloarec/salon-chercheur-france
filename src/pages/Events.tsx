@@ -87,7 +87,7 @@ const Events = () => {
         <Header />
         <main className="py-12">
           <div className="text-center">
-            <p className="text-red-600">Erreur lors du chargement des événements</p>
+            <p className="text-destructive">Erreur lors du chargement des événements</p>
           </div>
         </main>
         <Footer />
@@ -96,7 +96,7 @@ const Events = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Helmet>
         <title>Salons professionnels en France | Lotexpo</title>
         <meta name="description" content="Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Calendrier B2B complet, dates, lieux et exposants sur Lotexpo." />
