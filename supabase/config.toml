@@ -132,3 +132,9 @@ verify_jwt = false
 # The webhook does not send a user JWT, so JWT verification must stay disabled.
 # It only emails admin@lotexpo.com; no data is read or returned.
 verify_jwt = false
+
+[functions.notify-radar-access-approved]
+# Called from the admin UI by an authenticated admin after approving an access
+# request. JWT verification is required; the function additionally enforces in
+# code that the caller has the 'admin' role before sending the approval email.
+verify_jwt = true
