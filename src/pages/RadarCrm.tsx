@@ -139,6 +139,7 @@ const RadarCrmPage: React.FC = () => {
 
   useEffect(() => {
     if (!user || parsed) return;
+    if (isRadarLocked) return;
     const pending = loadPendingImport();
     if (pending) {
       const headers = Object.keys(pending.rows[0] ?? {});
@@ -152,7 +153,7 @@ const RadarCrmPage: React.FC = () => {
       setMapping(pending.mapping as Partial<Record<RadarField, string>>);
       resumedFromPendingRef.current = true;
     }
-  }, [user, parsed]);
+  }, [user, parsed, isRadarLocked]);
 
   const onParsed = (p: ParsedFile) => {
     setParsed(p);
