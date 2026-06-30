@@ -144,7 +144,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   return (
     <>
       <SEOHead event={event} noIndex={isPreview} />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted/30">
         <Header />
         
         {/* Admin toolbar - shown if user is admin */}
@@ -198,10 +198,10 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           <div className="container mx-auto px-4 space-y-8">
             {/* Preview notice */}
             {isPreview && (
-              <div className="bg-orange-100 border-l-4 border-orange-500 p-4 rounded">
+              <div className="bg-accent/10 border-l-4 border-accent p-4 rounded">
                 <div className="flex items-center">
                   <div className="ml-3">
-                    <p className="text-sm text-orange-700">
+                    <p className="text-sm text-foreground/80">
                       <strong>Mode aperçu:</strong> Cet événement n'est pas encore publié et n'est visible que par les administrateurs.
                     </p>
                   </div>
@@ -235,7 +235,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
             {/* Past event banner */}
             {isEventPast && (
-              <div className="rounded-r-lg border-l-4 border-orange-400 bg-orange-50 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+              <div className="rounded-r-lg border-l-4 border-accent bg-accent/10 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
                 <p className="text-sm text-foreground/80">
                   Cet événement est terminé. Retrouvez les prochains salons de ce secteur sur Lotexpo.
                 </p>
@@ -280,7 +280,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 {exhibitorCount >= 80 && !isEventPast && (
                   <section
                     aria-label="Préparer votre visite avec l'IA Lotexpo"
-                    className="rounded-lg border border-[#CFE0F7] bg-[#F2F6FD] overflow-hidden"
+                    className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden"
                   >
                     <div className="space-y-4 px-6 py-[22px]">
                       {/* Eyebrow : carré bleu marine + label */}
@@ -313,7 +313,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                         ].map(({ icon: Icon, label }) => (
                           <span
                             key={label}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-[#D3E0F5] bg-card px-3 py-1.5 text-xs font-medium text-primary"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-xs font-medium text-primary"
                           >
                             <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                             {label}

@@ -169,7 +169,7 @@ const CityYearHub = () => {
           </div>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-3">
+            <h1 className="heading-display text-3xl font-bold text-foreground mb-3">
               Salons professionnels à {hub.cityName} en {year}
             </h1>
             <p className="text-muted-foreground max-w-3xl">{intro}</p>
@@ -197,7 +197,7 @@ const CityYearHub = () => {
 
           {grouped.length > 0 ? (
             <section className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6">
+              <h2 className="section-rule heading-display text-2xl font-semibold text-foreground mb-6">
                 Programme {year}
               </h2>
               <div className="space-y-10">
@@ -232,7 +232,7 @@ const CityYearHub = () => {
           )}
 
           <section className="mb-12 border-t border-border pt-8">
-            <h2 className="text-xl font-semibold text-foreground mb-4">
+            <h2 className="section-rule heading-display text-xl font-semibold text-foreground mb-4">
               Autres années disponibles
             </h2>
             <div className="flex flex-wrap gap-2">

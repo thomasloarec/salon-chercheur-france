@@ -86,8 +86,8 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
 
   return (
     <section className={cn(
-      "bg-white rounded-lg shadow-sm p-8 mb-8 relative",
-      !event.visible && isAdmin && "bg-gray-100 opacity-50"
+      "bg-card rounded-lg shadow-sm p-8 mb-8 relative",
+      !event.visible && isAdmin && "bg-muted opacity-50"
     )}>
        {!event.visible && isAdmin && (
         <Badge
@@ -109,7 +109,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
                 className="flex flex-wrap gap-2 mb-3"
                 sectorClassName="text-xs px-2 py-0.5"
               />
-              <h1 className="text-xl font-bold text-gray-900 leading-tight text-left mb-2 break-words">
+              <h1 className="heading-display text-xl font-bold text-foreground leading-tight text-left mb-2 break-words">
                 {event.nom_event}
               </h1>
             </div>
@@ -140,7 +140,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           )}
 
           {/* Infos: Date, Type, Affluence, Lieu */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600 mb-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground mb-4">
             <div className="flex items-center">
               <CalendarDays className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
               <time dateTime={event.date_debut}>
@@ -215,8 +215,8 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
                   className={cn(
                     "transition-all duration-200",
                     isFavorite 
-                      ? "bg-green-500 text-white hover:bg-green-600 border-green-500" 
-                      : "bg-white hover:bg-gray-100"
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary" 
+                      : "bg-card hover:bg-muted"
                   )}
                 >
                   {isFavorite ? (
@@ -255,7 +255,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           />
 
           {/* ✅ AMÉLIORATION : Titre optimisé */}
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight text-left mb-2 break-words">
+          <h1 className="heading-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground leading-tight text-left mb-2 break-words">
             {event.nom_event}
           </h1>
 
@@ -267,7 +267,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           )}
 
           {/* Toutes les infos sur une seule ligne */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base text-gray-600 mb-6">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base text-muted-foreground mb-6">
             {/* Date */}
             <div className="flex items-center">
               <CalendarDays className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
@@ -351,8 +351,8 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
                         className={cn(
                           "transition-all duration-200",
                           isFavorite 
-                            ? "bg-green-500 text-white hover:bg-green-600 border-green-500" 
-                            : "bg-white hover:bg-gray-100"
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary" 
+                            : "bg-card hover:bg-muted"
                         )}
                       >
                         {isFavorite ? (

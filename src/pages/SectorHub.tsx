@@ -129,7 +129,7 @@ const SectorHub = () => {
 
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-3">
+            <h1 className="heading-display text-3xl font-bold text-foreground mb-3">
               Salons {hub.sectorLabel} en France
             </h1>
             <p className="text-muted-foreground max-w-3xl">{hub.description}</p>
@@ -165,7 +165,7 @@ const SectorHub = () => {
           {/* Upcoming events grouped by month */}
           {groupedUpcoming.length > 0 && (
             <section className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6">
+              <h2 className="section-rule heading-display text-2xl font-semibold text-foreground mb-6">
                 Salons {hub.sectorLabel} à venir
               </h2>
               <div className="space-y-10">
@@ -204,7 +204,7 @@ const SectorHub = () => {
           {/* Past events */}
           {hub.pastEvents.length > 0 && (
             <section className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-2">
+              <h2 className="section-rule heading-display text-2xl font-semibold text-foreground mb-2">
                 Éditions précédentes
               </h2>
               <p className="text-sm text-muted-foreground mb-6">Ces salons ont déjà eu lieu.</p>
@@ -225,7 +225,7 @@ const SectorHub = () => {
           {/* Explorer par année */}
           {hub.yearsBreakdown.length > 0 && (
             <section className="mb-12 border-t border-border pt-8">
-              <h2 className="text-xl font-semibold text-foreground mb-4">
+              <h2 className="section-rule heading-display text-xl font-semibold text-foreground mb-4">
                 Explorer par année
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -255,7 +255,7 @@ const SectorHub = () => {
           {/* Blog articles */}
           {articles.length > 0 && (
             <section className="mb-12">
-              <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <h2 className="heading-display text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                 <ArrowRight className="h-5 w-5 text-primary" />
                 Articles liés au secteur {hub.sectorLabel}
               </h2>
