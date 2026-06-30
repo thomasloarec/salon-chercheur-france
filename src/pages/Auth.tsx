@@ -155,11 +155,11 @@ const Auth = () => {
 
   return (
     <MainLayout title="Connexion">
-      <div className="bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-muted/30 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">Lotexpo</h1>
-            <p className="text-gray-600 mt-2">Gérez vos événements professionnels</p>
+            <h1 className="heading-display text-3xl text-primary">Lotexpo</h1>
+            <p className="text-muted-foreground mt-2">Gérez vos événements professionnels</p>
           </div>
 
           <Card>
@@ -227,7 +227,7 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="signin-email">Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="signin-email"
                           type="email"
@@ -280,7 +280,7 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="signup-email"
                           type="email"
@@ -344,16 +344,16 @@ const Auth = () => {
               </Tabs>
 
               {error && (
-                <Alert className="mt-4 border-red-200 bg-red-50">
-                  <AlertDescription className="text-red-700">
+                <Alert className="mt-4 border-destructive/20 bg-destructive/5">
+                  <AlertDescription className="text-destructive">
                     {error}
                   </AlertDescription>
                 </Alert>
               )}
 
               {message && (
-                <Alert className="mt-4 border-green-200 bg-green-50">
-                  <AlertDescription className="text-green-700">
+                <Alert className="mt-4 border-primary/20 bg-primary/5">
+                  <AlertDescription className="text-primary">
                     {message}
                   </AlertDescription>
                 </Alert>

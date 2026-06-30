@@ -131,7 +131,7 @@ const ResetPassword = () => {
     if (status === 'success') {
       return (
         <div className="space-y-4 text-center">
-          <p className="text-green-700">
+          <p className="text-primary">
             Votre mot de passe a été réinitialisé. Redirection en cours…
           </p>
           <Button className="w-full" onClick={() => navigate('/', { replace: true })}>
@@ -191,11 +191,11 @@ const ResetPassword = () => {
 
   return (
     <MainLayout title="Réinitialiser le mot de passe">
-      <div className="bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-muted/30 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">Lotexpo</h1>
-            <p className="text-gray-600 mt-2">Définissez votre nouveau mot de passe</p>
+            <h1 className="heading-display text-3xl text-primary">Lotexpo</h1>
+            <p className="text-muted-foreground mt-2">Définissez votre nouveau mot de passe</p>
           </div>
 
           <Card>
