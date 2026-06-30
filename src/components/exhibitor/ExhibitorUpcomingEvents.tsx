@@ -31,7 +31,7 @@ export default function ExhibitorUpcomingEvents({
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">À voir sur les salons</h2>
+        <h2 className="heading-display section-rule text-xl font-bold">À voir sur les salons</h2>
         {!isLoading && events.length > 0 && (
           <span className="text-sm text-muted-foreground">
             {events.length} salon{events.length > 1 ? 's' : ''} à venir
