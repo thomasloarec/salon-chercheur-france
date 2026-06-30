@@ -262,6 +262,46 @@ const RadarCrmResults: React.FC = () => {
     [radarView],
   );
 
+  // ── Triage « étoile / ignorer » (P1-c) ──────────────────────────────
+  // pref_status de base (lu depuis la RPC), indexé par crm_company_id.
+  const prefByCompany = useMemo(() => {
+    const m: Record<string, Pref> = {};
+    for (const g of eventGroups) {
+      for (const c of g.companies) {
+        if (c.pref_status) m[c.company.id] = c.pref_status;
+      }
+    }
+    return m;
+  }, [eventGroups]);
+
+  // Surcouche optimiste : appliquée immédiatement, réconciliée à chaque rechargement.
+  const [prefOverrides, setPrefOverrides] = useState<Record<string, Pref>>({});
+  // On efface les overrides quand une nouvelle vue arrive (les statuts viennent alors de la base).
+  useEffect(() => { setPrefOverrides({}); }, [radarView]);
+
+  const getPref = (companyId: string): Pref =>
+    prefOverrides[companyId] ?? prefByCompany[companyId] ?? 'normal';
+
+  const setPref = async (companyId: string, next: Pref) => {
+    const prev = getPref(companyId);
+    if (prev === next) return;
+    setPrefOverrides((o) => ({ ...o, [companyId]: next }));
+    void trackRadarEvent('crm_company_pref_set', { companyId, status: next });
+    const { error: rpcErr } = await supabase.rpc('set_radar_company_pref', {
+      p_crm_company_id: companyId,
+      p_status: next,
+    });
+    if (rpcErr) {
+      console.error('[RadarCRM] set_radar_company_pref failed:', rpcErr);
+      setPrefOverrides((o) => ({ ...o, [companyId]: prev }));
+      toast({
+        title: 'Action impossible',
+        description: "Impossible de mettre à jour ce compte. Réessayez dans un instant.",
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Unique detected companies derived from the event groups (full-access only;
   // empty in a locked state since the RPC strips company identities).
   const matchedCompanies = useMemo(() => {
