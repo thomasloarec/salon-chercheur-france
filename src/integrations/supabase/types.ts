@@ -5828,6 +5828,10 @@ export type Database = {
         Returns: Json
       }
       _recon_norm_domain: { Args: { p_val: string }; Returns: string }
+      admin_approve_access_request: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
       admin_find_website_duplicate: {
         Args: {
           p_domain: string
@@ -5846,6 +5850,36 @@ export type Database = {
           p_source?: string
         }
         Returns: Json
+      }
+      admin_list_access_requests: {
+        Args: never
+        Returns: {
+          account_name: string
+          account_plan: string
+          company: string
+          created_at: string
+          email: string
+          first_name: string
+          job_title: string
+          last_name: string
+          phone: string
+          radar_account_id: string
+          request_id: string
+          status: string
+          user_id: string
+        }[]
+      }
+      admin_list_radar_accounts: {
+        Args: never
+        Returns: {
+          account_id: string
+          companies: number
+          created_at: string
+          members: number
+          name: string
+          plan: string
+          trial_ends_at: string
+        }[]
       }
       admin_normalize_website: { Args: { p_raw: string }; Returns: Json }
       admin_preview_exhibitor_identity_reconciliation: {
@@ -6101,6 +6135,14 @@ export type Database = {
           total_teams: number
           warnings: Json
         }[]
+      }
+      admin_set_access_request_status: {
+        Args: { p_request_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_set_radar_plan: {
+        Args: { p_account_id: string; p_plan: string }
+        Returns: undefined
       }
       admin_update_exhibitor_website: {
         Args: {
