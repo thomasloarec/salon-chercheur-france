@@ -507,6 +507,12 @@ async function buildPreviewForUser(
   const companiesCount = companyKeys.size;
   const eventsCount = top.length;
 
+  const starredKeys = new Set<string>();
+  for (const g of top) for (const co of g.companies as any[]) {
+    if (co.isStarred) { const k = exhibitorDedupKey(co); if (k) starredKeys.add(k); }
+  }
+  const starredCount = starredKeys.size;
+
   // Smart subject line — fall back to generic if names would be too long.
   const SUBJECT_MAX = 90;
   // Subject uses the real exposant name (exposants.nom_exposant) when known,
