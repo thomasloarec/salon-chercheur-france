@@ -554,7 +554,7 @@ const RadarCrmResults: React.FC = () => {
                   {futureGroups.length === 0 ? (
                     <NoFutureMatches companiesCount={kpiAnalyzed} matchedCount={kpiDetected} />
                   ) : (
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       {futureGroups.map((g) => (
                         <div
                           key={g.event_id}
@@ -582,7 +582,7 @@ const RadarCrmResults: React.FC = () => {
                   {pastGroups.length === 0 ? (
                     <EmptyText label="Aucun salon passé détecté pour vos comptes surveillés." />
                   ) : (
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       {pastGroups.map((g) => (
                         <PastEventCard
                           key={g.event_id}
