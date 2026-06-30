@@ -652,6 +652,62 @@ async function userHasRadarAccess(
   }
 }
 
+// Resolve the user's canonical Radar account WITHOUT side effects.
+// (Same resolution as set_radar_company_pref: oldest active membership on a
+// non-deleted account — but SELECT-only. We must NOT call
+// resolve_radar_account_for_user here, which creates an account on miss.)
+async function resolveActiveAccountId(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<string | null> {
+  const { data: members } = await supabase
+    .from('radar_members')
+    .select('radar_account_id')
+    .eq('user_id', userId)
+    .eq('status', 'active');
+  const accountIds = (members ?? [])
+    .map((m: any) => m.radar_account_id)
+    .filter((v: any): v is string => Boolean(v));
+  if (accountIds.length === 0) return null;
+  const { data: accts } = await supabase
+    .from('radar_accounts')
+    .select('id, created_at')
+    .in('id', accountIds)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true })
+    .limit(1);
+  return (accts?.[0] as any)?.id ?? null;
+}
+
+// Load account-level company prefs (starred/ignored) keyed by company_key.
+// Fail-OPEN: on any miss/error, return an empty map (show everything, no
+// stars) — never silently hide a user's matches because prefs failed to load.
+async function loadCompanyPrefs(
+  supabase: ReturnType<typeof createClient>,
+  accountId: string | null,
+): Promise<Map<string, 'starred' | 'ignored'>> {
+  const map = new Map<string, 'starred' | 'ignored'>();
+  if (!accountId) return map;
+  const { data: rows } = await supabase
+    .from('radar_company_prefs')
+    .select('company_key, status')
+    .eq('radar_account_id', accountId);
+  for (const r of rows ?? []) {
+    const k = (r as any).company_key as string | null;
+    const s = (r as any).status as string | null;
+    if (k && (s === 'starred' || s === 'ignored')) map.set(k, s);
+  }
+  return map;
+}
+
+// Same key as the SQL radar_company_key(domain, name):
+// coalesce(nullif(lower(trim(domain)),''), lower(trim(name))).
+function companyPrefKey(co: any): string | null {
+  const domain = co?.normalizedDomain ? String(co.normalizedDomain).trim().toLowerCase() : '';
+  const name = co?.companyName ? String(co.companyName).trim().toLowerCase() : '';
+  return domain || name || null;
+}
+
 function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string) {
   const ORANGE = '#ff7a1f';
   const ORANGE_DARK = '#ea6a10';
