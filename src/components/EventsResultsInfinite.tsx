@@ -99,15 +99,15 @@ export const EventsResultsInfinite = ({
 
   if (isLoading) {
     return (
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
-            <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div key={i} className="bg-card rounded-2xl p-6 animate-pulse">
+            <div className="h-48 bg-muted rounded-lg mb-4"></div>
+            <div className="h-4 bg-muted rounded mb-2"></div>
+            <div className="h-4 bg-muted rounded w-1/2 mb-4"></div>
             <div className="space-y-2">
-              <div className="h-3 bg-gray-200 rounded"></div>
-              <div className="h-3 bg-gray-200 rounded"></div>
+              <div className="h-3 bg-muted rounded"></div>
+              <div className="h-3 bg-muted rounded"></div>
             </div>
           </div>
         ))}
@@ -118,11 +118,11 @@ export const EventsResultsInfinite = ({
   if (!events || events.length === 0) {
     return (
       <div className="text-center py-12">
-        <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-600 mb-2">
+        <Calendar className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
+        <h3 className="heading-display text-xl text-foreground mb-2">
           Aucun salon trouvé
         </h3>
-        <p className="text-gray-500">
+        <p className="text-muted-foreground">
           Essayez de modifier vos critères de recherche
         </p>
       </div>
@@ -130,28 +130,28 @@ export const EventsResultsInfinite = ({
   }
 
   return (
-    <div className="space-y-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="space-y-14 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
       {ongoingEvents.length > 0 && (
-        <section className="border-t border-gray-200 pt-8 first:border-t-0 first:pt-0">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
+        <section className="border-t border-border/60 pt-10 first:border-t-0 first:pt-0">
+          <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-6 flex items-center gap-3">
             <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex h-3 w-3 rounded-full bg-accent"></span>
             </span>
             Événements en cours
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
             {ongoingEvents.map((event) => renderCard(event))}
           </div>
         </section>
       )}
 
       {groupedEvents.map(({ monthLabel, events: monthEvents }) => (
-        <section key={monthLabel} className="border-t border-gray-200 pt-8 first:border-t-0 first:pt-0">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 capitalize">
+        <section key={monthLabel} className="border-t border-border/60 pt-10 first:border-t-0 first:pt-0">
+          <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-6 capitalize">
             {monthLabel}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
             {monthEvents.map((event) => renderCard(event))}
           </div>
         </section>
