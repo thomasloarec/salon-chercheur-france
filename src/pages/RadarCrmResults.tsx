@@ -1047,7 +1047,7 @@ const CompanyAccountsList: React.FC<{
   const following = enriched.filter((e) => getPref(e.c.id) === 'normal');
 
   const Grid: React.FC<{ items: typeof enriched; dimmed?: boolean }> = ({ items, dimmed }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       {items.map(({ c, future, past }) => (
         <CompanyAccountCard
           key={c.id}
@@ -1064,16 +1064,16 @@ const CompanyAccountsList: React.FC<{
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Prioritaires (étoilés) */}
       {starred.length > 0 && (
-        <section className="space-y-3">
-          <div className="space-y-1.5">
-            <div className="h-[3px] w-8 rounded-full bg-accent" aria-hidden="true" />
+        <section className="space-y-5">
+          <div className="space-y-2">
+            <div className="h-[3px] w-10 rounded-full bg-accent" aria-hidden="true" />
             <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-accent fill-accent" />
-              <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
-                Prioritaires ({starred.length})
+              <Star className="h-5 w-5 text-accent fill-accent" />
+              <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                Prioritaires <span className="text-muted-foreground font-normal">({starred.length})</span>
               </h2>
             </div>
           </div>
@@ -1083,11 +1083,14 @@ const CompanyAccountsList: React.FC<{
 
       {/* À suivre */}
       {following.length > 0 ? (
-        <section className="space-y-3">
+        <section className="space-y-5">
           {starred.length > 0 && (
-            <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              À suivre ({following.length})
-            </h2>
+            <div className="space-y-2">
+              <div className="h-[3px] w-10 rounded-full bg-border" aria-hidden="true" />
+              <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                À suivre <span className="text-muted-foreground font-normal">({following.length})</span>
+              </h2>
+            </div>
           )}
           <Grid items={following} />
         </section>
@@ -1099,11 +1102,11 @@ const CompanyAccountsList: React.FC<{
 
       {/* Ignorés (repliés par défaut) */}
       {ignored.length > 0 && (
-        <section className="space-y-3">
+        <section className="space-y-4 pt-2">
           <button
             type="button"
             onClick={() => setIgnoredOpen((o) => !o)}
-            className="flex items-center gap-1.5 text-sm font-medium text-foreground/60 hover:text-foreground"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             {ignoredOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             <EyeOff className="h-4 w-4" />
