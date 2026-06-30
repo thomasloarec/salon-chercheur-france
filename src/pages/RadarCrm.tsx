@@ -258,7 +258,6 @@ const RadarCrmPage: React.FC = () => {
         setParsed(null);
         setMapping({});
         clearPendingImport();
-        void trackRadarEvent('crm_import_trial_expired_hit', { source: 'upload' });
         toast({
           title: 'Essai terminé',
           description: "Vous ne pouvez plus importer de nouveau fichier. Demandez l'accès pour continuer.",
