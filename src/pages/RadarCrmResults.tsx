@@ -56,6 +56,9 @@ type Company = {
  */
 type RadarStatus = 'paid' | 'beta' | 'trial_active' | 'trial_expired' | 'free' | 'none';
 
+/** Per-account watch preference (P1-c triage). */
+type Pref = 'starred' | 'ignored' | 'normal';
+
 interface RadarViewCompany {
   crm_company_id: string;
   company_name: string | null;
@@ -66,6 +69,7 @@ interface RadarViewCompany {
   stand_exposants_list: string | null;
   needs_review: boolean | null;
   name_similarity: number | null;
+  pref_status: Pref | null;
 }
 
 interface RadarViewEvent {
@@ -95,6 +99,8 @@ interface RadarView {
     future_companies: number;
     future_salons: number;
     future_participations: number;
+    starred?: number;
+    ignored?: number;
   };
   events: RadarViewEvent[];
 }
