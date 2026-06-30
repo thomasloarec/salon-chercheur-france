@@ -287,15 +287,25 @@ const RadarCrmResults: React.FC = () => {
     [eventGroups],
   );
 
+  // Salon le plus imminent (le plus petit days_until parmi les salons futurs),
+  // indépendamment de la mise en avant deep-link — pour le bandeau « radar actif ».
+  const nextEvent = useMemo(() => {
+    const fut = eventGroups.filter((g) => g.is_future && g.days_until != null);
+    if (fut.length === 0) return null;
+    return fut.reduce((min, g) => ((g.days_until ?? 9999) < (min.days_until ?? 9999) ? g : min));
+  }, [eventGroups]);
+
   // Scroll to highlighted event once results are rendered.
   useEffect(() => {
     if (!highlightedEventId || loading) return;
+    // N'active le scroll que si la vue par salon est affichée (sinon les cartes salon ne sont pas montées).
+    if (activeTab !== 'future') return;
     if (!eventGroups.find((g) => g.event_id === highlightedEventId)) return;
     const el = document.getElementById(`radar-event-${highlightedEventId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [highlightedEventId, loading, eventGroups]);
+  }, [highlightedEventId, loading, eventGroups, activeTab]);
 
   // KPI values come straight from the server-aggregated summary.
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;
