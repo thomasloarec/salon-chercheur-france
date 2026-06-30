@@ -653,8 +653,8 @@ const RadarActiveBanner: React.FC<{
       <CardContent className="py-4 space-y-3">
         <div className="flex items-start gap-3">
           <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500/60 opacity-75 animate-ping" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" />
+            <span className="absolute inline-flex h-full w-full rounded-full bg-accent/50 opacity-75 animate-ping" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />
           </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">Radar actif</p>
@@ -674,7 +674,7 @@ const RadarActiveBanner: React.FC<{
             type="button"
             onClick={() => onClickEvent(ev)}
             disabled={!ev.slug}
-            className="w-full text-left rounded-lg border border-accent/40 bg-accent/10 p-3 transition-colors hover:bg-accent/15 disabled:opacity-60"
+            className="w-full text-left rounded-lg border border-accent/25 bg-secondary/60 p-3 transition-colors hover:bg-secondary disabled:opacity-60"
           >
             <p className="text-[10px] font-bold uppercase tracking-wide text-accent flex items-center gap-1">
               {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
