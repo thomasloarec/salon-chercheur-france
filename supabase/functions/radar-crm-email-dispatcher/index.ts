@@ -565,7 +565,7 @@ async function buildPreviewForUser(
   return {
     preview: {
       userId, emailTo, subject,
-      eventsCount, companiesCount,
+      eventsCount, companiesCount, starredCount,
       notificationIds, eventIds: eventIdsOut, importIds,
       groups: top,
     },
