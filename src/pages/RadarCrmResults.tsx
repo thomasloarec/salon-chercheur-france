@@ -640,11 +640,14 @@ const RadarActiveBanner: React.FC<{
   analyzed: number;
   futureCompanies: number;
   futureSalons: number;
-  nextEvent: EventGroup | null;
+  featured: { event: EventGroup; company: Company | null; isPriority: boolean } | null;
+  starredCount: number;
   onClickEvent: (g: EventGroup) => void;
   onOpenSettings: () => void;
-}> = ({ analyzed, futureCompanies, futureSalons, nextEvent, onClickEvent, onOpenSettings }) => {
-  const days = nextEvent?.days_until != null ? Math.max(0, nextEvent.days_until) : null;
+}> = ({ analyzed, futureCompanies, futureSalons, featured, starredCount, onClickEvent, onOpenSettings }) => {
+  const ev = featured?.event ?? null;
+  const isPriority = featured?.isPriority ?? false;
+  const days = ev?.days_until != null ? Math.max(0, ev.days_until) : null;
   return (
     <Card className="bg-card border-primary/20">
       <CardContent className="py-4 space-y-3">
@@ -659,30 +662,42 @@ const RadarActiveBanner: React.FC<{
               On surveille <strong className="text-foreground">{analyzed}</strong> compte{analyzed > 1 ? 's' : ''} de votre CRM.{' '}
               <strong className="text-foreground">{futureCompanies}</strong> exposeront sur{' '}
               <strong className="text-foreground">{futureSalons}</strong> salon{futureSalons > 1 ? 's' : ''} à venir.
+              {starredCount > 0 && (
+                <> Vous suivez <strong className="text-foreground">{starredCount}</strong> compte{starredCount > 1 ? 's' : ''} en priorité.</>
+              )}
             </p>
           </div>
         </div>
 
-        {nextEvent && (
+        {ev && (
           <button
             type="button"
-            onClick={() => onClickEvent(nextEvent)}
-            disabled={!nextEvent.slug}
+            onClick={() => onClickEvent(ev)}
+            disabled={!ev.slug}
             className="w-full text-left rounded-lg border border-accent/40 bg-accent/10 p-3 transition-colors hover:bg-accent/15 disabled:opacity-60"
           >
             <p className="text-[10px] font-bold uppercase tracking-wide text-accent flex items-center gap-1">
-              <Flame className="h-3 w-3" /> À ne pas rater
+              {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
+              {isPriority ? 'Compte prioritaire' : 'Prochain salon'}
             </p>
-            <p className="text-sm font-semibold text-foreground mt-1">
-              {nextEvent.nom_event}
-              {days != null && (
-                <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>
-              )}
-            </p>
-            <p className="text-xs text-foreground/70 mt-0.5">
-              {nextEvent.company_count} de vos comptes y exposent
-              {nextEvent.ville ? ` · ${nextEvent.ville}` : ''}
-            </p>
+            {isPriority && featured?.company ? (
+              <p className="text-sm font-semibold text-foreground mt-1">
+                <span className="text-accent">{featured.company.company_name}</span> expose à {ev.nom_event}
+                {days != null && <span className="ml-1">dans {days} jour{days > 1 ? 's' : ''}</span>}
+                {ev.ville ? ` · ${ev.ville}` : ''}
+              </p>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-foreground mt-1">
+                  Prochain salon où vos comptes exposent : {ev.nom_event}
+                  {days != null && <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>}
+                </p>
+                <p className="text-xs text-foreground/70 mt-0.5">
+                  {ev.company_count} de vos comptes y exposent
+                  {ev.ville ? ` · ${ev.ville}` : ''}
+                </p>
+              </>
+            )}
           </button>
         )}
 
