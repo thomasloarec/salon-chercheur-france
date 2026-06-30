@@ -150,18 +150,18 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
           </div>
         </CardWrapper>
         
-        <CardContent className="flex flex-col gap-1 p-4">
+        <CardContent className="flex flex-col gap-1 p-5">
           <CardWrapper>
             <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.nom_event}>
               {event.nom_event}
             </h3>
           </CardWrapper>
           
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             {formatDateRange(event.date_debut, event.date_fin)}
           </p>
           
-          <p className="text-sm text-gray-500 flex items-center gap-1">
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
             <MapPin className="h-4 w-4 shrink-0" />
             {formatAddress(event.rue, event.code_postal, event.ville) || '—'}
           </p>
@@ -198,12 +198,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
             <Button 
               variant="default" 
               size="sm" 
-              className={cn(
-                "w-full mt-4",
-                ongoing 
-                  ? "bg-accent/20 text-accent hover:bg-accent/30 border border-accent/40" 
-                  : "bg-accent hover:bg-accent/90"
-              )}
+              className="w-full mt-4"
             >
               {adminPreview ? 'Voir / Éditer' : 'Voir le salon'}
             </Button>
