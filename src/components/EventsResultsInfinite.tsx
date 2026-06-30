@@ -133,12 +133,14 @@ export const EventsResultsInfinite = ({
     <div className="space-y-14 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
       {ongoingEvents.length > 0 && (
         <section className="border-t border-border/60 pt-10 first:border-t-0 first:pt-0">
-          <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-6 flex items-center gap-3">
-            <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-accent"></span>
+          <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-6">
+            <span className="inline-flex items-center gap-3">
+              <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-accent"></span>
+              </span>
+              Événements en cours
             </span>
-            Événements en cours
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
             {ongoingEvents.map((event) => renderCard(event))}
