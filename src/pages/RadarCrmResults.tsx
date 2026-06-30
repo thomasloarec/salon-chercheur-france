@@ -424,8 +424,8 @@ const RadarCrmResults: React.FC = () => {
             <RadarErrorState onRetry={() => setActiveImportId((id) => id)} />
           ) : isLocked ? (
             <LockedView
-              futureGroups={futureGroups}
-              pastGroups={pastGroups}
+              teaserGroups={futureGroups}
+              summary={summary}
               onRequestAccess={() => setAccessOpen(true)}
             />
           ) : (
