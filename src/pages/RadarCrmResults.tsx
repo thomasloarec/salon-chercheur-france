@@ -779,13 +779,13 @@ const CompanyChip: React.FC<{
     onClick={onClick}
     className={cn(
       'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1 transition-all hover:bg-primary/5',
-      starred && 'border-amber-400 bg-amber-50/60',
-      needsReview ? 'border-amber-500/60 hover:border-amber-500' : 'border-border hover:border-primary',
+      starred && 'border-accent/50 bg-secondary/50',
+      needsReview ? 'border-border hover:border-primary' : 'border-border hover:border-primary',
     )}
     title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
     <CompanyAvatar company={company} size="xs" />
-    {starred && <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" aria-label="Compte prioritaire" />}
+    {starred && <Star className="h-3 w-3 text-accent fill-accent shrink-0" aria-label="Compte prioritaire" />}
     <span className="flex flex-col items-start leading-tight">
       <span className="text-sm font-semibold text-foreground group-hover:text-primary">
         {nomExposant ?? company.company_name}
@@ -795,12 +795,12 @@ const CompanyChip: React.FC<{
       )}
     </span>
     {stand && (
-      <span className="text-xs font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+      <span className="text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
         {stand}
       </span>
     )}
     {needsReview && (
-      <span className="text-[10px] font-medium text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded">
+      <span className="text-[10px] font-medium text-muted-foreground bg-muted border border-border px-1.5 py-0.5 rounded">
         À vérifier
       </span>
     )}
