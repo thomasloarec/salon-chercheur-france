@@ -6163,6 +6163,7 @@ export type Database = {
         Args: { event_id: string; exhibitor_id: string }
         Returns: boolean
       }
+      can_radar_import: { Args: { p_user_id?: string }; Returns: boolean }
       check_seo_automation_dependencies: { Args: never; Returns: Json }
       check_seo_cron_dependencies: { Args: never; Returns: Json }
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }

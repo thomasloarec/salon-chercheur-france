@@ -96,6 +96,26 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
+    // Server-side gate: block imports when the user's Radar trial is expired or free.
+    // The first upload for a brand-new user is allowed by the RPC (no account => true).
+    const { data: canImport, error: gateErr } = await serviceClient.rpc('can_radar_import', {
+      p_user_id: user.id,
+    })
+    if (gateErr) {
+      console.error('can_radar_import gate check failed:', gateErr)
+      return jsonResp({ error: 'gate_check_failed' }, 500)
+    }
+    if (canImport !== true) {
+      return jsonResp(
+        {
+          error: 'TRIAL_EXPIRED',
+          message: "Votre période d'essai Radar CRM est terminée. Contactez-nous pour accéder à la version Premium.",
+        },
+        403,
+      )
+    }
+
+
     // Beta rate-limit: max 3 imports (processing/completed) per user per 24h.
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const { count: recentCount, error: rlErr } = await serviceClient
