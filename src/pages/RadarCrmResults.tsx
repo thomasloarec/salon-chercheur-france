@@ -525,7 +525,8 @@ const RadarCrmResults: React.FC = () => {
                 analyzed={kpiAnalyzed}
                 futureCompanies={summary?.future_companies ?? 0}
                 futureSalons={kpiFutureSalons}
-                nextEvent={nextEvent}
+                featured={featured}
+                starredCount={starredCount}
                 onClickEvent={onClickEvent}
                 onOpenSettings={() => setSettingsOpen(true)}
               />
@@ -544,6 +545,8 @@ const RadarCrmResults: React.FC = () => {
                     groups={eventGroups}
                     companies={matchedCompanies}
                     onClickEvent={onClickEvent}
+                    getPref={getPref}
+                    onSetPref={setPref}
                   />
                 </TabsContent>
 
@@ -564,6 +567,7 @@ const RadarCrmResults: React.FC = () => {
                           <EventCard
                             group={g}
                             importId={activeImportId}
+                            getPref={getPref}
                             onView={() => onClickEvent(g)}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
