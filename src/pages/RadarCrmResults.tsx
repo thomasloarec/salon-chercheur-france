@@ -721,15 +721,15 @@ const StatCard: React.FC<{
   label: string; value: number | string; sub?: string;
   accent?: 'primary' | 'success' | 'accent'; icon?: React.ReactNode;
 }> = ({ label, value, sub, accent, icon }) => {
+  // Discipline « un seul accent » : seul le chiffre clé (accent) porte l'orange.
+  // Les autres cartes restent neutres (blanc, bordure fine), chiffre en navy ou foreground.
   const tone =
-    accent === 'primary' ? 'border-primary/40 bg-primary/5' :
-    accent === 'success' ? 'border-emerald-500/40 bg-emerald-500/5' :
-    accent === 'accent'  ? 'border-accent/50 bg-accent/10' :
+    accent === 'accent' ? 'border-accent/30 bg-secondary/40' :
     'bg-card';
   const valueTone =
+    accent === 'accent'  ? 'text-accent' :
     accent === 'primary' ? 'text-primary' :
-    accent === 'success' ? 'text-emerald-600' :
-    accent === 'accent'  ? 'text-accent' : 'text-foreground';
+    'text-foreground';
   return (
     <Card className={tone}>
       <CardContent className="pt-5 pb-5">
