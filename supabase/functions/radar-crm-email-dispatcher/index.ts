@@ -485,6 +485,11 @@ async function buildPreviewForUser(
   });
   const top = groupedList.slice(0, 5);
 
+  // Starred companies first within each event card.
+  for (const g of top) {
+    g.companies.sort((a: any, b: any) => (b.isStarred ? 1 : 0) - (a.isStarred ? 1 : 0));
+  }
+
   // Note: companies were already enriched (exhibitorName, companyName,
   // normalizedDomain) during the strict filter pass above. No second
   // enrichment query is needed here.
