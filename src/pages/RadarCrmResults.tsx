@@ -1060,10 +1060,12 @@ const RadarErrorState: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
   </Card>
 );
 
-/** Locked teaser for a single event — no company identities, blurred placeholders. */
+/**
+ * Locked teaser for a single event — strictly generic.
+ * Aucun compteur, aucune identité d'entreprise : juste le salon + 2 pastilles
+ * floutées génériques identiques pour tous (ne représentent pas un nombre réel).
+ */
 const LockedEventTeaser: React.FC<{ group: EventGroup }> = ({ group }) => {
-  const count = group.company_count;
-  const pills = Math.min(count, 12);
   return (
     <Card className="overflow-hidden bg-card">
       <div className="flex flex-col sm:flex-row">
@@ -1106,19 +1108,16 @@ const LockedEventTeaser: React.FC<{ group: EventGroup }> = ({ group }) => {
           <div className="bg-muted/50 border rounded-lg p-3">
             <p className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-2 flex items-center gap-1.5">
               <Lock className="h-3.5 w-3.5" />
-              {count} entreprise{count > 1 ? 's' : ''} de votre CRM
+              Des entreprises de votre CRM exposent ici
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: pills }).map((_, i) => (
+              {[0, 1].map((i) => (
                 <div
                   key={i}
                   className="h-7 w-24 rounded-full bg-muted-foreground/20 blur-[2px]"
                   aria-hidden="true"
                 />
               ))}
-              {count > pills && (
-                <span className="text-xs text-foreground/50 self-center">+ {count - pills}</span>
-              )}
             </div>
           </div>
         </div>
@@ -1127,44 +1126,71 @@ const LockedEventTeaser: React.FC<{ group: EventGroup }> = ({ group }) => {
   );
 };
 
-/** Full locked view: KPIs stay visible (rendered by parent), teaser cards + single CTA. */
+/**
+ * Paywall dur façon média : bandeau de stats agrégées + au plus 3 salons teaser
+ * (renvoyés par le serveur), puis un blocage net. Aucun onglet passé/entreprises,
+ * aucune liste complète, aucun compteur par salon : tout est verrouillé côté serveur.
+ */
 const LockedView: React.FC<{
-  futureGroups: EventGroup[];
-  pastGroups: EventGroup[];
+  teaserGroups: EventGroup[];
+  summary?: RadarView['summary'];
   onRequestAccess: () => void;
-}> = ({ futureGroups, pastGroups, onRequestAccess }) => {
-  const allGroups = [...futureGroups, ...pastGroups];
+}> = ({ teaserGroups, summary, onRequestAccess }) => {
+  const analyzed = summary?.companies_analyzed ?? 0;
+  const futureCompanies = summary?.future_companies ?? 0;
+  const futureSalons = summary?.future_salons ?? 0;
+  // Serveur : 3 salons max en verrouillé. Sécurité front si la liste enflait.
+  const teaser = teaserGroups.slice(0, 3);
+
   return (
     <div className="space-y-5">
-      <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="pt-6 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Lock className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground">Accès Radar CRM verrouillé</p>
-              <p className="text-sm text-foreground/70 max-w-md">
-                Vos détections sont prêtes. Demandez l'accès pour découvrir quelles entreprises de votre CRM
-                exposent et préparer vos rendez-vous.
-              </p>
-            </div>
+      {/* Bandeau de stats agrégées (aucune fuite d'identité) */}
+      <Card className="bg-card">
+        <CardContent className="py-4">
+          <p className="text-sm text-foreground/80">
+            <strong className="text-foreground">{analyzed}</strong> compte{analyzed > 1 ? 's' : ''} analysé{analyzed > 1 ? 's' : ''}
+            {' · '}
+            <strong className="text-foreground">{futureCompanies}</strong> exposeront sur{' '}
+            <strong className="text-foreground">{futureSalons}</strong> salon{futureSalons > 1 ? 's' : ''} à venir
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Teaser : aperçu de quelques salons puis fondu de masquage */}
+      {teaser.length > 0 && (
+        <div className="relative">
+          <div className="space-y-3">
+            {teaser.map((g) => (
+              <LockedEventTeaser key={g.event_id} group={g} />
+            ))}
           </div>
-          <Button onClick={onRequestAccess} className="shrink-0 w-full sm:w-auto">
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-muted/20"
+            aria-hidden="true"
+          />
+        </div>
+      )}
+
+      {/* Blocage dur */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="pt-8 pb-8 flex flex-col items-center text-center gap-4">
+          <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <Lock className="h-6 w-6" />
+          </div>
+          <div className="max-w-lg space-y-1.5">
+            <h3 className="text-lg font-bold text-foreground">La suite est réservée</h3>
+            <p className="text-sm text-foreground/70">
+              <strong className="text-foreground">{futureCompanies}</strong> entreprise{futureCompanies > 1 ? 's' : ''} de votre CRM
+              {futureCompanies > 1 ? ' exposeront' : ' exposera'} sur{' '}
+              <strong className="text-foreground">{futureSalons}</strong> salon{futureSalons > 1 ? 's' : ''} à venir.
+              Débloquez Radar CRM pour découvrir lesquelles, où et quand.
+            </p>
+          </div>
+          <Button onClick={onRequestAccess} size="lg" className="w-full sm:w-auto">
             Demander l'accès
           </Button>
         </CardContent>
       </Card>
-
-      {allGroups.length === 0 ? (
-        <EmptyText label="Aucun salon détecté pour le moment." />
-      ) : (
-        <div className="space-y-3">
-          {allGroups.map((g) => (
-            <LockedEventTeaser key={g.event_id} group={g} />
-          ))}
-        </div>
-      )}
     </div>
   );
 };
