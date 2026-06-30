@@ -1286,7 +1286,10 @@ async function runDryRun(
       }
       usersEligible += 1;
       notificationsIncluded += built.preview.notificationIds.length;
-      previews.push(previewToJson(built.preview));
+      const hasAccess = await userHasRadarAccess(supabase, userId);
+      const previewJson = previewToJson(built.preview) as Record<string, unknown>;
+      previewJson.visibilityMode = hasAccess ? 'full' : 'teaser';
+      previews.push(previewJson);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       console.error('preview user failed', { userId, message });
