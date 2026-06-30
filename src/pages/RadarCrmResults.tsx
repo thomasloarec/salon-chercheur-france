@@ -918,7 +918,11 @@ const PastEventCard: React.FC<{
 const CompanyAccountsList: React.FC<{
   groups: EventGroup[]; companies: Company[]; onClickEvent: (g: EventGroup) => void;
 }> = ({ groups, companies, onClickEvent }) => {
-  if (companies.length === 0) return <EmptyText label="Aucune entreprise détectée." />;
+  if (companies.length === 0) {
+    return (
+      <EmptyText label="Aucun mouvement détecté pour l'instant — Radar continue de surveiller vos comptes. Dès qu'un de vos comptes s'inscrit à un salon, vous le verrez ici et serez alerté." />
+    );
+  }
 
   const enriched = companies.map((c) => {
     const compGroups = groups.filter((g) => g.companies.some((x) => x.company.id === c.id));
@@ -926,7 +930,11 @@ const CompanyAccountsList: React.FC<{
     const past = compGroups.filter((g) => !g.is_future).sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? ''));
     return { c, future, past };
   }).sort((a, b) => {
-    if (a.future.length !== b.future.length) return b.future.length - a.future.length;
+    // Tri par imminence : le compte avec le salon futur le plus proche d'abord.
+    // Les comptes sans salon futur passent en bas.
+    const aHas = a.future.length > 0;
+    const bHas = b.future.length > 0;
+    if (aHas !== bHas) return aHas ? -1 : 1;
     return (a.future[0]?.days_until ?? 9999) - (b.future[0]?.days_until ?? 9999);
   });
 
