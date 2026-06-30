@@ -29,7 +29,8 @@ export type RadarEventType =
   | 'radar_privacy_notice_acknowledged'
   | 'crm_event_widget_viewed_with_matches'
   | 'crm_event_widget_teaser_clicked'
-  | 'crm_event_widget_results_clicked';
+  | 'crm_event_widget_results_clicked'
+  | 'crm_access_requested';
 
 export async function trackRadarEvent(event_type: RadarEventType, metadata: Record<string, unknown> = {}) {
   try {
