@@ -69,7 +69,7 @@ const Index = () => {
                       Organisateurs de salons
                     </span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-4 break-words">
+                  <h2 className="section-rule heading-display text-xl sm:text-2xl md:text-3xl text-foreground mb-4 break-words">
                     Organisateurs : donnez une visibilité supplémentaire à votre salon
                   </h2>
                   <div className="space-y-3 text-muted-foreground leading-relaxed text-sm md:text-base">
