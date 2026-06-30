@@ -139,17 +139,17 @@ const Events = () => {
       <main className="py-8">
         <div className="w-full px-6 mx-auto">
           {/* Header with results count */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
+          <div className="mb-10 section-rule">
+            <h1 className="heading-display text-3xl md:text-4xl text-foreground">
               Salons professionnels en France
             </h1>
-            <p className="text-gray-600 mt-2 max-w-3xl text-sm md:text-base">
+            <p className="text-muted-foreground mt-3 max-w-3xl text-sm md:text-base">
               Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période.{' '}
               <Link to="/salons-professionnels-2026" className="text-accent hover:underline font-medium whitespace-nowrap">
                 Voir les salons professionnels 2026 →
               </Link>
             </p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               {isLoading ? 'Chargement…' : `${totalCount} salon${totalCount > 1 ? 's' : ''} référencé${totalCount > 1 ? 's' : ''}`}
             </p>
             {data && (
