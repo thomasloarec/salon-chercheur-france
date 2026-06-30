@@ -496,7 +496,7 @@ const RadarCrmResults: React.FC = () => {
 
           {/* Hero stats — masquées en état verrouillé (remplacées par le bandeau agrégé du paywall) */}
           {!isLocked && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
               <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
               <StatCard label="Entreprises détectées" value={kpiDetected} accent="accent" />
               <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
