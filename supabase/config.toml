@@ -126,3 +126,9 @@ verify_jwt = false
 # (status='published', is_test=false), systematic HTML escaping, http(s)-only
 # hrefs, and a Content-Security-Policy frame-ancestors derived from the token.
 verify_jwt = false
+
+[functions.notify-radar-access-request]
+# Invoked by a Supabase Database Webhook (INSERT on radar_access_requests).
+# The webhook does not send a user JWT, so JWT verification must stay disabled.
+# It only emails admin@lotexpo.com; no data is read or returned.
+verify_jwt = false
