@@ -498,7 +498,7 @@ const RadarCrmResults: React.FC = () => {
           {!isLocked && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
-              <StatCard label="Entreprises détectées" value={kpiDetected} accent="success" />
+              <StatCard label="Entreprises détectées" value={kpiDetected} accent="accent" />
               <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
               <StatCard label="Participations futures" value={kpiFutureParticipations} />
             </div>
@@ -653,8 +653,8 @@ const RadarActiveBanner: React.FC<{
       <CardContent className="py-4 space-y-3">
         <div className="flex items-start gap-3">
           <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500/60 opacity-75 animate-ping" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" />
+            <span className="absolute inline-flex h-full w-full rounded-full bg-accent/50 opacity-75 animate-ping" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />
           </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">Radar actif</p>
@@ -674,7 +674,7 @@ const RadarActiveBanner: React.FC<{
             type="button"
             onClick={() => onClickEvent(ev)}
             disabled={!ev.slug}
-            className="w-full text-left rounded-lg border border-accent/40 bg-accent/10 p-3 transition-colors hover:bg-accent/15 disabled:opacity-60"
+            className="w-full text-left rounded-lg border border-accent/25 bg-secondary/60 p-3 transition-colors hover:bg-secondary disabled:opacity-60"
           >
             <p className="text-[10px] font-bold uppercase tracking-wide text-accent flex items-center gap-1">
               {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
@@ -721,15 +721,15 @@ const StatCard: React.FC<{
   label: string; value: number | string; sub?: string;
   accent?: 'primary' | 'success' | 'accent'; icon?: React.ReactNode;
 }> = ({ label, value, sub, accent, icon }) => {
+  // Discipline « un seul accent » : seul le chiffre clé (accent) porte l'orange.
+  // Les autres cartes restent neutres (blanc, bordure fine), chiffre en navy ou foreground.
   const tone =
-    accent === 'primary' ? 'border-primary/40 bg-primary/5' :
-    accent === 'success' ? 'border-emerald-500/40 bg-emerald-500/5' :
-    accent === 'accent'  ? 'border-accent/50 bg-accent/10' :
+    accent === 'accent' ? 'border-accent/30 bg-secondary/40' :
     'bg-card';
   const valueTone =
+    accent === 'accent'  ? 'text-accent' :
     accent === 'primary' ? 'text-primary' :
-    accent === 'success' ? 'text-emerald-600' :
-    accent === 'accent'  ? 'text-accent' : 'text-foreground';
+    'text-foreground';
   return (
     <Card className={tone}>
       <CardContent className="pt-5 pb-5">
@@ -744,9 +744,10 @@ const StatCard: React.FC<{
 };
 
 const priorityFor = (n: number): { label: string; tone: string; icon?: React.ReactNode } | null => {
+  // Échelle unique : l'orange est réservé à la vraie priorité ; le reste reste neutre/atténué.
   if (n >= 3) return { label: `Priorité forte · ${n} comptes`, tone: 'bg-accent text-accent-foreground', icon: <Flame className="h-3 w-3 mr-1" /> };
-  if (n === 2) return { label: '2 comptes détectés', tone: 'bg-primary text-primary-foreground' };
-  if (n === 1) return { label: 'Opportunité', tone: 'bg-emerald-600 text-white' };
+  if (n === 2) return { label: '2 comptes détectés', tone: 'bg-muted text-muted-foreground' };
+  if (n === 1) return { label: 'Opportunité', tone: 'bg-muted text-muted-foreground' };
   return null;
 };
 
@@ -778,13 +779,13 @@ const CompanyChip: React.FC<{
     onClick={onClick}
     className={cn(
       'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1 transition-all hover:bg-primary/5',
-      starred && 'border-amber-400 bg-amber-50/60',
-      needsReview ? 'border-amber-500/60 hover:border-amber-500' : 'border-border hover:border-primary',
+      starred && 'border-accent/50 bg-secondary/50',
+      needsReview ? 'border-border hover:border-primary' : 'border-border hover:border-primary',
     )}
     title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
     <CompanyAvatar company={company} size="xs" />
-    {starred && <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" aria-label="Compte prioritaire" />}
+    {starred && <Star className="h-3 w-3 text-accent fill-accent shrink-0" aria-label="Compte prioritaire" />}
     <span className="flex flex-col items-start leading-tight">
       <span className="text-sm font-semibold text-foreground group-hover:text-primary">
         {nomExposant ?? company.company_name}
@@ -794,12 +795,12 @@ const CompanyChip: React.FC<{
       )}
     </span>
     {stand && (
-      <span className="text-xs font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+      <span className="text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
         {stand}
       </span>
     )}
     {needsReview && (
-      <span className="text-[10px] font-medium text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded">
+      <span className="text-[10px] font-medium text-muted-foreground bg-muted border border-border px-1.5 py-0.5 rounded">
         À vérifier
       </span>
     )}
@@ -842,7 +843,7 @@ const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null 
         disabled={toggleFavorite.isPending}
         className={cn(
           'transition-all duration-200',
-          isFavorite && 'bg-green-500 text-white hover:bg-green-600 border-green-500',
+          isFavorite && 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary',
         )}
       >
         {isFavorite ? (
@@ -1067,11 +1068,14 @@ const CompanyAccountsList: React.FC<{
       {/* Prioritaires (étoilés) */}
       {starred.length > 0 && (
         <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
-              Prioritaires ({starred.length})
-            </h2>
+          <div className="space-y-1.5">
+            <div className="h-[3px] w-8 rounded-full bg-accent" aria-hidden="true" />
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-accent fill-accent" />
+              <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
+                Prioritaires ({starred.length})
+              </h2>
+            </div>
           </div>
           <Grid items={starred} />
         </section>
@@ -1081,7 +1085,7 @@ const CompanyAccountsList: React.FC<{
       {following.length > 0 ? (
         <section className="space-y-3">
           {starred.length > 0 && (
-            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground/70">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
               À suivre ({following.length})
             </h2>
           )}
@@ -1173,7 +1177,7 @@ const CompanyAccountCard: React.FC<{
       dimmed
         ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
         : 'hover:shadow-md hover:border-primary/40',
-      pref === 'starred' && 'border-amber-400/70 bg-amber-50/30',
+      pref === 'starred' && 'border-accent/50 bg-secondary/40',
     )}>
       <CardContent className="pt-5 space-y-3">
         <div className="flex items-start gap-3">
@@ -1194,7 +1198,7 @@ const CompanyAccountCard: React.FC<{
               onClick={() => onSetPref(pref === 'starred' ? 'normal' : 'starred')}
               className="p-1.5 rounded-md hover:bg-muted transition-colors"
             >
-              <Star className={cn('h-4 w-4', pref === 'starred' ? 'text-amber-500 fill-amber-500' : 'text-foreground/40')} />
+              <Star className={cn('h-4 w-4', pref === 'starred' ? 'text-accent fill-accent' : 'text-foreground/40')} />
             </button>
             <button
               type="button"
