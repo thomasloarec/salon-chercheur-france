@@ -445,14 +445,32 @@ const RadarCrmResults: React.FC = () => {
             />
           ) : (
             <>
-              <Tabs defaultValue="future">
+              {/* Bandeau « radar actif » — cadrage veille/surveillance */}
+              <RadarActiveBanner
+                analyzed={kpiAnalyzed}
+                futureCompanies={summary?.future_companies ?? 0}
+                futureSalons={kpiFutureSalons}
+                nextEvent={nextEvent}
+                onClickEvent={onClickEvent}
+                onOpenSettings={() => setSettingsOpen(true)}
+              />
+
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="bg-card border w-full sm:w-auto justify-start flex-nowrap overflow-x-auto no-scrollbar">
-                  <TabsTrigger value="future">À venir ({futureGroups.length})</TabsTrigger>
+                  <TabsTrigger value="companies" className="whitespace-nowrap">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
+                  <TabsTrigger value="future" className="whitespace-nowrap">Par salon ({futureGroups.length})</TabsTrigger>
                   <TabsTrigger value="past" className="whitespace-nowrap">
-                    <History className="h-3.5 w-3.5 mr-1" /> Historique passé ({pastGroups.length})
+                    <History className="h-3.5 w-3.5 mr-1" /> Historique ({pastGroups.length})
                   </TabsTrigger>
-                  <TabsTrigger value="companies" className="whitespace-nowrap">Entreprises ({matchedCompanies.length})</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="companies" className="mt-5">
+                  <CompanyAccountsList
+                    groups={eventGroups}
+                    companies={matchedCompanies}
+                    onClickEvent={onClickEvent}
+                  />
+                </TabsContent>
 
                 <TabsContent value="future" className="mt-5">
                   {futureGroups.length === 0 ? (
@@ -483,7 +501,7 @@ const RadarCrmResults: React.FC = () => {
 
                 <TabsContent value="past" className="mt-5">
                   {pastGroups.length === 0 ? (
-                    <EmptyText label="Aucun salon passé détecté." />
+                    <EmptyText label="Aucun salon passé détecté pour vos comptes surveillés." />
                   ) : (
                     <div className="space-y-3">
                       {pastGroups.map((g) => (
@@ -497,14 +515,6 @@ const RadarCrmResults: React.FC = () => {
                       ))}
                     </div>
                   )}
-                </TabsContent>
-
-                <TabsContent value="companies" className="mt-5">
-                  <CompanyAccountsList
-                    groups={eventGroups}
-                    companies={matchedCompanies}
-                    onClickEvent={onClickEvent}
-                  />
                 </TabsContent>
               </Tabs>
 
