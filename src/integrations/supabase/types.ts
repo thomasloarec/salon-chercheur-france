@@ -3894,6 +3894,7 @@ export type Database = {
           id: string
           job_title: string | null
           last_name: string | null
+          phone: string | null
           primary_sector: string | null
           role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
@@ -3907,6 +3908,7 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string | null
+          phone?: string | null
           primary_sector?: string | null
           role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
@@ -3920,6 +3922,7 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string | null
+          phone?: string | null
           primary_sector?: string | null
           role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
@@ -3931,6 +3934,59 @@ export type Database = {
             columns: ["primary_sector"]
             isOneToOne: false
             referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radar_access_requests: {
+        Row: {
+          company: string
+          created_at: string
+          email: string | null
+          first_name: string
+          id: string
+          job_title: string
+          last_name: string
+          phone: string
+          radar_account_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          email?: string | null
+          first_name: string
+          id?: string
+          job_title: string
+          last_name: string
+          phone: string
+          radar_account_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          id?: string
+          job_title?: string
+          last_name?: string
+          phone?: string
+          radar_account_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_access_requests_radar_account_id_fkey"
+            columns: ["radar_account_id"]
+            isOneToOne: false
+            referencedRelation: "radar_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -6318,6 +6374,10 @@ export type Database = {
         Args: { p_public_slug: string }
         Returns: Json
       }
+      get_my_radar_event_matches: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       get_my_radar_view: { Args: { p_import_id?: string }; Returns: Json }
       get_novelty_likes_count: {
         Args: { novelty_uuid: string }
@@ -6692,6 +6752,16 @@ export type Database = {
       }
       slugify: { Args: { txt: string }; Returns: string }
       start_seo_weekly_catchup: { Args: never; Returns: Json }
+      submit_radar_access_request: {
+        Args: {
+          p_company: string
+          p_first_name: string
+          p_job_title: string
+          p_last_name: string
+          p_phone: string
+        }
+        Returns: string
+      }
       sync_exhibitor_public_identities: {
         Args: { p_limit?: number }
         Returns: {
