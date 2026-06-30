@@ -1068,11 +1068,14 @@ const CompanyAccountsList: React.FC<{
       {/* Prioritaires (étoilés) */}
       {starred.length > 0 && (
         <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
-              Prioritaires ({starred.length})
-            </h2>
+          <div className="space-y-1.5">
+            <div className="h-[3px] w-8 rounded-full bg-accent" aria-hidden="true" />
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-accent fill-accent" />
+              <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
+                Prioritaires ({starred.length})
+              </h2>
+            </div>
           </div>
           <Grid items={starred} />
         </section>
@@ -1082,7 +1085,7 @@ const CompanyAccountsList: React.FC<{
       {following.length > 0 ? (
         <section className="space-y-3">
           {starred.length > 0 && (
-            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground/70">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
               À suivre ({following.length})
             </h2>
           )}
