@@ -1016,7 +1016,10 @@ const PastEventCard: React.FC<{
 /** Company "account" cards — modern CRM look */
 const CompanyAccountsList: React.FC<{
   groups: EventGroup[]; companies: Company[]; onClickEvent: (g: EventGroup) => void;
-}> = ({ groups, companies, onClickEvent }) => {
+  getPref: (companyId: string) => Pref;
+  onSetPref: (companyId: string, next: Pref) => void;
+}> = ({ groups, companies, onClickEvent, getPref, onSetPref }) => {
+  const [ignoredOpen, setIgnoredOpen] = useState(false);
   if (companies.length === 0) {
     return (
       <EmptyText label="Aucun mouvement détecté pour l'instant — Radar continue de surveiller vos comptes. Dès qu'un de vos comptes s'inscrit à un salon, vous le verrez ici et serez alerté." />
@@ -1037,17 +1040,74 @@ const CompanyAccountsList: React.FC<{
     return (a.future[0]?.days_until ?? 9999) - (b.future[0]?.days_until ?? 9999);
   });
 
-  return (
+  // Trois groupes dérivés du statut effectif (override ?? base).
+  const starred = enriched.filter((e) => getPref(e.c.id) === 'starred');
+  const ignored = enriched.filter((e) => getPref(e.c.id) === 'ignored');
+  const following = enriched.filter((e) => getPref(e.c.id) === 'normal');
+
+  const Grid: React.FC<{ items: typeof enriched; dimmed?: boolean }> = ({ items, dimmed }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      {enriched.map(({ c, future, past }) => (
+      {items.map(({ c, future, past }) => (
         <CompanyAccountCard
           key={c.id}
           company={c}
           future={future}
           past={past}
           onClickEvent={onClickEvent}
+          pref={getPref(c.id)}
+          onSetPref={(next) => onSetPref(c.id, next)}
+          dimmed={dimmed}
         />
       ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Prioritaires (étoilés) */}
+      {starred.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
+              Prioritaires ({starred.length})
+            </h2>
+          </div>
+          <Grid items={starred} />
+        </section>
+      )}
+
+      {/* À suivre */}
+      {following.length > 0 ? (
+        <section className="space-y-3">
+          {starred.length > 0 && (
+            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground/70">
+              À suivre ({following.length})
+            </h2>
+          )}
+          <Grid items={following} />
+        </section>
+      ) : (
+        starred.length === 0 && (
+          <EmptyText label="Tous vos comptes sont rangés." />
+        )
+      )}
+
+      {/* Ignorés (repliés par défaut) */}
+      {ignored.length > 0 && (
+        <section className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setIgnoredOpen((o) => !o)}
+            className="flex items-center gap-1.5 text-sm font-medium text-foreground/60 hover:text-foreground"
+          >
+            {ignoredOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <EyeOff className="h-4 w-4" />
+            {ignored.length} compte{ignored.length > 1 ? 's' : ''} ignoré{ignored.length > 1 ? 's' : ''}
+          </button>
+          {ignoredOpen && <Grid items={ignored} dimmed />}
+        </section>
+      )}
     </div>
   );
 };
@@ -1058,7 +1118,10 @@ const CompanyAccountCard: React.FC<{
   future: EventGroup[];
   past: EventGroup[];
   onClickEvent: (g: EventGroup) => void;
-}> = ({ company, future, past, onClickEvent }) => {
+  pref: Pref;
+  onSetPref: (next: Pref) => void;
+  dimmed?: boolean;
+}> = ({ company, future, past, onClickEvent, pref, onSetPref, dimmed }) => {
   const INITIAL = 3;
   const [expF, setExpF] = useState(false);
   const [expP, setExpP] = useState(false);
@@ -1105,7 +1168,13 @@ const CompanyAccountCard: React.FC<{
   };
 
   return (
-    <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all">
+    <Card className={cn(
+      'h-full transition-all',
+      dimmed
+        ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
+        : 'hover:shadow-md hover:border-primary/40',
+      pref === 'starred' && 'border-amber-400/70 bg-amber-50/30',
+    )}>
       <CardContent className="pt-5 space-y-3">
         <div className="flex items-start gap-3">
           <CompanyAvatar company={company} size="md" />
@@ -1116,7 +1185,41 @@ const CompanyAccountCard: React.FC<{
               {company.normalized_domain ?? company.website_raw ?? ''}
             </p>
           </div>
+          {/* Contrôles triage étoile / ignorer */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              type="button"
+              aria-label={pref === 'starred' ? 'Retirer des prioritaires' : 'Marquer comme prioritaire'}
+              title={pref === 'starred' ? 'Retirer des prioritaires' : 'Marquer comme prioritaire'}
+              onClick={() => onSetPref(pref === 'starred' ? 'normal' : 'starred')}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors"
+            >
+              <Star className={cn('h-4 w-4', pref === 'starred' ? 'text-amber-500 fill-amber-500' : 'text-foreground/40')} />
+            </button>
+            <button
+              type="button"
+              aria-label={pref === 'ignored' ? 'Ne plus ignorer' : 'Ignorer ce compte'}
+              title={pref === 'ignored' ? 'Ne plus ignorer' : 'Ignorer ce compte'}
+              onClick={() => onSetPref(pref === 'ignored' ? 'normal' : 'ignored')}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors"
+            >
+              {pref === 'ignored'
+                ? <Eye className="h-4 w-4 text-foreground/50" />
+                : <EyeOff className="h-4 w-4 text-foreground/40" />}
+            </button>
+          </div>
         </div>
+
+        {dimmed && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => onSetPref('normal')}
+          >
+            <Eye className="h-3.5 w-3.5 mr-1.5" /> Ne plus ignorer
+          </Button>
+        )}
 
         <div className="flex gap-4 text-sm">
           <div>
