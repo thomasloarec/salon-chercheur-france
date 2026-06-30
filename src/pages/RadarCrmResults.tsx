@@ -177,6 +177,9 @@ const RadarCrmResults: React.FC = () => {
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  // Vue par compte = vue par défaut (cadrage « veille »).
+  // Si un événement est mis en avant (deep-link), on ouvre la vue par salon pour préserver le scroll auto.
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('eventId') ? 'future' : 'companies');
 
   const reloadAll = async () => {
     setActiveImportId(null);
