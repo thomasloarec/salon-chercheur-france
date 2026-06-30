@@ -57,11 +57,11 @@ const CrmIntegrations = () => {
     <MainLayout>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Intégrations CRM</h1>
+          <h1 className="heading-display text-3xl font-bold mb-2 text-foreground">Intégrations CRM</h1>
           <p className="text-muted-foreground">
             Connecte tes outils CRM pour synchroniser tes données d'entreprise et événements.
             {!user && (
-              <span className="block mt-2 text-blue-600 font-medium">
+              <span className="block mt-2 text-primary font-medium">
                 Tu peux commencer la connexion même sans compte - nous te guiderons ensuite !
               </span>
             )}
@@ -80,7 +80,7 @@ const CrmIntegrations = () => {
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{getProviderIcon(provider)}</span>
                       <div>
-                        <CardTitle className="text-xl">{getProviderName(provider)}</CardTitle>
+                        <CardTitle className="heading-display text-xl">{getProviderName(provider)}</CardTitle>
                         <CardDescription>
                           {provider === 'hubspot' && 'Synchronise tes entreprises et contacts'}
                           {provider === 'salesforce' && 'Accède à tes comptes Salesforce'}
@@ -158,7 +158,7 @@ const CrmIntegrations = () => {
         {/* Section d'aide */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Aide et Support</CardTitle>
+            <CardTitle className="heading-display">Aide et Support</CardTitle>
             <CardDescription>
               Des questions sur les intégrations CRM ?
             </CardDescription>
