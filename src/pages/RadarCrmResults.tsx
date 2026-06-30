@@ -744,9 +744,10 @@ const StatCard: React.FC<{
 };
 
 const priorityFor = (n: number): { label: string; tone: string; icon?: React.ReactNode } | null => {
+  // Échelle unique : l'orange est réservé à la vraie priorité ; le reste reste neutre/atténué.
   if (n >= 3) return { label: `Priorité forte · ${n} comptes`, tone: 'bg-accent text-accent-foreground', icon: <Flame className="h-3 w-3 mr-1" /> };
-  if (n === 2) return { label: '2 comptes détectés', tone: 'bg-primary text-primary-foreground' };
-  if (n === 1) return { label: 'Opportunité', tone: 'bg-emerald-600 text-white' };
+  if (n === 2) return { label: '2 comptes détectés', tone: 'bg-muted text-muted-foreground' };
+  if (n === 1) return { label: 'Opportunité', tone: 'bg-muted text-muted-foreground' };
   return null;
 };
 
