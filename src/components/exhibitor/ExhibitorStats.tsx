@@ -27,7 +27,7 @@ export default function ExhibitorStats({ profile }: { profile: PublicExhibitorPr
             key={s.label}
             className="rounded-xl border border-bubble-border bg-bubble px-4 py-4 text-center"
           >
-            <p className="text-2xl font-bold text-bubble-foreground">{s.value}</p>
+            <p className="font-display tracking-tight text-2xl font-bold text-bubble-foreground">{s.value}</p>
             <p className="text-xs text-bubble-foreground/70 mt-1 leading-snug">
               {s.label}
             </p>

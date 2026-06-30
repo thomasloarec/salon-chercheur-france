@@ -79,7 +79,7 @@ export default function ExhibitorHero({
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
+            <h1 className="heading-display text-2xl sm:text-3xl font-bold leading-tight">
               {name}
             </h1>
           </div>

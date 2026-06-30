@@ -298,7 +298,7 @@ export default function NoveltyDetail() {
               </DropdownMenu>
             </div>
 
-            <h1 className="text-2xl font-bold leading-tight tracking-tight md:text-3xl">
+            <h1 className="heading-display text-2xl font-bold leading-tight tracking-tight md:text-3xl">
               {novelty.title}
             </h1>
 
@@ -468,7 +468,7 @@ export default function NoveltyDetail() {
 function AroundBlock({ title, items }: { title: string; items: PublicNovelty[] }) {
   return (
     <section>
-      <h2 className="mb-4 text-xl font-bold tracking-tight">{title}</h2>
+      <h2 className="heading-display section-rule mb-4 text-xl font-bold tracking-tight">{title}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((n) => {
           const img = (n.media_urls ?? []).find((u) => u && isImage(u));
