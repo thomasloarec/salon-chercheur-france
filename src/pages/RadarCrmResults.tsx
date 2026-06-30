@@ -28,6 +28,7 @@ import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
+import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
@@ -1163,34 +1164,6 @@ const LockedView: React.FC<{
 };
 
 /** Minimal "request access" modal with a direct contact fallback. */
-const AccessRequestDialog: React.FC<{ open: boolean; onOpenChange: (o: boolean) => void }> = ({ open, onOpenChange }) => (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-md">
-      <DialogHeader>
-        <DialogTitle>Demander l'accès à Radar CRM</DialogTitle>
-        <DialogDescription>
-          Radar CRM identifie les entreprises de votre CRM qui exposent sur les salons à venir, avec leur stand
-          et un accès direct à leur fiche — pour préparer vos visites et vos rendez-vous.
-        </DialogDescription>
-      </DialogHeader>
-      <p className="text-sm text-foreground/70">
-        Écrivez-nous pour activer votre accès. Nous revenons vers vous rapidement.
-      </p>
-      <DialogFooter>
-        <Button
-          asChild
-          onClick={() => void trackRadarEvent('crm_access_requested', { source: 'locked_view' })}
-          className="w-full sm:w-auto"
-        >
-          <a href="mailto:admin@lotexpo.com?subject=Demande%20d'acc%C3%A8s%20Radar%20CRM">
-            <Mail className="h-4 w-4 mr-2" /> Nous contacter
-          </a>
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
-
 const NoFutureMatches: React.FC<{ companiesCount: number; matchedCount: number }> = ({ companiesCount, matchedCount }) => (
   <Card>
     <CardContent className="pt-8 pb-8 text-center">
