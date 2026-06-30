@@ -147,6 +147,7 @@ type PreviewBuild = {
   subject: string;
   eventsCount: number;
   companiesCount: number;
+  starredCount: number;
   notificationIds: string[];
   eventIds: string[];
   importIds: string[];
@@ -430,8 +431,26 @@ async function buildPreviewForUser(
     return { preview: null, skip, alreadyEmailedCount, skipCounters };
   }
 
-  const groupedMap = new Map<string, GroupedEvent>();
+  // ---- TRIAGE (account-level star/ignore prefs) ----
+  const triageAccountId = await resolveActiveAccountId(supabase, userId);
+  const companyPrefs = await loadCompanyPrefs(supabase, triageAccountId);
+  const triagedCandidates: typeof filteredCandidates = [];
   for (const c of filteredCandidates) {
+    const keep: any[] = [];
+    for (const co of c.companies) {
+      const key = companyPrefKey(co);
+      const status = key ? companyPrefs.get(key) : undefined;
+      if (status === 'ignored') continue;                  // user said "ignore" → exclude
+      keep.push({ ...co, isStarred: status === 'starred' });
+    }
+    if (keep.length > 0) triagedCandidates.push({ ...c, companies: keep });
+  }
+  if (triagedCandidates.length === 0) {
+    return { preview: null, skip: 'no_eligible', alreadyEmailedCount, skipCounters };
+  }
+
+  const groupedMap = new Map<string, GroupedEvent>();
+  for (const c of triagedCandidates) {
     const eid = c.event.id as string;
     const meta = (c.notification.metadata ?? {}) as Record<string, unknown>;
     const importId =
@@ -466,6 +485,11 @@ async function buildPreviewForUser(
   });
   const top = groupedList.slice(0, 5);
 
+  // Starred companies first within each event card.
+  for (const g of top) {
+    g.companies.sort((a: any, b: any) => (b.isStarred ? 1 : 0) - (a.isStarred ? 1 : 0));
+  }
+
   // Note: companies were already enriched (exhibitorName, companyName,
   // normalizedDomain) during the strict filter pass above. No second
   // enrichment query is needed here.
@@ -482,6 +506,12 @@ async function buildPreviewForUser(
   }
   const companiesCount = companyKeys.size;
   const eventsCount = top.length;
+
+  const starredKeys = new Set<string>();
+  for (const g of top) for (const co of g.companies as any[]) {
+    if (co.isStarred) { const k = exhibitorDedupKey(co); if (k) starredKeys.add(k); }
+  }
+  const starredCount = starredKeys.size;
 
   // Smart subject line — fall back to generic if names would be too long.
   const SUBJECT_MAX = 90;
@@ -513,6 +543,21 @@ async function buildPreviewForUser(
       : `${companiesCount} entreprises de votre Radar CRM exposent bientôt`;
   }
 
+  const firstStarredName: string | null = (() => {
+    for (const g of top) for (const co of g.companies as any[]) {
+      if (co?.isStarred && (co.exhibitorName || co.companyName)) {
+        return String(co.exhibitorName ?? co.companyName);
+      }
+    }
+    return null;
+  })();
+  if (firstStarredName) {
+    const starSubj = firstEventName
+      ? `★ ${firstStarredName} expose bientôt à ${firstEventName}`
+      : `★ ${firstStarredName} expose bientôt`;
+    subject = starSubj.length <= SUBJECT_MAX ? starSubj : `★ ${firstStarredName} expose bientôt`;
+  }
+
   const notificationIds = top.flatMap((g) => g.notificationIds);
   const importIds = Array.from(new Set(top.flatMap((g) => g.importIds)));
   const eventIdsOut = top.map((g) => g.eventId);
@@ -520,7 +565,7 @@ async function buildPreviewForUser(
   return {
     preview: {
       userId, emailTo, subject,
-      eventsCount, companiesCount,
+      eventsCount, companiesCount, starredCount,
       notificationIds, eventIds: eventIdsOut, importIds,
       groups: top,
     },
@@ -536,6 +581,7 @@ function previewToJson(p: PreviewBuild) {
     subject: p.subject,
     eventsCount: p.eventsCount,
     companiesCount: p.companiesCount,
+    starredCount: p.starredCount,
     notifications: p.groups.map((g) => ({
       notificationId: g.notificationIds[0],
       notificationIds: g.notificationIds,
@@ -555,6 +601,7 @@ function previewToJson(p: PreviewBuild) {
         companyName: co.companyName ?? null,
         stand: co.stand ?? null,
         normalizedDomain: co.normalizedDomain ?? null,
+        isStarred: co.isStarred ?? false,
       })),
     })),
   };
@@ -607,6 +654,62 @@ async function userHasRadarAccess(
   }
 }
 
+// Resolve the user's canonical Radar account WITHOUT side effects.
+// (Same resolution as set_radar_company_pref: oldest active membership on a
+// non-deleted account — but SELECT-only. We must NOT call
+// resolve_radar_account_for_user here, which creates an account on miss.)
+async function resolveActiveAccountId(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<string | null> {
+  const { data: members } = await supabase
+    .from('radar_members')
+    .select('radar_account_id')
+    .eq('user_id', userId)
+    .eq('status', 'active');
+  const accountIds = (members ?? [])
+    .map((m: any) => m.radar_account_id)
+    .filter((v: any): v is string => Boolean(v));
+  if (accountIds.length === 0) return null;
+  const { data: accts } = await supabase
+    .from('radar_accounts')
+    .select('id, created_at')
+    .in('id', accountIds)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true })
+    .limit(1);
+  return (accts?.[0] as any)?.id ?? null;
+}
+
+// Load account-level company prefs (starred/ignored) keyed by company_key.
+// Fail-OPEN: on any miss/error, return an empty map (show everything, no
+// stars) — never silently hide a user's matches because prefs failed to load.
+async function loadCompanyPrefs(
+  supabase: ReturnType<typeof createClient>,
+  accountId: string | null,
+): Promise<Map<string, 'starred' | 'ignored'>> {
+  const map = new Map<string, 'starred' | 'ignored'>();
+  if (!accountId) return map;
+  const { data: rows } = await supabase
+    .from('radar_company_prefs')
+    .select('company_key, status')
+    .eq('radar_account_id', accountId);
+  for (const r of rows ?? []) {
+    const k = (r as any).company_key as string | null;
+    const s = (r as any).status as string | null;
+    if (k && (s === 'starred' || s === 'ignored')) map.set(k, s);
+  }
+  return map;
+}
+
+// Same key as the SQL radar_company_key(domain, name):
+// coalesce(nullif(lower(trim(domain)),''), lower(trim(name))).
+function companyPrefKey(co: any): string | null {
+  const domain = co?.normalizedDomain ? String(co.normalizedDomain).trim().toLowerCase() : '';
+  const name = co?.companyName ? String(co.companyName).trim().toLowerCase() : '';
+  return domain || name || null;
+}
+
 function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string) {
   const ORANGE = '#ff7a1f';
   const ORANGE_DARK = '#ea6a10';
@@ -640,6 +743,7 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
     const companiesChips = g.companies.map((co: any) => {
       const primary = co.exhibitorName ?? co.companyName ?? '—';
       const name = escapeHtml(String(primary));
+      const isStarred = co.isStarred === true;
       const crmName = co.exhibitorName && co.companyName && co.companyName !== co.exhibitorName
         ? escapeHtml(String(co.companyName))
         : '';
@@ -652,15 +756,20 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
       const logoCell = fav
         ? `<img src="${escapeHtml(fav)}" alt="${name}" width="32" height="32" style="display:block;width:32px;height:32px;border-radius:6px;border:1px solid ${BORDER};background:#fff;object-fit:contain;" />`
         : `<div style="width:32px;height:32px;border-radius:6px;background:${ORANGE};color:#fff;font-weight:700;font-size:13px;line-height:32px;text-align:center;">${escapeHtml(companyInitials(String(primary)))}</div>`;
+      const chipBg = isStarred ? ORANGE_SOFT : '#fff';
+      const chipBorder = isStarred ? ORANGE : BORDER;
+      const starredBadge = isStarred
+        ? `<span style="display:inline-block;padding:3px 8px;margin-left:6px;background:${ORANGE};color:#fff;border-radius:999px;font-size:11px;font-weight:700;">★ Prioritaire</span>`
+        : '';
       return `
         <tr><td style="padding:6px 0;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;background:#fff;border:1px solid ${BORDER};border-radius:10px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;background:${chipBg};border:1px solid ${chipBorder};border-radius:10px;">
             <tr>
               <td width="44" style="padding:10px 0 10px 12px;vertical-align:top;">${logoCell}</td>
               <td style="padding:10px 12px;vertical-align:top;">
                 <div style="font-size:14px;font-weight:700;color:${TEXT};word-break:break-word;line-height:1.3;">${name}</div>
                 ${subLine}
-                <div style="margin-top:6px;"><span style="display:inline-block;padding:3px 8px;background:${ORANGE_SOFT};color:${ORANGE_DARK};border-radius:999px;font-size:11px;font-weight:600;">Présent dans votre CRM</span></div>
+                <div style="margin-top:6px;"><span style="display:inline-block;padding:3px 8px;background:${ORANGE_SOFT};color:${ORANGE_DARK};border-radius:999px;font-size:11px;font-weight:600;">Présent dans votre CRM</span>${starredBadge}</div>
               </td>
             </tr>
           </table>
@@ -725,6 +834,7 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
               <td style="padding:14px 16px;font-size:13px;color:${NAVY};">
                 <strong style="color:${ORANGE_DARK};">${totalCompanies}</strong> entreprise${totalCompanies>1?'s':''} de votre CRM ·
                 <strong style="color:${ORANGE_DARK};">${totalEvents}</strong> salon${totalEvents>1?'s':''}<br/>
+                ${p.starredCount > 0 ? `<span style="display:inline-block;color:${ORANGE_DARK};font-weight:600;margin-top:2px;">★ ${p.starredCount} prioritaire${p.starredCount>1?'s':''} dans votre veille</span><br/>` : ''}
                 <span style="color:${MUTED};">Préparez vos rendez-vous avant l’événement.</span>
               </td>
             </tr>
@@ -1222,7 +1332,7 @@ async function sendRealForUser(
       response: {
         success: true, dryRun: false, sendReal: true,
         emailsSent: 1,
-        emailTo: p.emailTo, subject: p.subject,
+        emailTo: p.emailTo, subject: subjectToSend,
         resendMessageId: resendId, status: 'sent', logId,
         notificationIdsIncluded: p.notificationIds,
         skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
