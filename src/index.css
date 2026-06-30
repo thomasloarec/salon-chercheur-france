@@ -112,7 +112,30 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    @apply font-body;
+    /* font-body = Source Sans 3 (cf. tailwind.config.ts), avec pile de secours intégrée */
+  }
+}
+
+@layer components {
+  /* Signature Lotexpo : filet horizontal orange (accent) au-dessus des titres de section.
+     Posée à l'origine sur Radar CRM, désormais réutilisable partout. */
+  .section-rule::before {
+    content: '';
+    display: block;
+    width: 2.5rem;
+    height: 3px;
+    background-color: hsl(var(--accent));
+    border-radius: 9999px;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Titre éditorial réutilisable : Playfair Display, poids/interligne calmes. */
+  .heading-display {
+    @apply font-display;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
   }
 }
 
