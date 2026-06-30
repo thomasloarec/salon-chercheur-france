@@ -90,7 +90,7 @@ const SalonsAnnualHub = () => {
               <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-3">
                 Calendrier annuel
               </p>
-              <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+              <h1 className="heading-display text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
                 Salons professionnels {YEAR} en France
               </h1>
               <p className="text-base md:text-lg text-muted-foreground mb-6">
@@ -153,7 +153,7 @@ const SalonsAnnualHub = () => {
                 <section id="secteurs" className="mb-16 scroll-mt-24">
                   <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
                     <div>
-                      <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                      <h2 className="section-rule heading-display text-2xl md:text-3xl font-bold text-foreground mb-1">
                         Explorer par secteur
                       </h2>
                       <p className="text-sm text-muted-foreground">
@@ -200,7 +200,7 @@ const SalonsAnnualHub = () => {
               {data.cities.length > 0 && (
                 <section id="villes" className="mb-16 scroll-mt-24">
                   <div className="mb-6">
-                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                    <h2 className="section-rule heading-display text-2xl md:text-3xl font-bold text-foreground mb-1">
                       Explorer par ville
                     </h2>
                     <p className="text-sm text-muted-foreground">
@@ -239,7 +239,7 @@ const SalonsAnnualHub = () => {
               {data.featured.length > 0 && (
                 <section id="prochains" className="mb-16 scroll-mt-24">
                   <div className="mb-6">
-                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                    <h2 className="section-rule heading-display text-2xl md:text-3xl font-bold text-foreground mb-1">
                       Prochains salons professionnels {YEAR}
                     </h2>
                     <p className="text-sm text-muted-foreground">
@@ -258,7 +258,7 @@ const SalonsAnnualHub = () => {
               {data.monthGroups.length > 0 && (
                 <section id="calendrier" className="mb-16 scroll-mt-24">
                   <div className="mb-6">
-                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                    <h2 className="section-rule heading-display text-2xl md:text-3xl font-bold text-foreground mb-1">
                       Calendrier {YEAR} mois par mois
                     </h2>
                     <p className="text-sm text-muted-foreground">
