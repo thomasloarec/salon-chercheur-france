@@ -928,11 +928,11 @@ const EventCard: React.FC<{
           </div>
 
           {/* CRM companies — the heart of the card */}
-          <div className="bg-primary/5 border border-primary/10 rounded-lg p-3">
-            <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">
+          <div className="bg-secondary/40 border border-border/60 rounded-lg p-4 md:p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
                 <CompanyChip
                   key={company.id}
