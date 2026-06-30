@@ -12,11 +12,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
+import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
   Radar, ShieldCheck, Sparkles, Zap, ArrowRight, Target, Map, Rocket,
   Upload, FileCheck2, Search, Lock, CheckCircle2, Eye, Globe, EyeOff,
   Building2, MapPin, Database, AlertTriangle, Compass, Clock,
-  Users, CalendarClock, PhoneCall,
+  Users, CalendarClock, PhoneCall, Mail,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,6 +77,50 @@ const RadarCrmPage: React.FC = () => {
     const floored = Math.floor(base / 1000) * 1000;
     return `${floored.toLocaleString('fr-FR')}+`;
   }, [participationCount]);
+
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [radarStatus, setRadarStatus] = useState<{
+    status: string;
+    has_access: boolean;
+    loaded: boolean;
+  }>({ status: 'none', has_access: false, loaded: false });
+
+  const isRadarLocked = useMemo(() => {
+    const lockedStatuses = ['trial_expired', 'free'];
+    return radarStatus.loaded && lockedStatuses.includes(radarStatus.status);
+  }, [radarStatus]);
+
+  useEffect(() => {
+    if (isRadarLocked) {
+      setParsed(null);
+      setMapping({});
+      clearPendingImport();
+    }
+  }, [isRadarLocked]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setRadarStatus({ status: 'none', has_access: false, loaded: true });
+      return;
+    }
+    let active = true;
+    void (async () => {
+      const { data, error } = await supabase.rpc('my_radar_status');
+      if (!active) return;
+      if (error || !data || data.length === 0) {
+        setRadarStatus({ status: 'none', has_access: false, loaded: true });
+      } else {
+        const row = data[0];
+        setRadarStatus({
+          status: row.status ?? 'none',
+          has_access: row.has_access ?? false,
+          loaded: true,
+        });
+      }
+    })();
+    return () => { active = false; };
+  }, [authLoading, user]);
 
   useEffect(() => {
     void trackRadarEvent('radar_page_viewed');
