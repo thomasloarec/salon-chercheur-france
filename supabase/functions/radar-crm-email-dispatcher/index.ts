@@ -588,6 +588,25 @@ async function ensureUnsubscribeUrl(
   return `${base}/functions/v1/radar-crm-unsubscribe?token=${token}`;
 }
 
+// Resolve Radar entitlement for a user via the canonical SQL function.
+// Fail-safe: on any error, treat as LOCKED (teaser) — never leak full details.
+async function userHasRadarAccess(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('has_radar_access', { p_user_id: userId } as never);
+    if (error) {
+      console.warn('has_radar_access failed', { userId, error: error.message });
+      return false;
+    }
+    return data === true;
+  } catch (e) {
+    console.warn('has_radar_access threw', { userId, error: e instanceof Error ? e.message : String(e) });
+    return false;
+  }
+}
+
 function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string) {
   const ORANGE = '#ff7a1f';
   const ORANGE_DARK = '#ea6a10';
@@ -766,6 +785,120 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
   textLines.push('');
   textLines.push("Ces informations sont basées sur les données de participation disponibles sur Lotexpo à la date d'envoi.");
   textLines.push('Vous recevez cet email car vous avez activé les alertes email Radar CRM sur Lotexpo.');
+  textLines.push(`Se désabonner : ${unsubscribeUrl}`);
+
+  return { html, text: textLines.join('\n') };
+}
+
+function renderTeaserEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string) {
+  const ORANGE = '#ff7a1f';
+  const ORANGE_DARK = '#ea6a10';
+  const ORANGE_SOFT = '#fff4ec';
+  const NAVY = '#06286e';
+  const TEXT = '#0f172a';
+  const MUTED = '#64748b';
+  const BORDER = '#e5e7eb';
+  const BG = '#f5f7fb';
+
+  const totalCompanies = p.companiesCount;
+  const totalEvents = p.eventsCount;
+  const reactivateUrl = `${appBaseUrl}/radar-crm`;
+
+  const eventsHtml = p.groups.map((g) => {
+    const evName = escapeHtml(String(g.event.nom_event ?? '—'));
+    const evDate = escapeHtml(formatDateFr(g.event.date_debut));
+    const evCity = g.event.ville ? escapeHtml(String(g.event.ville)) : '';
+    const evVenue = g.event.nom_lieu ? escapeHtml(String(g.event.nom_lieu)) : '';
+    const imgUrl = g.event.url_image ? String(g.event.url_image) : null;
+    const IMG_H = 180;
+    const heroImage = imgUrl
+      ? `<img src="${escapeHtml(imgUrl)}" alt="${evName}" width="568" height="${IMG_H}" class="rcrm-hero" style="display:block;width:100%;max-width:100%;height:${IMG_H}px;object-fit:cover;border-radius:10px 10px 0 0;border:0;outline:none;" />`
+      : `<div class="rcrm-hero" style="height:${IMG_H}px;background:${NAVY};border-radius:10px 10px 0 0;text-align:center;">
+           <span style="display:inline-block;padding-top:78px;color:#fff;font-size:18px;font-weight:700;">${evName}</span>
+         </div>`;
+
+    const lockedBlock = `
+      <div style="margin-top:14px;border:1px dashed ${ORANGE};background:${ORANGE_SOFT};border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:22px;line-height:1;margin-bottom:6px;">🔒</div>
+        <div style="font-size:14px;font-weight:700;color:${NAVY};">Des entreprises de votre CRM exposent ici</div>
+        <div style="font-size:13px;color:${MUTED};margin-top:4px;">Réactivez Radar CRM pour voir lesquelles.</div>
+      </div>`;
+
+    const contentBlock = `
+      <div class="rcrm-card-cell" style="padding:18px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${ORANGE_DARK};">Opportunité Radar CRM</div>
+        <div style="font-size:18px;font-weight:700;color:${TEXT};margin-top:4px;">${evName}</div>
+        <div style="font-size:13px;color:${MUTED};margin-top:2px;">${evDate}${evCity ? ` · ${evCity}` : ''}${evVenue ? ` · ${evVenue}` : ''}</div>
+        ${lockedBlock}
+        <div style="margin-top:14px;">
+          <a href="${escapeHtml(reactivateUrl)}" style="display:inline-block;font-size:13px;font-weight:700;color:${ORANGE_DARK};text-decoration:none;">Réactiver pour voir →</a>
+        </div>
+      </div>`;
+
+    return `
+      <div style="background:#ffffff;border:1px solid ${BORDER};border-radius:12px;overflow:hidden;margin-bottom:16px;">
+        ${heroImage}
+        ${contentBlock}
+      </div>`;
+  }).join('');
+
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="color-scheme" content="light only" /><meta name="supported-color-schemes" content="light only" /><title>${escapeHtml(p.subject)}</title>
+<style>@media only screen and (max-width:520px){
+    .rcrm-container{width:100% !important;max-width:100% !important;padding:0 !important;}
+    .rcrm-outer-cell{padding:12px 8px !important;}
+    .rcrm-intro{padding:20px 16px !important;border-radius:12px !important;}
+    .rcrm-intro h1{font-size:20px !important;}
+    .rcrm-hero{height:160px !important;}
+    .rcrm-card-cell{padding:14px !important;}
+    .rcrm-final-cta{display:block !important;width:100% !important;box-sizing:border-box !important;}
+  }</style></head>
+<body style="margin:0;padding:0;background:${BG};color:${TEXT};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${totalCompanies} entreprise${totalCompanies>1?'s':''} de votre CRM exposent sur ${totalEvents} salon${totalEvents>1?'s':''}. Réactivez Radar CRM pour voir lesquelles.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
+    <tr><td class="rcrm-outer-cell" align="center" style="padding:24px 12px;">
+      <table role="presentation" class="rcrm-container" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;">
+        <tr><td style="padding:0 0 16px 0;">
+          <span style="font-size:18px;font-weight:800;color:${NAVY};">Lotexpo</span>
+          <span style="font-size:13px;font-weight:700;color:${ORANGE_DARK};margin-left:8px;">Radar CRM</span>
+        </td></tr>
+        <tr><td class="rcrm-intro" style="background:${NAVY};border-radius:14px;padding:28px 24px;">
+          <h1 style="margin:0;font-size:22px;line-height:1.25;color:#ffffff;">De nouvelles opportunités salon détectées</h1>
+          <p style="margin:10px 0 0 0;font-size:14px;line-height:1.5;color:#dbe4ff;">Des entreprises présentes dans votre fichier CRM exposent prochainement sur des salons référencés par Lotexpo. Votre accès Radar CRM est actuellement inactif — réactivez-le pour découvrir lesquelles.</p>
+          <div style="margin-top:16px;background:${ORANGE_SOFT};border-radius:10px;padding:12px 14px;">
+            <span style="font-size:14px;font-weight:700;color:${NAVY};">${totalCompanies} entreprise${totalCompanies>1?'s':''} de votre CRM · ${totalEvents} salon${totalEvents>1?'s':''}</span>
+            <span style="display:block;font-size:13px;color:${MUTED};margin-top:2px;">Réactivez pour préparer vos rendez-vous.</span>
+          </div>
+        </td></tr>
+        <tr><td style="padding:20px 0 0 0;">${eventsHtml}</td></tr>
+        <tr><td align="center" style="padding:8px 0 20px 0;">
+          <a href="${escapeHtml(reactivateUrl)}" class="rcrm-final-cta" style="display:inline-block;background:${ORANGE};color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 28px;border-radius:10px;">Réactiver Radar CRM</a>
+        </td></tr>
+        <tr><td style="padding:8px 0 0 0;border-top:1px solid ${BORDER};">
+          <p style="margin:12px 0 0 0;font-size:12px;color:${MUTED};line-height:1.5;">Ces informations sont basées sur les données de participation disponibles sur Lotexpo à la date d'envoi.</p>
+          <p style="margin:8px 0 0 0;font-size:12px;color:${MUTED};line-height:1.5;">Vous recevez cet email car vous avez activé les alertes email Radar CRM sur Lotexpo.<br /><a href="${escapeHtml(unsubscribeUrl)}" style="color:${MUTED};text-decoration:underline;">Se désabonner des emails Radar CRM</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  const textLines = [
+    'Lotexpo · Radar CRM',
+    'De nouvelles opportunités salon détectées',
+    '',
+    `${totalCompanies} entreprise${totalCompanies > 1 ? 's' : ''} de votre CRM · ${totalEvents} salon${totalEvents > 1 ? 's' : ''}`,
+    'Votre accès Radar CRM est actuellement inactif. Réactivez-le pour voir quelles entreprises exposent.',
+    '',
+  ];
+  for (const g of p.groups) {
+    textLines.push(`▶ ${g.event.nom_event ?? '—'}`);
+    textLines.push(`  ${formatDateFr(g.event.date_debut)} · ${g.event.ville ?? '—'}${g.event.nom_lieu ? ` · ${g.event.nom_lieu}` : ''}`);
+    textLines.push('  🔒 Des entreprises de votre CRM exposent ici — réactivez pour voir lesquelles.');
+    textLines.push('');
+  }
+  textLines.push(`Réactiver Radar CRM : ${appBaseUrl}/radar-crm`);
+  textLines.push('');
+  textLines.push("Vous recevez cet email car vous avez activé les alertes email Radar CRM sur Lotexpo.");
   textLines.push(`Se désabonner : ${unsubscribeUrl}`);
 
   return { html, text: textLines.join('\n') };
@@ -1002,6 +1135,16 @@ async function sendRealForUser(
     };
   }
 
+  // Entitlement branch: active access → full digest; locked → teaser.
+  const hasAccess = await userHasRadarAccess(supabase, filterUserId);
+  const visibilityMode: 'full' | 'teaser' = hasAccess ? 'full' : 'teaser';
+  const emailType: 'radar_digest' | 'teaser' = hasAccess ? 'radar_digest' : 'teaser';
+  const subjectToSend = hasAccess
+    ? p.subject
+    : (p.companiesCount > 1
+        ? `${p.companiesCount} entreprises de votre CRM exposent bientôt`
+        : `1 entreprise de votre CRM expose bientôt`);
+
   const metadataLog = {
     events: p.groups.map((g) => ({
       eventId: g.eventId,
@@ -1019,9 +1162,9 @@ async function sendRealForUser(
       status: 'pending',
       dry_run: false,
       email_to: p.emailTo,
-      email_subject: p.subject,
-      email_type: 'radar_digest',
-      visibility_mode: 'full',
+      email_subject: subjectToSend,
+      email_type: emailType,
+      visibility_mode: visibilityMode,
       notification_ids: p.notificationIds,
       event_ids: p.eventIds,
       import_ids: p.importIds,
@@ -1045,16 +1188,20 @@ async function sendRealForUser(
   }
 
   const appBaseUrl = Deno.env.get('APP_BASE_URL') ?? 'https://lotexpo.com';
-  const { html, text } = renderEmail(p, unsubscribeUrl, appBaseUrl);
+  const pToRender = hasAccess ? p : { ...p, subject: subjectToSend };
+  const { html, text } = hasAccess
+    ? renderEmail(pToRender, unsubscribeUrl, appBaseUrl)
+    : renderTeaserEmail(pToRender, unsubscribeUrl, appBaseUrl);
 
   try {
     const { id: resendId } = await sendResendEmail({
       to: p.emailTo,
-      subject: p.subject,
+      subject: subjectToSend,
       html, text,
       tags: [
         { name: 'feature', value: 'radar_crm' },
-        { name: 'email_type', value: 'radar_digest' },
+        { name: 'email_type', value: emailType },
+        { name: 'visibility', value: visibilityMode },
         { name: 'environment', value: 'beta' },
       ],
     });
@@ -1139,7 +1286,10 @@ async function runDryRun(
       }
       usersEligible += 1;
       notificationsIncluded += built.preview.notificationIds.length;
-      previews.push(previewToJson(built.preview));
+      const hasAccess = await userHasRadarAccess(supabase, userId);
+      const previewJson = previewToJson(built.preview) as Record<string, unknown>;
+      previewJson.visibilityMode = hasAccess ? 'full' : 'teaser';
+      previews.push(previewJson);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       console.error('preview user failed', { userId, message });
