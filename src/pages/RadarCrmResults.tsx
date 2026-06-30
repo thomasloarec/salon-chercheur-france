@@ -649,16 +649,16 @@ const RadarActiveBanner: React.FC<{
   const isPriority = featured?.isPriority ?? false;
   const days = ev?.days_until != null ? Math.max(0, ev.days_until) : null;
   return (
-    <Card className="bg-card border-primary/20">
-      <CardContent className="py-4 space-y-3">
+    <Card className="bg-secondary/40 border-border/60 shadow-none">
+      <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
         <div className="flex items-start gap-3">
           <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
             <span className="absolute inline-flex h-full w-full rounded-full bg-accent/50 opacity-75 animate-ping" />
             <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Radar actif</p>
-            <p className="text-sm text-foreground/80 mt-0.5">
+            <p className="font-display text-lg font-semibold text-foreground leading-tight">Radar actif</p>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
               On surveille <strong className="text-foreground">{analyzed}</strong> compte{analyzed > 1 ? 's' : ''} de votre CRM.{' '}
               <strong className="text-foreground">{futureCompanies}</strong> exposeront sur{' '}
               <strong className="text-foreground">{futureSalons}</strong> salon{futureSalons > 1 ? 's' : ''} à venir.
@@ -674,25 +674,25 @@ const RadarActiveBanner: React.FC<{
             type="button"
             onClick={() => onClickEvent(ev)}
             disabled={!ev.slug}
-            className="w-full text-left rounded-lg border border-accent/25 bg-secondary/60 p-3 transition-colors hover:bg-secondary disabled:opacity-60"
+            className="w-full text-left rounded-xl border border-accent/30 bg-card p-4 md:p-5 transition-colors hover:bg-secondary/50 disabled:opacity-60"
           >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-accent flex items-center gap-1">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-accent flex items-center gap-1.5">
               {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
               {isPriority ? 'Compte prioritaire' : 'Prochain salon'}
             </p>
             {isPriority && featured?.company ? (
-              <p className="text-sm font-semibold text-foreground mt-1">
+              <p className="text-base font-semibold text-foreground mt-2 leading-snug">
                 <span className="text-accent">{featured.company.company_name}</span> expose à {ev.nom_event}
                 {days != null && <span className="ml-1">dans {days} jour{days > 1 ? 's' : ''}</span>}
                 {ev.ville ? ` · ${ev.ville}` : ''}
               </p>
             ) : (
               <>
-                <p className="text-sm font-semibold text-foreground mt-1">
+                <p className="text-base font-semibold text-foreground mt-2 leading-snug">
                   Prochain salon où vos comptes exposent : {ev.nom_event}
                   {days != null && <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>}
                 </p>
-                <p className="text-xs text-foreground/70 mt-0.5">
+                <p className="text-sm text-muted-foreground mt-1">
                   {ev.company_count} de vos comptes y exposent
                   {ev.ville ? ` · ${ev.ville}` : ''}
                 </p>
@@ -701,7 +701,7 @@ const RadarActiveBanner: React.FC<{
           </button>
         )}
 
-        <p className="text-xs text-foreground/60 flex flex-wrap items-center gap-1">
+        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
           <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
           Vous êtes alerté par email avant chaque salon concerné.
           <button
