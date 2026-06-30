@@ -782,6 +782,11 @@ const RadarCrmPage: React.FC = () => {
           </div>
         </div>
       </section>
+      <AccessRequestDialog
+        open={requestDialogOpen}
+        onOpenChange={setRequestDialogOpen}
+        source="locked_upload"
+      />
     </MainLayout>
   );
 };
@@ -901,6 +906,25 @@ const FaqItem: React.FC<{ v: string; q: string; a: string }> = ({ v, q, a }) => 
     <AccordionTrigger className="text-left">{q}</AccordionTrigger>
     <AccordionContent className="text-muted-foreground">{a}</AccordionContent>
   </AccordionItem>
+);
+
+const TrialExpiredCard: React.FC<{ onOpenRequest: () => void }> = ({ onOpenRequest }) => (
+  <Card className="border border-destructive/20 bg-destructive/5">
+    <CardContent className="pt-8 pb-8 text-center space-y-5">
+      <div className="mx-auto h-14 w-14 rounded-full bg-destructive/10 flex items-center justify-center">
+        <Lock className="h-7 w-7 text-destructive" />
+      </div>
+      <div>
+        <h3 className="text-xl font-semibold">Votre essai Radar CRM est terminé</h3>
+        <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+          Vous ne pouvez plus importer de nouveau fichier. Contactez-nous pour activer Radar CRM en Premium.
+        </p>
+      </div>
+      <Button onClick={onOpenRequest} size="lg">
+        <Mail className="h-4 w-4 mr-2" /> Demander l'accès
+      </Button>
+    </CardContent>
+  </Card>
 );
 
 export default RadarCrmPage;
