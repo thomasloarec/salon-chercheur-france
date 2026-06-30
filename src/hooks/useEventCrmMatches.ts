@@ -11,16 +11,15 @@ import { supabase } from '@/integrations/supabase/client';
  * - Aucune requête n'est exécutée si `enabled` est false (utilisateur non connecté
  *   ou eventId manquant). L'appelant DOIT passer `enabled: !!user && !!eventId`.
  * - Les NOMS des entreprises/exposants ne sont JAMAIS lus en direct : ils
- *   proviennent de la RPC server-side gatée `get_my_radar_view`, qui renvoie
- *   `companies: []` lorsque le compte est verrouillé (essai expiré / free).
- *   Le verrou d'entitlement est donc appliqué côté serveur, comme sur la page
- *   principale Radar CRM. Un utilisateur verrouillé ne reçoit aucun nom.
+ *   proviennent de la RPC server-side dédiée et gatée `get_my_radar_event_matches`,
+ *   qui ne renvoie en verrouillé QUE `has_matches` (booléen) — ni compteur, ni
+ *   identités (`companies: []`). Le verrou d'entitlement est appliqué côté serveur.
  *
  * Règle "dernier import" :
  * - On récupère le dernier import (created_at desc) UNIQUEMENT pour distinguer
  *   les états de cycle de vie (no_imports / processing / failed). Cette requête
  *   ne lit que `status` (pas de noms).
- * - Si `completed` -> on appelle la RPC gatée et on isole l'événement courant.
+ * - Si `completed` -> on appelle la RPC gatée `get_my_radar_event_matches`.
  */
 
 export type EventCrmMatch = {
@@ -39,15 +38,16 @@ export type EventCrmMatchesResult =
   | { status: 'failed'; matches: []; total: 0; importId: string }
   | { status: 'no_matches'; matches: []; total: 0; importId: string }
   | { status: 'has_matches'; matches: EventCrmMatch[]; total: number; importId: string }
-  | { status: 'locked'; matches: []; total: number; importId: string };
+  | { status: 'locked'; matches: []; total: 0; importId: string };
 
 type ImportRow = { id: string; status: string; created_at: string };
 
 /**
- * Forme (partielle) renvoyée par la RPC server-side gatée `get_my_radar_view`.
+ * Forme renvoyée par la RPC server-side gatée `get_my_radar_event_matches`.
  * Typée localement car la RPC est `Json` dans les types Supabase générés.
+ * En verrouillé : `has_access=false`, `companies=[]`, seul `has_matches` est exploitable.
  */
-interface RadarViewCompany {
+interface EventMatchCompany {
   crm_company_id: string;
   company_name: string | null;
   website_raw: string | null;
@@ -58,14 +58,10 @@ interface RadarViewCompany {
   needs_review: boolean | null;
   name_similarity: number | null;
 }
-interface RadarViewEvent {
-  event_id: string;
-  company_count: number;
-  companies: RadarViewCompany[];
-}
-interface RadarView {
+interface EventMatchView {
   has_access: boolean;
-  events: RadarViewEvent[];
+  has_matches: boolean;
+  companies: EventMatchCompany[];
 }
 
 export function useEventCrmMatches(
@@ -102,39 +98,31 @@ export function useEventCrmMatches(
         return { status: 'failed', matches: [], total: 0, importId: latest.id };
       }
 
-      // 2. Vue Radar gatée côté serveur (entitlement appliqué dans la RPC).
-      //    En cas d'erreur, on PROPAGE pour que le widget affiche un état
-      //    d'erreur visible (pas de silent failure / widget vide trompeur).
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_radar_view', {
-        p_import_id: latest.id,
+      // 2. RPC dédiée gatée côté serveur (entitlement appliqué dans la RPC).
+      //    En verrouillé, elle ne renvoie ni compteur ni noms — seulement
+      //    `has_matches`. En cas d'erreur, on PROPAGE pour un état visible.
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_my_radar_event_matches', {
+        p_event_id: eventId as string,
       });
       if (rpcError) {
-        console.error('[RadarCRM] get_my_radar_view (event widget) failed:', rpcError);
+        console.error('[RadarCRM] get_my_radar_event_matches failed:', rpcError);
         throw rpcError;
       }
 
-      const view = (rpcData as unknown as RadarView) ?? null;
-      if (!view) {
+      const view = (rpcData as unknown as EventMatchView) ?? null;
+      if (!view || !view.has_matches) {
         return { status: 'no_matches', matches: [], total: 0, importId: latest.id };
       }
 
-      const ev = (view.events ?? []).find((e) => e.event_id === eventId);
-      const companyCount = ev?.company_count ?? 0;
-
-      // Aucune entreprise détectée sur cet événement.
-      if (companyCount === 0) {
-        return { status: 'no_matches', matches: [], total: 0, importId: latest.id };
-      }
-
-      // Compte verrouillé : la RPC renvoie `companies: []` mais `company_count > 0`.
+      // Compte verrouillé : `has_matches=true` mais aucun nom ni compteur.
       if (!view.has_access) {
-        return { status: 'locked', matches: [], total: companyCount, importId: latest.id };
+        return { status: 'locked', matches: [], total: 0, importId: latest.id };
       }
 
-      // Accès complet : on mappe les entreprises gatées vers la forme du widget,
+      // Accès complet : on mappe les entreprises vers la forme du widget,
       // dédupliquées par crm_company_id.
       const dedup = new Map<string, EventCrmMatch>();
-      for (const c of ev?.companies ?? []) {
+      for (const c of view.companies ?? []) {
         if (!c.crm_company_id || dedup.has(c.crm_company_id)) continue;
         dedup.set(c.crm_company_id, {
           crmCompanyId: c.crm_company_id,
@@ -149,15 +137,13 @@ export function useEventCrmMatches(
 
       const list = Array.from(dedup.values());
       if (list.length === 0) {
-        // Accès mais aucune entreprise exploitable : on retombe en verrouillé
-        // visuel basé sur le compte serveur pour rester cohérent.
         return { status: 'no_matches', matches: [], total: 0, importId: latest.id };
       }
 
       return {
         status: 'has_matches',
         matches: list,
-        total: companyCount,
+        total: list.length,
         importId: latest.id,
       };
     },
