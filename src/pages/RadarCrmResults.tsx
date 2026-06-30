@@ -1131,44 +1131,48 @@ const CompanyAccountCard: React.FC<{
 }> = ({ company, future, past, onClickEvent, pref, onSetPref, dimmed }) => {
   const INITIAL = 3;
   const [expF, setExpF] = useState(false);
+  // Historique replié par défaut : on calme la carte (cf. polish v2).
   const [expP, setExpP] = useState(false);
   const futureShown = expF ? future : future.slice(0, INITIAL);
-  const pastShown = expP ? past : past.slice(0, INITIAL);
   const futureMore = future.length - futureShown.length;
-  const pastMore = past.length - pastShown.length;
 
-  const renderRow = (g: EventGroup, tone: 'future' | 'past', isNext = false) => {
+  // Seuil d'imminence : l'orange sur le badge J-XX est réservé aux salons proches.
+  const IMMINENT_DAYS = 30;
+  const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
     const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
+    const imminent = g.days_until != null && g.days_until < IMMINENT_DAYS;
     return (
       <button
         key={g.event_id}
         type="button"
         onClick={() => onClickEvent(g)}
         disabled={!g.slug}
-        className={`w-full text-left rounded-md p-2 transition-colors disabled:opacity-60 ${
+        className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors disabled:opacity-60 ${
           tone === 'future'
-            ? 'bg-primary/5 hover:bg-primary/10 border border-primary/10'
-            : 'bg-muted/40 hover:bg-muted border'
+            ? 'bg-secondary/40 hover:bg-secondary/70'
+            : 'hover:bg-muted/50'
         }`}
       >
         <div className="flex items-center justify-between gap-2">
-          <p className={`text-sm font-medium truncate ${tone === 'future' ? 'text-foreground' : 'text-foreground/80'}`}>
+          <p className={`text-sm truncate ${tone === 'future' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
             {g.nom_event}
           </p>
           {tone === 'future' && g.days_until != null && (
             <Badge
               className={cn(
                 'shrink-0 border-none',
-                isNext ? 'bg-accent text-accent-foreground' : 'bg-foreground/80 text-background',
+                imminent
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-muted text-muted-foreground',
               )}
             >
               J-{Math.max(0, g.days_until)}
             </Badge>
           )}
         </div>
-        <p className="text-[11px] text-foreground/60 mt-0.5 truncate">
+        <p className="text-xs text-muted-foreground mt-1 truncate">
           {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
-          {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
+          {stand && <span className="ml-2 text-foreground font-medium">Stand {stand}</span>}
         </p>
       </button>
     );
@@ -1176,18 +1180,18 @@ const CompanyAccountCard: React.FC<{
 
   return (
     <Card className={cn(
-      'h-full transition-all',
+      'h-full transition-all border-border/60 shadow-none',
       dimmed
         ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
-        : 'hover:shadow-md hover:border-primary/40',
+        : 'hover:border-border hover:shadow-sm',
       pref === 'starred' && 'border-accent/50 bg-secondary/40',
     )}>
-      <CardContent className="pt-5 space-y-3">
+      <CardContent className="p-5 space-y-4">
         <div className="flex items-start gap-3">
           <CompanyAvatar company={company} size="md" />
           <div className="min-w-0 flex-1">
-            <p className="font-bold text-foreground truncate">{company.company_name}</p>
-            <p className="text-xs text-foreground/60 truncate flex items-center gap-1">
+            <p className="font-semibold text-base text-foreground truncate">{company.company_name}</p>
+            <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
               <ExternalLink className="h-3 w-3" />
               {company.normalized_domain ?? company.website_raw ?? ''}
             </p>
@@ -1228,23 +1232,23 @@ const CompanyAccountCard: React.FC<{
           </Button>
         )}
 
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-6 text-sm">
           <div>
-            <p className="text-xl font-bold text-primary leading-none">{future.length}</p>
-            <p className="text-[11px] text-foreground/60 mt-0.5">à venir</p>
+            <p className="font-display text-2xl font-semibold text-primary leading-none tracking-tight">{future.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">à venir</p>
           </div>
-          <div className="border-l pl-4">
-            <p className="text-xl font-bold text-foreground/80 leading-none">{past.length}</p>
-            <p className="text-[11px] text-foreground/60 mt-0.5">passés</p>
+          <div className="border-l border-border/60 pl-6">
+            <p className="font-display text-2xl font-semibold text-foreground/70 leading-none tracking-tight">{past.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">passés</p>
           </div>
         </div>
 
         {future.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-primary">
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Salons à venir
             </p>
-            {futureShown.map((g, i) => renderRow(g, 'future', i === 0))}
+            {futureShown.map((g) => renderRow(g, 'future'))}
             {futureMore > 0 && (
               <button
                 type="button"
@@ -1258,7 +1262,7 @@ const CompanyAccountCard: React.FC<{
               <button
                 type="button"
                 onClick={() => setExpF(false)}
-                className="text-xs font-medium text-foreground/60 hover:underline flex items-center gap-1"
+                className="text-xs font-medium text-muted-foreground hover:underline flex items-center gap-1"
               >
                 <ChevronUp className="h-3 w-3" /> Réduire
               </button>
@@ -1266,29 +1270,23 @@ const CompanyAccountCard: React.FC<{
           </div>
         )}
 
+        {/* Historique passé : replié par défaut → une seule ligne discrète. */}
         {past.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-foreground/60">
-              Historique passé
-            </p>
-            {pastShown.map((g) => renderRow(g, 'past'))}
-            {pastMore > 0 && (
-              <button
-                type="button"
-                onClick={() => setExpP(true)}
-                className="text-xs font-medium text-foreground/70 hover:underline flex items-center gap-1"
-              >
-                <ChevronDown className="h-3 w-3" /> Voir {pastMore} salon{pastMore > 1 ? 's' : ''} de plus
-              </button>
-            )}
-            {expP && past.length > INITIAL && (
-              <button
-                type="button"
-                onClick={() => setExpP(false)}
-                className="text-xs font-medium text-foreground/60 hover:underline flex items-center gap-1"
-              >
-                <ChevronUp className="h-3 w-3" /> Réduire
-              </button>
+          <div className="space-y-2 pt-1 border-t border-border/50">
+            <button
+              type="button"
+              onClick={() => setExpP((o) => !o)}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              aria-expanded={expP}
+            >
+              {expP ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              <History className="h-3.5 w-3.5" />
+              {past.length} salon{past.length > 1 ? 's' : ''} passé{past.length > 1 ? 's' : ''}
+            </button>
+            {expP && (
+              <div className="space-y-2">
+                {past.map((g) => renderRow(g, 'past'))}
+              </div>
             )}
           </div>
         )}
