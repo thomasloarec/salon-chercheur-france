@@ -28,7 +28,7 @@ interface LinkedEvent {
 
 const SectionTitle = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`mb-8 ${className}`}>
-    <h2 className="text-2xl md:text-[28px] font-bold text-foreground">{children}</h2>
+    <h2 className="heading-display text-2xl md:text-[28px] font-bold text-foreground">{children}</h2>
     <div className="w-12 h-[3px] bg-primary mt-3 rounded-full" />
   </div>
 );
@@ -228,7 +228,7 @@ const BlogArticle = () => {
           </div>
 
           {/* 3. H1 */}
-          <h1 className="text-3xl md:text-[40px] font-bold mb-8 leading-tight tracking-tight text-foreground">
+          <h1 className="heading-display text-3xl md:text-[40px] font-bold mb-8 leading-tight tracking-tight text-foreground">
             {article.h1_title || article.title}
           </h1>
         </div>
