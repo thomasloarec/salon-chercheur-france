@@ -243,6 +243,29 @@ const RadarCrmPage: React.FC = () => {
       }
       navigate(`/radar-crm/results?importId=${result.importId ?? ''}`);
     } catch (err) {
+      let isTrialExpired = false;
+      if (err && typeof err === 'object' && 'context' in err) {
+        const ctx = (err as { context?: Response }).context;
+        if (ctx && ctx.status === 403) {
+          try {
+            const body = (await ctx.json()) as { error?: string; message?: string };
+            if (body?.error === 'TRIAL_EXPIRED') isTrialExpired = true;
+          } catch { /* ignore body parse errors */ }
+        }
+      }
+      if (isTrialExpired) {
+        setRadarStatus((prev) => ({ ...prev, status: 'trial_expired', has_access: false, loaded: true }));
+        setParsed(null);
+        setMapping({});
+        clearPendingImport();
+        void trackRadarEvent('crm_import_trial_expired_hit', { source: 'upload' });
+        toast({
+          title: 'Essai terminé',
+          description: "Vous ne pouvez plus importer de nouveau fichier. Demandez l'accès pour continuer.",
+          variant: 'destructive',
+        });
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'Erreur inconnue';
       void trackRadarEvent('crm_import_failed', { error: msg });
       toast({ title: "Échec de l'import", description: msg, variant: 'destructive' });
