@@ -22,7 +22,7 @@ const AllSectors = () => {
   return (
     <section className="bg-background py-16 px-4">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8 text-center">
+        <h2 className="section-rule [&::before]:mx-auto heading-display text-3xl md:text-4xl text-foreground mb-8 text-center">
           Tous les secteurs d'activité
         </h2>
 

@@ -71,7 +71,7 @@ const HeroWithFilters = () => {
     <section className="gradient-hero text-white pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 animate-fade-in-up">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          <h1 className="heading-display text-4xl md:text-6xl mb-4">
             Trouvez les salons professionnels
             <span className="block text-accent">qui méritent vraiment votre déplacement</span>
           </h1>

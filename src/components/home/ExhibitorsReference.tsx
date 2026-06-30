@@ -13,7 +13,7 @@ const ExhibitorsReference = () => {
             <Building2 className="h-10 w-10 text-accent" />
           </div>
           
-          <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h3 className="heading-display text-3xl md:text-4xl text-foreground mb-4">
             Exposants : rendez votre stand visible avant l'ouverture du salon
           </h3>
           

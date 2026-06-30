@@ -23,7 +23,7 @@ const AttentionProblem = () => {
     <section className="bg-background py-16 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="section-rule [&::before]:mx-auto heading-display text-3xl md:text-4xl text-foreground mb-4">
             Le vrai probl&egrave;me n&rsquo;est pas de trouver un salon. C&rsquo;est de savoir lequel m&eacute;rite votre attention.
           </h2>
           <p className="text-lg text-muted-foreground">
@@ -40,7 +40,7 @@ const AttentionProblem = () => {
               <div className="bg-accent/10 rounded-xl w-14 h-14 flex items-center justify-center mb-5">
                 <card.icon className="h-7 w-7 text-accent" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">{card.title}</h3>
+              <h3 className="heading-display text-xl text-foreground mb-3">{card.title}</h3>
               <p className="text-muted-foreground leading-relaxed">{card.text}</p>
             </div>
           ))}

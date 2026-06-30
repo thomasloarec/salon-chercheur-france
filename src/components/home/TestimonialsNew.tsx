@@ -28,7 +28,7 @@ const TestimonialsNew = () => {
     <section className="bg-background py-20 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16 max-w-3xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="section-rule [&::before]:mx-auto heading-display text-4xl md:text-5xl text-foreground mb-4">
             Lotexpo s&rsquo;adapte &agrave; plusieurs usages professionnels
           </h2>
           <p className="text-xl text-muted-foreground">
@@ -45,7 +45,7 @@ const TestimonialsNew = () => {
               <div className="bg-accent/10 rounded-xl w-14 h-14 flex items-center justify-center mb-5">
                 <useCase.icon className="h-7 w-7 text-accent" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">{useCase.title}</h3>
+              <h3 className="heading-display text-xl text-foreground mb-3">{useCase.title}</h3>
               <p className="text-muted-foreground text-lg leading-relaxed">{useCase.text}</p>
             </div>
           ))}

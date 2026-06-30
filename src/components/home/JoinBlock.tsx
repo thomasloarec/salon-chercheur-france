@@ -26,7 +26,7 @@ const JoinBlock = () => {
 
           {/* Right: Content */}
           <div>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <h2 className="section-rule heading-display text-4xl md:text-5xl text-foreground mb-6">
               Créez votre espace de préparation salon
             </h2>
             
