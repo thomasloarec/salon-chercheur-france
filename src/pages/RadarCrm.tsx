@@ -139,6 +139,7 @@ const RadarCrmPage: React.FC = () => {
 
   useEffect(() => {
     if (!user || parsed) return;
+    if (isRadarLocked) return;
     const pending = loadPendingImport();
     if (pending) {
       const headers = Object.keys(pending.rows[0] ?? {});
@@ -152,7 +153,7 @@ const RadarCrmPage: React.FC = () => {
       setMapping(pending.mapping as Partial<Record<RadarField, string>>);
       resumedFromPendingRef.current = true;
     }
-  }, [user, parsed]);
+  }, [user, parsed, isRadarLocked]);
 
   const onParsed = (p: ParsedFile) => {
     setParsed(p);
@@ -242,6 +243,28 @@ const RadarCrmPage: React.FC = () => {
       }
       navigate(`/radar-crm/results?importId=${result.importId ?? ''}`);
     } catch (err) {
+      let isTrialExpired = false;
+      if (err && typeof err === 'object' && 'context' in err) {
+        const ctx = (err as { context?: Response }).context;
+        if (ctx && ctx.status === 403) {
+          try {
+            const body = (await ctx.json()) as { error?: string; message?: string };
+            if (body?.error === 'TRIAL_EXPIRED') isTrialExpired = true;
+          } catch { /* ignore body parse errors */ }
+        }
+      }
+      if (isTrialExpired) {
+        setRadarStatus((prev) => ({ ...prev, status: 'trial_expired', has_access: false, loaded: true }));
+        setParsed(null);
+        setMapping({});
+        clearPendingImport();
+        toast({
+          title: 'Essai terminé',
+          description: "Vous ne pouvez plus importer de nouveau fichier. Demandez l'accès pour continuer.",
+          variant: 'destructive',
+        });
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'Erreur inconnue';
       void trackRadarEvent('crm_import_failed', { error: msg });
       toast({ title: "Échec de l'import", description: msg, variant: 'destructive' });
@@ -259,13 +282,14 @@ const RadarCrmPage: React.FC = () => {
   // Auto-launch the analysis after returning from auth with a pending import
   useEffect(() => {
     if (autoSubmitRef.current) return;
+    if (!radarStatus.loaded || isRadarLocked) return;
     if (!user || !parsed || submitting) return;
     if (!resumedFromPendingRef.current) return;
     if (missingRequired.length > 0) return;
     autoSubmitRef.current = true;
     void handleSubmit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, parsed, mapping, submitting, missingRequired.length]);
+  }, [user, parsed, mapping, submitting, missingRequired.length, radarStatus.loaded, isRadarLocked]);
 
   return (
     <MainLayout
@@ -478,7 +502,20 @@ const RadarCrmPage: React.FC = () => {
 
       {/* Upload zone */}
       <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
-        {!parsed && (
+        {!radarStatus.loaded && user && (
+          <Card className="border border-border bg-muted/20">
+            <CardContent className="pt-6 text-center">
+              <Radar className="h-8 w-8 mx-auto mb-3 text-muted-foreground animate-spin" />
+              <p className="text-sm text-muted-foreground">Vérification de votre accès Radar CRM…</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {radarStatus.loaded && isRadarLocked && (
+          <TrialExpiredCard onOpenRequest={() => setRequestDialogOpen(true)} />
+        )}
+
+        {radarStatus.loaded && !isRadarLocked && !parsed && (
           <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
             <CardContent className="pt-6">
               <div className="text-center mb-5">
@@ -493,7 +530,7 @@ const RadarCrmPage: React.FC = () => {
           </Card>
         )}
 
-        {parsed && (
+        {radarStatus.loaded && !isRadarLocked && parsed && (
           <div className="space-y-6" id="radar-mapping">
             {/* File summary */}
             <Card className="bg-card">
