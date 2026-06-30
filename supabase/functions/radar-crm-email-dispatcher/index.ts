@@ -581,6 +581,7 @@ function previewToJson(p: PreviewBuild) {
     subject: p.subject,
     eventsCount: p.eventsCount,
     companiesCount: p.companiesCount,
+    starredCount: p.starredCount,
     notifications: p.groups.map((g) => ({
       notificationId: g.notificationIds[0],
       notificationIds: g.notificationIds,
@@ -600,6 +601,7 @@ function previewToJson(p: PreviewBuild) {
         companyName: co.companyName ?? null,
         stand: co.stand ?? null,
         normalizedDomain: co.normalizedDomain ?? null,
+        isStarred: co.isStarred ?? false,
       })),
     })),
   };
