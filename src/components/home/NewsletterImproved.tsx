@@ -40,7 +40,7 @@ const NewsletterImproved = () => {
       <div className="max-w-4xl mx-auto text-center">
         <div className="mb-8">
           <Mail className="h-16 w-16 text-accent mx-auto mb-4" />
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="heading-display text-4xl md:text-5xl text-foreground mb-4">
             Recevez les salons et nouveautés qui méritent votre attention
           </h2>
           <p className="text-xl text-muted-foreground">
