@@ -77,19 +77,19 @@ const HeroSection = () => {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-accent">
+              <div className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-accent">
                 {isLoading ? '...' : `${stats?.totalEvents || 0}+`}
               </div>
               <div className="text-gray-300 mt-2">Salons référencés</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-accent">
+              <div className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-accent">
                 {isLoading ? '...' : `${stats?.totalSectors || 0}+`}
               </div>
               <div className="text-gray-300 mt-2">Secteurs d'activité</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-accent">100%</div>
+              <div className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-accent">100%</div>
               <div className="text-gray-300 mt-2">Gratuit</div>
             </div>
           </div>

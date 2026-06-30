@@ -54,7 +54,7 @@ const StatsBar = () => {
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-2">
               <TrendingUp className="h-8 w-8 text-accent" />
-              <div className="text-4xl md:text-5xl font-bold text-foreground">
+              <div className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
                 {isLoading ? '...' : `${eventsCount}+`}
               </div>
             </div>
@@ -66,7 +66,7 @@ const StatsBar = () => {
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-2">
               <Building2 className="h-8 w-8 text-accent" />
-              <div className="text-4xl md:text-5xl font-bold text-foreground">
+              <div className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
                 {isLoading ? '...' : `${exhibitorsCount}+`}
               </div>
             </div>
@@ -78,7 +78,7 @@ const StatsBar = () => {
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-2">
               <Check className="h-8 w-8 text-accent" />
-              <div className="text-4xl md:text-5xl font-bold text-foreground">
+            <div className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
                 100%
               </div>
             </div>

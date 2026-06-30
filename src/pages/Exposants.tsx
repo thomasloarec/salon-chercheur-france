@@ -335,7 +335,7 @@ export default function Exposants() {
                   </div>
 
                   <div>
-                    <span className="text-4xl font-bold">0€</span>
+                    <span className="font-display text-4xl font-semibold tracking-tight">0€</span>
                     <span className="text-muted-foreground ml-2">/ événement</span>
                   </div>
 
@@ -389,7 +389,7 @@ export default function Exposants() {
                   </div>
 
                   <div>
-                    <span className="text-4xl font-bold">99€</span>
+                    <span className="font-display text-4xl font-semibold tracking-tight">99€</span>
                     <span className="text-muted-foreground ml-2">HT / événement</span>
                   </div>
 
