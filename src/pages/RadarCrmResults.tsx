@@ -18,7 +18,7 @@ import {
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
   CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
-  CalendarCheck, Settings,
+  CalendarCheck, Settings, Lock, Mail, Clock,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
@@ -28,6 +28,9 @@ import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
 
 type Import = {
   id: string;
@@ -46,33 +49,53 @@ type Company = {
   normalized_domain: string | null;
 };
 
-type Match = {
-  id: string;
-  crm_company_id: string;
-  id_exposant: string;
-  event_id: string;
-  normalized_domain: string;
-  needs_review?: boolean | null;
-  name_similarity?: number | null;
-  review_reason?: string | null;
-};
+/**
+ * Shape returned by the server-side RPC `get_my_radar_view`.
+ * Defined locally because the RPC is typed as `Json` in the generated Supabase types.
+ */
+type RadarStatus = 'paid' | 'beta' | 'trial_active' | 'trial_expired' | 'free' | 'none';
 
-type ParticipationViewRow = {
-  id_exposant: string;
+interface RadarViewCompany {
+  crm_company_id: string;
+  company_name: string | null;
+  website_raw: string | null;
+  normalized_domain: string | null;
+  id_exposant: string | null;
   nom_exposant: string | null;
+  stand_exposants_list: string | null;
+  needs_review: boolean | null;
+  name_similarity: number | null;
+}
+
+interface RadarViewEvent {
   event_id: string;
   nom_event: string | null;
+  slug: string | null;
+  url_image: string | null;
   type_event: string | null;
   date_debut: string | null;
   date_fin: string | null;
   ville: string | null;
   nom_lieu: string | null;
-  stand_exposants_list: string | null;
-  is_future_event: boolean | null;
   days_until_event: number | null;
-  url_image: string | null;
-  slug: string | null;
-};
+  is_future_event: boolean | null;
+  company_count: number;
+  companies: RadarViewCompany[];
+}
+
+interface RadarView {
+  has_access: boolean;
+  status: RadarStatus;
+  days_left: number | null;
+  import_id: string | null;
+  summary: {
+    companies_analyzed: number;
+    companies_detected: number;
+    future_salons: number;
+    future_participations: number;
+  };
+  events: RadarViewEvent[];
+}
 
 const formatDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
