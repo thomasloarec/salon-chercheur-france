@@ -1162,9 +1162,9 @@ async function sendRealForUser(
       status: 'pending',
       dry_run: false,
       email_to: p.emailTo,
-      email_subject: p.subject,
-      email_type: 'radar_digest',
-      visibility_mode: 'full',
+      email_subject: subjectToSend,
+      email_type: emailType,
+      visibility_mode: visibilityMode,
       notification_ids: p.notificationIds,
       event_ids: p.eventIds,
       import_ids: p.importIds,
@@ -1188,16 +1188,20 @@ async function sendRealForUser(
   }
 
   const appBaseUrl = Deno.env.get('APP_BASE_URL') ?? 'https://lotexpo.com';
-  const { html, text } = renderEmail(p, unsubscribeUrl, appBaseUrl);
+  const pToRender = hasAccess ? p : { ...p, subject: subjectToSend };
+  const { html, text } = hasAccess
+    ? renderEmail(pToRender, unsubscribeUrl, appBaseUrl)
+    : renderTeaserEmail(pToRender, unsubscribeUrl, appBaseUrl);
 
   try {
     const { id: resendId } = await sendResendEmail({
       to: p.emailTo,
-      subject: p.subject,
+      subject: subjectToSend,
       html, text,
       tags: [
         { name: 'feature', value: 'radar_crm' },
-        { name: 'email_type', value: 'radar_digest' },
+        { name: 'email_type', value: emailType },
+        { name: 'visibility', value: visibilityMode },
         { name: 'environment', value: 'beta' },
       ],
     });
