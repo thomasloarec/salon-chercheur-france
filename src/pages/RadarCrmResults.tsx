@@ -860,6 +860,7 @@ const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null 
 const EventCard: React.FC<{
   group: EventGroup;
   importId?: string | null;
+  getPref?: (companyId: string) => Pref;
   onView: () => void;
   onCompanyClick: (
     c: Company,
@@ -868,7 +869,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, onView, onCompanyClick }) => {
+}> = ({ group, importId, getPref, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -933,6 +934,7 @@ const EventCard: React.FC<{
                   stand={stand}
                   nomExposant={nom_exposant}
                   needsReview={needs_review}
+                  starred={getPref?.(company.id) === 'starred'}
                   onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
                 />
               ))}
