@@ -10,11 +10,11 @@ const MentionsLegales = () => {
       </Helmet>
       
       <div className="container mx-auto px-4 py-8 prose prose-lg max-w-4xl">
-        <h1 className="text-3xl font-bold mb-6 text-primary">Mentions Légales</h1>
+        <h1 className="heading-display text-3xl font-bold mb-6 text-foreground">Mentions Légales</h1>
 
         {/* 1. Identification de l'éditeur */}
         <section id="identification" className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-primary">1. Éditeur du site</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">1. Éditeur du site</h2>
           <p className="mb-4">
             <strong>Cécile Noël</strong> – CECILE NOEL COMMUNICATION (entrepreneur individuel, EI)<br/>
             Adresse : 12 allée des Longrais, 14200 Hérouville Saint Clair<br/>
@@ -27,13 +27,13 @@ const MentionsLegales = () => {
 
         {/* 2. Directeur de publication */}
         <section id="publication" className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-primary">2. Directrice de la publication</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">2. Directrice de la publication</h2>
           <p className="mb-4">Cécile Noël</p>
         </section>
 
         {/* 3. Hébergeur */}
         <section id="hebergeur" className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-primary">3. Hébergeur</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">3. Hébergeur</h2>
           <p className="mb-4">
             GoDaddy<br/>
             003, Tower 4A, DLF Corporate Park, MG Road Gurgaon Gurgaon HR IN 122002<br/>
@@ -43,7 +43,7 @@ const MentionsLegales = () => {
 
         {/* 4. Propriété intellectuelle */}
         <section id="propriete-intellectuelle" className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-primary">4. Propriété intellectuelle</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">4. Propriété intellectuelle</h2>
           <p className="mb-4">
             L'ensemble du contenu du site Lotexpo (textes, images, graphismes, logo, icônes, etc.) est protégé par le Code de la propriété intellectuelle. Toute reproduction ou représentation est interdite sans l'autorisation écrite préalable de CECILE NOEL COMMUNICATION.
           </p>
@@ -51,7 +51,7 @@ const MentionsLegales = () => {
 
         {/* 5. Données personnelles & Cookies */}
         <section id="donnees-personnelles" className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-primary">5. Données personnelles & Cookies</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">5. Données personnelles & Cookies</h2>
           <p className="mb-4">
             Conformément au Règlement (UE) 2016/679 (RGPD) et à la loi n° 78‑17 du 6 janvier 1978 modifiée, vous disposez d'un droit d'accès, de rectification et de suppression des données vous concernant. Pour l'exercer, contactez : <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>.<br/>
             La gestion des cookies est détaillée dans la <a href="/politique-confidentialite" className="text-primary hover:underline">Politique de confidentialité</a>.
@@ -60,7 +60,7 @@ const MentionsLegales = () => {
 
         {/* 6. Responsabilité */}
         <section id="responsabilite" className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-primary">6. Responsabilité</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">6. Responsabilité</h2>
           <p className="mb-4">
             CECILE NOEL COMMUNICATION ne saurait être tenu responsable des dommages directs ou indirects résultant de l'accès ou de l'utilisation du site et/ou de ces informations.
           </p>
@@ -68,7 +68,7 @@ const MentionsLegales = () => {
 
         {/* 7. Droit applicable */}
         <section id="droit-applicable" className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-primary">7. Droit applicable</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">7. Droit applicable</h2>
           <p className="mb-4">Le site et ses mentions légales sont régis par le droit français.</p>
         </section>
 

@@ -45,11 +45,11 @@ const ForgotPassword = () => {
 
   return (
     <MainLayout title="Mot de passe oublié">
-      <div className="bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-muted/30 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">Lotexpo</h1>
-            <p className="text-gray-600 mt-2">Réinitialisez votre mot de passe</p>
+            <h1 className="heading-display text-3xl text-primary">Lotexpo</h1>
+            <p className="text-muted-foreground mt-2">Réinitialisez votre mot de passe</p>
           </div>
 
           <Card>
@@ -62,8 +62,8 @@ const ForgotPassword = () => {
             <CardContent>
               {submitted ? (
                 <div className="space-y-4">
-                  <Alert className="border-green-200 bg-green-50">
-                    <AlertDescription className="text-green-700">
+                  <Alert className="border-primary/20 bg-primary/5">
+                    <AlertDescription className="text-primary">
                       {GENERIC_SUCCESS}
                     </AlertDescription>
                   </Alert>
@@ -79,7 +79,7 @@ const ForgotPassword = () => {
                   <div className="space-y-2">
                     <Label htmlFor="forgot-email">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="forgot-email"
                         type="email"
