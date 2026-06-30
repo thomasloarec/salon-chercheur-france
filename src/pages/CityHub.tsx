@@ -176,7 +176,7 @@ const CityHub = () => {
 
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-3">
+            <h1 className="heading-display text-3xl font-bold text-foreground mb-3">
               Salons professionnels à {hub.cityName}
             </h1>
             <p className="text-muted-foreground max-w-3xl">{hub.description}</p>
@@ -224,7 +224,7 @@ const CityHub = () => {
           {/* Upcoming events grouped by month */}
           {groupedUpcoming.length > 0 && (
             <section className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6">
+              <h2 className="section-rule heading-display text-2xl font-semibold text-foreground mb-6">
                 Salons à venir à {hub.cityName}
               </h2>
               <div className="space-y-10">
@@ -265,7 +265,7 @@ const CityHub = () => {
           {/* Past events */}
           {filteredPast.length > 0 && (
             <section className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-2">
+              <h2 className="section-rule heading-display text-2xl font-semibold text-foreground mb-2">
                 Éditions précédentes
               </h2>
               <p className="text-sm text-muted-foreground mb-6">Ces salons ont déjà eu lieu.</p>
@@ -286,7 +286,7 @@ const CityHub = () => {
           {/* Explorer par année */}
           {hub.yearsBreakdown && hub.yearsBreakdown.length > 0 && (
             <section className="mb-12 border-t border-border pt-8">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Explorer par année</h2>
+              <h2 className="section-rule heading-display text-xl font-semibold text-foreground mb-4">Explorer par année</h2>
               <div className="flex flex-wrap gap-2">
                 {hub.yearsBreakdown.map(y => (
                   y.indexable ? (
