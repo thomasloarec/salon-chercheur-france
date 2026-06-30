@@ -1332,7 +1332,7 @@ async function sendRealForUser(
       response: {
         success: true, dryRun: false, sendReal: true,
         emailsSent: 1,
-        emailTo: p.emailTo, subject: p.subject,
+        emailTo: p.emailTo, subject: subjectToSend,
         resendMessageId: resendId, status: 'sent', logId,
         notificationIdsIncluded: p.notificationIds,
         skippedNotificationsAlreadyEmailed: built.alreadyEmailedCount,
