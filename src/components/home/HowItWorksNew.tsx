@@ -5,7 +5,7 @@ const HowItWorksNew = () => {
     <section className="bg-secondary py-20 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+          <h2 className="section-rule [&::before]:mx-auto heading-display text-4xl md:text-5xl text-foreground mb-6">
             Les salons concentrent l'attention. Lotexpo la transforme en rencontres utiles.
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -20,16 +20,16 @@ const HowItWorksNew = () => {
             <div className="mb-8">
               <div className="bg-card border-2 border-border rounded-2xl p-8 shadow-lg">
                 <div className="flex items-start gap-4">
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-4 shrink-0">
-                    <Search className="h-8 w-8 text-white" />
+                  <div className="bg-primary rounded-full p-4 shrink-0">
+                    <Search className="h-8 w-8 text-primary-foreground" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-sm font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                      <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
                         Étape 1
                       </span>
                     </div>
-                    <h3 className="text-2xl font-bold text-foreground mb-3">
+                    <h3 className="heading-display text-2xl text-foreground mb-3">
                       Identifier les salons qui méritent votre déplacement
                     </h3>
                     <p className="text-muted-foreground text-lg">
@@ -48,16 +48,16 @@ const HowItWorksNew = () => {
             <div className="mb-8">
               <div className="bg-card border-2 border-border rounded-2xl p-8 shadow-lg">
                 <div className="flex items-start gap-4">
-                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-full p-4 shrink-0">
-                    <Sparkles className="h-8 w-8 text-white" />
+                  <div className="bg-primary rounded-full p-4 shrink-0">
+                    <Sparkles className="h-8 w-8 text-primary-foreground" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-sm font-bold text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                      <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
                         Étape 2
                       </span>
                     </div>
-                    <h3 className="text-2xl font-bold text-foreground mb-3">
+                    <h3 className="heading-display text-2xl text-foreground mb-3">
                       Repérer les exposants et nouveautés à suivre
                     </h3>
                     <p className="text-muted-foreground text-lg">
@@ -77,7 +77,7 @@ const HowItWorksNew = () => {
               <div className="bg-gradient-to-br from-accent/10 to-accent/5 border-2 border-accent rounded-2xl p-8 shadow-lg">
                 <div className="flex items-start gap-4">
                   <div className="bg-gradient-to-br from-accent to-accent/80 rounded-full p-4 shrink-0">
-                    <Users className="h-8 w-8 text-white" />
+                    <Users className="h-8 w-8 text-accent-foreground" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
@@ -85,7 +85,7 @@ const HowItWorksNew = () => {
                         Étape 3
                       </span>
                     </div>
-                    <h3 className="text-2xl font-bold text-foreground mb-3">
+                    <h3 className="heading-display text-2xl text-foreground mb-3">
                       Transformer votre visite en rencontres business
                     </h3>
                     <p className="text-muted-foreground text-lg">
