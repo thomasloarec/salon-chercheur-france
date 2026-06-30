@@ -136,6 +136,7 @@ interface EventGroup {
     stand: string | null;
     needs_review: boolean;
     name_similarity: number | null;
+    pref_status: Pref | null;
   }>;
 }
 
@@ -164,6 +165,7 @@ const mapEventToGroup = (e: RadarViewEvent): EventGroup => ({
     stand: c.stand_exposants_list,
     needs_review: c.needs_review === true,
     name_similarity: c.name_similarity ?? null,
+    pref_status: c.pref_status ?? null,
   })),
 });
 
