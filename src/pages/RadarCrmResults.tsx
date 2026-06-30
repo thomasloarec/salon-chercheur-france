@@ -843,7 +843,7 @@ const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null 
         disabled={toggleFavorite.isPending}
         className={cn(
           'transition-all duration-200',
-          isFavorite && 'bg-green-500 text-white hover:bg-green-600 border-green-500',
+          isFavorite && 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary',
         )}
       >
         {isFavorite ? (
