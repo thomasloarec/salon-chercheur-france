@@ -177,6 +177,9 @@ const RadarCrmResults: React.FC = () => {
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  // Vue par compte = vue par défaut (cadrage « veille »).
+  // Si un événement est mis en avant (deep-link), on ouvre la vue par salon pour préserver le scroll auto.
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('eventId') ? 'future' : 'companies');
 
   const reloadAll = async () => {
     setActiveImportId(null);
@@ -284,15 +287,25 @@ const RadarCrmResults: React.FC = () => {
     [eventGroups],
   );
 
+  // Salon le plus imminent (le plus petit days_until parmi les salons futurs),
+  // indépendamment de la mise en avant deep-link — pour le bandeau « radar actif ».
+  const nextEvent = useMemo(() => {
+    const fut = eventGroups.filter((g) => g.is_future && g.days_until != null);
+    if (fut.length === 0) return null;
+    return fut.reduce((min, g) => ((g.days_until ?? 9999) < (min.days_until ?? 9999) ? g : min));
+  }, [eventGroups]);
+
   // Scroll to highlighted event once results are rendered.
   useEffect(() => {
     if (!highlightedEventId || loading) return;
+    // N'active le scroll que si la vue par salon est affichée (sinon les cartes salon ne sont pas montées).
+    if (activeTab !== 'future') return;
     if (!eventGroups.find((g) => g.event_id === highlightedEventId)) return;
     const el = document.getElementById(`radar-event-${highlightedEventId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [highlightedEventId, loading, eventGroups]);
+  }, [highlightedEventId, loading, eventGroups, activeTab]);
 
   // KPI values come straight from the server-aggregated summary.
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;
@@ -364,7 +377,7 @@ const RadarCrmResults: React.FC = () => {
                 {loading ? 'Analyse en cours…' : isLocked ? (
                   <>Votre Radar CRM est prêt — débloquez l'accès pour découvrir vos détections</>
                 ) : (
-                  <><strong className="text-foreground">{kpiDetected}</strong> entreprise{kpiDetected > 1 ? 's' : ''} détectée{kpiDetected > 1 ? 's' : ''} sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo</>
+                  <>Pendant que vous travaillez, Radar surveille vos comptes CRM et vous alerte avant chaque salon.</>
                 )}
               </p>
             </div>
@@ -432,14 +445,32 @@ const RadarCrmResults: React.FC = () => {
             />
           ) : (
             <>
-              <Tabs defaultValue="future">
+              {/* Bandeau « radar actif » — cadrage veille/surveillance */}
+              <RadarActiveBanner
+                analyzed={kpiAnalyzed}
+                futureCompanies={summary?.future_companies ?? 0}
+                futureSalons={kpiFutureSalons}
+                nextEvent={nextEvent}
+                onClickEvent={onClickEvent}
+                onOpenSettings={() => setSettingsOpen(true)}
+              />
+
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="bg-card border w-full sm:w-auto justify-start flex-nowrap overflow-x-auto no-scrollbar">
-                  <TabsTrigger value="future">À venir ({futureGroups.length})</TabsTrigger>
+                  <TabsTrigger value="companies" className="whitespace-nowrap">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
+                  <TabsTrigger value="future" className="whitespace-nowrap">Par salon ({futureGroups.length})</TabsTrigger>
                   <TabsTrigger value="past" className="whitespace-nowrap">
-                    <History className="h-3.5 w-3.5 mr-1" /> Historique passé ({pastGroups.length})
+                    <History className="h-3.5 w-3.5 mr-1" /> Historique ({pastGroups.length})
                   </TabsTrigger>
-                  <TabsTrigger value="companies" className="whitespace-nowrap">Entreprises ({matchedCompanies.length})</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="companies" className="mt-5">
+                  <CompanyAccountsList
+                    groups={eventGroups}
+                    companies={matchedCompanies}
+                    onClickEvent={onClickEvent}
+                  />
+                </TabsContent>
 
                 <TabsContent value="future" className="mt-5">
                   {futureGroups.length === 0 ? (
@@ -470,7 +501,7 @@ const RadarCrmResults: React.FC = () => {
 
                 <TabsContent value="past" className="mt-5">
                   {pastGroups.length === 0 ? (
-                    <EmptyText label="Aucun salon passé détecté." />
+                    <EmptyText label="Aucun salon passé détecté pour vos comptes surveillés." />
                   ) : (
                     <div className="space-y-3">
                       {pastGroups.map((g) => (
@@ -484,14 +515,6 @@ const RadarCrmResults: React.FC = () => {
                       ))}
                     </div>
                   )}
-                </TabsContent>
-
-                <TabsContent value="companies" className="mt-5">
-                  <CompanyAccountsList
-                    groups={eventGroups}
-                    companies={matchedCompanies}
-                    onClickEvent={onClickEvent}
-                  />
                 </TabsContent>
               </Tabs>
 
@@ -532,6 +555,73 @@ const RadarCrmResults: React.FC = () => {
 };
 
 /* ────────────────────────── Sub-components ────────────────────────── */
+
+/** Bandeau « radar actif » — cadrage veille : surveillance + imminence + réassurance email. */
+const RadarActiveBanner: React.FC<{
+  analyzed: number;
+  futureCompanies: number;
+  futureSalons: number;
+  nextEvent: EventGroup | null;
+  onClickEvent: (g: EventGroup) => void;
+  onOpenSettings: () => void;
+}> = ({ analyzed, futureCompanies, futureSalons, nextEvent, onClickEvent, onOpenSettings }) => {
+  const days = nextEvent?.days_until != null ? Math.max(0, nextEvent.days_until) : null;
+  return (
+    <Card className="bg-card border-primary/20">
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500/60 opacity-75 animate-ping" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">Radar actif</p>
+            <p className="text-sm text-foreground/80 mt-0.5">
+              On surveille <strong className="text-foreground">{analyzed}</strong> compte{analyzed > 1 ? 's' : ''} de votre CRM.{' '}
+              <strong className="text-foreground">{futureCompanies}</strong> exposeront sur{' '}
+              <strong className="text-foreground">{futureSalons}</strong> salon{futureSalons > 1 ? 's' : ''} à venir.
+            </p>
+          </div>
+        </div>
+
+        {nextEvent && (
+          <button
+            type="button"
+            onClick={() => onClickEvent(nextEvent)}
+            disabled={!nextEvent.slug}
+            className="w-full text-left rounded-lg border border-accent/40 bg-accent/10 p-3 transition-colors hover:bg-accent/15 disabled:opacity-60"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wide text-accent flex items-center gap-1">
+              <Flame className="h-3 w-3" /> À ne pas rater
+            </p>
+            <p className="text-sm font-semibold text-foreground mt-1">
+              {nextEvent.nom_event}
+              {days != null && (
+                <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>
+              )}
+            </p>
+            <p className="text-xs text-foreground/70 mt-0.5">
+              {nextEvent.company_count} de vos comptes y exposent
+              {nextEvent.ville ? ` · ${nextEvent.ville}` : ''}
+            </p>
+          </button>
+        )}
+
+        <p className="text-xs text-foreground/60 flex flex-wrap items-center gap-1">
+          <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
+          Vous êtes alerté par email avant chaque salon concerné.
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="text-primary hover:underline font-medium"
+          >
+            Paramètres Radar CRM
+          </button>
+        </p>
+      </CardContent>
+    </Card>
+  );
+};
 
 const StatCard: React.FC<{
   label: string; value: number | string; sub?: string;
@@ -828,7 +918,11 @@ const PastEventCard: React.FC<{
 const CompanyAccountsList: React.FC<{
   groups: EventGroup[]; companies: Company[]; onClickEvent: (g: EventGroup) => void;
 }> = ({ groups, companies, onClickEvent }) => {
-  if (companies.length === 0) return <EmptyText label="Aucune entreprise détectée." />;
+  if (companies.length === 0) {
+    return (
+      <EmptyText label="Aucun mouvement détecté pour l'instant — Radar continue de surveiller vos comptes. Dès qu'un de vos comptes s'inscrit à un salon, vous le verrez ici et serez alerté." />
+    );
+  }
 
   const enriched = companies.map((c) => {
     const compGroups = groups.filter((g) => g.companies.some((x) => x.company.id === c.id));
@@ -836,7 +930,11 @@ const CompanyAccountsList: React.FC<{
     const past = compGroups.filter((g) => !g.is_future).sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? ''));
     return { c, future, past };
   }).sort((a, b) => {
-    if (a.future.length !== b.future.length) return b.future.length - a.future.length;
+    // Tri par imminence : le compte avec le salon futur le plus proche d'abord.
+    // Les comptes sans salon futur passent en bas.
+    const aHas = a.future.length > 0;
+    const bHas = b.future.length > 0;
+    if (aHas !== bHas) return aHas ? -1 : 1;
     return (a.future[0]?.days_until ?? 9999) - (b.future[0]?.days_until ?? 9999);
   });
 
@@ -870,7 +968,7 @@ const CompanyAccountCard: React.FC<{
   const futureMore = future.length - futureShown.length;
   const pastMore = past.length - pastShown.length;
 
-  const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
+  const renderRow = (g: EventGroup, tone: 'future' | 'past', isNext = false) => {
     const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
     return (
       <button
@@ -884,9 +982,21 @@ const CompanyAccountCard: React.FC<{
             : 'bg-muted/40 hover:bg-muted border'
         }`}
       >
-        <p className={`text-sm font-medium truncate ${tone === 'future' ? 'text-foreground' : 'text-foreground/80'}`}>
-          {g.nom_event}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className={`text-sm font-medium truncate ${tone === 'future' ? 'text-foreground' : 'text-foreground/80'}`}>
+            {g.nom_event}
+          </p>
+          {tone === 'future' && g.days_until != null && (
+            <Badge
+              className={cn(
+                'shrink-0 border-none',
+                isNext ? 'bg-accent text-accent-foreground' : 'bg-foreground/80 text-background',
+              )}
+            >
+              J-{Math.max(0, g.days_until)}
+            </Badge>
+          )}
+        </div>
         <p className="text-[11px] text-foreground/60 mt-0.5 truncate">
           {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
           {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
@@ -925,7 +1035,7 @@ const CompanyAccountCard: React.FC<{
             <p className="text-[10px] font-bold uppercase tracking-wide text-primary">
               Salons à venir
             </p>
-            {futureShown.map((g) => renderRow(g, 'future'))}
+            {futureShown.map((g, i) => renderRow(g, 'future', i === 0))}
             {futureMore > 0 && (
               <button
                 type="button"
@@ -1201,14 +1311,14 @@ const LockedView: React.FC<{
 const NoFutureMatches: React.FC<{ companiesCount: number; matchedCount: number }> = ({ companiesCount, matchedCount }) => (
   <Card>
     <CardContent className="pt-8 pb-8 text-center">
-      <Sparkles className="h-10 w-10 mx-auto text-primary mb-3" />
+      <Radar className="h-10 w-10 mx-auto text-primary mb-3" />
       <h3 className="text-lg font-semibold mb-1 text-foreground">
-        {matchedCount === 0 ? 'Aucune entreprise détectée pour le moment' : 'Aucun salon à venir détecté'}
+        Aucun mouvement détecté pour l'instant
       </h3>
       <p className="text-sm text-foreground/70 max-w-md mx-auto mb-4">
         {matchedCount === 0
-          ? `Nous n'avons pas trouvé de correspondance exacte entre les ${companiesCount} domaines de votre fichier et les exposants Lotexpo.`
-          : "Vos comptes ne sont pas encore inscrits à un salon à venir. Importez un nouveau fichier ou consultez l'historique."}
+          ? `Radar continue de surveiller vos comptes. Aucune correspondance pour l'instant entre les ${companiesCount} domaines de votre fichier et les exposants Lotexpo.`
+          : "Radar continue de surveiller vos comptes. Dès qu'un de vos comptes s'inscrit à un salon à venir, vous le verrez ici et serez alerté par email."}
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         <Button asChild>
