@@ -556,6 +556,73 @@ const RadarCrmResults: React.FC = () => {
 
 /* ────────────────────────── Sub-components ────────────────────────── */
 
+/** Bandeau « radar actif » — cadrage veille : surveillance + imminence + réassurance email. */
+const RadarActiveBanner: React.FC<{
+  analyzed: number;
+  futureCompanies: number;
+  futureSalons: number;
+  nextEvent: EventGroup | null;
+  onClickEvent: (g: EventGroup) => void;
+  onOpenSettings: () => void;
+}> = ({ analyzed, futureCompanies, futureSalons, nextEvent, onClickEvent, onOpenSettings }) => {
+  const days = nextEvent?.days_until != null ? Math.max(0, nextEvent.days_until) : null;
+  return (
+    <Card className="bg-card border-primary/20">
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500/60 opacity-75 animate-ping" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">Radar actif</p>
+            <p className="text-sm text-foreground/80 mt-0.5">
+              On surveille <strong className="text-foreground">{analyzed}</strong> compte{analyzed > 1 ? 's' : ''} de votre CRM.{' '}
+              <strong className="text-foreground">{futureCompanies}</strong> exposeront sur{' '}
+              <strong className="text-foreground">{futureSalons}</strong> salon{futureSalons > 1 ? 's' : ''} à venir.
+            </p>
+          </div>
+        </div>
+
+        {nextEvent && (
+          <button
+            type="button"
+            onClick={() => onClickEvent(nextEvent)}
+            disabled={!nextEvent.slug}
+            className="w-full text-left rounded-lg border border-accent/40 bg-accent/10 p-3 transition-colors hover:bg-accent/15 disabled:opacity-60"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wide text-accent flex items-center gap-1">
+              <Flame className="h-3 w-3" /> À ne pas rater
+            </p>
+            <p className="text-sm font-semibold text-foreground mt-1">
+              {nextEvent.nom_event}
+              {days != null && (
+                <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>
+              )}
+            </p>
+            <p className="text-xs text-foreground/70 mt-0.5">
+              {nextEvent.company_count} de vos comptes y exposent
+              {nextEvent.ville ? ` · ${nextEvent.ville}` : ''}
+            </p>
+          </button>
+        )}
+
+        <p className="text-xs text-foreground/60 flex flex-wrap items-center gap-1">
+          <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
+          Vous êtes alerté par email avant chaque salon concerné.
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="text-primary hover:underline font-medium"
+          >
+            Paramètres Radar CRM
+          </button>
+        </p>
+      </CardContent>
+    </Card>
+  );
+};
+
 const StatCard: React.FC<{
   label: string; value: number | string; sub?: string;
   accent?: 'primary' | 'success' | 'accent'; icon?: React.ReactNode;
