@@ -1135,6 +1135,16 @@ async function sendRealForUser(
     };
   }
 
+  // Entitlement branch: active access → full digest; locked → teaser.
+  const hasAccess = await userHasRadarAccess(supabase, filterUserId);
+  const visibilityMode: 'full' | 'teaser' = hasAccess ? 'full' : 'teaser';
+  const emailType: 'radar_digest' | 'teaser' = hasAccess ? 'radar_digest' : 'teaser';
+  const subjectToSend = hasAccess
+    ? p.subject
+    : (p.companiesCount > 1
+        ? `${p.companiesCount} entreprises de votre CRM exposent bientôt`
+        : `1 entreprise de votre CRM expose bientôt`);
+
   const metadataLog = {
     events: p.groups.map((g) => ({
       eventId: g.eventId,
