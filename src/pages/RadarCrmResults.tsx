@@ -342,6 +342,34 @@ const RadarCrmResults: React.FC = () => {
     return fut.reduce((min, g) => ((g.days_until ?? 9999) < (min.days_until ?? 9999) ? g : min));
   }, [eventGroups]);
 
+  // Encart héros « ancré sur la priorité » :
+  //  - s'il existe un compte étoilé avec un salon à venir → le plus imminent d'entre eux ;
+  //  - sinon → le salon le plus imminent (libellé explicite).
+  const featured = useMemo(() => {
+    let best: { event: EventGroup; company: Company; days: number } | null = null;
+    for (const g of eventGroups) {
+      if (!g.is_future || g.days_until == null) continue;
+      for (const c of g.companies) {
+        const eff = prefOverrides[c.company.id] ?? prefByCompany[c.company.id] ?? 'normal';
+        if (eff !== 'starred') continue;
+        if (!best || (g.days_until ?? 9999) < best.days) {
+          best = { event: g, company: c.company, days: g.days_until ?? 9999 };
+        }
+      }
+    }
+    if (best) return { event: best.event, company: best.company, isPriority: true };
+    if (nextEvent) return { event: nextEvent, company: null as Company | null, isPriority: false };
+    return null;
+  }, [eventGroups, nextEvent, prefOverrides, prefByCompany]);
+
+  // Nombre de comptes étoilés (statut effectif) pour la ligne « Radar actif ».
+  const starredCount = useMemo(
+    () => matchedCompanies.filter(
+      (c) => (prefOverrides[c.id] ?? prefByCompany[c.id] ?? 'normal') === 'starred',
+    ).length,
+    [matchedCompanies, prefOverrides, prefByCompany],
+  );
+
   // Scroll to highlighted event once results are rendered.
   useEffect(() => {
     if (!highlightedEventId || loading) return;
