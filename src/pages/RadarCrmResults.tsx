@@ -1311,14 +1311,14 @@ const LockedView: React.FC<{
 const NoFutureMatches: React.FC<{ companiesCount: number; matchedCount: number }> = ({ companiesCount, matchedCount }) => (
   <Card>
     <CardContent className="pt-8 pb-8 text-center">
-      <Sparkles className="h-10 w-10 mx-auto text-primary mb-3" />
+      <Radar className="h-10 w-10 mx-auto text-primary mb-3" />
       <h3 className="text-lg font-semibold mb-1 text-foreground">
-        {matchedCount === 0 ? 'Aucune entreprise détectée pour le moment' : 'Aucun salon à venir détecté'}
+        Aucun mouvement détecté pour l'instant
       </h3>
       <p className="text-sm text-foreground/70 max-w-md mx-auto mb-4">
         {matchedCount === 0
-          ? `Nous n'avons pas trouvé de correspondance exacte entre les ${companiesCount} domaines de votre fichier et les exposants Lotexpo.`
-          : "Vos comptes ne sont pas encore inscrits à un salon à venir. Importez un nouveau fichier ou consultez l'historique."}
+          ? `Radar continue de surveiller vos comptes. Aucune correspondance pour l'instant entre les ${companiesCount} domaines de votre fichier et les exposants Lotexpo.`
+          : "Radar continue de surveiller vos comptes. Dès qu'un de vos comptes s'inscrit à un salon à venir, vous le verrez ici et serez alerté par email."}
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         <Button asChild>
