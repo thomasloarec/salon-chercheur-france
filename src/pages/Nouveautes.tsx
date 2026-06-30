@@ -489,7 +489,7 @@ function HeroStat({ value, label, loading }: { value: number; label: string; loa
       {loading ? (
         <Skeleton className="h-8 w-12" />
       ) : (
-        <span className="text-2xl font-bold tabular-nums text-primary md:text-3xl">
+        <span className="font-display text-2xl font-semibold tracking-tight tabular-nums text-primary md:text-3xl">
           {value}
         </span>
       )}
