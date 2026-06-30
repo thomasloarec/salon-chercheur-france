@@ -286,7 +286,6 @@ const RadarCrmResults: React.FC = () => {
     const prev = getPref(companyId);
     if (prev === next) return;
     setPrefOverrides((o) => ({ ...o, [companyId]: next }));
-    void trackRadarEvent('crm_company_pref_set', { companyId, status: next });
     const { error: rpcErr } = await supabase.rpc('set_radar_company_pref', {
       p_crm_company_id: companyId,
       p_status: next,
