@@ -543,6 +543,21 @@ async function buildPreviewForUser(
       : `${companiesCount} entreprises de votre Radar CRM exposent bientôt`;
   }
 
+  const firstStarredName: string | null = (() => {
+    for (const g of top) for (const co of g.companies as any[]) {
+      if (co?.isStarred && (co.exhibitorName || co.companyName)) {
+        return String(co.exhibitorName ?? co.companyName);
+      }
+    }
+    return null;
+  })();
+  if (firstStarredName) {
+    const starSubj = firstEventName
+      ? `★ ${firstStarredName} expose bientôt à ${firstEventName}`
+      : `★ ${firstStarredName} expose bientôt`;
+    subject = starSubj.length <= SUBJECT_MAX ? starSubj : `★ ${firstStarredName} expose bientôt`;
+  }
+
   const notificationIds = top.flatMap((g) => g.notificationIds);
   const importIds = Array.from(new Set(top.flatMap((g) => g.importIds)));
   const eventIdsOut = top.map((g) => g.eventId);
