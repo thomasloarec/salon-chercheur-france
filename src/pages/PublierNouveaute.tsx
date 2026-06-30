@@ -53,7 +53,7 @@ export default function PublierNouveaute() {
           <div className="container max-w-4xl mx-auto px-4">
             {/* Header */}
             <div className="text-center space-y-4 mb-10">
-              <h1 className="text-3xl md:text-4xl font-bold">
+              <h1 className="heading-display text-3xl md:text-4xl text-foreground">
                 Trouvez votre salon pour publier votre nouveauté
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
