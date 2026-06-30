@@ -834,6 +834,7 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
               <td style="padding:14px 16px;font-size:13px;color:${NAVY};">
                 <strong style="color:${ORANGE_DARK};">${totalCompanies}</strong> entreprise${totalCompanies>1?'s':''} de votre CRM ·
                 <strong style="color:${ORANGE_DARK};">${totalEvents}</strong> salon${totalEvents>1?'s':''}<br/>
+                ${p.starredCount > 0 ? `<span style="display:inline-block;color:${ORANGE_DARK};font-weight:600;margin-top:2px;">★ ${p.starredCount} prioritaire${p.starredCount>1?'s':''} dans votre veille</span><br/>` : ''}
                 <span style="color:${MUTED};">Préparez vos rendez-vous avant l’événement.</span>
               </td>
             </tr>
