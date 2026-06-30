@@ -437,18 +437,18 @@ const RadarCrmResults: React.FC = () => {
 
   return (
     <MainLayout title="Mon Radar CRM | Lotexpo">
-      <div className="bg-muted/20 min-h-[calc(100vh-200px)]">
-        <div className="max-w-6xl mx-auto px-4 py-8 md:py-10 space-y-6">
+      <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
+        <div className="max-w-6xl mx-auto px-4 py-10 md:py-14 space-y-10 md:space-y-12">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-3 mb-2">
                 <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
                   <Radar className="h-5 w-5" />
                 </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">Votre Radar CRM</h1>
+                <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Votre Radar CRM</h1>
               </div>
-              <p className="text-foreground/70 text-sm md:text-base">
+              <p className="text-muted-foreground text-sm md:text-base max-w-xl">
                 {loading ? 'Analyse en cours…' : isLocked ? (
                   <>Votre Radar CRM est prêt — débloquez l'accès pour découvrir vos détections</>
                 ) : (
@@ -496,7 +496,7 @@ const RadarCrmResults: React.FC = () => {
 
           {/* Hero stats — masquées en état verrouillé (remplacées par le bandeau agrégé du paywall) */}
           {!isLocked && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
               <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
               <StatCard label="Entreprises détectées" value={kpiDetected} accent="accent" />
               <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
@@ -540,7 +540,7 @@ const RadarCrmResults: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="companies" className="mt-5">
+                <TabsContent value="companies" className="mt-8">
                   <CompanyAccountsList
                     groups={eventGroups}
                     companies={matchedCompanies}
@@ -550,11 +550,11 @@ const RadarCrmResults: React.FC = () => {
                   />
                 </TabsContent>
 
-                <TabsContent value="future" className="mt-5">
+                <TabsContent value="future" className="mt-8">
                   {futureGroups.length === 0 ? (
                     <NoFutureMatches companiesCount={kpiAnalyzed} matchedCount={kpiDetected} />
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-5">
                       {futureGroups.map((g) => (
                         <div
                           key={g.event_id}
@@ -578,11 +578,11 @@ const RadarCrmResults: React.FC = () => {
                   )}
                 </TabsContent>
 
-                <TabsContent value="past" className="mt-5">
+                <TabsContent value="past" className="mt-8">
                   {pastGroups.length === 0 ? (
                     <EmptyText label="Aucun salon passé détecté pour vos comptes surveillés." />
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-5">
                       {pastGroups.map((g) => (
                         <PastEventCard
                           key={g.event_id}
@@ -649,16 +649,16 @@ const RadarActiveBanner: React.FC<{
   const isPriority = featured?.isPriority ?? false;
   const days = ev?.days_until != null ? Math.max(0, ev.days_until) : null;
   return (
-    <Card className="bg-card border-primary/20">
-      <CardContent className="py-4 space-y-3">
+    <Card className="bg-secondary/40 border-border/60 shadow-none">
+      <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
         <div className="flex items-start gap-3">
           <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
             <span className="absolute inline-flex h-full w-full rounded-full bg-accent/50 opacity-75 animate-ping" />
             <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Radar actif</p>
-            <p className="text-sm text-foreground/80 mt-0.5">
+            <p className="font-display text-lg font-semibold text-foreground leading-tight">Radar actif</p>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
               On surveille <strong className="text-foreground">{analyzed}</strong> compte{analyzed > 1 ? 's' : ''} de votre CRM.{' '}
               <strong className="text-foreground">{futureCompanies}</strong> exposeront sur{' '}
               <strong className="text-foreground">{futureSalons}</strong> salon{futureSalons > 1 ? 's' : ''} à venir.
@@ -674,25 +674,25 @@ const RadarActiveBanner: React.FC<{
             type="button"
             onClick={() => onClickEvent(ev)}
             disabled={!ev.slug}
-            className="w-full text-left rounded-lg border border-accent/25 bg-secondary/60 p-3 transition-colors hover:bg-secondary disabled:opacity-60"
+            className="w-full text-left rounded-xl border border-accent/30 bg-card p-4 md:p-5 transition-colors hover:bg-secondary/50 disabled:opacity-60"
           >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-accent flex items-center gap-1">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-accent flex items-center gap-1.5">
               {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
               {isPriority ? 'Compte prioritaire' : 'Prochain salon'}
             </p>
             {isPriority && featured?.company ? (
-              <p className="text-sm font-semibold text-foreground mt-1">
+              <p className="text-base font-semibold text-foreground mt-2 leading-snug">
                 <span className="text-accent">{featured.company.company_name}</span> expose à {ev.nom_event}
                 {days != null && <span className="ml-1">dans {days} jour{days > 1 ? 's' : ''}</span>}
                 {ev.ville ? ` · ${ev.ville}` : ''}
               </p>
             ) : (
               <>
-                <p className="text-sm font-semibold text-foreground mt-1">
+                <p className="text-base font-semibold text-foreground mt-2 leading-snug">
                   Prochain salon où vos comptes exposent : {ev.nom_event}
                   {days != null && <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>}
                 </p>
-                <p className="text-xs text-foreground/70 mt-0.5">
+                <p className="text-sm text-muted-foreground mt-1">
                   {ev.company_count} de vos comptes y exposent
                   {ev.ville ? ` · ${ev.ville}` : ''}
                 </p>
@@ -701,7 +701,7 @@ const RadarActiveBanner: React.FC<{
           </button>
         )}
 
-        <p className="text-xs text-foreground/60 flex flex-wrap items-center gap-1">
+        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
           <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
           Vous êtes alerté par email avant chaque salon concerné.
           <button
@@ -725,19 +725,19 @@ const StatCard: React.FC<{
   // Les autres cartes restent neutres (blanc, bordure fine), chiffre en navy ou foreground.
   const tone =
     accent === 'accent' ? 'border-accent/30 bg-secondary/40' :
-    'bg-card';
+    'bg-card border-border/60';
   const valueTone =
     accent === 'accent'  ? 'text-accent' :
     accent === 'primary' ? 'text-primary' :
     'text-foreground';
   return (
-    <Card className={tone}>
-      <CardContent className="pt-5 pb-5">
-        <div className="flex items-center gap-1.5 text-xs text-foreground/70 mb-1 font-medium">
+    <Card className={cn('shadow-none', tone)}>
+      <CardContent className="px-5 pt-6 pb-6">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2 font-medium">
           {icon}<span>{label}</span>
         </div>
-        <p className={`text-2xl font-bold leading-tight ${valueTone}`}>{value}</p>
-        {sub && <p className="text-xs text-foreground/60 mt-1 truncate" title={sub}>{sub}</p>}
+        <p className={`font-display text-3xl font-semibold leading-none tracking-tight ${valueTone}`}>{value}</p>
+        {sub && <p className="text-xs text-muted-foreground mt-1.5 truncate" title={sub}>{sub}</p>}
       </CardContent>
     </Card>
   );
@@ -875,7 +875,7 @@ const EventCard: React.FC<{
   const prio = priorityFor(group.companies.length);
 
   return (
-    <Card className="overflow-hidden hover:shadow-md hover:border-primary/30 transition-all bg-card">
+    <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm hover:border-border transition-all bg-card">
       <div className="flex flex-col sm:flex-row">
         {/* Thumbnail */}
         <div className="relative w-full sm:w-[180px] sm:min-w-[180px] h-[140px] sm:h-auto bg-muted overflow-hidden">
@@ -897,7 +897,10 @@ const EventCard: React.FC<{
             </div>
           )}
           {group.days_until != null && (
-            <Badge className="absolute top-2 left-2 bg-foreground text-background border-none">
+            <Badge className={cn(
+              'absolute top-2 left-2 border-none',
+              group.days_until < 30 ? 'bg-accent text-accent-foreground' : 'bg-foreground/85 text-background',
+            )}>
               J-{Math.max(0, group.days_until)}
             </Badge>
           )}
@@ -907,8 +910,8 @@ const EventCard: React.FC<{
         <div className="flex-1 p-4 flex flex-col gap-3 min-w-0">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="font-bold text-lg leading-tight text-foreground line-clamp-2">{group.nom_event}</h3>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-foreground/70 mt-1">
+              <h3 className="font-semibold text-lg leading-snug text-foreground line-clamp-2">{group.nom_event}</h3>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground mt-1.5">
                 <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{formatDate(group.date_debut)}</span>
                 {(group.ville || group.nom_lieu) && (
                   <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{[group.nom_lieu, group.ville].filter(Boolean).join(' · ')}</span>
@@ -1047,7 +1050,7 @@ const CompanyAccountsList: React.FC<{
   const following = enriched.filter((e) => getPref(e.c.id) === 'normal');
 
   const Grid: React.FC<{ items: typeof enriched; dimmed?: boolean }> = ({ items, dimmed }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       {items.map(({ c, future, past }) => (
         <CompanyAccountCard
           key={c.id}
@@ -1064,16 +1067,16 @@ const CompanyAccountsList: React.FC<{
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       {/* Prioritaires (étoilés) */}
       {starred.length > 0 && (
-        <section className="space-y-3">
-          <div className="space-y-1.5">
-            <div className="h-[3px] w-8 rounded-full bg-accent" aria-hidden="true" />
+        <section className="space-y-5">
+          <div className="space-y-2">
+            <div className="h-[3px] w-10 rounded-full bg-accent" aria-hidden="true" />
             <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-accent fill-accent" />
-              <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
-                Prioritaires ({starred.length})
+              <Star className="h-5 w-5 text-accent fill-accent" />
+              <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                Prioritaires <span className="text-muted-foreground font-normal">({starred.length})</span>
               </h2>
             </div>
           </div>
@@ -1083,11 +1086,14 @@ const CompanyAccountsList: React.FC<{
 
       {/* À suivre */}
       {following.length > 0 ? (
-        <section className="space-y-3">
+        <section className="space-y-5">
           {starred.length > 0 && (
-            <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              À suivre ({following.length})
-            </h2>
+            <div className="space-y-2">
+              <div className="h-[3px] w-10 rounded-full bg-border" aria-hidden="true" />
+              <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                À suivre <span className="text-muted-foreground font-normal">({following.length})</span>
+              </h2>
+            </div>
           )}
           <Grid items={following} />
         </section>
@@ -1099,11 +1105,11 @@ const CompanyAccountsList: React.FC<{
 
       {/* Ignorés (repliés par défaut) */}
       {ignored.length > 0 && (
-        <section className="space-y-3">
+        <section className="space-y-4 pt-2">
           <button
             type="button"
             onClick={() => setIgnoredOpen((o) => !o)}
-            className="flex items-center gap-1.5 text-sm font-medium text-foreground/60 hover:text-foreground"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             {ignoredOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             <EyeOff className="h-4 w-4" />
@@ -1128,44 +1134,48 @@ const CompanyAccountCard: React.FC<{
 }> = ({ company, future, past, onClickEvent, pref, onSetPref, dimmed }) => {
   const INITIAL = 3;
   const [expF, setExpF] = useState(false);
+  // Historique replié par défaut : on calme la carte (cf. polish v2).
   const [expP, setExpP] = useState(false);
   const futureShown = expF ? future : future.slice(0, INITIAL);
-  const pastShown = expP ? past : past.slice(0, INITIAL);
   const futureMore = future.length - futureShown.length;
-  const pastMore = past.length - pastShown.length;
 
-  const renderRow = (g: EventGroup, tone: 'future' | 'past', isNext = false) => {
+  // Seuil d'imminence : l'orange sur le badge J-XX est réservé aux salons proches.
+  const IMMINENT_DAYS = 30;
+  const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
     const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
+    const imminent = g.days_until != null && g.days_until < IMMINENT_DAYS;
     return (
       <button
         key={g.event_id}
         type="button"
         onClick={() => onClickEvent(g)}
         disabled={!g.slug}
-        className={`w-full text-left rounded-md p-2 transition-colors disabled:opacity-60 ${
+        className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors disabled:opacity-60 ${
           tone === 'future'
-            ? 'bg-primary/5 hover:bg-primary/10 border border-primary/10'
-            : 'bg-muted/40 hover:bg-muted border'
+            ? 'bg-secondary/40 hover:bg-secondary/70'
+            : 'hover:bg-muted/50'
         }`}
       >
         <div className="flex items-center justify-between gap-2">
-          <p className={`text-sm font-medium truncate ${tone === 'future' ? 'text-foreground' : 'text-foreground/80'}`}>
+          <p className={`text-sm truncate ${tone === 'future' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
             {g.nom_event}
           </p>
           {tone === 'future' && g.days_until != null && (
             <Badge
               className={cn(
                 'shrink-0 border-none',
-                isNext ? 'bg-accent text-accent-foreground' : 'bg-foreground/80 text-background',
+                imminent
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-muted text-muted-foreground',
               )}
             >
               J-{Math.max(0, g.days_until)}
             </Badge>
           )}
         </div>
-        <p className="text-[11px] text-foreground/60 mt-0.5 truncate">
+        <p className="text-xs text-muted-foreground mt-1 truncate">
           {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
-          {stand && <span className="ml-2 text-accent font-medium">Stand {stand}</span>}
+          {stand && <span className="ml-2 text-foreground font-medium">Stand {stand}</span>}
         </p>
       </button>
     );
@@ -1173,18 +1183,18 @@ const CompanyAccountCard: React.FC<{
 
   return (
     <Card className={cn(
-      'h-full transition-all',
+      'h-full transition-all border-border/60 shadow-none',
       dimmed
         ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
-        : 'hover:shadow-md hover:border-primary/40',
+        : 'hover:border-border hover:shadow-sm',
       pref === 'starred' && 'border-accent/50 bg-secondary/40',
     )}>
-      <CardContent className="pt-5 space-y-3">
+      <CardContent className="p-5 space-y-4">
         <div className="flex items-start gap-3">
           <CompanyAvatar company={company} size="md" />
           <div className="min-w-0 flex-1">
-            <p className="font-bold text-foreground truncate">{company.company_name}</p>
-            <p className="text-xs text-foreground/60 truncate flex items-center gap-1">
+            <p className="font-semibold text-base text-foreground truncate">{company.company_name}</p>
+            <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
               <ExternalLink className="h-3 w-3" />
               {company.normalized_domain ?? company.website_raw ?? ''}
             </p>
@@ -1225,23 +1235,23 @@ const CompanyAccountCard: React.FC<{
           </Button>
         )}
 
-        <div className="flex gap-4 text-sm">
+        <div className="flex gap-6 text-sm">
           <div>
-            <p className="text-xl font-bold text-primary leading-none">{future.length}</p>
-            <p className="text-[11px] text-foreground/60 mt-0.5">à venir</p>
+            <p className="font-display text-2xl font-semibold text-primary leading-none tracking-tight">{future.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">à venir</p>
           </div>
-          <div className="border-l pl-4">
-            <p className="text-xl font-bold text-foreground/80 leading-none">{past.length}</p>
-            <p className="text-[11px] text-foreground/60 mt-0.5">passés</p>
+          <div className="border-l border-border/60 pl-6">
+            <p className="font-display text-2xl font-semibold text-foreground/70 leading-none tracking-tight">{past.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">passés</p>
           </div>
         </div>
 
         {future.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-primary">
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Salons à venir
             </p>
-            {futureShown.map((g, i) => renderRow(g, 'future', i === 0))}
+            {futureShown.map((g) => renderRow(g, 'future'))}
             {futureMore > 0 && (
               <button
                 type="button"
@@ -1255,7 +1265,7 @@ const CompanyAccountCard: React.FC<{
               <button
                 type="button"
                 onClick={() => setExpF(false)}
-                className="text-xs font-medium text-foreground/60 hover:underline flex items-center gap-1"
+                className="text-xs font-medium text-muted-foreground hover:underline flex items-center gap-1"
               >
                 <ChevronUp className="h-3 w-3" /> Réduire
               </button>
@@ -1263,29 +1273,23 @@ const CompanyAccountCard: React.FC<{
           </div>
         )}
 
+        {/* Historique passé : replié par défaut → une seule ligne discrète. */}
         {past.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-foreground/60">
-              Historique passé
-            </p>
-            {pastShown.map((g) => renderRow(g, 'past'))}
-            {pastMore > 0 && (
-              <button
-                type="button"
-                onClick={() => setExpP(true)}
-                className="text-xs font-medium text-foreground/70 hover:underline flex items-center gap-1"
-              >
-                <ChevronDown className="h-3 w-3" /> Voir {pastMore} salon{pastMore > 1 ? 's' : ''} de plus
-              </button>
-            )}
-            {expP && past.length > INITIAL && (
-              <button
-                type="button"
-                onClick={() => setExpP(false)}
-                className="text-xs font-medium text-foreground/60 hover:underline flex items-center gap-1"
-              >
-                <ChevronUp className="h-3 w-3" /> Réduire
-              </button>
+          <div className="space-y-2 pt-1 border-t border-border/50">
+            <button
+              type="button"
+              onClick={() => setExpP((o) => !o)}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              aria-expanded={expP}
+            >
+              {expP ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              <History className="h-3.5 w-3.5" />
+              {past.length} salon{past.length > 1 ? 's' : ''} passé{past.length > 1 ? 's' : ''}
+            </button>
+            {expP && (
+              <div className="space-y-2">
+                {past.map((g) => renderRow(g, 'past'))}
+              </div>
             )}
           </div>
         )}
