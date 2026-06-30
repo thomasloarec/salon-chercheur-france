@@ -282,13 +282,14 @@ const RadarCrmPage: React.FC = () => {
   // Auto-launch the analysis after returning from auth with a pending import
   useEffect(() => {
     if (autoSubmitRef.current) return;
+    if (!radarStatus.loaded || isRadarLocked) return;
     if (!user || !parsed || submitting) return;
     if (!resumedFromPendingRef.current) return;
     if (missingRequired.length > 0) return;
     autoSubmitRef.current = true;
     void handleSubmit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, parsed, mapping, submitting, missingRequired.length]);
+  }, [user, parsed, mapping, submitting, missingRequired.length, radarStatus.loaded, isRadarLocked]);
 
   return (
     <MainLayout
