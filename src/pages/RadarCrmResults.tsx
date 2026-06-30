@@ -498,7 +498,7 @@ const RadarCrmResults: React.FC = () => {
           {!isLocked && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
-              <StatCard label="Entreprises détectées" value={kpiDetected} accent="success" />
+              <StatCard label="Entreprises détectées" value={kpiDetected} accent="accent" />
               <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
               <StatCard label="Participations futures" value={kpiFutureParticipations} />
             </div>
