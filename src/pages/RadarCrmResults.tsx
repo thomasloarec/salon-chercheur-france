@@ -377,7 +377,7 @@ const RadarCrmResults: React.FC = () => {
                 {loading ? 'Analyse en cours…' : isLocked ? (
                   <>Votre Radar CRM est prêt — débloquez l'accès pour découvrir vos détections</>
                 ) : (
-                  <><strong className="text-foreground">{kpiDetected}</strong> entreprise{kpiDetected > 1 ? 's' : ''} détectée{kpiDetected > 1 ? 's' : ''} sur <strong className="text-foreground">{eventGroups.length}</strong> salon{eventGroups.length > 1 ? 's' : ''} Lotexpo</>
+                  <>Pendant que vous travaillez, Radar surveille vos comptes CRM et vous alerte avant chaque salon.</>
                 )}
               </p>
             </div>
