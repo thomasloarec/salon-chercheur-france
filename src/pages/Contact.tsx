@@ -122,22 +122,22 @@ const Contact = () => {
       
       <main className="flex-1 py-12 px-4">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold text-foreground mb-3">Contactez-nous</h1>
+          <div className="text-center mb-12">
+            <h1 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">Contactez-nous</h1>
             <p className="text-muted-foreground">
               Une question, une suggestion ? Nous sommes à votre écoute.
             </p>
           </div>
 
           {isSuccess ? (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="bg-secondary border border-border rounded-lg p-8 text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Send className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-xl font-semibold text-green-800 dark:text-green-300 mb-2">
+              <h2 className="text-xl font-semibold text-foreground mb-2">
                 Message envoyé avec succès
               </h2>
-              <p className="text-green-700 dark:text-green-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Merci pour votre message. Nous vous répondrons dans les plus brefs délais.
               </p>
               <Button onClick={() => setIsSuccess(false)} variant="outline">
