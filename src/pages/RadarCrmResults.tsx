@@ -898,8 +898,10 @@ const EventCard: React.FC<{
           )}
           {group.days_until != null && (
             <Badge className={cn(
-              'absolute top-2 left-2 border-none',
-              group.days_until < 30 ? 'bg-accent text-accent-foreground' : 'bg-foreground/85 text-background',
+              'absolute top-2 left-2 border-none text-xs',
+              group.days_until < 30
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-muted text-muted-foreground',
             )}>
               J-{Math.max(0, group.days_until)}
             </Badge>
