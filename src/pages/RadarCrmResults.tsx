@@ -1006,6 +1006,191 @@ const EmptyText: React.FC<{ label: string }> = ({ label }) => (
   <div className="text-center text-foreground/60 py-12">{label}</div>
 );
 
+/* ───────────────────────── Gating sub-components ───────────────────────── */
+
+/** Trial banner shown to users on an active trial. Tone intensifies near expiry. */
+const TrialBanner: React.FC<{ daysLeft: number | null; detected: number }> = ({ daysLeft, detected }) => {
+  const urgent = daysLeft != null && daysLeft <= 2;
+  return (
+    <div
+      className={cn(
+        'rounded-lg border px-4 py-3 flex items-start gap-3',
+        urgent
+          ? 'border-accent/50 bg-accent/10 text-foreground'
+          : 'border-primary/30 bg-primary/5 text-foreground',
+      )}
+    >
+      <Clock className={cn('h-5 w-5 mt-0.5 shrink-0', urgent ? 'text-accent' : 'text-primary')} />
+      <div className="text-sm">
+        {urgent ? (
+          <p>
+            <span className="font-semibold">Votre essai se termine bientôt</span> — vous perdrez l'accès à
+            vos <strong>{detected}</strong> détection{detected > 1 ? 's' : ''}
+            {daysLeft != null && daysLeft > 0 ? ` dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}` : " aujourd'hui"}.
+          </p>
+        ) : (
+          <p>
+            <span className="font-semibold">Essai gratuit</span> — il vous reste{' '}
+            <strong>{daysLeft ?? 0}</strong> jour{(daysLeft ?? 0) > 1 ? 's' : ''}.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/** Visible error state instead of a silent empty render. */
+const RadarErrorState: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
+  <Card className="border-destructive/30 bg-destructive/5">
+    <CardContent className="pt-8 pb-8 text-center">
+      <AlertCircle className="h-10 w-10 mx-auto text-destructive mb-3" />
+      <h3 className="text-lg font-semibold mb-1 text-foreground">Impossible de charger votre Radar CRM</h3>
+      <p className="text-sm text-foreground/70 max-w-md mx-auto mb-4">
+        Une erreur est survenue lors de la récupération de vos données. Réessayez dans un instant.
+      </p>
+      <Button onClick={onRetry}>Réessayer</Button>
+    </CardContent>
+  </Card>
+);
+
+/** Locked teaser for a single event — no company identities, blurred placeholders. */
+const LockedEventTeaser: React.FC<{ group: EventGroup }> = ({ group }) => {
+  const count = group.company_count;
+  const pills = Math.min(count, 12);
+  return (
+    <Card className="overflow-hidden bg-card">
+      <div className="flex flex-col sm:flex-row">
+        <div className="relative w-full sm:w-[180px] sm:min-w-[180px] h-[140px] sm:h-auto bg-muted overflow-hidden">
+          {group.url_image ? (
+            <img
+              src={group.url_image}
+              alt={group.nom_event}
+              className="w-full h-full object-cover opacity-80"
+              loading="lazy"
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))' }}
+            >
+              <span className="text-2xl font-bold text-primary-foreground tracking-wider opacity-90">
+                {eventInitials(group.nom_event)}
+              </span>
+            </div>
+          )}
+          {group.days_until != null && (
+            <Badge className="absolute top-2 left-2 bg-foreground text-background border-none">
+              J-{Math.max(0, group.days_until)}
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex-1 p-4 flex flex-col gap-3 min-w-0">
+          <div className="min-w-0">
+            <h3 className="font-bold text-lg leading-tight text-foreground line-clamp-2">{group.nom_event}</h3>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-foreground/70 mt-1">
+              <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{formatDate(group.date_debut)}</span>
+              {(group.ville || group.nom_lieu) && (
+                <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{[group.nom_lieu, group.ville].filter(Boolean).join(' · ')}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-muted/50 border rounded-lg p-3">
+            <p className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5" />
+              {count} entreprise{count > 1 ? 's' : ''} de votre CRM
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {Array.from({ length: pills }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-7 w-24 rounded-full bg-muted-foreground/20 blur-[2px]"
+                  aria-hidden="true"
+                />
+              ))}
+              {count > pills && (
+                <span className="text-xs text-foreground/50 self-center">+ {count - pills}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+/** Full locked view: KPIs stay visible (rendered by parent), teaser cards + single CTA. */
+const LockedView: React.FC<{
+  futureGroups: EventGroup[];
+  pastGroups: EventGroup[];
+  onRequestAccess: () => void;
+}> = ({ futureGroups, pastGroups, onRequestAccess }) => {
+  const allGroups = [...futureGroups, ...pastGroups];
+  return (
+    <div className="space-y-5">
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="pt-6 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Lock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">Accès Radar CRM verrouillé</p>
+              <p className="text-sm text-foreground/70 max-w-md">
+                Vos détections sont prêtes. Demandez l'accès pour découvrir quelles entreprises de votre CRM
+                exposent et préparer vos rendez-vous.
+              </p>
+            </div>
+          </div>
+          <Button onClick={onRequestAccess} className="shrink-0 w-full sm:w-auto">
+            Demander l'accès
+          </Button>
+        </CardContent>
+      </Card>
+
+      {allGroups.length === 0 ? (
+        <EmptyText label="Aucun salon détecté pour le moment." />
+      ) : (
+        <div className="space-y-3">
+          {allGroups.map((g) => (
+            <LockedEventTeaser key={g.event_id} group={g} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/** Minimal "request access" modal with a direct contact fallback. */
+const AccessRequestDialog: React.FC<{ open: boolean; onOpenChange: (o: boolean) => void }> = ({ open, onOpenChange }) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Demander l'accès à Radar CRM</DialogTitle>
+        <DialogDescription>
+          Radar CRM identifie les entreprises de votre CRM qui exposent sur les salons à venir, avec leur stand
+          et un accès direct à leur fiche — pour préparer vos visites et vos rendez-vous.
+        </DialogDescription>
+      </DialogHeader>
+      <p className="text-sm text-foreground/70">
+        Écrivez-nous pour activer votre accès. Nous revenons vers vous rapidement.
+      </p>
+      <DialogFooter>
+        <Button
+          asChild
+          onClick={() => void trackRadarEvent('crm_access_requested', { source: 'locked_view' })}
+          className="w-full sm:w-auto"
+        >
+          <a href="mailto:admin@lotexpo.com?subject=Demande%20d'acc%C3%A8s%20Radar%20CRM">
+            <Mail className="h-4 w-4 mr-2" /> Nous contacter
+          </a>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
 const NoFutureMatches: React.FC<{ companiesCount: number; matchedCount: number }> = ({ companiesCount, matchedCount }) => (
   <Card>
     <CardContent className="pt-8 pb-8 text-center">
