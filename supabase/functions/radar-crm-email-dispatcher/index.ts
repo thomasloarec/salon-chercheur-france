@@ -588,6 +588,25 @@ async function ensureUnsubscribeUrl(
   return `${base}/functions/v1/radar-crm-unsubscribe?token=${token}`;
 }
 
+// Resolve Radar entitlement for a user via the canonical SQL function.
+// Fail-safe: on any error, treat as LOCKED (teaser) — never leak full details.
+async function userHasRadarAccess(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('has_radar_access', { p_user_id: userId } as never);
+    if (error) {
+      console.warn('has_radar_access failed', { userId, error: error.message });
+      return false;
+    }
+    return data === true;
+  } catch (e) {
+    console.warn('has_radar_access threw', { userId, error: e instanceof Error ? e.message : String(e) });
+    return false;
+  }
+}
+
 function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string) {
   const ORANGE = '#ff7a1f';
   const ORANGE_DARK = '#ea6a10';
