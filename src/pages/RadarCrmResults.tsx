@@ -554,7 +554,7 @@ const RadarCrmResults: React.FC = () => {
                   {futureGroups.length === 0 ? (
                     <NoFutureMatches companiesCount={kpiAnalyzed} matchedCount={kpiDetected} />
                   ) : (
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       {futureGroups.map((g) => (
                         <div
                           key={g.event_id}
@@ -582,7 +582,7 @@ const RadarCrmResults: React.FC = () => {
                   {pastGroups.length === 0 ? (
                     <EmptyText label="Aucun salon passé détecté pour vos comptes surveillés." />
                   ) : (
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       {pastGroups.map((g) => (
                         <PastEventCard
                           key={g.event_id}
@@ -744,10 +744,10 @@ const StatCard: React.FC<{
 };
 
 const priorityFor = (n: number): { label: string; tone: string; icon?: React.ReactNode } | null => {
-  // Échelle unique : l'orange est réservé à la vraie priorité ; le reste reste neutre/atténué.
+  // Échelle unique : l'orange est réservé à la vraie priorité forte ; le reste reste neutre/atténué.
   if (n >= 3) return { label: `Priorité forte · ${n} comptes`, tone: 'bg-accent text-accent-foreground', icon: <Flame className="h-3 w-3 mr-1" /> };
   if (n === 2) return { label: '2 comptes détectés', tone: 'bg-muted text-muted-foreground' };
-  if (n === 1) return { label: 'Opportunité', tone: 'bg-muted text-muted-foreground' };
+  if (n === 1) return { label: '1 compte détecté', tone: 'bg-muted text-muted-foreground' };
   return null;
 };
 
@@ -778,7 +778,7 @@ const CompanyChip: React.FC<{
     type="button"
     onClick={onClick}
     className={cn(
-      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1 transition-all hover:bg-primary/5',
+      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1.5 transition-all hover:bg-primary/5',
       starred && 'border-accent/50 bg-secondary/50',
       needsReview ? 'border-border hover:border-primary' : 'border-border hover:border-primary',
     )}
@@ -898,8 +898,10 @@ const EventCard: React.FC<{
           )}
           {group.days_until != null && (
             <Badge className={cn(
-              'absolute top-2 left-2 border-none',
-              group.days_until < 30 ? 'bg-accent text-accent-foreground' : 'bg-foreground/85 text-background',
+              'absolute top-2 left-2 border-none text-xs',
+              group.days_until < 30
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-muted text-muted-foreground',
             )}>
               J-{Math.max(0, group.days_until)}
             </Badge>
@@ -907,7 +909,7 @@ const EventCard: React.FC<{
         </div>
 
         {/* Body */}
-        <div className="flex-1 p-4 flex flex-col gap-3 min-w-0">
+        <div className="flex-1 p-5 md:p-6 flex flex-col gap-4 min-w-0">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="font-semibold text-lg leading-snug text-foreground line-clamp-2">{group.nom_event}</h3>
@@ -926,11 +928,11 @@ const EventCard: React.FC<{
           </div>
 
           {/* CRM companies — the heart of the card */}
-          <div className="bg-primary/5 border border-primary/10 rounded-lg p-3">
-            <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">
+          <div className="bg-secondary/40 border border-border/60 rounded-lg p-4 md:p-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
                 <CompanyChip
                   key={company.id}
@@ -970,7 +972,7 @@ const PastEventCard: React.FC<{
   ) => void;
 }> = ({ group, onView, onCompanyClick }) => {
   return (
-    <Card className="overflow-hidden hover:shadow-sm transition-all bg-card">
+    <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm transition-all bg-card">
       <div className="flex flex-col sm:flex-row">
         <div className="relative w-full sm:w-[140px] sm:min-w-[140px] h-[110px] sm:h-auto bg-muted overflow-hidden">
           {group.url_image ? (
@@ -981,36 +983,40 @@ const PastEventCard: React.FC<{
             </div>
           )}
         </div>
-        <div className="flex-1 p-4 min-w-0">
-          <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+        <div className="flex-1 p-5 flex flex-col gap-3 min-w-0">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="font-bold text-base text-foreground leading-tight">{group.nom_event}</h3>
-              <p className="text-xs text-foreground/60 mt-0.5">
+              <h3 className="font-semibold text-base text-foreground leading-tight">{group.nom_event}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {formatDate(group.date_debut)}{group.ville ? ` · ${group.ville}` : ''}
               </p>
             </div>
-            <Badge variant="secondary" className="font-semibold">
+            <Badge className="bg-muted text-muted-foreground border-none font-medium">
               {group.companies.length} compte{group.companies.length > 1 ? 's' : ''}
             </Badge>
           </div>
-          <p className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5">
-            Entreprises détectées
-          </p>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
-              <CompanyChip
-                key={company.id}
-                company={company}
-                stand={stand}
-                nomExposant={nom_exposant}
-                needsReview={needs_review}
-                onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
-              />
-            ))}
+          <div className="bg-secondary/40 border border-border/60 rounded-lg p-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Entreprises détectées
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {group.companies.map(({ company, id_exposant, stand, nom_exposant, needs_review }) => (
+                <CompanyChip
+                  key={company.id}
+                  company={company}
+                  stand={stand}
+                  nomExposant={nom_exposant}
+                  needsReview={needs_review}
+                  onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
+                />
+              ))}
+            </div>
           </div>
-          <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary -ml-2">
-            Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
-          </Button>
+          <div className="mt-auto">
+            <Button size="sm" variant="ghost" onClick={onView} disabled={!group.slug} className="text-primary hover:text-primary hover:bg-primary/5 -ml-2">
+              Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
