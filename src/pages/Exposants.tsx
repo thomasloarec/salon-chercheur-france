@@ -43,7 +43,7 @@ export default function Exposants() {
           <div className="text-center space-y-6 max-w-3xl mx-auto">
 
             {/* Headline */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+            <h1 className="heading-display text-3xl md:text-4xl lg:text-5xl text-foreground leading-tight">
               Ne comptez plus sur le <span className="text-primary">hasard</span>
               <br />
               pour attirer les bons visiteurs
@@ -81,17 +81,17 @@ export default function Exposants() {
             {/* Trust indicators */}
             <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-green-600" />
+                <Check className="h-4 w-4 text-primary" />
                 1 nouveauté gratuite
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-green-600" />
+                <Check className="h-4 w-4 text-primary" />
                 Sans carte bancaire
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-green-600" />
+                <Check className="h-4 w-4 text-primary" />
                 Publication en quelques minutes
               </span>
             </p>
@@ -121,7 +121,7 @@ export default function Exposants() {
                 <span className="text-sm font-semibold">Le problème</span>
               </div>
               
-              <h2 className="text-3xl font-bold leading-tight">
+              <h2 className="section-rule heading-display text-3xl text-foreground leading-tight">
                 Pourquoi tant d'exposants repartent avec le sentiment d'avoir subi leur salon ?
               </h2>
 
@@ -151,12 +151,12 @@ export default function Exposants() {
 
             {/* Solution */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
-                <Check className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-semibold text-green-900 dark:text-green-100">La solution Lotexpo</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+                <Check className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold text-primary">La solution Lotexpo</span>
               </div>
               
-              <h2 className="text-3xl font-bold leading-tight">
+              <h2 className="section-rule heading-display text-3xl text-foreground leading-tight">
                 Créez une intention de visite avant le salon
               </h2>
 
@@ -177,8 +177,8 @@ export default function Exposants() {
                   </p>
                 </div>
               </div>
-              <div className="p-4 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-950 dark:to-primary/10 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <p className="text-sm font-semibold text-foreground">
                   ✨ Résultat : votre présence n'est plus seulement passive. Vous donnez aux visiteurs une raison claire de vous intégrer à leur parcours.
                 </p>
               </div>
@@ -190,14 +190,14 @@ export default function Exposants() {
       {/* Benefits Section - Pourquoi publier vos nouveautés */}
       <section className="bg-background py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-foreground mb-16">
+          <h2 className="heading-display text-3xl md:text-4xl text-center text-foreground mb-16 section-rule [&::before]:mx-auto">
             Pourquoi publier vos nouveautés sur Lotexpo ?
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="bg-accent/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-accent" />
+              <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
                 Être visible avant l'ouverture
@@ -208,8 +208,8 @@ export default function Exposants() {
             </div>
 
             <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="bg-accent/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-accent" />
+              <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
                 Créer une raison de passage
@@ -220,8 +220,8 @@ export default function Exposants() {
             </div>
 
             <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="bg-accent/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-8 w-8 text-accent" />
+              <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
                 Mesurer l'intérêt généré
@@ -237,7 +237,7 @@ export default function Exposants() {
       {/* How It Works Section */}
       <section className="py-20 px-4 bg-background">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-foreground mb-4">
+          <h2 className="heading-display text-3xl md:text-4xl text-center text-foreground mb-4 section-rule [&::before]:mx-auto">
             Comment ça marche ?
           </h2>
           <p className="text-xl text-muted-foreground text-center mb-16 max-w-3xl mx-auto">
@@ -246,15 +246,15 @@ export default function Exposants() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {/* Connecting line */}
-            <div className="hidden md:block absolute top-24 left-0 right-0 h-0.5 bg-gradient-to-r from-accent/50 via-primary/50 to-accent/50" style={{ width: 'calc(100% - 8rem)', margin: '0 4rem' }} />
+            <div className="hidden md:block absolute top-24 left-0 right-0 h-0.5 bg-gradient-to-r from-primary/30 via-primary/50 to-primary/30" style={{ width: 'calc(100% - 8rem)', margin: '0 4rem' }} />
             
             {/* Step 1 */}
             <div className="relative">
-              <div className="bg-card border-2 border-accent/20 rounded-2xl p-8 text-center relative z-10 hover:border-accent/40 transition-colors">
-                <div className="bg-gradient-to-br from-accent to-primary rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Search className="h-10 w-10 text-white" />
+              <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
+                <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <Search className="h-10 w-10 text-primary-foreground" />
                 </div>
-                <div className="inline-block bg-accent/10 text-accent font-bold text-sm px-4 py-1 rounded-full mb-4">
+                <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
                   ÉTAPE 1
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
@@ -269,8 +269,8 @@ export default function Exposants() {
             {/* Step 2 */}
             <div className="relative">
               <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
-                <div className="bg-gradient-to-br from-primary to-accent rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Megaphone className="h-10 w-10 text-white" />
+                <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <Megaphone className="h-10 w-10 text-primary-foreground" />
                 </div>
                 <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
                   ÉTAPE 2
@@ -286,11 +286,11 @@ export default function Exposants() {
 
             {/* Step 3 */}
             <div className="relative">
-              <div className="bg-card border-2 border-accent/20 rounded-2xl p-8 text-center relative z-10 hover:border-accent/40 transition-colors">
-                <div className="bg-gradient-to-br from-accent to-primary rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <LineChart className="h-10 w-10 text-white" />
+              <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
+                <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <LineChart className="h-10 w-10 text-primary-foreground" />
                 </div>
-                <div className="inline-block bg-accent/10 text-accent font-bold text-sm px-4 py-1 rounded-full mb-4">
+                <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
                   ÉTAPE 3
                 </div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
@@ -309,7 +309,7 @@ export default function Exposants() {
       <section id="pricing" className="py-20">
         <div className="container max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">
+            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
               Commencez gratuitement, amplifiez si le salon est stratégique
             </h2>
             <p className="text-muted-foreground text-lg">
@@ -341,15 +341,15 @@ export default function Exposants() {
 
                   <div className="space-y-3">
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm">1 nouveauté par événement</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm">3 premiers contacts générés gratuits</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Sans carte bancaire</span>
                     </div>
                     <div className="flex items-start gap-2 opacity-50">
@@ -395,23 +395,23 @@ export default function Exposants() {
 
                   <div className="space-y-3">
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm"><strong>5 Nouveautés par événement</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm"><strong>Accès complet aux contacts générés</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Export CSV de vos contacts</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Statistiques détaillées</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Badge Premium sur vos nouveautés</span>
                     </div>
                   </div>
@@ -435,7 +435,7 @@ export default function Exposants() {
       <section className="py-20 bg-muted/30">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">
+            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
               Premium s'adapte à votre situation
             </h2>
             <p className="text-muted-foreground text-lg">
@@ -508,7 +508,7 @@ export default function Exposants() {
       <section className="py-20">
         <div className="container max-w-3xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">
+            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
               Questions fréquentes
             </h2>
           </div>
@@ -564,7 +564,7 @@ export default function Exposants() {
       {/* Final CTA Section */}
       <section className="py-20 bg-gradient-to-br from-primary/10 to-primary/5">
         <div className="container max-w-4xl mx-auto px-4 text-center space-y-8">
-          <h2 className="text-4xl md:text-5xl font-bold">
+          <h2 className="heading-display text-3xl md:text-4xl text-foreground section-rule [&::before]:mx-auto">
             Donnez aux visiteurs une raison de venir vous voir
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">

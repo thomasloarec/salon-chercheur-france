@@ -269,7 +269,7 @@ const Organisateurs = () => {
               <ShieldCheck className="w-3.5 h-3.5" />
               Visibilité pré-salon
             </span>
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
+            <h1 className="heading-display text-3xl md:text-4xl text-foreground mb-6 leading-tight">
               Aidez les bons visiteurs à choisir votre salon avant même l'ouverture
             </h1>
             <div className="space-y-4 text-base md:text-lg text-muted-foreground text-left max-w-3xl mx-auto">
@@ -333,7 +333,7 @@ const Organisateurs = () => {
         {/* Lotexpo est / n'est pas */}
         <section className="py-16 px-4">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4 max-w-3xl mx-auto">
+            <h2 className="heading-display text-2xl md:text-3xl text-foreground text-center mb-4 max-w-3xl mx-auto section-rule [&::before]:mx-auto">
               Une plateforme indépendante, pensée pour renforcer votre visibilité
             </h2>
             <p className="text-base md:text-lg text-muted-foreground text-center mb-10 max-w-2xl mx-auto">
@@ -380,7 +380,7 @@ const Organisateurs = () => {
         {/* Le problème : attention dispersée */}
         <section className="py-16 px-4 bg-secondary">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4 max-w-3xl mx-auto">
+            <h2 className="heading-display text-2xl md:text-3xl text-foreground text-center mb-4 max-w-3xl mx-auto section-rule [&::before]:mx-auto">
               Le problème : l'attention autour d'un salon est souvent dispersée
             </h2>
             <p className="text-base md:text-lg text-muted-foreground text-center mb-10 max-w-3xl mx-auto">
@@ -416,7 +416,7 @@ const Organisateurs = () => {
                   </div>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-foreground mb-4">{section.title}</h2>
+                  <h2 className="section-rule heading-display text-2xl text-foreground mb-4">{section.title}</h2>
                   <div className="space-y-3 text-muted-foreground leading-relaxed">
                     {section.body}
                   </div>
@@ -447,7 +447,7 @@ const Organisateurs = () => {
               <div className="bg-primary/10 rounded-2xl p-3 w-fit mb-5">
                 <LayoutGrid className="h-7 w-7 text-primary" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+              <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-4">
                 Affichez les temps forts de vos exposants sur votre site officiel
               </h2>
               <div className="space-y-3 text-muted-foreground leading-relaxed">
@@ -515,7 +515,7 @@ const Organisateurs = () => {
         {/* Benefits grid */}
         <section className="bg-secondary py-16 px-4">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-12">
+            <h2 className="heading-display text-3xl md:text-4xl text-foreground text-center mb-12 section-rule [&::before]:mx-auto">
               Ce que votre salon gagne avec Lotexpo
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -541,7 +541,7 @@ const Organisateurs = () => {
         {/* FAQ */}
         <section className="py-16 px-4">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-12">
+            <h2 className="heading-display text-3xl md:text-4xl text-foreground text-center mb-12 section-rule [&::before]:mx-auto">
               Questions fréquentes
             </h2>
             <div className="space-y-6">
@@ -573,7 +573,7 @@ const Organisateurs = () => {
         {/* Final CTA */}
         <section className="bg-primary text-primary-foreground py-16 px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="heading-display text-3xl md:text-4xl mb-4">
               Votre salon mérite d'être découvert avant le jour J
             </h2>
             <p className="text-lg text-primary-foreground/80 mb-8">

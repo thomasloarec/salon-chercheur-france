@@ -53,8 +53,8 @@ export default function TrouverSalon() {
         <section className="py-12 md:py-20">
           <div className="container max-w-4xl mx-auto px-4">
             {/* Header */}
-            <div className="text-center space-y-4 mb-10">
-              <h1 className="text-3xl md:text-4xl font-bold">
+            <div className="text-center space-y-4 mb-12">
+              <h1 className="heading-display text-3xl md:text-4xl text-foreground section-rule [&::before]:mx-auto">
                 Trouvez la fiche de votre salon sur Lotexpo
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
