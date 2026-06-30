@@ -18,7 +18,7 @@ import {
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
   CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
-  CalendarCheck, Settings, Lock, Mail, Clock,
+  CalendarCheck, Settings, Lock, Mail, Clock, Star, EyeOff, Eye,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
