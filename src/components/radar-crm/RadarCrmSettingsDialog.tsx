@@ -100,12 +100,18 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
         console.error('[RadarCRM] lecture radar_offer_profile échouée:', o.error);
       }
       const offerRow = (o.data ?? null) as Partial<OfferProfile> | null;
+      const parsedSells = (offerRow?.sells ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      setSellsChips(parsedSells);
       setOffer({
         sells: offerRow?.sells ?? '',
         target: offerRow?.target ?? '',
         problem: offerRow?.problem ?? '',
         qualifies: offerRow?.qualifies ?? '',
       });
+
       setLoading(false);
     })();
   }, [open]);
