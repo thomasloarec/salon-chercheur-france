@@ -869,8 +869,9 @@ const CompanyChip: React.FC<{
   nomExposant?: string | null;
   needsReview?: boolean;
   starred?: boolean;
+  relationship?: RelationshipStatus;
   onClick: () => void;
-}> = ({ company, stand, nomExposant, needsReview, starred, onClick }) => (
+}> = ({ company, stand, nomExposant, needsReview, starred, relationship, onClick }) => (
   <button
     type="button"
     onClick={onClick}
@@ -891,6 +892,9 @@ const CompanyChip: React.FC<{
         <span className="text-[10px] text-foreground/60">CRM : {company.company_name}</span>
       )}
     </span>
+    {relationship && relationship !== 'a_qualifier' && (
+      <RelationshipBadge status={relationship} className="ml-0.5" />
+    )}
     {stand && (
       <span className="text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
         {stand}
@@ -959,6 +963,7 @@ const EventCard: React.FC<{
   group: EventGroup;
   importId?: string | null;
   getPref?: (companyId: string) => Pref;
+  getRel?: (company: Company) => RelationshipStatus;
   onView: () => void;
   onCompanyClick: (
     c: Company,
@@ -967,7 +972,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, onView, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -1038,6 +1043,7 @@ const EventCard: React.FC<{
                   nomExposant={nom_exposant}
                   needsReview={needs_review}
                   starred={getPref?.(company.id) === 'starred'}
+                  relationship={getRel?.(company)}
                   onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
                 />
               ))}
