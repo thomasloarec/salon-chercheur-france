@@ -68,7 +68,10 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [offer, setOffer] = useState<OfferProfile>({ sells: '', target: '', problem: '', qualifies: '' });
+  const [sellsChips, setSellsChips] = useState<string[]>([]);
+  const [sellsInput, setSellsInput] = useState('');
   const [offerSaving, setOfferSaving] = useState(false);
+
 
   useEffect(() => {
     if (!open) return;
