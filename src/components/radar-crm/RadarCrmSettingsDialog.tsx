@@ -229,6 +229,74 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
                 </CardContent>
               </Card>
 
+              {/* Bloc A bis — Profil d'offre commercial */}
+              <Card>
+                <CardContent className="pt-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Profil d'offre commercial</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Décrivez votre offre pour que Radar CRM personnalise vos questions de terrain avant chaque salon.
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-sells" className="font-medium">Ce que vous vendez</Label>
+                    <Input
+                      id="offer-sells"
+                      value={offer.sells}
+                      onChange={(e) => setOffer((o) => ({ ...o, sells: e.target.value }))}
+                      placeholder="Ex : capteurs industriels"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-target" className="font-medium">Votre cible</Label>
+                    <Input
+                      id="offer-target"
+                      value={offer.target}
+                      onChange={(e) => setOffer((o) => ({ ...o, target: e.target.value }))}
+                      placeholder="Ex : industriels agroalimentaires, PME et ETI"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <Label htmlFor="offer-problem" className="font-medium">Le problème que vous adressez</Label>
+                      <span className="text-[11px] font-medium text-accent">
+                        le plus utile pour personnaliser vos questions
+                      </span>
+                    </div>
+                    <Textarea
+                      id="offer-problem"
+                      value={offer.problem}
+                      onChange={(e) => setOffer((o) => ({ ...o, problem: e.target.value }))}
+                      placeholder="Ex : fiabilité des composants sur les lignes de production"
+                      className="min-h-[72px]"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-qualifies" className="font-medium">
+                      Ce que vous cherchez à qualifier <span className="text-muted-foreground font-normal">(optionnel)</span>
+                    </Label>
+                    <Textarea
+                      id="offer-qualifies"
+                      value={offer.qualifies}
+                      onChange={(e) => setOffer((o) => ({ ...o, qualifies: e.target.value }))}
+                      placeholder="Ex : lignes récentes, enjeux de maintenance"
+                      className="min-h-[60px]"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button onClick={() => void saveOffer()} disabled={offerSaving}>
+                      {offerSaving ? 'Enregistrement…' : 'Enregistrer'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Bloc B — Préférences */}
               <Card>
                 <CardContent className="pt-5 space-y-4">
