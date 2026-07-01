@@ -619,6 +619,11 @@ const RadarCrmResults: React.FC = () => {
                 onOpenSettings={() => setSettingsOpen(true)}
               />
 
+              {/* Nudge profil d'offre — discret, disparaît une fois le profil rempli */}
+              {offerEmpty === true && (
+                <OfferProfileNudge onOpenSettings={() => setSettingsOpen(true)} />
+              )}
+
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="bg-card border w-full sm:w-auto justify-start flex-nowrap overflow-x-auto no-scrollbar">
                   <TabsTrigger value="companies" className="whitespace-nowrap">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
