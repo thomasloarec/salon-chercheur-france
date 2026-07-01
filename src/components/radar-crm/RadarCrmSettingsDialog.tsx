@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Trash2, AlertTriangle, CheckCircle2, Info, Target } from 'lucide-react';
+import { Shield, Trash2, AlertTriangle, CheckCircle2, Info, Target, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
@@ -68,7 +68,10 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [offer, setOffer] = useState<OfferProfile>({ sells: '', target: '', problem: '', qualifies: '' });
+  const [sellsChips, setSellsChips] = useState<string[]>([]);
+  const [sellsInput, setSellsInput] = useState('');
   const [offerSaving, setOfferSaving] = useState(false);
+
 
   useEffect(() => {
     if (!open) return;
@@ -97,20 +100,78 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
         console.error('[RadarCRM] lecture radar_offer_profile échouée:', o.error);
       }
       const offerRow = (o.data ?? null) as Partial<OfferProfile> | null;
+      const parsedSells = (offerRow?.sells ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      setSellsChips(parsedSells);
       setOffer({
         sells: offerRow?.sells ?? '',
         target: offerRow?.target ?? '',
         problem: offerRow?.problem ?? '',
         qualifies: offerRow?.qualifies ?? '',
       });
+
       setLoading(false);
     })();
   }, [open]);
 
+  const addSellsChips = (raw: string) => {
+    const items = raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setSellsChips((prev) => {
+      const merged = [...prev, ...items];
+      const seen = new Set<string>();
+      const next: string[] = [];
+      for (const item of merged) {
+        const key = item.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          next.push(item);
+        }
+      }
+      return next;
+    });
+  };
+
+  const removeSellsChip = (chip: string) => {
+    setSellsChips((prev) => prev.filter((c) => c !== chip));
+  };
+
+  const handleSellsKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === 'Enter' || e.key === ',') && sellsInput.trim()) {
+      e.preventDefault();
+      addSellsChips(sellsInput);
+      setSellsInput('');
+    }
+    if (e.key === 'Backspace' && sellsInput === '' && sellsChips.length > 0) {
+      setSellsChips((prev) => prev.slice(0, -1));
+    }
+  };
+
   const saveOffer = async () => {
     setOfferSaving(true);
+    // Flush any pending text in the sells input into chips before saving.
+    const pending = sellsInput
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const merged = [...sellsChips, ...pending];
+    const seen = new Set<string>();
+    const finalChips: string[] = [];
+    for (const item of merged) {
+      const key = item.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        finalChips.push(item);
+      }
+    }
+    setSellsChips(finalChips);
+    setSellsInput('');
     const { error } = await supabase.rpc('upsert_radar_offer_profile', {
-      p_sells: offer.sells.trim(),
+      p_sells: finalChips.join(', '),
       p_target: offer.target.trim(),
       p_problem: offer.problem.trim(),
       p_qualifies: offer.qualifies.trim(),
@@ -120,10 +181,12 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
       return;
     }
+    setOffer((prev) => ({ ...prev, sells: finalChips.join(', ') }));
     toast({ title: "Profil d'offre enregistré" });
     void trackRadarEvent('radar_offer_profile_saved', { source: 'radar_crm' });
     onOfferProfileSaved?.();
   };
+
 
   const updatePref = async (patch: Partial<Prefs>) => {
     if (!prefs) return;
@@ -244,11 +307,33 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
                     <Label htmlFor="offer-sells" className="font-medium">Ce que vous vendez</Label>
                     <Input
                       id="offer-sells"
-                      value={offer.sells}
-                      onChange={(e) => setOffer((o) => ({ ...o, sells: e.target.value }))}
-                      placeholder="Ex : capteurs industriels"
+                      value={sellsInput}
+                      onChange={(e) => setSellsInput(e.target.value)}
+                      onKeyDown={handleSellsKeyDown}
+                      placeholder="Tapez un produit puis Entrée ou virgule"
                     />
+                    {sellsChips.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {sellsChips.map((chip) => (
+                          <Badge
+                            key={chip}
+                            className="gap-1 pr-1 rounded-md bg-primary/10 text-primary hover:bg-primary/10 min-h-[2rem] items-center pl-2.5 py-1"
+                          >
+                            <span className="text-sm">{chip}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeSellsChip(chip)}
+                              className="ml-1 flex items-center justify-center h-6 w-6 rounded-full text-primary hover:bg-primary/20 transition-colors"
+                              aria-label={`Supprimer ${chip}`}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
+
 
                   <div className="space-y-1.5">
                     <Label htmlFor="offer-target" className="font-medium">Votre cible</Label>
