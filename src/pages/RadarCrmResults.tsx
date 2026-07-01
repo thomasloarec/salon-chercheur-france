@@ -305,6 +305,90 @@ const RadarCrmResults: React.FC = () => {
     }
   };
 
+  // ── Statut relationnel par compte (RUN 3) ───────────────────────────
+  // Base lue directement depuis radar_company_relationship (RLS = workspace courant),
+  // indexée par company_key. Surcouche optimiste réconciliée à chaque rechargement.
+  const [relByKey, setRelByKey] = useState<Record<string, RelationshipStatus>>({});
+  const [relOverrides, setRelOverrides] = useState<Record<string, RelationshipStatus>>({});
+
+  const loadRelationships = async () => {
+    const { data, error: relErr } = await supabase
+      .from('radar_company_relationship')
+      .select('company_key, relationship_status');
+    if (relErr) {
+      console.error('[RadarCRM] lecture radar_company_relationship échouée:', relErr);
+      return;
+    }
+    const seen = new Set<string>();
+    const m: Record<string, RelationshipStatus> = {};
+    for (const r of (data ?? []) as Array<{ company_key: string | null; relationship_status: string | null }>) {
+      const key = (r.company_key ?? '').trim().toLowerCase();
+      if (!key) continue;
+      if (seen.has(key)) {
+        // Doublon de company_key = signal d'un utilisateur multi-workspace : on log sans deviner.
+        console.warn('[RadarCRM] company_key en doublon (multi-workspace ?):', key);
+      }
+      seen.add(key);
+      m[key] = normalizeRelationship(r.relationship_status);
+    }
+    setRelByKey(m);
+    setRelOverrides({});
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    void loadRelationships();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getRel = (company: Company): RelationshipStatus => {
+    const key = companyKeyFor(company.normalized_domain, company.company_name);
+    return relOverrides[key] ?? relByKey[key] ?? DEFAULT_RELATIONSHIP;
+  };
+
+  const setRel = async (company: Company, next: RelationshipStatus) => {
+    const key = companyKeyFor(company.normalized_domain, company.company_name);
+    const prev = getRel(company);
+    if (prev === next) return;
+    setRelOverrides((o) => ({ ...o, [key]: next }));
+    const { error: rpcErr } = await supabase.rpc('set_radar_company_relationship', {
+      p_crm_company_id: company.id,
+      p_status: next,
+    });
+    if (rpcErr) {
+      console.error('[RadarCRM] set_radar_company_relationship failed:', rpcErr);
+      setRelOverrides((o) => ({ ...o, [key]: prev }));
+      toast({
+        title: 'Action impossible',
+        description: "Impossible de mettre à jour le statut de ce compte. Réessayez dans un instant.",
+        variant: 'destructive',
+      });
+      return;
+    }
+    void trackRadarEvent('radar_company_relationship_updated', { status: next });
+  };
+
+  // ── Profil d'offre : détection « vide » pour le nudge cockpit ────────
+  const [offerEmpty, setOfferEmpty] = useState<boolean | null>(null);
+  const checkOfferProfile = async () => {
+    const { data, error: offErr } = await supabase
+      .from('radar_offer_profile')
+      .select('sells, target, problem, qualifies')
+      .maybeSingle();
+    if (offErr) {
+      // Multi-workspace / anomalie : ne pas deviner, on masque le nudge.
+      console.error('[RadarCRM] lecture radar_offer_profile échouée:', offErr);
+      setOfferEmpty(false);
+      return;
+    }
+    const row = data as { sells?: string | null; target?: string | null; problem?: string | null; qualifies?: string | null } | null;
+    const empty = !row || ![row.sells, row.target, row.problem, row.qualifies].some((v) => (v ?? '').trim().length > 0);
+    setOfferEmpty(empty);
+  };
+  useEffect(() => {
+    if (!user) return;
+    void checkOfferProfile();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Unique detected companies derived from the event groups (full-access only;
   // empty in a locked state since the RPC strips company identities).
   const matchedCompanies = useMemo(() => {
