@@ -10,12 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Trash2, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { Shield, Trash2, AlertTriangle, CheckCircle2, Info, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
@@ -24,6 +26,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDataDeleted?: () => void;
+  /** Notifié après un enregistrement réussi du profil d'offre (pour rafraîchir le nudge cockpit). */
+  onOfferProfileSaved?: () => void;
 }
 
 type Access = {
@@ -41,6 +45,13 @@ type Prefs = {
   radar_email_disabled_at: string | null;
 };
 
+type OfferProfile = {
+  sells: string;
+  target: string;
+  problem: string;
+  qualifies: string;
+};
+
 const STATUS_LABELS: Record<string, string> = {
   beta: 'Beta gratuite',
   trial: 'Essai actif',
@@ -49,22 +60,25 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Abonnement annulé',
 };
 
-const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDeleted }) => {
+const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDeleted, onOfferProfileSaved }) => {
   const [access, setAccess] = useState<Access | null>(null);
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [offer, setOffer] = useState<OfferProfile>({ sells: '', target: '', problem: '', qualifies: '' });
+  const [offerSaving, setOfferSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     void trackRadarEvent('radar_settings_opened', { source: 'radar_crm' });
     setLoading(true);
     (async () => {
-      const [a, p] = await Promise.all([
+      const [a, p, o] = await Promise.all([
         supabase.rpc('get_or_create_my_radar_access'),
         supabase.rpc('get_or_create_my_crm_notification_preferences'),
+        supabase.from('radar_offer_profile').select('sells, target, problem, qualifies').maybeSingle(),
       ]);
       const accessRow = (Array.isArray(a.data) ? a.data[0] : a.data) as Access | null;
       const prefRow = (Array.isArray(p.data) ? p.data[0] : p.data) as Prefs | null;
@@ -78,9 +92,38 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
         radar_email_unsubscribed_at: null,
         radar_email_disabled_at: null,
       });
+      if (o.error) {
+        // Multi-workspace ou anomalie de lecture : ne pas deviner, on log et on laisse les champs vides.
+        console.error('[RadarCRM] lecture radar_offer_profile échouée:', o.error);
+      }
+      const offerRow = (o.data ?? null) as Partial<OfferProfile> | null;
+      setOffer({
+        sells: offerRow?.sells ?? '',
+        target: offerRow?.target ?? '',
+        problem: offerRow?.problem ?? '',
+        qualifies: offerRow?.qualifies ?? '',
+      });
       setLoading(false);
     })();
   }, [open]);
+
+  const saveOffer = async () => {
+    setOfferSaving(true);
+    const { error } = await supabase.rpc('upsert_radar_offer_profile', {
+      p_sells: offer.sells.trim(),
+      p_target: offer.target.trim(),
+      p_problem: offer.problem.trim(),
+      p_qualifies: offer.qualifies.trim(),
+    });
+    setOfferSaving(false);
+    if (error) {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: "Profil d'offre enregistré" });
+    void trackRadarEvent('radar_offer_profile_saved', { source: 'radar_crm' });
+    onOfferProfileSaved?.();
+  };
 
   const updatePref = async (patch: Partial<Prefs>) => {
     if (!prefs) return;
@@ -183,6 +226,74 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
                   <p className="text-sm text-muted-foreground">
                     Radar CRM est actuellement disponible en Beta gratuite.
                   </p>
+                </CardContent>
+              </Card>
+
+              {/* Bloc A bis — Profil d'offre commercial */}
+              <Card>
+                <CardContent className="pt-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Profil d'offre commercial</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Décrivez votre offre pour que Radar CRM personnalise vos questions de terrain avant chaque salon.
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-sells" className="font-medium">Ce que vous vendez</Label>
+                    <Input
+                      id="offer-sells"
+                      value={offer.sells}
+                      onChange={(e) => setOffer((o) => ({ ...o, sells: e.target.value }))}
+                      placeholder="Ex : capteurs industriels"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-target" className="font-medium">Votre cible</Label>
+                    <Input
+                      id="offer-target"
+                      value={offer.target}
+                      onChange={(e) => setOffer((o) => ({ ...o, target: e.target.value }))}
+                      placeholder="Ex : industriels agroalimentaires, PME et ETI"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <Label htmlFor="offer-problem" className="font-medium">Le problème que vous adressez</Label>
+                      <span className="text-[11px] font-medium text-accent">
+                        le plus utile pour personnaliser vos questions
+                      </span>
+                    </div>
+                    <Textarea
+                      id="offer-problem"
+                      value={offer.problem}
+                      onChange={(e) => setOffer((o) => ({ ...o, problem: e.target.value }))}
+                      placeholder="Ex : fiabilité des composants sur les lignes de production"
+                      className="min-h-[72px]"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offer-qualifies" className="font-medium">
+                      Ce que vous cherchez à qualifier <span className="text-muted-foreground font-normal">(optionnel)</span>
+                    </Label>
+                    <Textarea
+                      id="offer-qualifies"
+                      value={offer.qualifies}
+                      onChange={(e) => setOffer((o) => ({ ...o, qualifies: e.target.value }))}
+                      placeholder="Ex : lignes récentes, enjeux de maintenance"
+                      className="min-h-[60px]"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button onClick={() => void saveOffer()} disabled={offerSaving}>
+                      {offerSaving ? 'Enregistrement…' : 'Enregistrer'}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 

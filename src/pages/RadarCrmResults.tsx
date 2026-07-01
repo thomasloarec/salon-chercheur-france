@@ -30,6 +30,10 @@ import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
+  type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
+  companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP,
+} from '@/lib/radarCrm/relationship';
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 
@@ -301,6 +305,90 @@ const RadarCrmResults: React.FC = () => {
     }
   };
 
+  // ── Statut relationnel par compte (RUN 3) ───────────────────────────
+  // Base lue directement depuis radar_company_relationship (RLS = workspace courant),
+  // indexée par company_key. Surcouche optimiste réconciliée à chaque rechargement.
+  const [relByKey, setRelByKey] = useState<Record<string, RelationshipStatus>>({});
+  const [relOverrides, setRelOverrides] = useState<Record<string, RelationshipStatus>>({});
+
+  const loadRelationships = async () => {
+    const { data, error: relErr } = await supabase
+      .from('radar_company_relationship')
+      .select('company_key, relationship_status');
+    if (relErr) {
+      console.error('[RadarCRM] lecture radar_company_relationship échouée:', relErr);
+      return;
+    }
+    const seen = new Set<string>();
+    const m: Record<string, RelationshipStatus> = {};
+    for (const r of (data ?? []) as Array<{ company_key: string | null; relationship_status: string | null }>) {
+      const key = (r.company_key ?? '').trim().toLowerCase();
+      if (!key) continue;
+      if (seen.has(key)) {
+        // Doublon de company_key = signal d'un utilisateur multi-workspace : on log sans deviner.
+        console.warn('[RadarCRM] company_key en doublon (multi-workspace ?):', key);
+      }
+      seen.add(key);
+      m[key] = normalizeRelationship(r.relationship_status);
+    }
+    setRelByKey(m);
+    setRelOverrides({});
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    void loadRelationships();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getRel = (company: Company): RelationshipStatus => {
+    const key = companyKeyFor(company.normalized_domain, company.company_name);
+    return relOverrides[key] ?? relByKey[key] ?? DEFAULT_RELATIONSHIP;
+  };
+
+  const setRel = async (company: Company, next: RelationshipStatus) => {
+    const key = companyKeyFor(company.normalized_domain, company.company_name);
+    const prev = getRel(company);
+    if (prev === next) return;
+    setRelOverrides((o) => ({ ...o, [key]: next }));
+    const { error: rpcErr } = await supabase.rpc('set_radar_company_relationship', {
+      p_crm_company_id: company.id,
+      p_status: next,
+    });
+    if (rpcErr) {
+      console.error('[RadarCRM] set_radar_company_relationship failed:', rpcErr);
+      setRelOverrides((o) => ({ ...o, [key]: prev }));
+      toast({
+        title: 'Action impossible',
+        description: "Impossible de mettre à jour le statut de ce compte. Réessayez dans un instant.",
+        variant: 'destructive',
+      });
+      return;
+    }
+    void trackRadarEvent('radar_company_relationship_updated', { status: next });
+  };
+
+  // ── Profil d'offre : détection « vide » pour le nudge cockpit ────────
+  const [offerEmpty, setOfferEmpty] = useState<boolean | null>(null);
+  const checkOfferProfile = async () => {
+    const { data, error: offErr } = await supabase
+      .from('radar_offer_profile')
+      .select('sells, target, problem, qualifies')
+      .maybeSingle();
+    if (offErr) {
+      // Multi-workspace / anomalie : ne pas deviner, on masque le nudge.
+      console.error('[RadarCRM] lecture radar_offer_profile échouée:', offErr);
+      setOfferEmpty(false);
+      return;
+    }
+    const row = data as { sells?: string | null; target?: string | null; problem?: string | null; qualifies?: string | null } | null;
+    const empty = !row || ![row.sells, row.target, row.problem, row.qualifies].some((v) => (v ?? '').trim().length > 0);
+    setOfferEmpty(empty);
+  };
+  useEffect(() => {
+    if (!user) return;
+    void checkOfferProfile();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Unique detected companies derived from the event groups (full-access only;
   // empty in a locked state since the RPC strips company identities).
   const matchedCompanies = useMemo(() => {
@@ -531,6 +619,11 @@ const RadarCrmResults: React.FC = () => {
                 onOpenSettings={() => setSettingsOpen(true)}
               />
 
+              {/* Nudge profil d'offre — discret, disparaît une fois le profil rempli */}
+              {offerEmpty === true && (
+                <OfferProfileNudge onOpenSettings={() => setSettingsOpen(true)} />
+              )}
+
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="bg-card border w-full sm:w-auto justify-start flex-nowrap overflow-x-auto no-scrollbar">
                   <TabsTrigger value="companies" className="whitespace-nowrap">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
@@ -547,6 +640,8 @@ const RadarCrmResults: React.FC = () => {
                     onClickEvent={onClickEvent}
                     getPref={getPref}
                     onSetPref={setPref}
+                    getRel={getRel}
+                    onSetRel={setRel}
                   />
                 </TabsContent>
 
@@ -568,6 +663,7 @@ const RadarCrmResults: React.FC = () => {
                             group={g}
                             importId={activeImportId}
                             getPref={getPref}
+                            getRel={getRel}
                             onView={() => onClickEvent(g)}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
@@ -627,6 +723,7 @@ const RadarCrmResults: React.FC = () => {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         onDataDeleted={() => { void reloadAll(); }}
+        onOfferProfileSaved={() => { void checkOfferProfile(); }}
       />
       <AccessRequestDialog open={accessOpen} onOpenChange={setAccessOpen} />
     </MainLayout>
@@ -751,6 +848,62 @@ const priorityFor = (n: number): { label: string; tone: string; icon?: React.Rea
   return null;
 };
 
+/** Badge coloré de statut relationnel (lecture seule). */
+const RelationshipBadge: React.FC<{ status: RelationshipStatus; className?: string }> = ({ status, className }) => {
+  const meta = RELATIONSHIP_META[status];
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        meta.badge,
+        className,
+      )}
+    >
+      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
+      {meta.label}
+    </span>
+  );
+};
+
+/** Sélecteur compact de statut relationnel — tactile, s'applique immédiatement. */
+const RelationshipSelect: React.FC<{
+  status: RelationshipStatus;
+  onChange: (next: RelationshipStatus) => void;
+}> = ({ status, onChange }) => (
+  <Select value={status} onValueChange={(v) => onChange(v as RelationshipStatus)}>
+    <SelectTrigger
+      aria-label="Statut relationnel du compte"
+      className="h-8 w-auto min-w-0 gap-1.5 rounded-full border-border bg-background px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0"
+    >
+      <RelationshipBadge status={status} className="border-0 px-0 py-0 bg-transparent" />
+    </SelectTrigger>
+    <SelectContent>
+      {RELATIONSHIP_ORDER.map((s) => (
+        <SelectItem key={s} value={s} className="py-2">
+          <RelationshipBadge status={s} className="border-0 px-0 py-0 bg-transparent" />
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+);
+
+/** Nudge cockpit : incite à compléter le profil d'offre (disparaît une fois rempli). */
+const OfferProfileNudge: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) => (
+  <Card className="border-accent/30 bg-accent/5 shadow-none">
+    <CardContent className="py-4 px-5 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex items-start gap-3 min-w-0 flex-1">
+        <Sparkles className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+        <p className="text-sm text-foreground">
+          Complétez votre profil d'offre pour des questions de terrain personnalisées.
+        </p>
+      </div>
+      <Button variant="outline" size="sm" onClick={onOpenSettings} className="shrink-0 w-full sm:w-auto">
+        Compléter mon profil
+      </Button>
+    </CardContent>
+  </Card>
+);
+
 /** Small avatar with logo/favicon/initials fallback */
 const CompanyAvatar: React.FC<{ company: Company; size?: 'xs' | 'sm' | 'md' }> = ({ company, size = 'sm' }) => {
   const url = getExhibitorLogoUrl(null, company.website_raw ?? company.normalized_domain ?? null);
@@ -772,8 +925,9 @@ const CompanyChip: React.FC<{
   nomExposant?: string | null;
   needsReview?: boolean;
   starred?: boolean;
+  relationship?: RelationshipStatus;
   onClick: () => void;
-}> = ({ company, stand, nomExposant, needsReview, starred, onClick }) => (
+}> = ({ company, stand, nomExposant, needsReview, starred, relationship, onClick }) => (
   <button
     type="button"
     onClick={onClick}
@@ -794,6 +948,9 @@ const CompanyChip: React.FC<{
         <span className="text-[10px] text-foreground/60">CRM : {company.company_name}</span>
       )}
     </span>
+    {relationship && relationship !== 'a_qualifier' && (
+      <RelationshipBadge status={relationship} className="ml-0.5" />
+    )}
     {stand && (
       <span className="text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
         {stand}
@@ -862,6 +1019,7 @@ const EventCard: React.FC<{
   group: EventGroup;
   importId?: string | null;
   getPref?: (companyId: string) => Pref;
+  getRel?: (company: Company) => RelationshipStatus;
   onView: () => void;
   onCompanyClick: (
     c: Company,
@@ -870,7 +1028,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, onView, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onView, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -941,6 +1099,7 @@ const EventCard: React.FC<{
                   nomExposant={nom_exposant}
                   needsReview={needs_review}
                   starred={getPref?.(company.id) === 'starred'}
+                  relationship={getRel?.(company)}
                   onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
                 />
               ))}
@@ -1028,7 +1187,9 @@ const CompanyAccountsList: React.FC<{
   groups: EventGroup[]; companies: Company[]; onClickEvent: (g: EventGroup) => void;
   getPref: (companyId: string) => Pref;
   onSetPref: (companyId: string, next: Pref) => void;
-}> = ({ groups, companies, onClickEvent, getPref, onSetPref }) => {
+  getRel: (company: Company) => RelationshipStatus;
+  onSetRel: (company: Company, next: RelationshipStatus) => void;
+}> = ({ groups, companies, onClickEvent, getPref, onSetPref, getRel, onSetRel }) => {
   const [ignoredOpen, setIgnoredOpen] = useState(false);
   if (companies.length === 0) {
     return (
@@ -1066,6 +1227,8 @@ const CompanyAccountsList: React.FC<{
           onClickEvent={onClickEvent}
           pref={getPref(c.id)}
           onSetPref={(next) => onSetPref(c.id, next)}
+          relationship={getRel(c)}
+          onSetRelationship={(next) => onSetRel(c, next)}
           dimmed={dimmed}
         />
       ))}
@@ -1136,8 +1299,10 @@ const CompanyAccountCard: React.FC<{
   onClickEvent: (g: EventGroup) => void;
   pref: Pref;
   onSetPref: (next: Pref) => void;
+  relationship: RelationshipStatus;
+  onSetRelationship: (next: RelationshipStatus) => void;
   dimmed?: boolean;
-}> = ({ company, future, past, onClickEvent, pref, onSetPref, dimmed }) => {
+}> = ({ company, future, past, onClickEvent, pref, onSetPref, relationship, onSetRelationship, dimmed }) => {
   const INITIAL = 3;
   const [expF, setExpF] = useState(false);
   // Historique replié par défaut : on calme la carte (cf. polish v2).
@@ -1228,6 +1393,14 @@ const CompanyAccountCard: React.FC<{
                 : <EyeOff className="h-4 w-4 text-foreground/40" />}
             </button>
           </div>
+        </div>
+
+        {/* Statut relationnel — s'applique immédiatement (pas de bouton enregistrer) */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
+            Statut
+          </span>
+          <RelationshipSelect status={relationship} onChange={onSetRelationship} />
         </div>
 
         {dimmed && (

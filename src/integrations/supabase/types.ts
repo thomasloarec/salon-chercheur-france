@@ -4074,6 +4074,36 @@ export type Database = {
           },
         ]
       }
+      radar_company_relationship: {
+        Row: {
+          company_key: string
+          created_at: string
+          id: string
+          radar_account_id: string
+          relationship_status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          company_key: string
+          created_at?: string
+          id?: string
+          radar_account_id: string
+          relationship_status: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          company_key?: string
+          created_at?: string
+          id?: string
+          radar_account_id?: string
+          relationship_status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       radar_email_log: {
         Row: {
           companies_count: number
@@ -4186,6 +4216,172 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      radar_mission_notes: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          mission_id: string
+          radar_account_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mission_id: string
+          radar_account_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mission_id?: string
+          radar_account_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_mission_notes_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "radar_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radar_mission_tasks: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          done: boolean
+          due_at: string | null
+          id: string
+          mission_id: string
+          radar_account_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          done?: boolean
+          due_at?: string | null
+          id?: string
+          mission_id: string
+          radar_account_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          done?: boolean
+          due_at?: string | null
+          id?: string
+          mission_id?: string
+          radar_account_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_mission_tasks_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "radar_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radar_missions: {
+        Row: {
+          company_key: string
+          created_at: string
+          created_by: string | null
+          crm_company_id: string | null
+          event_id: string
+          id: string
+          id_exposant: string | null
+          objective: string | null
+          opening_line: string | null
+          origin: string
+          radar_account_id: string
+          top_q1: string | null
+          top_q2: string | null
+          top_q3: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_key: string
+          created_at?: string
+          created_by?: string | null
+          crm_company_id?: string | null
+          event_id: string
+          id?: string
+          id_exposant?: string | null
+          objective?: string | null
+          opening_line?: string | null
+          origin?: string
+          radar_account_id: string
+          top_q1?: string | null
+          top_q2?: string | null
+          top_q3?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_key?: string
+          created_at?: string
+          created_by?: string | null
+          crm_company_id?: string | null
+          event_id?: string
+          id?: string
+          id_exposant?: string | null
+          objective?: string | null
+          opening_line?: string | null
+          origin?: string
+          radar_account_id?: string
+          top_q1?: string | null
+          top_q2?: string | null
+          top_q3?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      radar_offer_profile: {
+        Row: {
+          created_at: string
+          problem: string | null
+          qualifies: string | null
+          radar_account_id: string
+          sells: string | null
+          target: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          problem?: string | null
+          qualifies?: string | null
+          radar_account_id: string
+          sells?: string | null
+          target?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          problem?: string | null
+          qualifies?: string | null
+          radar_account_id?: string
+          sells?: string | null
+          target?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       regions: {
         Row: {
@@ -5866,6 +6062,19 @@ export type Database = {
         Returns: Json
       }
       _recon_norm_domain: { Args: { p_val: string }; Returns: string }
+      add_radar_mission_note: {
+        Args: { p_body: string; p_crm_company_id: string; p_event_id: string }
+        Returns: string
+      }
+      add_radar_mission_task: {
+        Args: {
+          p_body: string
+          p_crm_company_id: string
+          p_due_at?: string
+          p_event_id: string
+        }
+        Returns: string
+      }
       admin_approve_access_request: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -6513,6 +6722,7 @@ export type Database = {
       get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
+      get_radar_salon_missions: { Args: { p_event_id: string }; Returns: Json }
       get_top_novelties_per_event: {
         Args: never
         Returns: {
@@ -6835,6 +7045,14 @@ export type Database = {
         Args: { p_crm_company_id: string; p_status: string }
         Returns: string
       }
+      set_radar_company_relationship: {
+        Args: { p_crm_company_id: string; p_status: string }
+        Returns: string
+      }
+      set_radar_mission_task_done: {
+        Args: { p_done: boolean; p_task_id: string }
+        Returns: boolean
+      }
       set_seo_vault_secret: {
         Args: { p_name: string; p_value: string }
         Returns: Json
@@ -6892,6 +7110,27 @@ export type Database = {
       update_user_password: {
         Args: { current_password: string; new_password: string }
         Returns: Json
+      }
+      upsert_radar_mission: {
+        Args: {
+          p_crm_company_id: string
+          p_event_id: string
+          p_objective?: string
+          p_opening_line?: string
+          p_top_q1?: string
+          p_top_q2?: string
+          p_top_q3?: string
+        }
+        Returns: string
+      }
+      upsert_radar_offer_profile: {
+        Args: {
+          p_problem: string
+          p_qualifies: string
+          p_sells: string
+          p_target: string
+        }
+        Returns: string
       }
       web_domain: { Args: { p_raw: string }; Returns: string }
     }
