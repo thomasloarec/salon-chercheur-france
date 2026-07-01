@@ -723,6 +723,7 @@ const RadarCrmResults: React.FC = () => {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         onDataDeleted={() => { void reloadAll(); }}
+        onOfferProfileSaved={() => { void checkOfferProfile(); }}
       />
       <AccessRequestDialog open={accessOpen} onOpenChange={setAccessOpen} />
     </MainLayout>
