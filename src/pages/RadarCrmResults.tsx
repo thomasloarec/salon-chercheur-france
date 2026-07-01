@@ -690,7 +690,7 @@ const RadarCrmResults: React.FC = () => {
                             getRel={getRel}
                             onView={() => onClickEvent(g)}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
-                              onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
+                              onOpenMission(c, stand, g, nom_exposant)}
                           />
                         </div>
                       ))}
