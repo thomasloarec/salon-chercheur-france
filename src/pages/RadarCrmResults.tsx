@@ -517,6 +517,27 @@ const RadarCrmResults: React.FC = () => {
     });
   };
 
+  // Ouverture du panneau mission depuis la vue « Par salon ».
+  const onOpenMission = (
+    company: Company,
+    stand: string | null,
+    g: EventGroup,
+    nom_exposant: string | null,
+  ) => {
+    void trackRadarEvent('radar_mission_opened', { eventId: g.event_id });
+    setMission({
+      company,
+      target: {
+        companyId: company.id,
+        companyName: company.company_name,
+        nomExposant: nom_exposant,
+        stand,
+        eventId: g.event_id,
+        eventName: g.nom_event,
+      },
+    });
+  };
+
   // Empty state
   if (!authLoading && imports !== null && imports.length === 0) {
     return (
