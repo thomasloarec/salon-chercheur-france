@@ -116,10 +116,62 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
     })();
   }, [open]);
 
+  const addSellsChips = (raw: string) => {
+    const items = raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setSellsChips((prev) => {
+      const merged = [...prev, ...items];
+      const seen = new Set<string>();
+      const next: string[] = [];
+      for (const item of merged) {
+        const key = item.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          next.push(item);
+        }
+      }
+      return next;
+    });
+  };
+
+  const removeSellsChip = (chip: string) => {
+    setSellsChips((prev) => prev.filter((c) => c !== chip));
+  };
+
+  const handleSellsKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === 'Enter' || e.key === ',') && sellsInput.trim()) {
+      e.preventDefault();
+      addSellsChips(sellsInput);
+      setSellsInput('');
+    }
+    if (e.key === 'Backspace' && sellsInput === '' && sellsChips.length > 0) {
+      setSellsChips((prev) => prev.slice(0, -1));
+    }
+  };
+
   const saveOffer = async () => {
     setOfferSaving(true);
+    // Flush any pending text in the sells input into chips before saving.
+    const pending = sellsInput
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const merged = [...sellsChips, ...pending];
+    const seen = new Set<string>();
+    const finalChips: string[] = [];
+    for (const item of merged) {
+      const key = item.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        finalChips.push(item);
+      }
+    }
+    setSellsChips(finalChips);
+    setSellsInput('');
     const { error } = await supabase.rpc('upsert_radar_offer_profile', {
-      p_sells: offer.sells.trim(),
+      p_sells: finalChips.join(', '),
       p_target: offer.target.trim(),
       p_problem: offer.problem.trim(),
       p_qualifies: offer.qualifies.trim(),
@@ -129,10 +181,12 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
       return;
     }
+    setOffer((prev) => ({ ...prev, sells: finalChips.join(', ') }));
     toast({ title: "Profil d'offre enregistré" });
     void trackRadarEvent('radar_offer_profile_saved', { source: 'radar_crm' });
     onOfferProfileSaved?.();
   };
+
 
   const updatePref = async (patch: Partial<Prefs>) => {
     if (!prefs) return;
