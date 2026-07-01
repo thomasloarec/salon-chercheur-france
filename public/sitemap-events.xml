@@ -109,19 +109,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/iltm</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/step-by-pollutec</loc>
+    <loc>https://lotexpo.com/events/trustech-2026</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/trustech-2026</loc>
+    <loc>https://lotexpo.com/events/step-by-pollutec</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -139,14 +133,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/tech-for-retail</loc>
-    <lastmod>2026-06-28</lastmod>
+    <loc>https://lotexpo.com/events/iltm</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solucop-nice</loc>
-    <lastmod>2026-03-26</lastmod>
+    <loc>https://lotexpo.com/events/tech-for-retail</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -159,6 +153,12 @@
   <url>
     <loc>https://lotexpo.com/events/solucop-nice-1</loc>
     <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/solucop-nice</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -205,13 +205,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/les-places-d-or</loc>
+    <loc>https://lotexpo.com/events/international-conference-on-obesity-metabolism-weight-management</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/international-conference-on-obesity-metabolism-weight-management</loc>
+    <loc>https://lotexpo.com/events/les-places-d-or</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -235,13 +235,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/tech-show-paris</loc>
+    <loc>https://lotexpo.com/events/video-digest</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/video-digest</loc>
+    <loc>https://lotexpo.com/events/tech-show-paris</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -301,6 +301,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/salon-rent-2026</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/mapic</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
@@ -319,18 +325,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/salon-rent-2026</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/euronaval-2026</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-clermont-ferrand</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
@@ -339,6 +333,12 @@
   <url>
     <loc>https://lotexpo.com/events/solutions-cse-parc-asterix</loc>
     <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/euronaval-2026</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -355,13 +355,19 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/asbestonomy-2026</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/agrimax</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/asbestonomy-2026</loc>
+    <loc>https://lotexpo.com/events/batinovia</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -373,19 +379,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/maredimoda-cannes</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/toulouse-space-summit</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/batinovia</loc>
+    <loc>https://lotexpo.com/events/maredimoda-cannes</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -397,19 +397,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/paris-audio-video-music-dj-lights-show</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/sina-paris</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/architect-work-paris</loc>
+    <loc>https://lotexpo.com/events/paris-audio-video-music-dj-lights-show</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -421,14 +415,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/forum-teratec</loc>
-    <lastmod>2026-05-19</lastmod>
+    <loc>https://lotexpo.com/events/architect-work-paris</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/international-golf-travel-market-igtm</loc>
-    <lastmod>2026-03-26</lastmod>
+    <loc>https://lotexpo.com/events/forum-teratec</loc>
+    <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -439,14 +433,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/sial-paris-2026</loc>
-    <lastmod>2026-05-18</lastmod>
+    <loc>https://lotexpo.com/events/international-golf-travel-market-igtm</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/atmos-fair</loc>
-    <lastmod>2026-06-27</lastmod>
+    <loc>https://lotexpo.com/events/sial-paris-2026</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -457,8 +451,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/4th-international-conference-on-neurology-neurological-disorders</loc>
-    <lastmod>2026-06-28</lastmod>
+    <loc>https://lotexpo.com/events/btp-travaux-de-montagne</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/21e-journees-interactives-des-realites-therapeutiques-en-dermatologie</loc>
+    <lastmod>2026-04-05</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -475,8 +475,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/btp-travaux-de-montagne</loc>
-    <lastmod>2026-03-26</lastmod>
+    <loc>https://lotexpo.com/events/4th-international-conference-on-neurology-neurological-disorders</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/atmos-fair</loc>
+    <lastmod>2026-06-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -487,13 +493,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/21e-journees-interactives-des-realites-therapeutiques-en-dermatologie</loc>
-    <lastmod>2026-04-05</lastmod>
+    <loc>https://lotexpo.com/events/cloud-security-forum</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/mobility-for-business</loc>
+    <loc>https://lotexpo.com/events/cosmetic360</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/salon-ibs-intelligent-building-systems</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -517,19 +529,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/cosmetic360</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-ibs-intelligent-building-systems</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/cloud-security-forum</loc>
+    <loc>https://lotexpo.com/events/mobility-for-business</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -541,31 +541,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/siane-industries</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-colmar</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-sme</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/solutions-cse-annecy</loc>
     <lastmod>2026-06-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/top-drh-rhone-alpes</loc>
+    <loc>https://lotexpo.com/events/siane-industries</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -577,20 +559,26 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-international-de-l-aftes</loc>
+    <loc>https://lotexpo.com/events/top-drh-rhone-alpes</loc>
     <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/salon-sme</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-colmar</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/11eme-congres-de-la-societe-francophone-de-nephrologie-dialyse-et-transplantation</loc>
     <lastmod>2026-05-19</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/forum-horizon-chimie-2026</loc>
-    <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -613,13 +601,25 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/4eme-salon-des-seniors-de-cagnes-sur-mer</loc>
-    <lastmod>2026-03-26</lastmod>
+    <loc>https://lotexpo.com/events/congres-international-de-l-aftes</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/forum-horizon-chimie-2026</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/viving-habitat-et-immobilier-quimper</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/4eme-salon-des-seniors-de-cagnes-sur-mer</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -643,19 +643,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solucop-lille</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/forum-franchise-lyon</loc>
+    <loc>https://lotexpo.com/events/les-rendez-vous-de-la-matiere</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/les-rendez-vous-de-la-matiere</loc>
+    <loc>https://lotexpo.com/events/forum-franchise-lyon</loc>
     <lastmod>2026-06-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -667,13 +661,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/enviropro-grand-est-2026</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-autonomic-grand-ouest</loc>
+    <loc>https://lotexpo.com/events/solucop-lille</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -685,31 +673,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/industrie-grand-ouest</loc>
+    <loc>https://lotexpo.com/events/salon-autonomic-grand-ouest</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/r4-composites</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/congres-biocides</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/business-hydro-2026</loc>
-    <lastmod>2026-06-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/preventica-lyon</loc>
+    <loc>https://lotexpo.com/events/enviropro-grand-est-2026</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -721,14 +691,44 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/sommet-de-l-elevage</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/r4-composites</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/preventica-lyon</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/business-hydro-2026</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/congres-biocides</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/solutions-cse-dijon-1</loc>
     <lastmod>2026-06-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/sommet-de-l-elevage</loc>
-    <lastmod>2026-06-28</lastmod>
+    <loc>https://lotexpo.com/events/industrie-grand-ouest</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -751,7 +751,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-montpellier</loc>
+    <loc>https://lotexpo.com/events/solutions-cse-limoges</loc>
     <lastmod>2026-06-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -769,13 +769,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-orleans</loc>
+    <loc>https://lotexpo.com/events/solutions-cse-montpellier</loc>
     <lastmod>2026-06-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-limoges</loc>
+    <loc>https://lotexpo.com/events/solutions-cse-orleans</loc>
     <lastmod>2026-06-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -811,25 +811,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-rennes-2026</loc>
-    <lastmod>2026-05-17</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/micronora</loc>
     <lastmod>2026-05-18</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/ideobain</loc>
-    <lastmod>2026-05-18</lastmod>
+    <loc>https://lotexpo.com/events/solutions-cse-rennes-2026</loc>
+    <lastmod>2026-05-17</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/batimat-2026</loc>
+    <loc>https://lotexpo.com/events/interclima</loc>
     <lastmod>2026-05-18</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -841,25 +835,31 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/natexpo</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/tfwa-world-exhibition-conference</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/renodays-2026</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/interclima</loc>
+    <loc>https://lotexpo.com/events/batimat-2026</loc>
     <lastmod>2026-05-18</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/natexpo</loc>
+    <loc>https://lotexpo.com/events/ideobain</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/renodays-2026</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -871,8 +871,8 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/salon-habitat-angers</loc>
-    <lastmod>2026-03-26</lastmod>
+    <loc>https://lotexpo.com/events/congres-national-de-medecine-esthetique-et-de-chirurgie-dermatologique</loc>
+    <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -883,8 +883,14 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-national-de-medecine-esthetique-et-de-chirurgie-dermatologique</loc>
-    <lastmod>2026-05-19</lastmod>
+    <loc>https://lotexpo.com/events/salon-habitat-angers</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/solutions-cse-futuroscope</loc>
+    <lastmod>2026-05-17</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -901,6 +907,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/solutions-cse-toulouse</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/go-entrepreneurs-lyon-2026</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
@@ -913,19 +925,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-futuroscope</loc>
-    <lastmod>2026-05-17</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/solutions-cse-toulouse</loc>
-    <lastmod>2026-05-28</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/handi-4-lille</loc>
+    <loc>https://lotexpo.com/events/grci-2026</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -937,7 +937,31 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/grci-2026</loc>
+    <loc>https://lotexpo.com/events/handi-4-lille</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/surfair-2026</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-lille</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/cdrc-convention-des-reseaux-commerciaux</loc>
+    <lastmod>2026-04-05</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/sepem-toulouse</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -949,8 +973,8 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/sepem-toulouse</loc>
-    <lastmod>2026-03-26</lastmod>
+    <loc>https://lotexpo.com/events/solutions-cse-lille-1</loc>
+    <lastmod>2026-05-17</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -967,30 +991,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-lille</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/surfair-2026</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/cdrc-convention-des-reseaux-commerciaux</loc>
-    <lastmod>2026-04-05</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/solutions-cse-lille-1</loc>
-    <lastmod>2026-05-17</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/jadh-26</loc>
     <lastmod>2026-05-16</lastmod>
     <changefreq>daily</changefreq>
@@ -1003,37 +1003,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-nancy</loc>
-    <lastmod>2026-05-17</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/reeduca</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/solutions-cse-nancy</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/normandy-horse-meet-up</loc>
-    <lastmod>2026-05-19</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/solutions-cse-paris-porte-de-versailles</loc>
-    <lastmod>2026-04-05</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/jdl-expo</loc>
-    <lastmod>2026-05-19</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/81e-congres-national-de-l-ordre-des-experts-comptables</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -1051,26 +1033,20 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/all4customer-cannes</loc>
+    <loc>https://lotexpo.com/events/jdl-expo</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/les-journees-du-courtage</loc>
+    <loc>https://lotexpo.com/events/81e-congres-national-de-l-ordre-des-experts-comptables</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/cosmopet-international-congress</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/big-data-ai-paris</loc>
-    <lastmod>2026-03-26</lastmod>
+    <loc>https://lotexpo.com/events/solutions-cse-paris-porte-de-versailles</loc>
+    <lastmod>2026-04-05</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -1081,8 +1057,20 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/space</loc>
+    <loc>https://lotexpo.com/events/big-data-ai-paris</loc>
     <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/le-salon-du-vegetal</loc>
+    <lastmod>2026-05-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/all4customer-cannes</loc>
+    <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -1093,7 +1081,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/le-salon-du-vegetal</loc>
+    <loc>https://lotexpo.com/events/cosmopet-international-congress</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/space</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/les-journees-du-courtage</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -1117,13 +1117,25 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/ipem-global-2026</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/journee-presse-et-influence</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/cannes-yachting-festival</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/journee-presse-et-influence</loc>
+    <loc>https://lotexpo.com/events/european-society-for-pedraitric-endocrinology</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -1135,31 +1147,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/ipem-global-2026</loc>
-    <lastmod>2026-05-18</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/european-society-for-pedraitric-endocrinology</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/sport-achat-ete</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/bijorhca-paris</loc>
+    <loc>https://lotexpo.com/events/who-s-next</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/who-s-next</loc>
+    <loc>https://lotexpo.com/events/bijorhca-paris</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -1183,12 +1183,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/advanced-fermentation-technology-2026</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/wonca-europe-2026</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>monthly</changefreq>
@@ -1196,6 +1190,12 @@
   </url>
   <url>
     <loc>https://lotexpo.com/events/salon-souverainete-numerique</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/advanced-fermentation-technology-2026</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1225,20 +1225,14 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/securfood</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/bourgogne-btp-expo</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/tech-for-industry-show</loc>
-    <lastmod>2026-03-27</lastmod>
+    <loc>https://lotexpo.com/events/securfood</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -1255,13 +1249,19 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/moove-on</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/coter-numerique</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/moove-on</loc>
+    <loc>https://lotexpo.com/events/tech-for-industry-show</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1285,12 +1285,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-aime-paris-2026</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/27e-journees-nationales-d-infectiologie</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -1303,13 +1297,19 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/jas-la-rochelle</loc>
+    <loc>https://lotexpo.com/events/congres-aime-paris-2026</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/makeup-in-paris</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/edition-speciale-by-luxe-pack</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1327,25 +1327,25 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/edition-speciale-by-luxe-pack</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/nanomaten</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/enviropro-grand-ouest-2026</loc>
+    <loc>https://lotexpo.com/events/jas-la-rochelle</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/vivatech</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/enviropro-grand-ouest-2026</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1393,13 +1393,19 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/reanimation-2026</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/51emes-journees-nationales-d-etudes-des-puericultrices</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/reanimation-2026</loc>
+    <loc>https://lotexpo.com/events/architect-work-lyon</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1407,12 +1413,6 @@
   <url>
     <loc>https://lotexpo.com/events/congres-des-societes-de-pediatrie</loc>
     <lastmod>2026-05-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/architect-work-lyon</loc>
-    <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -1429,25 +1429,25 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/salon-du-fromage-et-des-produits-laitiers</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/gourmet-selection</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/terres-en-fete</loc>
+    <loc>https://lotexpo.com/events/salon-du-fromage-et-des-produits-laitiers</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/les-52-congres-annuel-de-la-sims</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/terres-en-fete</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1483,13 +1483,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/euromove</loc>
-    <lastmod>2026-03-27</lastmod>
+    <loc>https://lotexpo.com/events/carrefour-international-du-bois</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/datacloud-global-congress</loc>
+    <loc>https://lotexpo.com/events/euromove</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1501,13 +1501,31 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/navexpo</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/salon-amif</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/drive-to-zero-salon-de-l-innovation-pour-la-mobilite-decarbonee</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/navexpo</loc>
+    <loc>https://lotexpo.com/events/sepem-brest</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/datacloud-global-congress</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1519,31 +1537,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/sepem-brest</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-amif</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/carrefour-international-du-bois</loc>
-    <lastmod>2026-03-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/elevate</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/unitechdays-2026</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1555,7 +1549,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-age-3-lyon</loc>
+    <loc>https://lotexpo.com/events/unitechdays-2026</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1563,6 +1557,12 @@
   <url>
     <loc>https://lotexpo.com/events/biomed-j-2026</loc>
     <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/congres-age-3-lyon</loc>
+    <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -1591,13 +1591,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-nice</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/solutions-cse-angers</loc>
+    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-lyon</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1609,7 +1603,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-lyon</loc>
+    <loc>https://lotexpo.com/events/solutions-cse-angers</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/solutions-cse-nice</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1627,31 +1627,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-de-l-amf93-association-des-maires-de-seine-saint-denis</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/seanergy</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/solutions-cse-saint-etienne</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/europcr</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/journees-cofrend-2026</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/congres-de-l-amf93-association-des-maires-de-seine-saint-denis</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1663,13 +1645,31 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/europcr</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/santexpo</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/solutions-cse-saint-etienne</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/reuse-economy-expo</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/seanergy</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1705,6 +1705,12 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/solutions-cse-clermont-ferrand</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/congres-age-3-avignon</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -1717,19 +1723,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-clermont-ferrand</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/handi-4-avignon</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/solutions-cse-bordeaux</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1759,6 +1753,12 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/solutions-cse-bordeaux</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/velo-in-paris</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -1766,12 +1766,6 @@
   </url>
   <url>
     <loc>https://lotexpo.com/events/mix-e</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/invest-in-african-energy</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1789,7 +1783,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/mountain-planet</loc>
+    <loc>https://lotexpo.com/events/invest-in-african-energy</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1801,7 +1795,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/drep-expo-le-salon-de-l-immobilier-de-dubai-a-paris</loc>
+    <loc>https://lotexpo.com/events/mountain-planet</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1813,13 +1807,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/asd-alliance</loc>
+    <loc>https://lotexpo.com/events/drep-expo-le-salon-de-l-immobilier-de-dubai-a-paris</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/go-entrepreneurs-paris-2026</loc>
+    <loc>https://lotexpo.com/events/asd-alliance</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1831,13 +1825,19 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/food-hotel-tech</loc>
-    <lastmod>2026-03-26</lastmod>
+    <loc>https://lotexpo.com/events/go-entrepreneurs-paris-2026</loc>
+    <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/in-cosmetics-global</loc>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/food-hotel-tech</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1849,19 +1849,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/spie-photonics-europe</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/ehra-2026</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/vanlife-expo-rennes</loc>
+    <loc>https://lotexpo.com/events/spie-photonics-europe</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1873,13 +1867,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/viving-habitat-et-immobilier-marseille</loc>
+    <loc>https://lotexpo.com/events/vanlife-expo-rennes</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/siimea-salon-de-l-investissement-de-l-immobilier-et-des-energies-pour-l-afrique</loc>
+    <loc>https://lotexpo.com/events/viving-habitat-et-immobilier-marseille</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1891,7 +1885,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/laval-virtual</loc>
+    <loc>https://lotexpo.com/events/siimea-salon-de-l-investissement-de-l-immobilier-et-des-energies-pour-l-afrique</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1903,7 +1897,19 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-tours</loc>
+    <loc>https://lotexpo.com/events/made-in-pme-2026</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/laval-virtual</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/celo-2026</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1921,18 +1927,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/celo-2026</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/made-in-pme-2026</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/innovative-learning</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -1940,6 +1934,12 @@
   </url>
   <url>
     <loc>https://lotexpo.com/events/shipping-days</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/solutions-cse-tours</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -1957,43 +1957,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-detergence-6eme-edition</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/journees-de-la-naturalite-2026</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/shop-le-salon-37eme-edition</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/c-brand-deployez-votre-univers-de-marque</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/enviropro-sud-est-2026</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/snack-show</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/midi-mat-occitanie</loc>
+    <loc>https://lotexpo.com/events/congres-detergence-6eme-edition</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2005,19 +1975,37 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/enviropro-sud-est-2026</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/midi-mat-occitanie</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/journees-de-la-naturalite-2026</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/snack-show</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/c-brand-deployez-votre-univers-de-marque</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/medtech-meetup-2026</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/sitl-2026</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-paris</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2035,6 +2023,24 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-paris</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/sitl-2026</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/global-industrie</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/changenow</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -2047,19 +2053,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/global-industrie</loc>
+    <loc>https://lotexpo.com/events/horecalpes</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/chr-pro-expo-corse</loc>
-    <lastmod>2026-03-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/horecalpes</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2077,13 +2077,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/6eme-congres-international-gfru</loc>
+    <loc>https://lotexpo.com/events/solutions-cse-zooparc-de-beauval</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/jfr-urgences-2026</loc>
+    <loc>https://lotexpo.com/events/6eme-congres-international-gfru</loc>
     <lastmod>2026-03-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2095,14 +2095,8 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-zooparc-de-beauval</loc>
+    <loc>https://lotexpo.com/events/jfr-urgences-2026</loc>
     <lastmod>2026-03-26</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/sitem</loc>
-    <lastmod>2026-01-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2113,8 +2107,8 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/heavent-meetings</loc>
-    <lastmod>2026-01-18</lastmod>
+    <loc>https://lotexpo.com/events/sitem</loc>
+    <lastmod>2026-01-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2125,20 +2119,56 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/midi-mat-cote-d-azur</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/cycl-eau-toulouse</loc>
     <lastmod>2026-03-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/duck-conf</loc>
+    <loc>https://lotexpo.com/events/midi-mat-cote-d-azur</loc>
+    <lastmod>2026-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/heavent-meetings</loc>
+    <lastmod>2026-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/solutions-cse-mulhouse</loc>
     <lastmod>2026-01-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/all4customer-paris</loc>
+    <lastmod>2026-01-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/jdc-garden-trends</loc>
+    <lastmod>2026-01-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/seta</loc>
+    <lastmod>2026-03-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/workspace-paris</loc>
+    <lastmod>2026-01-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/salon-de-la-conciergerie-locative</loc>
+    <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2149,8 +2179,14 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/jdc-garden-trends</loc>
-    <lastmod>2026-01-11</lastmod>
+    <loc>https://lotexpo.com/events/sase-ztna-forum</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/duck-conf</loc>
+    <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2167,50 +2203,14 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/all4customer-paris</loc>
-    <lastmod>2026-01-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/quantum-networks-summit-2026</loc>
-    <lastmod>2026-03-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/solutions-cse-mulhouse</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/seta</loc>
-    <lastmod>2026-03-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-de-la-conciergerie-locative</loc>
-    <lastmod>2026-01-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/intersol-2026</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/workspace-paris</loc>
-    <lastmod>2026-01-07</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/sase-ztna-forum</loc>
-    <lastmod>2026-02-15</lastmod>
+    <loc>https://lotexpo.com/events/quantum-networks-summit-2026</loc>
+    <lastmod>2026-03-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2227,14 +2227,20 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/salon-du-randonneur</loc>
+    <lastmod>2026-01-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/salon-zen-et-bio</loc>
     <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/salon-du-randonneur</loc>
-    <lastmod>2026-01-10</lastmod>
+    <loc>https://lotexpo.com/events/57eme-j-e-p-u-journees-d-enseignement-post-universitaires</loc>
+    <lastmod>2025-12-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2251,8 +2257,8 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/57eme-j-e-p-u-journees-d-enseignement-post-universitaires</loc>
-    <lastmod>2025-12-31</lastmod>
+    <loc>https://lotexpo.com/events/solutions-cse-paris-printemps</loc>
+    <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2269,19 +2275,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-paris-printemps</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/les-rendez-vous-du-courtage</loc>
-    <lastmod>2026-01-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/top-drh-sud</loc>
+    <loc>https://lotexpo.com/events/solutions-cse-la-grande-motte</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2293,7 +2287,19 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-la-grande-motte</loc>
+    <loc>https://lotexpo.com/events/minalogic-business-meetings</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/hpp-human-protection-prevention-summitit</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/top-drh-sud</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2311,26 +2317,20 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/hpp-human-protection-prevention-summitit</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/minalogic-business-meetings</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-eudipat-et-l-echo-du-gout</loc>
-    <lastmod>2026-01-10</lastmod>
+    <loc>https://lotexpo.com/events/les-rendez-vous-du-courtage</loc>
+    <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/esmo-targeted-anticancer-therapies-congress-2026</loc>
     <lastmod>2025-12-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/salon-eudipat-et-l-echo-du-gout</loc>
+    <lastmod>2026-01-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2353,14 +2353,8 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/vivre-autrement</loc>
+    <loc>https://lotexpo.com/events/le-salon-de-l-immobilier-toulouse</loc>
     <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/viving-habitat-et-immobilier-brest-printemps</loc>
-    <lastmod>2026-01-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2371,20 +2365,14 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/le-salon-de-l-immobilier-toulouse</loc>
+    <loc>https://lotexpo.com/events/vivre-autrement</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/les-rencontres-flotauto-paris</loc>
-    <lastmod>2026-01-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-mondial-du-tourisme</loc>
-    <lastmod>2026-01-06</lastmod>
+    <loc>https://lotexpo.com/events/viving-habitat-et-immobilier-brest-printemps</loc>
+    <lastmod>2026-01-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2401,8 +2389,20 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/35eme-salon-de-gynecologie-obstetrique-pratique</loc>
-    <lastmod>2025-12-31</lastmod>
+    <loc>https://lotexpo.com/events/salon-mondial-du-tourisme</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/les-rencontres-flotauto-paris</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/solutions-cse-lyon</loc>
+    <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2419,13 +2419,43 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-lyon</loc>
+    <loc>https://lotexpo.com/events/salon-du-travail-mobilite-professionnelle-lille</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/salon-du-travail-mobilite-professionnelle-lille</loc>
+    <loc>https://lotexpo.com/events/35eme-salon-de-gynecologie-obstetrique-pratique</loc>
+    <lastmod>2025-12-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/gedicoop</loc>
+    <lastmod>2026-01-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/open-energies</loc>
+    <lastmod>2026-01-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/expobiogaz</loc>
+    <lastmod>2026-01-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/mipim-marche-international-des-professionnels-de-l-immobilier</loc>
+    <lastmod>2026-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-rouen</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2437,32 +2467,8 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/congres-professionnel-des-personnels-de-structures-d-accueil-de-la-petite-enfance-rouen</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/gedicoop</loc>
+    <loc>https://lotexpo.com/events/cfia</loc>
     <lastmod>2026-01-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/solutions-cse-nantes</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/mipim-marche-international-des-professionnels-de-l-immobilier</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/open-energies</loc>
-    <lastmod>2026-01-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2473,20 +2479,14 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/cfia</loc>
-    <lastmod>2026-01-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/expobiogaz</loc>
-    <lastmod>2026-01-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/forum-labo-lyon</loc>
     <lastmod>2026-01-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/solutions-cse-nantes</loc>
+    <lastmod>2026-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2499,18 +2499,6 @@
   <url>
     <loc>https://lotexpo.com/events/viving-habitat-et-immobilier-vannes</loc>
     <lastmod>2026-01-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/matter-and-shape</loc>
-    <lastmod>2026-01-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-habitat-deco-bordeaux</loc>
-    <lastmod>2026-01-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2533,7 +2521,19 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-metz</loc>
+    <loc>https://lotexpo.com/events/matter-and-shape</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/salon-habitat-deco-bordeaux</loc>
+    <lastmod>2026-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/eva-expo</loc>
     <lastmod>2026-01-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2545,13 +2545,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/eva-expo</loc>
+    <loc>https://lotexpo.com/events/salon-regionale-de-l-agriculture-de-tarbes</loc>
     <lastmod>2026-01-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/salon-regionale-de-l-agriculture-de-tarbes</loc>
+    <loc>https://lotexpo.com/events/solutions-cse-metz</loc>
     <lastmod>2026-01-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2611,14 +2611,14 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/nordbat-2026</loc>
-    <lastmod>2026-01-18</lastmod>
+    <loc>https://lotexpo.com/events/bio360-europe-2026</loc>
+    <lastmod>2026-01-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/bio360-europe-2026</loc>
-    <lastmod>2026-01-10</lastmod>
+    <loc>https://lotexpo.com/events/nordbat-2026</loc>
+    <lastmod>2026-01-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2631,12 +2631,6 @@
   <url>
     <loc>https://lotexpo.com/events/siprho-2026</loc>
     <lastmod>2026-01-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/events/salon-piscine-jardin</loc>
-    <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2659,13 +2653,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/solutions-cse-brest-2026</loc>
-    <lastmod>2026-01-18</lastmod>
+    <loc>https://lotexpo.com/events/salon-piscine-jardin</loc>
+    <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/salon-seminaires-business-events-de-lyon</loc>
+    <loc>https://lotexpo.com/events/solutions-cse-brest-2026</loc>
     <lastmod>2026-01-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2677,13 +2671,19 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://lotexpo.com/events/salon-seminaires-business-events-de-lyon</loc>
+    <lastmod>2026-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/events/paris-packaging-week</loc>
     <lastmod>2026-01-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/midem-cannes</loc>
+    <loc>https://lotexpo.com/events/it-partners-2026</loc>
     <lastmod>2026-01-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2695,7 +2695,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/it-partners-2026</loc>
+    <loc>https://lotexpo.com/events/midem-cannes</loc>
     <lastmod>2026-01-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2713,7 +2713,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/ctco-2026</loc>
+    <loc>https://lotexpo.com/events/c-print-lyon-2026</loc>
     <lastmod>2026-01-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2725,14 +2725,14 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/euromaritime-2026</loc>
-    <lastmod>2026-01-11</lastmod>
+    <loc>https://lotexpo.com/events/ctco-2026</loc>
+    <lastmod>2026-01-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/cyber-ia-expo</loc>
-    <lastmod>2026-01-02</lastmod>
+    <loc>https://lotexpo.com/events/symposium-on-optronics-in-defence-and-security-optro2026</loc>
+    <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2743,8 +2743,8 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/c-print-lyon-2026</loc>
-    <lastmod>2026-01-10</lastmod>
+    <loc>https://lotexpo.com/events/cyber-ia-expo</loc>
+    <lastmod>2026-01-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2755,7 +2755,7 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/symposium-on-optronics-in-defence-and-security-optro2026</loc>
+    <loc>https://lotexpo.com/events/euromaritime-2026</loc>
     <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -2797,14 +2797,14 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/13e-assises-de-genetique-humaine-et-medicale</loc>
-    <lastmod>2026-01-18</lastmod>
+    <loc>https://lotexpo.com/events/sepem-douai</loc>
+    <lastmod>2026-01-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/sepem-douai</loc>
-    <lastmod>2026-01-12</lastmod>
+    <loc>https://lotexpo.com/events/13e-assises-de-genetique-humaine-et-medicale</loc>
+    <lastmod>2026-01-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -2815,26 +2815,26 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/parkours</loc>
-    <lastmod>2026-01-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://lotexpo.com/events/les-thermalies-le-salon-de-l-eau-du-bien-etre</loc>
     <lastmod>2026-01-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://lotexpo.com/events/carrefour-des-gestions-locales-de-l-eau</loc>
-    <lastmod>2026-01-11</lastmod>
+    <loc>https://lotexpo.com/events/parkours</loc>
+    <lastmod>2026-01-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lotexpo.com/events/pharmapack-europe-2026</loc>
     <lastmod>2026-01-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/events/carrefour-des-gestions-locales-de-l-eau</loc>
+    <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
