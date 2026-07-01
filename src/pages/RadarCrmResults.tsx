@@ -30,6 +30,10 @@ import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
+  type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
+  companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP,
+} from '@/lib/radarCrm/relationship';
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 
