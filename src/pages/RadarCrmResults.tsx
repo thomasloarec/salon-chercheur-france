@@ -1243,8 +1243,10 @@ const CompanyAccountCard: React.FC<{
   onClickEvent: (g: EventGroup) => void;
   pref: Pref;
   onSetPref: (next: Pref) => void;
+  relationship: RelationshipStatus;
+  onSetRelationship: (next: RelationshipStatus) => void;
   dimmed?: boolean;
-}> = ({ company, future, past, onClickEvent, pref, onSetPref, dimmed }) => {
+}> = ({ company, future, past, onClickEvent, pref, onSetPref, relationship, onSetRelationship, dimmed }) => {
   const INITIAL = 3;
   const [expF, setExpF] = useState(false);
   // Historique replié par défaut : on calme la carte (cf. polish v2).
