@@ -640,6 +640,8 @@ const RadarCrmResults: React.FC = () => {
                     onClickEvent={onClickEvent}
                     getPref={getPref}
                     onSetPref={setPref}
+                    getRel={getRel}
+                    onSetRel={setRel}
                   />
                 </TabsContent>
 
@@ -661,6 +663,7 @@ const RadarCrmResults: React.FC = () => {
                             group={g}
                             importId={activeImportId}
                             getPref={getPref}
+                            getRel={getRel}
                             onView={() => onClickEvent(g)}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
