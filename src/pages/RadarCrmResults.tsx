@@ -29,6 +29,7 @@ import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
+import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
   companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP,
