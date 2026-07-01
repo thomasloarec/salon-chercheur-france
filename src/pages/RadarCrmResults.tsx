@@ -29,6 +29,7 @@ import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
+import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
   companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP,
@@ -189,6 +190,8 @@ const RadarCrmResults: React.FC = () => {
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  // Panneau mission (vue « Par salon ») — couple compte + salon.
+  const [mission, setMission] = useState<{ target: MissionTarget; company: Company } | null>(null);
   // Vue par compte = vue par défaut (cadrage « veille »).
   // Si un événement est mis en avant (deep-link), on ouvre la vue par salon pour préserver le scroll auto.
   const [activeTab, setActiveTab] = useState<string>(searchParams.get('eventId') ? 'future' : 'companies');
@@ -514,6 +517,27 @@ const RadarCrmResults: React.FC = () => {
     });
   };
 
+  // Ouverture du panneau mission depuis la vue « Par salon ».
+  const onOpenMission = (
+    company: Company,
+    stand: string | null,
+    g: EventGroup,
+    nom_exposant: string | null,
+  ) => {
+    void trackRadarEvent('radar_mission_opened', { eventId: g.event_id });
+    setMission({
+      company,
+      target: {
+        companyId: company.id,
+        companyName: company.company_name,
+        nomExposant: nom_exposant,
+        stand,
+        eventId: g.event_id,
+        eventName: g.nom_event,
+      },
+    });
+  };
+
   // Empty state
   if (!authLoading && imports !== null && imports.length === 0) {
     return (
@@ -666,7 +690,7 @@ const RadarCrmResults: React.FC = () => {
                             getRel={getRel}
                             onView={() => onClickEvent(g)}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
-                              onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
+                              onOpenMission(c, stand, g, nom_exposant)}
                           />
                         </div>
                       ))}
@@ -726,6 +750,14 @@ const RadarCrmResults: React.FC = () => {
         onOfferProfileSaved={() => { void checkOfferProfile(); }}
       />
       <AccessRequestDialog open={accessOpen} onOpenChange={setAccessOpen} />
+      <RadarMissionSheet
+        target={mission?.target ?? null}
+        open={!!mission}
+        onOpenChange={(o) => { if (!o) setMission(null); }}
+        relationship={mission ? getRel(mission.company) : DEFAULT_RELATIONSHIP}
+        onChangeRelationship={(next) => { if (mission) void setRel(mission.company, next); }}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
     </MainLayout>
   );
 };

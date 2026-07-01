@@ -32,7 +32,9 @@ export type RadarEventType =
   | 'crm_event_widget_results_clicked'
   | 'crm_access_requested'
   | 'radar_offer_profile_saved'
-  | 'radar_company_relationship_updated';
+  | 'radar_company_relationship_updated'
+  | 'radar_mission_opened'
+  | 'radar_mission_saved';
 
 export async function trackRadarEvent(event_type: RadarEventType, metadata: Record<string, unknown> = {}) {
   try {
