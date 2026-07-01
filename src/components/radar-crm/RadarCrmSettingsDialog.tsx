@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Trash2, AlertTriangle, CheckCircle2, Info, Target } from 'lucide-react';
+import { Shield, Trash2, AlertTriangle, CheckCircle2, Info, Target, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
