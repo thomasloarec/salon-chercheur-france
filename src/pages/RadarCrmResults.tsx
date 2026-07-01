@@ -1339,6 +1339,14 @@ const CompanyAccountCard: React.FC<{
           </div>
         </div>
 
+        {/* Statut relationnel — s'applique immédiatement (pas de bouton enregistrer) */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
+            Statut
+          </span>
+          <RelationshipSelect status={relationship} onChange={onSetRelationship} />
+        </div>
+
         {dimmed && (
           <Button
             variant="outline"
