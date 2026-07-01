@@ -750,6 +750,14 @@ const RadarCrmResults: React.FC = () => {
         onOfferProfileSaved={() => { void checkOfferProfile(); }}
       />
       <AccessRequestDialog open={accessOpen} onOpenChange={setAccessOpen} />
+      <RadarMissionSheet
+        target={mission?.target ?? null}
+        open={!!mission}
+        onOpenChange={(o) => { if (!o) setMission(null); }}
+        relationship={mission ? getRel(mission.company) : DEFAULT_RELATIONSHIP}
+        onChangeRelationship={(next) => { if (mission) void setRel(mission.company, next); }}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
     </MainLayout>
   );
 };
