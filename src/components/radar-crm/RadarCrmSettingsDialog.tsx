@@ -307,11 +307,33 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
                     <Label htmlFor="offer-sells" className="font-medium">Ce que vous vendez</Label>
                     <Input
                       id="offer-sells"
-                      value={offer.sells}
-                      onChange={(e) => setOffer((o) => ({ ...o, sells: e.target.value }))}
-                      placeholder="Ex : capteurs industriels"
+                      value={sellsInput}
+                      onChange={(e) => setSellsInput(e.target.value)}
+                      onKeyDown={handleSellsKeyDown}
+                      placeholder="Tapez un produit puis Entrée ou virgule"
                     />
+                    {sellsChips.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {sellsChips.map((chip) => (
+                          <Badge
+                            key={chip}
+                            className="gap-1 pr-1 rounded-md bg-primary/10 text-primary hover:bg-primary/10 min-h-[2rem] items-center pl-2.5 py-1"
+                          >
+                            <span className="text-sm">{chip}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeSellsChip(chip)}
+                              className="ml-1 flex items-center justify-center h-6 w-6 rounded-full text-primary hover:bg-primary/20 transition-colors"
+                              aria-label={`Supprimer ${chip}`}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
+
 
                   <div className="space-y-1.5">
                     <Label htmlFor="offer-target" className="font-medium">Votre cible</Label>
