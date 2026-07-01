@@ -190,6 +190,8 @@ const RadarCrmResults: React.FC = () => {
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  // Panneau mission (vue « Par salon ») — couple compte + salon.
+  const [mission, setMission] = useState<{ target: MissionTarget; company: Company } | null>(null);
   // Vue par compte = vue par défaut (cadrage « veille »).
   // Si un événement est mis en avant (deep-link), on ouvre la vue par salon pour préserver le scroll auto.
   const [activeTab, setActiveTab] = useState<string>(searchParams.get('eventId') ? 'future' : 'companies');
