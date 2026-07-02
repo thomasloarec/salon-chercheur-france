@@ -6736,6 +6736,7 @@ export type Database = {
       get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
+      get_radar_onboarding_progress: { Args: never; Returns: Json }
       get_radar_salon_missions: { Args: { p_event_id: string }; Returns: Json }
       get_radar_salon_similar: {
         Args: { p_event_id: string; p_exclude?: string[]; p_limit?: number }
