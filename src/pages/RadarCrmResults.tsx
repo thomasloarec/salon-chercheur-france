@@ -34,6 +34,9 @@ import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/Ra
 import RadarOnboardingPanel, { type RadarOnboardingProgress } from '@/components/radar-crm/RadarOnboardingPanel';
 import SimilarExhibitorsSection from '@/components/radar-crm/SimilarExhibitorsSection';
 import {
+  eventPhase, showModeSalon, modeSalonIsHot, showDebrief,
+} from '@/lib/radarCrm/eventPhase';
+import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
   companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP, triggerClassFor,
 } from '@/lib/radarCrm/relationship';
@@ -696,6 +699,19 @@ const RadarCrmResults: React.FC = () => {
             )}
           </div>
 
+          {/* Panneau d'onboarding gamifié — 4 missions, tout en haut du cockpit
+              (sous le titre, avant les stats et le bandeau « Radar actif »). */}
+          {!isLocked && (
+            <RadarOnboardingPanel
+              progress={onboarding}
+              loading={onboardingLoading}
+              captureEventId={onboardingCaptureEventId}
+              onGoCompanies={() => setActiveTab('companies')}
+              onPrepareEvent={onPrepareEvent}
+              onEnterTerrain={enterTerrain}
+            />
+          )}
+
           {/* Trial banner */}
           {isTrial && !loading && (
             <TrialBanner daysLeft={daysLeft} detected={kpiDetected} />
@@ -744,16 +760,6 @@ const RadarCrmResults: React.FC = () => {
               {offerEmpty === true && (
                 <OfferProfileNudge onOpenSettings={() => setSettingsOpen(true)} />
               )}
-
-              {/* Panneau d'onboarding gamifié — 4 missions, au-dessus des onglets */}
-              <RadarOnboardingPanel
-                progress={onboarding}
-                loading={onboardingLoading}
-                captureEventId={onboardingCaptureEventId}
-                onGoCompanies={() => setActiveTab('companies')}
-                onPrepareEvent={onPrepareEvent}
-                onEnterTerrain={enterTerrain}
-              />
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="flex w-full max-w-full h-auto justify-start flex-nowrap gap-1 overflow-x-auto no-scrollbar bg-card border p-1">
@@ -1290,6 +1296,9 @@ const EventCard: React.FC<{
 }> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, onDebrief, similarCount = 0, onSimilarKept, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
+  // Phase du salon (avant / pendant / après) → pilote la visibilité et la
+  // mise en avant des actions « Mode salon » et « Débrief ».
+  const phase = eventPhase(group.date_debut, group.date_fin);
 
   return (
     <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm hover:border-border transition-all bg-card">
@@ -1374,12 +1383,27 @@ const EventCard: React.FC<{
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
             <AgendaLotexpoButton eventId={group.event_id} importId={importId} />
-            {onModeSalon && (
-              <Button size="sm" variant="ghost" onClick={onModeSalon} className="text-muted-foreground hover:text-foreground">
-                <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
-              </Button>
+            {onModeSalon && showModeSalon(phase) && (
+              modeSalonIsHot(phase) ? (
+                <Button
+                  size="sm"
+                  onClick={onModeSalon}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onModeSalon}
+                  className="text-muted-foreground/70 hover:text-foreground"
+                >
+                  <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
+                </Button>
+              )
             )}
-            {onDebrief && (
+            {onDebrief && showDebrief(phase) && (
               <Button size="sm" variant="ghost" onClick={onDebrief} className="text-muted-foreground hover:text-foreground">
                 <ClipboardList className="h-3.5 w-3.5 mr-1" /> Débrief
               </Button>

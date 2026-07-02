@@ -19,6 +19,7 @@ import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship, DEFAULT_RELATIONSHIP,
 } from '@/lib/radarCrm/relationship';
 import { cn } from '@/lib/utils';
+import { eventPhase, showDebrief } from '@/lib/radarCrm/eventPhase';
 
 type Pref = 'starred' | 'ignored' | 'normal';
 
@@ -322,6 +323,8 @@ const RadarCrmTerrainInner: React.FC = () => {
 
   const ev = payload?.event ?? null;
   const eventName = ev?.nom_event ?? 'Salon';
+  // Phase du salon : le débrief n'est proposé qu'à partir du 1er jour du salon.
+  const phase = eventPhase(ev?.date_debut, ev?.date_fin);
   const dateLabel = useMemo(() => {
     const d1 = fmtDate(ev?.date_debut);
     const d2 = fmtDate(ev?.date_fin);
@@ -542,13 +545,15 @@ const RadarCrmTerrainInner: React.FC = () => {
                       {toSeeCount} à voir
                     </span>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
-                    className="gap-2 min-h-[44px]"
-                  >
-                    <ClipboardList className="h-4 w-4" /> Débrief du salon
-                  </Button>
+                  {showDebrief(phase) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
+                      className="gap-2 min-h-[44px]"
+                    >
+                      <ClipboardList className="h-4 w-4" /> Débrief du salon
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
