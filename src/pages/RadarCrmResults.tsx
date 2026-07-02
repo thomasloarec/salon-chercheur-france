@@ -32,7 +32,7 @@ import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
-  companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP,
+  companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP, triggerClassFor,
 } from '@/lib/radarCrm/relationship';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -999,13 +999,20 @@ const RelationshipBadge: React.FC<{ status: RelationshipStatus; className?: stri
 const RelationshipSelect: React.FC<{
   status: RelationshipStatus;
   onChange: (next: RelationshipStatus) => void;
-}> = ({ status, onChange }) => (
+}> = ({ status, onChange }) => {
+  const meta = RELATIONSHIP_META[status];
+  return (
   <Select value={status} onValueChange={(v) => onChange(v as RelationshipStatus)}>
     <SelectTrigger
       aria-label="Statut relationnel du compte"
-      className="h-8 w-auto min-w-0 gap-1.5 rounded-md border-border bg-background px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0"
+      className={cn(
+        'h-8 w-auto min-w-0 gap-1.5 rounded-md px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0',
+        '[&>span]:line-clamp-none',
+        triggerClassFor(status),
+      )}
     >
-      <RelationshipBadge status={status} />
+      <span className={cn('h-2 w-2 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
+      <span className={cn('truncate text-xs font-medium', meta.badge)}>{meta.label}</span>
     </SelectTrigger>
     <SelectContent>
       {RELATIONSHIP_ORDER.map((s) => (
@@ -1019,7 +1026,8 @@ const RelationshipSelect: React.FC<{
       ))}
     </SelectContent>
   </Select>
-);
+  );
+};
 
 /** Nudge cockpit : incite à compléter le profil d'offre (disparaît une fois rempli). */
 const OfferProfileNudge: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) => (
