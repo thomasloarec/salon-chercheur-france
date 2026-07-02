@@ -21,6 +21,8 @@ import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
 } from '@/lib/radarCrm/relationship';
 import { buildMissionSuggestion, type OfferProfileInput } from '@/lib/radarCrm/playbooks';
+import ExpandableText from '@/components/exhibitor/ExpandableText';
+
 
 /** Compte ciblé par le panneau mission (couple crm_company_id + salon). */
 export interface MissionTarget {
@@ -77,6 +79,9 @@ const RadarMissionSheet: React.FC<{
   const [statusChanged, setStatusChanged] = useState(false);
   // Dernier statut pour lequel des suggestions ont été appliquées / chargées.
   const prevRelRef = useRef<RelationshipStatus>(relationship);
+  // Description société (résumé IA ou legacy) affichée sous l'en-tête.
+  const [description, setDescription] = useState<string | null>(null);
+
 
   // Charge la mission existante + le profil d'offre à l'ouverture, puis préremplit.
   useEffect(() => {
@@ -115,7 +120,11 @@ const RadarMissionSheet: React.FC<{
             top_q2: (row.top_q2 as string) ?? '',
             top_q3: (row.top_q3 as string) ?? '',
           };
+          setDescription((row.description as string | null) ?? null);
+        } else {
+          setDescription(null);
         }
+
       }
 
       // Préremplissage : garde le travail existant, complète les champs vides via le moteur.
@@ -236,7 +245,14 @@ const RadarMissionSheet: React.FC<{
               <MapPin className="h-3 w-3" /> {standLabel}
             </span>
           </SheetDescription>
+          {nonEmpty(description) && (
+            <ExpandableText
+              text={description!}
+              className="pt-1"
+            />
+          )}
         </SheetHeader>
+
 
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
           {loading ? (
