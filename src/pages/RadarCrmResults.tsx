@@ -1156,6 +1156,7 @@ const EventCard: React.FC<{
   getPref?: (companyId: string) => Pref;
   getRel?: (company: Company) => RelationshipStatus;
   onView: () => void;
+  onModeSalon?: () => void;
   onCompanyClick: (
     c: Company,
     id_exposant: string,
@@ -1163,7 +1164,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, getRel, onView, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onView, onModeSalon, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -1246,6 +1247,11 @@ const EventCard: React.FC<{
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
             <AgendaLotexpoButton eventId={group.event_id} importId={importId} />
+            {onModeSalon && (
+              <Button size="sm" variant="ghost" onClick={onModeSalon} className="text-muted-foreground hover:text-foreground">
+                <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
+              </Button>
+            )}
           </div>
         </div>
       </div>
