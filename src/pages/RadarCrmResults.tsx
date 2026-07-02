@@ -696,6 +696,19 @@ const RadarCrmResults: React.FC = () => {
             )}
           </div>
 
+          {/* Panneau d'onboarding gamifié — 4 missions, tout en haut du cockpit
+              (sous le titre, avant les stats et le bandeau « Radar actif »). */}
+          {!isLocked && (
+            <RadarOnboardingPanel
+              progress={onboarding}
+              loading={onboardingLoading}
+              captureEventId={onboardingCaptureEventId}
+              onGoCompanies={() => setActiveTab('companies')}
+              onPrepareEvent={onPrepareEvent}
+              onEnterTerrain={enterTerrain}
+            />
+          )}
+
           {/* Trial banner */}
           {isTrial && !loading && (
             <TrialBanner daysLeft={daysLeft} detected={kpiDetected} />
@@ -744,16 +757,6 @@ const RadarCrmResults: React.FC = () => {
               {offerEmpty === true && (
                 <OfferProfileNudge onOpenSettings={() => setSettingsOpen(true)} />
               )}
-
-              {/* Panneau d'onboarding gamifié — 4 missions, au-dessus des onglets */}
-              <RadarOnboardingPanel
-                progress={onboarding}
-                loading={onboardingLoading}
-                captureEventId={onboardingCaptureEventId}
-                onGoCompanies={() => setActiveTab('companies')}
-                onPrepareEvent={onPrepareEvent}
-                onEnterTerrain={enterTerrain}
-              />
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="flex w-full max-w-full h-auto justify-start flex-nowrap gap-1 overflow-x-auto no-scrollbar bg-card border p-1">
