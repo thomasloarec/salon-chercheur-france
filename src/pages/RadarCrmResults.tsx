@@ -1490,7 +1490,7 @@ const CompanyAccountCard: React.FC<{
             type="button"
             onClick={() => onClickEvent(g)}
             disabled={!g.slug}
-            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-secondary/40 hover:bg-secondary/70 transition-colors disabled:opacity-60"
+            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-muted/40 hover:bg-muted/70 transition-colors disabled:opacity-60"
           >
             {rowInner}
           </button>
@@ -1526,13 +1526,13 @@ const CompanyAccountCard: React.FC<{
       dimmed
         ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
         : 'hover:border-border hover:shadow-sm',
-      pref === 'starred' && 'border-accent/50 bg-secondary/40',
+      pref === 'starred' && 'border-accent/40',
     )}>
       <CardContent className="p-5 space-y-4">
         <div className="flex items-start gap-3">
           <CompanyAvatar company={company} size="md" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-base text-foreground truncate">{company.company_name}</p>
+            <p className="font-display font-semibold text-base text-foreground truncate" title={company.company_name}>{company.company_name}</p>
             <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
               <ExternalLink className="h-3 w-3" />
               {company.normalized_domain ?? company.website_raw ?? ''}
