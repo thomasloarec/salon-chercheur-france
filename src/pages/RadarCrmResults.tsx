@@ -1226,6 +1226,7 @@ const EventCard: React.FC<{
   onView: () => void;
   onModeSalon?: () => void;
   similarCount?: number;
+  onSimilarKept?: () => void;
   onCompanyClick: (
     c: Company,
     id_exposant: string,
@@ -1233,7 +1234,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, similarCount = 0, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, similarCount = 0, onSimilarKept, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
