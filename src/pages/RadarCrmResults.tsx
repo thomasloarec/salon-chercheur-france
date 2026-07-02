@@ -262,6 +262,18 @@ const RadarCrmResults: React.FC = () => {
     })();
   }, [activeImportId, user]);
 
+  // Rafraîchissement léger du cockpit après un « Garder » (sans écran de chargement).
+  // Re-fetch get_my_radar_view + relations pour faire apparaître le compte gardé
+  // (prospect froid) dans « À suivre » et sur le salon, sans rechargement manuel.
+  const refreshCockpit = async () => {
+    if (!activeImportId || !user) return;
+    const { data, error: rpcError } = await supabase.rpc('get_my_radar_view', {
+      p_import_id: activeImportId ?? null,
+    });
+    if (!rpcError) setRadarView((data as unknown as RadarView) ?? null);
+    void loadRelationships();
+  };
+
   const status: RadarStatus = radarView?.status ?? 'none';
   const isLocked = status === 'trial_expired' || status === 'free';
   const isTrial = status === 'trial_active';
