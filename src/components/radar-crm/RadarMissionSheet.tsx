@@ -27,6 +27,7 @@ import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
+  triggerClassFor,
 } from '@/lib/radarCrm/relationship';
 import { buildMissionSuggestion, type OfferProfileInput } from '@/lib/radarCrm/playbooks';
 import ExpandableText from '@/components/exhibitor/ExpandableText';
