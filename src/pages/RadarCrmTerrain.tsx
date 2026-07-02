@@ -1,0 +1,361 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  ArrowLeft, MapPin, Star, ChevronRight, Calendar, StickyNote, CheckSquare,
+} from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { trackRadarEvent } from '@/lib/radarCrm/tracking';
+import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
+import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
+import {
+  type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship, DEFAULT_RELATIONSHIP,
+} from '@/lib/radarCrm/relationship';
+import { cn } from '@/lib/utils';
+
+type Pref = 'starred' | 'ignored' | 'normal';
+
+/** Shape renvoyée par get_radar_salon_missions (typée Json côté RPC). */
+interface SalonMissionCompany {
+  crm_company_id: string;
+  company_name: string | null;
+  description: string | null;
+  nom_exposant: string | null;
+  stands: string[] | null;
+  relationship_status: string | null;
+  mission_id: string | null;
+  objective: string | null;
+  opening_line: string | null;
+  top_q1: string | null;
+  top_q2: string | null;
+  top_q3: string | null;
+  pref_status: Pref | null;
+  notes: unknown[] | null;
+  tasks: Array<{ done?: boolean | null }> | null;
+}
+
+interface SalonMissionEvent {
+  event_id?: string | null;
+  nom_event?: string | null;
+  ville?: string | null;
+  nom_lieu?: string | null;
+  date_debut?: string | null;
+  date_fin?: string | null;
+}
+
+interface SalonMissionsPayload {
+  event: SalonMissionEvent | null;
+  companies: SalonMissionCompany[];
+}
+
+const fmtDate = (d: string | null | undefined) =>
+  d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
+
+const standLabelFor = (stands: string[] | null): string => {
+  const list = (stands ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
+  return list.length ? `Stand ${list.join(', ')}` : 'Stand non renseigné';
+};
+
+/** Badge coloré de statut relationnel (mêmes tokens que le cockpit — run 3). */
+const RelBadge: React.FC<{ status: RelationshipStatus }> = ({ status }) => {
+  const meta = RELATIONSHIP_META[status];
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        meta.badge,
+      )}
+    >
+      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
+      {meta.label}
+    </span>
+  );
+};
+
+const RadarCrmTerrain: React.FC = () => {
+  const { eventId } = useParams<{ eventId: string }>();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [payload, setPayload] = useState<SalonMissionsPayload | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mission, setMission] = useState<{ target: MissionTarget; companyId: string } | null>(null);
+
+  // Surcouche optimiste du statut relationnel (indexée par crm_company_id).
+  const [relOverrides, setRelOverrides] = useState<Record<string, RelationshipStatus>>({});
+
+  // Auth gate — même comportement que le cockpit.
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate(`/auth?redirect=${encodeURIComponent(`/radar-crm/terrain/${eventId ?? ''}`)}`);
+    }
+  }, [user, authLoading, navigate, eventId]);
+
+  const load = useCallback(async () => {
+    if (!eventId || !user) return;
+    setLoading(true);
+    setError(null);
+    // Gating entitlement : on s'appuie sur get_my_radar_view (comme le cockpit).
+    const { data: view, error: viewErr } = await supabase.rpc('get_my_radar_view', { p_import_id: null });
+    if (viewErr) {
+      console.error('[RadarCRM] get_my_radar_view failed:', viewErr);
+    } else {
+      const v = view as unknown as { has_access?: boolean; status?: string } | null;
+      const locked = v?.status === 'trial_expired' || v?.status === 'free' || v?.has_access === false;
+      if (locked) {
+        navigate('/radar-crm/results', { replace: true });
+        return;
+      }
+    }
+
+    const { data, error: rpcErr } = await supabase.rpc('get_radar_salon_missions', { p_event_id: eventId });
+    if (rpcErr) {
+      console.error('[RadarCRM] get_radar_salon_missions failed:', rpcErr);
+      setError(rpcErr.message);
+      setPayload(null);
+      setLoading(false);
+      return;
+    }
+    const p = data as unknown as SalonMissionsPayload | null;
+    setPayload(
+      p
+        ? { event: p.event ?? null, companies: Array.isArray(p.companies) ? p.companies : [] }
+        : { event: null, companies: [] },
+    );
+    setRelOverrides({});
+    setLoading(false);
+  }, [eventId, user, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    void trackRadarEvent('radar_salon_mode_viewed', { eventId });
+    void load();
+  }, [user, load, eventId]);
+
+  const ev = payload?.event ?? null;
+  const eventName = ev?.nom_event ?? 'Salon';
+  const dateLabel = useMemo(() => {
+    const d1 = fmtDate(ev?.date_debut);
+    const d2 = fmtDate(ev?.date_fin);
+    if (d1 && d2 && d1 !== d2) return `${d1} – ${d2}`;
+    return d1 ?? '';
+  }, [ev?.date_debut, ev?.date_fin]);
+
+  const getRel = (c: SalonMissionCompany): RelationshipStatus =>
+    relOverrides[c.crm_company_id] ?? normalizeRelationship(c.relationship_status);
+
+  const setRel = async (companyId: string, next: RelationshipStatus) => {
+    const prev = getRel(
+      (payload?.companies ?? []).find((c) => c.crm_company_id === companyId) ?? ({} as SalonMissionCompany),
+    );
+    if (prev === next) return;
+    setRelOverrides((o) => ({ ...o, [companyId]: next }));
+    const { error: rpcErr } = await supabase.rpc('set_radar_company_relationship', {
+      p_crm_company_id: companyId,
+      p_status: next,
+    });
+    if (rpcErr) {
+      console.error('[RadarCRM] set_radar_company_relationship failed:', rpcErr);
+      setRelOverrides((o) => ({ ...o, [companyId]: prev }));
+      toast({
+        title: 'Action impossible',
+        description: 'Impossible de mettre à jour le statut de ce compte.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Tri : favoris (starred) d'abord, puis alphabétique sur le nom affiché.
+  const companies = useMemo(() => {
+    const list = [...(payload?.companies ?? [])];
+    const displayName = (c: SalonMissionCompany) =>
+      (c.nom_exposant ?? c.company_name ?? '').toLocaleLowerCase('fr');
+    return list.sort((a, b) => {
+      const sa = a.pref_status === 'starred' ? 0 : 1;
+      const sb = b.pref_status === 'starred' ? 0 : 1;
+      if (sa !== sb) return sa - sb;
+      return displayName(a).localeCompare(displayName(b), 'fr');
+    });
+  }, [payload]);
+
+  const openMission = (c: SalonMissionCompany) => {
+    if (!eventId) return;
+    void trackRadarEvent('radar_mission_opened', { eventId, source: 'salon_mode' });
+    setMission({
+      companyId: c.crm_company_id,
+      target: {
+        companyId: c.crm_company_id,
+        companyName: c.company_name ?? '',
+        nomExposant: c.nom_exposant,
+        stand: (c.stands ?? []).filter(Boolean).join(', ') || null,
+        eventId,
+        eventName,
+      },
+    });
+  };
+
+  const activeCompany = mission
+    ? (payload?.companies ?? []).find((c) => c.crm_company_id === mission.companyId) ?? null
+    : null;
+
+  return (
+    <div className="min-h-screen bg-muted/10 font-body">
+      <Helmet>
+        <title>Mode salon — {eventName} | Lotexpo</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
+
+      {/* Barre supérieure fine — usage sur stand */}
+      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="max-w-3xl mx-auto flex items-center gap-3 px-4 py-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Retour"
+            onClick={() => navigate('/radar-crm/results')}
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="min-w-0">
+            <p className="font-display text-base font-semibold text-foreground leading-tight truncate">
+              {loading ? 'Mode salon' : eventName}
+            </p>
+            {dateLabel && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                <Calendar className="h-3 w-3 shrink-0" /> {dateLabel}
+              </p>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-4 py-6 md:py-8">
+        {loading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-16 space-y-4">
+            <p className="text-sm text-muted-foreground">Impossible de charger ce salon.</p>
+            <Button variant="outline" onClick={() => void load()}>Réessayer</Button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6">
+              <h1 className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground leading-tight">
+                {eventName}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                {ev?.ville && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" /> {ev.ville}
+                  </span>
+                )}
+                <span className="font-medium text-foreground">
+                  {companies.length} entreprise{companies.length > 1 ? 's' : ''} à voir
+                </span>
+              </p>
+            </div>
+
+            {companies.length === 0 ? (
+              <div className="text-center py-16 text-sm text-muted-foreground">
+                Aucune entreprise de votre CRM détectée sur ce salon.
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {companies.map((c) => {
+                  const noteCount = Array.isArray(c.notes) ? c.notes.length : 0;
+                  const taskCount = Array.isArray(c.tasks)
+                    ? c.tasks.filter((t) => !t?.done).length
+                    : 0;
+                  const starred = c.pref_status === 'starred';
+                  const name = c.nom_exposant ?? c.company_name ?? 'Entreprise';
+                  return (
+                    <li key={c.crm_company_id}>
+                      <button
+                        type="button"
+                        onClick={() => openMission(c)}
+                        className={cn(
+                          'group w-full text-left rounded-xl border bg-card p-4 md:p-5 transition-colors',
+                          'hover:bg-secondary/40 active:bg-secondary/60',
+                          starred ? 'border-accent/50' : 'border-border/60',
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          {starred && (
+                            <Star className="h-5 w-5 text-accent fill-accent shrink-0 mt-0.5" aria-label="Compte prioritaire" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="font-display text-lg md:text-xl font-semibold text-foreground leading-snug break-words">
+                              {name}
+                            </p>
+                            <p className="text-sm text-foreground/70 mt-1 flex items-center gap-1">
+                              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              {standLabelFor(c.stands)}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
+                              <RelBadge status={getRel(c)} />
+                              {(noteCount > 0 || taskCount > 0) && (
+                                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {noteCount > 0 && (
+                                    <span className="flex items-center gap-1">
+                                      <StickyNote className="h-3.5 w-3.5" /> {noteCount} note{noteCount > 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                  {taskCount > 0 && (
+                                    <span className="flex items-center gap-1">
+                                      <CheckSquare className="h-3.5 w-3.5" /> {taskCount} tâche{taskCount > 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground/50 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </>
+        )}
+      </main>
+
+      <RadarMissionSheet
+        target={mission?.target ?? null}
+        open={!!mission}
+        onOpenChange={(o) => {
+          if (!o) {
+            setMission(null);
+            // Rafraîchit les compteurs notes/tâches capturés dans le Sheet.
+            void load();
+          }
+        }}
+        relationship={activeCompany ? getRel(activeCompany) : DEFAULT_RELATIONSHIP}
+        onChangeRelationship={(next) => {
+          if (mission) void setRel(mission.companyId, next);
+        }}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+
+      <RadarCrmSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
+    </div>
+  );
+};
+
+export default RadarCrmTerrain;
