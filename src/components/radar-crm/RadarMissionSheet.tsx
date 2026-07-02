@@ -121,7 +121,16 @@ const RadarMissionSheet: React.FC<{
   relationship: RelationshipStatus;
   onChangeRelationship: (next: RelationshipStatus) => void;
   onOpenSettings: () => void;
-}> = ({ target, open, onOpenChange, relationship, onChangeRelationship, onOpenSettings }) => {
+  /** Mode d'affichage : « prepa » (défaut, cockpit/préparation) ou « terrain » (mode salon). */
+  mode?: 'terrain' | 'prepa';
+  /** Terrain : état « visité » du compte (toggle accessible dans le Sheet). */
+  visited?: boolean;
+  /** Terrain : bascule le statut « visité ». Non fourni en prepa. */
+  onToggleVisited?: () => void;
+}> = ({
+  target, open, onOpenChange, relationship, onChangeRelationship, onOpenSettings,
+  mode = 'prepa', visited = false, onToggleVisited,
+}) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [fields, setFields] = useState<MissionFields>(EMPTY);
