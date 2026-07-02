@@ -131,6 +131,8 @@ const RadarMissionSheet: React.FC<{
   const prevRelRef = useRef<RelationshipStatus>(relationship);
   // Description société (résumé IA ou legacy) affichée sous l'en-tête.
   const [description, setDescription] = useState<string | null>(null);
+  // Dates du salon (niveau SALON) — lues dans le payload de la RPC, affichées dans l'en-tête.
+  const [eventDates, setEventDates] = useState<{ start: string | null; end: string | null } | null>(null);
 
   // Capture terrain : notes & tâches (actions immédiates, hors bouton Enregistrer).
   const [notes, setNotes] = useState<MissionNote[]>([]);
