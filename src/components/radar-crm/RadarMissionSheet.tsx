@@ -87,6 +87,17 @@ const fmtDue = (iso: string | null | undefined) => {
   return format(d, 'd MMM yyyy', { locale: fr });
 };
 
+/** Plage de dates lisible fr : « 12 – 14 mars 2026 » (niveau salon). */
+const fmtRange = (start?: string | null, end?: string | null) => {
+  if (!start) return '';
+  const s = new Date(start);
+  if (Number.isNaN(s.getTime())) return '';
+  if (!end || end === start) return format(s, 'd MMM yyyy', { locale: fr });
+  const e = new Date(end);
+  if (Number.isNaN(e.getTime())) return format(s, 'd MMM yyyy', { locale: fr });
+  return `${format(s, 'd MMM', { locale: fr })} – ${format(e, 'd MMM yyyy', { locale: fr })}`;
+};
+
 /** Statut relationnel — point 8px + libellé neutre (doctrine visuelle Radar CRM). */
 const RelBadge: React.FC<{ status: RelationshipStatus }> = ({ status }) => {
   const meta = RELATIONSHIP_META[status];
@@ -120,6 +131,8 @@ const RadarMissionSheet: React.FC<{
   const prevRelRef = useRef<RelationshipStatus>(relationship);
   // Description société (résumé IA ou legacy) affichée sous l'en-tête.
   const [description, setDescription] = useState<string | null>(null);
+  // Dates du salon (niveau SALON) — lues dans le payload de la RPC, affichées dans l'en-tête.
+  const [eventDates, setEventDates] = useState<{ start: string | null; end: string | null } | null>(null);
 
   // Capture terrain : notes & tâches (actions immédiates, hors bouton Enregistrer).
   const [notes, setNotes] = useState<MissionNote[]>([]);
@@ -139,6 +152,7 @@ const RadarMissionSheet: React.FC<{
     prevRelRef.current = relationship;
     let cancelled = false;
     setLoading(true);
+    setEventDates(null);
     (async () => {
       const [missionsRes, offerRes] = await Promise.all([
         supabase.rpc('get_radar_salon_missions', { p_event_id: target.eventId }),
@@ -157,7 +171,19 @@ const RadarMissionSheet: React.FC<{
       if (missionsRes.error) {
         console.error('[RadarCRM] get_radar_salon_missions failed:', missionsRes.error);
       } else {
-        const payload = missionsRes.data as { companies?: Array<Record<string, unknown>> } | null;
+        const payload = missionsRes.data as {
+          event?: Record<string, unknown>;
+          companies?: Array<Record<string, unknown>>;
+        } | null;
+        const ev = payload?.event ?? null;
+        setEventDates(
+          ev
+            ? {
+                start: (ev.date_debut as string | null) ?? null,
+                end: (ev.date_fin as string | null) ?? null,
+              }
+            : null,
+        );
         const row = (payload?.companies ?? []).find(
           (c) => String(c.crm_company_id ?? '') === target.companyId,
         );
@@ -354,6 +380,10 @@ const RadarMissionSheet: React.FC<{
   );
 
   const showCrm = !!target?.nomExposant && target.nomExposant !== target.companyName;
+  const eventDateLabel = useMemo(
+    () => fmtRange(eventDates?.start, eventDates?.end),
+    [eventDates?.start, eventDates?.end],
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -366,20 +396,53 @@ const RadarMissionSheet: React.FC<{
         <SheetHeader className="px-5 pt-6 pb-4 border-b text-left space-y-2">
           <div className="flex items-center gap-2 text-accent">
             <Target className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wide">Préparation de mission</span>
+            <span className="text-xs font-semibold uppercase tracking-wide">Préparer ma visite</span>
           </div>
+
+          {/* Niveau SALON : le salon est l'élément principal (on prépare CE salon). */}
           <SheetTitle className="font-display text-xl leading-snug">
-            {target?.nomExposant ?? target?.companyName ?? 'Compte'}
+            {target?.eventName ?? 'Salon'}
           </SheetTitle>
-          <SheetDescription className="space-y-1">
+          {nonEmpty(eventDateLabel) && (
+            <p className="text-xs text-muted-foreground">{eventDateLabel}</p>
+          )}
+
+          {/* Niveau ENTREPRISE : sous-titre discret (identité + CRM + stand). */}
+          <SheetDescription className="space-y-1 pt-1">
+            <span className="block text-sm font-medium text-foreground/90">
+              {target?.nomExposant ?? target?.companyName}
+            </span>
             {showCrm && (
               <span className="block text-xs text-muted-foreground">CRM : {target?.companyName}</span>
             )}
-            <span className="block text-sm text-foreground/80">{target?.eventName}</span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" /> {standLabel}
             </span>
           </SheetDescription>
+
+          {/* Statut relationnel — attribut ENTREPRISE : compact, en haut, jamais l'élément principal. */}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
+              Statut
+            </span>
+            <Select value={relationship} onValueChange={(v) => onChangeRelationship(v as RelationshipStatus)}>
+              <SelectTrigger className="h-8 w-auto min-w-0 gap-1.5 rounded-md px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0">
+                <RelBadge status={relationship} />
+              </SelectTrigger>
+              <SelectContent>
+                {RELATIONSHIP_ORDER.map((s) => (
+                  <SelectItem
+                    key={s}
+                    value={s}
+                    className="py-2 focus:bg-muted focus:text-foreground data-[state=checked]:bg-muted"
+                  >
+                    <RelBadge status={s} />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {nonEmpty(description) && (
             <ExpandableText
               text={description!}
@@ -399,26 +462,10 @@ const RadarMissionSheet: React.FC<{
             </div>
           ) : (
             <>
-              {/* Statut relationnel */}
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Statut relationnel</Label>
-                <Select value={relationship} onValueChange={(v) => onChangeRelationship(v as RelationshipStatus)}>
-                  <SelectTrigger className="h-11 w-full">
-                    <RelBadge status={relationship} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RELATIONSHIP_ORDER.map((s) => (
-                      <SelectItem
-                        key={s}
-                        value={s}
-                        className="py-2.5 focus:bg-muted focus:text-foreground data-[state=checked]:bg-muted"
-                      >
-                        <RelBadge status={s} />
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Corps du Sheet : tout ce qui suit est propre à CE salon. */}
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Préparation pour ce salon
+              </p>
 
               {/* Invite discrète : le statut a changé alors que des champs sont édités. */}
               {statusChanged && (

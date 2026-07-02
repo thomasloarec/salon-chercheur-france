@@ -1118,7 +1118,7 @@ const CompanyChip: React.FC<{
     </span>
     {/* Indicateur d'action : la puce ouvre la préparation de mission. */}
     <span className="ml-0.5 shrink-0 self-center flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
-      <span className="hidden sm:inline">Préparer</span>
+      <span className="hidden sm:inline">Préparer ma visite</span>
       <ChevronRight className="h-3.5 w-3.5" />
     </span>
   </div>
@@ -1530,12 +1530,12 @@ const CompanyAccountCard: React.FC<{
           <button
             type="button"
             onClick={() => onOpenMission(g)}
-            title="Préparer la mission"
-            aria-label={`Préparer la mission — ${g.nom_event}`}
+            title="Préparer ma visite"
+            aria-label={`Préparer ma visite — ${g.nom_event}`}
             className="shrink-0 flex items-center gap-1 rounded-lg border border-accent/30 bg-accent/5 px-2.5 text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
           >
             <Target className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Préparer</span>
+            <span className="hidden sm:inline">Préparer ma visite</span>
           </button>
         </div>
       );
