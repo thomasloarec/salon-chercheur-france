@@ -1352,8 +1352,9 @@ const CompanyAccountCard: React.FC<{
   onSetPref: (next: Pref) => void;
   relationship: RelationshipStatus;
   onSetRelationship: (next: RelationshipStatus) => void;
+  onOpenMission: (g: EventGroup) => void;
   dimmed?: boolean;
-}> = ({ company, future, past, onClickEvent, pref, onSetPref, relationship, onSetRelationship, dimmed }) => {
+}> = ({ company, future, past, onClickEvent, pref, onSetPref, relationship, onSetRelationship, onOpenMission, dimmed }) => {
   const INITIAL = 3;
   const [expF, setExpF] = useState(false);
   // Historique replié par défaut : on calme la carte (cf. polish v2).
@@ -1366,18 +1367,8 @@ const CompanyAccountCard: React.FC<{
   const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
     const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
     const imminent = g.days_until != null && g.days_until < IMMINENT_DAYS;
-    return (
-      <button
-        key={g.event_id}
-        type="button"
-        onClick={() => onClickEvent(g)}
-        disabled={!g.slug}
-        className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors disabled:opacity-60 ${
-          tone === 'future'
-            ? 'bg-secondary/40 hover:bg-secondary/70'
-            : 'hover:bg-muted/50'
-        }`}
-      >
+    const rowInner = (
+      <>
         <div className="flex items-center justify-between gap-2">
           <p className={`text-sm truncate ${tone === 'future' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
             {g.nom_event}
@@ -1399,6 +1390,41 @@ const CompanyAccountCard: React.FC<{
           {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
           {stand && <span className="ml-2 text-foreground font-medium">Stand {stand}</span>}
         </p>
+      </>
+    );
+    // Salons à venir : ligne cliquable (événement) + action « Préparer » (mission).
+    if (tone === 'future') {
+      return (
+        <div key={g.event_id} className="flex items-stretch gap-1.5">
+          <button
+            type="button"
+            onClick={() => onOpenMission(g)}
+            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-secondary/40 hover:bg-secondary/70 transition-colors"
+          >
+            {rowInner}
+          </button>
+          <button
+            type="button"
+            onClick={() => onOpenMission(g)}
+            title="Préparer la mission"
+            aria-label={`Préparer la mission — ${g.nom_event}`}
+            className="shrink-0 flex items-center gap-1 rounded-lg border border-accent/30 bg-accent/5 px-2.5 text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
+          >
+            <Target className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Préparer</span>
+          </button>
+        </div>
+      );
+    }
+    return (
+      <button
+        key={g.event_id}
+        type="button"
+        onClick={() => onClickEvent(g)}
+        disabled={!g.slug}
+        className="w-full text-left rounded-lg px-3 py-2.5 transition-colors disabled:opacity-60 hover:bg-muted/50"
+      >
+        {rowInner}
       </button>
     );
   };
