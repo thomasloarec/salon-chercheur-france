@@ -183,25 +183,25 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           </div>
         </button>
 
-        {/* Actions directes — grosses cibles tactiles */}
+        {/* Actions directes — Note = action primaire (accent orange), Visité = secondaire (neutre, discret) */}
         <div className="flex items-stretch gap-2 border-t border-border/60 p-3">
           <Button
             type="button"
-            variant={visited ? 'secondary' : 'outline'}
-            className="flex-1 min-h-[44px] gap-2"
-            onClick={onToggleVisited}
-          >
-            <Check className={cn('h-4 w-4', visited && 'text-emerald-600')} />
-            {visited ? 'Vu' : 'Visité'}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 min-h-[44px] gap-2"
+            variant="default"
+            className="flex-[1.25] min-h-[44px] gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
             onClick={noteOpen ? onCloseNote : onOpenNote}
             aria-expanded={noteOpen}
           >
             <Plus className="h-4 w-4" /> Note
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+            onClick={onToggleVisited}
+          >
+            <Check className={cn('h-4 w-4', visited && 'text-emerald-600')} />
+            {visited ? 'Vu' : 'Visité'}
           </Button>
         </div>
 
