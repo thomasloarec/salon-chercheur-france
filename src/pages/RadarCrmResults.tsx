@@ -742,6 +742,8 @@ const RadarCrmResults: React.FC = () => {
                           key={g.event_id}
                           group={g}
                           onView={() => onClickEvent(g)}
+                          getRel={getRel}
+                          onSetRel={setRel}
                           onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                             onOpenExhibitor(c, id_exposant, stand, g, nom_exposant, needs_review)}
                         />
