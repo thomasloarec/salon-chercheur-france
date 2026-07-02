@@ -975,18 +975,18 @@ const priorityFor = (n: number): { label: string; tone: string; icon?: React.Rea
   return null;
 };
 
-/** Badge coloré de statut relationnel (lecture seule). */
+/** Statut relationnel (lecture seule) — point 8px + libellé neutre, sans pilule colorée. */
 const RelationshipBadge: React.FC<{ status: RelationshipStatus; className?: string }> = ({ status, className }) => {
   const meta = RELATIONSHIP_META[status];
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap',
         meta.badge,
         className,
       )}
     >
-      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
+      <span className={cn('h-2 w-2 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
       {meta.label}
     </span>
   );
@@ -1000,14 +1000,18 @@ const RelationshipSelect: React.FC<{
   <Select value={status} onValueChange={(v) => onChange(v as RelationshipStatus)}>
     <SelectTrigger
       aria-label="Statut relationnel du compte"
-      className="h-8 w-auto min-w-0 gap-1.5 rounded-full border-border bg-background px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0"
+      className="h-8 w-auto min-w-0 gap-1.5 rounded-md border-border bg-background px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0"
     >
-      <RelationshipBadge status={status} className="border-0 px-0 py-0 bg-transparent" />
+      <RelationshipBadge status={status} />
     </SelectTrigger>
     <SelectContent>
       {RELATIONSHIP_ORDER.map((s) => (
-        <SelectItem key={s} value={s} className="py-2">
-          <RelationshipBadge status={s} className="border-0 px-0 py-0 bg-transparent" />
+        <SelectItem
+          key={s}
+          value={s}
+          className="py-2 focus:bg-muted focus:text-foreground data-[state=checked]:bg-muted"
+        >
+          <RelationshipBadge status={s} />
         </SelectItem>
       ))}
     </SelectContent>
