@@ -380,6 +380,10 @@ const RadarMissionSheet: React.FC<{
   );
 
   const showCrm = !!target?.nomExposant && target.nomExposant !== target.companyName;
+  const eventDateLabel = useMemo(
+    () => fmtRange(eventDates?.start, eventDates?.end),
+    [eventDates?.start, eventDates?.end],
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -392,20 +396,53 @@ const RadarMissionSheet: React.FC<{
         <SheetHeader className="px-5 pt-6 pb-4 border-b text-left space-y-2">
           <div className="flex items-center gap-2 text-accent">
             <Target className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wide">Préparation de mission</span>
+            <span className="text-xs font-semibold uppercase tracking-wide">Préparer ma visite</span>
           </div>
+
+          {/* Niveau SALON : le salon est l'élément principal (on prépare CE salon). */}
           <SheetTitle className="font-display text-xl leading-snug">
-            {target?.nomExposant ?? target?.companyName ?? 'Compte'}
+            {target?.eventName ?? 'Salon'}
           </SheetTitle>
-          <SheetDescription className="space-y-1">
+          {nonEmpty(eventDateLabel) && (
+            <p className="text-xs text-muted-foreground">{eventDateLabel}</p>
+          )}
+
+          {/* Niveau ENTREPRISE : sous-titre discret (identité + CRM + stand). */}
+          <SheetDescription className="space-y-1 pt-1">
+            <span className="block text-sm font-medium text-foreground/90">
+              {target?.nomExposant ?? target?.companyName}
+            </span>
             {showCrm && (
               <span className="block text-xs text-muted-foreground">CRM : {target?.companyName}</span>
             )}
-            <span className="block text-sm text-foreground/80">{target?.eventName}</span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" /> {standLabel}
             </span>
           </SheetDescription>
+
+          {/* Statut relationnel — attribut ENTREPRISE : compact, en haut, jamais l'élément principal. */}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
+              Statut
+            </span>
+            <Select value={relationship} onValueChange={(v) => onChangeRelationship(v as RelationshipStatus)}>
+              <SelectTrigger className="h-8 w-auto min-w-0 gap-1.5 rounded-md px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0">
+                <RelBadge status={relationship} />
+              </SelectTrigger>
+              <SelectContent>
+                {RELATIONSHIP_ORDER.map((s) => (
+                  <SelectItem
+                    key={s}
+                    value={s}
+                    className="py-2 focus:bg-muted focus:text-foreground data-[state=checked]:bg-muted"
+                  >
+                    <RelBadge status={s} />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {nonEmpty(description) && (
             <ExpandableText
               text={description!}
