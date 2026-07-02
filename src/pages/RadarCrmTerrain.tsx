@@ -641,6 +641,9 @@ const RadarCrmTerrainInner: React.FC = () => {
       <RadarMissionSheet
         target={mission?.target ?? null}
         open={!!mission}
+        mode="terrain"
+        visited={activeCompany ? getVisited(activeCompany) : false}
+        onToggleVisited={() => { if (activeCompany) void toggleVisited(activeCompany); }}
         onOpenChange={(o) => {
           if (!o) {
             setMission(null);
