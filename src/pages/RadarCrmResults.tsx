@@ -461,6 +461,28 @@ const RadarCrmResults: React.FC = () => {
     [matchedCompanies, prefOverrides, prefByCompany],
   );
 
+  // Salons EN COURS aujourd'hui : date du jour (locale) comprise entre
+  // date_debut et date_fin inclus (date_fin null → date_debut).
+  // Le plus « prioritaire » = celui avec le plus d'entreprises détectées.
+  const ongoingEvents = useMemo(() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    return eventGroups
+      .filter((g) => {
+        if (!g.date_debut) return false;
+        const start = g.date_debut.slice(0, 10);
+        const end = (g.date_fin ?? g.date_debut).slice(0, 10);
+        return start <= today && today <= end;
+      })
+      .sort((a, b) => b.company_count - a.company_count);
+  }, [eventGroups]);
+
+  const enterTerrain = (id: string) => {
+    void trackRadarEvent('radar_salon_mode_opened', { eventId: id });
+    navigate(`/radar-crm/terrain/${id}`);
+  };
+
   // Scroll to highlighted event once results are rendered.
   useEffect(() => {
     if (!highlightedEventId || loading) return;
@@ -639,6 +661,8 @@ const RadarCrmResults: React.FC = () => {
                 futureSalons={kpiFutureSalons}
                 featured={featured}
                 starredCount={starredCount}
+                ongoing={ongoingEvents}
+                onEnterTerrain={enterTerrain}
                 onClickEvent={onClickEvent}
                 onOpenSettings={() => setSettingsOpen(true)}
               />
