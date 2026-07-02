@@ -254,6 +254,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mission, setMission] = useState<{ target: MissionTarget; companyId: string } | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   // Surcouche optimiste du statut relationnel (indexée par crm_company_id).
   const [relOverrides, setRelOverrides] = useState<Record<string, RelationshipStatus>>({});
