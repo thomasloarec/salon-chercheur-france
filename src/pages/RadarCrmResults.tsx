@@ -1058,43 +1058,67 @@ const CompanyChip: React.FC<{
   starred?: boolean;
   relationship?: RelationshipStatus;
   onClick: () => void;
-}> = ({ company, stand, nomExposant, needsReview, starred, relationship, onClick }) => (
-  <button
-    type="button"
+  /** Si fourni, le badge statut devient un sélecteur autonome (modifiable partout). */
+  onSetRelationship?: (next: RelationshipStatus) => void;
+}> = ({ company, stand, nomExposant, needsReview, starred, relationship, onClick, onSetRelationship }) => (
+  <div
+    role="button"
+    tabIndex={0}
     onClick={onClick}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); }
+    }}
     className={cn(
-      'group flex items-center gap-2.5 max-w-full bg-card border border-border rounded-lg px-2.5 py-2 cursor-pointer transition-colors hover:bg-muted/40 hover:border-primary/40',
+      // Mobile : pleine largeur → empilement vertical propre. Desktop : puce compacte.
+      'group flex w-full sm:w-auto sm:max-w-xs items-center gap-2.5 max-w-full bg-card border border-border rounded-lg px-2.5 py-2 cursor-pointer text-left transition-colors hover:bg-muted/40 hover:border-primary/40',
       starred && 'border-accent/40',
     )}
     title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
     <CompanyAvatar company={company} size="xs" />
-    {starred && <Star className="h-3 w-3 text-accent fill-accent shrink-0" aria-label="Compte prioritaire" />}
-    <span className="flex min-w-0 flex-col items-start leading-tight">
-      <span className="max-w-[12rem] truncate font-display text-sm font-semibold text-foreground group-hover:text-primary">
-        {nomExposant ?? company.company_name}
+    <span className="flex min-w-0 flex-1 flex-col items-start gap-1 leading-tight">
+      {/* Ligne 1 : nom (tronqué proprement) */}
+      <span className="flex min-w-0 max-w-full items-center gap-1.5">
+        {starred && <Star className="h-3 w-3 text-accent fill-accent shrink-0" aria-label="Compte prioritaire" />}
+        <span className="truncate font-display text-sm font-semibold text-foreground group-hover:text-primary">
+          {nomExposant ?? company.company_name}
+        </span>
       </span>
       {nomExposant && nomExposant !== company.company_name && (
-        <span className="max-w-[12rem] truncate text-[10px] text-foreground/60">CRM : {company.company_name}</span>
+        <span className="max-w-full truncate text-[10px] text-foreground/60">CRM : {company.company_name}</span>
       )}
+      {/* Ligne 2 : statut + stand + à vérifier (wrap, jamais de chevauchement) */}
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        {onSetRelationship ? (
+          // Le clic sur le statut ne déclenche jamais la navigation/ouverture parente.
+          <span
+            role="presentation"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <RelationshipSelect status={relationship ?? 'a_qualifier'} onChange={onSetRelationship} />
+          </span>
+        ) : (
+          <RelationshipBadge status={relationship ?? 'a_qualifier'} />
+        )}
+        {stand && (
+          <span className="shrink-0 text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
+            {stand}
+          </span>
+        )}
+        {needsReview && (
+          <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-accent whitespace-nowrap">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" /> À vérifier
+          </span>
+        )}
+      </span>
     </span>
-    <RelationshipBadge status={relationship ?? 'a_qualifier'} className="ml-0.5 shrink-0" />
-    {stand && (
-      <span className="shrink-0 text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
-        {stand}
-      </span>
-    )}
-    {needsReview && (
-      <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-accent whitespace-nowrap">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" /> À vérifier
-      </span>
-    )}
     {/* Indicateur d'action : la puce ouvre la préparation de mission. */}
-    <span className="ml-0.5 shrink-0 flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+    <span className="ml-0.5 shrink-0 self-center flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
       <span className="hidden sm:inline">Préparer</span>
       <ChevronRight className="h-3.5 w-3.5" />
     </span>
-  </button>
+  </div>
 );
 
 /** Compact horizontal event card — image left, info center, actions right */
