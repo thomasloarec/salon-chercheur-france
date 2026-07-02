@@ -158,7 +158,9 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
         >
           <span className="flex items-center gap-2 min-w-0">
             <Sparkles className="h-4 w-4 shrink-0 text-accent" />
-            <span className="truncate">Découvrir d'autres exposants à potentiel</span>
+            <span className="truncate">
+              Découvrir {count} autre{count > 1 ? 's' : ''} exposant{count > 1 ? 's' : ''} à potentiel
+            </span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </button>
