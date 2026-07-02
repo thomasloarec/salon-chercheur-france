@@ -20,7 +20,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select, SelectContent, SelectItem, SelectTrigger,
 } from '@/components/ui/select';
-import { CalendarIcon, Loader2, MapPin, Plus, RotateCcw, Target } from 'lucide-react';
+import {
+  CalendarIcon, Check, ChevronDown, Loader2, MapPin, MessageSquare, Plus,
+  RotateCcw, StickyNote, Target,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
@@ -31,6 +34,7 @@ import {
 } from '@/lib/radarCrm/relationship';
 import { buildMissionSuggestion, type OfferProfileInput } from '@/lib/radarCrm/playbooks';
 import ExpandableText from '@/components/exhibitor/ExpandableText';
+import { cn } from '@/lib/utils';
 
 
 /** Compte ciblé par le panneau mission (couple crm_company_id + salon). */
