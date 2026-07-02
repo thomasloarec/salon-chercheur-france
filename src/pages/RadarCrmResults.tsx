@@ -1328,6 +1328,11 @@ const EventCard: React.FC<{
                 <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
               </Button>
             )}
+            {onDebrief && (
+              <Button size="sm" variant="ghost" onClick={onDebrief} className="text-muted-foreground hover:text-foreground">
+                <ClipboardList className="h-3.5 w-3.5 mr-1" /> Débrief
+              </Button>
+            )}
           </div>
         </div>
       </div>
