@@ -33,42 +33,48 @@ export const DEFAULT_RELATIONSHIP: RelationshipStatus = 'a_qualifier';
 
 interface RelationshipMeta {
   label: string;
-  /** Classes du badge (dot + texte + fond). */
+  /** Classe de la couleur du texte du libellé (toujours neutre pour rester lisible). */
   badge: string;
-  /** Classe de la pastille de couleur. */
+  /** Classe de la pastille de couleur (point 8px). Désaturée, sauf « à qualifier » (orange = action). */
   dot: string;
 }
 
+/**
+ * Doctrine visuelle (RUN 7) :
+ *  - Le LIBELLÉ est toujours en texte neutre foncé (foreground), jamais en couleur sur fond coloré.
+ *  - L'ORANGE (accent) est réservé à « à qualifier » = état qui attend une action.
+ *  - Les 5 autres statuts « réglés » = point désaturé/atténué, discret. Pas de couleurs vives.
+ */
 export const RELATIONSHIP_META: Record<RelationshipStatus, RelationshipMeta> = {
   client_actif: {
     label: 'Client actif',
-    badge: 'bg-green-100 text-green-700 border-green-200',
-    dot: 'bg-green-500',
+    badge: 'text-foreground',
+    dot: 'bg-emerald-600/60',
   },
   client_dormant: {
     label: 'Client dormant',
-    badge: 'bg-amber-100 text-amber-700 border-amber-200',
-    dot: 'bg-amber-500',
+    badge: 'text-foreground',
+    dot: 'bg-stone-400',
   },
   prospect_chaud: {
     label: 'Prospect chaud',
-    badge: 'bg-accent/15 text-accent border-accent/30',
-    dot: 'bg-accent',
+    badge: 'text-foreground',
+    dot: 'bg-primary/70',
   },
   prospect_froid: {
     label: 'Prospect froid',
-    badge: 'bg-blue-100 text-blue-700 border-blue-200',
-    dot: 'bg-blue-500',
+    badge: 'text-foreground',
+    dot: 'bg-sky-400/60',
   },
   ancien_client: {
     label: 'Ancien client',
-    badge: 'bg-slate-100 text-slate-600 border-slate-200',
-    dot: 'bg-slate-400',
+    badge: 'text-foreground',
+    dot: 'bg-slate-300',
   },
   a_qualifier: {
     label: 'À qualifier',
-    badge: 'bg-muted text-muted-foreground border-border',
-    dot: 'bg-muted-foreground/50',
+    badge: 'text-foreground',
+    dot: 'bg-accent',
   },
 };
 

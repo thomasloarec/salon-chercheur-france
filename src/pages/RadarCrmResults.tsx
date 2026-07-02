@@ -673,10 +673,10 @@ const RadarCrmResults: React.FC = () => {
               )}
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="bg-card border w-full sm:w-auto justify-start flex-nowrap overflow-x-auto no-scrollbar">
-                  <TabsTrigger value="companies" className="whitespace-nowrap">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
-                  <TabsTrigger value="future" className="whitespace-nowrap">Par salon ({futureGroups.length})</TabsTrigger>
-                  <TabsTrigger value="past" className="whitespace-nowrap">
+                <TabsList className="bg-card border h-auto max-w-full justify-start flex-nowrap gap-1 overflow-x-auto no-scrollbar">
+                  <TabsTrigger value="companies" className="shrink-0 whitespace-nowrap">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
+                  <TabsTrigger value="future" className="shrink-0 whitespace-nowrap">Par salon ({futureGroups.length})</TabsTrigger>
+                  <TabsTrigger value="past" className="shrink-0 whitespace-nowrap">
                     <History className="h-3.5 w-3.5 mr-1" /> Historique ({pastGroups.length})
                   </TabsTrigger>
                 </TabsList>
@@ -873,7 +873,7 @@ const RadarActiveBanner: React.FC<{
   }
 
   return (
-    <Card className="bg-secondary/40 border-border/60 shadow-none">
+    <Card className="bg-muted/30 border-border/60 shadow-none">
       <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
         <div className="flex items-start gap-3">
           <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
@@ -898,7 +898,7 @@ const RadarActiveBanner: React.FC<{
             type="button"
             onClick={() => onClickEvent(ev)}
             disabled={!ev.slug}
-            className="w-full text-left rounded-xl border border-accent/30 bg-card p-4 md:p-5 transition-colors hover:bg-secondary/50 disabled:opacity-60"
+            className="w-full text-left rounded-xl border border-accent/30 bg-card p-4 md:p-5 transition-colors hover:bg-muted/50 disabled:opacity-60"
           >
             <p className="text-[11px] font-bold uppercase tracking-wide text-accent flex items-center gap-1.5">
               {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
@@ -975,18 +975,18 @@ const priorityFor = (n: number): { label: string; tone: string; icon?: React.Rea
   return null;
 };
 
-/** Badge coloré de statut relationnel (lecture seule). */
+/** Statut relationnel (lecture seule) — point 8px + libellé neutre, sans pilule colorée. */
 const RelationshipBadge: React.FC<{ status: RelationshipStatus; className?: string }> = ({ status, className }) => {
   const meta = RELATIONSHIP_META[status];
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap',
         meta.badge,
         className,
       )}
     >
-      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
+      <span className={cn('h-2 w-2 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
       {meta.label}
     </span>
   );
@@ -1000,14 +1000,18 @@ const RelationshipSelect: React.FC<{
   <Select value={status} onValueChange={(v) => onChange(v as RelationshipStatus)}>
     <SelectTrigger
       aria-label="Statut relationnel du compte"
-      className="h-8 w-auto min-w-0 gap-1.5 rounded-full border-border bg-background px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0"
+      className="h-8 w-auto min-w-0 gap-1.5 rounded-md border-border bg-background px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0"
     >
-      <RelationshipBadge status={status} className="border-0 px-0 py-0 bg-transparent" />
+      <RelationshipBadge status={status} />
     </SelectTrigger>
     <SelectContent>
       {RELATIONSHIP_ORDER.map((s) => (
-        <SelectItem key={s} value={s} className="py-2">
-          <RelationshipBadge status={s} className="border-0 px-0 py-0 bg-transparent" />
+        <SelectItem
+          key={s}
+          value={s}
+          className="py-2 focus:bg-muted focus:text-foreground data-[state=checked]:bg-muted"
+        >
+          <RelationshipBadge status={s} />
         </SelectItem>
       ))}
     </SelectContent>
@@ -1031,21 +1035,21 @@ const OfferProfileNudge: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSet
   </Card>
 );
 
-/** Small avatar with logo/favicon/initials fallback */
+/** Logo d'entreprise — petit carré propre (coins légèrement arrondis), jamais un grand cercle. */
 const CompanyAvatar: React.FC<{ company: Company; size?: 'xs' | 'sm' | 'md' }> = ({ company, size = 'sm' }) => {
   const url = getExhibitorLogoUrl(null, company.website_raw ?? company.normalized_domain ?? null);
   const cls = size === 'xs' ? 'h-6 w-6 text-[10px]' : size === 'md' ? 'h-10 w-10 text-sm' : 'h-7 w-7 text-[11px]';
   return (
-    <Avatar className={`${cls} border bg-background`}>
-      {url && <AvatarImage src={url} alt={company.company_name} />}
-      <AvatarFallback className="bg-primary/10 text-primary font-bold">
+    <Avatar className={`${cls} rounded-md border bg-background`}>
+      {url && <AvatarImage src={url} alt={company.company_name} className="rounded-md" />}
+      <AvatarFallback className="rounded-md bg-primary/10 text-primary font-bold">
         {companyInitials(company.company_name)}
       </AvatarFallback>
     </Avatar>
   );
 };
 
-/** Company chip — clickable, shows logo + name */
+/** Ligne entreprise cliquable — logo carré + nom fort, sans pilule. */
 const CompanyChip: React.FC<{
   company: Company;
   stand?: string | null;
@@ -1059,41 +1063,34 @@ const CompanyChip: React.FC<{
     type="button"
     onClick={onClick}
     className={cn(
-      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-2.5 py-1.5 cursor-pointer transition-all hover:bg-primary/5 hover:shadow-sm',
-      starred && 'border-accent/50 bg-secondary/50',
-      needsReview ? 'border-border hover:border-primary' : 'border-border hover:border-primary',
+      'group flex items-center gap-2.5 max-w-full bg-card border border-border rounded-lg px-2.5 py-2 cursor-pointer transition-colors hover:bg-muted/40 hover:border-primary/40',
+      starred && 'border-accent/40',
     )}
     title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
     <CompanyAvatar company={company} size="xs" />
     {starred && <Star className="h-3 w-3 text-accent fill-accent shrink-0" aria-label="Compte prioritaire" />}
-    <span className="flex flex-col items-start leading-tight">
-      <span className="text-sm font-semibold text-foreground group-hover:text-primary">
+    <span className="flex min-w-0 flex-col items-start leading-tight">
+      <span className="max-w-[12rem] truncate font-display text-sm font-semibold text-foreground group-hover:text-primary">
         {nomExposant ?? company.company_name}
       </span>
       {nomExposant && nomExposant !== company.company_name && (
-        <span className="text-[10px] text-foreground/60">CRM : {company.company_name}</span>
+        <span className="max-w-[12rem] truncate text-[10px] text-foreground/60">CRM : {company.company_name}</span>
       )}
     </span>
-    {(relationship ?? 'a_qualifier') !== 'a_qualifier' ? (
-      <RelationshipBadge status={relationship!} className="ml-0.5" />
-    ) : (
-      <span className="ml-0.5 inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent whitespace-nowrap">
-        À qualifier
-      </span>
-    )}
+    <RelationshipBadge status={relationship ?? 'a_qualifier'} className="ml-0.5 shrink-0" />
     {stand && (
-      <span className="text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
+      <span className="shrink-0 text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
         {stand}
       </span>
     )}
     {needsReview && (
-      <span className="text-[10px] font-medium text-muted-foreground bg-muted border border-border px-1.5 py-0.5 rounded">
-        À vérifier
+      <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-accent whitespace-nowrap">
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" /> À vérifier
       </span>
     )}
     {/* Indicateur d'action : la puce ouvre la préparation de mission. */}
-    <span className="ml-0.5 flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+    <span className="ml-0.5 shrink-0 flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
       <span className="hidden sm:inline">Préparer</span>
       <ChevronRight className="h-3.5 w-3.5" />
     </span>
@@ -1223,7 +1220,7 @@ const EventCard: React.FC<{
           </div>
 
           {/* CRM companies — the heart of the card */}
-          <div className="bg-secondary/40 border border-border/60 rounded-lg p-4 md:p-5">
+          <div className="bg-muted/30 border border-border/60 rounded-lg p-4 md:p-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
             </p>
@@ -1296,7 +1293,7 @@ const PastEventCard: React.FC<{
               {group.companies.length} compte{group.companies.length > 1 ? 's' : ''}
             </Badge>
           </div>
-          <div className="bg-secondary/40 border border-border/60 rounded-lg p-4">
+          <div className="bg-muted/30 border border-border/60 rounded-lg p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Entreprises détectées
             </p>
@@ -1493,7 +1490,7 @@ const CompanyAccountCard: React.FC<{
             type="button"
             onClick={() => onClickEvent(g)}
             disabled={!g.slug}
-            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-secondary/40 hover:bg-secondary/70 transition-colors disabled:opacity-60"
+            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-muted/40 hover:bg-muted/70 transition-colors disabled:opacity-60"
           >
             {rowInner}
           </button>
@@ -1529,13 +1526,13 @@ const CompanyAccountCard: React.FC<{
       dimmed
         ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
         : 'hover:border-border hover:shadow-sm',
-      pref === 'starred' && 'border-accent/50 bg-secondary/40',
+      pref === 'starred' && 'border-accent/40',
     )}>
       <CardContent className="p-5 space-y-4">
         <div className="flex items-start gap-3">
           <CompanyAvatar company={company} size="md" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-base text-foreground truncate">{company.company_name}</p>
+            <p className="font-display font-semibold text-base text-foreground truncate" title={company.company_name}>{company.company_name}</p>
             <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
               <ExternalLink className="h-3 w-3" />
               {company.normalized_domain ?? company.website_raw ?? ''}

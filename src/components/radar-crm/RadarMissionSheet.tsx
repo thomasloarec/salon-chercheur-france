@@ -87,12 +87,12 @@ const fmtDue = (iso: string | null | undefined) => {
   return format(d, 'd MMM yyyy', { locale: fr });
 };
 
-/** Badge inline réutilisant les tokens de statut relationnel. */
+/** Statut relationnel — point 8px + libellé neutre (doctrine visuelle Radar CRM). */
 const RelBadge: React.FC<{ status: RelationshipStatus }> = ({ status }) => {
   const meta = RELATIONSHIP_META[status];
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden="true" />
+    <span className={`inline-flex items-center gap-1.5 text-foreground ${meta.badge}`}>
+      <span className={`h-2 w-2 rounded-full ${meta.dot}`} aria-hidden="true" />
       {meta.label}
     </span>
   );
@@ -406,7 +406,11 @@ const RadarMissionSheet: React.FC<{
                   </SelectTrigger>
                   <SelectContent>
                     {RELATIONSHIP_ORDER.map((s) => (
-                      <SelectItem key={s} value={s} className="py-2.5">
+                      <SelectItem
+                        key={s}
+                        value={s}
+                        className="py-2.5 focus:bg-muted focus:text-foreground data-[state=checked]:bg-muted"
+                      >
                         <RelBadge status={s} />
                       </SelectItem>
                     ))}
