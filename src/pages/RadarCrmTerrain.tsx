@@ -545,13 +545,15 @@ const RadarCrmTerrainInner: React.FC = () => {
                       {toSeeCount} à voir
                     </span>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
-                    className="gap-2 min-h-[44px]"
-                  >
-                    <ClipboardList className="h-4 w-4" /> Débrief du salon
-                  </Button>
+                  {showDebrief(phase) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
+                      className="gap-2 min-h-[44px]"
+                    >
+                      <ClipboardList className="h-4 w-4" /> Débrief du salon
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
