@@ -1238,7 +1238,8 @@ const CompanyAccountsList: React.FC<{
   onSetPref: (companyId: string, next: Pref) => void;
   getRel: (company: Company) => RelationshipStatus;
   onSetRel: (company: Company, next: RelationshipStatus) => void;
-}> = ({ groups, companies, onClickEvent, getPref, onSetPref, getRel, onSetRel }) => {
+  onOpenMission: (company: Company, g: EventGroup) => void;
+}> = ({ groups, companies, onClickEvent, getPref, onSetPref, getRel, onSetRel, onOpenMission }) => {
   const [ignoredOpen, setIgnoredOpen] = useState(false);
   if (companies.length === 0) {
     return (
@@ -1278,6 +1279,7 @@ const CompanyAccountsList: React.FC<{
           onSetPref={(next) => onSetPref(c.id, next)}
           relationship={getRel(c)}
           onSetRelationship={(next) => onSetRel(c, next)}
+          onOpenMission={(g) => onOpenMission(c, g)}
           dimmed={dimmed}
         />
       ))}
