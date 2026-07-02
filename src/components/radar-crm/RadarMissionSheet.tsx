@@ -245,7 +245,14 @@ const RadarMissionSheet: React.FC<{
               <MapPin className="h-3 w-3" /> {standLabel}
             </span>
           </SheetDescription>
+          {nonEmpty(description) && (
+            <ExpandableText
+              text={description!}
+              className="pt-1"
+            />
+          )}
         </SheetHeader>
+
 
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
           {loading ? (
