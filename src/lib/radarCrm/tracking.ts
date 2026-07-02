@@ -36,7 +36,10 @@ export type RadarEventType =
   | 'radar_mission_opened'
   | 'radar_mission_saved'
   | 'radar_salon_mode_opened'
-  | 'radar_salon_mode_viewed';
+  | 'radar_salon_mode_viewed'
+  | 'radar_debrief_viewed'
+  | 'radar_debrief_copied'
+  | 'radar_debrief_csv_exported';
 
 export async function trackRadarEvent(event_type: RadarEventType, metadata: Record<string, unknown> = {}) {
   try {

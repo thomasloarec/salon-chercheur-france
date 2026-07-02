@@ -19,6 +19,7 @@ import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
   CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
   CalendarCheck, Settings, Lock, Mail, Clock, Star, EyeOff, Eye, ChevronRight, Target,
+  ClipboardList,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
@@ -755,6 +756,7 @@ const RadarCrmResults: React.FC = () => {
                             onSetRel={setRel}
                             onView={() => onClickEvent(g)}
                             onModeSalon={() => enterTerrain(g.event_id)}
+                            onDebrief={() => navigate(`/radar-crm/debrief/${g.event_id}`)}
                             similarCount={similarCounts?.[g.event_id] ?? 0}
                             onSimilarKept={() => { void refreshCockpit(); }}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
@@ -1225,6 +1227,7 @@ const EventCard: React.FC<{
   onSetRel?: (company: Company, next: RelationshipStatus) => void;
   onView: () => void;
   onModeSalon?: () => void;
+  onDebrief?: () => void;
   similarCount?: number;
   onSimilarKept?: () => void;
   onCompanyClick: (
@@ -1234,7 +1237,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, similarCount = 0, onSimilarKept, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, onDebrief, similarCount = 0, onSimilarKept, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -1324,6 +1327,11 @@ const EventCard: React.FC<{
             {onModeSalon && (
               <Button size="sm" variant="ghost" onClick={onModeSalon} className="text-muted-foreground hover:text-foreground">
                 <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
+              </Button>
+            )}
+            {onDebrief && (
+              <Button size="sm" variant="ghost" onClick={onDebrief} className="text-muted-foreground hover:text-foreground">
+                <ClipboardList className="h-3.5 w-3.5 mr-1" /> Débrief
               </Button>
             )}
           </div>
