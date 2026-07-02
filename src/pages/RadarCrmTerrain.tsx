@@ -60,17 +60,17 @@ const standLabelFor = (stands: string[] | null): string => {
   return list.length ? `Stand ${list.join(', ')}` : 'Stand non renseigné';
 };
 
-/** Badge coloré de statut relationnel (mêmes tokens que le cockpit — run 3). */
+/** Statut relationnel — point 8px + libellé neutre, sans pilule (même doctrine que le cockpit). */
 const RelBadge: React.FC<{ status: RelationshipStatus }> = ({ status }) => {
   const meta = RELATIONSHIP_META[status];
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap',
         meta.badge,
       )}
     >
-      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
+      <span className={cn('h-2 w-2 rounded-full shrink-0', meta.dot)} aria-hidden="true" />
       {meta.label}
     </span>
   );
@@ -296,7 +296,10 @@ const RadarCrmTerrain: React.FC = () => {
                             <Star className="h-5 w-5 text-accent fill-accent shrink-0 mt-0.5" aria-label="Compte prioritaire" />
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="font-display text-lg md:text-xl font-semibold text-foreground leading-snug break-words">
+                            <p
+                              className="font-display text-lg md:text-xl font-semibold text-foreground leading-snug truncate"
+                              title={name}
+                            >
                               {name}
                             </p>
                             <p className="text-sm text-foreground/70 mt-1 flex items-center gap-1">
