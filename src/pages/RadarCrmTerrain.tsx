@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
+import RadarTerrainAddCompanySheet from '@/components/radar-crm/RadarTerrainAddCompanySheet';
 import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship, DEFAULT_RELATIONSHIP,
 } from '@/lib/radarCrm/relationship';
@@ -253,6 +254,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mission, setMission] = useState<{ target: MissionTarget; companyId: string } | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   // Surcouche optimiste du statut relationnel (indexée par crm_company_id).
   const [relOverrides, setRelOverrides] = useState<Record<string, RelationshipStatus>>({});
@@ -582,6 +584,27 @@ const RadarCrmTerrainInner: React.FC = () => {
           </>
         )}
       </main>
+
+      {/* FAB — ajouter une entreprise rencontrée (atteignable au pouce) */}
+      {!loading && !error && eventId && (
+        <Button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          className="fixed bottom-5 right-5 z-40 h-14 rounded-full gap-2 pl-5 pr-6 shadow-lg bg-accent text-accent-foreground hover:bg-accent/90"
+        >
+          <Plus className="h-5 w-5" />
+          <span className="font-semibold">Ajouter une entreprise</span>
+        </Button>
+      )}
+
+      {eventId && (
+        <RadarTerrainAddCompanySheet
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          eventId={eventId}
+          onAdded={() => void load()}
+        />
+      )}
 
       <RadarMissionSheet
         target={mission?.target ?? null}
