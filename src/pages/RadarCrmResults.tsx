@@ -196,6 +196,9 @@ const RadarCrmResults: React.FC = () => {
   // Vue par compte = vue par défaut (cadrage « veille »).
   // Si un événement est mis en avant (deep-link), on ouvre la vue par salon pour préserver le scroll auto.
   const [activeTab, setActiveTab] = useState<string>(searchParams.get('eventId') ? 'future' : 'companies');
+  // Comptage des similaires par salon (à venir, > 0). Chargé une fois à l'ouverture
+  // de l'onglet « Par salon » ; sert à n'afficher la section que s'il y a du contenu.
+  const [similarCounts, setSimilarCounts] = useState<Record<string, number> | null>(null);
 
   const reloadAll = async () => {
     setActiveImportId(null);
@@ -496,6 +499,22 @@ const RadarCrmResults: React.FC = () => {
     }
   }, [highlightedEventId, loading, eventGroups, activeTab]);
 
+  // Comptage des similaires : appelé une seule fois quand l'onglet « Par salon » s'ouvre.
+  useEffect(() => {
+    if (activeTab !== 'future' || similarCounts !== null) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.rpc('get_radar_similar_counts');
+      if (cancelled) return;
+      if (error || !data || typeof data !== 'object') {
+        setSimilarCounts({});
+        return;
+      }
+      setSimilarCounts(data as Record<string, number>);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, similarCounts]);
+
   // KPI values come straight from the server-aggregated summary.
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;
   const kpiDetected = summary?.companies_detected ?? matchedCompanies.length;
@@ -724,6 +743,7 @@ const RadarCrmResults: React.FC = () => {
                             onSetRel={setRel}
                             onView={() => onClickEvent(g)}
                             onModeSalon={() => enterTerrain(g.event_id)}
+                            similarCount={similarCounts?.[g.event_id] ?? 0}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenMission(c, stand, g, nom_exposant)}
                           />
@@ -1192,6 +1212,7 @@ const EventCard: React.FC<{
   onSetRel?: (company: Company, next: RelationshipStatus) => void;
   onView: () => void;
   onModeSalon?: () => void;
+  similarCount?: number;
   onCompanyClick: (
     c: Company,
     id_exposant: string,
@@ -1199,7 +1220,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, similarCount = 0, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -1279,7 +1300,7 @@ const EventCard: React.FC<{
           </div>
 
           {/* Suggestions d'exposants similaires (lazy) */}
-          <SimilarExhibitorsSection eventId={group.event_id} />
+          <SimilarExhibitorsSection eventId={group.event_id} initialCount={similarCount} />
 
           <div className="flex flex-wrap gap-2 mt-auto">
             <Button size="sm" onClick={onView} disabled={!group.slug}>

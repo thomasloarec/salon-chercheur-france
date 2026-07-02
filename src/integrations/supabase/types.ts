@@ -6731,6 +6731,7 @@ export type Database = {
         Args: { p_event_id: string; p_exclude?: string[]; p_limit?: number }
         Returns: Json
       }
+      get_radar_similar_counts: { Args: never; Returns: Json }
       get_top_novelties_per_event: {
         Args: never
         Returns: {
