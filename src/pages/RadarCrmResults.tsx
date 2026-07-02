@@ -674,6 +674,10 @@ const RadarCrmResults: React.FC = () => {
                     <NoFutureMatches companiesCount={kpiAnalyzed} matchedCount={kpiDetected} />
                   ) : (
                     <div className="space-y-6">
+                      <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Target className="h-4 w-4 text-accent shrink-0" />
+                        Cliquez sur une entreprise pour préparer votre mission (statut, objectif, questions).
+                      </p>
                       {futureGroups.map((g) => (
                         <div
                           key={g.event_id}
