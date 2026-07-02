@@ -666,6 +666,10 @@ const RadarCrmResults: React.FC = () => {
                     onSetPref={setPref}
                     getRel={getRel}
                     onSetRel={setRel}
+                    onOpenMission={(company, g) => {
+                      const cc = g.companies.find((x) => x.company.id === company.id);
+                      onOpenMission(company, cc?.stand ?? null, g, cc?.nom_exposant ?? null);
+                    }}
                   />
                 </TabsContent>
 
