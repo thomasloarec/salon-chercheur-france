@@ -34,6 +34,9 @@ import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/Ra
 import RadarOnboardingPanel, { type RadarOnboardingProgress } from '@/components/radar-crm/RadarOnboardingPanel';
 import SimilarExhibitorsSection from '@/components/radar-crm/SimilarExhibitorsSection';
 import {
+  eventPhase, showModeSalon, modeSalonIsHot, showDebrief,
+} from '@/lib/radarCrm/eventPhase';
+import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
   companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP, triggerClassFor,
 } from '@/lib/radarCrm/relationship';
