@@ -34,7 +34,9 @@ export type RadarEventType =
   | 'radar_offer_profile_saved'
   | 'radar_company_relationship_updated'
   | 'radar_mission_opened'
-  | 'radar_mission_saved';
+  | 'radar_mission_saved'
+  | 'radar_salon_mode_opened'
+  | 'radar_salon_mode_viewed';
 
 export async function trackRadarEvent(event_type: RadarEventType, metadata: Record<string, unknown> = {}) {
   try {
