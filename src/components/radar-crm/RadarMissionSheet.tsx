@@ -462,26 +462,10 @@ const RadarMissionSheet: React.FC<{
             </div>
           ) : (
             <>
-              {/* Statut relationnel */}
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Statut relationnel</Label>
-                <Select value={relationship} onValueChange={(v) => onChangeRelationship(v as RelationshipStatus)}>
-                  <SelectTrigger className="h-11 w-full">
-                    <RelBadge status={relationship} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RELATIONSHIP_ORDER.map((s) => (
-                      <SelectItem
-                        key={s}
-                        value={s}
-                        className="py-2.5 focus:bg-muted focus:text-foreground data-[state=checked]:bg-muted"
-                      >
-                        <RelBadge status={s} />
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Corps du Sheet : tout ce qui suit est propre à CE salon. */}
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Préparation pour ce salon
+              </p>
 
               {/* Invite discrète : le statut a changé alors que des champs sont édités. */}
               {statusChanged && (
