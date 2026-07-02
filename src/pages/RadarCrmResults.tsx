@@ -532,6 +532,30 @@ const RadarCrmResults: React.FC = () => {
     return () => { cancelled = true; };
   }, [activeTab, similarCounts]);
 
+  // Onboarding gamifié : progression des 4 missions (qualifier, prioriser,
+  // préparer, capturer). Chargé une fois au montage quand l'utilisateur est
+  // connecté. Non bloquant : en cas d'erreur on masque silencieusement le panneau.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setOnboardingLoading(true);
+    (async () => {
+      const { data, error: obErr } = await supabase.rpc('get_radar_onboarding_progress');
+      if (cancelled) return;
+      if (obErr || !data || typeof data !== 'object') {
+        if (obErr) console.error('[RadarCRM] get_radar_onboarding_progress failed:', obErr);
+        setOnboarding(null);
+        setOnboardingLoading(false);
+        return;
+      }
+      setOnboarding(data as unknown as RadarOnboardingProgress);
+      setOnboardingLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+
+
   // KPI values come straight from the server-aggregated summary.
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;
   const kpiDetected = summary?.companies_detected ?? matchedCompanies.length;
