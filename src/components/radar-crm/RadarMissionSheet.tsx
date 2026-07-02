@@ -21,6 +21,8 @@ import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
 } from '@/lib/radarCrm/relationship';
 import { buildMissionSuggestion, type OfferProfileInput } from '@/lib/radarCrm/playbooks';
+import ExpandableText from '@/components/exhibitor/ExpandableText';
+
 
 /** Compte ciblé par le panneau mission (couple crm_company_id + salon). */
 export interface MissionTarget {
