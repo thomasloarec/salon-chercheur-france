@@ -721,6 +721,7 @@ const RadarCrmResults: React.FC = () => {
                             getPref={getPref}
                             getRel={getRel}
                             onView={() => onClickEvent(g)}
+                            onModeSalon={() => enterTerrain(g.event_id)}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenMission(c, stand, g, nom_exposant)}
                           />
