@@ -4,9 +4,11 @@ import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, MapPin, Star, ChevronRight, Calendar, StickyNote, CheckSquare,
+  Check, Plus, Loader2, X,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
@@ -27,6 +29,7 @@ interface SalonMissionCompany {
   nom_exposant: string | null;
   stands: string[] | null;
   relationship_status: string | null;
+  visited: boolean | null;
   mission_id: string | null;
   objective: string | null;
   opening_line: string | null;
@@ -58,6 +61,27 @@ const fmtDate = (d: string | null | undefined) =>
 const standLabelFor = (stands: string[] | null): string => {
   const list = (stands ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
   return list.length ? `Stand ${list.join(', ')}` : 'Stand non renseigné';
+};
+
+/** Premier stand exploitable (pour le tri de tournée). null si aucun. */
+const primaryStand = (stands: string[] | null): string | null => {
+  const list = (stands ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
+  return list.length ? list[0] : null;
+};
+
+/** Tri naturel de tournée : stands d'abord (A12 < A103 < B4), sans-stand en fin. */
+const byStand = (a: SalonMissionCompany, b: SalonMissionCompany): number => {
+  const sa = primaryStand(a.stands);
+  const sb = primaryStand(b.stands);
+  if (sa && !sb) return -1;
+  if (!sa && sb) return 1;
+  if (sa && sb) {
+    const cmp = sa.localeCompare(sb, 'fr', { numeric: true, sensitivity: 'base' });
+    if (cmp !== 0) return cmp;
+  }
+  const na = (a.nom_exposant ?? a.company_name ?? '').toLocaleLowerCase('fr');
+  const nb = (b.nom_exposant ?? b.company_name ?? '').toLocaleLowerCase('fr');
+  return na.localeCompare(nb, 'fr');
 };
 
 /** Statut relationnel — point 8px + libellé neutre, sans pilule (même doctrine que le cockpit). */
