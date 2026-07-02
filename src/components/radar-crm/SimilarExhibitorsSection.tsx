@@ -21,7 +21,7 @@ type Suggestion = {
   description: string | null;
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 /**
  * « Découvrir d'autres exposants à potentiel » — section repliée par défaut,
@@ -41,11 +41,10 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<Suggestion[]>([]);
-  const [hasMore, setHasMore] = useState(true);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
-  // Compteur affiché sur le bouton, décrémenté en optimiste à chaque garder/écarter.
-  const [count, setCount] = useState(initialCount);
-  const [done, setDone] = useState(false);
+  // `endReached` ne passe à true QUE lorsqu'un appel RPC renvoie une liste vide.
+  // Il est totalement découplé des actions garder/écarter.
+  const [endReached, setEndReached] = useState(false);
   // Tous les id_exposant déjà proposés (pour construire p_exclude).
   const seenRef = useRef<Set<string>>(new Set());
 
@@ -60,15 +59,17 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
       });
       if (error) throw error;
       const payload = (data ?? {}) as { suggestions?: Suggestion[]; count?: number };
-      const fresh = (payload.suggestions ?? []).filter(
+      const raw = payload.suggestions ?? [];
+      const fresh = raw.filter(
         (s) => s.id_exposant && !seenRef.current.has(s.id_exposant),
       );
       fresh.forEach((s) => seenRef.current.add(s.id_exposant));
       setItems((prev) => [...prev, ...fresh]);
-      setHasMore(fresh.length >= PAGE_SIZE);
+      // Fin propre : seulement si le backend n'a plus rien renvoyé.
+      if (raw.length === 0) setEndReached(true);
     } catch {
       toast({ title: 'Impossible de charger les suggestions', variant: 'destructive' });
-      setHasMore(false);
+      setEndReached(true);
     } finally {
       setLoading(false);
       setLoaded(true);
@@ -83,19 +84,10 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
   const removeCard = (id: string) =>
     setItems((prev) => prev.filter((s) => s.id_exposant !== id));
 
-  // Décrémente le compteur (garder/écarter). À 0, la section disparaît.
-  const decrement = () =>
-    setCount((c) => {
-      const next = Math.max(0, c - 1);
-      if (next === 0) setDone(true);
-      return next;
-    });
-
   const handleKeep = async (s: Suggestion) => {
     if (busy[s.id_exposant]) return;
     setBusy((b) => ({ ...b, [s.id_exposant]: true }));
     removeCard(s.id_exposant); // optimiste
-    decrement();
     try {
       const { error } = await supabase.rpc('add_radar_company_from_exposant', {
         p_id_exposant: s.id_exposant,
@@ -106,8 +98,6 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
     } catch {
       toast({ title: "Échec de l'ajout", variant: 'destructive' });
       setItems((prev) => [s, ...prev]); // rollback
-      setCount((c) => c + 1);
-      setDone(false);
     } finally {
       setBusy((b) => ({ ...b, [s.id_exposant]: false }));
     }
@@ -117,7 +107,6 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
     if (busy[s.id_exposant]) return;
     setBusy((b) => ({ ...b, [s.id_exposant]: true }));
     removeCard(s.id_exposant); // optimiste
-    decrement();
     try {
       const { error } = await supabase.rpc('set_radar_exposant_ignored', {
         p_id_exposant: s.id_exposant,
@@ -126,8 +115,6 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
     } catch {
       toast({ title: "Échec de l'action", variant: 'destructive' });
       setItems((prev) => [s, ...prev]); // rollback
-      setCount((c) => c + 1);
-      setDone(false);
     } finally {
       setBusy((b) => ({ ...b, [s.id_exposant]: false }));
     }
@@ -135,15 +122,8 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
 
   const isEmpty = loaded && items.length === 0;
 
-  // N'afficher la section que s'il reste des similaires à découvrir.
-  if (initialCount <= 0) return null;
-  if (done) {
-    return (
-      <p className="mt-1 px-1 py-2 text-xs text-muted-foreground">
-        Terminé pour ce salon.
-      </p>
-    );
-  }
+  // Gating : n'afficher la section que si le comptage backend est > 0.
+  if (!(typeof initialCount === 'number' && initialCount > 0)) return null;
 
   return (
     <Collapsible open={open} onOpenChange={handleOpenChange} className="mt-1">
@@ -159,7 +139,7 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
           <span className="flex items-center gap-2 min-w-0">
             <Sparkles className="h-4 w-4 shrink-0 text-accent" />
             <span className="truncate">
-              Découvrir {count} autre{count > 1 ? 's' : ''} exposant{count > 1 ? 's' : ''} à potentiel
+              Découvrir {initialCount} autre{initialCount > 1 ? 's' : ''} exposant{initialCount > 1 ? 's' : ''} à potentiel
             </span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -171,7 +151,7 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
           <div className="flex items-center gap-2 px-1 py-3 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Recherche d'exposants similaires…
           </div>
-        ) : isEmpty ? (
+        ) : isEmpty && endReached ? (
           <p className="px-1 py-2 text-sm text-muted-foreground">
             Aucun exposant similaire détecté pour vos comptes sur ce salon.
           </p>
@@ -235,7 +215,13 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
               </div>
             ))}
 
-            {hasMore ? (
+            {endReached ? (
+              items.length > 0 && (
+                <p className="px-1 py-1 text-xs text-muted-foreground">
+                  Plus d'autres suggestions pour ce salon.
+                </p>
+              )
+            ) : (
               <Button
                 variant="ghost"
                 size="sm"
@@ -249,12 +235,6 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
                   <><ChevronDown className="h-4 w-4 mr-1.5" /> Voir plus</>
                 )}
               </Button>
-            ) : (
-              items.length > 0 && (
-                <p className="px-1 py-1 text-xs text-muted-foreground">
-                  Plus d'autres suggestions pour ce salon.
-                </p>
-              )
             )}
           </div>
         )}
