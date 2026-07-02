@@ -162,6 +162,10 @@ const RadarCrmTerrain: React.FC = () => {
         : { event: null, companies: [] },
     );
     setRelOverrides({});
+    setVisitedOverrides({});
+    setNoteAdds({});
+    setNoteOpenFor(null);
+    setNoteText('');
     setLoading(false);
   }, [eventId, user, navigate]);
 
