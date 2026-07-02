@@ -152,6 +152,7 @@ const RadarMissionSheet: React.FC<{
     prevRelRef.current = relationship;
     let cancelled = false;
     setLoading(true);
+    setEventDates(null);
     (async () => {
       const [missionsRes, offerRes] = await Promise.all([
         supabase.rpc('get_radar_salon_missions', { p_event_id: target.eventId }),
