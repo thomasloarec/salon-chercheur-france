@@ -33,13 +33,19 @@ const PAGE_SIZE = 10;
  *  - add_radar_company_from_exposant (garder)
  *  - set_radar_exposant_ignored (écarter)
  */
-const SimilarExhibitorsSection: React.FC<{ eventId: string }> = ({ eventId }) => {
+const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: number }> = ({
+  eventId,
+  initialCount = 0,
+}) => {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<Suggestion[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+  // Compteur affiché sur le bouton, décrémenté en optimiste à chaque garder/écarter.
+  const [count, setCount] = useState(initialCount);
+  const [done, setDone] = useState(false);
   // Tous les id_exposant déjà proposés (pour construire p_exclude).
   const seenRef = useRef<Set<string>>(new Set());
 
@@ -77,10 +83,19 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string }> = ({ eventId }) =>
   const removeCard = (id: string) =>
     setItems((prev) => prev.filter((s) => s.id_exposant !== id));
 
+  // Décrémente le compteur (garder/écarter). À 0, la section disparaît.
+  const decrement = () =>
+    setCount((c) => {
+      const next = Math.max(0, c - 1);
+      if (next === 0) setDone(true);
+      return next;
+    });
+
   const handleKeep = async (s: Suggestion) => {
     if (busy[s.id_exposant]) return;
     setBusy((b) => ({ ...b, [s.id_exposant]: true }));
     removeCard(s.id_exposant); // optimiste
+    decrement();
     try {
       const { error } = await supabase.rpc('add_radar_company_from_exposant', {
         p_id_exposant: s.id_exposant,
@@ -91,6 +106,8 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string }> = ({ eventId }) =>
     } catch {
       toast({ title: "Échec de l'ajout", variant: 'destructive' });
       setItems((prev) => [s, ...prev]); // rollback
+      setCount((c) => c + 1);
+      setDone(false);
     } finally {
       setBusy((b) => ({ ...b, [s.id_exposant]: false }));
     }
@@ -100,6 +117,7 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string }> = ({ eventId }) =>
     if (busy[s.id_exposant]) return;
     setBusy((b) => ({ ...b, [s.id_exposant]: true }));
     removeCard(s.id_exposant); // optimiste
+    decrement();
     try {
       const { error } = await supabase.rpc('set_radar_exposant_ignored', {
         p_id_exposant: s.id_exposant,
@@ -108,12 +126,24 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string }> = ({ eventId }) =>
     } catch {
       toast({ title: "Échec de l'action", variant: 'destructive' });
       setItems((prev) => [s, ...prev]); // rollback
+      setCount((c) => c + 1);
+      setDone(false);
     } finally {
       setBusy((b) => ({ ...b, [s.id_exposant]: false }));
     }
   };
 
   const isEmpty = loaded && items.length === 0;
+
+  // N'afficher la section que s'il reste des similaires à découvrir.
+  if (initialCount <= 0) return null;
+  if (done) {
+    return (
+      <p className="mt-1 px-1 py-2 text-xs text-muted-foreground">
+        Terminé pour ce salon.
+      </p>
+    );
+  }
 
   return (
     <Collapsible open={open} onOpenChange={handleOpenChange} className="mt-1">
