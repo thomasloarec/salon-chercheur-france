@@ -873,7 +873,7 @@ const RadarActiveBanner: React.FC<{
   }
 
   return (
-    <Card className="bg-secondary/40 border-border/60 shadow-none">
+    <Card className="bg-muted/30 border-border/60 shadow-none">
       <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
         <div className="flex items-start gap-3">
           <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
@@ -898,7 +898,7 @@ const RadarActiveBanner: React.FC<{
             type="button"
             onClick={() => onClickEvent(ev)}
             disabled={!ev.slug}
-            className="w-full text-left rounded-xl border border-accent/30 bg-card p-4 md:p-5 transition-colors hover:bg-secondary/50 disabled:opacity-60"
+            className="w-full text-left rounded-xl border border-accent/30 bg-card p-4 md:p-5 transition-colors hover:bg-muted/50 disabled:opacity-60"
           >
             <p className="text-[11px] font-bold uppercase tracking-wide text-accent flex items-center gap-1.5">
               {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
@@ -1220,7 +1220,7 @@ const EventCard: React.FC<{
           </div>
 
           {/* CRM companies — the heart of the card */}
-          <div className="bg-secondary/40 border border-border/60 rounded-lg p-4 md:p-5">
+          <div className="bg-muted/30 border border-border/60 rounded-lg p-4 md:p-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               {group.companies.length} entreprise{group.companies.length > 1 ? 's' : ''} de votre CRM
             </p>
@@ -1293,7 +1293,7 @@ const PastEventCard: React.FC<{
               {group.companies.length} compte{group.companies.length > 1 ? 's' : ''}
             </Badge>
           </div>
-          <div className="bg-secondary/40 border border-border/60 rounded-lg p-4">
+          <div className="bg-muted/30 border border-border/60 rounded-lg p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Entreprises détectées
             </p>
