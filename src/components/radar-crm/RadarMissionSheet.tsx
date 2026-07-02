@@ -659,68 +659,64 @@ const RadarMissionSheet: React.FC<{
       >
         {/* Une seule zone scrollable : l'en-tête défile avec le contenu (non fixe). */}
         <div className="flex-1 overflow-y-auto">
-        <SheetHeader className="px-5 pt-6 pb-4 border-b text-left space-y-2">
-          <div className="flex items-center gap-2 text-accent">
-            <Target className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wide">Préparer ma visite</span>
-          </div>
-
-          {/* Niveau SALON : le salon est l'élément principal (on prépare CE salon). */}
-          <SheetTitle className="font-display text-xl leading-snug">
-            {target?.eventName ?? 'Salon'}
-          </SheetTitle>
-          {nonEmpty(eventDateLabel) && (
-            <p className="text-xs text-muted-foreground">{eventDateLabel}</p>
-          )}
-
-          {/* Niveau ENTREPRISE : sous-titre discret (identité + CRM + stand). */}
-          <SheetDescription className="space-y-1 pt-1">
-            <span className="block text-sm font-medium text-foreground/90">
+        {isTerrain ? (
+          /* Mode TERRAIN : l'ENTREPRISE est l'élément principal (en-tête compact). */
+          <SheetHeader className="px-5 pt-6 pb-4 border-b text-left space-y-2">
+            <div className="flex items-center gap-2 text-accent">
+              <MapPin className="h-4 w-4 shrink-0" />
+              <span className="text-xs font-semibold uppercase tracking-wide truncate">
+                Mode salon · {target?.eventName ?? 'Salon'}
+              </span>
+            </div>
+            <SheetTitle className="font-display text-2xl leading-tight">
               {target?.nomExposant ?? target?.companyName}
-            </span>
-            {showCrm && (
-              <span className="block text-xs text-muted-foreground">CRM : {target?.companyName}</span>
+            </SheetTitle>
+            <SheetDescription className="space-y-1">
+              {showCrm && (
+                <span className="block text-xs text-muted-foreground">CRM : {target?.companyName}</span>
+              )}
+              <span className="flex items-center gap-1 text-sm font-medium text-foreground/80">
+                <MapPin className="h-4 w-4 shrink-0" /> {standLabel}
+              </span>
+            </SheetDescription>
+            {statusSelect}
+            {descriptionBlock}
+          </SheetHeader>
+        ) : (
+          /* Mode PREPA (inchangé) : le SALON est l'élément principal. */
+          <SheetHeader className="px-5 pt-6 pb-4 border-b text-left space-y-2">
+            <div className="flex items-center gap-2 text-accent">
+              <Target className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wide">Préparer ma visite</span>
+            </div>
+
+            {/* Niveau SALON : le salon est l'élément principal (on prépare CE salon). */}
+            <SheetTitle className="font-display text-xl leading-snug">
+              {target?.eventName ?? 'Salon'}
+            </SheetTitle>
+            {nonEmpty(eventDateLabel) && (
+              <p className="text-xs text-muted-foreground">{eventDateLabel}</p>
             )}
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3" /> {standLabel}
-            </span>
-          </SheetDescription>
 
-          {/* Statut relationnel — attribut ENTREPRISE : compact, en haut, jamais l'élément principal. */}
-          <div className="flex items-center gap-2 pt-1">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
-              Statut
-            </span>
-            <Select value={relationship} onValueChange={(v) => onChangeRelationship(v as RelationshipStatus)}>
-              <SelectTrigger
-                className={`h-8 w-auto min-w-0 gap-1.5 rounded-md px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0 [&>span]:line-clamp-none ${triggerClassFor(relationship)}`}
-              >
-                <span className={`h-2 w-2 rounded-full shrink-0 ${RELATIONSHIP_META[relationship].dot}`} aria-hidden="true" />
-                <span className={`truncate text-sm font-medium ${RELATIONSHIP_META[relationship].badge}`}>
-                  {RELATIONSHIP_META[relationship].label}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                {RELATIONSHIP_ORDER.map((s) => (
-                  <SelectItem
-                    key={s}
-                    value={s}
-                    className="py-2 focus:bg-muted focus:text-foreground data-[state=checked]:bg-muted"
-                  >
-                    <RelBadge status={s} />
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Niveau ENTREPRISE : sous-titre discret (identité + CRM + stand). */}
+            <SheetDescription className="space-y-1 pt-1">
+              <span className="block text-sm font-medium text-foreground/90">
+                {target?.nomExposant ?? target?.companyName}
+              </span>
+              {showCrm && (
+                <span className="block text-xs text-muted-foreground">CRM : {target?.companyName}</span>
+              )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3" /> {standLabel}
+              </span>
+            </SheetDescription>
 
-          {nonEmpty(description) && (
-            <ExpandableText
-              text={description!}
-              className="pt-1"
-            />
-          )}
-        </SheetHeader>
+            {/* Statut relationnel — attribut ENTREPRISE : compact, en haut, jamais l'élément principal. */}
+            {statusSelect}
+
+            {descriptionBlock}
+          </SheetHeader>
+        )}
 
 
         <div className="px-5 py-5 space-y-6">
