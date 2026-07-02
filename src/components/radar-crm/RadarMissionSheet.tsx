@@ -265,6 +265,23 @@ const RadarMissionSheet: React.FC<{
                 </Select>
               </div>
 
+              {/* Invite discrète : le statut a changé alors que des champs sont édités. */}
+              {statusChanged && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5">
+                  <p className="text-xs text-foreground/80">
+                    Le statut a changé — réinitialiser les questions ?
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={regenerate}
+                    className="h-8 shrink-0 border-accent/40 text-accent hover:bg-accent/10 hover:text-accent"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 mr-1" /> Régénérer
+                  </Button>
+                </div>
+              )}
+
               {/* Objectif */}
               <div className="space-y-2">
                 <Label htmlFor="mission-objective" className="text-sm font-semibold">Objectif de la visite</Label>
