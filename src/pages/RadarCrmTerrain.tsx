@@ -19,6 +19,7 @@ import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship, DEFAULT_RELATIONSHIP,
 } from '@/lib/radarCrm/relationship';
 import { cn } from '@/lib/utils';
+import { eventPhase, showDebrief } from '@/lib/radarCrm/eventPhase';
 
 type Pref = 'starred' | 'ignored' | 'normal';
 
