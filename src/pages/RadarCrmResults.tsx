@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
+import RadarOnboardingPanel, { type RadarOnboardingProgress } from '@/components/radar-crm/RadarOnboardingPanel';
 import SimilarExhibitorsSection from '@/components/radar-crm/SimilarExhibitorsSection';
 import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
@@ -200,6 +201,9 @@ const RadarCrmResults: React.FC = () => {
   // Comptage des similaires par salon (à venir, > 0). Chargé une fois à l'ouverture
   // de l'onglet « Par salon » ; sert à n'afficher la section que s'il y a du contenu.
   const [similarCounts, setSimilarCounts] = useState<Record<string, number> | null>(null);
+  // ── Onboarding gamifié (RUN O1) — progression 4 missions ─────────────
+  const [onboarding, setOnboarding] = useState<RadarOnboardingProgress | null>(null);
+  const [onboardingLoading, setOnboardingLoading] = useState(true);
 
   const reloadAll = async () => {
     setActiveImportId(null);
@@ -500,6 +504,18 @@ const RadarCrmResults: React.FC = () => {
     navigate(`/radar-crm/terrain/${id}`);
   };
 
+  // CTA onboarding « Préparer » : bascule sur l'onglet « Par salon » et focalise
+  // le salon ciblé (deep-link eventId) pour le scroll automatique vers sa carte.
+  const onPrepareEvent = (eventId: string) => {
+    setActiveTab('future');
+    navigate(`/radar-crm/results?eventId=${encodeURIComponent(eventId)}`, { replace: true });
+  };
+
+  // Salon à privilégier pour le CTA « Capturer » : le prochain salon de
+  // l'onboarding, sinon le salon le plus imminent détecté dans le cockpit.
+  const onboardingCaptureEventId =
+    onboarding?.prepare_next?.event_id ?? nextEvent?.event_id ?? null;
+
   // Scroll to highlighted event once results are rendered.
   useEffect(() => {
     if (!highlightedEventId || loading) return;
@@ -527,6 +543,30 @@ const RadarCrmResults: React.FC = () => {
     })();
     return () => { cancelled = true; };
   }, [activeTab, similarCounts]);
+
+  // Onboarding gamifié : progression des 4 missions (qualifier, prioriser,
+  // préparer, capturer). Chargé une fois au montage quand l'utilisateur est
+  // connecté. Non bloquant : en cas d'erreur on masque silencieusement le panneau.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setOnboardingLoading(true);
+    (async () => {
+      const { data, error: obErr } = await supabase.rpc('get_radar_onboarding_progress');
+      if (cancelled) return;
+      if (obErr || !data || typeof data !== 'object') {
+        if (obErr) console.error('[RadarCRM] get_radar_onboarding_progress failed:', obErr);
+        setOnboarding(null);
+        setOnboardingLoading(false);
+        return;
+      }
+      setOnboarding(data as unknown as RadarOnboardingProgress);
+      setOnboardingLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+
 
   // KPI values come straight from the server-aggregated summary.
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;
@@ -704,6 +744,16 @@ const RadarCrmResults: React.FC = () => {
               {offerEmpty === true && (
                 <OfferProfileNudge onOpenSettings={() => setSettingsOpen(true)} />
               )}
+
+              {/* Panneau d'onboarding gamifié — 4 missions, au-dessus des onglets */}
+              <RadarOnboardingPanel
+                progress={onboarding}
+                loading={onboardingLoading}
+                captureEventId={onboardingCaptureEventId}
+                onGoCompanies={() => setActiveTab('companies')}
+                onPrepareEvent={onPrepareEvent}
+                onEnterTerrain={enterTerrain}
+              />
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="flex w-full max-w-full h-auto justify-start flex-nowrap gap-1 overflow-x-auto no-scrollbar bg-card border p-1">
