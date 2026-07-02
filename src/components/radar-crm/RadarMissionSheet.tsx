@@ -10,11 +10,19 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select, SelectContent, SelectItem, SelectTrigger,
 } from '@/components/ui/select';
-import { Loader2, MapPin, RotateCcw, Target } from 'lucide-react';
+import { CalendarIcon, Loader2, MapPin, Plus, RotateCcw, Target } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import {
@@ -42,11 +50,42 @@ interface MissionFields {
   top_q3: string;
 }
 
+/** Note de mission (capture terrain, ajout seul en V1). */
+interface MissionNote {
+  id: string;
+  body: string;
+  created_at: string;
+}
+
+/** Tâche de mission (ajout + toggle done en V1). */
+interface MissionTask {
+  id: string;
+  body: string;
+  due_at: string | null;
+  done: boolean;
+}
+
 const EMPTY: MissionFields = {
   objective: '', opening_line: '', top_q1: '', top_q2: '', top_q3: '',
 };
 
 const nonEmpty = (v: string | null | undefined) => (v ?? '').trim().length > 0;
+
+/** Horodatage lisible fr : « 12 mars, 14:30 ». */
+const fmtStamp = (iso: string | null | undefined) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return format(d, 'd MMM, HH:mm', { locale: fr });
+};
+
+/** Échéance lisible fr : « 12 mars ». */
+const fmtDue = (iso: string | null | undefined) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return format(d, 'd MMM yyyy', { locale: fr });
+};
 
 /** Badge inline réutilisant les tokens de statut relationnel. */
 const RelBadge: React.FC<{ status: RelationshipStatus }> = ({ status }) => {
@@ -81,6 +120,16 @@ const RadarMissionSheet: React.FC<{
   const prevRelRef = useRef<RelationshipStatus>(relationship);
   // Description société (résumé IA ou legacy) affichée sous l'en-tête.
   const [description, setDescription] = useState<string | null>(null);
+
+  // Capture terrain : notes & tâches (actions immédiates, hors bouton Enregistrer).
+  const [notes, setNotes] = useState<MissionNote[]>([]);
+  const [tasks, setTasks] = useState<MissionTask[]>([]);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
+  const [taskDraft, setTaskDraft] = useState('');
+  const [taskDue, setTaskDue] = useState<Date | undefined>(undefined);
+  const [dueOpen, setDueOpen] = useState(false);
+  const [addingTask, setAddingTask] = useState(false);
 
 
   // Charge la mission existante + le profil d'offre à l'ouverture, puis préremplit.
@@ -121,8 +170,12 @@ const RadarMissionSheet: React.FC<{
             top_q3: (row.top_q3 as string) ?? '',
           };
           setDescription((row.description as string | null) ?? null);
+          setNotes(Array.isArray(row.notes) ? (row.notes as MissionNote[]) : []);
+          setTasks(Array.isArray(row.tasks) ? (row.tasks as MissionTask[]) : []);
         } else {
           setDescription(null);
+          setNotes([]);
+          setTasks([]);
         }
 
       }
@@ -142,6 +195,9 @@ const RadarMissionSheet: React.FC<{
         nonEmpty(dbFields.top_q1) || nonEmpty(dbFields.top_q2) || nonEmpty(dbFields.top_q3);
       setEdited(hasSaved);
       setStatusChanged(false);
+      setNoteDraft('');
+      setTaskDraft('');
+      setTaskDue(undefined);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -183,6 +239,83 @@ const RadarMissionSheet: React.FC<{
     regenerate();
     setResetConfirm(false);
     toast({ title: 'Suggestions réappliquées', description: 'Objectif, ouverture et TOP 3 régénérés depuis votre profil.' });
+  };
+
+  // Ajoute une note (action immédiate, optimiste), indépendante d'« Enregistrer ».
+  const addNote = async () => {
+    if (!target || !nonEmpty(noteDraft) || addingNote) return;
+    const body = noteDraft.trim();
+    setAddingNote(true);
+    const { data, error } = await supabase.rpc('add_radar_mission_note', {
+      p_crm_company_id: target.companyId,
+      p_event_id: target.eventId,
+      p_body: body,
+    });
+    setAddingNote(false);
+    if (error) {
+      console.error('[RadarCRM] add_radar_mission_note failed:', error);
+      toast({ title: 'Note non enregistrée', description: 'Réessayez dans un instant.', variant: 'destructive' });
+      return;
+    }
+    const optimistic: MissionNote = {
+      id: (data as string) ?? `tmp-${Date.now()}`,
+      body,
+      created_at: new Date().toISOString(),
+    };
+    setNotes((n) => [optimistic, ...n]);
+    setNoteDraft('');
+  };
+
+  // Ctrl/Cmd+Entrée dans la note → ajout rapide.
+  const onNoteKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      void addNote();
+    }
+  };
+
+  // Ajoute une tâche (échéance optionnelle), optimiste.
+  const addTask = async () => {
+    if (!target || !nonEmpty(taskDraft) || addingTask) return;
+    const body = taskDraft.trim();
+    const due = taskDue ? taskDue.toISOString() : null;
+    setAddingTask(true);
+    const args: { p_crm_company_id: string; p_event_id: string; p_body: string; p_due_at?: string } = {
+      p_crm_company_id: target.companyId,
+      p_event_id: target.eventId,
+      p_body: body,
+    };
+    if (due) args.p_due_at = due;
+    const { data, error } = await supabase.rpc('add_radar_mission_task', args);
+    setAddingTask(false);
+    if (error) {
+      console.error('[RadarCRM] add_radar_mission_task failed:', error);
+      toast({ title: 'Tâche non enregistrée', description: 'Réessayez dans un instant.', variant: 'destructive' });
+      return;
+    }
+    const optimistic: MissionTask = {
+      id: (data as string) ?? `tmp-${Date.now()}`,
+      body,
+      due_at: due,
+      done: false,
+    };
+    setTasks((t) => [optimistic, ...t]);
+    setTaskDraft('');
+    setTaskDue(undefined);
+  };
+
+  // Coche / décoche une tâche (optimiste, rollback si erreur).
+  const toggleTask = async (taskId: string, next: boolean) => {
+    setTasks((ts) => ts.map((t) => (t.id === taskId ? { ...t, done: next } : t)));
+    const { error } = await supabase.rpc('set_radar_mission_task_done', {
+      p_task_id: taskId,
+      p_done: next,
+    });
+    if (error) {
+      console.error('[RadarCRM] set_radar_mission_task_done failed:', error);
+      setTasks((ts) => ts.map((t) => (t.id === taskId ? { ...t, done: !next } : t)));
+      toast({ title: 'Action impossible', description: 'La tâche n\'a pas pu être mise à jour.', variant: 'destructive' });
+    }
   };
 
   const handleSave = async () => {
@@ -352,6 +485,130 @@ const RadarMissionSheet: React.FC<{
                   </button>.
                 </p>
               )}
+
+              {/* Notes — capture immédiate */}
+              <div className="space-y-3 pt-2 border-t">
+                <Label className="text-sm font-semibold">Notes</Label>
+                <div className="space-y-2">
+                  <Textarea
+                    value={noteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    onKeyDown={onNoteKeyDown}
+                    rows={2}
+                    placeholder="Une info à retenir sur ce compte…"
+                    className="resize-none text-base"
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-muted-foreground">Ctrl/Cmd + Entrée pour ajouter</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={addNote}
+                      disabled={!nonEmpty(noteDraft) || addingNote}
+                      className="h-9"
+                    >
+                      {addingNote ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+                {notes.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Aucune note pour l'instant.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {notes.map((n) => (
+                      <li key={n.id} className="rounded-lg border bg-muted/20 px-3 py-2">
+                        <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{n.body}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">{fmtStamp(n.created_at)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Tâches — capture + toggle done */}
+              <div className="space-y-3 pt-2 border-t">
+                <Label className="text-sm font-semibold">Tâches</Label>
+                <div className="space-y-2">
+                  <Input
+                    value={taskDraft}
+                    onChange={(e) => setTaskDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void addTask(); } }}
+                    placeholder="Une action à faire…"
+                    className="h-11 text-base"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Popover open={dueOpen} onOpenChange={setDueOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={`h-9 flex-1 justify-start text-left font-normal ${taskDue ? '' : 'text-muted-foreground'}`}
+                        >
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          {taskDue ? fmtDue(taskDue.toISOString()) : 'Échéance (option.)'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={taskDue}
+                          onSelect={(d) => { setTaskDue(d ?? undefined); setDueOpen(false); }}
+                          initialFocus
+                          locale={fr}
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {taskDue && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setTaskDue(undefined)}
+                        className="h-9 px-2 text-muted-foreground"
+                      >
+                        Effacer
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={addTask}
+                      disabled={!nonEmpty(taskDraft) || addingTask}
+                      className="h-9"
+                    >
+                      {addingTask ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+                {tasks.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Aucune tâche.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {tasks.map((t) => (
+                      <li key={t.id} className="flex items-start gap-3 rounded-lg border bg-muted/20 px-3 py-2.5">
+                        <Checkbox
+                          checked={t.done}
+                          onCheckedChange={(v) => toggleTask(t.id, v === true)}
+                          className="mt-0.5 h-5 w-5"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm break-words ${t.done ? 'line-through text-muted-foreground' : 'text-foreground/90'}`}>
+                            {t.body}
+                          </p>
+                          {nonEmpty(t.due_at) && (
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">Échéance : {fmtDue(t.due_at)}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
               <button
                 type="button"
