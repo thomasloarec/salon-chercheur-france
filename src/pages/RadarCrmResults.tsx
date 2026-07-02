@@ -803,12 +803,74 @@ const RadarActiveBanner: React.FC<{
   futureSalons: number;
   featured: { event: EventGroup; company: Company | null; isPriority: boolean } | null;
   starredCount: number;
+  ongoing: EventGroup[];
+  onEnterTerrain: (eventId: string) => void;
   onClickEvent: (g: EventGroup) => void;
   onOpenSettings: () => void;
-}> = ({ analyzed, futureCompanies, futureSalons, featured, starredCount, onClickEvent, onOpenSettings }) => {
+}> = ({ analyzed, futureCompanies, futureSalons, featured, starredCount, ongoing, onEnterTerrain, onClickEvent, onOpenSettings }) => {
   const ev = featured?.event ?? null;
   const isPriority = featured?.isPriority ?? false;
   const days = ev?.days_until != null ? Math.max(0, ev.days_until) : null;
+
+  // État « salon en cours aujourd'hui » — traitement distinct (live, mode terrain).
+  if (ongoing.length > 0) {
+    const live = ongoing[0];
+    const others = ongoing.slice(1);
+    return (
+      <Card className="bg-accent/5 border-accent/40 shadow-none">
+        <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
+          <div className="flex items-start gap-3">
+            <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 animate-ping" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-accent">Salon en cours aujourd'hui</p>
+              <p className="font-display text-lg md:text-xl font-semibold text-foreground leading-tight mt-1">
+                {live.nom_event}{live.ville ? <span className="text-muted-foreground font-normal"> · {live.ville}</span> : null}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {live.company_count} de vos comptes exposent ici.
+              </p>
+            </div>
+          </div>
+
+          <Button onClick={() => onEnterTerrain(live.event_id)} className="w-full sm:w-auto">
+            <Radar className="h-4 w-4 mr-2" /> Entrer en mode salon
+          </Button>
+
+          {others.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
+              <span className="text-xs text-muted-foreground">Autres salons en cours :</span>
+              {others.map((o) => (
+                <button
+                  key={o.event_id}
+                  type="button"
+                  onClick={() => onEnterTerrain(o.event_id)}
+                  className="text-xs text-primary hover:underline font-medium"
+                >
+                  {o.nom_event}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
+            Vous êtes alerté par email avant chaque salon concerné.
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="text-primary hover:underline font-medium"
+            >
+              Paramètres Radar CRM
+            </button>
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="bg-secondary/40 border-border/60 shadow-none">
       <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
