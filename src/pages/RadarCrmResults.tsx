@@ -1242,17 +1242,17 @@ const EventCard: React.FC<{
     <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm hover:border-border transition-all bg-card">
       <div className="flex flex-col sm:flex-row sm:items-start">
         {/* Thumbnail — hauteur fixe pour ne jamais se déformer avec le contenu de droite */}
-        <div className="relative w-full sm:w-[180px] sm:min-w-[180px] h-[140px] sm:h-[200px] bg-muted overflow-hidden">
+        <div className="relative w-full sm:w-[180px] sm:min-w-[180px] bg-muted overflow-hidden">
           {group.url_image ? (
             <img
               src={group.url_image}
               alt={group.nom_event}
-              className="w-full h-full object-cover"
+              className="w-full h-auto object-contain sm:max-h-[280px]"
               loading="lazy"
             />
           ) : (
             <div
-              className="w-full h-full flex items-center justify-center"
+              className="w-full h-[140px] sm:h-[200px] flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))' }}
             >
               <span className="text-2xl font-bold text-primary-foreground tracking-wider opacity-90">
