@@ -135,7 +135,6 @@ const SimilarExhibitorsSection: React.FC<{
     }
   };
 
-  const isEmpty = loaded && items.length === 0;
   // « Terminé » : soit le backend n'a plus rien renvoyé, soit le compteur est à 0.
   const finished = endReached || remaining <= 0;
 
