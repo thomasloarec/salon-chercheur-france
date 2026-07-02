@@ -18,7 +18,7 @@ import {
 import {
   ArrowRight, Calendar, MapPin, Plus, Radar, Upload, Building2, Sparkles,
   CalendarPlus, Flame, AlertCircle, ExternalLink, History, ChevronDown, ChevronUp,
-  CalendarCheck, Settings, Lock, Mail, Clock, Star, EyeOff, Eye,
+  CalendarCheck, Settings, Lock, Mail, Clock, Star, EyeOff, Eye, ChevronRight, Target,
 } from 'lucide-react';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import { toast } from '@/hooks/use-toast';
@@ -666,6 +666,10 @@ const RadarCrmResults: React.FC = () => {
                     onSetPref={setPref}
                     getRel={getRel}
                     onSetRel={setRel}
+                    onOpenMission={(company, g) => {
+                      const cc = g.companies.find((x) => x.company.id === company.id);
+                      onOpenMission(company, cc?.stand ?? null, g, cc?.nom_exposant ?? null);
+                    }}
                   />
                 </TabsContent>
 
@@ -674,6 +678,10 @@ const RadarCrmResults: React.FC = () => {
                     <NoFutureMatches companiesCount={kpiAnalyzed} matchedCount={kpiDetected} />
                   ) : (
                     <div className="space-y-6">
+                      <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Target className="h-4 w-4 text-accent shrink-0" />
+                        Cliquez sur une entreprise pour préparer votre mission (statut, objectif, questions).
+                      </p>
                       {futureGroups.map((g) => (
                         <div
                           key={g.event_id}
@@ -964,7 +972,7 @@ const CompanyChip: React.FC<{
     type="button"
     onClick={onClick}
     className={cn(
-      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1.5 transition-all hover:bg-primary/5',
+      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-2.5 py-1.5 cursor-pointer transition-all hover:bg-primary/5 hover:shadow-sm',
       starred && 'border-accent/50 bg-secondary/50',
       needsReview ? 'border-border hover:border-primary' : 'border-border hover:border-primary',
     )}
@@ -980,8 +988,12 @@ const CompanyChip: React.FC<{
         <span className="text-[10px] text-foreground/60">CRM : {company.company_name}</span>
       )}
     </span>
-    {relationship && relationship !== 'a_qualifier' && (
-      <RelationshipBadge status={relationship} className="ml-0.5" />
+    {(relationship ?? 'a_qualifier') !== 'a_qualifier' ? (
+      <RelationshipBadge status={relationship!} className="ml-0.5" />
+    ) : (
+      <span className="ml-0.5 inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent whitespace-nowrap">
+        À qualifier
+      </span>
     )}
     {stand && (
       <span className="text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
@@ -993,6 +1005,11 @@ const CompanyChip: React.FC<{
         À vérifier
       </span>
     )}
+    {/* Indicateur d'action : la puce ouvre la préparation de mission. */}
+    <span className="ml-0.5 flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+      <span className="hidden sm:inline">Préparer</span>
+      <ChevronRight className="h-3.5 w-3.5" />
+    </span>
   </button>
 );
 
@@ -1221,7 +1238,8 @@ const CompanyAccountsList: React.FC<{
   onSetPref: (companyId: string, next: Pref) => void;
   getRel: (company: Company) => RelationshipStatus;
   onSetRel: (company: Company, next: RelationshipStatus) => void;
-}> = ({ groups, companies, onClickEvent, getPref, onSetPref, getRel, onSetRel }) => {
+  onOpenMission: (company: Company, g: EventGroup) => void;
+}> = ({ groups, companies, onClickEvent, getPref, onSetPref, getRel, onSetRel, onOpenMission }) => {
   const [ignoredOpen, setIgnoredOpen] = useState(false);
   if (companies.length === 0) {
     return (
@@ -1261,6 +1279,7 @@ const CompanyAccountsList: React.FC<{
           onSetPref={(next) => onSetPref(c.id, next)}
           relationship={getRel(c)}
           onSetRelationship={(next) => onSetRel(c, next)}
+          onOpenMission={(g) => onOpenMission(c, g)}
           dimmed={dimmed}
         />
       ))}
@@ -1333,8 +1352,9 @@ const CompanyAccountCard: React.FC<{
   onSetPref: (next: Pref) => void;
   relationship: RelationshipStatus;
   onSetRelationship: (next: RelationshipStatus) => void;
+  onOpenMission: (g: EventGroup) => void;
   dimmed?: boolean;
-}> = ({ company, future, past, onClickEvent, pref, onSetPref, relationship, onSetRelationship, dimmed }) => {
+}> = ({ company, future, past, onClickEvent, pref, onSetPref, relationship, onSetRelationship, onOpenMission, dimmed }) => {
   const INITIAL = 3;
   const [expF, setExpF] = useState(false);
   // Historique replié par défaut : on calme la carte (cf. polish v2).
@@ -1347,18 +1367,8 @@ const CompanyAccountCard: React.FC<{
   const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
     const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
     const imminent = g.days_until != null && g.days_until < IMMINENT_DAYS;
-    return (
-      <button
-        key={g.event_id}
-        type="button"
-        onClick={() => onClickEvent(g)}
-        disabled={!g.slug}
-        className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors disabled:opacity-60 ${
-          tone === 'future'
-            ? 'bg-secondary/40 hover:bg-secondary/70'
-            : 'hover:bg-muted/50'
-        }`}
-      >
+    const rowInner = (
+      <>
         <div className="flex items-center justify-between gap-2">
           <p className={`text-sm truncate ${tone === 'future' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
             {g.nom_event}
@@ -1380,6 +1390,42 @@ const CompanyAccountCard: React.FC<{
           {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
           {stand && <span className="ml-2 text-foreground font-medium">Stand {stand}</span>}
         </p>
+      </>
+    );
+    // Salons à venir : ligne cliquable (événement) + action « Préparer » (mission).
+    if (tone === 'future') {
+      return (
+        <div key={g.event_id} className="flex items-stretch gap-1.5">
+          <button
+            type="button"
+            onClick={() => onClickEvent(g)}
+            disabled={!g.slug}
+            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-secondary/40 hover:bg-secondary/70 transition-colors disabled:opacity-60"
+          >
+            {rowInner}
+          </button>
+          <button
+            type="button"
+            onClick={() => onOpenMission(g)}
+            title="Préparer la mission"
+            aria-label={`Préparer la mission — ${g.nom_event}`}
+            className="shrink-0 flex items-center gap-1 rounded-lg border border-accent/30 bg-accent/5 px-2.5 text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
+          >
+            <Target className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Préparer</span>
+          </button>
+        </div>
+      );
+    }
+    return (
+      <button
+        key={g.event_id}
+        type="button"
+        onClick={() => onClickEvent(g)}
+        disabled={!g.slug}
+        className="w-full text-left rounded-lg px-3 py-2.5 transition-colors disabled:opacity-60 hover:bg-muted/50"
+      >
+        {rowInner}
       </button>
     );
   };
