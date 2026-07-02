@@ -101,6 +101,149 @@ const RelBadge: React.FC<{ status: RelationshipStatus }> = ({ status }) => {
 };
 
 const RadarCrmTerrain: React.FC = () => {
+  return <RadarCrmTerrainInner />;
+};
+
+interface TerrainRowProps {
+  company: SalonMissionCompany;
+  visited: boolean;
+  relationship: RelationshipStatus;
+  noteCount: number;
+  noteOpen: boolean;
+  noteText: string;
+  savingNote: boolean;
+  onOpenMission: () => void;
+  onToggleVisited: () => void;
+  onOpenNote: () => void;
+  onCloseNote: () => void;
+  onChangeNote: (v: string) => void;
+  onSubmitNote: () => void;
+}
+
+/** Ligne de check-list terrain : grande, tactile, actions directes. */
+const TerrainRow: React.FC<TerrainRowProps> = ({
+  company: c, visited, relationship, noteCount, noteOpen, noteText, savingNote,
+  onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote,
+}) => {
+  const taskCount = Array.isArray(c.tasks) ? c.tasks.filter((t) => !t?.done).length : 0;
+  const starred = c.pref_status === 'starred';
+  const name = c.nom_exposant ?? c.company_name ?? 'Entreprise';
+
+  return (
+    <li>
+      <div
+        className={cn(
+          'rounded-xl border bg-card transition-colors',
+          visited ? 'border-border/50 opacity-60' : starred ? 'border-accent/50' : 'border-border/60',
+        )}
+      >
+        {/* Zone tap → Sheet mission (hors boutons) */}
+        <button
+          type="button"
+          onClick={onOpenMission}
+          className="group w-full text-left p-4 md:p-5 rounded-t-xl hover:bg-secondary/40 active:bg-secondary/60 transition-colors"
+        >
+          <div className="flex items-start gap-3">
+            {starred && (
+              <Star className="h-5 w-5 text-accent fill-accent shrink-0 mt-0.5" aria-label="Compte prioritaire" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  'font-display text-lg md:text-xl font-semibold leading-snug truncate',
+                  visited ? 'text-muted-foreground line-through decoration-1' : 'text-foreground',
+                )}
+                title={name}
+              >
+                {name}
+              </p>
+              <p className="text-sm text-foreground/70 mt-1 flex items-center gap-1 font-medium">
+                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                {standLabelFor(c.stands)}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
+                <RelBadge status={relationship} />
+                {(noteCount > 0 || taskCount > 0) && (
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {noteCount > 0 && (
+                      <span className="flex items-center gap-1">
+                        <StickyNote className="h-3.5 w-3.5" /> {noteCount} note{noteCount > 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {taskCount > 0 && (
+                      <span className="flex items-center gap-1">
+                        <CheckSquare className="h-3.5 w-3.5" /> {taskCount} tâche{taskCount > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground/50 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
+          </div>
+        </button>
+
+        {/* Actions directes — grosses cibles tactiles */}
+        <div className="flex items-stretch gap-2 border-t border-border/60 p-3">
+          <Button
+            type="button"
+            variant={visited ? 'secondary' : 'outline'}
+            className="flex-1 min-h-[44px] gap-2"
+            onClick={onToggleVisited}
+          >
+            <Check className={cn('h-4 w-4', visited && 'text-emerald-600')} />
+            {visited ? 'Vu' : 'Visité'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 min-h-[44px] gap-2"
+            onClick={noteOpen ? onCloseNote : onOpenNote}
+            aria-expanded={noteOpen}
+          >
+            <Plus className="h-4 w-4" /> Note
+          </Button>
+        </div>
+
+        {/* Capture éclair en place */}
+        {noteOpen && (
+          <div className="px-3 pb-3 space-y-2">
+            <Textarea
+              autoFocus
+              value={noteText}
+              onChange={(e) => onChangeNote(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  onSubmitNote();
+                }
+              }}
+              placeholder="Note éclair… (Entrée pour ajouter)"
+              className="min-h-[64px] text-base"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={onCloseNote} className="gap-1">
+                <X className="h-4 w-4" /> Annuler
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={onSubmitNote}
+                disabled={savingNote || !noteText.trim()}
+                className="gap-1"
+              >
+                {savingNote ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Ajouter
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </li>
+  );
+};
+
+const RadarCrmTerrainInner: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
