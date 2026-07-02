@@ -6905,6 +6905,10 @@ export type Database = {
         Args: { p_event_data: Json; p_id_event: string }
         Returns: Json
       }
+      radar_active_import_id: {
+        Args: { p_account_id: string }
+        Returns: string
+      }
       radar_company_key: {
         Args: { p_domain: string; p_name: string }
         Returns: string
