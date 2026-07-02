@@ -4313,6 +4313,8 @@ export type Database = {
           top_q2: string | null
           top_q3: string | null
           updated_at: string
+          visited: boolean
+          visited_at: string | null
         }
         Insert: {
           company_key: string
@@ -4330,6 +4332,8 @@ export type Database = {
           top_q2?: string | null
           top_q3?: string | null
           updated_at?: string
+          visited?: boolean
+          visited_at?: string | null
         }
         Update: {
           company_key?: string
@@ -4347,6 +4351,8 @@ export type Database = {
           top_q2?: string | null
           top_q3?: string | null
           updated_at?: string
+          visited?: boolean
+          visited_at?: string | null
         }
         Relationships: []
       }
@@ -6066,6 +6072,10 @@ export type Database = {
         Args: { p_event_id: string; p_id_exposant: string }
         Returns: string
       }
+      add_radar_manual_company: {
+        Args: { p_event_id: string; p_name: string; p_website?: string }
+        Returns: string
+      }
       add_radar_mission_note: {
         Args: { p_body: string; p_crm_company_id: string; p_event_id: string }
         Returns: string
@@ -7024,6 +7034,10 @@ export type Database = {
         }
         Returns: string[]
       }
+      search_radar_salon_exposants: {
+        Args: { p_event_id: string; p_query: string }
+        Returns: Json
+      }
       seo_eligible_events: {
         Args: { p_only_post_import?: boolean }
         Returns: {
@@ -7064,6 +7078,14 @@ export type Database = {
       }
       set_radar_mission_task_done: {
         Args: { p_done: boolean; p_task_id: string }
+        Returns: boolean
+      }
+      set_radar_mission_visited: {
+        Args: {
+          p_crm_company_id: string
+          p_event_id: string
+          p_visited: boolean
+        }
         Returns: boolean
       }
       set_seo_vault_secret: {
