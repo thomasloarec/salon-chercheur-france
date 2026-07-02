@@ -499,6 +499,22 @@ const RadarCrmResults: React.FC = () => {
     }
   }, [highlightedEventId, loading, eventGroups, activeTab]);
 
+  // Comptage des similaires : appelé une seule fois quand l'onglet « Par salon » s'ouvre.
+  useEffect(() => {
+    if (activeTab !== 'future' || similarCounts !== null) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.rpc('get_radar_similar_counts');
+      if (cancelled) return;
+      if (error || !data || typeof data !== 'object') {
+        setSimilarCounts({});
+        return;
+      }
+      setSimilarCounts(data as Record<string, number>);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, similarCounts]);
+
   // KPI values come straight from the server-aggregated summary.
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;
   const kpiDetected = summary?.companies_detected ?? matchedCompanies.length;
