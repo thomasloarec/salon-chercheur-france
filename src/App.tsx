@@ -41,6 +41,7 @@ import AdminIaVisite from '@/pages/AdminIaVisite';
 import AdminRadarCrm from '@/pages/admin/AdminRadarCrm';
 import RadarCrm from '@/pages/RadarCrm';
 import RadarCrmResults from '@/pages/RadarCrmResults';
+import RadarCrmTerrain from '@/pages/RadarCrmTerrain';
 import CrmIntegrations from '@/pages/CrmIntegrations';
 import { OAuthCallback } from '@/pages/OAuthCallback';
 import OAuthHubspotTest from '@/pages/OAuthHubspotTest';
@@ -122,6 +123,7 @@ function App() {
             <Route path="/trouver-un-salon" element={<TrouverSalon />} />
             <Route path="/radar-crm" element={<RadarCrm />} />
             <Route path="/radar-crm/results" element={<RadarCrmResults />} />
+            <Route path="/radar-crm/terrain/:eventId" element={<RadarCrmTerrain />} />
 
             {/* Admin routes with sidebar layout */}
             <Route path="/admin" element={<AdminLayout />}>
