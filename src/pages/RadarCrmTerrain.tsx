@@ -323,6 +323,8 @@ const RadarCrmTerrainInner: React.FC = () => {
 
   const ev = payload?.event ?? null;
   const eventName = ev?.nom_event ?? 'Salon';
+  // Phase du salon : le débrief n'est proposé qu'à partir du 1er jour du salon.
+  const phase = eventPhase(ev?.date_debut, ev?.date_fin);
   const dateLabel = useMemo(() => {
     const d1 = fmtDate(ev?.date_debut);
     const d2 = fmtDate(ev?.date_fin);
