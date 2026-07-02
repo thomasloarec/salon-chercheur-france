@@ -727,216 +727,78 @@ const RadarMissionSheet: React.FC<{
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
+          ) : isTerrain ? (
+            /* Mode TERRAIN : ce que je dis (gros) → ce que je capture → secondaire replié. */
+            <>
+              {onToggleVisited && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onToggleVisited}
+                  className={cn(
+                    'w-full min-h-[44px] gap-2',
+                    visited
+                      ? 'border-emerald-600/40 text-emerald-700 hover:text-emerald-700'
+                      : 'border-border/70 text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Check className={cn('h-4 w-4', visited && 'text-emerald-600')} />
+                  {visited ? 'Visité' : 'Marquer comme visité'}
+                </Button>
+              )}
+
+              {statusChangedInvite}
+
+              {/* CE QUE JE DIS — mis en avant, gros, lecture immédiate */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-accent">
+                  <MessageSquare className="h-4 w-4 shrink-0" />
+                  <span className="text-xs font-semibold uppercase tracking-wide">Ce que je dis</span>
+                </div>
+                {openingBlock(true)}
+                {top3Block(true)}
+                {offerEmptyHint}
+              </section>
+
+              {/* CE QUE JE CAPTURE — actions immédiates */}
+              <section className="space-y-6 pt-4 border-t">
+                <div className="flex items-center gap-2 text-accent">
+                  <StickyNote className="h-4 w-4 shrink-0" />
+                  <span className="text-xs font-semibold uppercase tracking-wide">Ce que je capture</span>
+                </div>
+                {notesBlock}
+                {tasksBlock}
+              </section>
+
+              {/* Secondaire — replié par défaut */}
+              <details className="group border-t pt-4">
+                <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                  Objectif &amp; options
+                </summary>
+                <div className="space-y-6 pt-4">
+                  {objectiveBlock}
+                  {resetButton}
+                </div>
+              </details>
+            </>
           ) : (
+            /* Mode PREPA (inchangé). */
             <>
               {/* Corps du Sheet : tout ce qui suit est propre à CE salon. */}
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Préparation pour ce salon
               </p>
 
-              {/* Invite discrète : le statut a changé alors que des champs sont édités. */}
-              {statusChanged && (
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5">
-                  <p className="text-xs text-foreground/80">
-                    Le statut a changé — réinitialiser les questions ?
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={regenerate}
-                    className="h-8 shrink-0 border-accent/40 text-accent hover:bg-accent/10 hover:text-accent"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5 mr-1" /> Régénérer
-                  </Button>
-                </div>
-              )}
+              {statusChangedInvite}
 
-              {/* Objectif */}
-              <div className="space-y-2">
-                <Label htmlFor="mission-objective" className="text-sm font-semibold">Objectif de la visite</Label>
-                <Textarea
-                  id="mission-objective"
-                  value={fields.objective}
-                  onChange={set('objective')}
-                  rows={2}
-                  className="resize-none text-base"
-                />
-              </div>
-
-              {/* Phrase d'ouverture */}
-              <div className="space-y-2">
-                <Label htmlFor="mission-opening" className="text-sm font-semibold">Phrase d'ouverture</Label>
-                <Textarea
-                  id="mission-opening"
-                  value={fields.opening_line}
-                  onChange={set('opening_line')}
-                  rows={3}
-                  className="resize-none text-base"
-                />
-              </div>
-
-              {/* TOP 3 */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">TOP 3 — questions à poser</Label>
-                {(['top_q1', 'top_q2', 'top_q3'] as const).map((k, i) => (
-                  <div key={k} className="flex gap-2 items-start">
-                    <span className="mt-2.5 h-6 w-6 shrink-0 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
-                      {i + 1}
-                    </span>
-                    <Textarea
-                      value={fields[k]}
-                      onChange={set(k)}
-                      rows={2}
-                      className="resize-none text-base"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {offerEmpty && (
-                <p className="text-xs text-muted-foreground">
-                  Pour des questions plus précises,{' '}
-                  <button
-                    type="button"
-                    onClick={() => { onOpenChange(false); onOpenSettings(); }}
-                    className="text-accent underline underline-offset-2 hover:text-accent/80"
-                  >
-                    complétez votre profil d'offre
-                  </button>.
-                </p>
-              )}
-
-              {/* Notes — capture immédiate */}
-              <div className="space-y-3 pt-2 border-t">
-                <Label className="text-sm font-semibold">Notes</Label>
-                <div className="space-y-2">
-                  <Textarea
-                    value={noteDraft}
-                    onChange={(e) => setNoteDraft(e.target.value)}
-                    onKeyDown={onNoteKeyDown}
-                    rows={2}
-                    placeholder="Une info à retenir sur ce compte…"
-                    className="resize-none text-base"
-                  />
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-muted-foreground">Ctrl/Cmd + Entrée pour ajouter</span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={addNote}
-                      disabled={!nonEmpty(noteDraft) || addingNote}
-                      className="h-9"
-                    >
-                      {addingNote ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
-                      Ajouter
-                    </Button>
-                  </div>
-                </div>
-                {notes.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Aucune note pour l'instant.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {notes.map((n) => (
-                      <li key={n.id} className="rounded-lg border bg-muted/20 px-3 py-2">
-                        <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{n.body}</p>
-                        <p className="mt-1 text-[11px] text-muted-foreground">{fmtStamp(n.created_at)}</p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {/* Tâches — capture + toggle done */}
-              <div className="space-y-3 pt-2 border-t">
-                <Label className="text-sm font-semibold">Tâches</Label>
-                <div className="space-y-2">
-                  <Input
-                    value={taskDraft}
-                    onChange={(e) => setTaskDraft(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void addTask(); } }}
-                    placeholder="Une action à faire…"
-                    className="h-11 text-base"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Popover open={dueOpen} onOpenChange={setDueOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className={`h-9 flex-1 justify-start text-left font-normal ${taskDue ? '' : 'text-muted-foreground'}`}
-                        >
-                          <CalendarIcon className="h-4 w-4 mr-2" />
-                          {taskDue ? fmtDue(taskDue.toISOString()) : 'Échéance (option.)'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={taskDue}
-                          onSelect={(d) => { setTaskDue(d ?? undefined); setDueOpen(false); }}
-                          initialFocus
-                          locale={fr}
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {taskDue && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setTaskDue(undefined)}
-                        className="h-9 px-2 text-muted-foreground"
-                      >
-                        Effacer
-                      </Button>
-                    )}
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={addTask}
-                      disabled={!nonEmpty(taskDraft) || addingTask}
-                      className="h-9"
-                    >
-                      {addingTask ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
-                      Ajouter
-                    </Button>
-                  </div>
-                </div>
-                {tasks.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Aucune tâche.</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {tasks.map((t) => (
-                      <li key={t.id} className="flex items-start gap-3 rounded-lg border bg-muted/20 px-3 py-2.5">
-                        <Checkbox
-                          checked={t.done}
-                          onCheckedChange={(v) => toggleTask(t.id, v === true)}
-                          className="mt-0.5 h-5 w-5"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className={`text-sm break-words ${t.done ? 'line-through text-muted-foreground' : 'text-foreground/90'}`}>
-                            {t.body}
-                          </p>
-                          {nonEmpty(t.due_at) && (
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">Échéance : {fmtDue(t.due_at)}</p>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setResetConfirm(true)}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser depuis mon profil
-              </button>
+              {objectiveBlock}
+              {openingBlock(false)}
+              {top3Block(false)}
+              {offerEmptyHint}
+              {notesBlock}
+              {tasksBlock}
+              {resetButton}
             </>
           )}
         </div>
