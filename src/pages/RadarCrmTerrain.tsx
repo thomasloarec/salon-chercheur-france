@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
+import RadarTerrainAddCompanySheet from '@/components/radar-crm/RadarTerrainAddCompanySheet';
 import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship, DEFAULT_RELATIONSHIP,
 } from '@/lib/radarCrm/relationship';
