@@ -1277,6 +1277,9 @@ const EventCard: React.FC<{
             </div>
           </div>
 
+          {/* Suggestions d'exposants similaires (lazy) */}
+          <SimilarExhibitorsSection eventId={group.event_id} />
+
           <div className="flex flex-wrap gap-2 mt-auto">
             <Button size="sm" onClick={onView} disabled={!group.slug}>
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
