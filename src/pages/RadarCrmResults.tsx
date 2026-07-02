@@ -196,6 +196,9 @@ const RadarCrmResults: React.FC = () => {
   // Vue par compte = vue par défaut (cadrage « veille »).
   // Si un événement est mis en avant (deep-link), on ouvre la vue par salon pour préserver le scroll auto.
   const [activeTab, setActiveTab] = useState<string>(searchParams.get('eventId') ? 'future' : 'companies');
+  // Comptage des similaires par salon (à venir, > 0). Chargé une fois à l'ouverture
+  // de l'onglet « Par salon » ; sert à n'afficher la section que s'il y a du contenu.
+  const [similarCounts, setSimilarCounts] = useState<Record<string, number> | null>(null);
 
   const reloadAll = async () => {
     setActiveImportId(null);
