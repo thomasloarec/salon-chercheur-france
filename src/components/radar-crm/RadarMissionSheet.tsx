@@ -361,6 +361,8 @@ const RadarMissionSheet: React.FC<{
         side="right"
         className="w-full sm:max-w-lg flex flex-col gap-0 p-0 overflow-hidden"
       >
+        {/* Une seule zone scrollable : l'en-tête défile avec le contenu (non fixe). */}
+        <div className="flex-1 overflow-y-auto">
         <SheetHeader className="px-5 pt-6 pb-4 border-b text-left space-y-2">
           <div className="flex items-center gap-2 text-accent">
             <Target className="h-4 w-4" />
@@ -387,7 +389,7 @@ const RadarMissionSheet: React.FC<{
         </SheetHeader>
 
 
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+        <div className="px-5 py-5 space-y-6">
           {loading ? (
             <div className="space-y-4">
               <Skeleton className="h-9 w-48" />
