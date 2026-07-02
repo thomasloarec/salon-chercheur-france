@@ -1035,21 +1035,21 @@ const OfferProfileNudge: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSet
   </Card>
 );
 
-/** Small avatar with logo/favicon/initials fallback */
+/** Logo d'entreprise — petit carré propre (coins légèrement arrondis), jamais un grand cercle. */
 const CompanyAvatar: React.FC<{ company: Company; size?: 'xs' | 'sm' | 'md' }> = ({ company, size = 'sm' }) => {
   const url = getExhibitorLogoUrl(null, company.website_raw ?? company.normalized_domain ?? null);
   const cls = size === 'xs' ? 'h-6 w-6 text-[10px]' : size === 'md' ? 'h-10 w-10 text-sm' : 'h-7 w-7 text-[11px]';
   return (
-    <Avatar className={`${cls} border bg-background`}>
-      {url && <AvatarImage src={url} alt={company.company_name} />}
-      <AvatarFallback className="bg-primary/10 text-primary font-bold">
+    <Avatar className={`${cls} rounded-md border bg-background`}>
+      {url && <AvatarImage src={url} alt={company.company_name} className="rounded-md" />}
+      <AvatarFallback className="rounded-md bg-primary/10 text-primary font-bold">
         {companyInitials(company.company_name)}
       </AvatarFallback>
     </Avatar>
   );
 };
 
-/** Company chip — clickable, shows logo + name */
+/** Ligne entreprise cliquable — logo carré + nom fort, sans pilule. */
 const CompanyChip: React.FC<{
   company: Company;
   stand?: string | null;
@@ -1063,41 +1063,34 @@ const CompanyChip: React.FC<{
     type="button"
     onClick={onClick}
     className={cn(
-      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-2.5 py-1.5 cursor-pointer transition-all hover:bg-primary/5 hover:shadow-sm',
-      starred && 'border-accent/50 bg-secondary/50',
-      needsReview ? 'border-border hover:border-primary' : 'border-border hover:border-primary',
+      'group flex items-center gap-2.5 max-w-full bg-card border border-border rounded-lg px-2.5 py-2 cursor-pointer transition-colors hover:bg-muted/40 hover:border-primary/40',
+      starred && 'border-accent/40',
     )}
     title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
     <CompanyAvatar company={company} size="xs" />
     {starred && <Star className="h-3 w-3 text-accent fill-accent shrink-0" aria-label="Compte prioritaire" />}
-    <span className="flex flex-col items-start leading-tight">
-      <span className="text-sm font-semibold text-foreground group-hover:text-primary">
+    <span className="flex min-w-0 flex-col items-start leading-tight">
+      <span className="max-w-[12rem] truncate font-display text-sm font-semibold text-foreground group-hover:text-primary">
         {nomExposant ?? company.company_name}
       </span>
       {nomExposant && nomExposant !== company.company_name && (
-        <span className="text-[10px] text-foreground/60">CRM : {company.company_name}</span>
+        <span className="max-w-[12rem] truncate text-[10px] text-foreground/60">CRM : {company.company_name}</span>
       )}
     </span>
-    {(relationship ?? 'a_qualifier') !== 'a_qualifier' ? (
-      <RelationshipBadge status={relationship!} className="ml-0.5" />
-    ) : (
-      <span className="ml-0.5 inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent whitespace-nowrap">
-        À qualifier
-      </span>
-    )}
+    <RelationshipBadge status={relationship ?? 'a_qualifier'} className="ml-0.5 shrink-0" />
     {stand && (
-      <span className="text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
+      <span className="shrink-0 text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
         {stand}
       </span>
     )}
     {needsReview && (
-      <span className="text-[10px] font-medium text-muted-foreground bg-muted border border-border px-1.5 py-0.5 rounded">
-        À vérifier
+      <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-accent whitespace-nowrap">
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" /> À vérifier
       </span>
     )}
     {/* Indicateur d'action : la puce ouvre la préparation de mission. */}
-    <span className="ml-0.5 flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+    <span className="ml-0.5 shrink-0 flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
       <span className="hidden sm:inline">Préparer</span>
       <ChevronRight className="h-3.5 w-3.5" />
     </span>
