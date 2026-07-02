@@ -1288,6 +1288,8 @@ const EventCard: React.FC<{
 const PastEventCard: React.FC<{
   group: EventGroup;
   onView: () => void;
+  getRel?: (company: Company) => RelationshipStatus;
+  onSetRel?: (company: Company, next: RelationshipStatus) => void;
   onCompanyClick: (
     c: Company,
     id_exposant: string,
@@ -1295,7 +1297,7 @@ const PastEventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, onView, onCompanyClick }) => {
+}> = ({ group, onView, getRel, onSetRel, onCompanyClick }) => {
   return (
     <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm transition-all bg-card">
       <div className="flex flex-col sm:flex-row">
@@ -1332,6 +1334,8 @@ const PastEventCard: React.FC<{
                   stand={stand}
                   nomExposant={nom_exposant}
                   needsReview={needs_review}
+                  relationship={getRel?.(company)}
+                  onSetRelationship={onSetRel ? (next) => onSetRel(company, next) : undefined}
                   onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
                 />
               ))}
