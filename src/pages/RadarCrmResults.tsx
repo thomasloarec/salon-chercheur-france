@@ -201,6 +201,9 @@ const RadarCrmResults: React.FC = () => {
   // Comptage des similaires par salon (à venir, > 0). Chargé une fois à l'ouverture
   // de l'onglet « Par salon » ; sert à n'afficher la section que s'il y a du contenu.
   const [similarCounts, setSimilarCounts] = useState<Record<string, number> | null>(null);
+  // ── Onboarding gamifié (RUN O1) — progression 4 missions ─────────────
+  const [onboarding, setOnboarding] = useState<RadarOnboardingProgress | null>(null);
+  const [onboardingLoading, setOnboardingLoading] = useState(true);
 
   const reloadAll = async () => {
     setActiveImportId(null);
