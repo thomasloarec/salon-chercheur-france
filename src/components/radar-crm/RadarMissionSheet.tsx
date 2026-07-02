@@ -79,6 +79,9 @@ const RadarMissionSheet: React.FC<{
   const [statusChanged, setStatusChanged] = useState(false);
   // Dernier statut pour lequel des suggestions ont été appliquées / chargées.
   const prevRelRef = useRef<RelationshipStatus>(relationship);
+  // Description société (résumé IA ou legacy) affichée sous l'en-tête.
+  const [description, setDescription] = useState<string | null>(null);
+
 
   // Charge la mission existante + le profil d'offre à l'ouverture, puis préremplit.
   useEffect(() => {
