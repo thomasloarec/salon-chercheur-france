@@ -120,7 +120,11 @@ const RadarMissionSheet: React.FC<{
             top_q2: (row.top_q2 as string) ?? '',
             top_q3: (row.top_q3 as string) ?? '',
           };
+          setDescription((row.description as string | null) ?? null);
+        } else {
+          setDescription(null);
         }
+
       }
 
       // Préremplissage : garde le travail existant, complète les champs vides via le moteur.
