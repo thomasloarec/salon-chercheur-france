@@ -626,6 +626,7 @@ const RadarMissionSheet: React.FC<{
             </>
           )}
         </div>
+        </div>
 
         <SheetFooter className="px-5 py-4 border-t bg-muted/20">
           <Button onClick={handleSave} disabled={saving || loading} className="w-full">
