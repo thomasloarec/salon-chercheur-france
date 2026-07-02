@@ -1293,6 +1293,9 @@ const EventCard: React.FC<{
 }> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, onDebrief, similarCount = 0, onSimilarKept, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
+  // Phase du salon (avant / pendant / après) → pilote la visibilité et la
+  // mise en avant des actions « Mode salon » et « Débrief ».
+  const phase = eventPhase(group.date_debut, group.date_fin);
 
   return (
     <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm hover:border-border transition-all bg-card">
@@ -1377,12 +1380,27 @@ const EventCard: React.FC<{
               Voir l'événement <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
             <AgendaLotexpoButton eventId={group.event_id} importId={importId} />
-            {onModeSalon && (
-              <Button size="sm" variant="ghost" onClick={onModeSalon} className="text-muted-foreground hover:text-foreground">
-                <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
-              </Button>
+            {onModeSalon && showModeSalon(phase) && (
+              modeSalonIsHot(phase) ? (
+                <Button
+                  size="sm"
+                  onClick={onModeSalon}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onModeSalon}
+                  className="text-muted-foreground/70 hover:text-foreground"
+                >
+                  <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
+                </Button>
+              )
             )}
-            {onDebrief && (
+            {onDebrief && showDebrief(phase) && (
               <Button size="sm" variant="ghost" onClick={onDebrief} className="text-muted-foreground hover:text-foreground">
                 <ClipboardList className="h-3.5 w-3.5 mr-1" /> Débrief
               </Button>
