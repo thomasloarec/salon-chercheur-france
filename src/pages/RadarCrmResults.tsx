@@ -1259,6 +1259,7 @@ const EventCard: React.FC<{
                   needsReview={needs_review}
                   starred={getPref?.(company.id) === 'starred'}
                   relationship={getRel?.(company)}
+                  onSetRelationship={onSetRel ? (next) => onSetRel(company, next) : undefined}
                   onClick={() => onCompanyClick(company, id_exposant, stand, nom_exposant, needs_review)}
                 />
               ))}
