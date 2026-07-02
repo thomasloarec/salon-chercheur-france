@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
+import RadarOnboardingPanel, { type RadarOnboardingProgress } from '@/components/radar-crm/RadarOnboardingPanel';
 import SimilarExhibitorsSection from '@/components/radar-crm/SimilarExhibitorsSection';
 import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
