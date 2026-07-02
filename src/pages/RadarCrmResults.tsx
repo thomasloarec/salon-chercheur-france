@@ -262,6 +262,18 @@ const RadarCrmResults: React.FC = () => {
     })();
   }, [activeImportId, user]);
 
+  // Rafraîchissement léger du cockpit après un « Garder » (sans écran de chargement).
+  // Re-fetch get_my_radar_view + relations pour faire apparaître le compte gardé
+  // (prospect froid) dans « À suivre » et sur le salon, sans rechargement manuel.
+  const refreshCockpit = async () => {
+    if (!activeImportId || !user) return;
+    const { data, error: rpcError } = await supabase.rpc('get_my_radar_view', {
+      p_import_id: activeImportId ?? null,
+    });
+    if (!rpcError) setRadarView((data as unknown as RadarView) ?? null);
+    void loadRelationships();
+  };
+
   const status: RadarStatus = radarView?.status ?? 'none';
   const isLocked = status === 'trial_expired' || status === 'free';
   const isTrial = status === 'trial_active';
@@ -744,6 +756,7 @@ const RadarCrmResults: React.FC = () => {
                             onView={() => onClickEvent(g)}
                             onModeSalon={() => enterTerrain(g.event_id)}
                             similarCount={similarCounts?.[g.event_id] ?? 0}
+                            onSimilarKept={() => { void refreshCockpit(); }}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenMission(c, stand, g, nom_exposant)}
                           />
@@ -1213,6 +1226,7 @@ const EventCard: React.FC<{
   onView: () => void;
   onModeSalon?: () => void;
   similarCount?: number;
+  onSimilarKept?: () => void;
   onCompanyClick: (
     c: Company,
     id_exposant: string,
@@ -1220,7 +1234,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, similarCount = 0, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, similarCount = 0, onSimilarKept, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
 
@@ -1300,7 +1314,7 @@ const EventCard: React.FC<{
           </div>
 
           {/* Suggestions d'exposants similaires (lazy) */}
-          <SimilarExhibitorsSection eventId={group.event_id} initialCount={similarCount} />
+          <SimilarExhibitorsSection eventId={group.event_id} initialCount={similarCount} onKept={onSimilarKept} />
 
           <div className="flex flex-wrap gap-2 mt-auto">
             <Button size="sm" onClick={onView} disabled={!group.slug}>

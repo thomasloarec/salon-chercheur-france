@@ -33,10 +33,12 @@ const PAGE_SIZE = 5;
  *  - add_radar_company_from_exposant (garder)
  *  - set_radar_exposant_ignored (écarter)
  */
-const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: number }> = ({
-  eventId,
-  initialCount = 0,
-}) => {
+const SimilarExhibitorsSection: React.FC<{
+  eventId: string;
+  initialCount?: number;
+  /** Appelé après un « Garder » réussi pour rafraîchir le cockpit (get_my_radar_view). */
+  onKept?: () => void;
+}> = ({ eventId, initialCount = 0, onKept }) => {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,6 +47,10 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
   // `endReached` ne passe à true QUE lorsqu'un appel RPC renvoie une liste vide.
   // Il est totalement découplé des actions garder/écarter.
   const [endReached, setEndReached] = useState(false);
+  // Compteur restant (à trier). Part du total backend et décroît à chaque
+  // garder/écarter (optimiste). Coexiste avec `endReached` : les deux peuvent
+  // conclure « terminé ».
+  const [remaining, setRemaining] = useState(initialCount);
   // Tous les id_exposant déjà proposés (pour construire p_exclude).
   const seenRef = useRef<Set<string>>(new Set());
 
@@ -88,16 +94,22 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
     if (busy[s.id_exposant]) return;
     setBusy((b) => ({ ...b, [s.id_exposant]: true }));
     removeCard(s.id_exposant); // optimiste
+    setRemaining((n) => Math.max(0, n - 1)); // décrément optimiste
     try {
       const { error } = await supabase.rpc('add_radar_company_from_exposant', {
         p_id_exposant: s.id_exposant,
         p_event_id: eventId,
       });
       if (error) throw error;
-      toast({ title: 'Ajouté à vos comptes' });
+      toast({
+        title: 'Ajouté à vos comptes en prospect froid',
+        description: 'Visible dans « À suivre » et sur ce salon.',
+      });
+      onKept?.();
     } catch {
       toast({ title: "Échec de l'ajout", variant: 'destructive' });
       setItems((prev) => [s, ...prev]); // rollback
+      setRemaining((n) => n + 1); // rollback
     } finally {
       setBusy((b) => ({ ...b, [s.id_exposant]: false }));
     }
@@ -107,20 +119,24 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
     if (busy[s.id_exposant]) return;
     setBusy((b) => ({ ...b, [s.id_exposant]: true }));
     removeCard(s.id_exposant); // optimiste
+    setRemaining((n) => Math.max(0, n - 1)); // décrément optimiste
     try {
       const { error } = await supabase.rpc('set_radar_exposant_ignored', {
         p_id_exposant: s.id_exposant,
       });
       if (error) throw error;
+      toast({ title: 'Retiré des suggestions' });
     } catch {
       toast({ title: "Échec de l'action", variant: 'destructive' });
       setItems((prev) => [s, ...prev]); // rollback
+      setRemaining((n) => n + 1); // rollback
     } finally {
       setBusy((b) => ({ ...b, [s.id_exposant]: false }));
     }
   };
 
-  const isEmpty = loaded && items.length === 0;
+  // « Terminé » : soit le backend n'a plus rien renvoyé, soit le compteur est à 0.
+  const finished = endReached || remaining <= 0;
 
   // Gating : n'afficher la section que si le comptage backend est > 0.
   if (!(typeof initialCount === 'number' && initialCount > 0)) return null;
@@ -139,7 +155,9 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
           <span className="flex items-center gap-2 min-w-0">
             <Sparkles className="h-4 w-4 shrink-0 text-accent" />
             <span className="truncate">
-              Découvrir {initialCount} autre{initialCount > 1 ? 's' : ''} exposant{initialCount > 1 ? 's' : ''} à potentiel
+              {remaining > 0
+                ? `Découvrir ${remaining} autre${remaining > 1 ? 's' : ''} exposant${remaining > 1 ? 's' : ''} à potentiel`
+                : 'Terminé pour ce salon'}
             </span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -151,9 +169,9 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
           <div className="flex items-center gap-2 px-1 py-3 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Recherche d'exposants similaires…
           </div>
-        ) : isEmpty && endReached ? (
+        ) : items.length === 0 && finished ? (
           <p className="px-1 py-2 text-sm text-muted-foreground">
-            Aucun exposant similaire détecté pour vos comptes sur ce salon.
+            Terminé pour ce salon.
           </p>
         ) : (
           <div className="space-y-2.5">
@@ -215,10 +233,10 @@ const SimilarExhibitorsSection: React.FC<{ eventId: string; initialCount?: numbe
               </div>
             ))}
 
-            {endReached ? (
+            {finished ? (
               items.length > 0 && (
                 <p className="px-1 py-1 text-xs text-muted-foreground">
-                  Plus d'autres suggestions pour ce salon.
+                  Terminé pour ce salon.
                 </p>
               )
             ) : (
