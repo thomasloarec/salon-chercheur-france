@@ -448,6 +448,28 @@ const RadarCrmTerrainInner: React.FC = () => {
     });
   };
 
+  /** Ouvre le Sheet mission pour un compte identifié par son id (compte ajouté ou déjà présent). */
+  const openMissionById = (companyId: string, name: string) => {
+    if (!eventId) return;
+    const c = (payload?.companies ?? []).find((x) => x.crm_company_id === companyId);
+    if (c) {
+      openMission(c);
+      return;
+    }
+    void trackRadarEvent('radar_mission_opened', { eventId, source: 'salon_mode' });
+    setMission({
+      companyId,
+      target: {
+        companyId,
+        companyName: name,
+        nomExposant: name,
+        stand: null,
+        eventId,
+        eventName,
+      },
+    });
+  };
+
   const activeCompany = mission
     ? (payload?.companies ?? []).find((c) => c.crm_company_id === mission.companyId) ?? null
     : null;
