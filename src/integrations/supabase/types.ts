@@ -6062,6 +6062,10 @@ export type Database = {
         Returns: Json
       }
       _recon_norm_domain: { Args: { p_val: string }; Returns: string }
+      add_radar_company_from_exposant: {
+        Args: { p_event_id: string; p_id_exposant: string }
+        Returns: string
+      }
       add_radar_mission_note: {
         Args: { p_body: string; p_crm_company_id: string; p_event_id: string }
         Returns: string
@@ -6723,6 +6727,10 @@ export type Database = {
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
       get_radar_salon_missions: { Args: { p_event_id: string }; Returns: Json }
+      get_radar_salon_similar: {
+        Args: { p_event_id: string; p_exclude?: string[]; p_limit?: number }
+        Returns: Json
+      }
       get_top_novelties_per_event: {
         Args: never
         Returns: {
@@ -7048,6 +7056,10 @@ export type Database = {
       set_radar_company_relationship: {
         Args: { p_crm_company_id: string; p_status: string }
         Returns: string
+      }
+      set_radar_exposant_ignored: {
+        Args: { p_id_exposant: string }
+        Returns: boolean
       }
       set_radar_mission_task_done: {
         Args: { p_done: boolean; p_task_id: string }

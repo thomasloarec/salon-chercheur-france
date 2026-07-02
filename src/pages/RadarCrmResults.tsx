@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
+import SimilarExhibitorsSection from '@/components/radar-crm/SimilarExhibitorsSection';
 import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
   companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP, triggerClassFor,
@@ -1276,6 +1277,9 @@ const EventCard: React.FC<{
               ))}
             </div>
           </div>
+
+          {/* Suggestions d'exposants similaires (lazy) */}
+          <SimilarExhibitorsSection eventId={group.event_id} />
 
           <div className="flex flex-wrap gap-2 mt-auto">
             <Button size="sm" onClick={onView} disabled={!group.slug}>
