@@ -364,76 +364,77 @@ const RadarCrmTerrain: React.FC = () => {
                     <MapPin className="h-3.5 w-3.5" /> {ev.ville}
                   </span>
                 )}
-                <span className="font-medium text-foreground">
-                  {companies.length} entreprise{companies.length > 1 ? 's' : ''} à voir
-                </span>
               </p>
+              {totalCount > 0 && (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                  <span>{seenCount} vus</span>
+                  <span className="text-muted-foreground font-normal">·</span>
+                  <span className={cn(toSeeCount > 0 ? 'text-foreground' : 'text-muted-foreground')}>
+                    {toSeeCount} à voir
+                  </span>
+                </div>
+              )}
             </div>
 
-            {companies.length === 0 ? (
+            {totalCount === 0 ? (
               <div className="text-center py-16 text-sm text-muted-foreground">
                 Aucune entreprise de votre CRM détectée sur ce salon.
               </div>
             ) : (
-              <ul className="space-y-3">
-                {companies.map((c) => {
-                  const noteCount = Array.isArray(c.notes) ? c.notes.length : 0;
-                  const taskCount = Array.isArray(c.tasks)
-                    ? c.tasks.filter((t) => !t?.done).length
-                    : 0;
-                  const starred = c.pref_status === 'starred';
-                  const name = c.nom_exposant ?? c.company_name ?? 'Entreprise';
-                  return (
-                    <li key={c.crm_company_id}>
-                      <button
-                        type="button"
-                        onClick={() => openMission(c)}
-                        className={cn(
-                          'group w-full text-left rounded-xl border bg-card p-4 md:p-5 transition-colors',
-                          'hover:bg-secondary/40 active:bg-secondary/60',
-                          starred ? 'border-accent/50' : 'border-border/60',
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          {starred && (
-                            <Star className="h-5 w-5 text-accent fill-accent shrink-0 mt-0.5" aria-label="Compte prioritaire" />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p
-                              className="font-display text-lg md:text-xl font-semibold text-foreground leading-snug truncate"
-                              title={name}
-                            >
-                              {name}
-                            </p>
-                            <p className="text-sm text-foreground/70 mt-1 flex items-center gap-1">
-                              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                              {standLabelFor(c.stands)}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
-                              <RelBadge status={getRel(c)} />
-                              {(noteCount > 0 || taskCount > 0) && (
-                                <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  {noteCount > 0 && (
-                                    <span className="flex items-center gap-1">
-                                      <StickyNote className="h-3.5 w-3.5" /> {noteCount} note{noteCount > 1 ? 's' : ''}
-                                    </span>
-                                  )}
-                                  {taskCount > 0 && (
-                                    <span className="flex items-center gap-1">
-                                      <CheckSquare className="h-3.5 w-3.5" /> {taskCount} tâche{taskCount > 1 ? 's' : ''}
-                                    </span>
-                                  )}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground/50 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="space-y-3">
+                <ul className="space-y-3">
+                  {toSee.map((c) => (
+                    <TerrainRow
+                      key={c.crm_company_id}
+                      company={c}
+                      visited={false}
+                      relationship={getRel(c)}
+                      noteCount={noteCountFor(c)}
+                      noteOpen={noteOpenFor === c.crm_company_id}
+                      noteText={noteText}
+                      savingNote={savingNote}
+                      onOpenMission={() => openMission(c)}
+                      onToggleVisited={() => void toggleVisited(c)}
+                      onOpenNote={() => openNote(c)}
+                      onCloseNote={closeNote}
+                      onChangeNote={setNoteText}
+                      onSubmitNote={() => void submitNote(c)}
+                    />
+                  ))}
+                </ul>
+
+                {seen.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-3 pt-4 pb-1">
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Déjà vus ({seenCount})
+                      </span>
+                      <span className="h-px flex-1 bg-border" />
+                    </div>
+                    <ul className="space-y-3">
+                      {seen.map((c) => (
+                        <TerrainRow
+                          key={c.crm_company_id}
+                          company={c}
+                          visited
+                          relationship={getRel(c)}
+                          noteCount={noteCountFor(c)}
+                          noteOpen={noteOpenFor === c.crm_company_id}
+                          noteText={noteText}
+                          savingNote={savingNote}
+                          onOpenMission={() => openMission(c)}
+                          onToggleVisited={() => void toggleVisited(c)}
+                          onOpenNote={() => openNote(c)}
+                          onCloseNote={closeNote}
+                          onChangeNote={setNoteText}
+                          onSubmitNote={() => void submitNote(c)}
+                        />
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
             )}
           </>
         )}
