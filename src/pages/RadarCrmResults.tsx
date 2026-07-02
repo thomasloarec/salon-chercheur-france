@@ -720,6 +720,7 @@ const RadarCrmResults: React.FC = () => {
                             importId={activeImportId}
                             getPref={getPref}
                             getRel={getRel}
+                            onSetRel={setRel}
                             onView={() => onClickEvent(g)}
                             onModeSalon={() => enterTerrain(g.event_id)}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
