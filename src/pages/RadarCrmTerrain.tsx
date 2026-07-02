@@ -533,13 +533,22 @@ const RadarCrmTerrainInner: React.FC = () => {
                 )}
               </p>
               {totalCount > 0 && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
-                  <Check className="h-4 w-4 text-emerald-600" />
-                  <span>{seenCount} vus</span>
-                  <span className="text-muted-foreground font-normal">·</span>
-                  <span className={cn(toSeeCount > 0 ? 'text-foreground' : 'text-muted-foreground')}>
-                    {toSeeCount} à voir
-                  </span>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
+                    <Check className="h-4 w-4 text-emerald-600" />
+                    <span>{seenCount} vus</span>
+                    <span className="text-muted-foreground font-normal">·</span>
+                    <span className={cn(toSeeCount > 0 ? 'text-foreground' : 'text-muted-foreground')}>
+                      {toSeeCount} à voir
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
+                    className="gap-2 min-h-[44px]"
+                  >
+                    <ClipboardList className="h-4 w-4" /> Débrief du salon
+                  </Button>
                 </div>
               )}
             </div>
