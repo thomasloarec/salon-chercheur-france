@@ -745,6 +745,16 @@ const RadarCrmResults: React.FC = () => {
                 <OfferProfileNudge onOpenSettings={() => setSettingsOpen(true)} />
               )}
 
+              {/* Panneau d'onboarding gamifié — 4 missions, au-dessus des onglets */}
+              <RadarOnboardingPanel
+                progress={onboarding}
+                loading={onboardingLoading}
+                captureEventId={onboardingCaptureEventId}
+                onGoCompanies={() => setActiveTab('companies')}
+                onPrepareEvent={onPrepareEvent}
+                onEnterTerrain={enterTerrain}
+              />
+
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="flex w-full max-w-full h-auto justify-start flex-nowrap gap-1 overflow-x-auto no-scrollbar bg-card border p-1">
                   <TabsTrigger value="companies" className="shrink-0 whitespace-nowrap px-3 py-2 text-sm">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
