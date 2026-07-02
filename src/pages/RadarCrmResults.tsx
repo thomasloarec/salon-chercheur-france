@@ -1398,8 +1398,9 @@ const CompanyAccountCard: React.FC<{
         <div key={g.event_id} className="flex items-stretch gap-1.5">
           <button
             type="button"
-            onClick={() => onOpenMission(g)}
-            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-secondary/40 hover:bg-secondary/70 transition-colors"
+            onClick={() => onClickEvent(g)}
+            disabled={!g.slug}
+            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-secondary/40 hover:bg-secondary/70 transition-colors disabled:opacity-60"
           >
             {rowInner}
           </button>
