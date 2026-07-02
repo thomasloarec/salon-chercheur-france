@@ -1,35 +1,47 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Loader2, MapPin, Plus, Building2 } from 'lucide-react';
+import { Search, Loader2, MapPin, Plus, Building2, CornerDownRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-interface ExposantResult {
+/** Un de tes comptes déjà présent sur ce salon. */
+interface InListResult {
+  type: 'in_list';
+  crm_company_id: string;
+  nom: string | null;
+}
+
+/** Exposant officiel à ajouter. */
+interface AddableResult {
+  type: 'addable';
   id_exposant: string;
-  nom_exposant: string | null;
+  nom: string | null;
   website: string | null;
   normalized_domain: string | null;
   stands: string[] | null;
   secteur: string | null;
-  description: string | null;
 }
+
+type SearchResult = InListResult | AddableResult;
 
 interface SearchPayload {
   query?: string;
-  results?: ExposantResult[];
+  results?: SearchResult[];
 }
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventId: string;
-  /** Appelé après un ajout réussi (officiel ou manuel) pour rafraîchir la liste terrain. */
-  onAdded: () => void;
+  /** Appelé après un ajout réussi (officiel ou manuel) : rafraîchit + ouvre la mission. */
+  onAddedCompany: (crmCompanyId: string, name: string) => void;
+  /** Appelé au tap sur un compte déjà présent : ouvre sa mission existante. */
+  onOpenExisting: (crmCompanyId: string, name: string) => void;
 }
 
 const standLabel = (stands: string[] | null): string | null => {
@@ -37,11 +49,13 @@ const standLabel = (stands: string[] | null): string | null => {
   return list.length ? `Stand ${list.join(', ')}` : null;
 };
 
-const RadarTerrainAddCompanySheet: React.FC<Props> = ({ open, onOpenChange, eventId, onAdded }) => {
+const RadarTerrainAddCompanySheet: React.FC<Props> = ({
+  open, onOpenChange, eventId, onAddedCompany, onOpenExisting,
+}) => {
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   const [searching, setSearching] = useState(false);
-  const [results, setResults] = useState<ExposantResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [addingId, setAddingId] = useState<string | null>(null);
 
   // Mini-formulaire création hors liste.
@@ -105,23 +119,26 @@ const RadarTerrainAddCompanySheet: React.FC<Props> = ({ open, onOpenChange, even
     };
   }, [debounced, eventId]);
 
-  const finish = useCallback(
-    (name: string) => {
-      toast({ title: `${name} ajoutée — prospect froid` });
-      onOpenChange(false);
-      onAdded();
-    },
-    [onAdded, onOpenChange],
-  );
+  const finishAdded = (crmCompanyId: string, name: string) => {
+    toast({ title: `${name} ajoutée — prospect froid` });
+    onOpenChange(false);
+    onAddedCompany(crmCompanyId, name);
+  };
 
-  const addOfficial = async (r: ExposantResult) => {
+  const openExisting = (r: InListResult) => {
+    const name = r.nom ?? 'Entreprise';
+    onOpenChange(false);
+    onOpenExisting(r.crm_company_id, name);
+  };
+
+  const addOfficial = async (r: AddableResult) => {
     if (addingId) return;
     setAddingId(r.id_exposant);
-    const { error } = await supabase.rpc('add_radar_company_from_exposant', {
+    const { data, error } = await supabase.rpc('add_radar_company_from_exposant', {
       p_id_exposant: r.id_exposant,
       p_event_id: eventId,
     });
-    if (error) {
+    if (error || !data) {
       console.error('[RadarCRM] add_radar_company_from_exposant failed:', error);
       setAddingId(null);
       toast({
@@ -131,7 +148,7 @@ const RadarTerrainAddCompanySheet: React.FC<Props> = ({ open, onOpenChange, even
       });
       return;
     }
-    finish(r.nom_exposant ?? 'Entreprise');
+    finishAdded(data as unknown as string, r.nom ?? 'Entreprise');
   };
 
   const createManual = async () => {
@@ -139,13 +156,13 @@ const RadarTerrainAddCompanySheet: React.FC<Props> = ({ open, onOpenChange, even
     if (!name || creating) return;
     setCreating(true);
     const website = createWebsite.trim();
-    const { error } = await supabase.rpc('add_radar_manual_company', {
+    const { data, error } = await supabase.rpc('add_radar_manual_company', {
       p_event_id: eventId,
       p_name: name,
       ...(website ? { p_website: website } : {}),
     });
     setCreating(false);
-    if (error) {
+    if (error || !data) {
       console.error('[RadarCRM] add_radar_manual_company failed:', error);
       toast({
         title: 'Création impossible',
@@ -154,11 +171,15 @@ const RadarTerrainAddCompanySheet: React.FC<Props> = ({ open, onOpenChange, even
       });
       return;
     }
-    finish(name);
+    finishAdded(data as unknown as string, name);
   };
 
   const showCreateEntry = query.trim().length >= 2;
   const typedName = query.trim();
+
+  const inList = results.filter((r): r is InListResult => r.type === 'in_list');
+  const addable = results.filter((r): r is AddableResult => r.type === 'addable');
+  const hasResults = inList.length > 0 || addable.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -190,47 +211,89 @@ const RadarTerrainAddCompanySheet: React.FC<Props> = ({ open, onOpenChange, even
             <div className="flex items-center justify-center py-10 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
-          ) : results.length > 0 ? (
-            <ul className="space-y-2">
-              {results.map((r) => {
-                const sLabel = standLabel(r.stands);
-                const sub = [r.secteur, r.description].map((s) => (s ?? '').trim()).filter(Boolean).join(' · ');
-                const busy = addingId === r.id_exposant;
-                return (
-                  <li key={r.id_exposant}>
-                    <button
-                      type="button"
-                      disabled={!!addingId}
-                      onClick={() => void addOfficial(r)}
-                      className={cn(
-                        'w-full text-left rounded-xl border border-border/60 bg-card p-4 min-h-[44px]',
-                        'hover:bg-secondary/40 active:bg-secondary/60 transition-colors',
-                        'disabled:opacity-60 flex items-start gap-3',
-                      )}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-foreground leading-snug truncate">
-                          {r.nom_exposant ?? 'Entreprise'}
-                        </p>
-                        {sLabel && (
-                          <p className="text-sm text-foreground/70 mt-0.5 flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> {sLabel}
-                          </p>
-                        )}
-                        {sub && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{sub}</p>
-                        )}
-                      </div>
-                      {busy ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-accent shrink-0 mt-0.5" />
-                      ) : (
-                        <Plus className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+          ) : hasResults ? (
+            <div className="space-y-5">
+              {inList.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Dans votre liste
+                  </p>
+                  <ul className="space-y-2">
+                    {inList.map((r) => (
+                      <li key={r.crm_company_id}>
+                        <button
+                          type="button"
+                          onClick={() => openExisting(r)}
+                          className={cn(
+                            'w-full text-left rounded-xl border border-border/60 bg-card p-4 min-h-[44px]',
+                            'hover:bg-secondary/40 active:bg-secondary/60 transition-colors',
+                            'flex items-center gap-3',
+                          )}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-foreground leading-snug truncate">
+                              {r.nom ?? 'Entreprise'}
+                            </p>
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                              déjà dans votre liste
+                            </span>
+                          </div>
+                          <CornerDownRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {addable.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    À ajouter
+                  </p>
+                  <ul className="space-y-2">
+                    {addable.map((r) => {
+                      const sLabel = standLabel(r.stands);
+                      const sub = (r.secteur ?? '').trim();
+                      const busy = addingId === r.id_exposant;
+                      return (
+                        <li key={r.id_exposant}>
+                          <button
+                            type="button"
+                            disabled={!!addingId}
+                            onClick={() => void addOfficial(r)}
+                            className={cn(
+                              'w-full text-left rounded-xl border border-border/60 bg-card p-4 min-h-[44px]',
+                              'hover:bg-secondary/40 active:bg-secondary/60 transition-colors',
+                              'disabled:opacity-60 flex items-start gap-3',
+                            )}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-foreground leading-snug truncate">
+                                {r.nom ?? 'Entreprise'}
+                              </p>
+                              {sLabel && (
+                                <p className="text-sm text-foreground/70 mt-0.5 flex items-center gap-1">
+                                  <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> {sLabel}
+                                </p>
+                              )}
+                              {sub && (
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{sub}</p>
+                              )}
+                            </div>
+                            {busy ? (
+                              <Loader2 className="h-5 w-5 animate-spin text-accent shrink-0 mt-0.5" />
+                            ) : (
+                              <Plus className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="text-center py-8 text-sm text-muted-foreground">
               Aucun exposant trouvé pour « {typedName} ».
