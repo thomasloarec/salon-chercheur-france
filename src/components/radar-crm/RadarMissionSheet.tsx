@@ -87,6 +87,17 @@ const fmtDue = (iso: string | null | undefined) => {
   return format(d, 'd MMM yyyy', { locale: fr });
 };
 
+/** Plage de dates lisible fr : « 12 – 14 mars 2026 » (niveau salon). */
+const fmtRange = (start?: string | null, end?: string | null) => {
+  if (!start) return '';
+  const s = new Date(start);
+  if (Number.isNaN(s.getTime())) return '';
+  if (!end || end === start) return format(s, 'd MMM yyyy', { locale: fr });
+  const e = new Date(end);
+  if (Number.isNaN(e.getTime())) return format(s, 'd MMM yyyy', { locale: fr });
+  return `${format(s, 'd MMM', { locale: fr })} – ${format(e, 'd MMM yyyy', { locale: fr })}`;
+};
+
 /** Statut relationnel — point 8px + libellé neutre (doctrine visuelle Radar CRM). */
 const RelBadge: React.FC<{ status: RelationshipStatus }> = ({ status }) => {
   const meta = RELATIONSHIP_META[status];
