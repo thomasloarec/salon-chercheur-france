@@ -1300,7 +1300,7 @@ const EventCard: React.FC<{
           </div>
 
           {/* Suggestions d'exposants similaires (lazy) */}
-          <SimilarExhibitorsSection eventId={group.event_id} />
+          <SimilarExhibitorsSection eventId={group.event_id} initialCount={similarCount} />
 
           <div className="flex flex-wrap gap-2 mt-auto">
             <Button size="sm" onClick={onView} disabled={!group.slug}>
