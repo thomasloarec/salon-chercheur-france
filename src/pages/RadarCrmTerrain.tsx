@@ -585,6 +585,27 @@ const RadarCrmTerrainInner: React.FC = () => {
         )}
       </main>
 
+      {/* FAB — ajouter une entreprise rencontrée (atteignable au pouce) */}
+      {!loading && !error && eventId && (
+        <Button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          className="fixed bottom-5 right-5 z-40 h-14 rounded-full gap-2 pl-5 pr-6 shadow-lg bg-accent text-accent-foreground hover:bg-accent/90"
+        >
+          <Plus className="h-5 w-5" />
+          <span className="font-semibold">Ajouter une entreprise</span>
+        </Button>
+      )}
+
+      {eventId && (
+        <RadarTerrainAddCompanySheet
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          eventId={eventId}
+          onAdded={() => void load()}
+        />
+      )}
+
       <RadarMissionSheet
         target={mission?.target ?? null}
         open={!!mission}
