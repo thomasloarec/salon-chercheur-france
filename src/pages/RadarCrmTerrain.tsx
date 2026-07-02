@@ -607,15 +607,21 @@ const RadarCrmTerrainInner: React.FC = () => {
         )}
       </main>
 
-      {/* FAB — ajouter une entreprise rencontrée (atteignable au pouce) */}
+      {/* FAB compact — ajouter une entreprise rencontrée (atteignable au pouce) */}
       {!loading && !error && eventId && (
         <Button
           type="button"
+          size="icon"
           onClick={() => setAddOpen(true)}
-          className="fixed bottom-5 right-5 z-40 h-14 rounded-full gap-2 pl-5 pr-6 shadow-lg bg-accent text-accent-foreground hover:bg-accent/90"
+          aria-label="Ajouter une entreprise"
+          className="fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90"
         >
-          <Plus className="h-5 w-5" />
-          <span className="font-semibold">Ajouter une entreprise</span>
+          <span className="relative inline-flex items-center justify-center">
+            <Building2 className="h-6 w-6" />
+            <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent-foreground text-accent">
+              <Plus className="h-3 w-3" strokeWidth={3} />
+            </span>
+          </span>
         </Button>
       )}
 
@@ -624,7 +630,11 @@ const RadarCrmTerrainInner: React.FC = () => {
           open={addOpen}
           onOpenChange={setAddOpen}
           eventId={eventId}
-          onAdded={() => void load()}
+          onAddedCompany={(id, name) => {
+            void load();
+            openMissionById(id, name);
+          }}
+          onOpenExisting={(id, name) => openMissionById(id, name)}
         />
       )}
 
