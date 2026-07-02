@@ -170,7 +170,19 @@ const RadarMissionSheet: React.FC<{
       if (missionsRes.error) {
         console.error('[RadarCRM] get_radar_salon_missions failed:', missionsRes.error);
       } else {
-        const payload = missionsRes.data as { companies?: Array<Record<string, unknown>> } | null;
+        const payload = missionsRes.data as {
+          event?: Record<string, unknown>;
+          companies?: Array<Record<string, unknown>>;
+        } | null;
+        const ev = payload?.event ?? null;
+        setEventDates(
+          ev
+            ? {
+                start: (ev.date_debut as string | null) ?? null,
+                end: (ev.date_fin as string | null) ?? null,
+              }
+            : null,
+        );
         const row = (payload?.companies ?? []).find(
           (c) => String(c.crm_company_id ?? '') === target.companyId,
         );
