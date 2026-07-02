@@ -673,10 +673,10 @@ const RadarCrmResults: React.FC = () => {
               )}
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="bg-card border h-auto max-w-full justify-start flex-nowrap gap-1 overflow-x-auto no-scrollbar">
-                  <TabsTrigger value="companies" className="shrink-0 whitespace-nowrap">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
-                  <TabsTrigger value="future" className="shrink-0 whitespace-nowrap">Par salon ({futureGroups.length})</TabsTrigger>
-                  <TabsTrigger value="past" className="shrink-0 whitespace-nowrap">
+                <TabsList className="flex w-full max-w-full h-auto justify-start flex-nowrap gap-1 overflow-x-auto no-scrollbar bg-card border p-1">
+                  <TabsTrigger value="companies" className="shrink-0 whitespace-nowrap px-3 py-2 text-sm">Comptes surveillés ({matchedCompanies.length})</TabsTrigger>
+                  <TabsTrigger value="future" className="shrink-0 whitespace-nowrap px-3 py-2 text-sm">Par salon ({futureGroups.length})</TabsTrigger>
+                  <TabsTrigger value="past" className="shrink-0 whitespace-nowrap px-3 py-2 text-sm">
                     <History className="h-3.5 w-3.5 mr-1" /> Historique ({pastGroups.length})
                   </TabsTrigger>
                 </TabsList>
