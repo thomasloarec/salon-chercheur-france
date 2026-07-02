@@ -504,6 +504,18 @@ const RadarCrmResults: React.FC = () => {
     navigate(`/radar-crm/terrain/${id}`);
   };
 
+  // CTA onboarding « Préparer » : bascule sur l'onglet « Par salon » et focalise
+  // le salon ciblé (deep-link eventId) pour le scroll automatique vers sa carte.
+  const onPrepareEvent = (eventId: string) => {
+    setActiveTab('future');
+    navigate(`/radar-crm/results?eventId=${encodeURIComponent(eventId)}`, { replace: true });
+  };
+
+  // Salon à privilégier pour le CTA « Capturer » : le prochain salon de
+  // l'onboarding, sinon le salon le plus imminent détecté dans le cockpit.
+  const onboardingCaptureEventId =
+    onboarding?.prepare_next?.event_id ?? nextEvent?.event_id ?? null;
+
   // Scroll to highlighted event once results are rendered.
   useEffect(() => {
     if (!highlightedEventId || loading) return;
