@@ -743,6 +743,7 @@ const RadarCrmResults: React.FC = () => {
                             onSetRel={setRel}
                             onView={() => onClickEvent(g)}
                             onModeSalon={() => enterTerrain(g.event_id)}
+                            similarCount={similarCounts?.[g.event_id] ?? 0}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenMission(c, stand, g, nom_exposant)}
                           />
