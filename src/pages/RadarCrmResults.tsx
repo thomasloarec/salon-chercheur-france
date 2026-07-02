@@ -968,7 +968,7 @@ const CompanyChip: React.FC<{
     type="button"
     onClick={onClick}
     className={cn(
-      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-3 py-1.5 transition-all hover:bg-primary/5',
+      'group flex items-center gap-2 bg-background border rounded-full pl-1 pr-2.5 py-1.5 cursor-pointer transition-all hover:bg-primary/5 hover:shadow-sm',
       starred && 'border-accent/50 bg-secondary/50',
       needsReview ? 'border-border hover:border-primary' : 'border-border hover:border-primary',
     )}
@@ -984,8 +984,12 @@ const CompanyChip: React.FC<{
         <span className="text-[10px] text-foreground/60">CRM : {company.company_name}</span>
       )}
     </span>
-    {relationship && relationship !== 'a_qualifier' && (
-      <RelationshipBadge status={relationship} className="ml-0.5" />
+    {(relationship ?? 'a_qualifier') !== 'a_qualifier' ? (
+      <RelationshipBadge status={relationship!} className="ml-0.5" />
+    ) : (
+      <span className="ml-0.5 inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent whitespace-nowrap">
+        À qualifier
+      </span>
     )}
     {stand && (
       <span className="text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
@@ -997,6 +1001,11 @@ const CompanyChip: React.FC<{
         À vérifier
       </span>
     )}
+    {/* Indicateur d'action : la puce ouvre la préparation de mission. */}
+    <span className="ml-0.5 flex items-center gap-0.5 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+      <span className="hidden sm:inline">Préparer</span>
+      <ChevronRight className="h-3.5 w-3.5" />
+    </span>
   </button>
 );
 
