@@ -208,18 +208,84 @@ const RadarCrmTerrain: React.FC = () => {
     }
   };
 
-  // Tri : favoris (starred) d'abord, puis alphabétique sur le nom affiché.
-  const companies = useMemo(() => {
-    const list = [...(payload?.companies ?? [])];
-    const displayName = (c: SalonMissionCompany) =>
-      (c.nom_exposant ?? c.company_name ?? '').toLocaleLowerCase('fr');
-    return list.sort((a, b) => {
-      const sa = a.pref_status === 'starred' ? 0 : 1;
-      const sb = b.pref_status === 'starred' ? 0 : 1;
-      if (sa !== sb) return sa - sb;
-      return displayName(a).localeCompare(displayName(b), 'fr');
+  const allCompanies = payload?.companies ?? [];
+
+  const getVisited = (c: SalonMissionCompany): boolean =>
+    visitedOverrides[c.crm_company_id] ?? !!c.visited;
+
+  const noteCountFor = (c: SalonMissionCompany): number =>
+    (Array.isArray(c.notes) ? c.notes.length : 0) + (noteAdds[c.crm_company_id] ?? 0);
+
+  // Check-list de tournée : non visités (par stand) puis visités (par stand).
+  const { toSee, seen } = useMemo(() => {
+    const list = [...allCompanies];
+    const toSee = list.filter((c) => !getVisited(c)).sort(byStand);
+    const seen = list.filter((c) => getVisited(c)).sort(byStand);
+    return { toSee, seen };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allCompanies, visitedOverrides]);
+
+  const totalCount = allCompanies.length;
+  const seenCount = seen.length;
+  const toSeeCount = toSee.length;
+
+  const toggleVisited = async (c: SalonMissionCompany) => {
+    if (!eventId) return;
+    const id = c.crm_company_id;
+    const next = !getVisited(c);
+    setVisitedOverrides((o) => ({ ...o, [id]: next }));
+    const { error: rpcErr } = await supabase.rpc('set_radar_mission_visited', {
+      p_crm_company_id: id,
+      p_event_id: eventId,
+      p_visited: next,
     });
-  }, [payload]);
+    if (rpcErr) {
+      console.error('[RadarCRM] set_radar_mission_visited failed:', rpcErr);
+      setVisitedOverrides((o) => ({ ...o, [id]: !next }));
+      toast({
+        title: 'Action impossible',
+        description: 'Impossible de mettre à jour le statut « visité ».',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const openNote = (c: SalonMissionCompany) => {
+    setNoteOpenFor(c.crm_company_id);
+    setNoteText('');
+  };
+  const closeNote = () => {
+    setNoteOpenFor(null);
+    setNoteText('');
+  };
+
+  const submitNote = async (c: SalonMissionCompany) => {
+    if (!eventId) return;
+    const body = noteText.trim();
+    if (!body || savingNote) return;
+    const id = c.crm_company_id;
+    setSavingNote(true);
+    // Optimiste : incrémente le compteur et ferme le champ.
+    setNoteAdds((o) => ({ ...o, [id]: (o[id] ?? 0) + 1 }));
+    closeNote();
+    const { error: rpcErr } = await supabase.rpc('add_radar_mission_note', {
+      p_crm_company_id: id,
+      p_event_id: eventId,
+      p_body: body,
+    });
+    setSavingNote(false);
+    if (rpcErr) {
+      console.error('[RadarCRM] add_radar_mission_note failed:', rpcErr);
+      setNoteAdds((o) => ({ ...o, [id]: Math.max(0, (o[id] ?? 1) - 1) }));
+      toast({
+        title: 'Note non enregistrée',
+        description: 'Réessayez d’ajouter cette note.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'Note ajoutée' });
+    }
+  };
 
   const openMission = (c: SalonMissionCompany) => {
     if (!eventId) return;
