@@ -93,3 +93,14 @@ export const normalizeRelationship = (
   (s && (RELATIONSHIP_ORDER as string[]).includes(s))
     ? (s as RelationshipStatus)
     : DEFAULT_RELATIONSHIP;
+
+/**
+ * Classe du trigger du sélecteur selon la doctrine :
+ *  - « À qualifier » (action attendue) : liseré + très léger fond orangé, subtil.
+ *  - Les 5 statuts « réglés » : trigger neutre calme.
+ * Le libellé reste toujours en texte neutre lisible (aucun texte clair sur orange plein).
+ */
+export const triggerClassFor = (status: RelationshipStatus): string =>
+  status === 'a_qualifier'
+    ? 'border-accent/60 bg-accent/[0.06] hover:bg-accent/10'
+    : 'border-border bg-background';
