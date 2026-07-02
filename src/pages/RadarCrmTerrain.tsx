@@ -114,6 +114,15 @@ const RadarCrmTerrain: React.FC = () => {
   // Surcouche optimiste du statut relationnel (indexée par crm_company_id).
   const [relOverrides, setRelOverrides] = useState<Record<string, RelationshipStatus>>({});
 
+  // Surcouches optimistes terrain (indexées par crm_company_id).
+  const [visitedOverrides, setVisitedOverrides] = useState<Record<string, boolean>>({});
+  const [noteAdds, setNoteAdds] = useState<Record<string, number>>({});
+
+  // Capture éclair : ligne dont le mini-champ note est ouvert.
+  const [noteOpenFor, setNoteOpenFor] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
   // Auth gate — même comportement que le cockpit.
   useEffect(() => {
     if (!authLoading && !user) {
