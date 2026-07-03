@@ -230,32 +230,29 @@ const RadarOnboardingPanel: React.FC<{
   return (
     <Card className="shadow-none bg-card border-border/60">
       <CardContent className="py-4 px-5 space-y-3">
-        {/* En-tête : titre + % global + barre fine */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Rocket className="h-4 w-4" />
-              </div>
-              <h2 className="font-display text-sm font-semibold tracking-tight text-foreground truncate">
-                Bien démarrer avec Radar CRM
-              </h2>
+        {/* En-tête : titre + % global chiffré (sans barre globale) */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Rocket className="h-4 w-4" />
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="font-display text-sm font-semibold tabular-nums text-foreground">
-                {globalPct}%
-              </span>
-              <button
-                type="button"
-                onClick={toggle}
-                aria-label={expanded ? 'Masquer' : 'Afficher'}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground min-h-[44px] px-1"
-              >
-                {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-            </div>
+            <h2 className="font-display text-sm font-semibold tracking-tight text-foreground truncate">
+              Bien démarrer avec Radar CRM
+            </h2>
           </div>
-          <Progress value={globalPct} className="h-1" />
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="font-display text-sm font-semibold tabular-nums text-foreground">
+              {globalPct}%
+            </span>
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label={expanded ? 'Masquer' : 'Afficher'}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground min-h-[44px] px-1"
+            >
+              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         {expanded && shown && (
@@ -307,52 +304,56 @@ const RadarOnboardingPanel: React.FC<{
   );
 };
 
-/** Une mission, bande fine : icône, titre, sous-texte, mini-barre, CTA — faite = calme. */
+/** Une mission, bande fine : icône, titre, sous-texte, mini-barre, CTA — faite = calme.
+ *  Responsive : empile le CTA sous le contenu sur mobile (≥360px), ligne unique sur desktop. */
 const MissionRow: React.FC<{ mission: MissionDef }> = ({ mission }) => {
   const { icon, title, sub, done, na, progress, ctaLabel, onCta } = mission;
   const calm = done || na;
+  const showCta = !!ctaLabel && !!onCta && !done;
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-lg border p-2.5 transition-colors',
+        'flex flex-col gap-2 rounded-lg border p-2.5 transition-colors sm:flex-row sm:items-center sm:gap-3',
         done ? 'border-border/40 bg-muted/20 opacity-80' :
         na ? 'border-border/40 bg-muted/10' :
         'border-border/60 bg-background',
       )}
     >
-      <div
-        className={cn(
-          'h-9 w-9 rounded-lg flex items-center justify-center shrink-0',
-          calm ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary',
-        )}
-      >
-        {done ? <CheckCircle2 className="h-5 w-5" /> : icon}
-      </div>
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex items-center gap-2">
-          <h3
-            className={cn(
-              'font-display text-sm font-semibold leading-tight truncate',
-              calm ? 'text-foreground/60' : 'text-foreground',
+      <div className="flex items-start gap-3 min-w-0 flex-1">
+        <div
+          className={cn(
+            'h-9 w-9 rounded-lg flex items-center justify-center shrink-0',
+            calm ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary',
+          )}
+        >
+          {done ? <CheckCircle2 className="h-5 w-5" /> : icon}
+        </div>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <h3
+              className={cn(
+                'font-display text-sm font-semibold leading-tight truncate',
+                calm ? 'text-foreground/60' : 'text-foreground',
+              )}
+            >
+              {title}
+            </h3>
+            {done && (
+              <span className="text-[11px] font-medium text-muted-foreground shrink-0">✓ Fait</span>
             )}
-          >
-            {title}
-          </h3>
-          {done && (
-            <span className="text-[11px] font-medium text-muted-foreground shrink-0">✓ Fait</span>
+          </div>
+          <p className={cn('text-xs truncate', calm ? 'text-muted-foreground' : 'text-foreground/70')}>{sub}</p>
+          {progress != null && !done && (
+            <Progress value={progress} className="h-1" />
           )}
         </div>
-        <p className={cn('text-xs truncate', calm ? 'text-muted-foreground' : 'text-foreground/70')}>{sub}</p>
-        {progress != null && !done && (
-          <Progress value={progress} className="h-1" />
-        )}
       </div>
-      {ctaLabel && onCta && !done && (
+      {showCta && (
         <Button
           variant="outline"
           size="sm"
           onClick={onCta}
-          className="shrink-0 min-h-[44px] border-accent/40 text-accent hover:bg-accent/10 hover:text-accent"
+          className="w-full shrink-0 min-h-[44px] border-accent/40 text-accent hover:bg-accent/10 hover:text-accent sm:w-auto"
         >
           {ctaLabel}
         </Button>
