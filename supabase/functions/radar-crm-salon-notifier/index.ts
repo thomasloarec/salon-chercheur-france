@@ -200,9 +200,14 @@ function renderSalonEmail(args: {
   const body = escapeHtml(args.message).replace(/\n/g, '<br/>');
   const ctaUrl = args.ctaUrl;
   const unsubscribeUrl = args.unsubscribeUrl;
-  const preheader = args.type === 'radar_salon_live'
-    ? `${args.eventName} ouvre aujourd\u2019hui. Préparez vos rendez-vous.`
-    : `${args.eventName} est terminé. Débriefez et exportez vos contacts.`;
+  const preheaderByType: Record<SalonType, string> = {
+    radar_salon_live: `${args.eventName} ouvre aujourd\u2019hui. Préparez vos rendez-vous.`,
+    radar_salon_debrief: `${args.eventName} est terminé. Débriefez et exportez vos contacts.`,
+    radar_task_due: 'Une relance vous attend aujourd\u2019hui sur Radar CRM.',
+    radar_prep_reminder: `${args.eventName} approche. Préparez votre visite dès maintenant.`,
+    radar_hot_prospect: 'Un prospect chaud expose bientôt. Anticipez le rendez-vous.',
+  };
+  const preheader = preheaderByType[args.type];
 
   const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="color-scheme" content="light only" /><meta name="supported-color-schemes" content="light only" /><title>${escapeHtml(copy.subject)}</title>
 <style>
