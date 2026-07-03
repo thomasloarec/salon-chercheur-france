@@ -31,7 +31,13 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const SALON_TYPES = ['radar_salon_live', 'radar_salon_debrief'] as const;
+const SALON_TYPES = [
+  'radar_salon_live',
+  'radar_salon_debrief',
+  'radar_task_due',
+  'radar_prep_reminder',
+  'radar_hot_prospect',
+] as const;
 type SalonType = (typeof SALON_TYPES)[number];
 
 function jsonResp(body: unknown, status = 200) {
@@ -133,18 +139,44 @@ async function ensureUnsubscribeUrl(
 type SalonCopy = { subject: string; title: string; ctaLabel: string };
 
 function copyFor(type: SalonType, eventName: string): SalonCopy {
-  if (type === 'radar_salon_live') {
-    return {
-      subject: `${eventName} commence aujourd'hui`,
-      title: 'Votre salon commence aujourd\u2019hui',
-      ctaLabel: 'Entrer en Mode Salon',
-    };
+  switch (type) {
+    case 'radar_salon_live':
+      return {
+        subject: `${eventName} commence aujourd'hui`,
+        title: 'Votre salon commence aujourd\u2019hui',
+        ctaLabel: 'Entrer en Mode Salon',
+      };
+    case 'radar_salon_debrief':
+      return {
+        subject: `Débriefez ${eventName}`,
+        title: 'Votre salon est terminé',
+        ctaLabel: 'Voir le débrief',
+      };
+    case 'radar_task_due':
+      return {
+        subject: 'Une relance à faire aujourd\u2019hui',
+        title: 'Une relance à faire aujourd\u2019hui',
+        ctaLabel: 'Voir le compte',
+      };
+    case 'radar_prep_reminder':
+      return {
+        subject: `${eventName} dans 7 jours — préparez votre visite`,
+        title: `${eventName} dans 7 jours`,
+        ctaLabel: 'Préparer ma visite',
+      };
+    case 'radar_hot_prospect':
+      return {
+        subject: 'Un prospect chaud expose bientôt',
+        title: 'Un prospect chaud expose bientôt',
+        ctaLabel: 'Voir le salon',
+      };
+    default:
+      return {
+        subject: eventName,
+        title: eventName,
+        ctaLabel: 'Ouvrir Radar CRM',
+      };
   }
-  return {
-    subject: `Débriefez ${eventName}`,
-    title: 'Votre salon est terminé',
-    ctaLabel: 'Voir le débrief',
-  };
 }
 
 function renderSalonEmail(args: {
@@ -168,9 +200,14 @@ function renderSalonEmail(args: {
   const body = escapeHtml(args.message).replace(/\n/g, '<br/>');
   const ctaUrl = args.ctaUrl;
   const unsubscribeUrl = args.unsubscribeUrl;
-  const preheader = args.type === 'radar_salon_live'
-    ? `${args.eventName} ouvre aujourd\u2019hui. Préparez vos rendez-vous.`
-    : `${args.eventName} est terminé. Débriefez et exportez vos contacts.`;
+  const preheaderByType: Record<SalonType, string> = {
+    radar_salon_live: `${args.eventName} ouvre aujourd\u2019hui. Préparez vos rendez-vous.`,
+    radar_salon_debrief: `${args.eventName} est terminé. Débriefez et exportez vos contacts.`,
+    radar_task_due: 'Une relance vous attend aujourd\u2019hui sur Radar CRM.',
+    radar_prep_reminder: `${args.eventName} approche. Préparez votre visite dès maintenant.`,
+    radar_hot_prospect: 'Un prospect chaud expose bientôt. Anticipez le rendez-vous.',
+  };
+  const preheader = preheaderByType[args.type];
 
   const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="color-scheme" content="light only" /><meta name="supported-color-schemes" content="light only" /><title>${escapeHtml(copy.subject)}</title>
 <style>
