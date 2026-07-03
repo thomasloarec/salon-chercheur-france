@@ -25,7 +25,11 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
   // Optimized title: {{Nom de l'événement}} {{Année}} | Salon professionnel à {{Ville}} – Lotexpo
   // Max 60 chars, keyword first, brand suffix
   const eventYear = event.date_debut ? new Date(event.date_debut).getFullYear() : currentYear;
-  const baseTitle = `${event.nom_event} ${eventYear} | Salon professionnel à ${event.ville || 'France'} – Lotexpo`.slice(0, 60);
+  // Avoid duplicating the year when the event name already contains it
+  // (e.g. "SIDO 2026" would otherwise become "SIDO 2026 2026 | ...").
+  const nameHasYear = new RegExp(`\\b${eventYear}\\b`).test(event.nom_event || '');
+  const namePart = nameHasYear ? event.nom_event : `${event.nom_event} ${eventYear}`;
+  const baseTitle = `${namePart} | Salon professionnel à ${event.ville || 'France'} – Lotexpo`.slice(0, 60);
   const title = isEventPast ? `[Terminé] ${baseTitle}`.slice(0, 60) : baseTitle;
 
   // Optimized description: prefer generated meta if available, otherwise fallback
