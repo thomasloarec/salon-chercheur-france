@@ -6913,6 +6913,8 @@ export type Database = {
         Args: { p_domain: string; p_name: string }
         Returns: string
       }
+      radar_notify_salons_debrief: { Args: never; Returns: number }
+      radar_notify_salons_live: { Args: never; Returns: number }
       rebuild_event_duplicate_candidates: {
         Args: { p_only_future?: boolean }
         Returns: Json
