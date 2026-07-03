@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "lotexpo-mcp",
+      "version": "0.1.0",
+      "title": "Lotexpo MCP"
+    },
+    "tools": [
+      {
+        "name": "search_salons",
+        "title": "Search trade shows",
+        "description": "Search French professional trade shows (salons) listed on Lotexpo. Filter by keyword, sector label, or city. Returns upcoming and ongoing salons by default.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string"
+            },
+            "sector": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "includePast": {
+              "type": "boolean"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_salon",
+        "title": "Get trade show details",
+        "description": "Get the full public details of a single Lotexpo trade show (salon) by its slug.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "slug"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_sectors",
+        "title": "List trade show sectors",
+        "description": "List the business sectors that Lotexpo trade shows are classified under, with the number of upcoming salons per sector. Use the returned labels with search_salons.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_exhibitors",
+        "title": "Search exhibitors",
+        "description": "Search companies (exhibitors) referenced on Lotexpo by name. Returns approved, public exhibitor profiles.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "query"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
