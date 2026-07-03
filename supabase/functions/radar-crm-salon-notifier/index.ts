@@ -139,18 +139,44 @@ async function ensureUnsubscribeUrl(
 type SalonCopy = { subject: string; title: string; ctaLabel: string };
 
 function copyFor(type: SalonType, eventName: string): SalonCopy {
-  if (type === 'radar_salon_live') {
-    return {
-      subject: `${eventName} commence aujourd'hui`,
-      title: 'Votre salon commence aujourd\u2019hui',
-      ctaLabel: 'Entrer en Mode Salon',
-    };
+  switch (type) {
+    case 'radar_salon_live':
+      return {
+        subject: `${eventName} commence aujourd'hui`,
+        title: 'Votre salon commence aujourd\u2019hui',
+        ctaLabel: 'Entrer en Mode Salon',
+      };
+    case 'radar_salon_debrief':
+      return {
+        subject: `Débriefez ${eventName}`,
+        title: 'Votre salon est terminé',
+        ctaLabel: 'Voir le débrief',
+      };
+    case 'radar_task_due':
+      return {
+        subject: 'Une relance à faire aujourd\u2019hui',
+        title: 'Une relance à faire aujourd\u2019hui',
+        ctaLabel: 'Voir le compte',
+      };
+    case 'radar_prep_reminder':
+      return {
+        subject: `${eventName} dans 7 jours — préparez votre visite`,
+        title: `${eventName} dans 7 jours`,
+        ctaLabel: 'Préparer ma visite',
+      };
+    case 'radar_hot_prospect':
+      return {
+        subject: 'Un prospect chaud expose bientôt',
+        title: 'Un prospect chaud expose bientôt',
+        ctaLabel: 'Voir le salon',
+      };
+    default:
+      return {
+        subject: eventName,
+        title: eventName,
+        ctaLabel: 'Ouvrir Radar CRM',
+      };
   }
-  return {
-    subject: `Débriefez ${eventName}`,
-    title: 'Votre salon est terminé',
-    ctaLabel: 'Voir le débrief',
-  };
 }
 
 function renderSalonEmail(args: {
