@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 
 // Lazy, import-safe Supabase client factory. Never read env at module top level:
 // this module is evaluated at build time and on Edge Function cold start where
