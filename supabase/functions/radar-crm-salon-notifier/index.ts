@@ -31,7 +31,13 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const SALON_TYPES = ['radar_salon_live', 'radar_salon_debrief'] as const;
+const SALON_TYPES = [
+  'radar_salon_live',
+  'radar_salon_debrief',
+  'radar_task_due',
+  'radar_prep_reminder',
+  'radar_hot_prospect',
+] as const;
 type SalonType = (typeof SALON_TYPES)[number];
 
 function jsonResp(body: unknown, status = 200) {
