@@ -447,6 +447,8 @@ const RadarMissionSheet: React.FC<{
     setDirty(false);
     setSaveStatus('saved');
     void trackRadarEvent('radar_mission_saved', { eventId: target.eventId });
+    // Refetch métadonnées (ai_field_sources → indicateur « modifié ») sans écraser la frappe.
+    void loadRow({ overwriteFields: false });
   };
 
   // Auto-save débouncé (~900 ms) : uniquement sur modification réelle par l'utilisateur.
