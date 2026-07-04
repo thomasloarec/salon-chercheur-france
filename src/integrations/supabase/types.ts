@@ -4225,6 +4225,7 @@ export type Database = {
           id: string
           mission_id: string
           radar_account_id: string
+          source: string | null
         }
         Insert: {
           body: string
@@ -4233,6 +4234,7 @@ export type Database = {
           id?: string
           mission_id: string
           radar_account_id: string
+          source?: string | null
         }
         Update: {
           body?: string
@@ -4241,6 +4243,7 @@ export type Database = {
           id?: string
           mission_id?: string
           radar_account_id?: string
+          source?: string | null
         }
         Relationships: [
           {
@@ -4262,6 +4265,7 @@ export type Database = {
           id: string
           mission_id: string
           radar_account_id: string
+          source: string | null
           updated_at: string
         }
         Insert: {
@@ -4273,6 +4277,7 @@ export type Database = {
           id?: string
           mission_id: string
           radar_account_id: string
+          source?: string | null
           updated_at?: string
         }
         Update: {
@@ -4284,11 +4289,96 @@ export type Database = {
           id?: string
           mission_id?: string
           radar_account_id?: string
+          source?: string | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "radar_mission_tasks_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "radar_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radar_mission_voice_notes: {
+        Row: {
+          audio_duration_seconds: number | null
+          audio_mime_type: string
+          audio_storage_path: string
+          company_key: string | null
+          created_at: string
+          created_by: string | null
+          created_note_id: string | null
+          created_task_ids: string[] | null
+          deleted_audio_at: string | null
+          error_message: string | null
+          event_id: string | null
+          id: string
+          mission_id: string
+          processed_at: string | null
+          radar_account_id: string
+          status: string
+          structured_payload: Json | null
+          summary_note: string | null
+          transcript_raw: string | null
+          validated_at: string | null
+        }
+        Insert: {
+          audio_duration_seconds?: number | null
+          audio_mime_type: string
+          audio_storage_path: string
+          company_key?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_note_id?: string | null
+          created_task_ids?: string[] | null
+          deleted_audio_at?: string | null
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          mission_id: string
+          processed_at?: string | null
+          radar_account_id: string
+          status?: string
+          structured_payload?: Json | null
+          summary_note?: string | null
+          transcript_raw?: string | null
+          validated_at?: string | null
+        }
+        Update: {
+          audio_duration_seconds?: number | null
+          audio_mime_type?: string
+          audio_storage_path?: string
+          company_key?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_note_id?: string | null
+          created_task_ids?: string[] | null
+          deleted_audio_at?: string | null
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          mission_id?: string
+          processed_at?: string | null
+          radar_account_id?: string
+          status?: string
+          structured_payload?: Json | null
+          summary_note?: string | null
+          transcript_raw?: string | null
+          validated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_mission_voice_notes_created_note_id_fkey"
+            columns: ["created_note_id"]
+            isOneToOne: false
+            referencedRelation: "radar_mission_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radar_mission_voice_notes_mission_id_fkey"
             columns: ["mission_id"]
             isOneToOne: false
             referencedRelation: "radar_missions"
@@ -6512,6 +6602,17 @@ export type Database = {
         }
         Returns: Json
       }
+      create_radar_mission_voice_note: {
+        Args: {
+          p_audio_duration_seconds?: number
+          p_audio_mime_type: string
+          p_audio_storage_path: string
+          p_crm_company_id: string
+          p_event_id: string
+          p_id: string
+        }
+        Returns: string
+      }
       crm_backfill_match_review: { Args: never; Returns: Json }
       crm_compute_match_review: {
         Args: { p_crm_name: string; p_exhibitor_name: string }
@@ -7176,6 +7277,14 @@ export type Database = {
           p_target: string
         }
         Returns: string
+      }
+      validate_radar_voice_note: {
+        Args: {
+          p_checked_tasks?: Json
+          p_edited_summary: string
+          p_voice_note_id: string
+        }
+        Returns: Json
       }
       web_domain: { Args: { p_raw: string }; Returns: string }
     }
