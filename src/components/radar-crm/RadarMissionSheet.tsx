@@ -449,6 +449,38 @@ const RadarMissionSheet: React.FC<{
 
   const isTerrain = mode === 'terrain';
 
+  // Hiérarchie adaptative (terrain) : on se base sur l'AVANCEMENT (contenu CRM), pas le temps.
+  // Passer à true pour inclure « visité » comme second déclencheur.
+  const INCLUDE_VISITED_IN_CRM_SIGNAL = false;
+  const hasCrmContent =
+    notes.length > 0 || tasks.length > 0 ||
+    (INCLUDE_VISITED_IN_CRM_SIGNAL && visited);
+
+  // Indicateur d'auto-save : rendu uniquement quand il a du contenu (aucune bande résiduelle).
+  const autoSaveIndicator = saveStatus === 'idle' ? null : (
+    <div
+      className="flex items-center gap-1.5 text-xs"
+      style={{ color: '#04316d' }}
+      aria-live="polite"
+    >
+      {saveStatus === 'saving' && (
+        <>
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <span>Enregistrement…</span>
+        </>
+      )}
+      {saveStatus === 'saved' && (
+        <>
+          <Check className="h-3.5 w-3.5" />
+          <span>Enregistré</span>
+        </>
+      )}
+      {saveStatus === 'error' && (
+        <span className="text-muted-foreground">Non enregistré — nouvelle tentative…</span>
+      )}
+    </div>
+  );
+
   // ---- Blocs réutilisables (mêmes données/handlers dans les deux modes) ----
 
   const statusSelect = (
