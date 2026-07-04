@@ -12,6 +12,7 @@ const REL_STATUSES = [
   "prospect_froid", "ancien_client", "a_qualifier",
 ];
 const NEXT_STATUS = [...REL_STATUSES, "ignore", "add_crm"];
+const EXHIBITOR_SCALES = ["grand_groupe", "eti", "pme", "incertain"];
 
 type Status = string;
 
