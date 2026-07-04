@@ -238,6 +238,9 @@ const RadarMissionSheet: React.FC<{
         nonEmpty(dbFields.top_q1) || nonEmpty(dbFields.top_q2) || nonEmpty(dbFields.top_q3);
       setEdited(hasSaved);
       setStatusChanged(false);
+      // Ouverture / hydratation : on ne déclenche JAMAIS d'auto-save.
+      setDirty(false);
+      setSaveStatus('idle');
       setNoteDraft('');
       setTaskDraft('');
       setTaskDue(undefined);
