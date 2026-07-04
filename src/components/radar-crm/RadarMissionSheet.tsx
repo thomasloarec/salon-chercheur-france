@@ -133,7 +133,9 @@ const RadarMissionSheet: React.FC<{
   mode = 'prepa', visited = false, onToggleVisited,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  // Auto-save silencieux (façon Notion) : statut discret + drapeau « dirty ».
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [dirty, setDirty] = useState(false);
   const [fields, setFields] = useState<MissionFields>(EMPTY);
   const [offer, setOffer] = useState<OfferProfileInput | null>(null);
   const [offerEmpty, setOfferEmpty] = useState(false);
