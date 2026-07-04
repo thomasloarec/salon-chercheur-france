@@ -519,7 +519,7 @@ const RadarMissionSheet: React.FC<{
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
         Statut
       </span>
-      <Select value={relationship} onValueChange={(v) => onChangeRelationship(v as RelationshipStatus)}>
+      <Select value={relationship} onValueChange={(v) => { void handleRelationshipChange(v as RelationshipStatus); }}>
         <SelectTrigger
           className={`h-8 w-auto min-w-0 gap-1.5 rounded-md px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0 [&>span]:line-clamp-none ${triggerClassFor(relationship)}`}
         >
