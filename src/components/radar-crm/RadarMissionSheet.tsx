@@ -297,7 +297,8 @@ const RadarMissionSheet: React.FC<{
     let cancelled = false;
     setLoading(true);
     setEventDates(null);
-    setGenerating(false);
+    // Source de vérité de l'état « régénération en cours » : le verrou par crm_company_id.
+    setGenerating(missionGenInFlight.has(target.companyId));
     (async () => {
       const row = await loadRow({ overwriteFields: true });
       if (cancelled) return;
