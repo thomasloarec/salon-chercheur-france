@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
@@ -109,6 +109,18 @@ const EMPTY: MissionFields = {
 
 const nonEmpty = (v: string | null | undefined) => (v ?? '').trim().length > 0;
 
+/**
+ * Skeleton multi-lignes aux dimensions proches d'une zone de texte de mission.
+ * Sobre (doctrine chargement : pas d'accent orange), la dernière ligne est raccourcie.
+ */
+const LineSkeleton: React.FC<{ lines?: number }> = ({ lines = 2 }) => (
+  <div className="space-y-2" aria-hidden="true">
+    {Array.from({ length: lines }).map((_, i) => (
+      <Skeleton key={i} className={cn('h-4', i === lines - 1 ? 'w-4/5' : 'w-full')} />
+    ))}
+  </div>
+);
+
 /** Horodatage lisible fr : « 12 mars, 14:30 ». */
 const fmtStamp = (iso: string | null | undefined) => {
   if (!iso) return '';
@@ -177,6 +189,10 @@ const RadarMissionSheet: React.FC<{
   const [rawRelStatus, setRawRelStatus] = useState<string | null>(null);
   // Génération IA en cours (spinner localisé, non bloquant).
   const [generating, setGenerating] = useState(false);
+  // Régénération « force » en cours (« Tout régénérer ») → tous les champs sont remplacés.
+  const [regenForce, setRegenForce] = useState(false);
+  // Miroir synchrone de `generating` (pour détecter la fin d'un invoke lancé par une autre instance).
+  const generatingRef = useRef(false);
   // Confirmation avant d'écraser des champs édités manuellement.
   const [regenConfirm, setRegenConfirm] = useState(false);
   // Description société (résumé IA ou legacy) affichée sous l'en-tête.
@@ -251,6 +267,7 @@ const RadarMissionSheet: React.FC<{
     const cid = target.companyId;
     if (missionGenInFlight.has(cid)) return;
     missionGenInFlight.add(cid);
+    setRegenForce(!!force);
     setGenerating(true);
     try {
       const body: Record<string, unknown> = { crm_company_id: cid, event_id: target.eventId };
@@ -270,6 +287,7 @@ const RadarMissionSheet: React.FC<{
     } finally {
       missionGenInFlight.delete(cid);
       setGenerating(false);
+      setRegenForce(false);
     }
   };
 
@@ -279,7 +297,8 @@ const RadarMissionSheet: React.FC<{
     let cancelled = false;
     setLoading(true);
     setEventDates(null);
-    setGenerating(false);
+    // Source de vérité de l'état « régénération en cours » : le verrou par crm_company_id.
+    setGenerating(missionGenInFlight.has(target.companyId));
     (async () => {
       const row = await loadRow({ overwriteFields: true });
       if (cancelled) return;
@@ -297,6 +316,27 @@ const RadarMissionSheet: React.FC<{
       }
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, target?.companyId, target?.eventId]);
+
+  // Miroir synchrone de l'état de génération (lu par le poll ci-dessous).
+  useEffect(() => { generatingRef.current = generating; }, [generating]);
+
+  // Poll du verrou : détecte la fin d'un invoke (même lancé par une autre instance du Sheet)
+  // pour retirer les skeletons et réafficher depuis l'état persisté (jamais de skeleton bloqué).
+  useEffect(() => {
+    if (!open || !target) return;
+    const cid = target.companyId;
+    const id = window.setInterval(() => {
+      const inFlight = missionGenInFlight.has(cid);
+      if (inFlight === generatingRef.current) return;
+      if (!inFlight) {
+        // Régénération terminée ailleurs → refetch de l'état persisté (succès ou erreur).
+        void loadRow({ overwriteFields: true });
+      }
+      setGenerating(inFlight);
+    }, 400);
+    return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, target?.companyId, target?.eventId]);
 
@@ -558,13 +598,17 @@ const RadarMissionSheet: React.FC<{
       <Label htmlFor="mission-objective" className="text-sm font-semibold">
         Objectif de la visite{modifiedTag('objective')}
       </Label>
-      <Textarea
-        id="mission-objective"
-        value={fields.objective}
-        onChange={set('objective')}
-        rows={2}
-        className={cn('resize-none font-medium', big ? 'text-lg leading-relaxed' : 'text-base')}
-      />
+      {shouldSkeleton('objective') ? (
+        <LineSkeleton lines={2} />
+      ) : (
+        <Textarea
+          id="mission-objective"
+          value={fields.objective}
+          onChange={set('objective')}
+          rows={2}
+          className={cn('resize-none font-medium', big ? 'text-lg leading-relaxed' : 'text-base')}
+        />
+      )}
     </div>
   );
 
@@ -573,19 +617,34 @@ const RadarMissionSheet: React.FC<{
       <Label htmlFor="mission-opening" className="text-sm font-semibold">
         Phrase d'ouverture{modifiedTag('opening_line')}
       </Label>
-      <Textarea
-        id="mission-opening"
-        value={fields.opening_line}
-        onChange={set('opening_line')}
-        rows={big ? 4 : 3}
-        className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
-      />
+      {shouldSkeleton('opening_line') ? (
+        <LineSkeleton lines={3} />
+      ) : (
+        <Textarea
+          id="mission-opening"
+          value={fields.opening_line}
+          onChange={set('opening_line')}
+          rows={big ? 4 : 3}
+          className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
+        />
+      )}
     </div>
   );
 
   // Question 0 (orientation) — lecture seule (ai_meta), AVANT le TOP 3, ne compte pas dedans.
-  const q0Block = (big: boolean) =>
-    nonEmpty(aiMeta?.q0_role_check) ? (
+  const q0Block = (big: boolean) => {
+    // Q0 est toujours régénérée par l'IA (non éditable) → skeleton dès qu'une régénération tourne.
+    if (regenerating) {
+      return (
+        <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Question d'orientation · pour situer votre interlocuteur
+          </p>
+          <LineSkeleton lines={2} />
+        </div>
+      );
+    }
+    return nonEmpty(aiMeta?.q0_role_check) ? (
       <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Question d'orientation · pour situer votre interlocuteur
@@ -595,6 +654,7 @@ const RadarMissionSheet: React.FC<{
         </p>
       </div>
     ) : null;
+  };
 
   const top3Block = (big: boolean) => (
     <div className="space-y-3">
@@ -610,14 +670,20 @@ const RadarMissionSheet: React.FC<{
             {i + 1}
           </span>
           <div className="flex-1 space-y-1">
-            <Textarea
-              value={fields[k]}
-              onChange={set(k)}
-              rows={2}
-              className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
-            />
-            {aiFieldSources[k] === 'user_edited' && (
-              <span className="text-[11px] text-muted-foreground">modifié</span>
+            {shouldSkeleton(k) ? (
+              <LineSkeleton lines={2} />
+            ) : (
+              <>
+                <Textarea
+                  value={fields[k]}
+                  onChange={set(k)}
+                  rows={2}
+                  className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
+                />
+                {aiFieldSources[k] === 'user_edited' && (
+                  <span className="text-[11px] text-muted-foreground">modifié</span>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -768,6 +834,16 @@ const RadarMissionSheet: React.FC<{
     aiGeneratedAt != null ||
     nonEmpty(fields.objective) || nonEmpty(fields.opening_line) ||
     nonEmpty(fields.top_q1) || nonEmpty(fields.top_q2) || nonEmpty(fields.top_q3);
+
+  // Régénération IA en cours ALORS qu'un contenu existe déjà : on remplace le texte par des
+  // skeletons pour signaler clairement l'arrivée d'un nouveau contenu (≠ première génération,
+  // ≠ édition manuelle inline qui, elle, n'active jamais `generating`).
+  const regenerating = generating && hasMission;
+  // Un champ éditable passe en skeleton s'il va réellement être remplacé :
+  //  - force (« Tout régénérer ») → tous les champs ;
+  //  - sans force → seulement ceux qui ne sont pas édités à la main (préservés par l'EF).
+  const shouldSkeleton = (k: keyof MissionFields) =>
+    regenerating && (regenForce || aiFieldSources[k] !== 'user_edited');
 
   const renderMissionBody = (big: boolean) => {
     if (rawRelStatus == null) return characterizeCard;
