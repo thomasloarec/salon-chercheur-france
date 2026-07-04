@@ -918,24 +918,8 @@ const RadarMissionSheet: React.FC<{
     </div>
   );
 
-  const resetButton = (
-    <button
-      type="button"
-      onClick={() => setResetConfirm(true)}
-      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-    >
-      <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser depuis mon profil
-    </button>
-  );
-
-  // Contenu « préparation » (phrase d'ouverture + TOP 3) réutilisé en section ouverte ou en accordéon.
-  const preparationInner = (
-    <>
-      {openingBlock(true)}
-      {top3Block(true)}
-      {offerEmptyHint}
-    </>
-  );
+  // Contenu « préparation » (mission complète, rendu depuis l'état persisté) réutilisé partout.
+  const preparationInner = renderMissionBody(true);
 
   // Bloc « Ce que je dis » (préparation ouverte, terrain).
   const preparationSection = (
