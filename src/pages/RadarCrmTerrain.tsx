@@ -312,6 +312,15 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [noteText, setNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
 
+  // --- Notes vocales : validation différée signalée sur la ligne ---
+  // Ligne dont la capture vocale inline est ouverte.
+  const [voiceOpenFor, setVoiceOpenFor] = useState<string | null>(null);
+  // Map crm_company_id -> nb de notes vocales ready_for_review (badge orange « à valider »).
+  const [pendingVoiceMap, setPendingVoiceMap] = useState<Record<string, number>>({});
+  // Sociétés dont une capture vocale est en cours d'analyse (indicateur neutre « Analyse… »).
+  const [voiceProcessing, setVoiceProcessing] = useState<Record<string, boolean>>({});
+  const voiceWatchRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Auth gate — même comportement que le cockpit.
   useEffect(() => {
     if (!authLoading && !user) {
