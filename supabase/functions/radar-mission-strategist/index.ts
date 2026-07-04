@@ -61,10 +61,11 @@ function normStatus(s: unknown): Status {
 }
 
 // Fallback templates (sans IA). Restent utiles, jamais des placeholders vides.
+// IMPORTANT : ne JAMAIS injecter le texte brut de `problem` (souvent une phrase
+// entière) au milieu d'un gabarit — cela casse la syntaxe. On reste générique
+// mais grammaticalement correct : c'est l'IA qui apporte la spécificité.
 function fallbackFields(status: Status, ctx: any) {
-  const op = ctx?.offer_profile ?? {};
   const name = (ctx?.company?.company_name ?? "cette entreprise").toString();
-  const problem = (op.problem ?? "").toString().trim() || "ce sujet";
   const intents = INTENTS[status] ?? INTENTS.a_qualifier;
   const roleCheck =
     `Vous êtes plutôt sur quelle partie du sujet chez ${name} : commercial, technique, achats, direction, marketing, opérations… ?`;
@@ -72,45 +73,45 @@ function fallbackFields(status: Status, ctx: any) {
     `Qui serait la bonne personne pour voir si ce sujet mérite un échange après le salon ?`;
   const bank: Record<Status, { objective: string; opening_line: string; q1: string; q2: string; q3: string }> = {
     a_qualifier: {
-      objective: `Confirmer si ${name} est pertinent pour ${problem} et repérer le bon interlocuteur.`,
-      opening_line: `Bonjour, je découvre votre stand — je travaille sur ${problem} avec des acteurs de votre secteur.`,
+      objective: `Confirmer si ${name} est pertinent pour votre domaine et repérer le bon interlocuteur.`,
+      opening_line: `Bonjour, je découvre votre stand — je travaille avec des acteurs de votre secteur sur des sujets proches des vôtres.`,
       q1: `Sur quel type d'activité ${name} est plutôt positionné aujourd'hui ?`,
-      q2: `Est-ce que ${problem} vous parle comme enjeu en ce moment ?`,
+      q2: `Est-ce que ce type de sujet vous parle comme enjeu en ce moment ?`,
       q3: q3generic,
     },
     prospect_froid: {
-      objective: `Détecter si ${name} a un enjeu autour de ${problem} et repérer qui porte le sujet en interne.`,
-      opening_line: `Bonjour, je passe parce que vous exposez ici — je travaille avec des acteurs de votre secteur sur ${problem}.`,
-      q1: `Aujourd'hui, comment ${name} gère plutôt ${problem} ?`,
+      objective: `Détecter si ${name} a un enjeu sur votre domaine et repérer qui porte le sujet en interne.`,
+      opening_line: `Bonjour, je découvre votre stand — je travaille avec des acteurs de votre secteur sur des sujets proches des vôtres.`,
+      q1: `Aujourd'hui, comment gérez-vous ce type de sujet chez ${name} ?`,
       q2: `Quand ça coince, l'impact est plutôt coût, délai, qualité ou charge des équipes ?`,
       q3: q3generic,
     },
     prospect_chaud: {
-      objective: `Valider si le projet autour de ${problem} est toujours actif chez ${name} et décrocher la prochaine étape.`,
-      opening_line: `Bonjour, on avait échangé sur ${problem} — je voulais voir où en est le sujet chez vous.`,
-      q1: `Le projet sur ${problem} est-il toujours d'actualité, ou les priorités ont bougé ?`,
+      objective: `Valider si le projet est toujours actif chez ${name} et décrocher la prochaine étape.`,
+      opening_line: `Bonjour, on avait échangé sur le sujet — je voulais voir où en sont les choses chez vous.`,
+      q1: `Le projet est-il toujours d'actualité chez ${name}, ou les priorités ont bougé ?`,
       q2: `Sur quoi se joue surtout la décision aujourd'hui : budget, timing, ou choix technique ?`,
       q3: `Quelle serait la prochaine étape concrète — un point après le salon avec la bonne personne ?`,
     },
     client_actif: {
       objective: `Mesurer la satisfaction de ${name}, repérer une extension et un éventuel risque fournisseur.`,
       opening_line: `Bonjour, on travaille déjà avec certaines de vos équipes — je passais voir vos priorités cette année.`,
-      q1: `Comment ça se passe côté usage actuel sur ${problem} ?`,
+      q1: `Comment ça se passe côté usage actuel chez ${name} ?`,
       q2: `Y a-t-il un nouveau besoin ou une évolution qui monte de votre côté ?`,
       q3: `Qui pilote les projets à venir sur ce périmètre chez vous ?`,
     },
     client_dormant: {
       objective: `Comprendre pourquoi la relation avec ${name} s'est mise en sommeil et trouver une condition de réactivation.`,
       opening_line: `Bonjour, on a déjà collaboré — je voulais comprendre ce qui a évolué chez vous depuis.`,
-      q1: `Où en êtes-vous aujourd'hui sur ${problem} ?`,
+      q1: `Où en êtes-vous aujourd'hui chez ${name} sur ce type de sujet ?`,
       q2: `Qu'est-ce qui avait fait qu'on ne travaillait plus ensemble ?`,
       q3: `Qu'est-ce qui pourrait justifier de reprendre le sujet cette année ?`,
     },
     ancien_client: {
       objective: `Comprendre la cause de perte chez ${name} et repérer une condition de winback.`,
       opening_line: `Bonjour, on a travaillé ensemble par le passé — je voulais voir ce qui a changé chez vous depuis.`,
-      q1: `Qu'est-ce qui a évolué dans votre organisation sur ${problem} ?`,
-      q2: `Sur ${problem}, vous êtes équipés avec qui aujourd'hui, et qu'est-ce qui coince ?`,
+      q1: `Qu'est-ce qui a évolué dans votre organisation sur ce type de sujet ?`,
+      q2: `Aujourd'hui, vous êtes équipés avec qui, et qu'est-ce qui coince ?`,
       q3: `Y aurait-il une porte d'entrée pour retravailler ensemble ?`,
     },
   };
