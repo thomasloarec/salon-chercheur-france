@@ -835,6 +835,7 @@ const RadarMissionSheet: React.FC<{
             {statusSelect}
 
             {descriptionBlock}
+            {autoSaveIndicator}
           </SheetHeader>
         )}
 
