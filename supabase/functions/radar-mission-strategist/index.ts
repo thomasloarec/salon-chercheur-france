@@ -179,12 +179,26 @@ Règles strictes :
 6. Français, ton professionnel, questions courtes lisibles sur mobile (<= ~140 caractères).
 7. La personne rencontrée n'est souvent PAS le décideur : privilégie les questions qui cartographient (qui porte le sujet, qui recontacter) plutôt que le closing.
 
-Exemplars (offre = logiciel, cible = ETI industrielle, statut = prospect_froid) :
-BON : "Chez vous, le pilotage de la maintenance est plutôt suivi par production, maintenance ou direction ?"
-MAUVAIS : "Quels sont vos besoins logiciels ?" (générique, ne ponte pas vers l'entreprise).
+CALIBRAGE SELON L'EXPOSANT (prioritaire) :
+
+Avant de rédiger, évalue la taille et la structure probable de l'entreprise exposante à partir de son nom, de sa description et du salon. Déduis qui tient réellement le stand et ce qu'il peut répondre. Le statut relationnel définit l'objectif stratégique ; la taille de l'exposant définit ce qui est réellement atteignable au stand.
+
+- Grand groupe / multinationale / organisation multi-sites : le stand est presque toujours tenu par des profils commerciaux, marketing ou communication. Ils NE connaissent PAS les détails techniques d'un produit de niche ni l'historique d'une relation fournisseur. Quel que soit le statut relationnel, la première étape réaliste au stand est d'IDENTIFIER et d'ATTEINDRE le bon interlocuteur interne — l'info spécifique au statut (historique, projet, spec) se récupère ensuite auprès de cette personne. Génère des questions de cartographie / routage : qui pilote ce sujet en interne, comment c'est organisé (siège / région / site), quel est le bon point d'entrée pour la partie technique ou achats, comment obtenir ce contact. N'exige JAMAIS de cet interlocuteur qu'il se souvienne d'une spec ou d'un historique de collaboration.
+
+- ETI : profondeur partielle. Mélange une question de cartographie et une question plus concrète.
+
+- PME / startup : le stand connaît souvent le produit et l'organisation ; questions techniques ou business directes permises.
+
+- En cas de doute : une question de cartographie + une question qui fonctionne quel que soit l'interlocuteur, plutôt que des questions supposant une expertise pointue.
+
+Exemplars :
+
+- PME/ETI industrielle, prospect_froid, offre = capteurs — BON : « Chez vous, le choix des capteurs est plutôt piloté par le bureau d'études, la production ou les achats ? »
+
+- Grand groupe multi-sites, client_dormant, offre = capteurs — BON : « Qui pilote aujourd'hui les sujets capteurs / instrumentation chez vous, au siège ou par site ? » ; « Quel serait le bon point d'entrée technique pour reprendre le fil ? » — MAUVAIS : « Êtes-vous encore sur nos capteurs Reed ou avez-vous changé ? » (le commercial du stand d'un grand groupe ne le sait pas).
 
 Schéma JSON EXACT à retourner :
-{"objective":"…","opening_line":"…","q0_role_check":"…","top_q1":"…","top_q2":"…","top_q3":"…","question_intents":{"q1":"…","q2":"…","q3":"…"},"capture_fields":["…"],"success_condition":"…","recommended_next_status":"prospect_froid","follow_up_task":"…"}`;
+{"objective":"…","opening_line":"…","q0_role_check":"…","top_q1":"…","top_q2":"…","top_q3":"…","question_intents":{"q1":"…","q2":"…","q3":"…"},"exhibitor_scale":"grand_groupe|eti|pme|incertain","capture_fields":["…"],"success_condition":"…","recommended_next_status":"prospect_froid","follow_up_task":"…"}`;
 
 function buildUserPrompt(ctx: any, status: Status, scaffoldObjective: string, intents: any) {
   const banlist = [
