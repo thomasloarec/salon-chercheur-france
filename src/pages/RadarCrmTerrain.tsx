@@ -756,12 +756,25 @@ const RadarCrmTerrainInner: React.FC = () => {
                           noteOpen={noteOpenFor === c.crm_company_id}
                           noteText={noteText}
                           savingNote={savingNote}
+                          pendingVoiceCount={pendingVoiceMap[c.crm_company_id] ?? 0}
+                          voiceProcessing={!!voiceProcessing[c.crm_company_id]}
+                          voiceOpen={voiceOpenFor === c.crm_company_id}
+                          voiceSlot={voiceOpenFor === c.crm_company_id && eventId ? (
+                            <TerrainVoiceCapture
+                              companyId={c.crm_company_id}
+                              eventId={eventId}
+                              onProcessing={() => handleVoiceProcessing(c.crm_company_id)}
+                              onReady={() => handleVoiceReady(c.crm_company_id)}
+                              onClose={closeVoice}
+                            />
+                          ) : undefined}
                           onOpenMission={() => openMission(c)}
                           onToggleVisited={() => void toggleVisited(c)}
                           onOpenNote={() => openNote(c)}
                           onCloseNote={closeNote}
                           onChangeNote={setNoteText}
                           onSubmitNote={() => void submitNote(c)}
+                          onToggleVoice={() => openVoice(c.crm_company_id)}
                         />
                       ))}
                     </ul>
