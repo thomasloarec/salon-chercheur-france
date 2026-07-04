@@ -731,6 +731,45 @@ const RadarMissionSheet: React.FC<{
     </button>
   );
 
+  // Contenu « préparation » (phrase d'ouverture + TOP 3) réutilisé en section ouverte ou en accordéon.
+  const preparationInner = (
+    <>
+      {openingBlock(true)}
+      {top3Block(true)}
+      {offerEmptyHint}
+    </>
+  );
+
+  // Bloc « Ce que je dis » (préparation ouverte, terrain).
+  const preparationSection = (
+    <section className="space-y-4">
+      <div className="flex items-center gap-2 text-accent">
+        <MessageSquare className="h-4 w-4 shrink-0" />
+        <span className="text-xs font-semibold uppercase tracking-wide">Ce que je dis</span>
+      </div>
+      {preparationInner}
+    </section>
+  );
+
+  // Bloc « Ce que je capture » (notes + tâches + vocal, terrain).
+  const captureSection = (
+    <section className="space-y-6">
+      <div className="flex items-center gap-2 text-accent">
+        <StickyNote className="h-4 w-4 shrink-0" />
+        <span className="text-xs font-semibold uppercase tracking-wide">Ce que je capture</span>
+      </div>
+      {target && (
+        <VoiceNoteCapture
+          companyId={target.companyId}
+          eventId={target.eventId}
+          onValidated={handleVoiceValidated}
+        />
+      )}
+      {notesBlock}
+      {tasksBlock}
+    </section>
+  );
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
