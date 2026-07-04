@@ -828,6 +828,8 @@ const RadarCrmTerrainInner: React.FC = () => {
             setMission(null);
             // Rafraîchit les compteurs notes/tâches capturés dans le Sheet.
             void load();
+            // Rafraîchit le badge « à valider » (une note peut avoir été validée dans le Sheet).
+            void refreshPending();
           }
         }}
         relationship={activeCompany ? getRel(activeCompany) : DEFAULT_RELATIONSHIP}
