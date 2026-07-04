@@ -434,6 +434,7 @@ const RadarCrmDebrief: React.FC = () => {
                             {notes.map((n, i) => (
                               <li key={i} className="text-sm text-foreground/85 border-l-2 border-border pl-3">
                                 <span className="break-words">{(n.body ?? '').trim()}</span>
+                                {n.source === 'voice' && <span className="ml-1.5"><VoiceMarker /></span>}
                                 {fmtDateTime(n.created_at) && (
                                   <span className="block text-[11px] text-muted-foreground mt-0.5">{fmtDateTime(n.created_at)}</span>
                                 )}
@@ -457,6 +458,7 @@ const RadarCrmDebrief: React.FC = () => {
                                   {fmtDate(t.due_at) && (
                                     <span className="text-muted-foreground"> · échéance {fmtDate(t.due_at)}</span>
                                   )}
+                                  {t.source === 'voice' && <span className="ml-1.5"><VoiceMarker /></span>}
                                 </span>
                               </li>
                             ))}
