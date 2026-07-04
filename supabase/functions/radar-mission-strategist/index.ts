@@ -316,6 +316,8 @@ Deno.serve(async (req) => {
               recommended_next_status: NEXT_STATUS.includes(parsed.recommended_next_status)
                 ? parsed.recommended_next_status : undefined,
               follow_up_task: typeof parsed.follow_up_task === "string" ? parsed.follow_up_task : undefined,
+              exhibitor_scale: EXHIBITOR_SCALES.includes(parsed.exhibitor_scale)
+                ? parsed.exhibitor_scale : undefined,
             };
           } else {
             fallbackReason = "missing_fields";
