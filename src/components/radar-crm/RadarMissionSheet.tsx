@@ -267,6 +267,7 @@ const RadarMissionSheet: React.FC<{
     const cid = target.companyId;
     if (missionGenInFlight.has(cid)) return;
     missionGenInFlight.add(cid);
+    setRegenForce(!!force);
     setGenerating(true);
     try {
       const body: Record<string, unknown> = { crm_company_id: cid, event_id: target.eventId };
@@ -286,6 +287,7 @@ const RadarMissionSheet: React.FC<{
     } finally {
       missionGenInFlight.delete(cid);
       setGenerating(false);
+      setRegenForce(false);
     }
   };
 
