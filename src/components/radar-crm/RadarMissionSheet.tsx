@@ -195,131 +195,130 @@ const RadarMissionSheet: React.FC<{
   const [addingTask, setAddingTask] = useState(false);
 
 
-  // Charge la mission existante + le profil d'offre à l'ouverture, puis préremplit.
+  /**
+   * Recharge l'état persisté du salon via get_radar_salon_missions (source unique de vérité).
+   * overwriteFields=true : réécrit les champs éditables (après génération IA fraîche).
+   * overwriteFields=false : ne touche pas aux textarea en cours d'édition, met à jour
+   * seulement les métadonnées (ai_field_sources, ai_meta, notes, tâches…).
+   */
+  const loadRow = async ({ overwriteFields }: { overwriteFields: boolean }) => {
+    if (!target) return null;
+    const { data, error } = await supabase.rpc('get_radar_salon_missions', { p_event_id: target.eventId });
+    if (error) {
+      console.error('[RadarCRM] get_radar_salon_missions failed:', error);
+      return null;
+    }
+    const payload = data as {
+      event?: Record<string, unknown>;
+      companies?: Array<Record<string, unknown>>;
+    } | null;
+    const ev = payload?.event ?? null;
+    setEventDates(
+      ev
+        ? { start: (ev.date_debut as string | null) ?? null, end: (ev.date_fin as string | null) ?? null }
+        : null,
+    );
+    const row = (payload?.companies ?? []).find(
+      (c) => String(c.crm_company_id ?? '') === target.companyId,
+    ) ?? null;
+
+    setRawRelStatus((row?.relationship_status as string | null) ?? null);
+    setAiMeta((row?.ai_meta as MissionAiMeta | null) ?? null);
+    setAiFieldSources((row?.ai_field_sources as Record<string, string> | null) ?? {});
+    setAiGeneratedAt((row?.ai_generated_at as string | null) ?? null);
+    setDescription((row?.description as string | null) ?? null);
+    setNotes(Array.isArray(row?.notes) ? (row!.notes as MissionNote[]) : []);
+    setTasks(Array.isArray(row?.tasks) ? (row!.tasks as MissionTask[]) : []);
+
+    if (overwriteFields) {
+      setFields({
+        objective: (row?.objective as string) ?? '',
+        opening_line: (row?.opening_line as string) ?? '',
+        top_q1: (row?.top_q1 as string) ?? '',
+        top_q2: (row?.top_q2 as string) ?? '',
+        top_q3: (row?.top_q3 as string) ?? '',
+      });
+    }
+    return row;
+  };
+
+  /**
+   * Déclenche radar-mission-strategist (JWT utilisateur via client authentifié), puis
+   * refetch : l'UI se rend TOUJOURS depuis l'état persisté, jamais depuis la réponse brute.
+   */
+  const generateMission = async ({ force }: { force?: boolean } = {}) => {
+    if (!target) return;
+    const cid = target.companyId;
+    if (missionGenInFlight.has(cid)) return;
+    missionGenInFlight.add(cid);
+    setGenerating(true);
+    try {
+      const body: Record<string, unknown> = { crm_company_id: cid, event_id: target.eventId };
+      if (force) body.force = true;
+      const { error } = await supabase.functions.invoke('radar-mission-strategist', { body });
+      if (error) {
+        console.error('[RadarCRM] radar-mission-strategist failed:', error);
+        toast({
+          title: 'Génération indisponible',
+          description: "La mission n'a pas pu être générée. Réessayez dans un instant.",
+          variant: 'destructive',
+        });
+        return;
+      }
+      void trackRadarEvent('radar_mission_generated', { eventId: target.eventId, forced: !!force });
+      await loadRow({ overwriteFields: true });
+    } finally {
+      missionGenInFlight.delete(cid);
+      setGenerating(false);
+    }
+  };
+
+  // Ouverture / changement de cible : charge l'état persisté, puis auto-génère si nécessaire.
   useEffect(() => {
     if (!open || !target) return;
-    // Ancre le statut courant : évite une régénération parasite à l'ouverture.
-    prevRelRef.current = relationship;
     let cancelled = false;
     setLoading(true);
     setEventDates(null);
+    setGenerating(false);
     (async () => {
-      const [missionsRes, offerRes] = await Promise.all([
-        supabase.rpc('get_radar_salon_missions', { p_event_id: target.eventId }),
-        supabase.from('radar_offer_profile').select('sells, target, problem, qualifies').maybeSingle(),
-      ]);
+      const row = await loadRow({ overwriteFields: true });
       if (cancelled) return;
-
-      const offerRow = (offerRes.data ?? null) as OfferProfileInput | null;
-      setOffer(offerRow);
-      setOfferEmpty(
-        !offerRow || ![offerRow.sells, offerRow.target, offerRow.problem, offerRow.qualifies]
-          .some((v) => (v ?? '').trim().length > 0),
-      );
-
-      let dbFields: MissionFields = EMPTY;
-      if (missionsRes.error) {
-        console.error('[RadarCRM] get_radar_salon_missions failed:', missionsRes.error);
-      } else {
-        const payload = missionsRes.data as {
-          event?: Record<string, unknown>;
-          companies?: Array<Record<string, unknown>>;
-        } | null;
-        const ev = payload?.event ?? null;
-        setEventDates(
-          ev
-            ? {
-                start: (ev.date_debut as string | null) ?? null,
-                end: (ev.date_fin as string | null) ?? null,
-              }
-            : null,
-        );
-        const row = (payload?.companies ?? []).find(
-          (c) => String(c.crm_company_id ?? '') === target.companyId,
-        );
-        if (row) {
-          dbFields = {
-            objective: (row.objective as string) ?? '',
-            opening_line: (row.opening_line as string) ?? '',
-            top_q1: (row.top_q1 as string) ?? '',
-            top_q2: (row.top_q2 as string) ?? '',
-            top_q3: (row.top_q3 as string) ?? '',
-          };
-          setDescription((row.description as string | null) ?? null);
-          setNotes(Array.isArray(row.notes) ? (row.notes as MissionNote[]) : []);
-          setTasks(Array.isArray(row.tasks) ? (row.tasks as MissionTask[]) : []);
-        } else {
-          setDescription(null);
-          setNotes([]);
-          setTasks([]);
-        }
-
-      }
-
-      // Préremplissage : garde le travail existant, complète les champs vides via le moteur.
-      const suggestion = buildMissionSuggestion(relationship, offerRow);
-      setFields({
-        objective: nonEmpty(dbFields.objective) ? dbFields.objective : suggestion.objective,
-        opening_line: nonEmpty(dbFields.opening_line) ? dbFields.opening_line : suggestion.opening_line,
-        top_q1: nonEmpty(dbFields.top_q1) ? dbFields.top_q1 : suggestion.top_q1,
-        top_q2: nonEmpty(dbFields.top_q2) ? dbFields.top_q2 : suggestion.top_q2,
-        top_q3: nonEmpty(dbFields.top_q3) ? dbFields.top_q3 : suggestion.top_q3,
-      });
-      // Mission enregistrée en base → considérée éditée (on ne régénère pas au changement de statut).
-      const hasSaved =
-        nonEmpty(dbFields.objective) || nonEmpty(dbFields.opening_line) ||
-        nonEmpty(dbFields.top_q1) || nonEmpty(dbFields.top_q2) || nonEmpty(dbFields.top_q3);
-      setEdited(hasSaved);
-      setStatusChanged(false);
-      // Ouverture / hydratation : on ne déclenche JAMAIS d'auto-save.
       setDirty(false);
       setSaveStatus('idle');
       setNoteDraft('');
       setTaskDraft('');
       setTaskDue(undefined);
       setLoading(false);
+      // Déclencheur (b) : caractérisée mais jamais générée → génération auto (une fois).
+      const rawRel = (row?.relationship_status as string | null) ?? null;
+      const genAt = (row?.ai_generated_at as string | null) ?? null;
+      if (rawRel != null && genAt == null) {
+        void generateMission({});
+      }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, target?.companyId, target?.eventId]);
 
-  // Changement de statut relationnel pendant que le Sheet est ouvert.
-  useEffect(() => {
-    if (!open || !target) return;
-    if (prevRelRef.current === relationship) return;
-    prevRelRef.current = relationship;
-    if (edited) {
-      // L'utilisateur a personnalisé : on ne touche à rien, on propose juste.
-      setStatusChanged(true);
-    } else {
-      // Encore à l'état « suggéré » → réapplique les suggestions du nouveau statut.
-      setFields({ ...buildMissionSuggestion(relationship, offer) });
-      setStatusChanged(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [relationship]);
-
-  // Toute frappe manuelle bascule le champ en « édité » et masque l'invite de reset.
+  // Édition inline : marque « dirty » (auto-save débouncé → upsert → refetch métadonnées).
   const set = (k: keyof MissionFields) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEdited(true);
-    setStatusChanged(false);
     setDirty(true);
     setFields((f) => ({ ...f, [k]: e.target.value }));
   };
 
-  // Régénère explicitement objectif + ouverture + TOP 3 depuis le statut courant.
-  const regenerate = () => {
-    setFields({ ...buildMissionSuggestion(relationship, offer) });
-    setEdited(false);
-    setStatusChanged(false);
-    setDirty(true);
-    prevRelRef.current = relationship;
+  // Déclencheur (a) : caractérisation → persiste le statut (awaité), puis génère la mission.
+  const handleRelationshipChange = async (next: RelationshipStatus) => {
+    await Promise.resolve(onChangeRelationship(next));
+    await generateMission({ force: false });
   };
 
-  const applySuggestions = () => {
-    regenerate();
-    setResetConfirm(false);
-    toast({ title: 'Suggestions réappliquées', description: 'Objectif, ouverture et TOP 3 régénérés depuis votre profil.' });
+  // Au moins un champ de mission a été édité manuellement (protection avant régénération).
+  const missionEdited = EDITABLE_KEYS.some((k) => aiFieldSources[k] === 'user_edited');
+
+  // Déclencheur (c) : régénération manuelle — confirme si des éditions manuelles existent.
+  const onRegenerateClick = () => {
+    if (missionEdited) setRegenConfirm(true);
+    else void generateMission({ force: false });
   };
 
   // Ajoute une note (action immédiate, optimiste), indépendante d'« Enregistrer ».
