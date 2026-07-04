@@ -189,6 +189,10 @@ const RadarMissionSheet: React.FC<{
   const [rawRelStatus, setRawRelStatus] = useState<string | null>(null);
   // Génération IA en cours (spinner localisé, non bloquant).
   const [generating, setGenerating] = useState(false);
+  // Régénération « force » en cours (« Tout régénérer ») → tous les champs sont remplacés.
+  const [regenForce, setRegenForce] = useState(false);
+  // Miroir synchrone de `generating` (pour détecter la fin d'un invoke lancé par une autre instance).
+  const generatingRef = useRef(false);
   // Confirmation avant d'écraser des champs édités manuellement.
   const [regenConfirm, setRegenConfirm] = useState(false);
   // Description société (résumé IA ou legacy) affichée sous l'en-tête.
