@@ -32,7 +32,7 @@ interface Props {
 
 const VoiceNoteCapture: React.FC<Props> = ({ companyId, eventId, onValidated }) => {
   const cap = useVoiceNoteCapture({ companyId, eventId });
-  const { state, errorMessage, elapsedMs, stepLabel, slow, start, stop, cancel, retry, reset, maxDurationMs } = cap;
+  const { state, errorMessage, elapsedMs, slow, start, stop, cancel, retry, reset, maxDurationMs } = cap;
 
   const [recording, setRecording] = React.useState(false); // l'utilisateur a ouvert l'enregistreur
   const [pending, setPending] = React.useState<VoiceNoteRow[]>([]);
