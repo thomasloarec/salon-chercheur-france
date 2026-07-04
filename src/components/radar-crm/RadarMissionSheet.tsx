@@ -598,13 +598,17 @@ const RadarMissionSheet: React.FC<{
       <Label htmlFor="mission-objective" className="text-sm font-semibold">
         Objectif de la visite{modifiedTag('objective')}
       </Label>
-      <Textarea
-        id="mission-objective"
-        value={fields.objective}
-        onChange={set('objective')}
-        rows={2}
-        className={cn('resize-none font-medium', big ? 'text-lg leading-relaxed' : 'text-base')}
-      />
+      {shouldSkeleton('objective') ? (
+        <LineSkeleton lines={2} />
+      ) : (
+        <Textarea
+          id="mission-objective"
+          value={fields.objective}
+          onChange={set('objective')}
+          rows={2}
+          className={cn('resize-none font-medium', big ? 'text-lg leading-relaxed' : 'text-base')}
+        />
+      )}
     </div>
   );
 
@@ -613,19 +617,34 @@ const RadarMissionSheet: React.FC<{
       <Label htmlFor="mission-opening" className="text-sm font-semibold">
         Phrase d'ouverture{modifiedTag('opening_line')}
       </Label>
-      <Textarea
-        id="mission-opening"
-        value={fields.opening_line}
-        onChange={set('opening_line')}
-        rows={big ? 4 : 3}
-        className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
-      />
+      {shouldSkeleton('opening_line') ? (
+        <LineSkeleton lines={3} />
+      ) : (
+        <Textarea
+          id="mission-opening"
+          value={fields.opening_line}
+          onChange={set('opening_line')}
+          rows={big ? 4 : 3}
+          className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
+        />
+      )}
     </div>
   );
 
   // Question 0 (orientation) — lecture seule (ai_meta), AVANT le TOP 3, ne compte pas dedans.
-  const q0Block = (big: boolean) =>
-    nonEmpty(aiMeta?.q0_role_check) ? (
+  const q0Block = (big: boolean) => {
+    // Q0 est toujours régénérée par l'IA (non éditable) → skeleton dès qu'une régénération tourne.
+    if (regenerating) {
+      return (
+        <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Question d'orientation · pour situer votre interlocuteur
+          </p>
+          <LineSkeleton lines={2} />
+        </div>
+      );
+    }
+    return nonEmpty(aiMeta?.q0_role_check) ? (
       <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Question d'orientation · pour situer votre interlocuteur
@@ -635,6 +654,7 @@ const RadarMissionSheet: React.FC<{
         </p>
       </div>
     ) : null;
+  };
 
   const top3Block = (big: boolean) => (
     <div className="space-y-3">
@@ -650,14 +670,20 @@ const RadarMissionSheet: React.FC<{
             {i + 1}
           </span>
           <div className="flex-1 space-y-1">
-            <Textarea
-              value={fields[k]}
-              onChange={set(k)}
-              rows={2}
-              className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
-            />
-            {aiFieldSources[k] === 'user_edited' && (
-              <span className="text-[11px] text-muted-foreground">modifié</span>
+            {shouldSkeleton(k) ? (
+              <LineSkeleton lines={2} />
+            ) : (
+              <>
+                <Textarea
+                  value={fields[k]}
+                  onChange={set(k)}
+                  rows={2}
+                  className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
+                />
+                {aiFieldSources[k] === 'user_edited' && (
+                  <span className="text-[11px] text-muted-foreground">modifié</span>
+                )}
+              </>
             )}
           </div>
         </div>
