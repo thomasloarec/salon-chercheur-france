@@ -133,7 +133,9 @@ const RadarMissionSheet: React.FC<{
   mode = 'prepa', visited = false, onToggleVisited,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  // Auto-save silencieux (façon Notion) : statut discret + drapeau « dirty ».
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [dirty, setDirty] = useState(false);
   const [fields, setFields] = useState<MissionFields>(EMPTY);
   const [offer, setOffer] = useState<OfferProfileInput | null>(null);
   const [offerEmpty, setOfferEmpty] = useState(false);
@@ -236,6 +238,9 @@ const RadarMissionSheet: React.FC<{
         nonEmpty(dbFields.top_q1) || nonEmpty(dbFields.top_q2) || nonEmpty(dbFields.top_q3);
       setEdited(hasSaved);
       setStatusChanged(false);
+      // Ouverture / hydratation : on ne déclenche JAMAIS d'auto-save.
+      setDirty(false);
+      setSaveStatus('idle');
       setNoteDraft('');
       setTaskDraft('');
       setTaskDue(undefined);
@@ -265,6 +270,7 @@ const RadarMissionSheet: React.FC<{
   const set = (k: keyof MissionFields) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEdited(true);
     setStatusChanged(false);
+    setDirty(true);
     setFields((f) => ({ ...f, [k]: e.target.value }));
   };
 
@@ -273,6 +279,7 @@ const RadarMissionSheet: React.FC<{
     setFields({ ...buildMissionSuggestion(relationship, offer) });
     setEdited(false);
     setStatusChanged(false);
+    setDirty(true);
     prevRelRef.current = relationship;
   };
 
@@ -383,9 +390,10 @@ const RadarMissionSheet: React.FC<{
     }
   };
 
-  const handleSave = async () => {
+  // Sauvegarde silencieuse des champs de mission via upsert_radar_mission (get-or-create serveur).
+  const persistFields = async () => {
     if (!target) return;
-    setSaving(true);
+    setSaveStatus('saving');
     // COALESCE serveur : on n'envoie que les champs remplis.
     const args: Record<string, string> = {
       p_crm_company_id: target.companyId,
@@ -398,20 +406,32 @@ const RadarMissionSheet: React.FC<{
     if (nonEmpty(fields.top_q3)) args.p_top_q3 = fields.top_q3.trim();
 
     const { error } = await supabase.rpc('upsert_radar_mission', args as never);
-    setSaving(false);
     if (error) {
+      // Échec silencieux, non bloquant : on garde « dirty » pour retenter au prochain cycle.
       console.error('[RadarCRM] upsert_radar_mission failed:', error);
-      toast({
-        title: 'Enregistrement impossible',
-        description: 'Impossible de sauvegarder cette mission. Réessayez dans un instant.',
-        variant: 'destructive',
-      });
+      setSaveStatus('error');
       return;
     }
+    setDirty(false);
+    setSaveStatus('saved');
     void trackRadarEvent('radar_mission_saved', { eventId: target.eventId });
-    toast({ title: 'Mission enregistrée', description: 'Votre préparation est prête pour le salon.' });
-    onOpenChange(false);
   };
+
+  // Auto-save débouncé (~900 ms) : uniquement sur modification réelle par l'utilisateur.
+  useEffect(() => {
+    if (!open || !target || !dirty) return;
+    const handle = setTimeout(() => { void persistFields(); }, 900);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fields, dirty, open, target?.companyId, target?.eventId]);
+
+  // Reprise discrète après un échec : nouvelle tentative silencieuse ~2,5 s plus tard.
+  useEffect(() => {
+    if (saveStatus !== 'error' || !dirty) return;
+    const handle = setTimeout(() => { void persistFields(); }, 2500);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveStatus, dirty]);
 
   const standLabel = useMemo(
     () => (nonEmpty(target?.stand) ? target!.stand!.trim() : 'Stand non renseigné'),
@@ -837,10 +857,27 @@ const RadarMissionSheet: React.FC<{
         </div>
 
         <SheetFooter className="px-5 py-4 border-t bg-muted/20">
-          <Button onClick={handleSave} disabled={saving || loading} className="w-full">
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Enregistrer
-          </Button>
+          <div
+            className="flex min-h-[20px] w-full items-center justify-center gap-1.5 text-xs"
+            style={{ color: '#04316d' }}
+            aria-live="polite"
+          >
+            {saveStatus === 'saving' && (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Enregistrement…</span>
+              </>
+            )}
+            {saveStatus === 'saved' && (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                <span>Enregistré</span>
+              </>
+            )}
+            {saveStatus === 'error' && (
+              <span className="text-muted-foreground">Non enregistré — nouvelle tentative…</span>
+            )}
+          </div>
         </SheetFooter>
       </SheetContent>
 
