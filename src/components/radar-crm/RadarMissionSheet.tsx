@@ -547,38 +547,32 @@ const RadarMissionSheet: React.FC<{
     <ExpandableText text={description!} className="pt-1" />
   ) : null;
 
-  const statusChangedInvite = statusChanged ? (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5">
-      <p className="text-xs text-foreground/80">
-        Le statut a changé — réinitialiser les questions ?
-      </p>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={regenerate}
-        className="h-8 shrink-0 border-accent/40 text-accent hover:bg-accent/10 hover:text-accent"
-      >
-        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Régénérer
-      </Button>
-    </div>
-  ) : null;
+  // Indicateur discret « modifié » quand un champ a été édité manuellement (ai_field_sources).
+  const modifiedTag = (k: keyof MissionFields) =>
+    aiFieldSources[k] === 'user_edited' ? (
+      <span className="ml-2 align-middle text-[11px] font-normal text-muted-foreground">modifié</span>
+    ) : null;
 
-  const objectiveBlock = (
+  const objectiveBlock = (big: boolean) => (
     <div className="space-y-2">
-      <Label htmlFor="mission-objective" className="text-sm font-semibold">Objectif de la visite</Label>
+      <Label htmlFor="mission-objective" className="text-sm font-semibold">
+        Objectif de la visite{modifiedTag('objective')}
+      </Label>
       <Textarea
         id="mission-objective"
         value={fields.objective}
         onChange={set('objective')}
         rows={2}
-        className="resize-none text-base"
+        className={cn('resize-none font-medium', big ? 'text-lg leading-relaxed' : 'text-base')}
       />
     </div>
   );
 
   const openingBlock = (big: boolean) => (
     <div className="space-y-2">
-      <Label htmlFor="mission-opening" className="text-sm font-semibold">Phrase d'ouverture</Label>
+      <Label htmlFor="mission-opening" className="text-sm font-semibold">
+        Phrase d'ouverture{modifiedTag('opening_line')}
+      </Label>
       <Textarea
         id="mission-opening"
         value={fields.opening_line}
@@ -588,6 +582,19 @@ const RadarMissionSheet: React.FC<{
       />
     </div>
   );
+
+  // Question 0 (orientation) — lecture seule (ai_meta), AVANT le TOP 3, ne compte pas dedans.
+  const q0Block = (big: boolean) =>
+    nonEmpty(aiMeta?.q0_role_check) ? (
+      <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Question d'orientation · pour situer votre interlocuteur
+        </p>
+        <p className={cn('text-foreground', big ? 'text-lg leading-relaxed' : 'text-base')}>
+          {aiMeta!.q0_role_check}
+        </p>
+      </div>
+    ) : null;
 
   const top3Block = (big: boolean) => (
     <div className="space-y-3">
@@ -602,29 +609,188 @@ const RadarMissionSheet: React.FC<{
           >
             {i + 1}
           </span>
-          <Textarea
-            value={fields[k]}
-            onChange={set(k)}
-            rows={2}
-            className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
-          />
+          <div className="flex-1 space-y-1">
+            <Textarea
+              value={fields[k]}
+              onChange={set(k)}
+              rows={2}
+              className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
+            />
+            {aiFieldSources[k] === 'user_edited' && (
+              <span className="text-[11px] text-muted-foreground">modifié</span>
+            )}
+          </div>
         </div>
       ))}
     </div>
   );
 
-  const offerEmptyHint = offerEmpty ? (
-    <p className="text-xs text-muted-foreground">
-      Pour des questions plus précises,{' '}
-      <button
-        type="button"
-        onClick={() => { onOpenChange(false); onOpenSettings(); }}
-        className="text-accent underline underline-offset-2 hover:text-accent/80"
+  // Badge de confiance — orange UNIQUEMENT si « faible » (action requise), neutre sinon.
+  const confidenceBadge = (() => {
+    const band = aiMeta?.confidence_band;
+    if (!band) return null;
+    const score = aiMeta?.confidence_score;
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
+          band === 'faible'
+            ? 'border-accent/50 bg-accent/[0.06] text-foreground'
+            : 'border-border bg-background text-muted-foreground',
+        )}
       >
-        complétez votre profil d'offre
-      </button>.
-    </p>
+        <span
+          className={cn(
+            'h-2 w-2 rounded-full',
+            band === 'faible' ? 'bg-accent' : band === 'moyen' ? 'bg-stone-400' : 'bg-emerald-600/60',
+          )}
+          aria-hidden="true"
+        />
+        Confiance {band}{typeof score === 'number' ? ` · ${score}/100` : ''}
+      </span>
+    );
+  })();
+
+  // Mention discrète si l'IA a basculé sur le scaffold (contenu de base valide).
+  const scaffoldNotice = aiMeta?.generator === 'scaffold' ? (
+    <span className="text-[11px] text-muted-foreground">
+      Enrichissement IA momentanément indisponible.
+    </span>
   ) : null;
+
+  // Nudge de complétion — profil faible/moyen : action requise (accent autorisé).
+  const completionNudge = (() => {
+    const band = aiMeta?.confidence_band;
+    if (band !== 'faible' && band !== 'moyen') return null;
+    const missing = aiMeta?.missing_profile_fields ?? [];
+    return (
+      <div className="space-y-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5">
+        <p className="text-xs text-foreground/80">
+          Complète ton profil d'offre pour des questions plus précises.
+        </p>
+        {missing.length > 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            À renseigner : {missing.map((f) => MISSING_PROFILE_LABELS[f] ?? f).join(' · ')}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => { onOpenChange(false); onOpenSettings(); }}
+          className="text-xs text-accent underline underline-offset-2 hover:text-accent/80"
+        >
+          Compléter mon profil
+        </button>
+      </div>
+    );
+  })();
+
+  // « Pourquoi ces questions ? » — intentions Q1/Q2/Q3 (contexte → enjeu → contact).
+  const whyQuestions = (() => {
+    const intents = aiMeta?.question_intents;
+    if (!intents || !(intents.q1 || intents.q2 || intents.q3)) return null;
+    const rows: Array<[string, string | undefined]> = [
+      ['Q1', intents.q1], ['Q2', intents.q2], ['Q3', intents.q3],
+    ];
+    return (
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+          <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+          Pourquoi ces questions ?
+        </summary>
+        <ul className="mt-2 space-y-1.5 pl-5 text-xs text-muted-foreground">
+          {rows.filter(([, v]) => nonEmpty(v)).map(([lbl, v]) => (
+            <li key={lbl}>
+              <span className="font-medium text-foreground/80">{lbl} —</span> {v}
+            </li>
+          ))}
+        </ul>
+      </details>
+    );
+  })();
+
+  const regenerateButton = (
+    <div className="flex items-center justify-between gap-3 pt-1">
+      {generating ? (
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Génération…
+        </span>
+      ) : (
+        <span />
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onRegenerateClick}
+        disabled={generating}
+        className="h-8 shrink-0"
+      >
+        <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Régénérer
+      </Button>
+    </div>
+  );
+
+  // Encart sobre : entreprise non caractérisée → inviter à poser un statut (pas de génération auto).
+  const characterizeCard = (
+    <div className="space-y-1 rounded-lg border border-border bg-muted/20 px-4 py-5 text-center">
+      <p className="text-sm font-medium text-foreground">
+        Caractérise cette entreprise pour générer sa mission
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Choisis un statut (client, prospect…) ci-dessus — objectif, ouverture, Question 0 et TOP 3
+        seront générés automatiquement.
+      </p>
+    </div>
+  );
+
+  const missionSkeleton = (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Génération de la mission…
+      </div>
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-32 w-full" />
+    </div>
+  );
+
+  // Mission jamais générée (échec ou en attente) alors que le compte est caractérisé.
+  const retryCard = (
+    <div className="space-y-3 rounded-lg border border-border bg-muted/20 px-4 py-5 text-center">
+      <p className="text-sm text-muted-foreground">La mission n'a pas encore été générée.</p>
+      <Button variant="outline" size="sm" onClick={() => void generateMission({})} className="h-8">
+        <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Générer la mission
+      </Button>
+    </div>
+  );
+
+  // Mission complète (objectif prééminent → ouverture → Q0 → TOP 3 → confiance/nudge/why → régénérer).
+  const hasMission =
+    aiGeneratedAt != null ||
+    nonEmpty(fields.objective) || nonEmpty(fields.opening_line) ||
+    nonEmpty(fields.top_q1) || nonEmpty(fields.top_q2) || nonEmpty(fields.top_q3);
+
+  const renderMissionBody = (big: boolean) => {
+    if (rawRelStatus == null) return characterizeCard;
+    if (generating && !hasMission) return missionSkeleton;
+    if (!hasMission) return retryCard;
+    return (
+      <div className="space-y-4">
+        {objectiveBlock(big)}
+        {openingBlock(big)}
+        {q0Block(big)}
+        {top3Block(big)}
+        {(confidenceBadge || scaffoldNotice) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {confidenceBadge}
+            {scaffoldNotice}
+          </div>
+        )}
+        {completionNudge}
+        {whyQuestions}
+        {regenerateButton}
+      </div>
+    );
+  };
 
   const notesBlock = (
     <div className="space-y-3 pt-2 border-t">
