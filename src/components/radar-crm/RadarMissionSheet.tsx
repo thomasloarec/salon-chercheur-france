@@ -109,6 +109,18 @@ const EMPTY: MissionFields = {
 
 const nonEmpty = (v: string | null | undefined) => (v ?? '').trim().length > 0;
 
+/**
+ * Skeleton multi-lignes aux dimensions proches d'une zone de texte de mission.
+ * Sobre (doctrine chargement : pas d'accent orange), la dernière ligne est raccourcie.
+ */
+const LineSkeleton: React.FC<{ lines?: number }> = ({ lines = 2 }) => (
+  <div className="space-y-2" aria-hidden="true">
+    {Array.from({ length: lines }).map((_, i) => (
+      <Skeleton key={i} className={cn('h-4', i === lines - 1 ? 'w-4/5' : 'w-full')} />
+    ))}
+  </div>
+);
+
 /** Horodatage lisible fr : « 12 mars, 14:30 ». */
 const fmtStamp = (iso: string | null | undefined) => {
   if (!iso) return '';
