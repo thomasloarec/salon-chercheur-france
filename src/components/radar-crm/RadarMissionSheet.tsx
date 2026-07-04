@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
@@ -35,7 +35,6 @@ import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
   triggerClassFor,
 } from '@/lib/radarCrm/relationship';
-import { buildMissionSuggestion, type OfferProfileInput } from '@/lib/radarCrm/playbooks';
 import ExpandableText from '@/components/exhibitor/ExpandableText';
 import { cn } from '@/lib/utils';
 import VoiceNoteCapture from '@/components/radar-crm/VoiceNoteCapture';
@@ -58,6 +57,36 @@ interface MissionFields {
   top_q2: string;
   top_q3: string;
 }
+
+/** Métadonnées IA produites par radar-mission-strategist (lecture seule côté front). */
+interface MissionAiMeta {
+  q0_role_check?: string;
+  question_intents?: { q1?: string; q2?: string; q3?: string };
+  confidence_score?: number;
+  confidence_band?: 'faible' | 'moyen' | 'fort';
+  missing_profile_fields?: string[];
+  generator?: 'ai' | 'scaffold';
+  model?: string;
+}
+
+/** Champs de mission éligibles à l'indicateur « modifié » (source-aware). */
+const EDITABLE_KEYS = ['objective', 'opening_line', 'top_q1', 'top_q2', 'top_q3'] as const;
+
+/** Traduction des blocs de profil manquants (nudge de complétion). */
+const MISSING_PROFILE_LABELS: Record<string, string> = {
+  offer_archetype: "Type d'offre",
+  problems_solved: 'Problèmes résolus',
+  business_outcomes: 'Résultats business',
+  personas: 'Personas (décideur, utilisateur, technique…)',
+  target_segments: 'Segments cibles (secteurs, tailles)',
+};
+
+/**
+ * Verrou de génération inter-rendus (par crm_company_id).
+ * Empêche deux invokes concurrents (ex. caractérisation + ouverture simultanée).
+ * Module-level : survit au remontage du Sheet.
+ */
+const missionGenInFlight = new Set<string>();
 
 /** Note de mission (capture terrain, ajout seul en V1). */
 interface MissionNote {
@@ -140,15 +169,16 @@ const RadarMissionSheet: React.FC<{
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [dirty, setDirty] = useState(false);
   const [fields, setFields] = useState<MissionFields>(EMPTY);
-  const [offer, setOffer] = useState<OfferProfileInput | null>(null);
-  const [offerEmpty, setOfferEmpty] = useState(false);
-  const [resetConfirm, setResetConfirm] = useState(false);
-  // Distingue « suggéré » (régénérable au changement de statut) de « édité » (protégé).
-  const [edited, setEdited] = useState(false);
-  // Le statut a changé alors que l'utilisateur avait déjà édité → invite discrète.
-  const [statusChanged, setStatusChanged] = useState(false);
-  // Dernier statut pour lequel des suggestions ont été appliquées / chargées.
-  const prevRelRef = useRef<RelationshipStatus>(relationship);
+  // Métadonnées IA persistées (ai_meta) + provenance par champ (ai_field_sources).
+  const [aiMeta, setAiMeta] = useState<MissionAiMeta | null>(null);
+  const [aiFieldSources, setAiFieldSources] = useState<Record<string, string>>({});
+  const [aiGeneratedAt, setAiGeneratedAt] = useState<string | null>(null);
+  // Statut relationnel BRUT lu en base (null = jamais caractérisé, ≠ 'a_qualifier' explicite).
+  const [rawRelStatus, setRawRelStatus] = useState<string | null>(null);
+  // Génération IA en cours (spinner localisé, non bloquant).
+  const [generating, setGenerating] = useState(false);
+  // Confirmation avant d'écraser des champs édités manuellement.
+  const [regenConfirm, setRegenConfirm] = useState(false);
   // Description société (résumé IA ou legacy) affichée sous l'en-tête.
   const [description, setDescription] = useState<string | null>(null);
   // Dates du salon (niveau SALON) — lues dans le payload de la RPC, affichées dans l'en-tête.
@@ -165,131 +195,130 @@ const RadarMissionSheet: React.FC<{
   const [addingTask, setAddingTask] = useState(false);
 
 
-  // Charge la mission existante + le profil d'offre à l'ouverture, puis préremplit.
+  /**
+   * Recharge l'état persisté du salon via get_radar_salon_missions (source unique de vérité).
+   * overwriteFields=true : réécrit les champs éditables (après génération IA fraîche).
+   * overwriteFields=false : ne touche pas aux textarea en cours d'édition, met à jour
+   * seulement les métadonnées (ai_field_sources, ai_meta, notes, tâches…).
+   */
+  const loadRow = async ({ overwriteFields }: { overwriteFields: boolean }) => {
+    if (!target) return null;
+    const { data, error } = await supabase.rpc('get_radar_salon_missions', { p_event_id: target.eventId });
+    if (error) {
+      console.error('[RadarCRM] get_radar_salon_missions failed:', error);
+      return null;
+    }
+    const payload = data as {
+      event?: Record<string, unknown>;
+      companies?: Array<Record<string, unknown>>;
+    } | null;
+    const ev = payload?.event ?? null;
+    setEventDates(
+      ev
+        ? { start: (ev.date_debut as string | null) ?? null, end: (ev.date_fin as string | null) ?? null }
+        : null,
+    );
+    const row = (payload?.companies ?? []).find(
+      (c) => String(c.crm_company_id ?? '') === target.companyId,
+    ) ?? null;
+
+    setRawRelStatus((row?.relationship_status as string | null) ?? null);
+    setAiMeta((row?.ai_meta as MissionAiMeta | null) ?? null);
+    setAiFieldSources((row?.ai_field_sources as Record<string, string> | null) ?? {});
+    setAiGeneratedAt((row?.ai_generated_at as string | null) ?? null);
+    setDescription((row?.description as string | null) ?? null);
+    setNotes(Array.isArray(row?.notes) ? (row!.notes as MissionNote[]) : []);
+    setTasks(Array.isArray(row?.tasks) ? (row!.tasks as MissionTask[]) : []);
+
+    if (overwriteFields) {
+      setFields({
+        objective: (row?.objective as string) ?? '',
+        opening_line: (row?.opening_line as string) ?? '',
+        top_q1: (row?.top_q1 as string) ?? '',
+        top_q2: (row?.top_q2 as string) ?? '',
+        top_q3: (row?.top_q3 as string) ?? '',
+      });
+    }
+    return row;
+  };
+
+  /**
+   * Déclenche radar-mission-strategist (JWT utilisateur via client authentifié), puis
+   * refetch : l'UI se rend TOUJOURS depuis l'état persisté, jamais depuis la réponse brute.
+   */
+  const generateMission = async ({ force }: { force?: boolean } = {}) => {
+    if (!target) return;
+    const cid = target.companyId;
+    if (missionGenInFlight.has(cid)) return;
+    missionGenInFlight.add(cid);
+    setGenerating(true);
+    try {
+      const body: Record<string, unknown> = { crm_company_id: cid, event_id: target.eventId };
+      if (force) body.force = true;
+      const { error } = await supabase.functions.invoke('radar-mission-strategist', { body });
+      if (error) {
+        console.error('[RadarCRM] radar-mission-strategist failed:', error);
+        toast({
+          title: 'Génération indisponible',
+          description: "La mission n'a pas pu être générée. Réessayez dans un instant.",
+          variant: 'destructive',
+        });
+        return;
+      }
+      void trackRadarEvent('radar_mission_generated', { eventId: target.eventId, forced: !!force });
+      await loadRow({ overwriteFields: true });
+    } finally {
+      missionGenInFlight.delete(cid);
+      setGenerating(false);
+    }
+  };
+
+  // Ouverture / changement de cible : charge l'état persisté, puis auto-génère si nécessaire.
   useEffect(() => {
     if (!open || !target) return;
-    // Ancre le statut courant : évite une régénération parasite à l'ouverture.
-    prevRelRef.current = relationship;
     let cancelled = false;
     setLoading(true);
     setEventDates(null);
+    setGenerating(false);
     (async () => {
-      const [missionsRes, offerRes] = await Promise.all([
-        supabase.rpc('get_radar_salon_missions', { p_event_id: target.eventId }),
-        supabase.from('radar_offer_profile').select('sells, target, problem, qualifies').maybeSingle(),
-      ]);
+      const row = await loadRow({ overwriteFields: true });
       if (cancelled) return;
-
-      const offerRow = (offerRes.data ?? null) as OfferProfileInput | null;
-      setOffer(offerRow);
-      setOfferEmpty(
-        !offerRow || ![offerRow.sells, offerRow.target, offerRow.problem, offerRow.qualifies]
-          .some((v) => (v ?? '').trim().length > 0),
-      );
-
-      let dbFields: MissionFields = EMPTY;
-      if (missionsRes.error) {
-        console.error('[RadarCRM] get_radar_salon_missions failed:', missionsRes.error);
-      } else {
-        const payload = missionsRes.data as {
-          event?: Record<string, unknown>;
-          companies?: Array<Record<string, unknown>>;
-        } | null;
-        const ev = payload?.event ?? null;
-        setEventDates(
-          ev
-            ? {
-                start: (ev.date_debut as string | null) ?? null,
-                end: (ev.date_fin as string | null) ?? null,
-              }
-            : null,
-        );
-        const row = (payload?.companies ?? []).find(
-          (c) => String(c.crm_company_id ?? '') === target.companyId,
-        );
-        if (row) {
-          dbFields = {
-            objective: (row.objective as string) ?? '',
-            opening_line: (row.opening_line as string) ?? '',
-            top_q1: (row.top_q1 as string) ?? '',
-            top_q2: (row.top_q2 as string) ?? '',
-            top_q3: (row.top_q3 as string) ?? '',
-          };
-          setDescription((row.description as string | null) ?? null);
-          setNotes(Array.isArray(row.notes) ? (row.notes as MissionNote[]) : []);
-          setTasks(Array.isArray(row.tasks) ? (row.tasks as MissionTask[]) : []);
-        } else {
-          setDescription(null);
-          setNotes([]);
-          setTasks([]);
-        }
-
-      }
-
-      // Préremplissage : garde le travail existant, complète les champs vides via le moteur.
-      const suggestion = buildMissionSuggestion(relationship, offerRow);
-      setFields({
-        objective: nonEmpty(dbFields.objective) ? dbFields.objective : suggestion.objective,
-        opening_line: nonEmpty(dbFields.opening_line) ? dbFields.opening_line : suggestion.opening_line,
-        top_q1: nonEmpty(dbFields.top_q1) ? dbFields.top_q1 : suggestion.top_q1,
-        top_q2: nonEmpty(dbFields.top_q2) ? dbFields.top_q2 : suggestion.top_q2,
-        top_q3: nonEmpty(dbFields.top_q3) ? dbFields.top_q3 : suggestion.top_q3,
-      });
-      // Mission enregistrée en base → considérée éditée (on ne régénère pas au changement de statut).
-      const hasSaved =
-        nonEmpty(dbFields.objective) || nonEmpty(dbFields.opening_line) ||
-        nonEmpty(dbFields.top_q1) || nonEmpty(dbFields.top_q2) || nonEmpty(dbFields.top_q3);
-      setEdited(hasSaved);
-      setStatusChanged(false);
-      // Ouverture / hydratation : on ne déclenche JAMAIS d'auto-save.
       setDirty(false);
       setSaveStatus('idle');
       setNoteDraft('');
       setTaskDraft('');
       setTaskDue(undefined);
       setLoading(false);
+      // Déclencheur (b) : caractérisée mais jamais générée → génération auto (une fois).
+      const rawRel = (row?.relationship_status as string | null) ?? null;
+      const genAt = (row?.ai_generated_at as string | null) ?? null;
+      if (rawRel != null && genAt == null) {
+        void generateMission({});
+      }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, target?.companyId, target?.eventId]);
 
-  // Changement de statut relationnel pendant que le Sheet est ouvert.
-  useEffect(() => {
-    if (!open || !target) return;
-    if (prevRelRef.current === relationship) return;
-    prevRelRef.current = relationship;
-    if (edited) {
-      // L'utilisateur a personnalisé : on ne touche à rien, on propose juste.
-      setStatusChanged(true);
-    } else {
-      // Encore à l'état « suggéré » → réapplique les suggestions du nouveau statut.
-      setFields({ ...buildMissionSuggestion(relationship, offer) });
-      setStatusChanged(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [relationship]);
-
-  // Toute frappe manuelle bascule le champ en « édité » et masque l'invite de reset.
+  // Édition inline : marque « dirty » (auto-save débouncé → upsert → refetch métadonnées).
   const set = (k: keyof MissionFields) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEdited(true);
-    setStatusChanged(false);
     setDirty(true);
     setFields((f) => ({ ...f, [k]: e.target.value }));
   };
 
-  // Régénère explicitement objectif + ouverture + TOP 3 depuis le statut courant.
-  const regenerate = () => {
-    setFields({ ...buildMissionSuggestion(relationship, offer) });
-    setEdited(false);
-    setStatusChanged(false);
-    setDirty(true);
-    prevRelRef.current = relationship;
+  // Déclencheur (a) : caractérisation → persiste le statut (awaité), puis génère la mission.
+  const handleRelationshipChange = async (next: RelationshipStatus) => {
+    await Promise.resolve(onChangeRelationship(next));
+    await generateMission({ force: false });
   };
 
-  const applySuggestions = () => {
-    regenerate();
-    setResetConfirm(false);
-    toast({ title: 'Suggestions réappliquées', description: 'Objectif, ouverture et TOP 3 régénérés depuis votre profil.' });
+  // Au moins un champ de mission a été édité manuellement (protection avant régénération).
+  const missionEdited = EDITABLE_KEYS.some((k) => aiFieldSources[k] === 'user_edited');
+
+  // Déclencheur (c) : régénération manuelle — confirme si des éditions manuelles existent.
+  const onRegenerateClick = () => {
+    if (missionEdited) setRegenConfirm(true);
+    else void generateMission({ force: false });
   };
 
   // Ajoute une note (action immédiate, optimiste), indépendante d'« Enregistrer ».
@@ -418,6 +447,8 @@ const RadarMissionSheet: React.FC<{
     setDirty(false);
     setSaveStatus('saved');
     void trackRadarEvent('radar_mission_saved', { eventId: target.eventId });
+    // Refetch métadonnées (ai_field_sources → indicateur « modifié ») sans écraser la frappe.
+    void loadRow({ overwriteFields: false });
   };
 
   // Auto-save débouncé (~900 ms) : uniquement sur modification réelle par l'utilisateur.
@@ -488,7 +519,7 @@ const RadarMissionSheet: React.FC<{
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
         Statut
       </span>
-      <Select value={relationship} onValueChange={(v) => onChangeRelationship(v as RelationshipStatus)}>
+      <Select value={relationship} onValueChange={(v) => { void handleRelationshipChange(v as RelationshipStatus); }}>
         <SelectTrigger
           className={`h-8 w-auto min-w-0 gap-1.5 rounded-md px-2.5 shadow-none focus:ring-1 focus:ring-ring focus:ring-offset-0 [&>span]:line-clamp-none ${triggerClassFor(relationship)}`}
         >
@@ -516,38 +547,32 @@ const RadarMissionSheet: React.FC<{
     <ExpandableText text={description!} className="pt-1" />
   ) : null;
 
-  const statusChangedInvite = statusChanged ? (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5">
-      <p className="text-xs text-foreground/80">
-        Le statut a changé — réinitialiser les questions ?
-      </p>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={regenerate}
-        className="h-8 shrink-0 border-accent/40 text-accent hover:bg-accent/10 hover:text-accent"
-      >
-        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Régénérer
-      </Button>
-    </div>
-  ) : null;
+  // Indicateur discret « modifié » quand un champ a été édité manuellement (ai_field_sources).
+  const modifiedTag = (k: keyof MissionFields) =>
+    aiFieldSources[k] === 'user_edited' ? (
+      <span className="ml-2 align-middle text-[11px] font-normal text-muted-foreground">modifié</span>
+    ) : null;
 
-  const objectiveBlock = (
+  const objectiveBlock = (big: boolean) => (
     <div className="space-y-2">
-      <Label htmlFor="mission-objective" className="text-sm font-semibold">Objectif de la visite</Label>
+      <Label htmlFor="mission-objective" className="text-sm font-semibold">
+        Objectif de la visite{modifiedTag('objective')}
+      </Label>
       <Textarea
         id="mission-objective"
         value={fields.objective}
         onChange={set('objective')}
         rows={2}
-        className="resize-none text-base"
+        className={cn('resize-none font-medium', big ? 'text-lg leading-relaxed' : 'text-base')}
       />
     </div>
   );
 
   const openingBlock = (big: boolean) => (
     <div className="space-y-2">
-      <Label htmlFor="mission-opening" className="text-sm font-semibold">Phrase d'ouverture</Label>
+      <Label htmlFor="mission-opening" className="text-sm font-semibold">
+        Phrase d'ouverture{modifiedTag('opening_line')}
+      </Label>
       <Textarea
         id="mission-opening"
         value={fields.opening_line}
@@ -557,6 +582,19 @@ const RadarMissionSheet: React.FC<{
       />
     </div>
   );
+
+  // Question 0 (orientation) — lecture seule (ai_meta), AVANT le TOP 3, ne compte pas dedans.
+  const q0Block = (big: boolean) =>
+    nonEmpty(aiMeta?.q0_role_check) ? (
+      <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Question d'orientation · pour situer votre interlocuteur
+        </p>
+        <p className={cn('text-foreground', big ? 'text-lg leading-relaxed' : 'text-base')}>
+          {aiMeta!.q0_role_check}
+        </p>
+      </div>
+    ) : null;
 
   const top3Block = (big: boolean) => (
     <div className="space-y-3">
@@ -571,29 +609,188 @@ const RadarMissionSheet: React.FC<{
           >
             {i + 1}
           </span>
-          <Textarea
-            value={fields[k]}
-            onChange={set(k)}
-            rows={2}
-            className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
-          />
+          <div className="flex-1 space-y-1">
+            <Textarea
+              value={fields[k]}
+              onChange={set(k)}
+              rows={2}
+              className={cn('resize-none', big ? 'text-lg leading-relaxed' : 'text-base')}
+            />
+            {aiFieldSources[k] === 'user_edited' && (
+              <span className="text-[11px] text-muted-foreground">modifié</span>
+            )}
+          </div>
         </div>
       ))}
     </div>
   );
 
-  const offerEmptyHint = offerEmpty ? (
-    <p className="text-xs text-muted-foreground">
-      Pour des questions plus précises,{' '}
-      <button
-        type="button"
-        onClick={() => { onOpenChange(false); onOpenSettings(); }}
-        className="text-accent underline underline-offset-2 hover:text-accent/80"
+  // Badge de confiance — orange UNIQUEMENT si « faible » (action requise), neutre sinon.
+  const confidenceBadge = (() => {
+    const band = aiMeta?.confidence_band;
+    if (!band) return null;
+    const score = aiMeta?.confidence_score;
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
+          band === 'faible'
+            ? 'border-accent/50 bg-accent/[0.06] text-foreground'
+            : 'border-border bg-background text-muted-foreground',
+        )}
       >
-        complétez votre profil d'offre
-      </button>.
-    </p>
+        <span
+          className={cn(
+            'h-2 w-2 rounded-full',
+            band === 'faible' ? 'bg-accent' : band === 'moyen' ? 'bg-stone-400' : 'bg-emerald-600/60',
+          )}
+          aria-hidden="true"
+        />
+        Confiance {band}{typeof score === 'number' ? ` · ${score}/100` : ''}
+      </span>
+    );
+  })();
+
+  // Mention discrète si l'IA a basculé sur le scaffold (contenu de base valide).
+  const scaffoldNotice = aiMeta?.generator === 'scaffold' ? (
+    <span className="text-[11px] text-muted-foreground">
+      Enrichissement IA momentanément indisponible.
+    </span>
   ) : null;
+
+  // Nudge de complétion — profil faible/moyen : action requise (accent autorisé).
+  const completionNudge = (() => {
+    const band = aiMeta?.confidence_band;
+    if (band !== 'faible' && band !== 'moyen') return null;
+    const missing = aiMeta?.missing_profile_fields ?? [];
+    return (
+      <div className="space-y-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5">
+        <p className="text-xs text-foreground/80">
+          Complète ton profil d'offre pour des questions plus précises.
+        </p>
+        {missing.length > 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            À renseigner : {missing.map((f) => MISSING_PROFILE_LABELS[f] ?? f).join(' · ')}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => { onOpenChange(false); onOpenSettings(); }}
+          className="text-xs text-accent underline underline-offset-2 hover:text-accent/80"
+        >
+          Compléter mon profil
+        </button>
+      </div>
+    );
+  })();
+
+  // « Pourquoi ces questions ? » — intentions Q1/Q2/Q3 (contexte → enjeu → contact).
+  const whyQuestions = (() => {
+    const intents = aiMeta?.question_intents;
+    if (!intents || !(intents.q1 || intents.q2 || intents.q3)) return null;
+    const rows: Array<[string, string | undefined]> = [
+      ['Q1', intents.q1], ['Q2', intents.q2], ['Q3', intents.q3],
+    ];
+    return (
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+          <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+          Pourquoi ces questions ?
+        </summary>
+        <ul className="mt-2 space-y-1.5 pl-5 text-xs text-muted-foreground">
+          {rows.filter(([, v]) => nonEmpty(v)).map(([lbl, v]) => (
+            <li key={lbl}>
+              <span className="font-medium text-foreground/80">{lbl} —</span> {v}
+            </li>
+          ))}
+        </ul>
+      </details>
+    );
+  })();
+
+  const regenerateButton = (
+    <div className="flex items-center justify-between gap-3 pt-1">
+      {generating ? (
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Génération…
+        </span>
+      ) : (
+        <span />
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onRegenerateClick}
+        disabled={generating}
+        className="h-8 shrink-0"
+      >
+        <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Régénérer
+      </Button>
+    </div>
+  );
+
+  // Encart sobre : entreprise non caractérisée → inviter à poser un statut (pas de génération auto).
+  const characterizeCard = (
+    <div className="space-y-1 rounded-lg border border-border bg-muted/20 px-4 py-5 text-center">
+      <p className="text-sm font-medium text-foreground">
+        Caractérise cette entreprise pour générer sa mission
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Choisis un statut (client, prospect…) ci-dessus — objectif, ouverture, Question 0 et TOP 3
+        seront générés automatiquement.
+      </p>
+    </div>
+  );
+
+  const missionSkeleton = (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Génération de la mission…
+      </div>
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-32 w-full" />
+    </div>
+  );
+
+  // Mission jamais générée (échec ou en attente) alors que le compte est caractérisé.
+  const retryCard = (
+    <div className="space-y-3 rounded-lg border border-border bg-muted/20 px-4 py-5 text-center">
+      <p className="text-sm text-muted-foreground">La mission n'a pas encore été générée.</p>
+      <Button variant="outline" size="sm" onClick={() => void generateMission({})} className="h-8">
+        <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Générer la mission
+      </Button>
+    </div>
+  );
+
+  // Mission complète (objectif prééminent → ouverture → Q0 → TOP 3 → confiance/nudge/why → régénérer).
+  const hasMission =
+    aiGeneratedAt != null ||
+    nonEmpty(fields.objective) || nonEmpty(fields.opening_line) ||
+    nonEmpty(fields.top_q1) || nonEmpty(fields.top_q2) || nonEmpty(fields.top_q3);
+
+  const renderMissionBody = (big: boolean) => {
+    if (rawRelStatus == null) return characterizeCard;
+    if (generating && !hasMission) return missionSkeleton;
+    if (!hasMission) return retryCard;
+    return (
+      <div className="space-y-4">
+        {objectiveBlock(big)}
+        {openingBlock(big)}
+        {q0Block(big)}
+        {top3Block(big)}
+        {(confidenceBadge || scaffoldNotice) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {confidenceBadge}
+            {scaffoldNotice}
+          </div>
+        )}
+        {completionNudge}
+        {whyQuestions}
+        {regenerateButton}
+      </div>
+    );
+  };
 
   const notesBlock = (
     <div className="space-y-3 pt-2 border-t">
@@ -721,24 +918,8 @@ const RadarMissionSheet: React.FC<{
     </div>
   );
 
-  const resetButton = (
-    <button
-      type="button"
-      onClick={() => setResetConfirm(true)}
-      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-    >
-      <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser depuis mon profil
-    </button>
-  );
-
-  // Contenu « préparation » (phrase d'ouverture + TOP 3) réutilisé en section ouverte ou en accordéon.
-  const preparationInner = (
-    <>
-      {openingBlock(true)}
-      {top3Block(true)}
-      {offerEmptyHint}
-    </>
-  );
+  // Contenu « préparation » (mission complète, rendu depuis l'état persisté) réutilisé partout.
+  const preparationInner = renderMissionBody(true);
 
   // Bloc « Ce que je dis » (préparation ouverte, terrain).
   const preparationSection = (
@@ -868,8 +1049,6 @@ const RadarMissionSheet: React.FC<{
                 </Button>
               )}
 
-              {statusChangedInvite}
-
               {/* Hiérarchie adaptative : le CRM prend le dessus dès qu'il existe du contenu. */}
               {hasCrmContent ? (
                 <>
@@ -900,18 +1079,6 @@ const RadarMissionSheet: React.FC<{
                   <div className="pt-4 border-t">{captureSection}</div>
                 </>
               )}
-
-              {/* Secondaire — replié par défaut */}
-              <details className="group border-t pt-4">
-                <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
-                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-                  Objectif &amp; options
-                </summary>
-                <div className="space-y-6 pt-4">
-                  {objectiveBlock}
-                  {resetButton}
-                </div>
-              </details>
             </>
           ) : (
             /* Mode PREPA (inchangé). */
@@ -921,15 +1088,9 @@ const RadarMissionSheet: React.FC<{
                 Préparation pour ce salon
               </p>
 
-              {statusChangedInvite}
-
-              {objectiveBlock}
-              {openingBlock(false)}
-              {top3Block(false)}
-              {offerEmptyHint}
+              {renderMissionBody(false)}
               {notesBlock}
               {tasksBlock}
-              {resetButton}
             </>
           )}
         </div>
@@ -937,18 +1098,28 @@ const RadarMissionSheet: React.FC<{
 
       </SheetContent>
 
-      <AlertDialog open={resetConfirm} onOpenChange={setResetConfirm}>
+      <AlertDialog open={regenConfirm} onOpenChange={setRegenConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Réinitialiser la mission ?</AlertDialogTitle>
+            <AlertDialogTitle>Tu as modifié une ou plusieurs questions.</AlertDialogTitle>
             <AlertDialogDescription>
-              Les champs objectif, phrase d'ouverture et TOP 3 seront remplacés par les suggestions
-              générées depuis votre profil d'offre et le statut actuel du compte.
+              Choisis comment régénérer la mission. « Garder mes modifications » ne régénère que les
+              champs non édités ; « Tout régénérer » écrase aussi tes éditions manuelles.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={applySuggestions}>Réinitialiser</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => { setRegenConfirm(false); void generateMission({ force: false }); }}
+            >
+              Garder mes modifications
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => { setRegenConfirm(false); void generateMission({ force: true }); }}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              Tout régénérer
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

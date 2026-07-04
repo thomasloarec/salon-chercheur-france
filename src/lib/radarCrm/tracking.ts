@@ -35,6 +35,7 @@ export type RadarEventType =
   | 'radar_company_relationship_updated'
   | 'radar_mission_opened'
   | 'radar_mission_saved'
+  | 'radar_mission_generated'
   | 'radar_salon_mode_opened'
   | 'radar_salon_mode_viewed'
   | 'radar_debrief_viewed'

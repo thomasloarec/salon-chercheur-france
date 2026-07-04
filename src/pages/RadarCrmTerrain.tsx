@@ -833,9 +833,7 @@ const RadarCrmTerrainInner: React.FC = () => {
           }
         }}
         relationship={activeCompany ? getRel(activeCompany) : DEFAULT_RELATIONSHIP}
-        onChangeRelationship={(next) => {
-          if (mission) void setRel(mission.companyId, next);
-        }}
+        onChangeRelationship={(next) => (mission ? setRel(mission.companyId, next) : undefined)}
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
