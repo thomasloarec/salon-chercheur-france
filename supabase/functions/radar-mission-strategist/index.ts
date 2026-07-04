@@ -262,10 +262,14 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
 
     let generator = "scaffold";
+    let fallbackReason = "none";
     let out: any = { ...fb };
     let aiExtra: any = {};
 
-    if (apiKey) {
+    if (!apiKey) {
+      fallbackReason = "no_api_key";
+      console.error("[strategist] no ANTHROPIC_API_KEY -> scaffold");
+    } else {
       const res = await callAnthropic({
         apiKey,
         model,
@@ -281,6 +285,7 @@ Deno.serve(async (req) => {
             .every((k) => typeof parsed?.[k] === "string" && parsed[k].trim().length > 0);
           if (ok) {
             generator = "ai";
+            fallbackReason = "none";
             out = {
               objective: parsed.objective.trim(),
               opening_line: parsed.opening_line.trim(),
@@ -298,12 +303,15 @@ Deno.serve(async (req) => {
               follow_up_task: typeof parsed.follow_up_task === "string" ? parsed.follow_up_task : undefined,
             };
           } else {
+            fallbackReason = "missing_fields";
             console.error("[strategist] AI JSON missing required fields -> scaffold");
           }
         } catch {
+          fallbackReason = "parse_error";
           console.error("[strategist] AI parse failed -> scaffold");
         }
       } else {
+        fallbackReason = `ai_error:${res.errorCode ?? "unknown"}`;
         console.error("[strategist] AI call failed -> scaffold:", res.errorCode);
       }
     }
@@ -321,6 +329,7 @@ Deno.serve(async (req) => {
       missing_profile_fields: conf.missing,
       model,
       generator,
+      fallback_reason: fallbackReason,
     };
 
     const { data: missionId, error: applyErr } = await supabase.rpc("apply_radar_mission_strategy", {
