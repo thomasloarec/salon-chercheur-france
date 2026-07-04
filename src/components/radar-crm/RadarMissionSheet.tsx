@@ -1049,8 +1049,6 @@ const RadarMissionSheet: React.FC<{
                 </Button>
               )}
 
-              {statusChangedInvite}
-
               {/* Hiérarchie adaptative : le CRM prend le dessus dès qu'il existe du contenu. */}
               {hasCrmContent ? (
                 <>
@@ -1081,18 +1079,6 @@ const RadarMissionSheet: React.FC<{
                   <div className="pt-4 border-t">{captureSection}</div>
                 </>
               )}
-
-              {/* Secondaire — replié par défaut */}
-              <details className="group border-t pt-4">
-                <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
-                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-                  Objectif &amp; options
-                </summary>
-                <div className="space-y-6 pt-4">
-                  {objectiveBlock}
-                  {resetButton}
-                </div>
-              </details>
             </>
           ) : (
             /* Mode PREPA (inchangé). */
@@ -1102,15 +1088,9 @@ const RadarMissionSheet: React.FC<{
                 Préparation pour ce salon
               </p>
 
-              {statusChangedInvite}
-
-              {objectiveBlock}
-              {openingBlock(false)}
-              {top3Block(false)}
-              {offerEmptyHint}
+              {renderMissionBody(false)}
               {notesBlock}
               {tasksBlock}
-              {resetButton}
             </>
           )}
         </div>
@@ -1118,18 +1098,28 @@ const RadarMissionSheet: React.FC<{
 
       </SheetContent>
 
-      <AlertDialog open={resetConfirm} onOpenChange={setResetConfirm}>
+      <AlertDialog open={regenConfirm} onOpenChange={setRegenConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Réinitialiser la mission ?</AlertDialogTitle>
+            <AlertDialogTitle>Tu as modifié une ou plusieurs questions.</AlertDialogTitle>
             <AlertDialogDescription>
-              Les champs objectif, phrase d'ouverture et TOP 3 seront remplacés par les suggestions
-              générées depuis votre profil d'offre et le statut actuel du compte.
+              Choisis comment régénérer la mission. « Garder mes modifications » ne régénère que les
+              champs non édités ; « Tout régénérer » écrase aussi tes éditions manuelles.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={applySuggestions}>Réinitialiser</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => { setRegenConfirm(false); void generateMission({ force: false }); }}
+            >
+              Garder mes modifications
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => { setRegenConfirm(false); void generateMission({ force: true }); }}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              Tout régénérer
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
