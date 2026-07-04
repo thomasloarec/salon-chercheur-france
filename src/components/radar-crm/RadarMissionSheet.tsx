@@ -809,6 +809,16 @@ const RadarMissionSheet: React.FC<{
     nonEmpty(fields.objective) || nonEmpty(fields.opening_line) ||
     nonEmpty(fields.top_q1) || nonEmpty(fields.top_q2) || nonEmpty(fields.top_q3);
 
+  // Régénération IA en cours ALORS qu'un contenu existe déjà : on remplace le texte par des
+  // skeletons pour signaler clairement l'arrivée d'un nouveau contenu (≠ première génération,
+  // ≠ édition manuelle inline qui, elle, n'active jamais `generating`).
+  const regenerating = generating && hasMission;
+  // Un champ éditable passe en skeleton s'il va réellement être remplacé :
+  //  - force (« Tout régénérer ») → tous les champs ;
+  //  - sans force → seulement ceux qui ne sont pas édités à la main (préservés par l'EF).
+  const shouldSkeleton = (k: keyof MissionFields) =>
+    regenerating && (regenForce || aiFieldSources[k] !== 'user_edited');
+
   const renderMissionBody = (big: boolean) => {
     if (rawRelStatus == null) return characterizeCard;
     if (generating && !hasMission) return missionSkeleton;
