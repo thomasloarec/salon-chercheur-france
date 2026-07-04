@@ -107,6 +107,9 @@ export function useVoiceNoteCapture({ companyId, eventId }: UseVoiceNoteCaptureA
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollDeadlineRef = useRef<number>(0);
+  // Référence toujours à jour vers finalize() : évite les closures périmées
+  // dans recorder.onstop (défini au moment de l'enregistrement).
+  const finalizeRef = useRef<() => void>(() => {});
 
   const clearTimers = useCallback(() => {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
@@ -225,7 +228,7 @@ export function useVoiceNoteCapture({ companyId, eventId }: UseVoiceNoteCaptureA
     recorder.ondataavailable = (e: BlobEvent) => {
       if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
     };
-    recorder.onstop = () => { void finalize(); };
+    recorder.onstop = () => { finalizeRef.current(); };
 
     startedAtRef.current = Date.now();
     recorder.start();
@@ -306,16 +309,18 @@ export function useVoiceNoteCapture({ companyId, eventId }: UseVoiceNoteCaptureA
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, eventId, clearTimers, stopStream, fail, startPolling]);
 
+  // Garde la ref alignée sur la dernière version de finalize.
+  useEffect(() => { finalizeRef.current = () => { void finalize(); }; }, [finalize]);
+
   // ---- stop() : demande l'arrêt ; finalize() est déclenché par onstop ----
   const stop = useCallback(() => {
     clearTimers();
     if (recorderRef.current && recorderRef.current.state !== 'inactive') {
-      try { recorderRef.current.stop(); } catch { void finalize(); }
+      try { recorderRef.current.stop(); } catch { finalizeRef.current(); }
     } else {
-      void finalize();
+      finalizeRef.current();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clearTimers, finalize]);
+  }, [clearTimers]);
 
   // ---- cancel() : abandon complet, rien n'est envoyé ----
   const cancel = useCallback(() => {
