@@ -373,6 +373,93 @@ const RadarCrmTerrainInner: React.FC = () => {
     void load();
   }, [user, load, eventId]);
 
+  // --- Map « à valider » : sociétés du salon ayant une note vocale ready_for_review ---
+  // RLS member : chaque utilisateur ne voit que ses propres missions / notes.
+  const refreshPending = useCallback(async () => {
+    if (!eventId || !user) return;
+    const { data: missions, error: mErr } = await supabase
+      .from('radar_missions')
+      .select('id, crm_company_id')
+      .eq('event_id', eventId);
+    if (mErr || !missions || missions.length === 0) {
+      setPendingVoiceMap({});
+      return;
+    }
+    const companyByMission = new Map<string, string>();
+    for (const m of missions as Array<{ id: string; crm_company_id: string }>) {
+      companyByMission.set(m.id, m.crm_company_id);
+    }
+    const { data: notes, error: nErr } = await supabase
+      .from('radar_mission_voice_notes')
+      .select('mission_id')
+      .eq('status', 'ready_for_review')
+      .in('mission_id', Array.from(companyByMission.keys()));
+    if (nErr) return;
+    const map: Record<string, number> = {};
+    for (const n of (notes ?? []) as Array<{ mission_id: string | null }>) {
+      const cid = n.mission_id ? companyByMission.get(n.mission_id) : undefined;
+      if (cid) map[cid] = (map[cid] ?? 0) + 1;
+    }
+    setPendingVoiceMap(map);
+    // Une société désormais « à valider » n'est plus « en analyse ».
+    setVoiceProcessing((p) => {
+      const next = { ...p };
+      let changed = false;
+      for (const cid of Object.keys(map)) {
+        if (next[cid]) { delete next[cid]; changed = true; }
+      }
+      return changed ? next : p;
+    });
+  }, [eventId, user]);
+
+  // Chargement initial + au retour sur la page (changement de salon / user).
+  useEffect(() => {
+    if (!user || !eventId) return;
+    void refreshPending();
+  }, [user, eventId, refreshPending]);
+
+  const clearVoiceWatch = useCallback(() => {
+    if (voiceWatchRef.current) { clearInterval(voiceWatchRef.current); voiceWatchRef.current = null; }
+  }, []);
+
+  // Filet de sécurité : tant qu'une capture est en analyse, on repolle la map même si
+  // l'utilisateur a refermé la capture inline (le badge finira par apparaître).
+  const startVoiceWatch = useCallback(() => {
+    if (voiceWatchRef.current) return;
+    let ticks = 0;
+    voiceWatchRef.current = setInterval(() => {
+      ticks += 1;
+      void refreshPending();
+      if (ticks >= 30) clearVoiceWatch(); // ~2 min max
+    }, 4_000);
+  }, [refreshPending, clearVoiceWatch]);
+
+  // Stoppe le filet quand plus aucune analyse n'est en cours.
+  useEffect(() => {
+    if (Object.keys(voiceProcessing).length === 0) clearVoiceWatch();
+  }, [voiceProcessing, clearVoiceWatch]);
+
+  useEffect(() => clearVoiceWatch, [clearVoiceWatch]);
+
+  const openVoice = (companyId: string) => {
+    setNoteOpenFor(null);
+    setVoiceOpenFor((cur) => (cur === companyId ? null : companyId));
+  };
+  const closeVoice = () => setVoiceOpenFor(null);
+
+  const handleVoiceProcessing = (companyId: string) => {
+    setVoiceProcessing((p) => ({ ...p, [companyId]: true }));
+    startVoiceWatch();
+  };
+  const handleVoiceReady = (companyId: string) => {
+    setVoiceProcessing((p) => {
+      const next = { ...p };
+      delete next[companyId];
+      return next;
+    });
+    void refreshPending();
+  };
+
   const ev = payload?.event ?? null;
   const eventName = ev?.nom_event ?? 'Salon';
   // Phase du salon : le débrief n'est proposé qu'à partir du 1er jour du salon.
