@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,13 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, MapPin, Star, ChevronRight, Calendar, StickyNote, CheckSquare,
-  Check, Plus, Loader2, X, Building2, ClipboardList,
+  Check, Plus, Loader2, X, Building2, ClipboardList, Mic,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import RadarTerrainAddCompanySheet from '@/components/radar-crm/RadarTerrainAddCompanySheet';
+import TerrainVoiceCapture from '@/components/radar-crm/TerrainVoiceCapture';
 import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship, DEFAULT_RELATIONSHIP,
 } from '@/lib/radarCrm/relationship';
@@ -22,6 +23,9 @@ import { cn } from '@/lib/utils';
 import { eventPhase, showDebrief } from '@/lib/radarCrm/eventPhase';
 
 type Pref = 'starred' | 'ignored' | 'normal';
+
+/** Orange doctrine : SEUL usage orange de la page = le badge « à valider » (validation différée). */
+const ORANGE = '#ff751f';
 
 /** Shape renvoyée par get_radar_salon_missions (typée Json côté RPC). */
 interface SalonMissionCompany {
@@ -114,18 +118,28 @@ interface TerrainRowProps {
   noteOpen: boolean;
   noteText: string;
   savingNote: boolean;
+  /** Nb de notes vocales en attente de validation (badge orange). */
+  pendingVoiceCount: number;
+  /** Une capture vocale de cette ligne est en cours d'analyse (indicateur neutre). */
+  voiceProcessing: boolean;
+  /** La capture vocale inline est ouverte sur cette ligne. */
+  voiceOpen: boolean;
+  /** Slot de capture vocale inline (rendu par le parent quand voiceOpen). */
+  voiceSlot?: React.ReactNode;
   onOpenMission: () => void;
   onToggleVisited: () => void;
   onOpenNote: () => void;
   onCloseNote: () => void;
   onChangeNote: (v: string) => void;
   onSubmitNote: () => void;
+  onToggleVoice: () => void;
 }
 
 /** Ligne de check-list terrain : grande, tactile, actions directes. */
 const TerrainRow: React.FC<TerrainRowProps> = ({
   company: c, visited, relationship, noteCount, noteOpen, noteText, savingNote,
-  onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote,
+  pendingVoiceCount, voiceProcessing, voiceOpen, voiceSlot,
+  onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote, onToggleVoice,
 }) => {
   const taskCount = Array.isArray(c.tasks) ? c.tasks.filter((t) => !t?.done).length : 0;
   const starred = c.pref_status === 'starred';
@@ -165,6 +179,20 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
               </p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
                 <RelBadge status={relationship} />
+                {pendingVoiceCount > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                    style={{ backgroundColor: ORANGE }}
+                  >
+                    <Mic className="h-3 w-3" />
+                    À valider{pendingVoiceCount > 1 ? ` (${pendingVoiceCount})` : ''}
+                  </span>
+                )}
+                {voiceProcessing && pendingVoiceCount === 0 && (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Analyse…
+                  </span>
+                )}
                 {(noteCount > 0 || taskCount > 0) && (
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     {noteCount > 0 && (
@@ -185,7 +213,7 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           </div>
         </button>
 
-        {/* Actions directes — Note = action primaire (accent orange), Visité = secondaire (neutre, discret) */}
+        {/* Actions directes — Note = action primaire (accent), Micro + Visité = secondaires (neutres) */}
         <div className="flex items-stretch gap-2 border-t border-border/60 p-3">
           <Button
             type="button"
@@ -199,6 +227,16 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           <Button
             type="button"
             variant="outline"
+            className="min-h-[44px] w-12 shrink-0 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+            onClick={onToggleVoice}
+            aria-expanded={voiceOpen}
+            aria-label="Note vocale"
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
             className="flex-1 min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
             onClick={onToggleVisited}
           >
@@ -206,6 +244,11 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
             {visited ? 'Vu' : 'Visité'}
           </Button>
         </div>
+
+        {/* Capture vocale inline (compacte) */}
+        {voiceOpen && voiceSlot && (
+          <div className="px-3 pb-3">{voiceSlot}</div>
+        )}
 
         {/* Capture éclair en place */}
         {noteOpen && (
@@ -269,6 +312,15 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [noteText, setNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
 
+  // --- Notes vocales : validation différée signalée sur la ligne ---
+  // Ligne dont la capture vocale inline est ouverte.
+  const [voiceOpenFor, setVoiceOpenFor] = useState<string | null>(null);
+  // Map crm_company_id -> nb de notes vocales ready_for_review (badge orange « à valider »).
+  const [pendingVoiceMap, setPendingVoiceMap] = useState<Record<string, number>>({});
+  // Sociétés dont une capture vocale est en cours d'analyse (indicateur neutre « Analyse… »).
+  const [voiceProcessing, setVoiceProcessing] = useState<Record<string, boolean>>({});
+  const voiceWatchRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Auth gate — même comportement que le cockpit.
   useEffect(() => {
     if (!authLoading && !user) {
@@ -320,6 +372,93 @@ const RadarCrmTerrainInner: React.FC = () => {
     void trackRadarEvent('radar_salon_mode_viewed', { eventId });
     void load();
   }, [user, load, eventId]);
+
+  // --- Map « à valider » : sociétés du salon ayant une note vocale ready_for_review ---
+  // RLS member : chaque utilisateur ne voit que ses propres missions / notes.
+  const refreshPending = useCallback(async () => {
+    if (!eventId || !user) return;
+    const { data: missions, error: mErr } = await supabase
+      .from('radar_missions')
+      .select('id, crm_company_id')
+      .eq('event_id', eventId);
+    if (mErr || !missions || missions.length === 0) {
+      setPendingVoiceMap({});
+      return;
+    }
+    const companyByMission = new Map<string, string>();
+    for (const m of missions as Array<{ id: string; crm_company_id: string }>) {
+      companyByMission.set(m.id, m.crm_company_id);
+    }
+    const { data: notes, error: nErr } = await supabase
+      .from('radar_mission_voice_notes')
+      .select('mission_id')
+      .eq('status', 'ready_for_review')
+      .in('mission_id', Array.from(companyByMission.keys()));
+    if (nErr) return;
+    const map: Record<string, number> = {};
+    for (const n of (notes ?? []) as Array<{ mission_id: string | null }>) {
+      const cid = n.mission_id ? companyByMission.get(n.mission_id) : undefined;
+      if (cid) map[cid] = (map[cid] ?? 0) + 1;
+    }
+    setPendingVoiceMap(map);
+    // Une société désormais « à valider » n'est plus « en analyse ».
+    setVoiceProcessing((p) => {
+      const next = { ...p };
+      let changed = false;
+      for (const cid of Object.keys(map)) {
+        if (next[cid]) { delete next[cid]; changed = true; }
+      }
+      return changed ? next : p;
+    });
+  }, [eventId, user]);
+
+  // Chargement initial + au retour sur la page (changement de salon / user).
+  useEffect(() => {
+    if (!user || !eventId) return;
+    void refreshPending();
+  }, [user, eventId, refreshPending]);
+
+  const clearVoiceWatch = useCallback(() => {
+    if (voiceWatchRef.current) { clearInterval(voiceWatchRef.current); voiceWatchRef.current = null; }
+  }, []);
+
+  // Filet de sécurité : tant qu'une capture est en analyse, on repolle la map même si
+  // l'utilisateur a refermé la capture inline (le badge finira par apparaître).
+  const startVoiceWatch = useCallback(() => {
+    if (voiceWatchRef.current) return;
+    let ticks = 0;
+    voiceWatchRef.current = setInterval(() => {
+      ticks += 1;
+      void refreshPending();
+      if (ticks >= 30) clearVoiceWatch(); // ~2 min max
+    }, 4_000);
+  }, [refreshPending, clearVoiceWatch]);
+
+  // Stoppe le filet quand plus aucune analyse n'est en cours.
+  useEffect(() => {
+    if (Object.keys(voiceProcessing).length === 0) clearVoiceWatch();
+  }, [voiceProcessing, clearVoiceWatch]);
+
+  useEffect(() => clearVoiceWatch, [clearVoiceWatch]);
+
+  const openVoice = (companyId: string) => {
+    setNoteOpenFor(null);
+    setVoiceOpenFor((cur) => (cur === companyId ? null : companyId));
+  };
+  const closeVoice = () => setVoiceOpenFor(null);
+
+  const handleVoiceProcessing = (companyId: string) => {
+    setVoiceProcessing((p) => ({ ...p, [companyId]: true }));
+    startVoiceWatch();
+  };
+  const handleVoiceReady = (companyId: string) => {
+    setVoiceProcessing((p) => {
+      const next = { ...p };
+      delete next[companyId];
+      return next;
+    });
+    void refreshPending();
+  };
 
   const ev = payload?.event ?? null;
   const eventName = ev?.nom_event ?? 'Salon';
@@ -575,12 +714,25 @@ const RadarCrmTerrainInner: React.FC = () => {
                       noteOpen={noteOpenFor === c.crm_company_id}
                       noteText={noteText}
                       savingNote={savingNote}
+                      pendingVoiceCount={pendingVoiceMap[c.crm_company_id] ?? 0}
+                      voiceProcessing={!!voiceProcessing[c.crm_company_id]}
+                      voiceOpen={voiceOpenFor === c.crm_company_id}
+                      voiceSlot={voiceOpenFor === c.crm_company_id && eventId ? (
+                        <TerrainVoiceCapture
+                          companyId={c.crm_company_id}
+                          eventId={eventId}
+                          onProcessing={() => handleVoiceProcessing(c.crm_company_id)}
+                          onReady={() => handleVoiceReady(c.crm_company_id)}
+                          onClose={closeVoice}
+                        />
+                      ) : undefined}
                       onOpenMission={() => openMission(c)}
                       onToggleVisited={() => void toggleVisited(c)}
                       onOpenNote={() => openNote(c)}
                       onCloseNote={closeNote}
                       onChangeNote={setNoteText}
                       onSubmitNote={() => void submitNote(c)}
+                      onToggleVoice={() => openVoice(c.crm_company_id)}
                     />
                   ))}
                 </ul>
@@ -604,12 +756,25 @@ const RadarCrmTerrainInner: React.FC = () => {
                           noteOpen={noteOpenFor === c.crm_company_id}
                           noteText={noteText}
                           savingNote={savingNote}
+                          pendingVoiceCount={pendingVoiceMap[c.crm_company_id] ?? 0}
+                          voiceProcessing={!!voiceProcessing[c.crm_company_id]}
+                          voiceOpen={voiceOpenFor === c.crm_company_id}
+                          voiceSlot={voiceOpenFor === c.crm_company_id && eventId ? (
+                            <TerrainVoiceCapture
+                              companyId={c.crm_company_id}
+                              eventId={eventId}
+                              onProcessing={() => handleVoiceProcessing(c.crm_company_id)}
+                              onReady={() => handleVoiceReady(c.crm_company_id)}
+                              onClose={closeVoice}
+                            />
+                          ) : undefined}
                           onOpenMission={() => openMission(c)}
                           onToggleVisited={() => void toggleVisited(c)}
                           onOpenNote={() => openNote(c)}
                           onCloseNote={closeNote}
                           onChangeNote={setNoteText}
                           onSubmitNote={() => void submitNote(c)}
+                          onToggleVoice={() => openVoice(c.crm_company_id)}
                         />
                       ))}
                     </ul>
@@ -663,6 +828,8 @@ const RadarCrmTerrainInner: React.FC = () => {
             setMission(null);
             // Rafraîchit les compteurs notes/tâches capturés dans le Sheet.
             void load();
+            // Rafraîchit le badge « à valider » (une note peut avoir été validée dans le Sheet).
+            void refreshPending();
           }
         }}
         relationship={activeCompany ? getRel(activeCompany) : DEFAULT_RELATIONSHIP}

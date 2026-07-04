@@ -32,7 +32,7 @@ interface Props {
 
 const VoiceNoteCapture: React.FC<Props> = ({ companyId, eventId, onValidated }) => {
   const cap = useVoiceNoteCapture({ companyId, eventId });
-  const { state, errorMessage, elapsedMs, stepLabel, slow, start, stop, cancel, retry, reset, maxDurationMs } = cap;
+  const { state, errorMessage, elapsedMs, slow, start, stop, cancel, retry, reset, maxDurationMs } = cap;
 
   const [recording, setRecording] = React.useState(false); // l'utilisateur a ouvert l'enregistreur
   const [pending, setPending] = React.useState<VoiceNoteRow[]>([]);
@@ -138,9 +138,11 @@ const VoiceNoteCapture: React.FC<Props> = ({ companyId, eventId, onValidated }) 
             <div className="flex items-center gap-3">
               <Loader2 className="h-5 w-5 shrink-0 animate-spin" style={{ color: NAVY }} />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{stepLabel ?? 'Analyse en cours…'}</p>
+                <p className="text-sm font-medium text-foreground">
+                  Note vocale envoyée — analyse en cours
+                </p>
                 <p className="text-[11px] text-muted-foreground">
-                  Vous pouvez continuer votre mission, l'analyse se poursuit.
+                  Vos notes et tâches arrivent dans quelques secondes. Vous pouvez continuer votre mission.
                 </p>
               </div>
             </div>
