@@ -4388,6 +4388,9 @@ export type Database = {
       }
       radar_missions: {
         Row: {
+          ai_field_sources: Json
+          ai_generated_at: string | null
+          ai_meta: Json | null
           company_key: string
           created_at: string
           created_by: string | null
@@ -4407,6 +4410,9 @@ export type Database = {
           visited_at: string | null
         }
         Insert: {
+          ai_field_sources?: Json
+          ai_generated_at?: string | null
+          ai_meta?: Json | null
           company_key: string
           created_at?: string
           created_by?: string | null
@@ -4426,6 +4432,9 @@ export type Database = {
           visited_at?: string | null
         }
         Update: {
+          ai_field_sources?: Json
+          ai_generated_at?: string | null
+          ai_meta?: Json | null
           company_key?: string
           created_at?: string
           created_by?: string | null
@@ -4450,6 +4459,7 @@ export type Database = {
         Row: {
           created_at: string
           problem: string | null
+          profile_v2: Json | null
           qualifies: string | null
           radar_account_id: string
           sells: string | null
@@ -4460,6 +4470,7 @@ export type Database = {
         Insert: {
           created_at?: string
           problem?: string | null
+          profile_v2?: Json | null
           qualifies?: string | null
           radar_account_id: string
           sells?: string | null
@@ -4470,6 +4481,7 @@ export type Database = {
         Update: {
           created_at?: string
           problem?: string | null
+          profile_v2?: Json | null
           qualifies?: string | null
           radar_account_id?: string
           sells?: string | null
@@ -6506,6 +6518,20 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_radar_mission_strategy: {
+        Args: {
+          p_ai_meta: Json
+          p_crm_company_id: string
+          p_event_id: string
+          p_force?: boolean
+          p_objective: string
+          p_opening_line: string
+          p_top_q1: string
+          p_top_q2: string
+          p_top_q3: string
+        }
+        Returns: string
+      }
       can_add_novelty: {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
@@ -6837,6 +6863,10 @@ export type Database = {
       get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
+      get_radar_mission_context: {
+        Args: { p_crm_company_id: string; p_event_id: string }
+        Returns: Json
+      }
       get_radar_onboarding_progress: { Args: never; Returns: Json }
       get_radar_salon_missions: { Args: { p_event_id: string }; Returns: Json }
       get_radar_salon_similar: {
@@ -7272,6 +7302,7 @@ export type Database = {
       upsert_radar_offer_profile: {
         Args: {
           p_problem: string
+          p_profile_v2?: Json
           p_qualifies: string
           p_sells: string
           p_target: string

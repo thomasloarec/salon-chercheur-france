@@ -156,3 +156,10 @@ verify_jwt = false
 # functions. Heavy work (transcription + Claude analysis) runs in the background
 # via EdgeRuntime.waitUntil after an immediate 202 response.
 verify_jwt = false
+
+[functions.radar-mission-strategist]
+# Auth enforced in code: getUser() via the anon client + forwarded Authorization
+# header, so auth.uid() resolves inside the SECURITY DEFINER RPCs
+# (get_radar_mission_context / apply_radar_mission_strategy). No service_role is
+# used. verify_jwt stays false to keep the in-code gate the single source of truth.
+verify_jwt = false
