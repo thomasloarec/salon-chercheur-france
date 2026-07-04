@@ -24,6 +24,9 @@ import { eventPhase, showDebrief } from '@/lib/radarCrm/eventPhase';
 
 type Pref = 'starred' | 'ignored' | 'normal';
 
+/** Orange doctrine : SEUL usage orange de la page = le badge « à valider » (validation différée). */
+const ORANGE = '#ff751f';
+
 /** Shape renvoyée par get_radar_salon_missions (typée Json côté RPC). */
 interface SalonMissionCompany {
   crm_company_id: string;
