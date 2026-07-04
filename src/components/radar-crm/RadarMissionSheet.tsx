@@ -270,6 +270,7 @@ const RadarMissionSheet: React.FC<{
   const set = (k: keyof MissionFields) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEdited(true);
     setStatusChanged(false);
+    setDirty(true);
     setFields((f) => ({ ...f, [k]: e.target.value }));
   };
 
@@ -278,6 +279,7 @@ const RadarMissionSheet: React.FC<{
     setFields({ ...buildMissionSuggestion(relationship, offer) });
     setEdited(false);
     setStatusChanged(false);
+    setDirty(true);
     prevRelRef.current = relationship;
   };
 
