@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, MapPin, Calendar, Copy, Download, Check, StickyNote,
-  CheckSquare, Sparkles, Target,
+  CheckSquare, Sparkles, Target, Mic,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
@@ -17,8 +17,8 @@ import {
 import { cn } from '@/lib/utils';
 
 /** Note / tâche telles que renvoyées par get_radar_salon_missions. */
-interface MissionNote { body?: string | null; created_at?: string | null }
-interface MissionTask { body?: string | null; due_at?: string | null; done?: boolean | null }
+interface MissionNote { body?: string | null; created_at?: string | null; source?: string | null }
+interface MissionTask { body?: string | null; due_at?: string | null; done?: boolean | null; source?: string | null }
 
 interface DebriefCompany {
   crm_company_id: string;
@@ -97,6 +97,16 @@ const RelBadge: React.FC<{ status: RelationshipStatus }> = ({ status }) => {
     </span>
   );
 };
+
+/** Marqueur discret et neutre pour les contenus issus d'une note vocale. */
+const VoiceMarker: React.FC = () => (
+  <span
+    className="inline-flex items-center gap-1 rounded-full bg-[#04316d]/10 text-[#04316d] px-1.5 py-0.5 text-[10px] font-medium align-middle"
+    title="Issu d'une note vocale"
+  >
+    <Mic className="h-2.5 w-2.5" aria-hidden="true" /> vocal
+  </span>
+);
 
 const RadarCrmDebrief: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
