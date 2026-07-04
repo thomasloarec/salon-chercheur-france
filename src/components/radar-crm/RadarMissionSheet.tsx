@@ -319,6 +319,27 @@ const RadarMissionSheet: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, target?.companyId, target?.eventId]);
 
+  // Miroir synchrone de l'état de génération (lu par le poll ci-dessous).
+  useEffect(() => { generatingRef.current = generating; }, [generating]);
+
+  // Poll du verrou : détecte la fin d'un invoke (même lancé par une autre instance du Sheet)
+  // pour retirer les skeletons et réafficher depuis l'état persisté (jamais de skeleton bloqué).
+  useEffect(() => {
+    if (!open || !target) return;
+    const cid = target.companyId;
+    const id = window.setInterval(() => {
+      const inFlight = missionGenInFlight.has(cid);
+      if (inFlight === generatingRef.current) return;
+      if (!inFlight) {
+        // Régénération terminée ailleurs → refetch de l'état persisté (succès ou erreur).
+        void loadRow({ overwriteFields: true });
+      }
+      setGenerating(inFlight);
+    }, 400);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, target?.companyId, target?.eventId]);
+
   // Édition inline : marque « dirty » (auto-save débouncé → upsert → refetch métadonnées).
   const set = (k: keyof MissionFields) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDirty(true);
