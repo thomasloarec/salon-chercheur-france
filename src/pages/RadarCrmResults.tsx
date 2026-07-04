@@ -883,7 +883,7 @@ const RadarCrmResults: React.FC = () => {
         open={!!mission}
         onOpenChange={(o) => { if (!o) setMission(null); }}
         relationship={mission ? getRel(mission.company) : DEFAULT_RELATIONSHIP}
-        onChangeRelationship={(next) => { if (mission) void setRel(mission.company, next); }}
+        onChangeRelationship={(next) => (mission ? setRel(mission.company, next) : undefined)}
         onOpenSettings={() => setSettingsOpen(true)}
       />
     </MainLayout>
