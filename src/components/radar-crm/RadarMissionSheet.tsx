@@ -169,15 +169,16 @@ const RadarMissionSheet: React.FC<{
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [dirty, setDirty] = useState(false);
   const [fields, setFields] = useState<MissionFields>(EMPTY);
-  const [offer, setOffer] = useState<OfferProfileInput | null>(null);
-  const [offerEmpty, setOfferEmpty] = useState(false);
-  const [resetConfirm, setResetConfirm] = useState(false);
-  // Distingue « suggéré » (régénérable au changement de statut) de « édité » (protégé).
-  const [edited, setEdited] = useState(false);
-  // Le statut a changé alors que l'utilisateur avait déjà édité → invite discrète.
-  const [statusChanged, setStatusChanged] = useState(false);
-  // Dernier statut pour lequel des suggestions ont été appliquées / chargées.
-  const prevRelRef = useRef<RelationshipStatus>(relationship);
+  // Métadonnées IA persistées (ai_meta) + provenance par champ (ai_field_sources).
+  const [aiMeta, setAiMeta] = useState<MissionAiMeta | null>(null);
+  const [aiFieldSources, setAiFieldSources] = useState<Record<string, string>>({});
+  const [aiGeneratedAt, setAiGeneratedAt] = useState<string | null>(null);
+  // Statut relationnel BRUT lu en base (null = jamais caractérisé, ≠ 'a_qualifier' explicite).
+  const [rawRelStatus, setRawRelStatus] = useState<string | null>(null);
+  // Génération IA en cours (spinner localisé, non bloquant).
+  const [generating, setGenerating] = useState(false);
+  // Confirmation avant d'écraser des champs édités manuellement.
+  const [regenConfirm, setRegenConfirm] = useState(false);
   // Description société (résumé IA ou legacy) affichée sous l'en-tête.
   const [description, setDescription] = useState<string | null>(null);
   // Dates du salon (niveau SALON) — lues dans le payload de la RPC, affichées dans l'en-tête.
