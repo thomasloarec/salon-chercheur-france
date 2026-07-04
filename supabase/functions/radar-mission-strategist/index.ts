@@ -341,6 +341,7 @@ Deno.serve(async (req) => {
         "Identifier le bon interlocuteur et une prochaine étape concrète.",
       recommended_next_status: aiExtra.recommended_next_status ?? (NEXT_BY_STATUS[status] ?? "prospect_chaud"),
       follow_up_task: aiExtra.follow_up_task ?? "Envoyer une information courte et ciblée après le salon.",
+      exhibitor_scale: aiExtra.exhibitor_scale ?? "incertain",
       confidence_score: conf.score,
       confidence_band: conf.band,
       missing_profile_fields: conf.missing,
