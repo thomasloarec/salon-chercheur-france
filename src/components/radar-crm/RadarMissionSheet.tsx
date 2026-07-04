@@ -35,6 +35,7 @@ import {
 import { buildMissionSuggestion, type OfferProfileInput } from '@/lib/radarCrm/playbooks';
 import ExpandableText from '@/components/exhibitor/ExpandableText';
 import { cn } from '@/lib/utils';
+import VoiceNoteCapture from '@/components/radar-crm/VoiceNoteCapture';
 
 
 /** Compte ciblé par le panneau mission (couple crm_company_id + salon). */
@@ -766,6 +767,9 @@ const RadarMissionSheet: React.FC<{
                   <StickyNote className="h-4 w-4 shrink-0" />
                   <span className="text-xs font-semibold uppercase tracking-wide">Ce que je capture</span>
                 </div>
+                {target && (
+                  <VoiceNoteCapture companyId={target.companyId} eventId={target.eventId} />
+                )}
                 {notesBlock}
                 {tasksBlock}
               </section>
