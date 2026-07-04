@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { callAnthropic, getAnthropicModelFast } from "../_shared/anthropic.ts";
+import { callAnthropic, getAnthropicModelStrong } from "../_shared/anthropic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -257,7 +257,7 @@ Deno.serve(async (req) => {
     const conf = scoreConfidence(ctx);
     const fb = fallbackFields(status, ctx);
 
-    const model = getAnthropicModelFast();
+    const model = getAnthropicModelStrong();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
 
     let generator = "scaffold";

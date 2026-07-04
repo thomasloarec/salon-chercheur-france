@@ -24,6 +24,21 @@ export function getAnthropicModelFast(): string {
   return Deno.env.get('ANTHROPIC_MODEL_FAST') || DEFAULT_ANTHROPIC_MODEL_FAST;
 }
 
+/**
+ * Default strong model for higher-quality reasoning surfaces (e.g. the Radar
+ * mission strategist). `claude-sonnet-5` is materially stronger than the fast
+ * Sonnet 4.6 default while staying cost-negligible at our volume. Both this id
+ * and the max-quality alternative `claude-opus-4-8` were verified callable in
+ * this environment (HTTP 200). Override per-environment via the
+ * `ANTHROPIC_MODEL_STRONG` secret (e.g. set it to `claude-opus-4-8` for max
+ * quality) without needing a redeploy.
+ */
+export const DEFAULT_ANTHROPIC_MODEL_STRONG = 'claude-sonnet-5';
+
+export function getAnthropicModelStrong(): string {
+  return Deno.env.get('ANTHROPIC_MODEL_STRONG') || DEFAULT_ANTHROPIC_MODEL_STRONG;
+}
+
 export function buildAnthropicHeaders(apiKey: string): HeadersInit {
   // NOTE: do NOT add `anthropic-beta: context-1m-2025-08-07` — that beta
   // was retired by Anthropic. Requests including it on Sonnet 4 / 4.5 fail
