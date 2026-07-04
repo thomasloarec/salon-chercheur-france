@@ -800,6 +800,7 @@ const RadarMissionSheet: React.FC<{
             </SheetDescription>
             {statusSelect}
             {descriptionBlock}
+            {autoSaveIndicator}
           </SheetHeader>
         ) : (
           /* Mode PREPA (inchangé) : le SALON est l'élément principal. */
