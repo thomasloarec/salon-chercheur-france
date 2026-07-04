@@ -857,10 +857,27 @@ const RadarMissionSheet: React.FC<{
         </div>
 
         <SheetFooter className="px-5 py-4 border-t bg-muted/20">
-          <Button onClick={handleSave} disabled={saving || loading} className="w-full">
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Enregistrer
-          </Button>
+          <div
+            className="flex min-h-[20px] w-full items-center justify-center gap-1.5 text-xs"
+            style={{ color: '#04316d' }}
+            aria-live="polite"
+          >
+            {saveStatus === 'saving' && (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Enregistrement…</span>
+              </>
+            )}
+            {saveStatus === 'saved' && (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                <span>Enregistré</span>
+              </>
+            )}
+            {saveStatus === 'error' && (
+              <span className="text-muted-foreground">Non enregistré — nouvelle tentative…</span>
+            )}
+          </div>
         </SheetFooter>
       </SheetContent>
 
