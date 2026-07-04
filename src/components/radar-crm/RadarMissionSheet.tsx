@@ -35,7 +35,6 @@ import {
   type RelationshipStatus, RELATIONSHIP_ORDER, RELATIONSHIP_META,
   triggerClassFor,
 } from '@/lib/radarCrm/relationship';
-import { buildMissionSuggestion, type OfferProfileInput } from '@/lib/radarCrm/playbooks';
 import ExpandableText from '@/components/exhibitor/ExpandableText';
 import { cn } from '@/lib/utils';
 import VoiceNoteCapture from '@/components/radar-crm/VoiceNoteCapture';
@@ -58,6 +57,36 @@ interface MissionFields {
   top_q2: string;
   top_q3: string;
 }
+
+/** Métadonnées IA produites par radar-mission-strategist (lecture seule côté front). */
+interface MissionAiMeta {
+  q0_role_check?: string;
+  question_intents?: { q1?: string; q2?: string; q3?: string };
+  confidence_score?: number;
+  confidence_band?: 'faible' | 'moyen' | 'fort';
+  missing_profile_fields?: string[];
+  generator?: 'ai' | 'scaffold';
+  model?: string;
+}
+
+/** Champs de mission éligibles à l'indicateur « modifié » (source-aware). */
+const EDITABLE_KEYS = ['objective', 'opening_line', 'top_q1', 'top_q2', 'top_q3'] as const;
+
+/** Traduction des blocs de profil manquants (nudge de complétion). */
+const MISSING_PROFILE_LABELS: Record<string, string> = {
+  offer_archetype: "Type d'offre",
+  problems_solved: 'Problèmes résolus',
+  business_outcomes: 'Résultats business',
+  personas: 'Personas (décideur, utilisateur, technique…)',
+  target_segments: 'Segments cibles (secteurs, tailles)',
+};
+
+/**
+ * Verrou de génération inter-rendus (par crm_company_id).
+ * Empêche deux invokes concurrents (ex. caractérisation + ouverture simultanée).
+ * Module-level : survit au remontage du Sheet.
+ */
+const missionGenInFlight = new Set<string>();
 
 /** Note de mission (capture terrain, ajout seul en V1). */
 interface MissionNote {
