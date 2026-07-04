@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter,
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from '@/components/ui/accordion';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -446,6 +449,38 @@ const RadarMissionSheet: React.FC<{
 
   const isTerrain = mode === 'terrain';
 
+  // Hiérarchie adaptative (terrain) : on se base sur l'AVANCEMENT (contenu CRM), pas le temps.
+  // Passer à true pour inclure « visité » comme second déclencheur.
+  const INCLUDE_VISITED_IN_CRM_SIGNAL = false;
+  const hasCrmContent =
+    notes.length > 0 || tasks.length > 0 ||
+    (INCLUDE_VISITED_IN_CRM_SIGNAL && visited);
+
+  // Indicateur d'auto-save : rendu uniquement quand il a du contenu (aucune bande résiduelle).
+  const autoSaveIndicator = saveStatus === 'idle' ? null : (
+    <div
+      className="flex items-center gap-1.5 text-xs"
+      style={{ color: '#04316d' }}
+      aria-live="polite"
+    >
+      {saveStatus === 'saving' && (
+        <>
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <span>Enregistrement…</span>
+        </>
+      )}
+      {saveStatus === 'saved' && (
+        <>
+          <Check className="h-3.5 w-3.5" />
+          <span>Enregistré</span>
+        </>
+      )}
+      {saveStatus === 'error' && (
+        <span className="text-muted-foreground">Non enregistré — nouvelle tentative…</span>
+      )}
+    </div>
+  );
+
   // ---- Blocs réutilisables (mêmes données/handlers dans les deux modes) ----
 
   const statusSelect = (
@@ -696,6 +731,45 @@ const RadarMissionSheet: React.FC<{
     </button>
   );
 
+  // Contenu « préparation » (phrase d'ouverture + TOP 3) réutilisé en section ouverte ou en accordéon.
+  const preparationInner = (
+    <>
+      {openingBlock(true)}
+      {top3Block(true)}
+      {offerEmptyHint}
+    </>
+  );
+
+  // Bloc « Ce que je dis » (préparation ouverte, terrain).
+  const preparationSection = (
+    <section className="space-y-4">
+      <div className="flex items-center gap-2 text-accent">
+        <MessageSquare className="h-4 w-4 shrink-0" />
+        <span className="text-xs font-semibold uppercase tracking-wide">Ce que je dis</span>
+      </div>
+      {preparationInner}
+    </section>
+  );
+
+  // Bloc « Ce que je capture » (notes + tâches + vocal, terrain).
+  const captureSection = (
+    <section className="space-y-6">
+      <div className="flex items-center gap-2 text-accent">
+        <StickyNote className="h-4 w-4 shrink-0" />
+        <span className="text-xs font-semibold uppercase tracking-wide">Ce que je capture</span>
+      </div>
+      {target && (
+        <VoiceNoteCapture
+          companyId={target.companyId}
+          eventId={target.eventId}
+          onValidated={handleVoiceValidated}
+        />
+      )}
+      {notesBlock}
+      {tasksBlock}
+    </section>
+  );
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -726,6 +800,7 @@ const RadarMissionSheet: React.FC<{
             </SheetDescription>
             {statusSelect}
             {descriptionBlock}
+            {autoSaveIndicator}
           </SheetHeader>
         ) : (
           /* Mode PREPA (inchangé) : le SALON est l'élément principal. */
@@ -760,6 +835,7 @@ const RadarMissionSheet: React.FC<{
             {statusSelect}
 
             {descriptionBlock}
+            {autoSaveIndicator}
           </SheetHeader>
         )}
 
@@ -794,33 +870,36 @@ const RadarMissionSheet: React.FC<{
 
               {statusChangedInvite}
 
-              {/* CE QUE JE DIS — mis en avant, gros, lecture immédiate */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 text-accent">
-                  <MessageSquare className="h-4 w-4 shrink-0" />
-                  <span className="text-xs font-semibold uppercase tracking-wide">Ce que je dis</span>
-                </div>
-                {openingBlock(true)}
-                {top3Block(true)}
-                {offerEmptyHint}
-              </section>
+              {/* Hiérarchie adaptative : le CRM prend le dessus dès qu'il existe du contenu. */}
+              {hasCrmContent ? (
+                <>
+                  {/* CE QUE JE CAPTURE (CRM) — en haut, ouvert */}
+                  {captureSection}
 
-              {/* CE QUE JE CAPTURE — actions immédiates */}
-              <section className="space-y-6 pt-4 border-t">
-                <div className="flex items-center gap-2 text-accent">
-                  <StickyNote className="h-4 w-4 shrink-0" />
-                  <span className="text-xs font-semibold uppercase tracking-wide">Ce que je capture</span>
-                </div>
-                {target && (
-                  <VoiceNoteCapture
-                    companyId={target.companyId}
-                    eventId={target.eventId}
-                    onValidated={handleVoiceValidated}
-                  />
-                )}
-                {notesBlock}
-                {tasksBlock}
-              </section>
+                  {/* PRÉPARATION — repliée, rouvrable, jamais supprimée */}
+                  <Accordion type="single" collapsible className="border-t">
+                    <AccordionItem value="preparation" className="border-b-0">
+                      <AccordionTrigger
+                        className="text-sm font-semibold hover:no-underline"
+                        style={{ color: '#04316d' }}
+                      >
+                        Préparation
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-4 pt-1">{preparationInner}</div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </>
+              ) : (
+                <>
+                  {/* CE QUE JE DIS — mis en avant, gros, lecture immédiate */}
+                  {preparationSection}
+
+                  {/* CE QUE JE CAPTURE — actions immédiates */}
+                  <div className="pt-4 border-t">{captureSection}</div>
+                </>
+              )}
 
               {/* Secondaire — replié par défaut */}
               <details className="group border-t pt-4">
@@ -856,29 +935,6 @@ const RadarMissionSheet: React.FC<{
         </div>
         </div>
 
-        <SheetFooter className="px-5 py-4 border-t bg-muted/20">
-          <div
-            className="flex min-h-[20px] w-full items-center justify-center gap-1.5 text-xs"
-            style={{ color: '#04316d' }}
-            aria-live="polite"
-          >
-            {saveStatus === 'saving' && (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Enregistrement…</span>
-              </>
-            )}
-            {saveStatus === 'saved' && (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                <span>Enregistré</span>
-              </>
-            )}
-            {saveStatus === 'error' && (
-              <span className="text-muted-foreground">Non enregistré — nouvelle tentative…</span>
-            )}
-          </div>
-        </SheetFooter>
       </SheetContent>
 
       <AlertDialog open={resetConfirm} onOpenChange={setResetConfirm}>
