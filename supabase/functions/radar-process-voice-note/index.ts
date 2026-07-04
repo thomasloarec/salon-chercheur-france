@@ -137,6 +137,7 @@ const ANALYSIS_SYSTEM = [
   "Règles impératives :",
   "- Ne détecte que les tâches explicitement énoncées ou très fortement implicites. En cas de doute, ne crée pas la tâche.",
   "- N'invente jamais une personne, une date, une entreprise ou une action qui n'a pas été prononcée.",
+  "- Le nom de l'entreprise visitée est souvent fourni dans le contexte ci-dessous. Quand il l'est, emploie EXACTEMENT cette orthographe pour désigner l'entreprise dans summary_note, même si la transcription l'orthographie différemment (les noms propres sont fréquemment mal transcrits en environnement bruyant).",
   "- Chaque tâche et chaque personne porte un niveau de confiance (high, medium, low).",
   "- due_at uniquement si une échéance est réellement mentionnée, au format ISO 8601 (sinon null).",
   "- Si l'audio est ambigu, inaudible ou trop pauvre pour une note fiable, mets needs_review à true.",
@@ -145,7 +146,7 @@ const ANALYSIS_SYSTEM = [
 
 function buildAnalysisUserPrompt(transcript: string, ctx: MissionContext): string {
   const lines: string[] = [];
-  if (ctx.companyName) lines.push(`Entreprise : ${ctx.companyName}`);
+  if (ctx.companyName) lines.push(`Entreprise visitée (orthographe de référence à employer telle quelle) : ${ctx.companyName}`);
   if (ctx.companyWebsite) lines.push(`Site : ${ctx.companyWebsite}`);
   if (ctx.eventName) lines.push(`Salon : ${ctx.eventName}`);
   if (ctx.objective) lines.push(`Objectif de la visite : ${ctx.objective}`);
