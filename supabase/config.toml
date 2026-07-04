@@ -148,3 +148,11 @@ verify_jwt = true
 # timing-safe Bearer == SUPABASE_SERVICE_ROLE_KEY, OR admin via JWT + has_role).
 # All other callers are refused.
 verify_jwt = false
+
+[functions.radar-process-voice-note]
+# Public entry point (verify_jwt=false): authentication is enforced in code —
+# getUser() via the anon client + Authorization header, then an RLS-enforced
+# read of the voice-note row for access control. Aligned with the other Radar
+# functions. Heavy work (transcription + Claude analysis) runs in the background
+# via EdgeRuntime.waitUntil after an immediate 202 response.
+verify_jwt = false
