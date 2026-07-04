@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { callAnthropic, getAnthropicModelFast } from "../_shared/anthropic.ts";
+import { callAnthropic, getAnthropicModelStrong } from "../_shared/anthropic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
