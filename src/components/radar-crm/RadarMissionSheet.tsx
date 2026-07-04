@@ -359,6 +359,30 @@ const RadarMissionSheet: React.FC<{
     }
   };
 
+  // Note vocale validée → note + tâches créées côté serveur ; insertion optimiste locale.
+  const handleVoiceValidated = ({
+    noteBody, tasks: voiceTasks,
+  }: { noteBody: string; tasks: Array<{ body: string; due_at: string | null }> }) => {
+    const stamp = Date.now();
+    if (nonEmpty(noteBody)) {
+      setNotes((n) => [
+        { id: `voice-note-${stamp}`, body: noteBody, created_at: new Date().toISOString() },
+        ...n,
+      ]);
+    }
+    if (voiceTasks.length > 0) {
+      setTasks((t) => [
+        ...voiceTasks.map((vt, i) => ({
+          id: `voice-task-${stamp}-${i}`,
+          body: vt.body,
+          due_at: vt.due_at,
+          done: false,
+        })),
+        ...t,
+      ]);
+    }
+  };
+
   const handleSave = async () => {
     if (!target) return;
     setSaving(true);
@@ -768,7 +792,11 @@ const RadarMissionSheet: React.FC<{
                   <span className="text-xs font-semibold uppercase tracking-wide">Ce que je capture</span>
                 </div>
                 {target && (
-                  <VoiceNoteCapture companyId={target.companyId} eventId={target.eventId} />
+                  <VoiceNoteCapture
+                    companyId={target.companyId}
+                    eventId={target.eventId}
+                    onValidated={handleVoiceValidated}
+                  />
                 )}
                 {notesBlock}
                 {tasksBlock}
