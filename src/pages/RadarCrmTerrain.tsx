@@ -118,18 +118,28 @@ interface TerrainRowProps {
   noteOpen: boolean;
   noteText: string;
   savingNote: boolean;
+  /** Nb de notes vocales en attente de validation (badge orange). */
+  pendingVoiceCount: number;
+  /** Une capture vocale de cette ligne est en cours d'analyse (indicateur neutre). */
+  voiceProcessing: boolean;
+  /** La capture vocale inline est ouverte sur cette ligne. */
+  voiceOpen: boolean;
+  /** Slot de capture vocale inline (rendu par le parent quand voiceOpen). */
+  voiceSlot?: React.ReactNode;
   onOpenMission: () => void;
   onToggleVisited: () => void;
   onOpenNote: () => void;
   onCloseNote: () => void;
   onChangeNote: (v: string) => void;
   onSubmitNote: () => void;
+  onToggleVoice: () => void;
 }
 
 /** Ligne de check-list terrain : grande, tactile, actions directes. */
 const TerrainRow: React.FC<TerrainRowProps> = ({
   company: c, visited, relationship, noteCount, noteOpen, noteText, savingNote,
-  onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote,
+  pendingVoiceCount, voiceProcessing, voiceOpen, voiceSlot,
+  onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote, onToggleVoice,
 }) => {
   const taskCount = Array.isArray(c.tasks) ? c.tasks.filter((t) => !t?.done).length : 0;
   const starred = c.pref_status === 'starred';
@@ -169,6 +179,20 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
               </p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
                 <RelBadge status={relationship} />
+                {pendingVoiceCount > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                    style={{ backgroundColor: ORANGE }}
+                  >
+                    <Mic className="h-3 w-3" />
+                    À valider{pendingVoiceCount > 1 ? ` (${pendingVoiceCount})` : ''}
+                  </span>
+                )}
+                {voiceProcessing && pendingVoiceCount === 0 && (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Analyse…
+                  </span>
+                )}
                 {(noteCount > 0 || taskCount > 0) && (
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     {noteCount > 0 && (
@@ -189,7 +213,7 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           </div>
         </button>
 
-        {/* Actions directes — Note = action primaire (accent orange), Visité = secondaire (neutre, discret) */}
+        {/* Actions directes — Note = action primaire (accent), Micro + Visité = secondaires (neutres) */}
         <div className="flex items-stretch gap-2 border-t border-border/60 p-3">
           <Button
             type="button"
@@ -203,6 +227,16 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           <Button
             type="button"
             variant="outline"
+            className="min-h-[44px] w-12 shrink-0 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+            onClick={onToggleVoice}
+            aria-expanded={voiceOpen}
+            aria-label="Note vocale"
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
             className="flex-1 min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
             onClick={onToggleVisited}
           >
@@ -210,6 +244,11 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
             {visited ? 'Vu' : 'Visité'}
           </Button>
         </div>
+
+        {/* Capture vocale inline (compacte) */}
+        {voiceOpen && voiceSlot && (
+          <div className="px-3 pb-3">{voiceSlot}</div>
+        )}
 
         {/* Capture éclair en place */}
         {noteOpen && (
