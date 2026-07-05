@@ -912,7 +912,7 @@ const RadarCrmResults: React.FC = () => {
       )}
       <RadarCrmSettingsDialog
         open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+        onOpenChange={(o) => { setSettingsOpen(o); if (!o) void loadSpaceMeta(); }}
         onDataDeleted={() => { void reloadAll(); }}
         onOfferProfileSaved={() => { void checkOfferProfile(); }}
       />
