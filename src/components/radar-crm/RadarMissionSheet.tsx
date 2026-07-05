@@ -235,8 +235,12 @@ const RadarMissionSheet: React.FC<{
     const payload = data as {
       event?: Record<string, unknown>;
       companies?: Array<Record<string, unknown>>;
+      active_member_count?: number | null;
     } | null;
     const ev = payload?.event ?? null;
+    setActiveMemberCount(
+      typeof payload?.active_member_count === 'number' ? payload.active_member_count : 1,
+    );
     setEventDates(
       ev
         ? { start: (ev.date_debut as string | null) ?? null, end: (ev.date_fin as string | null) ?? null }
