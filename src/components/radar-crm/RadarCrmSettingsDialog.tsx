@@ -21,6 +21,7 @@ import { Shield, Trash2, AlertTriangle, CheckCircle2, Info, Target, X } from 'lu
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
+import RadarCollaborationSection from './RadarCollaborationSection';
 
 interface Props {
   open: boolean;
