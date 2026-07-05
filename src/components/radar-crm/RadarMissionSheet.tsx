@@ -38,6 +38,7 @@ import {
 import ExpandableText from '@/components/exhibitor/ExpandableText';
 import { cn } from '@/lib/utils';
 import VoiceNoteCapture from '@/components/radar-crm/VoiceNoteCapture';
+import RadarAuthorBadge from '@/components/radar-crm/RadarAuthorBadge';
 
 
 /** Compte ciblé par le panneau mission (couple crm_company_id + salon). */
