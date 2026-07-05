@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
   Target, Star, CalendarCheck, ClipboardList, CheckCircle2, ChevronDown,
-  ChevronUp, Rocket, ChevronLeft, ChevronRight,
+  ChevronUp, Rocket, ChevronLeft, ChevronRight, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
