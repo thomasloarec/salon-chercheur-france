@@ -147,6 +147,17 @@ const RadarOnboardingPanel: React.FC<{
         ctaLabel: m4Done || !captureEventId ? undefined : 'Capturer',
         onCta: m4Done || !captureEventId ? undefined : fire('capture', () => onEnterTerrain(captureEventId)),
       },
+      {
+        key: 'collaborate',
+        icon: <Users className="h-5 w-5" />,
+        title: 'Invitez un collègue',
+        sub: `${col.members} membre${col.members > 1 ? 's' : ''} dans votre équipe`,
+        help: "Radar CRM est un outil d'équipe — invitez un collègue pour préparer et suivre vos visites salon ensemble.",
+        done: m5Done,
+        fraction: m5Done ? 1 : 0,
+        ctaLabel: m5Done ? undefined : 'Inviter',
+        onCta: m5Done ? undefined : fire('collaborate', onOpenCollaboration),
+      },
     ];
   }, [progress, onGoCompanies, onPrepareEvent, onEnterTerrain, captureEventId]);
 
