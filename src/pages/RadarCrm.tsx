@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +15,9 @@ import {
 } from '@/components/ui/accordion';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
-  Radar, ShieldCheck, Sparkles, Zap, ArrowRight, Target, Map, Rocket,
-  Upload, FileCheck2, Search, Lock, CheckCircle2, Eye, Globe, EyeOff,
-  Building2, MapPin, Database, AlertTriangle, Compass, Clock,
-  Users, CalendarClock, PhoneCall, Mail,
+  Radar, ArrowRight, Upload, FileCheck2, Lock, CheckCircle2, Mail,
+  Compass, AlertTriangle, Briefcase, Check, X, Target, MapPin, Rocket,
+  Sparkles, Eye, Globe, ShieldCheck, ClipboardList, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +26,8 @@ import { toast } from '@/hooks/use-toast';
 import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
 import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
 import RadarPreviewTable from '@/components/radar-crm/RadarPreviewTable';
-import RadarCrmDemoVideo from '@/components/radar-crm/RadarCrmDemoVideo';
+import MissionCardPreview from '@/components/radar-crm/previews/MissionCardPreview';
+import ResultDashboardPreview from '@/components/radar-crm/previews/ResultDashboardPreview';
 import {
   autoDetectMapping, RADAR_FIELD_LABELS, RADAR_FIELD_REQUIRED, RadarField,
 } from '@/lib/radarCrm/columnDetection';
@@ -46,6 +47,60 @@ const NONE = '__none__';
 const PRIMARY_FIELDS: RadarField[] = ['company_name', 'website_raw'];
 const ADVANCED_FIELDS: RadarField[] = ['crm_status', 'owner_name', 'owner_email', 'notes'];
 
+const CANONICAL_URL = 'https://lotexpo.com/radar-crm';
+
+// JSON-LD : présentation produit (SoftwareApplication) — schéma validé.
+const SOFTWARE_APP_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Radar CRM',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  url: CANONICAL_URL,
+  description:
+    "Radar CRM détecte les comptes de votre CRM présents comme exposants sur les prochains salons professionnels et prépare chaque visite : objectif de visite, phrase d'accroche et questions clés.",
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+  provider: { '@type': 'Organization', name: 'Lotexpo', url: 'https://lotexpo.com' },
+};
+
+// FAQ — source unique : rendue à l'écran (section 11) ET en JSON-LD FAQPage.
+const FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: 'Quelles colonnes faut-il dans mon fichier ?',
+    a: "Le nom de l'entreprise et son site web. C'est tout. Un CSV ou un Excel avec ces deux colonnes suffit pour lancer l'analyse.",
+  },
+  {
+    q: 'Comment fonctionne le matching ?',
+    a: 'Radar CRM compare le domaine web de vos entreprises avec les exposants référencés sur Lotexpo. La correspondance est exacte, entreprise par entreprise, sans approximation.',
+  },
+  {
+    q: 'Mes données sont-elles publiées quelque part ?',
+    a: "Non, jamais. Votre fichier est lié à votre seul compte et sert uniquement à détecter les correspondances. Rien n'est affiché publiquement ni partagé.",
+  },
+  {
+    q: "D'où vient la donnée salon ?",
+    a: "De Lotexpo, qui centralise les salons professionnels en France et plus de 25 000 participations d'exposants. C'est cette donnée que votre CRM n'a pas.",
+  },
+  {
+    q: "Je vais déjà sur les salons. Qu'est-ce que ça change ?",
+    a: "Vous n'y allez plus sans objectif. Radar CRM vous prépare compte par compte (objectif, accroche, questions), puis vous aide à noter chaque échange et à faire avancer vos deals au retour.",
+  },
+  {
+    q: 'Puis-je connecter HubSpot ou Salesforce ?',
+    a: 'Bientôt. Les connexions natives (HubSpot, Salesforce, Pipedrive, Zoho) arriveront pour automatiser l\u2019analyse. Le CSV/Excel fonctionne déjà aujourd\u2019hui.',
+  },
+];
+
+const FAQ_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ_ITEMS.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+
 const RadarCrmPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -55,28 +110,6 @@ const RadarCrmPage: React.FC = () => {
   const [privacyAck, setPrivacyAck] = useState(false);
   const autoSubmitRef = useRef(false);
   const resumedFromPendingRef = useRef(false);
-  const [participationCount, setParticipationCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      const { count, error } = await supabase
-        .from('participation')
-        .select('*', { count: 'exact', head: true });
-      if (active && !error && typeof count === 'number') {
-        setParticipationCount(count);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const participationLabel = useMemo(() => {
-    const base = participationCount ?? 17000;
-    const floored = Math.floor(base / 1000) * 1000;
-    return `${floored.toLocaleString('fr-FR')}+`;
-  }, [participationCount]);
 
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [radarStatus, setRadarStatus] = useState<{
@@ -132,9 +165,9 @@ const RadarCrmPage: React.FC = () => {
     document.getElementById('radar-upload')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const scrollToHowItWorks = () => {
+  const scrollToPreview = () => {
     void trackRadarEvent('radar_landing_cta_clicked', { source: 'hero_secondary' });
-    document.getElementById('demo-video')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('apercu')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -226,9 +259,7 @@ const RadarCrmPage: React.FC = () => {
         matchedCompanies: result.matchedCompaniesCount,
       });
       clearPendingImport();
-      // Rafraîchit les badges "Radar CRM" des EventCard après (ré)import.
       void queryClient.invalidateQueries({ queryKey: ['crm-event-matches', user?.id] });
-      // Invalider AUSSI le résolveur de portée, sinon le badge reste sur l'ancien import.
       void queryClient.invalidateQueries({ queryKey: ['crm-latest-import-companies', user?.id] });
       toast({
         title: 'Analyse terminée',
@@ -293,28 +324,35 @@ const RadarCrmPage: React.FC = () => {
 
   return (
     <MainLayout
-      title="Radar CRM | Détectez vos prospects sur les salons"
-      description="Importez votre CRM. Lotexpo détecte automatiquement les salons où vos prospects, clients et concurrents exposent."
+      title="Radar CRM — préparez chaque visite salon"
+      description="Radar CRM repère les comptes de votre CRM qui exposent sur les prochains salons et prépare chaque visite : objectif, phrase d'accroche et 3 questions clés."
+      canonical={CANONICAL_URL}
     >
-      {/* Hero */}
+      <Helmet>
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={CANONICAL_URL} />
+        <script type="application/ld+json">{JSON.stringify(SOFTWARE_APP_SCHEMA)}</script>
+        <script type="application/ld+json">{JSON.stringify(FAQ_SCHEMA)}</script>
+      </Helmet>
+
+      {/* 1. Hero */}
       <section className="relative overflow-hidden">
         <div
           className="absolute inset-0 -z-10 opacity-90"
           style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--accent) / 0.06))' }}
         />
-        <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 grid lg:grid-cols-2 gap-10 items-center">
-          <div>
-            <Badge className="mb-5 inline-flex items-center gap-1.5 bg-accent/10 text-accent hover:bg-accent/10 border-accent/20">
-              <Sparkles className="h-3.5 w-3.5" /> Beta
-            </Badge>
+        <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 grid lg:grid-cols-[55fr_45fr] gap-10 items-center">
+          <div className="animate-fade-in-up">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-3">
+              Pour les commerciaux qui vont sur les salons
+            </p>
             <h1 className="heading-display text-3xl sm:text-4xl md:text-5xl tracking-tight mb-4 leading-tight">
-              Vos prospects exposent déjà sur des salons.{' '}
-              <span className="text-primary">Votre CRM ne vous dit pas où.</span>
+              Arrivez sur le salon en sachant exactement qui voir, pourquoi, et quoi lui dire.
             </h1>
             <p className="text-base md:text-lg text-muted-foreground mb-8">
-              Importez votre fichier CRM et découvrez automatiquement sur quels salons vos clients,
-              prospects, partenaires ou concurrents seront présents. Radar CRM transforme une liste
-              d'entreprises en plan d'action terrain.
+              Radar CRM repère les comptes de votre CRM qui exposent, et prépare chaque visite à votre
+              place : un objectif, une phrase pour engager, les 3 bonnes questions. Comme si un
+              commercial de 20 ans qui connaît votre métier faisait le travail avant vous.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
               <Button
@@ -326,181 +364,299 @@ const RadarCrmPage: React.FC = () => {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
-                onClick={scrollToHowItWorks}
+                variant="ghost"
+                onClick={scrollToPreview}
                 className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
               >
-                Voir un exemple de résultat
+                Voir à quoi ça ressemble
               </Button>
             </div>
-            <p className="text-sm font-medium text-foreground mb-3">
-              Votre CRM vous dit qui cibler. Radar CRM vous dit où les rencontrer.
-            </p>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5" /> Analyse sécurisée. Vos données restent privées. Matching basé sur les sites web.
+              <Lock className="h-3.5 w-3.5" /> Analyse privée · vos données restent à vous · 2 colonnes suffisent (nom + site web)
             </p>
           </div>
 
-          {/* Hero preview card */}
-          <div className="relative">
+          {/* Aperçu carte de mission — miroir présentationnel du vrai Radar CRM */}
+          <div className="relative animate-scale-in">
             <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 via-accent/10 to-transparent rounded-3xl blur-2xl -z-10" />
-            <Card className="shadow-xl border-primary/10">
-              <CardContent className="pt-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-                      <Radar className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold leading-tight">Votre Radar CRM</p>
-                      <p className="text-xs text-muted-foreground">Aperçu d'un résultat</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px]">Démo</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <StatTile label="Entreprises analysées" value="310" />
-                  <StatTile label="Détectées sur salons" value="60" accent />
-                  <StatTile label="Participations futures" value="12" />
-                  <StatTile label="Prochain salon" value="Dans 9 j" />
-                </div>
-                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-sm">SEPEM Brest</p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Brest · Dans 9 jours</p>
-                    </div>
-                    <Badge className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 text-[10px]">3 comptes</Badge>
-                  </div>
-                  <div className="space-y-1.5 text-xs">
-                    <CompanyRow name="OSE" stand="A56" />
-                    <CompanyRow name="MAX EUROPE" stand="E35" />
-                    <CompanyRow name="LES MECAMIENS" stand="A39" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MissionCardPreview big />
           </div>
         </div>
       </section>
 
-      {/* Benefits */}
-      <section className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <BenefitCard
-            icon={<Target className="h-5 w-5" />}
-            title="Repérez les comptes actifs sur les salons"
-            text="Détectez automatiquement les entreprises de votre CRM déjà présentes comme exposants sur des salons professionnels."
-          />
-          <BenefitCard
-            icon={<Map className="h-5 w-5" />}
-            title="Identifiez les salons qui concentrent vos opportunités"
-            text="Ne choisissez plus vos déplacements à l'intuition. Priorisez les événements où plusieurs clients, prospects ou concurrents sont présents."
-          />
-          <BenefitCard
-            icon={<Rocket className="h-5 w-5" />}
-            title="Transformez la présence salon en action commerciale"
-            text="Préparez votre visite, contactez les bons comptes avant l'événement et arrivez sur place avec une vraie liste de priorités."
-          />
+      {/* 2. Le vrai problème (navy) */}
+      <section className="bg-primary text-primary-foreground">
+        <div className="max-w-6xl mx-auto px-4 py-14 md:py-20">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Le vrai problème</p>
+            <h2 className="heading-display text-2xl md:text-4xl mb-5">
+              Ce n’est pas d’aller sur le salon. C’est d’y aller sans objectif.
+            </h2>
+            <p className="text-base md:text-lg text-primary-foreground/80 leading-relaxed">
+              Vous bloquez deux jours. Vous payez le déplacement, le badge, l’hôtel. Et vous arrivez
+              sans liste, sans priorité. Alors vous marchez dans les allées, vous parlez à qui est
+              disponible, vous repartez avec des cartes. Le soir, on vous demande « ça a donné quoi ? »
+              — et vous n’avez rien de concret à répondre. Le pire, c’est que vous le sentiez venir
+              avant même de partir.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
+            <PainCard
+              icon={<Compass className="h-5 w-5" />}
+              title="Vous naviguez à l’intuition"
+              text="Sans liste de comptes prioritaires, vous découvrez le salon en le parcourant. Les bonnes rencontres tiennent à la chance."
+            />
+            <PainCard
+              icon={<AlertTriangle className="h-5 w-5" />}
+              title="Vous figez devant un compte clé"
+              text="Vous tombez sur une entreprise qui compte, sans objectif, sans angle, sans question préparée. L’occasion passe."
+            />
+            <PainCard
+              icon={<Briefcase className="h-5 w-5" />}
+              title="Vous rentrez les mains vides"
+              text="Beaucoup de pas, quelques cartes, aucun deal qui a bougé. Le salon devient un coût, pas un investissement."
+            />
+          </div>
         </div>
       </section>
 
-      {/* Problem */}
-      <section className="max-w-6xl mx-auto px-4 py-10">
-        <div className="text-center max-w-2xl mx-auto mb-8">
-          <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule [&::before]:mx-auto">
-            Le problème : vos opportunités salon sont invisibles dans votre CRM
+      {/* 3. Le basculement (avant / après) */}
+      <section className="max-w-6xl mx-auto px-4 py-14 md:py-20">
+        <div className="max-w-3xl mb-10">
+          <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Le basculement</p>
+          <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
+            La différence entre un salon subi et un salon rentable ? Un objectif par compte.
           </h2>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Un CRM vous aide à suivre vos comptes, mais il ne vous indique pas quand ces comptes
-            deviennent physiquement accessibles sur un salon professionnel.
+          <p className="text-base text-muted-foreground">
+            Le moment où vous savez quoi faire de chaque rencontre, tout change. C’est là que Radar CRM
+            entre en jeu.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <BenefitCard
-            icon={<AlertTriangle className="h-5 w-5" />}
-            title="Vos comptes bougent, mais votre CRM reste statique"
-            text="Un prospect peut exposer dans quelques semaines sur un salon stratégique sans que votre équipe commerciale le sache."
-          />
-          <BenefitCard
-            icon={<Compass className="h-5 w-5" />}
-            title="Les salons sont souvent choisis à l'intuition"
-            text="On décide de visiter un événement parce qu'il est connu, proche ou recommandé, pas parce que plusieurs comptes clés y seront présents."
-          />
-          <BenefitCard
-            icon={<Clock className="h-5 w-5" />}
-            title="Les commerciaux arrivent trop tard"
-            text="Quand l'information est découverte sur place, il est souvent trop tard pour préparer une visite, contacter les bons interlocuteurs ou organiser un rendez-vous."
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="border-border/60 shadow-none bg-muted/20">
+            <CardContent className="pt-6">
+              <h3 className="font-semibold text-lg mb-4 text-muted-foreground">Sans Radar CRM</h3>
+              <ul className="space-y-3">
+                {[
+                  'Vous errez dans les allées',
+                  'Vous parlez à qui vous croisez',
+                  'Vous notez sur un coin de carnet (ou pas)',
+                  'Vous repartez avec une pile de cartes',
+                  'Personne ne sait quoi en faire',
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                    <X className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground/70" aria-hidden="true" />
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+          <Card className="border-accent/30 bg-secondary/30 shadow-sm">
+            <CardContent className="pt-6">
+              <h3 className="font-semibold text-lg mb-4 text-foreground">Avec Radar CRM</h3>
+              <ul className="space-y-3">
+                {[
+                  'Vous savez qui voir en priorité',
+                  'Un objectif et une accroche par compte',
+                  'Vous dictez chaque échange en sortant du stand',
+                  'Vous repartez avec des deals qui ont avancé',
+                  'Le suivi est déjà prêt',
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2.5 text-sm text-foreground">
+                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-accent" aria-hidden="true" />
+                    <span className="font-medium">{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Proof / data credibility */}
-      <section className="max-w-6xl mx-auto px-4 py-10">
-        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8 md:p-10">
-          <div className="text-center max-w-2xl mx-auto mb-8">
-            <Badge variant="secondary" className="mb-3 inline-flex items-center gap-1.5">
-              <Database className="h-3.5 w-3.5" /> Donnée Lotexpo
-            </Badge>
-            <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule [&::before]:mx-auto">
-              Radar CRM s'appuie sur la donnée salon que votre CRM n'a pas
+      {/* 4. Ce que fait Radar CRM, maintenant (timeline) */}
+      <section className="bg-muted/20 border-y border-border/60">
+        <div className="max-w-5xl mx-auto px-4 py-14 md:py-20">
+          <div className="max-w-3xl mb-10">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">
+              Ce que fait Radar CRM, maintenant
+            </p>
+            <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
+              Du plan de visite jusqu’au deal qui avance.
             </h2>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Lotexpo centralise les salons professionnels en France et les participations
-              d'exposants associées. Radar CRM croise cette donnée avec votre fichier d'entreprises
-              pour détecter les comptes présents sur des événements à venir.
+            <p className="text-base text-muted-foreground">
+              Avant, Radar CRM vous disait seulement où étaient vos comptes. Aujourd’hui, il vous
+              accompagne à chaque étape du salon.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ProofStat value={participationLabel} label="participations exposants détectées" highlight />
-            <ProofStat value="France" label="salons professionnels centralisés" />
-            <ProofStat value="CSV / Excel" label="aucune connexion CRM nécessaire pour commencer" />
+
+          <ol className="relative space-y-8 md:space-y-10">
+            <PhaseRow
+              n={1}
+              phase="Avant le salon"
+              icon={<Target className="h-4 w-4" />}
+              title="Un objectif par compte, sans le préparer."
+              text="Radar CRM analyse votre offre et votre relation avec chaque entreprise — client, prospect, partenaire ou concurrent — puis génère pour chacune un objectif de visite, une phrase pour engager la conversation, et le TOP 3 des questions à poser. Une PME technique et un grand groupe n’appellent pas les mêmes questions : Radar CRM ajuste selon la taille et la personne que vous aurez en face."
+              chips={['Objectif de visite', 'Phrase d’accroche', 'Top 3 questions']}
+            />
+            <PhaseRow
+              n={2}
+              phase="Pendant le salon"
+              icon={<Radar className="h-4 w-4" />}
+              title="Le mode terrain. Mains libres, rien ne se perd."
+              text="Sur place, vous avez votre liste de priorités et votre checklist de visite. Vous sortez d’un stand ? Vous dictez ce qui s’est dit. L’IA transcrit, résume, et transforme l’échange en tâches de suivi. Fini les infos griffonnées puis oubliées dans le bruit du salon."
+              chips={['Note vocale', 'Résumé automatique', 'Tâches de suivi']}
+            />
+            <PhaseRow
+              n={3}
+              phase="Après le salon"
+              icon={<ClipboardList className="h-4 w-4" />}
+              title="Le débrief qui fait avancer les deals."
+              text="Chaque conversation devient une action concrète. Vos deals existants avancent d’une étape, vos nouveaux contacts sont relancés au bon moment. Vous exportez tout, prêt à réintégrer dans votre CRM."
+              chips={['Débrief guidé', 'Deals avancés', 'Export CSV']}
+              last
+            />
+          </ol>
+
+          {/* Bandeau bonus (peach) */}
+          <div className="mt-10 rounded-2xl bg-secondary text-secondary-foreground p-6 md:p-8">
+            <div className="flex items-start gap-4">
+              <span className="h-10 w-10 shrink-0 rounded-lg bg-accent/15 text-accent flex items-center justify-center">
+                <Sparkles className="h-5 w-5" />
+              </span>
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Et des comptes que vous ne suiviez pas encore.</h3>
+                <p className="text-sm text-secondary-foreground/80">
+                  Radar CRM repère aussi des entreprises qui ressemblent à vos meilleurs clients et qui
+                  exposent. De nouveaux prospects, détectés pour vous.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="radar-how" className="max-w-5xl mx-auto px-4 py-8 scroll-mt-24">
-        <h2 className="heading-display text-xl md:text-2xl text-center mb-6 section-rule [&::before]:mx-auto">
-          En 2 minutes, voyez comment un fichier CRM devient un plan de visite salon
-        </h2>
-        <RadarCrmDemoVideo />
-        <p className="text-sm text-muted-foreground text-center max-w-3xl mx-auto mb-8">
-          Importez une liste d'entreprises, détectez celles qui exposent, puis classez les salons où
-          vos comptes sont présents. L'objectif n'est pas seulement de savoir qui expose, mais de
-          décider où concentrer vos efforts commerciaux.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Step n={1} icon={<Upload className="h-5 w-5" />} title="Importez un CSV ou Excel" text="Avec vos entreprises (nom + site web)." />
-          <Step n={2} icon={<Search className="h-5 w-5" />} title="Matching automatique" text="Lotexpo détecte les correspondances par domaine." />
-          <Step n={3} icon={<Radar className="h-5 w-5" />} title="Plan d'action" text="Consultez les salons à venir et les comptes à rencontrer." />
+      {/* 5. Positionnement (navy centré) */}
+      <section className="bg-primary text-primary-foreground">
+        <div className="max-w-3xl mx-auto px-4 py-14 md:py-20 text-center">
+          <h2 className="heading-display text-2xl md:text-3xl mb-4">
+            Pas besoin d’être un crack de la vente.
+          </h2>
+          <p className="text-base md:text-lg text-primary-foreground/80 leading-relaxed">
+            L’idée n’est pas de vous transformer en négociateur d’élite. C’est de vous donner, sur
+            chaque compte, le plan qu’un commercial de 20 ans qui connaît votre secteur vous aurait
+            soufflé. Vous suivez le plan. Radar CRM apporte l’expertise.
+          </p>
+          <p className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+            Le besoin d’abord · le talent commercial ensuite
+          </p>
         </div>
       </section>
 
-      {/* After import — light teaser */}
-      <section className="max-w-5xl mx-auto px-4 py-6">
-        <h2 className="heading-display text-lg md:text-xl text-center mb-5">
-          Après l'import, Radar CRM vous montre :
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <AfterImportItem icon={<Building2 className="h-4 w-4" />} text="Les entreprises de votre CRM détectées sur des salons" />
-          <AfterImportItem icon={<Users className="h-4 w-4" />} text="Les salons où plusieurs comptes sont présents" />
-          <AfterImportItem icon={<CalendarClock className="h-4 w-4" />} text="Les prochaines dates à surveiller" />
-          <AfterImportItem icon={<PhoneCall className="h-4 w-4" />} text="Les comptes à contacter avant votre déplacement" />
+      {/* 6. Aperçu d'un résultat (dashboard) */}
+      <section id="apercu" className="max-w-5xl mx-auto px-4 py-14 md:py-20 scroll-mt-24">
+        <div className="max-w-3xl mb-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Aperçu d’un résultat</p>
+          <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
+            Votre CRM, transformé en plan de visite.
+          </h2>
+          <p className="text-base text-muted-foreground">
+            Un fichier d’entreprises entre. Un plan d’action salon en sort — avec un objectif sur chaque
+            compte.
+          </p>
+        </div>
+        {/* Miroir présentationnel de la vue résultat du vrai Radar CRM */}
+        <ResultDashboardPreview />
+      </section>
+
+      {/* 7. Comment ça marche */}
+      <section className="bg-muted/20 border-y border-border/60">
+        <div className="max-w-5xl mx-auto px-4 py-14 md:py-20">
+          <div className="max-w-3xl mb-10">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Comment ça marche</p>
+            <h2 className="heading-display text-2xl md:text-3xl section-rule">
+              Trois étapes. La première prend deux minutes.
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <StepCard n={1} title="Importez votre CRM" text="Un CSV ou un Excel avec deux colonnes : nom de l’entreprise et site web. Aucune connexion à installer." />
+            <StepCard n={2} title="Radar CRM détecte et prépare" text="Matching par domaine web, puis génération d’un objectif, d’une accroche et des bonnes questions pour chaque compte présent." />
+            <StepCard n={3} title="Vous arrivez avec un plan" text="Priorités, mode terrain, débrief. Vous repartez du salon avec des deals qui ont avancé et de nouveaux prospects engagés." />
+          </div>
         </div>
       </section>
 
-      {/* Trust strip */}
-      <section className="max-w-5xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <TrustItem icon={<ShieldCheck className="h-4 w-4 text-primary" />} label="Données privées" sub="Visibles uniquement par vous." />
-          <TrustItem icon={<Zap className="h-4 w-4 text-primary" />} label="Matching exact" sub="Basé sur le domaine web." />
-          <TrustItem icon={<FileCheck2 className="h-4 w-4 text-primary" />} label="2 colonnes suffisent" sub="Nom + site web." />
+      {/* 8. Confidentialité */}
+      <section className="max-w-5xl mx-auto px-4 py-14 md:py-20">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Confidentialité</p>
+            <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
+              Vos données CRM restent privées.
+            </h2>
+            <p className="text-base text-muted-foreground">
+              Votre fichier est lié à votre seul compte et sert uniquement à détecter les
+              correspondances avec les exposants référencés sur Lotexpo. Il n’est jamais affiché
+              publiquement.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <PrivacyPoint icon={<Eye className="h-4 w-4" />} title="Visibles uniquement par vous" sub="Aucune donnée n’est partagée ni publiée." />
+            <PrivacyPoint icon={<Globe className="h-4 w-4" />} title="Analyse basée sur le domaine web" sub="Correspondance exacte, entreprise par entreprise." />
+            <PrivacyPoint icon={<FileCheck2 className="h-4 w-4" />} title="Deux colonnes suffisent" sub="Nom + site web. Formats CSV ou XLSX." />
+          </div>
         </div>
       </section>
 
+      {/* 9. Connecteurs */}
+      <section className="max-w-6xl mx-auto px-4 py-8 md:py-12">
+        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8 md:p-10">
+          <div className="max-w-3xl mb-8">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Démarrez tout de suite</p>
+            <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
+              Commencez sans connecter votre CRM.
+            </h2>
+            <p className="text-base text-muted-foreground">
+              Le CSV/Excel fonctionne dès maintenant. Les connexions natives arrivent pour automatiser
+              l’analyse.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <ConnectorBadge name="CSV / Excel" status="Disponible" available />
+            <ConnectorBadge name="HubSpot" status="Bientôt" />
+            <ConnectorBadge name="Salesforce" status="Bientôt" />
+            <ConnectorBadge name="Pipedrive" status="Bientôt" />
+            <ConnectorBadge name="Zoho CRM" status="Bientôt" />
+          </div>
+        </div>
+      </section>
 
-      {/* Upload zone */}
+      {/* 10. CTA final + zone d'import */}
+      <section className="max-w-5xl mx-auto px-4 pt-8 md:pt-12">
+        <div className="rounded-2xl bg-primary text-primary-foreground p-8 md:p-10 text-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at top right, hsl(var(--accent)), transparent 60%)' }} />
+          <div className="relative">
+            <h2 className="heading-display text-2xl md:text-3xl mb-3">
+              Votre prochain salon peut être le plus rentable de l’année. Ou deux jours de perdus.
+            </h2>
+            <p className="text-sm md:text-base text-primary-foreground/80 mb-6 max-w-2xl mx-auto">
+              La seule différence, c’est d’y arriver avec un objectif. Importez votre fichier — Radar CRM
+              s’occupe du reste.
+            </p>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => scrollToUpload('final_cta')}
+              className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
+            >
+              <Upload className="h-4 w-4 mr-2 shrink-0" /> Analyser mon fichier CRM
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Zone d'import réelle (upload + mapping + auth-gate) — logique inchangée */}
       <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
         {!radarStatus.loaded && user && (
           <Card className="border border-border bg-muted/20">
@@ -693,95 +849,34 @@ const RadarCrmPage: React.FC = () => {
         )}
       </section>
 
-      {/* Beta connections strip */}
-      <section className="max-w-6xl mx-auto px-4 py-12">
-        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8">
-          <div className="text-center mb-6">
-            <Badge className="mb-3 bg-accent/10 text-accent hover:bg-accent/10 border-accent/20">Beta</Badge>
-            <h2 className="heading-display text-2xl mb-2 section-rule [&::before]:mx-auto">Commencez sans connecter votre CRM</h2>
-            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Radar CRM fonctionne déjà avec un simple export CSV ou Excel. Les connexions HubSpot,
-              Salesforce, Pipedrive et Zoho CRM permettront ensuite d'automatiser l'analyse, mais
-              vous pouvez détecter vos premières opportunités dès maintenant.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <ConnectorBadge name="CSV / Excel" status="Disponible en Beta" available />
-            <ConnectorBadge name="HubSpot" status="Bientôt" />
-            <ConnectorBadge name="Salesforce" status="Bientôt" />
-            <ConnectorBadge name="Pipedrive" status="Bientôt" />
-            <ConnectorBadge name="Zoho CRM" status="Bientôt" />
-          </div>
-          <div className="text-center mt-6">
-            <Button
-              onClick={() => scrollToUpload('beta_section')}
-              className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
-            >
-              <Upload className="h-4 w-4 mr-2 shrink-0" /> Tester avec un fichier CSV ou Excel
-            </Button>
-          </div>
+      {/* 11. FAQ */}
+      <section className="max-w-3xl mx-auto px-4 py-14 md:py-20">
+        <div className="mb-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Questions fréquentes</p>
+          <h2 className="heading-display text-2xl md:text-3xl section-rule">Ce qu’on nous demande le plus.</h2>
         </div>
-      </section>
-
-      {/* Privacy */}
-      <section className="max-w-5xl mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <Badge variant="secondary" className="mb-3"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Confidentialité</Badge>
-            <h2 className="heading-display text-2xl mb-3 section-rule">Vos données CRM restent privées</h2>
-            <p className="text-sm text-muted-foreground">
-              Votre fichier est associé uniquement à votre compte. Lotexpo utilise les sites web
-              des entreprises pour rechercher des correspondances avec les exposants référencés.
-              Vos données ne sont jamais affichées publiquement.
-            </p>
-          </div>
-          <div className="space-y-3">
-            <PrivacyPoint icon={<Eye className="h-4 w-4" />} text="Données visibles uniquement par vous" />
-            <PrivacyPoint icon={<Globe className="h-4 w-4" />} text="Analyse basée sur le domaine web" />
-            <PrivacyPoint icon={<EyeOff className="h-4 w-4" />} text="Aucun partage public de votre fichier" />
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="max-w-3xl mx-auto px-4 py-12">
-        <h2 className="heading-display text-2xl text-center mb-6 section-rule [&::before]:mx-auto">Questions fréquentes</h2>
         <Accordion type="single" collapsible className="w-full">
-          <FaqItem v="q1" q="Quel format de fichier est accepté ?" a="Radar CRM accepte les fichiers CSV et Excel (.xlsx). Le fichier doit contenir au minimum le nom de l'entreprise et son site web." />
-          <FaqItem v="q2" q="Quelles colonnes sont nécessaires ?" a="Le fichier doit contenir au minimum le nom de l'entreprise et son site web." />
-          <FaqItem v="q3" q="Comment fonctionne le matching ?" a="Lotexpo compare le domaine web des entreprises de votre fichier avec les domaines des exposants référencés sur la plateforme." />
-          <FaqItem v="q4" q="Pourquoi certaines entreprises ne sont-elles pas détectées ?" a="Le matching Beta repose sur une correspondance exacte du domaine web. Certains groupes utilisant des sous-domaines ou des sites pays peuvent ne pas être détectés automatiquement." />
-          <FaqItem v="q5" q="Puis-je connecter directement HubSpot ou Salesforce ?" a="Pas encore. Les connexions CRM directes sont prévues dans une prochaine étape. Pour le moment, vous pouvez tester Radar CRM avec un fichier CSV ou Excel." />
-          <FaqItem v="q6" q="Pourquoi utiliser Radar CRM avant un salon professionnel ?" a="Pour identifier à l'avance les comptes de votre CRM présents sur un événement, prioriser vos déplacements et préparer vos prises de contact avant le jour du salon." />
-          <FaqItem v="q7" q="Radar CRM sert-il uniquement aux visiteurs de salons ?" a="Non. Il peut aussi servir aux équipes commerciales, dirigeants, responsables marketing, partenaires ou exposants qui veulent savoir où leurs clients, prospects ou concurrents seront présents." />
-          <FaqItem v="q8" q="Que faire si Radar CRM détecte plusieurs comptes sur un même salon ?" a="C'est précisément le signal à exploiter. Un salon où plusieurs comptes stratégiques sont présents peut justifier une visite, une prise de rendez-vous en amont ou une action commerciale ciblée." />
-          <FaqItem v="q9" q="Puis-je utiliser Radar CRM pour suivre mes concurrents ?" a="Oui. Vous pouvez importer une liste de concurrents ou d'acteurs à surveiller pour identifier les salons où ils exposent." />
+          {FAQ_ITEMS.map((item, i) => (
+            <AccordionItem key={i} value={`faq-${i}`}>
+              <AccordionTrigger className="text-left">{item.q}</AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">{item.a}</AccordionContent>
+            </AccordionItem>
+          ))}
         </Accordion>
       </section>
 
-      {/* Final CTA */}
-      <section className="max-w-5xl mx-auto px-4 py-12 mb-8">
-        <div className="rounded-2xl bg-primary text-primary-foreground p-10 text-center relative overflow-hidden">
-          <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at top right, white, transparent 60%)' }} />
-          <div className="relative">
-            <h2 className="heading-display text-2xl md:text-3xl mb-3">
-              Vos prochains rendez-vous salon sont peut-être déjà dans votre CRM
-            </h2>
-            <p className="text-sm md:text-base opacity-90 mb-6 max-w-2xl mx-auto">
-              Importez votre fichier CSV ou Excel et découvrez les événements où vos clients,
-              prospects ou concurrents seront présents.
-            </p>
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => scrollToUpload('final_cta')}
-              className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
-            >
-              <Upload className="h-4 w-4 mr-2 shrink-0" /> Analyser mon fichier CRM
-            </Button>
-          </div>
+      {/* 12. Baseline (le footer global reste rendu par MainLayout) */}
+      <section className="max-w-5xl mx-auto px-4 pb-14 md:pb-20">
+        <div className="rounded-2xl border bg-muted/20 p-6 md:p-8 text-center">
+          <p className="flex items-center justify-center gap-2 font-display text-lg font-semibold text-foreground mb-1">
+            <Radar className="h-4 w-4 text-primary" /> Radar CRM · par Lotexpo
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Vos prochains rendez-vous salon sont peut-être déjà dans votre CRM.
+          </p>
         </div>
       </section>
+
       <AccessRequestDialog
         open={requestDialogOpen}
         onOpenChange={setRequestDialogOpen}
@@ -791,44 +886,72 @@ const RadarCrmPage: React.FC = () => {
   );
 };
 
-const BenefitCard: React.FC<{ icon: React.ReactNode; title: string; text: string }> = ({ icon, title, text }) => (
-  <Card className="hover:shadow-md transition-shadow">
-    <CardContent className="pt-6">
-      <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-3">
-        {icon}
-      </div>
-      <h3 className="font-semibold mb-1">{title}</h3>
-      <p className="text-sm text-muted-foreground">{text}</p>
-    </CardContent>
-  </Card>
+/* ── Présentation (helpers de section) ─────────────────────────────── */
+
+const PainCard: React.FC<{ icon: React.ReactNode; title: string; text: string }> = ({ icon, title, text }) => (
+  <div className="rounded-xl border border-primary-foreground/15 bg-primary-foreground/[0.06] p-5">
+    <div className="h-10 w-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center mb-3">
+      {icon}
+    </div>
+    <h3 className="font-semibold mb-1 text-primary-foreground">{title}</h3>
+    <p className="text-sm text-primary-foreground/70">{text}</p>
+  </div>
 );
 
-const Step: React.FC<{ n: number; icon: React.ReactNode; title: string; text: string }> = ({ n, icon, title, text }) => (
-  <div className="text-center p-5 rounded-lg border bg-card">
-    <div className="mx-auto h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold mb-3">
+const PhaseRow: React.FC<{
+  n: number; phase: string; icon: React.ReactNode; title: string; text: string; chips: string[]; last?: boolean;
+}> = ({ n, phase, icon, title, text, chips, last }) => (
+  <li className="relative flex gap-4 md:gap-6">
+    <div className="flex flex-col items-center">
+      <span className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-display font-semibold shadow-sm">
+        {n}
+      </span>
+      {!last && <span className="mt-1 w-px flex-1 bg-border" aria-hidden="true" />}
+    </div>
+    <div className={last ? '' : 'pb-2'}>
+      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent mb-1.5">
+        {icon}<span>{phase}</span>
+      </div>
+      <h3 className="font-semibold text-lg text-foreground mb-2">{title}</h3>
+      <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{text}</p>
+      <div className="flex flex-wrap gap-2 mt-3">
+        {chips.map((c) => (
+          <span key={c} className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground">
+            {c}
+          </span>
+        ))}
+      </div>
+    </div>
+  </li>
+);
+
+const StepCard: React.FC<{ n: number; title: string; text: string }> = ({ n, title, text }) => (
+  <div className="p-5 rounded-lg border bg-card">
+    <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-display font-semibold mb-3">
       {n}
     </div>
-    <div className="flex items-center justify-center gap-2 mb-1 text-primary">{icon}<span className="font-semibold text-foreground">{title}</span></div>
+    <h3 className="font-semibold mb-1">{title}</h3>
     <p className="text-sm text-muted-foreground">{text}</p>
   </div>
 );
 
-const TrustItem: React.FC<{ icon: React.ReactNode; label: string; sub: string }> = ({ icon, label, sub }) => (
-  <div className="flex items-start gap-2 p-3 rounded-lg border bg-card">
-    {icon}
-    <div className="text-sm">
-      <p className="font-medium leading-tight">{label}</p>
-      <p className="text-muted-foreground text-xs">{sub}</p>
+const PrivacyPoint: React.FC<{ icon: React.ReactNode; title: string; sub: string }> = ({ icon, title, sub }) => (
+  <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
+    <div className="h-9 w-9 shrink-0 rounded-md bg-primary/10 text-primary flex items-center justify-center">{icon}</div>
+    <div>
+      <h3 className="text-sm font-semibold leading-tight">{title}</h3>
+      <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
     </div>
   </div>
 );
 
-const AfterImportItem: React.FC<{ icon: React.ReactNode; text: string }> = ({ icon, text }) => (
-  <div className="flex items-start gap-2.5 p-3 rounded-lg border bg-card">
-    <span className="h-7 w-7 flex-shrink-0 rounded-md bg-primary/10 text-primary flex items-center justify-center">
-      {icon}
-    </span>
-    <span className="text-sm font-medium leading-snug">{text}</span>
+const ConnectorBadge: React.FC<{ name: string; status: string; available?: boolean }> = ({ name, status, available }) => (
+  <div className={`rounded-lg border bg-card p-3 text-center ${available ? 'border-primary/40 ring-1 ring-primary/20' : ''}`}>
+    <p className="font-semibold text-sm">{name}</p>
+    <p className={`text-[11px] mt-1 ${available ? 'text-primary' : 'text-muted-foreground'}`}>
+      {available && <CheckCircle2 className="inline h-3 w-3 mr-1" />}
+      {status}
+    </p>
   </div>
 );
 
@@ -852,60 +975,6 @@ const FieldSelect: React.FC<{
       </SelectContent>
     </Select>
   </div>
-);
-
-const StatTile: React.FC<{ label: string; value: string; accent?: boolean }> = ({ label, value, accent }) => (
-  <div className={`rounded-lg p-3 border ${accent ? 'bg-primary/10 border-primary/30' : 'bg-card'}`}>
-    <p className={`font-display text-xl font-semibold leading-none tracking-tight ${accent ? 'text-primary' : ''}`}>{value}</p>
-    <p className="text-[11px] text-muted-foreground mt-1">{label}</p>
-  </div>
-);
-
-const ProofStat: React.FC<{ value: string; label: string; highlight?: boolean }> = ({ value, label, highlight }) => (
-  <div className={`rounded-xl border bg-card p-6 text-center ${highlight ? 'border-primary/40 ring-1 ring-primary/20' : ''}`}>
-    <p className={`font-display font-semibold leading-none tracking-tight ${highlight ? 'text-3xl md:text-4xl text-primary' : 'text-2xl md:text-3xl'}`}>{value}</p>
-    <p className="text-sm text-muted-foreground mt-2">{label}</p>
-  </div>
-);
-
-const UseCaseStep: React.FC<{ n: number; text: string }> = ({ n, text }) => (
-  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
-    <span className="h-6 w-6 flex-shrink-0 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
-      {n}
-    </span>
-    <span className="text-xs font-medium leading-tight">{text}</span>
-  </div>
-);
-
-const CompanyRow: React.FC<{ name: string; stand: string }> = ({ name, stand }) => (
-  <div className="flex items-center justify-between">
-    <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3 text-muted-foreground" /> {name}</span>
-    <span className="font-mono text-muted-foreground">Stand {stand}</span>
-  </div>
-);
-
-const ConnectorBadge: React.FC<{ name: string; status: string; available?: boolean }> = ({ name, status, available }) => (
-  <div className={`rounded-lg border bg-card p-3 text-center ${available ? 'border-primary/40 ring-1 ring-primary/20' : ''}`}>
-    <p className="font-semibold text-sm">{name}</p>
-    <p className={`text-[11px] mt-1 ${available ? 'text-primary' : 'text-muted-foreground'}`}>
-      {available && <CheckCircle2 className="inline h-3 w-3 mr-1" />}
-      {status}
-    </p>
-  </div>
-);
-
-const PrivacyPoint: React.FC<{ icon: React.ReactNode; text: string }> = ({ icon, text }) => (
-  <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-    <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center">{icon}</div>
-    <p className="text-sm font-medium">{text}</p>
-  </div>
-);
-
-const FaqItem: React.FC<{ v: string; q: string; a: string }> = ({ v, q, a }) => (
-  <AccordionItem value={v}>
-    <AccordionTrigger className="text-left">{q}</AccordionTrigger>
-    <AccordionContent className="text-muted-foreground">{a}</AccordionContent>
-  </AccordionItem>
 );
 
 const TrialExpiredCard: React.FC<{ onOpenRequest: () => void }> = ({ onOpenRequest }) => (
