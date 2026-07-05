@@ -15,10 +15,11 @@ import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship,
 } from '@/lib/radarCrm/relationship';
 import { cn } from '@/lib/utils';
+import RadarAuthorBadge from '@/components/radar-crm/RadarAuthorBadge';
 
 /** Note / tâche telles que renvoyées par get_radar_salon_missions. */
-interface MissionNote { body?: string | null; created_at?: string | null; source?: string | null }
-interface MissionTask { body?: string | null; due_at?: string | null; done?: boolean | null; source?: string | null }
+interface MissionNote { body?: string | null; created_at?: string | null; source?: string | null; created_by?: string | null; author_name?: string | null }
+interface MissionTask { body?: string | null; due_at?: string | null; done?: boolean | null; source?: string | null; created_at?: string | null; created_by?: string | null; author_name?: string | null }
 
 interface DebriefCompany {
   crm_company_id: string;
@@ -51,6 +52,7 @@ interface DebriefEvent {
 interface DebriefPayload {
   event: DebriefEvent | null;
   companies: DebriefCompany[];
+  active_member_count?: number | null;
 }
 
 const fmtDate = (d: string | null | undefined) =>
@@ -152,8 +154,12 @@ const RadarCrmDebrief: React.FC = () => {
     const p = data as unknown as DebriefPayload | null;
     setPayload(
       p
-        ? { event: p.event ?? null, companies: Array.isArray(p.companies) ? p.companies : [] }
-        : { event: null, companies: [] },
+        ? {
+            event: p.event ?? null,
+            companies: Array.isArray(p.companies) ? p.companies : [],
+            active_member_count: typeof p.active_member_count === 'number' ? p.active_member_count : 1,
+          }
+        : { event: null, companies: [], active_member_count: 1 },
     );
     setLoading(false);
   }, [eventId, user, navigate]);
@@ -166,6 +172,7 @@ const RadarCrmDebrief: React.FC = () => {
 
   const ev = payload?.event ?? null;
   const eventName = ev?.nom_event ?? 'Salon';
+  const activeMemberCount = payload?.active_member_count ?? 1;
   const dateLabel = useMemo(() => {
     const d1 = fmtDate(ev?.date_debut);
     const d2 = fmtDate(ev?.date_fin);
@@ -435,9 +442,12 @@ const RadarCrmDebrief: React.FC = () => {
                               <li key={i} className="text-sm text-foreground/85 border-l-2 border-border pl-3">
                                 <span className="break-words">{(n.body ?? '').trim()}</span>
                                 {n.source === 'voice' && <span className="ml-1.5"><VoiceMarker /></span>}
-                                {fmtDateTime(n.created_at) && (
-                                  <span className="block text-[11px] text-muted-foreground mt-0.5">{fmtDateTime(n.created_at)}</span>
-                                )}
+                                <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                  {fmtDateTime(n.created_at) && (
+                                    <span className="text-[11px] text-muted-foreground">{fmtDateTime(n.created_at)}</span>
+                                  )}
+                                  <RadarAuthorBadge authorName={n.author_name} activeMemberCount={activeMemberCount} />
+                                </span>
                               </li>
                             ))}
                           </ul>
@@ -453,12 +463,19 @@ const RadarCrmDebrief: React.FC = () => {
                             {tasks.map((t, i) => (
                               <li key={i} className="text-sm flex items-start gap-2">
                                 <Check className={cn('h-4 w-4 shrink-0 mt-0.5', t.done ? 'text-emerald-600' : 'text-muted-foreground/40')} />
-                                <span className={cn('break-words', t.done ? 'text-muted-foreground line-through' : 'text-foreground/85')}>
-                                  {(t.body ?? '').trim()}
-                                  {fmtDate(t.due_at) && (
-                                    <span className="text-muted-foreground"> · échéance {fmtDate(t.due_at)}</span>
-                                  )}
-                                  {t.source === 'voice' && <span className="ml-1.5"><VoiceMarker /></span>}
+                                <span className="min-w-0">
+                                  <span className={cn('break-words', t.done ? 'text-muted-foreground line-through' : 'text-foreground/85')}>
+                                    {(t.body ?? '').trim()}
+                                    {fmtDate(t.due_at) && (
+                                      <span className="text-muted-foreground"> · échéance {fmtDate(t.due_at)}</span>
+                                    )}
+                                    {t.source === 'voice' && <span className="ml-1.5"><VoiceMarker /></span>}
+                                  </span>
+                                  <RadarAuthorBadge
+                                    authorName={t.author_name}
+                                    activeMemberCount={activeMemberCount}
+                                    className="mt-0.5 flex"
+                                  />
                                 </span>
                               </li>
                             ))}

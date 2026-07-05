@@ -38,6 +38,7 @@ import {
 import ExpandableText from '@/components/exhibitor/ExpandableText';
 import { cn } from '@/lib/utils';
 import VoiceNoteCapture from '@/components/radar-crm/VoiceNoteCapture';
+import RadarAuthorBadge from '@/components/radar-crm/RadarAuthorBadge';
 
 
 /** Compte ciblé par le panneau mission (couple crm_company_id + salon). */
@@ -93,6 +94,8 @@ interface MissionNote {
   id: string;
   body: string;
   created_at: string;
+  created_by?: string | null;
+  author_name?: string | null;
 }
 
 /** Tâche de mission (ajout + toggle done en V1). */
@@ -101,6 +104,9 @@ interface MissionTask {
   body: string;
   due_at: string | null;
   done: boolean;
+  created_at?: string | null;
+  created_by?: string | null;
+  author_name?: string | null;
 }
 
 const EMPTY: MissionFields = {
@@ -203,6 +209,9 @@ const RadarMissionSheet: React.FC<{
   // Capture terrain : notes & tâches (actions immédiates, hors bouton Enregistrer).
   const [notes, setNotes] = useState<MissionNote[]>([]);
   const [tasks, setTasks] = useState<MissionTask[]>([]);
+  // Nombre de membres actifs du compte (niveau enveloppe RPC) : pilote l'affichage
+  // de l'auteur des notes/tâches (uniquement si > 1 = compte partagé).
+  const [activeMemberCount, setActiveMemberCount] = useState<number>(1);
   const [noteDraft, setNoteDraft] = useState('');
   const [addingNote, setAddingNote] = useState(false);
   const [taskDraft, setTaskDraft] = useState('');
@@ -227,8 +236,12 @@ const RadarMissionSheet: React.FC<{
     const payload = data as {
       event?: Record<string, unknown>;
       companies?: Array<Record<string, unknown>>;
+      active_member_count?: number | null;
     } | null;
     const ev = payload?.event ?? null;
+    setActiveMemberCount(
+      typeof payload?.active_member_count === 'number' ? payload.active_member_count : 1,
+    );
     setEventDates(
       ev
         ? { start: (ev.date_debut as string | null) ?? null, end: (ev.date_fin as string | null) ?? null }
@@ -902,7 +915,10 @@ const RadarMissionSheet: React.FC<{
           {notes.map((n) => (
             <li key={n.id} className="rounded-lg border bg-muted/20 px-3 py-2">
               <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{n.body}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{fmtStamp(n.created_at)}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className="text-[11px] text-muted-foreground">{fmtStamp(n.created_at)}</span>
+                <RadarAuthorBadge authorName={n.author_name} activeMemberCount={activeMemberCount} />
+              </div>
             </li>
           ))}
         </ul>
@@ -986,6 +1002,11 @@ const RadarMissionSheet: React.FC<{
                 {nonEmpty(t.due_at) && (
                   <p className="mt-0.5 text-[11px] text-muted-foreground">Échéance : {fmtDue(t.due_at)}</p>
                 )}
+                <RadarAuthorBadge
+                  authorName={t.author_name}
+                  activeMemberCount={activeMemberCount}
+                  className="mt-0.5"
+                />
               </div>
             </li>
           ))}
