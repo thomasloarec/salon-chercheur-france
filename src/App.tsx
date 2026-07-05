@@ -43,6 +43,7 @@ import RadarCrm from '@/pages/RadarCrm';
 import RadarCrmResults from '@/pages/RadarCrmResults';
 import RadarCrmTerrain from '@/pages/RadarCrmTerrain';
 import RadarCrmDebrief from '@/pages/RadarCrmDebrief';
+import RadarInvitation from '@/pages/RadarInvitation';
 import CrmIntegrations from '@/pages/CrmIntegrations';
 import { OAuthCallback } from '@/pages/OAuthCallback';
 import OAuthHubspotTest from '@/pages/OAuthHubspotTest';
@@ -126,6 +127,7 @@ function App() {
             <Route path="/radar-crm/results" element={<RadarCrmResults />} />
             <Route path="/radar-crm/terrain/:eventId" element={<RadarCrmTerrain />} />
             <Route path="/radar-crm/debrief/:eventId" element={<RadarCrmDebrief />} />
+            <Route path="/radar/invitation" element={<RadarInvitation />} />
 
             {/* Admin routes with sidebar layout */}
             <Route path="/admin" element={<AdminLayout />}>
