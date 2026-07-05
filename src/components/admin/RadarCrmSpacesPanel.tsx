@@ -139,7 +139,7 @@ const RadarCrmSpacesPanel: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-primary" /> Espaces collaboratifs
+            <Building2 className="h-4 w-4 text-primary" /> Espaces Radar CRM
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-destructive">Erreur : {err}</CardContent>
@@ -151,10 +151,10 @@ const RadarCrmSpacesPanel: React.FC = () => {
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-primary" /> Espaces collaboratifs
+          <Building2 className="h-4 w-4 text-primary" /> Espaces Radar CRM
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Vue d'ensemble des espaces Radar CRM et de leurs membres.
+          Visibilité équipe et gestion du compte (plan, accès, membres).
         </p>
       </CardHeader>
       <CardContent>
