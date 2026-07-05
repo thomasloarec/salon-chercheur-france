@@ -293,7 +293,7 @@ const RadarCollaborationSection: React.FC = () => {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="truncate font-medium text-sm">{sp.name}</span>
+                      <span className="truncate font-medium text-sm">{sp.org_name?.trim() || sp.name}</span>
                       {sp.is_active && (
                         <Badge className="bg-primary text-primary-foreground hover:bg-primary shrink-0">
                           <Check className="mr-1 h-3 w-3" /> Actif
