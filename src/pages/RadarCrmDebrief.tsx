@@ -153,8 +153,12 @@ const RadarCrmDebrief: React.FC = () => {
     const p = data as unknown as DebriefPayload | null;
     setPayload(
       p
-        ? { event: p.event ?? null, companies: Array.isArray(p.companies) ? p.companies : [] }
-        : { event: null, companies: [] },
+        ? {
+            event: p.event ?? null,
+            companies: Array.isArray(p.companies) ? p.companies : [],
+            active_member_count: typeof p.active_member_count === 'number' ? p.active_member_count : 1,
+          }
+        : { event: null, companies: [], active_member_count: 1 },
     );
     setLoading(false);
   }, [eventId, user, navigate]);
