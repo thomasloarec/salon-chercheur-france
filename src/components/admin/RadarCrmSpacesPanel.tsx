@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Accordion,
@@ -9,7 +10,27 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
-import { Building2, Users, Loader2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { Building2, Users, Loader2, MoreHorizontal, Lock } from 'lucide-react';
+
+type RadarPlan = 'trial' | 'free' | 'paid' | 'beta';
 
 interface RadarSpaceRow {
   account_id: string;
@@ -35,16 +56,35 @@ interface RadarSpaceMember {
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR') : '—';
 
-const planVariant = (plan: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
-  if (plan === 'paid') return 'default';
-  if (plan === 'beta') return 'secondary';
-  if (plan === 'trial') return 'outline';
-  return 'destructive';
+const trialActive = (s: RadarSpaceRow) =>
+  s.plan === 'trial' && !!s.trial_ends_at && new Date(s.trial_ends_at) > new Date();
+
+const hasAccess = (s: RadarSpaceRow) =>
+  s.plan === 'paid' || s.plan === 'beta' || trialActive(s);
+
+const trialDaysLeft = (iso: string | null) => {
+  if (!iso) return 0;
+  const ms = new Date(iso).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / 86_400_000));
 };
+
+const statusLabel = (s: RadarSpaceRow) => {
+  if (s.plan === 'paid') return 'Payant';
+  if (s.plan === 'beta') return 'Beta';
+  if (s.plan === 'trial') {
+    return trialActive(s) ? `Essai (${trialDaysLeft(s.trial_ends_at)}j)` : 'Essai expiré';
+  }
+  return 'Verrouillé';
+};
+
+const statusVariant = (s: RadarSpaceRow): 'default' | 'secondary' | 'destructive' | 'outline' =>
+  hasAccess(s) ? 'default' : s.plan === 'free' ? 'destructive' : 'secondary';
 
 const RadarCrmSpacesPanel: React.FC = () => {
   const [spaces, setSpaces] = useState<RadarSpaceRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [lockTarget, setLockTarget] = useState<RadarSpaceRow | null>(null);
   const [membersByAccount, setMembersByAccount] = useState<
     Record<string, RadarSpaceMember[] | 'loading'>
   >({});
@@ -77,6 +117,22 @@ const RadarCrmSpacesPanel: React.FC = () => {
     },
     [membersByAccount],
   );
+
+  const setPlan = async (space: RadarSpaceRow, plan: RadarPlan) => {
+    setBusyId(space.account_id);
+    const { error } = await supabase.rpc('admin_set_radar_plan', {
+      p_account_id: space.account_id,
+      p_plan: plan,
+    });
+    setBusyId(null);
+    setLockTarget(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Plan mis à jour');
+    await loadSpaces();
+  };
 
   if (err) {
     return (
@@ -117,6 +173,7 @@ const RadarCrmSpacesPanel: React.FC = () => {
             {spaces.map((s) => {
               const displayName = s.org_name?.trim() || s.name || 'Espace sans nom';
               const members = membersByAccount[s.account_id];
+              const busy = busyId === s.account_id;
               return (
                 <AccordionItem key={s.account_id} value={s.account_id}>
                   <AccordionTrigger
@@ -131,7 +188,7 @@ const RadarCrmSpacesPanel: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={planVariant(s.plan)}>{s.plan}</Badge>
+                        <Badge variant={statusVariant(s)}>{statusLabel(s)}</Badge>
                         <Badge variant="outline" className="flex items-center gap-1">
                           <Users className="h-3 w-3" /> {s.members}
                         </Badge>
@@ -139,6 +196,55 @@ const RadarCrmSpacesPanel: React.FC = () => {
                         <span className="text-xs text-muted-foreground">
                           {fmtDate(s.created_at)}
                         </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={busy}
+                              aria-label="Gérer le plan"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {busy ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <DropdownMenuItem
+                              disabled={busy || s.plan === 'paid'}
+                              onSelect={() => setPlan(s, 'paid')}
+                            >
+                              Activer (Payant)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={busy || s.plan === 'beta'}
+                              onSelect={() => setPlan(s, 'beta')}
+                            >
+                              Beta
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={busy}
+                              onSelect={() => setPlan(s, 'trial')}
+                            >
+                              Essai 7j
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              disabled={busy || s.plan === 'free'}
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() => setLockTarget(s)}
+                            >
+                              <Lock className="h-4 w-4" /> Verrouiller
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </AccordionTrigger>
@@ -187,6 +293,28 @@ const RadarCrmSpacesPanel: React.FC = () => {
           </Accordion>
         )}
       </CardContent>
+
+      <AlertDialog
+        open={!!lockTarget}
+        onOpenChange={(open) => !open && setLockTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Verrouiller cet espace ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action passe l'espace «{' '}
+              {lockTarget?.org_name?.trim() || lockTarget?.name || 'Espace sans nom'} » en plan{' '}
+              <strong>free</strong> et retire immédiatement l'accès au Radar CRM.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => lockTarget && setPlan(lockTarget, 'free')}>
+              Verrouiller
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
