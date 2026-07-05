@@ -12,30 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Check, X, Mail, Loader2, Inbox } from 'lucide-react';
-
-type RadarPlan = 'trial' | 'free' | 'paid' | 'beta';
-
-interface RadarAccountRow {
-  account_id: string;
-  name: string | null;
-  plan: RadarPlan;
-  trial_ends_at: string | null;
-  members: number;
-  companies: number;
-  created_at: string;
-}
 
 interface RadarAccessRequestRow {
   request_id: string;
@@ -52,11 +30,6 @@ interface RadarAccessRequestRow {
   account_plan: string | null;
   account_name: string | null;
 }
-
-const hasAccess = (a: RadarAccountRow) =>
-  a.plan === 'paid' ||
-  a.plan === 'beta' ||
-  (a.plan === 'trial' && !!a.trial_ends_at && new Date(a.trial_ends_at) > new Date());
 
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR') : '—';
@@ -75,20 +48,8 @@ const statusBadge = (status: RadarAccessRequestRow['status']) => {
 };
 
 const RadarCrmAccessManager: React.FC = () => {
-  const [accounts, setAccounts] = useState<RadarAccountRow[] | null>(null);
   const [requests, setRequests] = useState<RadarAccessRequestRow[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [lockTarget, setLockTarget] = useState<RadarAccountRow | null>(null);
-
-  const loadAccounts = useCallback(async () => {
-    const { data, error } = await supabase.rpc('admin_list_radar_accounts');
-    if (error) {
-      toast.error(`Comptes : ${error.message}`);
-      setAccounts([]);
-      return;
-    }
-    setAccounts((data as unknown as RadarAccountRow[]) ?? []);
-  }, []);
 
   const loadRequests = useCallback(async () => {
     const { data, error } = await supabase.rpc('admin_list_access_requests');
@@ -101,9 +62,8 @@ const RadarCrmAccessManager: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadAccounts();
     loadRequests();
-  }, [loadAccounts, loadRequests]);
+  }, [loadRequests]);
 
   const sortedRequests = useMemo(() => {
     if (!requests) return [];
@@ -124,22 +84,6 @@ const RadarCrmAccessManager: React.FC = () => {
     () => (requests ?? []).filter((r) => r.status === 'pending').length,
     [requests],
   );
-
-  const setPlan = async (account: RadarAccountRow, plan: RadarPlan) => {
-    setBusyId(account.account_id);
-    const { error } = await supabase.rpc('admin_set_radar_plan', {
-      p_account_id: account.account_id,
-      p_plan: plan,
-    });
-    setBusyId(null);
-    setLockTarget(null);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success('Plan mis à jour');
-    await loadAccounts();
-  };
 
   const approveRequest = async (req: RadarAccessRequestRow) => {
     setBusyId(req.request_id);
@@ -174,7 +118,7 @@ const RadarCrmAccessManager: React.FC = () => {
       toast.warning("Demande approuvée — l'email de confirmation n'a pas pu être envoyé.");
     }
 
-    await Promise.all([loadRequests(), loadAccounts()]);
+    await loadRequests();
   };
 
   const setRequestStatus = async (
