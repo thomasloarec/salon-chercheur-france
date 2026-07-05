@@ -414,6 +414,8 @@ const RadarMissionSheet: React.FC<{
       id: (data as string) ?? `tmp-${Date.now()}`,
       body,
       created_at: new Date().toISOString(),
+      created_by: user?.id ?? null,
+      author_name: currentAuthorName,
     };
     setNotes((n) => [optimistic, ...n]);
     setNoteDraft('');
@@ -451,6 +453,8 @@ const RadarMissionSheet: React.FC<{
       body,
       due_at: due,
       done: false,
+      created_by: user?.id ?? null,
+      author_name: currentAuthorName,
     };
     setTasks((t) => [optimistic, ...t]);
     setTaskDraft('');
