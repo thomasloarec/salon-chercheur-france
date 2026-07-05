@@ -208,6 +208,9 @@ const RadarMissionSheet: React.FC<{
   // Capture terrain : notes & tâches (actions immédiates, hors bouton Enregistrer).
   const [notes, setNotes] = useState<MissionNote[]>([]);
   const [tasks, setTasks] = useState<MissionTask[]>([]);
+  // Nombre de membres actifs du compte (niveau enveloppe RPC) : pilote l'affichage
+  // de l'auteur des notes/tâches (uniquement si > 1 = compte partagé).
+  const [activeMemberCount, setActiveMemberCount] = useState<number>(1);
   const [noteDraft, setNoteDraft] = useState('');
   const [addingNote, setAddingNote] = useState(false);
   const [taskDraft, setTaskDraft] = useState('');
