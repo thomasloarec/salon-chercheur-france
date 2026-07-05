@@ -60,7 +60,9 @@ const RadarOnboardingPanel: React.FC<{
   onGoCompanies: () => void;
   onPrepareEvent: (eventId: string) => void;
   onEnterTerrain: (eventId: string) => void;
-}> = ({ progress, loading, captureEventId, onGoCompanies, onPrepareEvent, onEnterTerrain }) => {
+  /** Ouvre la section « Collaboration » des Paramètres Radar CRM (invitation d'un collègue). */
+  onOpenCollaboration: () => void;
+}> = ({ progress, loading, captureEventId, onGoCompanies, onPrepareEvent, onEnterTerrain, onOpenCollaboration }) => {
   const [expanded, setExpanded] = useState<boolean>(() => {
     try { return sessionStorage.getItem(COLLAPSED_KEY) !== '1'; } catch { return true; }
   });
