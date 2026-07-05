@@ -17,8 +17,8 @@ import {
 import { cn } from '@/lib/utils';
 
 /** Note / tâche telles que renvoyées par get_radar_salon_missions. */
-interface MissionNote { body?: string | null; created_at?: string | null; source?: string | null }
-interface MissionTask { body?: string | null; due_at?: string | null; done?: boolean | null; source?: string | null }
+interface MissionNote { body?: string | null; created_at?: string | null; source?: string | null; created_by?: string | null; author_name?: string | null }
+interface MissionTask { body?: string | null; due_at?: string | null; done?: boolean | null; source?: string | null; created_at?: string | null; created_by?: string | null; author_name?: string | null }
 
 interface DebriefCompany {
   crm_company_id: string;
@@ -51,6 +51,7 @@ interface DebriefEvent {
 interface DebriefPayload {
   event: DebriefEvent | null;
   companies: DebriefCompany[];
+  active_member_count?: number | null;
 }
 
 const fmtDate = (d: string | null | undefined) =>
