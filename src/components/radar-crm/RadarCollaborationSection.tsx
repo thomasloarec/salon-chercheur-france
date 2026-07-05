@@ -99,6 +99,8 @@ const RadarCollaborationSection: React.FC = () => {
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [orgNameInput, setOrgNameInput] = useState('');
+  const [savingOrgName, setSavingOrgName] = useState(false);
 
   const isOwner = team?.my_role === 'owner';
 
@@ -109,6 +111,7 @@ const RadarCollaborationSection: React.FC = () => {
     ]);
     const teamRow = (t.data ?? null) as unknown as Team | null;
     setTeam(teamRow);
+    setOrgNameInput((teamRow?.org_name ?? '').trim());
     setSpaces((s.data ?? []) as unknown as Space[]);
 
     // Invitations en attente : réservées à l'owner.
