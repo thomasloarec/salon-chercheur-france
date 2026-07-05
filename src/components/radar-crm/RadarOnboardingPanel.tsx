@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
   Target, Star, CalendarCheck, ClipboardList, CheckCircle2, ChevronDown,
-  ChevronUp, Rocket, ChevronLeft, ChevronRight,
+  ChevronUp, Rocket, ChevronLeft, ChevronRight, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
@@ -24,10 +24,11 @@ export interface RadarOnboardingProgress {
     pct: number;
   } | null;
   capture: { count: number; notes: number; tasks: number; done: boolean };
+  collaborate: { members: number; done: boolean };
 }
 
 interface MissionDef {
-  key: 'qualify' | 'prioritize' | 'prepare' | 'capture';
+  key: 'qualify' | 'prioritize' | 'prepare' | 'capture' | 'collaborate';
   icon: React.ReactNode;
   title: string;
   sub: string;
@@ -59,7 +60,9 @@ const RadarOnboardingPanel: React.FC<{
   onGoCompanies: () => void;
   onPrepareEvent: (eventId: string) => void;
   onEnterTerrain: (eventId: string) => void;
-}> = ({ progress, loading, captureEventId, onGoCompanies, onPrepareEvent, onEnterTerrain }) => {
+  /** Ouvre la section « Collaboration » des Paramètres Radar CRM (invitation d'un collègue). */
+  onOpenCollaboration: () => void;
+}> = ({ progress, loading, captureEventId, onGoCompanies, onPrepareEvent, onEnterTerrain, onOpenCollaboration }) => {
   const [expanded, setExpanded] = useState<boolean>(() => {
     try { return sessionStorage.getItem(COLLAPSED_KEY) !== '1'; } catch { return true; }
   });
@@ -85,12 +88,14 @@ const RadarOnboardingPanel: React.FC<{
     const p = progress.prioritize ?? { starred: 0, ignored: 0, done: false };
     const pn = progress.prepare_next ?? null;
     const cap = progress.capture ?? { count: 0, notes: 0, tasks: 0, done: false };
+    const col = progress.collaborate ?? { members: 0, done: false };
 
     const m1Done = q.pct >= 100;
     const m2Done = !!p.done;
     const m3Done = !!pn && pn.pct >= 100;
     const m3NA = !pn;
     const m4Done = !!cap.done;
+    const m5Done = !!col.done;
 
     const fire = (mission: MissionDef['key'], fn: () => void) => () => {
       void trackRadarEvent('radar_onboarding_cta_clicked', { mission });
@@ -142,8 +147,19 @@ const RadarOnboardingPanel: React.FC<{
         ctaLabel: m4Done || !captureEventId ? undefined : 'Capturer',
         onCta: m4Done || !captureEventId ? undefined : fire('capture', () => onEnterTerrain(captureEventId)),
       },
+      {
+        key: 'collaborate',
+        icon: <Users className="h-5 w-5" />,
+        title: 'Invitez un collègue',
+        sub: `${col.members} membre${col.members > 1 ? 's' : ''} dans votre équipe`,
+        help: "Radar CRM est un outil d'équipe — invitez un collègue pour préparer et suivre vos visites salon ensemble.",
+        done: m5Done,
+        fraction: m5Done ? 1 : 0,
+        ctaLabel: m5Done ? undefined : 'Inviter',
+        onCta: m5Done ? undefined : fire('collaborate', onOpenCollaboration),
+      },
     ];
-  }, [progress, onGoCompanies, onPrepareEvent, onEnterTerrain, captureEventId]);
+  }, [progress, onGoCompanies, onPrepareEvent, onEnterTerrain, captureEventId, onOpenCollaboration]);
 
   // Missions comptées : on exclut « préparer » quand aucun salon n'est à venir.
   const counted = useMemo(() => missions.filter((m) => !m.na), [missions]);

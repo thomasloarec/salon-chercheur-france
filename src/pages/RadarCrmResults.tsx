@@ -748,6 +748,7 @@ const RadarCrmResults: React.FC = () => {
               onGoCompanies={() => setActiveTab('companies')}
               onPrepareEvent={onPrepareEvent}
               onEnterTerrain={enterTerrain}
+              onOpenCollaboration={() => setSettingsOpen(true)}
             />
           )}
 
