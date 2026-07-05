@@ -95,6 +95,7 @@ const RadarOnboardingPanel: React.FC<{
     const m3Done = !!pn && pn.pct >= 100;
     const m3NA = !pn;
     const m4Done = !!cap.done;
+    const m5Done = !!col.done;
 
     const fire = (mission: MissionDef['key'], fn: () => void) => () => {
       void trackRadarEvent('radar_onboarding_cta_clicked', { mission });
