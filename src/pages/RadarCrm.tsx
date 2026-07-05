@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
+import RadarSpaceNameDialog from '@/components/radar-crm/RadarSpaceNameDialog';
 import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
 import RadarPreviewTable from '@/components/radar-crm/RadarPreviewTable';
 import MissionCardPreview from '@/components/radar-crm/previews/MissionCardPreview';
@@ -112,6 +113,8 @@ const RadarCrmPage: React.FC = () => {
   const resumedFromPendingRef = useRef(false);
 
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  // Après un import réussi : si l'espace de l'owner n'a pas encore de nom, on l'invite à le nommer.
+  const [nameSpace, setNameSpace] = useState<{ accountId: string; importId: string } | null>(null);
   const [radarStatus, setRadarStatus] = useState<{
     status: string;
     has_access: boolean;
@@ -271,6 +274,13 @@ const RadarCrmPage: React.FC = () => {
           description: `${result.qualityWarning.needsReviewCount} correspondance(s) suspecte(s) (${Math.round(result.qualityWarning.suspiciousRate * 100)}%). Vérifiez que le nom d'entreprise est bien dans la bonne colonne.`,
           variant: 'destructive',
         });
+      }
+      // Si l'owner n'a pas encore nommé son espace, on l'invite avant de basculer vers les résultats.
+      const teamRes = await supabase.rpc('get_my_radar_team');
+      const team = teamRes.data as unknown as { account_id?: string; my_role?: string; org_name?: string | null } | null;
+      if (team && team.my_role === 'owner' && !(team.org_name ?? '').trim() && team.account_id) {
+        setNameSpace({ accountId: team.account_id, importId: result.importId ?? '' });
+        return;
       }
       navigate(`/radar-crm/results?importId=${result.importId ?? ''}`);
     } catch (err) {
@@ -881,6 +891,16 @@ const RadarCrmPage: React.FC = () => {
         open={requestDialogOpen}
         onOpenChange={setRequestDialogOpen}
         source="locked_upload"
+      />
+
+      <RadarSpaceNameDialog
+        open={nameSpace !== null}
+        accountId={nameSpace?.accountId ?? null}
+        onClose={() => {
+          const importId = nameSpace?.importId ?? '';
+          setNameSpace(null);
+          navigate(`/radar-crm/results?importId=${importId}`);
+        }}
       />
     </MainLayout>
   );

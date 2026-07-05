@@ -3997,6 +3997,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           name: string
+          org_name: string | null
           plan: string
           realtime_alerts: boolean
           rows_limit: number
@@ -4011,6 +4012,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           name: string
+          org_name?: string | null
           plan?: string
           realtime_alerts?: boolean
           rows_limit?: number
@@ -4025,6 +4027,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           name?: string
+          org_name?: string | null
           plan?: string
           realtime_alerts?: boolean
           rows_limit?: number
@@ -7076,6 +7079,7 @@ export type Database = {
           is_active: boolean
           member_count: number
           name: string
+          org_name: string
           role: string
         }[]
       }
@@ -7116,6 +7120,7 @@ export type Database = {
         Returns: {
           days_left: number
           has_access: boolean
+          org_name: string
           plan: string
           radar_account_id: string
           status: string
@@ -7348,6 +7353,10 @@ export type Database = {
           p_visited: boolean
         }
         Returns: boolean
+      }
+      set_radar_space_name: {
+        Args: { p_account_id: string; p_name: string }
+        Returns: Json
       }
       set_seo_vault_secret: {
         Args: { p_name: string; p_value: string }

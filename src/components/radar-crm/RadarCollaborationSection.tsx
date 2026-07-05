@@ -23,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 type Member = {
   user_id: string;
   display_name: string | null;
+  email: string | null;
   role: string;
   is_me: boolean;
   last_seen_at: string | null;
@@ -32,6 +33,7 @@ type Team = {
   account_id: string;
   my_role: 'owner' | 'member' | string;
   active_member_count: number;
+  org_name: string | null;
   members: Member[];
 };
 
@@ -46,6 +48,7 @@ type PendingInvitation = {
 type Space = {
   account_id: string;
   name: string;
+  org_name: string | null;
   role: string;
   is_active: boolean;
   member_count: number;
@@ -96,6 +99,8 @@ const RadarCollaborationSection: React.FC = () => {
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [orgNameInput, setOrgNameInput] = useState('');
+  const [savingOrgName, setSavingOrgName] = useState(false);
 
   const isOwner = team?.my_role === 'owner';
 
@@ -106,6 +111,7 @@ const RadarCollaborationSection: React.FC = () => {
     ]);
     const teamRow = (t.data ?? null) as unknown as Team | null;
     setTeam(teamRow);
+    setOrgNameInput((teamRow?.org_name ?? '').trim());
     setSpaces((s.data ?? []) as unknown as Space[]);
 
     // Invitations en attente : réservées à l'owner.
@@ -187,6 +193,28 @@ const RadarCollaborationSection: React.FC = () => {
     window.location.reload();
   };
 
+  const handleSaveOrgName = async () => {
+    if (!team) return;
+    const name = orgNameInput.trim();
+    if (!name || name === (team.org_name ?? '').trim()) return;
+    setSavingOrgName(true);
+    const { error } = await supabase.rpc('set_radar_space_name', {
+      p_account_id: team.account_id,
+      p_name: name,
+    });
+    setSavingOrgName(false);
+    if (error) {
+      const message = /forbidden/i.test(error.message)
+        ? "Seul le propriétaire peut renommer l'espace."
+        : error.message;
+      toast({ title: 'Erreur', description: message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Nom de l\'entreprise enregistré' });
+    // Rendu depuis l'état persisté : on refetch (jamais depuis la réponse d'invoke).
+    await load();
+  };
+
   if (loading) {
     return (
       <Card>
@@ -206,6 +234,46 @@ const RadarCollaborationSection: React.FC = () => {
 
   return (
     <>
+      {/* Nom de l'entreprise / espace */}
+      <Card>
+        <CardContent className="pt-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Nom de l'entreprise</h3>
+          </div>
+          {isOwner ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Ce nom identifie votre espace Radar CRM auprès de votre équipe.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="org-name" className="sr-only">Nom de l'entreprise</Label>
+                  <Input
+                    id="org-name"
+                    value={orgNameInput}
+                    onChange={(e) => setOrgNameInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleSaveOrgName(); } }}
+                    placeholder="Ex : Standex Electronics"
+                    disabled={savingOrgName}
+                  />
+                </div>
+                <Button
+                  onClick={() => void handleSaveOrgName()}
+                  disabled={savingOrgName || !orgNameInput.trim() || orgNameInput.trim() === (team.org_name ?? '').trim()}
+                >
+                  {savingOrgName ? (<><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Enregistrement…</>) : 'Enregistrer'}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm font-medium">
+              {team.org_name?.trim() || <span className="text-muted-foreground font-normal">Espace non nommé</span>}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Sélecteur d'espace — uniquement si > 1 espace */}
       {hasMultipleSpaces && (
         <Card>
@@ -225,7 +293,7 @@ const RadarCollaborationSection: React.FC = () => {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="truncate font-medium text-sm">{sp.name}</span>
+                      <span className="truncate font-medium text-sm">{sp.org_name?.trim() || sp.name}</span>
                       {sp.is_active && (
                         <Badge className="bg-primary text-primary-foreground hover:bg-primary shrink-0">
                           <Check className="mr-1 h-3 w-3" /> Actif
@@ -289,6 +357,9 @@ const RadarCollaborationSection: React.FC = () => {
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">Vous</Badge>
                         )}
                       </div>
+                      {m.email && (
+                        <p className="truncate text-xs text-muted-foreground">{m.email}</p>
+                      )}
                       <Badge
                         variant="secondary"
                         className={

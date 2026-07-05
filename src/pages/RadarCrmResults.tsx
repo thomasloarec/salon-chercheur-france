@@ -197,6 +197,9 @@ const RadarCrmResults: React.FC = () => {
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  // Métadonnées d'espace (multi-membres) : nom d'entreprise + rôle pour l'invite "Nommez cet espace".
+  const [orgName, setOrgName] = useState<string | null>(null);
+  const [isSpaceOwner, setIsSpaceOwner] = useState(false);
   // Panneau mission (vue « Par salon ») — couple compte + salon.
   const [mission, setMission] = useState<{ target: MissionTarget; company: Company } | null>(null);
   // Vue par compte = vue par défaut (cadrage « veille »).
@@ -242,6 +245,19 @@ const RadarCrmResults: React.FC = () => {
       }
     })();
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Métadonnées d'espace : nom d'entreprise (org_name) + rôle courant.
+  const loadSpaceMeta = React.useCallback(async () => {
+    const { data } = await supabase.rpc('get_my_radar_team');
+    const t = data as unknown as { org_name?: string | null; my_role?: string } | null;
+    setOrgName((t?.org_name ?? '').trim() || null);
+    setIsSpaceOwner(t?.my_role === 'owner');
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    void loadSpaceMeta();
+  }, [user, loadSpaceMeta]);
 
   // Load the full radar view for the active import via the server-side RPC.
   // The RPC enforces entitlement/gating: in a locked state it returns
@@ -666,6 +682,28 @@ const RadarCrmResults: React.FC = () => {
                   <>Pendant que vous travaillez, Radar surveille vos comptes CRM et vous alerte avant chaque salon.</>
                 )}
               </p>
+              {!isLocked && !loading && (() => {
+                const activeImport = imports?.find((i) => i.id === activeImportId) ?? null;
+                const fileName = activeImport?.file_name ?? null;
+                if (!orgName && !fileName && !isSpaceOwner) return null;
+                return (
+                  <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
+                    {orgName ? (
+                      <span>Espace : <span className="font-medium text-foreground">{orgName}</span></span>
+                    ) : isSpaceOwner ? (
+                      <button
+                        type="button"
+                        onClick={() => setSettingsOpen(true)}
+                        className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+                      >
+                        Nommez cet espace
+                      </button>
+                    ) : null}
+                    {fileName && (orgName || isSpaceOwner) && <span aria-hidden>·</span>}
+                    {fileName && <span>Fichier : <span className="font-medium text-foreground">{fileName}</span></span>}
+                  </p>
+                );
+              })()}
             </div>
             {!isLocked && (
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
@@ -874,7 +912,7 @@ const RadarCrmResults: React.FC = () => {
       )}
       <RadarCrmSettingsDialog
         open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+        onOpenChange={(o) => { setSettingsOpen(o); if (!o) void loadSpaceMeta(); }}
         onDataDeleted={() => { void reloadAll(); }}
         onOfferProfileSaved={() => { void checkOfferProfile(); }}
       />
