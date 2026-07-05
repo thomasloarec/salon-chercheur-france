@@ -163,3 +163,10 @@ verify_jwt = false
 # (get_radar_mission_context / apply_radar_mission_strategy). No service_role is
 # used. verify_jwt stays false to keep the in-code gate the single source of truth.
 verify_jwt = false
+
+[functions.radar-send-invitation]
+# Auth enforced in code: getUser() via the anon client + forwarded Authorization
+# header, so auth.uid() resolves inside the owner-gated SECURITY DEFINER RPC
+# invite_radar_member (non-owners are rejected with 403). No service_role is
+# used. verify_jwt stays false to keep the in-code gate the single source of truth.
+verify_jwt = false
