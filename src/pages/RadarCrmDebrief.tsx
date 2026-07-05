@@ -171,6 +171,7 @@ const RadarCrmDebrief: React.FC = () => {
 
   const ev = payload?.event ?? null;
   const eventName = ev?.nom_event ?? 'Salon';
+  const activeMemberCount = payload?.active_member_count ?? 1;
   const dateLabel = useMemo(() => {
     const d1 = fmtDate(ev?.date_debut);
     const d2 = fmtDate(ev?.date_fin);
