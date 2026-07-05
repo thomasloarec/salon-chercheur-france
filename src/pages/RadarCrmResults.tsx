@@ -197,6 +197,9 @@ const RadarCrmResults: React.FC = () => {
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  // Métadonnées d'espace (multi-membres) : nom d'entreprise + rôle pour l'invite "Nommez cet espace".
+  const [orgName, setOrgName] = useState<string | null>(null);
+  const [isSpaceOwner, setIsSpaceOwner] = useState(false);
   // Panneau mission (vue « Par salon ») — couple compte + salon.
   const [mission, setMission] = useState<{ target: MissionTarget; company: Company } | null>(null);
   // Vue par compte = vue par défaut (cadrage « veille »).
