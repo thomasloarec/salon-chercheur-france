@@ -275,6 +275,13 @@ const RadarCrmPage: React.FC = () => {
           variant: 'destructive',
         });
       }
+      // Si l'owner n'a pas encore nommé son espace, on l'invite avant de basculer vers les résultats.
+      const teamRes = await supabase.rpc('get_my_radar_team');
+      const team = teamRes.data as unknown as { account_id?: string; my_role?: string; org_name?: string | null } | null;
+      if (team && team.my_role === 'owner' && !(team.org_name ?? '').trim() && team.account_id) {
+        setNameSpace({ accountId: team.account_id, importId: result.importId ?? '' });
+        return;
+      }
       navigate(`/radar-crm/results?importId=${result.importId ?? ''}`);
     } catch (err) {
       let isTrialExpired = false;
