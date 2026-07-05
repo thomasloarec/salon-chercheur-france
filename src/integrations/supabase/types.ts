@@ -6191,6 +6191,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_add_radar_member: {
+        Args: { p_account_id: string; p_email: string; p_role?: string }
+        Returns: Json
+      }
       admin_approve_access_request: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -7042,6 +7046,10 @@ export type Database = {
       }
       radar_company_key: {
         Args: { p_domain: string; p_name: string }
+        Returns: string
+      }
+      radar_member_display_name: {
+        Args: { p_user_id: string }
         Returns: string
       }
       radar_notify_hot_prospects: { Args: never; Returns: number }
