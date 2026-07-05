@@ -914,7 +914,10 @@ const RadarMissionSheet: React.FC<{
           {notes.map((n) => (
             <li key={n.id} className="rounded-lg border bg-muted/20 px-3 py-2">
               <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{n.body}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{fmtStamp(n.created_at)}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className="text-[11px] text-muted-foreground">{fmtStamp(n.created_at)}</span>
+                <RadarAuthorBadge authorName={n.author_name} activeMemberCount={activeMemberCount} />
+              </div>
             </li>
           ))}
         </ul>
