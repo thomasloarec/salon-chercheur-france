@@ -1001,6 +1001,11 @@ const RadarMissionSheet: React.FC<{
                 {nonEmpty(t.due_at) && (
                   <p className="mt-0.5 text-[11px] text-muted-foreground">Échéance : {fmtDue(t.due_at)}</p>
                 )}
+                <RadarAuthorBadge
+                  authorName={t.author_name}
+                  activeMemberCount={activeMemberCount}
+                  className="mt-0.5"
+                />
               </div>
             </li>
           ))}
