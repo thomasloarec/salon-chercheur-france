@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Check, X, Mail, Lock, Loader2, Inbox } from 'lucide-react';
+import { Check, X, Mail, Loader2, Inbox } from 'lucide-react';
 
 type RadarPlan = 'trial' | 'free' | 'paid' | 'beta';
 
@@ -60,18 +60,6 @@ const hasAccess = (a: RadarAccountRow) =>
 
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR') : '—';
-
-const accessLabel = (a: RadarAccountRow) => {
-  if (a.plan === 'paid') return 'Payant';
-  if (a.plan === 'beta') return 'Beta';
-  if (a.plan === 'trial') {
-    return hasAccess(a) ? `Essai (jusqu'au ${fmtDate(a.trial_ends_at)})` : 'Essai expiré';
-  }
-  return 'Verrouillé';
-};
-
-const planBadgeVariant = (a: RadarAccountRow): 'default' | 'secondary' | 'destructive' | 'outline' =>
-  hasAccess(a) ? 'default' : a.plan === 'free' ? 'destructive' : 'secondary';
 
 const statusBadge = (status: RadarAccessRequestRow['status']) => {
   switch (status) {
