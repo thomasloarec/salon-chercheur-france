@@ -6313,6 +6313,7 @@ export type Database = {
           created_at: string
           members: number
           name: string
+          org_name: string
           plan: string
           trial_ends_at: string
         }[]
