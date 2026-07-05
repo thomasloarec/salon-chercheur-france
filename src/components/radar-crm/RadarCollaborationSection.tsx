@@ -234,6 +234,46 @@ const RadarCollaborationSection: React.FC = () => {
 
   return (
     <>
+      {/* Nom de l'entreprise / espace */}
+      <Card>
+        <CardContent className="pt-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Nom de l'entreprise</h3>
+          </div>
+          {isOwner ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Ce nom identifie votre espace Radar CRM auprès de votre équipe.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="org-name" className="sr-only">Nom de l'entreprise</Label>
+                  <Input
+                    id="org-name"
+                    value={orgNameInput}
+                    onChange={(e) => setOrgNameInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleSaveOrgName(); } }}
+                    placeholder="Ex : Standex Electronics"
+                    disabled={savingOrgName}
+                  />
+                </div>
+                <Button
+                  onClick={() => void handleSaveOrgName()}
+                  disabled={savingOrgName || !orgNameInput.trim() || orgNameInput.trim() === (team.org_name ?? '').trim()}
+                >
+                  {savingOrgName ? (<><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Enregistrement…</>) : 'Enregistrer'}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm font-medium">
+              {team.org_name?.trim() || <span className="text-muted-foreground font-normal">Espace non nommé</span>}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Sélecteur d'espace — uniquement si > 1 espace */}
       {hasMultipleSpaces && (
         <Card>
