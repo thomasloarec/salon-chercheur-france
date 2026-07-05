@@ -28,7 +28,7 @@ export interface RadarOnboardingProgress {
 }
 
 interface MissionDef {
-  key: 'qualify' | 'prioritize' | 'prepare' | 'capture';
+  key: 'qualify' | 'prioritize' | 'prepare' | 'capture' | 'collaborate';
   icon: React.ReactNode;
   title: string;
   sub: string;
