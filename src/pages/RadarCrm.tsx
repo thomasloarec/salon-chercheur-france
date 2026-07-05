@@ -113,6 +113,8 @@ const RadarCrmPage: React.FC = () => {
   const resumedFromPendingRef = useRef(false);
 
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  // Après un import réussi : si l'espace de l'owner n'a pas encore de nom, on l'invite à le nommer.
+  const [nameSpace, setNameSpace] = useState<{ accountId: string; importId: string } | null>(null);
   const [radarStatus, setRadarStatus] = useState<{
     status: string;
     has_access: boolean;
