@@ -88,6 +88,7 @@ const RadarOnboardingPanel: React.FC<{
     const p = progress.prioritize ?? { starred: 0, ignored: 0, done: false };
     const pn = progress.prepare_next ?? null;
     const cap = progress.capture ?? { count: 0, notes: 0, tasks: 0, done: false };
+    const col = progress.collaborate ?? { members: 0, done: false };
 
     const m1Done = q.pct >= 100;
     const m2Done = !!p.done;
