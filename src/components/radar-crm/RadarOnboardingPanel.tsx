@@ -24,6 +24,7 @@ export interface RadarOnboardingProgress {
     pct: number;
   } | null;
   capture: { count: number; notes: number; tasks: number; done: boolean };
+  collaborate: { members: number; done: boolean };
 }
 
 interface MissionDef {
