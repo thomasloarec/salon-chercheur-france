@@ -193,6 +193,28 @@ const RadarCollaborationSection: React.FC = () => {
     window.location.reload();
   };
 
+  const handleSaveOrgName = async () => {
+    if (!team) return;
+    const name = orgNameInput.trim();
+    if (!name || name === (team.org_name ?? '').trim()) return;
+    setSavingOrgName(true);
+    const { error } = await supabase.rpc('set_radar_space_name', {
+      p_account_id: team.account_id,
+      p_name: name,
+    });
+    setSavingOrgName(false);
+    if (error) {
+      const message = /forbidden/i.test(error.message)
+        ? "Seul le propriétaire peut renommer l'espace."
+        : error.message;
+      toast({ title: 'Erreur', description: message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Nom de l\'entreprise enregistré' });
+    // Rendu depuis l'état persisté : on refetch (jamais depuis la réponse d'invoke).
+    await load();
+  };
+
   if (loading) {
     return (
       <Card>
