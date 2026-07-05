@@ -157,16 +157,14 @@ async function resolveNames(
     const { data: team } = await supabase.rpc("get_my_radar_team");
     const t = team as any;
     if (t) {
-      if (typeof t.account_name === "string" && t.account_name.trim()) {
-        spaceName = t.account_name.trim();
-      } else if (typeof t.name === "string" && t.name.trim()) {
-        spaceName = t.name.trim();
+      // Space name = org_name at the top of the get_my_radar_team envelope.
+      if (typeof t.org_name === "string" && t.org_name.trim()) {
+        spaceName = t.org_name.trim();
       }
+      // Inviter name = display_name of the member where is_me === true.
       const members = Array.isArray(t.members) ? t.members : [];
-      const me = members.find((m: any) => m?.is_me || m?.user_id === t.my_user_id) ??
-        members.find((m: any) => (m?.role ?? "").toLowerCase() === "owner");
-      const name = me?.full_name || me?.name ||
-        [me?.first_name, me?.last_name].filter(Boolean).join(" ").trim();
+      const me = members.find((m: any) => m?.is_me === true);
+      const name = typeof me?.display_name === "string" ? me.display_name.trim() : "";
       if (name) inviterName = name;
     }
   } catch (_e) {
