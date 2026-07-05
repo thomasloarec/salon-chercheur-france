@@ -108,7 +108,7 @@ const RadarInvitation: React.FC = () => {
       /* ignore */
     }
     setState({ kind: 'success' });
-    toast({ title: 'Bienvenue dans l\u2019espace partagé \u2713' });
+    toast({ title: 'Bienvenue dans l’espace partagé \u2713' });
     setTimeout(() => navigate(TARGET_ROUTE, { replace: true }), 1200);
   }, [token, navigate]);
 
@@ -172,8 +172,8 @@ const RadarInvitation: React.FC = () => {
                   <div className="rounded-lg bg-secondary/60 p-4 text-sm text-foreground flex gap-3">
                     <Mail className="h-5 w-5 shrink-0 text-primary mt-0.5" />
                     <p>
-                      Connectez-vous avec l\u2019adresse email à laquelle l\u2019invitation
-                      a été envoyée pour rejoindre l\u2019espace.
+                      Connectez-vous avec l’adresse email à laquelle l’invitation
+                      a été envoyée pour rejoindre l’espace.
                     </p>
                   </div>
                   <Button className="w-full" onClick={() => goToAuth('signin')}>
