@@ -94,6 +94,8 @@ const AdminRadarCrm: React.FC = () => {
 
       <RadarCrmAccessManager />
 
+      <RadarCrmSpacesPanel />
+
       <RadarCrmCronStatus />
       <RadarCrmRematchPanel />
       <RadarCrmEmailPreviewPanel />
