@@ -211,6 +211,24 @@ const RadarMissionSheet: React.FC<{
   // Capture terrain : notes & tâches (actions immédiates, hors bouton Enregistrer).
   const [notes, setNotes] = useState<MissionNote[]>([]);
   const [tasks, setTasks] = useState<MissionTask[]>([]);
+  // Identité de l'utilisateur COURANT (= forcément l'auteur de la note/tâche qu'il vient
+  // de créer). Sert à renseigner author_name dans l'objet optimiste, EXACTEMENT selon la
+  // même règle que get_radar_salon_missions côté serveur, pour éviter tout scintillement
+  // au refetch : « prénom nom » (trim) sinon local-part de l'email sinon « Membre ».
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
+  const currentAuthorName = useMemo(() => {
+    const first = (profile?.first_name ?? '').trim();
+    const last = (profile?.last_name ?? '').trim();
+    const full = `${first} ${last}`.trim();
+    if (full) return full;
+    const email = (user?.email ?? '').trim();
+    if (email) {
+      const local = email.split('@')[0]?.trim();
+      if (local) return local;
+    }
+    return 'Membre';
+  }, [profile?.first_name, profile?.last_name, user?.email]);
   // Nombre de membres actifs du compte (niveau enveloppe RPC) : pilote l'affichage
   // de l'auteur des notes/tâches (uniquement si > 1 = compte partagé).
   const [activeMemberCount, setActiveMemberCount] = useState<number>(1);
