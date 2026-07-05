@@ -892,6 +892,16 @@ const RadarCrmPage: React.FC = () => {
         onOpenChange={setRequestDialogOpen}
         source="locked_upload"
       />
+
+      <RadarSpaceNameDialog
+        open={nameSpace !== null}
+        accountId={nameSpace?.accountId ?? null}
+        onClose={() => {
+          const importId = nameSpace?.importId ?? '';
+          setNameSpace(null);
+          navigate(`/radar-crm/results?importId=${importId}`);
+        }}
+      />
     </MainLayout>
   );
 };
