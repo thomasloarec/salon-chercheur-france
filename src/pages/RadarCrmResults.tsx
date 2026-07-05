@@ -682,6 +682,28 @@ const RadarCrmResults: React.FC = () => {
                   <>Pendant que vous travaillez, Radar surveille vos comptes CRM et vous alerte avant chaque salon.</>
                 )}
               </p>
+              {!isLocked && !loading && (() => {
+                const activeImport = imports?.find((i) => i.id === activeImportId) ?? null;
+                const fileName = activeImport?.file_name ?? null;
+                if (!orgName && !fileName && !isSpaceOwner) return null;
+                return (
+                  <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
+                    {orgName ? (
+                      <span>Espace : <span className="font-medium text-foreground">{orgName}</span></span>
+                    ) : isSpaceOwner ? (
+                      <button
+                        type="button"
+                        onClick={() => setSettingsOpen(true)}
+                        className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+                      >
+                        Nommez cet espace
+                      </button>
+                    ) : null}
+                    {fileName && (orgName || isSpaceOwner) && <span aria-hidden>·</span>}
+                    {fileName && <span>Fichier : <span className="font-medium text-foreground">{fileName}</span></span>}
+                  </p>
+                );
+              })()}
             </div>
             {!isLocked && (
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
