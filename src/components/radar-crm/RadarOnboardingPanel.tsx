@@ -159,7 +159,7 @@ const RadarOnboardingPanel: React.FC<{
         onCta: m5Done ? undefined : fire('collaborate', onOpenCollaboration),
       },
     ];
-  }, [progress, onGoCompanies, onPrepareEvent, onEnterTerrain, captureEventId]);
+  }, [progress, onGoCompanies, onPrepareEvent, onEnterTerrain, captureEventId, onOpenCollaboration]);
 
   // Missions comptées : on exclut « préparer » quand aucun salon n'est à venir.
   const counted = useMemo(() => missions.filter((m) => !m.na), [missions]);
