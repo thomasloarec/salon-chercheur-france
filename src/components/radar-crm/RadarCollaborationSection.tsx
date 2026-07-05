@@ -357,6 +357,9 @@ const RadarCollaborationSection: React.FC = () => {
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">Vous</Badge>
                         )}
                       </div>
+                      {m.email && (
+                        <p className="truncate text-xs text-muted-foreground">{m.email}</p>
+                      )}
                       <Badge
                         variant="secondary"
                         className={
