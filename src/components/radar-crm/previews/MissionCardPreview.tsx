@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import PreviewRelBadge from './PreviewRelBadge';
+import { RELATIONSHIP_META } from '@/lib/radarCrm/relationship';
 
 /**
  * Miroir présentationnel de RadarMissionSheet (corps de la mission) — garder synchronisé.
@@ -31,9 +32,9 @@ const ReadonlyField: React.FC<{ children: React.ReactNode; big?: boolean; classN
 );
 
 const TOP3 = [
-  'Qui pilote le sujet en interne aujourd’hui ?',
-  'Qu’est-ce qui vous bloque avec la solution actuelle ?',
-  'Sur quel timing se décide le prochain achat ?',
+  'Le projet de bornes de recharge dont on avait parlé, il en est où aujourd’hui ?',
+  'Qui pilote ce sujet chez vous en ce moment ?',
+  'Quels autres projets sont en train de démarrer de votre côté ?',
 ];
 
 const MissionCardPreview: React.FC<{ big?: boolean; className?: string }> = ({ big = false, className }) => (
@@ -46,13 +47,13 @@ const MissionCardPreview: React.FC<{ big?: boolean; className?: string }> = ({ b
             Mission · SEPEM Brest
           </p>
           <h3 className="font-display text-xl font-semibold tracking-tight text-foreground mt-0.5 truncate">
-            MAX EUROPE
+            Legrand
           </h3>
         </div>
         <Badge variant="secondary" className="shrink-0 text-[10px]">Dans 9 j</Badge>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <PreviewRelBadge status="client_dormant" label="Client à développer" />
+        <PreviewRelBadge status="prospect_froid" label={RELATIONSHIP_META.prospect_froid.label} />
         <span className="shrink-0 text-xs font-medium text-primary bg-primary/5 px-1.5 py-0.5 rounded">
           Stand E35
         </span>
@@ -62,7 +63,7 @@ const MissionCardPreview: React.FC<{ big?: boolean; className?: string }> = ({ b
       <div className="space-y-2">
         <Label className="text-sm font-semibold">Objectif de la visite</Label>
         <ReadonlyField big={big} className="font-medium">
-          Rouvrir la discussion sur le renouvellement et repérer un besoin sur leur nouvelle ligne de production.
+          Savoir si le projet de bornes de recharge est encore actif ou abandonné — et, sinon, identifier un nouveau projet à adresser.
         </ReadonlyField>
       </div>
 
@@ -70,7 +71,7 @@ const MissionCardPreview: React.FC<{ big?: boolean; className?: string }> = ({ b
       <div className="space-y-2">
         <Label className="text-sm font-semibold">Phrase d’ouverture</Label>
         <ReadonlyField big={big}>
-          « On a suivi votre annonce sur le nouveau site. Ça change quoi pour vos équipes cette année ? »
+          « On avait déjà échangé sur vos bornes de recharge. Je suis d’assez près ce que vous développez, et j’étais curieux de savoir où ça en est aujourd’hui. »
         </ReadonlyField>
       </div>
 

@@ -5,7 +5,7 @@ import { MapPin, Flame, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import RadarStatCard from '@/components/radar-crm/RadarStatCard';
 import PreviewRelBadge from './PreviewRelBadge';
-import { type RelationshipStatus } from '@/lib/radarCrm/relationship';
+import { RELATIONSHIP_META, type RelationshipStatus } from '@/lib/radarCrm/relationship';
 
 /**
  * Miroir présentationnel de la vue résultat / cockpit (RadarCrmResults) — garder synchronisé.
@@ -27,9 +27,27 @@ interface AccountRowData {
 }
 
 const ROWS: AccountRowData[] = [
-  { name: 'OSE', objective: 'requalifier le besoin avant renouvellement', status: 'prospect_chaud', label: 'Prospect chaud', stand: 'A56' },
-  { name: 'MAX EUROPE', objective: 'rouvrir la discussion sur la nouvelle ligne', status: 'client_dormant', label: 'Client à développer', stand: 'E35' },
-  { name: 'LES MÉCAMIENS', objective: 'premier contact, comprendre l’organisation', status: 'a_qualifier', label: 'Nouveau compte', stand: 'A39' },
+  {
+    name: 'Schneider Electric',
+    objective: 'confirmer le budget sur leur projet de supervision énergétique',
+    status: 'prospect_chaud',
+    label: RELATIONSHIP_META.prospect_chaud.label,
+    stand: 'A56',
+  },
+  {
+    name: 'Legrand',
+    objective: 'savoir si le projet de bornes de recharge est encore actif',
+    status: 'prospect_froid',
+    label: RELATIONSHIP_META.prospect_froid.label,
+    stand: 'E35',
+  },
+  {
+    name: 'SEB',
+    objective: 'premier contact, identifier qui pilote la ligne Cookeo',
+    status: 'a_qualifier',
+    label: RELATIONSHIP_META.a_qualifier.label,
+    stand: 'A39',
+  },
 ];
 
 // Miroir de CompanyChip (RadarCrmResults) — garder synchronisé.
