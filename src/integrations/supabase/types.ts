@@ -7069,6 +7069,16 @@ export type Database = {
           role: string
         }[]
       }
+      list_my_radar_spaces: {
+        Args: never
+        Returns: {
+          account_id: string
+          is_active: boolean
+          member_count: number
+          name: string
+          role: string
+        }[]
+      }
       log_application_event: {
         Args: {
           p_details?: Json
