@@ -23,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 type Member = {
   user_id: string;
   display_name: string | null;
+  email: string | null;
   role: string;
   is_me: boolean;
   last_seen_at: string | null;
@@ -32,6 +33,7 @@ type Team = {
   account_id: string;
   my_role: 'owner' | 'member' | string;
   active_member_count: number;
+  org_name: string | null;
   members: Member[];
 };
 
@@ -46,6 +48,7 @@ type PendingInvitation = {
 type Space = {
   account_id: string;
   name: string;
+  org_name: string | null;
   role: string;
   is_active: boolean;
   member_count: number;
