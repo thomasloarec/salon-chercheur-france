@@ -15,6 +15,7 @@ import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship,
 } from '@/lib/radarCrm/relationship';
 import { cn } from '@/lib/utils';
+import RadarAuthorBadge from '@/components/radar-crm/RadarAuthorBadge';
 
 /** Note / tâche telles que renvoyées par get_radar_salon_missions. */
 interface MissionNote { body?: string | null; created_at?: string | null; source?: string | null; created_by?: string | null; author_name?: string | null }
