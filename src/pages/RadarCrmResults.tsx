@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
+import StatCard from '@/components/radar-crm/RadarStatCard';
 import RadarOnboardingPanel, { type RadarOnboardingProgress } from '@/components/radar-crm/RadarOnboardingPanel';
 import SimilarExhibitorsSection from '@/components/radar-crm/SimilarExhibitorsSection';
 import {
@@ -1031,32 +1032,6 @@ const RadarActiveBanner: React.FC<{
             Paramètres Radar CRM
           </button>
         </p>
-      </CardContent>
-    </Card>
-  );
-};
-
-const StatCard: React.FC<{
-  label: string; value: number | string; sub?: string;
-  accent?: 'primary' | 'success' | 'accent'; icon?: React.ReactNode;
-}> = ({ label, value, sub, accent, icon }) => {
-  // Discipline « un seul accent » : seul le chiffre clé (accent) porte l'orange.
-  // Les autres cartes restent neutres (blanc, bordure fine), chiffre en navy ou foreground.
-  const tone =
-    accent === 'accent' ? 'border-accent/30 bg-secondary/40' :
-    'bg-card border-border/60';
-  const valueTone =
-    accent === 'accent'  ? 'text-accent' :
-    accent === 'primary' ? 'text-primary' :
-    'text-foreground';
-  return (
-    <Card className={cn('shadow-none', tone)}>
-      <CardContent className="px-5 pt-6 pb-6">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2 font-medium">
-          {icon}<span>{label}</span>
-        </div>
-        <p className={`font-display text-3xl font-semibold leading-none tracking-tight ${valueTone}`}>{value}</p>
-        {sub && <p className="text-xs text-muted-foreground mt-1.5 truncate" title={sub}>{sub}</p>}
       </CardContent>
     </Card>
   );
