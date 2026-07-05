@@ -4173,11 +4173,62 @@ export type Database = {
         }
         Relationships: []
       }
+      radar_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          radar_account_id: string
+          role: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          radar_account_id: string
+          role?: string
+          status?: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          radar_account_id?: string
+          role?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_invitations_radar_account_id_fkey"
+            columns: ["radar_account_id"]
+            isOneToOne: false
+            referencedRelation: "radar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       radar_members: {
         Row: {
           created_at: string
           id: string
           invited_by: string | null
+          is_primary: boolean
           last_seen_at: string | null
           radar_account_id: string
           role: string
@@ -4189,6 +4240,7 @@ export type Database = {
           created_at?: string
           id?: string
           invited_by?: string | null
+          is_primary?: boolean
           last_seen_at?: string | null
           radar_account_id: string
           role?: string
@@ -4200,6 +4252,7 @@ export type Database = {
           created_at?: string
           id?: string
           invited_by?: string | null
+          is_primary?: boolean
           last_seen_at?: string | null
           radar_account_id?: string
           role?: string
@@ -6170,6 +6223,7 @@ export type Database = {
         Returns: Json
       }
       _recon_norm_domain: { Args: { p_val: string }; Returns: string }
+      accept_radar_invitation: { Args: { p_token: string }; Returns: Json }
       add_radar_company_from_exposant: {
         Args: { p_event_id: string; p_id_exposant: string }
         Returns: string
@@ -6232,6 +6286,18 @@ export type Database = {
           phone: string
           radar_account_id: string
           request_id: string
+          status: string
+          user_id: string
+        }[]
+      }
+      admin_list_radar_account_members: {
+        Args: { p_account_id: string }
+        Returns: {
+          created_at: string
+          display_name: string
+          email: string
+          last_seen_at: string
+          role: string
           status: string
           user_id: string
         }[]
@@ -6813,6 +6879,7 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      get_my_radar_team: { Args: never; Returns: Json }
       get_my_radar_view: { Args: { p_import_id?: string }; Returns: Json }
       get_novelty_likes_count: {
         Args: { novelty_uuid: string }
@@ -6935,10 +7002,18 @@ export type Database = {
         Args: { p_field: string; p_novelty_id: string }
         Returns: undefined
       }
+      invite_radar_member: {
+        Args: { p_account_id: string; p_email: string; p_role?: string }
+        Returns: Json
+      }
       is_admin: { Args: never; Returns: boolean }
       is_ai_refusal: { Args: { txt: string }; Returns: boolean }
       is_email_blacklisted: { Args: { _email: string }; Returns: boolean }
       is_radar_member: {
+        Args: { p_account_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      is_radar_owner: {
         Args: { p_account_id: string; p_user_id?: string }
         Returns: boolean
       }
@@ -6982,6 +7057,16 @@ export type Database = {
           reason: string
           source_type: string
           website: string
+        }[]
+      }
+      list_my_radar_pending_invitations: {
+        Args: never
+        Returns: {
+          email: string
+          expires_at: string
+          invitation_id: string
+          invited_at: string
+          role: string
         }[]
       }
       log_application_event: {
@@ -7048,6 +7133,10 @@ export type Database = {
         Args: { p_domain: string; p_name: string }
         Returns: string
       }
+      radar_current_account_id: {
+        Args: { p_user_id?: string }
+        Returns: string
+      }
       radar_member_display_name: {
         Args: { p_user_id: string }
         Returns: string
@@ -7057,6 +7146,10 @@ export type Database = {
       radar_notify_salons_debrief: { Args: never; Returns: number }
       radar_notify_salons_live: { Args: never; Returns: number }
       radar_notify_tasks_due: { Args: never; Returns: number }
+      radar_set_primary_space: {
+        Args: { p_account_id: string; p_user_id: string }
+        Returns: undefined
+      }
       rebuild_event_duplicate_candidates: {
         Args: { p_only_future?: boolean }
         Returns: Json
@@ -7077,6 +7170,10 @@ export type Database = {
           url_image: string
           ville: string
         }[]
+      }
+      remove_radar_member: {
+        Args: { p_account_id: string; p_user_id: string }
+        Returns: Json
       }
       reset_event_duplicate_candidates: { Args: never; Returns: Json }
       resolve_radar_account_for_user: {
@@ -7103,6 +7200,10 @@ export type Database = {
           p_status: string
         }
         Returns: undefined
+      }
+      revoke_radar_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: Json
       }
       run_exhibitor_ai_remap: { Args: never; Returns: Json }
       scan_event_duplicates: {
@@ -7205,6 +7306,7 @@ export type Database = {
         }[]
       }
       seo_test_hash_protection: { Args: never; Returns: Json }
+      set_active_radar_space: { Args: { p_account_id: string }; Returns: Json }
       set_exhibitor_alert: {
         Args: {
           p_enabled: boolean
