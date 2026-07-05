@@ -16,8 +16,8 @@ import {
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
   Radar, ArrowRight, Upload, FileCheck2, Lock, CheckCircle2, Mail,
-  Compass, AlertTriangle, Briefcase, Check, X, Target, MapPin, Rocket,
-  Sparkles, Eye, Globe, ShieldCheck, ClipboardList, MessageSquare,
+  Compass, AlertTriangle, Briefcase, Check, X, Target,
+  Sparkles, Eye, Globe, ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
