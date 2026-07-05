@@ -441,9 +441,12 @@ const RadarCrmDebrief: React.FC = () => {
                               <li key={i} className="text-sm text-foreground/85 border-l-2 border-border pl-3">
                                 <span className="break-words">{(n.body ?? '').trim()}</span>
                                 {n.source === 'voice' && <span className="ml-1.5"><VoiceMarker /></span>}
-                                {fmtDateTime(n.created_at) && (
-                                  <span className="block text-[11px] text-muted-foreground mt-0.5">{fmtDateTime(n.created_at)}</span>
-                                )}
+                                <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                  {fmtDateTime(n.created_at) && (
+                                    <span className="text-[11px] text-muted-foreground">{fmtDateTime(n.created_at)}</span>
+                                  )}
+                                  <RadarAuthorBadge authorName={n.author_name} activeMemberCount={activeMemberCount} />
+                                </span>
                               </li>
                             ))}
                           </ul>
@@ -459,12 +462,19 @@ const RadarCrmDebrief: React.FC = () => {
                             {tasks.map((t, i) => (
                               <li key={i} className="text-sm flex items-start gap-2">
                                 <Check className={cn('h-4 w-4 shrink-0 mt-0.5', t.done ? 'text-emerald-600' : 'text-muted-foreground/40')} />
-                                <span className={cn('break-words', t.done ? 'text-muted-foreground line-through' : 'text-foreground/85')}>
-                                  {(t.body ?? '').trim()}
-                                  {fmtDate(t.due_at) && (
-                                    <span className="text-muted-foreground"> · échéance {fmtDate(t.due_at)}</span>
-                                  )}
-                                  {t.source === 'voice' && <span className="ml-1.5"><VoiceMarker /></span>}
+                                <span className="min-w-0">
+                                  <span className={cn('break-words', t.done ? 'text-muted-foreground line-through' : 'text-foreground/85')}>
+                                    {(t.body ?? '').trim()}
+                                    {fmtDate(t.due_at) && (
+                                      <span className="text-muted-foreground"> · échéance {fmtDate(t.due_at)}</span>
+                                    )}
+                                    {t.source === 'voice' && <span className="ml-1.5"><VoiceMarker /></span>}
+                                  </span>
+                                  <RadarAuthorBadge
+                                    authorName={t.author_name}
+                                    activeMemberCount={activeMemberCount}
+                                    className="mt-0.5 flex"
+                                  />
                                 </span>
                               </li>
                             ))}
