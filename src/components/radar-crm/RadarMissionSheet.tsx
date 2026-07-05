@@ -93,6 +93,8 @@ interface MissionNote {
   id: string;
   body: string;
   created_at: string;
+  created_by?: string | null;
+  author_name?: string | null;
 }
 
 /** Tâche de mission (ajout + toggle done en V1). */
@@ -101,6 +103,9 @@ interface MissionTask {
   body: string;
   due_at: string | null;
   done: boolean;
+  created_at?: string | null;
+  created_by?: string | null;
+  author_name?: string | null;
 }
 
 const EMPTY: MissionFields = {
