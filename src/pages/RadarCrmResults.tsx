@@ -1037,32 +1037,6 @@ const RadarActiveBanner: React.FC<{
   );
 };
 
-const StatCard: React.FC<{
-  label: string; value: number | string; sub?: string;
-  accent?: 'primary' | 'success' | 'accent'; icon?: React.ReactNode;
-}> = ({ label, value, sub, accent, icon }) => {
-  // Discipline « un seul accent » : seul le chiffre clé (accent) porte l'orange.
-  // Les autres cartes restent neutres (blanc, bordure fine), chiffre en navy ou foreground.
-  const tone =
-    accent === 'accent' ? 'border-accent/30 bg-secondary/40' :
-    'bg-card border-border/60';
-  const valueTone =
-    accent === 'accent'  ? 'text-accent' :
-    accent === 'primary' ? 'text-primary' :
-    'text-foreground';
-  return (
-    <Card className={cn('shadow-none', tone)}>
-      <CardContent className="px-5 pt-6 pb-6">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2 font-medium">
-          {icon}<span>{label}</span>
-        </div>
-        <p className={`font-display text-3xl font-semibold leading-none tracking-tight ${valueTone}`}>{value}</p>
-        {sub && <p className="text-xs text-muted-foreground mt-1.5 truncate" title={sub}>{sub}</p>}
-      </CardContent>
-    </Card>
-  );
-};
-
 const priorityFor = (n: number): { label: string; tone: string; icon?: React.ReactNode } | null => {
   // Échelle unique : l'orange est réservé à la vraie priorité forte ; le reste reste neutre/atténué.
   if (n >= 3) return { label: `Priorité forte · ${n} comptes`, tone: 'bg-accent text-accent-foreground', icon: <Flame className="h-3 w-3 mr-1" /> };
