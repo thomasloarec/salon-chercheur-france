@@ -293,6 +293,9 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
                 </CardContent>
               </Card>
 
+              {/* Bloc Collaboration — comptes partagés multi-membres */}
+              <RadarCollaborationSection />
+
               {/* Bloc A bis — Profil d'offre commercial */}
               <Card>
                 <CardContent className="pt-5 space-y-4">
