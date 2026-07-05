@@ -246,6 +246,19 @@ const RadarCrmResults: React.FC = () => {
     })();
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Métadonnées d'espace : nom d'entreprise (org_name) + rôle courant.
+  const loadSpaceMeta = React.useCallback(async () => {
+    const { data } = await supabase.rpc('get_my_radar_team');
+    const t = data as unknown as { org_name?: string | null; my_role?: string } | null;
+    setOrgName((t?.org_name ?? '').trim() || null);
+    setIsSpaceOwner(t?.my_role === 'owner');
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    void loadSpaceMeta();
+  }, [user, loadSpaceMeta]);
+
   // Load the full radar view for the active import via the server-side RPC.
   // The RPC enforces entitlement/gating: in a locked state it returns
   // `companies: []` while keeping `company_count` and `summary` populated.
