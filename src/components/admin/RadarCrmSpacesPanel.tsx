@@ -27,8 +27,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Building2, Users, Loader2, MoreHorizontal, Lock } from 'lucide-react';
+import { Building2, Users, Loader2, MoreHorizontal, Lock, Minus, Plus, Ticket } from 'lucide-react';
 
 type RadarPlan = 'trial' | 'free' | 'paid' | 'beta';
 
@@ -41,6 +42,7 @@ interface RadarSpaceRow {
   members: number;
   companies: number;
   created_at: string;
+  paid_seats: number;
 }
 
 interface RadarSpaceMember {
@@ -56,34 +58,28 @@ interface RadarSpaceMember {
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR') : '—';
 
-const trialActive = (s: RadarSpaceRow) =>
-  s.plan === 'trial' && !!s.trial_ends_at && new Date(s.trial_ends_at) > new Date();
-
-const hasAccess = (s: RadarSpaceRow) =>
-  s.plan === 'paid' || s.plan === 'beta' || trialActive(s);
-
-const trialDaysLeft = (iso: string | null) => {
-  if (!iso) return 0;
-  const ms = new Date(iso).getTime() - Date.now();
-  return Math.max(0, Math.ceil(ms / 86_400_000));
-};
-
+// New access model: a member has access if they occupy a paid seat OR their
+// personal 7-day trial is still valid. Account plan only overrides:
+// 'beta' = free access, 'free' = locked. Otherwise `paid_seats` drives access.
 const statusLabel = (s: RadarSpaceRow) => {
-  if (s.plan === 'paid') return 'Payant';
   if (s.plan === 'beta') return 'Beta';
-  if (s.plan === 'trial') {
-    return trialActive(s) ? `Essai (${trialDaysLeft(s.trial_ends_at)}j)` : 'Essai expiré';
-  }
-  return 'Verrouillé';
+  if (s.plan === 'free') return 'Verrouillé';
+  if (s.paid_seats > 0) return 'Sièges payants';
+  return 'Essai';
 };
 
-const statusVariant = (s: RadarSpaceRow): 'default' | 'secondary' | 'destructive' | 'outline' =>
-  hasAccess(s) ? 'default' : s.plan === 'free' ? 'destructive' : 'secondary';
+const statusVariant = (s: RadarSpaceRow): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  if (s.plan === 'beta') return 'default';
+  if (s.plan === 'free') return 'destructive';
+  if (s.paid_seats > 0) return 'default';
+  return 'secondary';
+};
 
 const RadarCrmSpacesPanel: React.FC = () => {
   const [spaces, setSpaces] = useState<RadarSpaceRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [seatsBusyId, setSeatsBusyId] = useState<string | null>(null);
   const [lockTarget, setLockTarget] = useState<RadarSpaceRow | null>(null);
   const [membersByAccount, setMembersByAccount] = useState<
     Record<string, RadarSpaceMember[] | 'loading'>
@@ -134,6 +130,23 @@ const RadarCrmSpacesPanel: React.FC = () => {
     await loadSpaces();
   };
 
+  const setPaidSeats = async (space: RadarSpaceRow, seats: number) => {
+    const next = Math.max(0, Math.floor(seats));
+    if (next === space.paid_seats) return;
+    setSeatsBusyId(space.account_id);
+    const { error } = await supabase.rpc('admin_set_radar_paid_seats', {
+      p_account_id: space.account_id,
+      p_paid_seats: next,
+    });
+    setSeatsBusyId(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Sièges payants mis à jour');
+    await loadSpaces();
+  };
+
   if (err) {
     return (
       <Card>
@@ -174,6 +187,8 @@ const RadarCrmSpacesPanel: React.FC = () => {
               const displayName = s.org_name?.trim() || s.name || 'Espace sans nom';
               const members = membersByAccount[s.account_id];
               const busy = busyId === s.account_id;
+              const seatsBusy = seatsBusyId === s.account_id;
+              const inTrial = Math.max(0, s.members - s.paid_seats);
               return (
                 <AccordionItem key={s.account_id} value={s.account_id}>
                   <AccordionTrigger
@@ -191,6 +206,10 @@ const RadarCrmSpacesPanel: React.FC = () => {
                         <Badge variant={statusVariant(s)}>{statusLabel(s)}</Badge>
                         <Badge variant="outline" className="flex items-center gap-1">
                           <Users className="h-3 w-3" /> {s.members}
+                        </Badge>
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          <Ticket className="h-3 w-3" /> {s.paid_seats} siège{s.paid_seats > 1 ? 's' : ''} payant
+                          {s.paid_seats > 1 ? 's' : ''}
                         </Badge>
                         <Badge variant="outline">{s.companies} entreprises</Badge>
                         <span className="text-xs text-muted-foreground">
@@ -240,6 +259,60 @@ const RadarCrmSpacesPanel: React.FC = () => {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
+                    <div className="mb-4 rounded-lg border bg-muted/30 p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium flex items-center gap-2">
+                            <Ticket className="h-4 w-4 text-primary" /> Sièges payants
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {s.members} membre{s.members > 1 ? 's' : ''} / {s.paid_seats} siège
+                            {s.paid_seats > 1 ? 's' : ''} payant{s.paid_seats > 1 ? 's' : ''}
+                            {inTrial > 0 && (
+                              <span className="font-medium text-destructive"> · {inTrial} en essai</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={seatsBusy || s.paid_seats <= 0}
+                            aria-label="Retirer un siège payant"
+                            onClick={() => setPaidSeats(s, s.paid_seats - 1)}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={s.paid_seats}
+                            disabled={seatsBusy}
+                            aria-label="Nombre de sièges payants"
+                            className="h-8 w-16 text-center"
+                            onChange={(e) => {
+                              const v = Number(e.target.value);
+                              if (!Number.isNaN(v)) setPaidSeats(s, v);
+                            }}
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={seatsBusy}
+                            aria-label="Ajouter un siège payant"
+                            onClick={() => setPaidSeats(s, s.paid_seats + 1)}
+                          >
+                            {seatsBusy ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                     {members === 'loading' || members === undefined ? (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground py-3">
                         <Loader2 className="h-4 w-4 animate-spin" /> Chargement des membres…
