@@ -811,6 +811,14 @@ const RadarCrmResults: React.FC = () => {
 
           {/* Trial banner */}
           {isTrial && !loading && (
+          {/* Bandeau d'essai par siège (modèle par-membre) — source: my_radar_access */}
+          {isSeatTrial && !loading && (
+            <SeatTrialBanner daysLeft={access?.trial_days_left ?? null} />
+          )}
+
+          {/* Ancien bandeau d'essai (statut get_my_radar_view) — fallback si l'accès
+              par siège n'est pas disponible, pour ne pas régresser. */}
+          {isTrial && !loading && !access && (
             <TrialBanner daysLeft={daysLeft} detected={kpiDetected} />
           )}
 
