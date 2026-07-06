@@ -237,6 +237,16 @@ const RadarCrmSpacesPanel: React.FC = () => {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
+                              disabled={busy || s.plan === 'beta'}
+                              onSelect={() => setPlan(s, 'beta')}
+                            >
+                              Beta (accès libre)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem disabled className="text-muted-foreground">
+                              Activer / Essai 7j — gérés par sièges payants
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
                               disabled={busy || s.plan === 'free'}
                               className="text-destructive focus:text-destructive"
                               onSelect={() => setLockTarget(s)}
