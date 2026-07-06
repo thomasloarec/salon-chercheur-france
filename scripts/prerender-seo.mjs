@@ -1060,6 +1060,20 @@ async function main() {
     } catch (e) { errors++; console.warn('[prerender] city failed', slug, e.message); }
   }
 
+  // Villes CONNUES sous le seuil : page /ville/:slug en noindex,follow (self-canonical),
+  // pour ne plus tomber sur le shell home (canonical→home, indexable). buildCity
+  // renvoie déjà robots='noindex,follow' quand top.length < CITY_YEAR_INDEX_THRESHOLD.
+  for (const slug of Object.keys(cityCount)) {
+    if (cityCount[slug] >= CITY_YEAR_INDEX_THRESHOLD) continue; // déjà traitées au-dessus
+    try {
+      const matches = upcoming.filter((e) => e.ville && cityHubSlug(e.ville) === slug)
+        .sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
+      const built = buildCity(slug, cityLabel[slug], matches);
+      await writeRoute(`/ville/${slug}`, applyToShell(baseTemplate, built));
+      stats.cities++;
+    } catch (e) { errors++; console.warn('[prerender] low-city failed', slug, e.message); }
+  }
+
   // 7. annual hub /salons-professionnels-2026
   try {
     const ANNUAL_YEAR = 2026;
