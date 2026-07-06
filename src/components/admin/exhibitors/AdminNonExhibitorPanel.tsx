@@ -1,14 +1,17 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Building2, Mail, Archive, Globe, ExternalLink, Calendar, Info,
+  Pencil, Save, X,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import ExhibitorOutreachPanel from './ExhibitorOutreachPanel';
 import AdminExhibitorParticipationsCard from './AdminExhibitorParticipationsCard';
 import { CAMPAIGN_STATUS_VARIANTS, campaignStatusLabel } from '@/lib/outreach/labels';
@@ -25,6 +28,50 @@ const fmtDate = (s?: string | null) =>
 const AdminNonExhibitorPanel = ({ selection, onBack }: Props) => {
   const isOutreach = selection.kind === 'outreach';
   const eventId = isOutreach ? selection.event_id : null;
+  const legacyId = selection.kind === 'legacy' ? selection.legacy_id : null;
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // ── Description éditoriale (exposant legacy) ──────────────────────────────
+  // Les entreprises "legacy" n'ont pas de fiche exposant moderne : la
+  // description affichée sur le site provient de exposants.exposant_description
+  // (dernier maillon de la cascade). On permet à l'admin de la corriger
+  // directement, sans avoir à revendiquer la société.
+  const legacyDescKey = ['admin-legacy-exposant-description', legacyId];
+  const { data: legacyDescription, isLoading: legacyDescLoading } = useQuery({
+    queryKey: legacyDescKey,
+    enabled: !!legacyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exposants')
+        .select('exposant_description')
+        .eq('id_exposant', legacyId!)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.exposant_description as string | null) ?? null;
+    },
+  });
+
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [descDraft, setDescDraft] = useState('');
+
+  const updateLegacyDesc = useMutation({
+    mutationFn: async (value: string) => {
+      const clean = value.trim();
+      const { error } = await supabase
+        .from('exposants')
+        .update({ exposant_description: clean.length ? clean : null })
+        .eq('id_exposant', legacyId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: 'Description mise à jour' });
+      setEditingDesc(false);
+      queryClient.invalidateQueries({ queryKey: legacyDescKey });
+    },
+    onError: (err: any) =>
+      toast({ title: 'Erreur', description: err?.message || 'Mise à jour impossible', variant: 'destructive' }),
+  });
 
   // Fetch event details to show real event name (not UUID)
   const { data: event } = useQuery({
