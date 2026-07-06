@@ -149,11 +149,34 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
   const title =
     `${name} : salons, nouveautés et événements professionnels | Lotexpo`.slice(0, 70);
 
-  const description = (
-    cleanAiDescription(profile.description)
-      ? `Retrouvez les salons professionnels, nouveautés et informations publiques de ${name} sur Lotexpo.`
-      : `Consultez la fiche exposant de ${name} sur Lotexpo : salons professionnels associés, nouveautés et informations publiques.`
-  ).slice(0, 160);
+  // Full deduped participation list (past + upcoming) — same source that feeds
+  // the "Salons et événements" section AND the static prerender's evList.
+  const { data: participations, isLoading: participationsLoading } =
+    useExhibitorParticipationHistory(
+      profile.exhibitor_id,
+      profile.legacy_exposant_id,
+    );
+
+  // Wait until the salons list is actually loaded before computing the
+  // "expose sur N salons" description. Otherwise the first render (empty list)
+  // would overwrite the correct prerendered description with a 0-salon
+  // fallback that JS-executing crawlers would then read.
+  const salonsLoaded = !participationsLoading && Array.isArray(participations);
+
+  // Mirror the static evList ordering (date_debut DESC) so the 2 highlighted
+  // salon names in the description match the prerendered HTML byte-for-byte.
+  const evNames = salonsLoaded
+    ? [...(participations ?? [])]
+        .sort((a, b) => (b.date_debut || '').localeCompare(a.date_debut || ''))
+        .map((e) => e.nom_event)
+        .filter((n): n is string => !!n)
+    : [];
+
+  // null until the salons list has loaded: while null we DON'T emit the
+  // description-dependent tags, leaving the prerendered ones untouched.
+  const description = salonsLoaded
+    ? buildExhibitorMetaDescription(name, evNames)
+    : null;
 
   const canonicalUrl = `https://lotexpo.com/exposants/${slug}`;
   const indexable = profile.seo_indexable === true;
@@ -174,7 +197,9 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
   return (
     <Helmet>
       <title>{title}</title>
-      <meta name="description" content={description} />
+      {description !== null && (
+        <meta name="description" content={description} />
+      )}
       <meta
         name="robots"
         content={indexable ? 'index, follow' : 'noindex, follow'}
@@ -184,7 +209,9 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
 
       {/* Open Graph */}
       <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
+      {description !== null && (
+        <meta property="og:description" content={description} />
+      )}
       <meta property="og:type" content="website" />
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:site_name" content="Lotexpo" />
@@ -197,7 +224,9 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@lotexpo" />
       <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
+      {description !== null && (
+        <meta name="twitter:description" content={description} />
+      )}
       <meta name="twitter:image" content={ogImage} />
 
       {/* JSON-LD Organization (indexable profiles only) */}
