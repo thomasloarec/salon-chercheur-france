@@ -215,8 +215,9 @@ const AdminNonExhibitorPanel = ({ selection, onBack }: Props) => {
                 </CardContent>
               </Card>
 
-              {/* Description éditoriale — legacy uniquement */}
-              {selection.kind === 'legacy' && (
+              {/* Description éditoriale — disponible dès qu'un exposant legacy
+                  est rattaché (entrée legacy directe ou campagne outreach liée). */}
+              {!!legacyId && (
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between gap-2">
