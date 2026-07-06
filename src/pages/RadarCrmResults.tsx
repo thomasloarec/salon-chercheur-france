@@ -225,6 +225,10 @@ const RadarCrmResults: React.FC = () => {
   // ── Onboarding gamifié (RUN O1) — progression 4 missions ─────────────
   const [onboarding, setOnboarding] = useState<RadarOnboardingProgress | null>(null);
   const [onboardingLoading, setOnboardingLoading] = useState(true);
+  // Accès par membre (siège payant OU essai 7 j) — source de vérité pour le
+  // bandeau d'essai et le blocage propre quand l'accès a expiré/est suspendu.
+  const [access, setAccess] = useState<RadarAccess | null>(null);
+  const [accessLoading, setAccessLoading] = useState(true);
 
   const reloadAll = async () => {
     setActiveImportId(null);
