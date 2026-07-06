@@ -218,25 +218,6 @@ const RadarCrmSpacesPanel: React.FC = () => {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <DropdownMenuItem
-                              disabled={busy || s.plan === 'paid'}
-                              onSelect={() => setPlan(s, 'paid')}
-                            >
-                              Activer (Payant)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={busy || s.plan === 'beta'}
-                              onSelect={() => setPlan(s, 'beta')}
-                            >
-                              Beta
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={busy}
-                              onSelect={() => setPlan(s, 'trial')}
-                            >
-                              Essai 7j
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
                               disabled={busy || s.plan === 'beta'}
                               onSelect={() => setPlan(s, 'beta')}
                             >
