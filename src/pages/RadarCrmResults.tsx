@@ -277,6 +277,24 @@ const RadarCrmResults: React.FC = () => {
     void loadSpaceMeta();
   }, [user, loadSpaceMeta]);
 
+  // Accès par membre : appelé au chargement. Pilote bandeau d'essai + blocage.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      setAccessLoading(true);
+      const { data, error: rpcError } = await supabase.rpc('my_radar_access');
+      if (cancelled) return;
+      if (rpcError) {
+        console.error('[RadarCRM] my_radar_access failed:', rpcError);
+      } else {
+        setAccess((data as unknown as RadarAccess) ?? null);
+      }
+      setAccessLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   // Load the full radar view for the active import via the server-side RPC.
   // The RPC enforces entitlement/gating: in a locked state it returns
   // `companies: []` while keeping `company_count` and `summary` populated.
