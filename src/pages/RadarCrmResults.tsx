@@ -1923,10 +1923,60 @@ const EmptyText: React.FC<{ label: string }> = ({ label }) => (
 
 /* ───────────────────────── Gating sub-components ───────────────────────── */
 
+/**
+ * Bandeau d'essai discret (modèle par siège). Invite douce à contacter l'admin.
+ */
+const SeatTrialBanner: React.FC<{ daysLeft: number | null }> = ({ daysLeft }) => {
+  const d = Math.max(0, daysLeft ?? 0);
+  return (
+    <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 flex items-start gap-3">
+      <Clock className="h-5 w-5 mt-0.5 shrink-0 text-primary" />
+      <div className="text-sm text-foreground">
+        <p>
+          <span className="font-semibold">Essai</span> : {d} jour{d > 1 ? 's' : ''} restant{d > 1 ? 's' : ''}.
+        </p>
+        <p className="text-foreground/70 mt-0.5">
+          Contactez l'administrateur de votre espace pour un accès continu.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Écran de blocage propre quand l'accès par siège est refusé.
+ * `none` = essai expiré sans siège ; `locked` = accès suspendu.
+ * Ne rend jamais de données CRM.
+ */
+const RadarAccessBlocked: React.FC<{ kind: 'none' | 'locked' }> = ({ kind }) => (
+  <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
+    <div className="max-w-2xl mx-auto px-4 py-16 md:py-24">
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="pt-10 pb-10 flex flex-col items-center text-center gap-4">
+          <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+            <Lock className="h-7 w-7" />
+          </div>
+          <div className="max-w-md space-y-2">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">
+              {kind === 'locked' ? 'Accès suspendu' : "Votre accès d'essai a expiré"}
+            </h1>
+            <p className="text-sm text-foreground/70">
+              {kind === 'locked'
+                ? "Contactez l'administrateur de votre espace pour rétablir l'accès."
+                : "Contactez l'administrateur pour obtenir un siège payant et retrouver l'accès à votre Radar CRM."}
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/radar-crm">Retour</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
 /** Trial banner shown to users on an active trial. Tone intensifies near expiry. */
 const TrialBanner: React.FC<{ daysLeft: number | null; detected: number }> = ({ daysLeft, detected }) => {
-
-/* placeholder */
   const urgent = daysLeft != null && daysLeft <= 2;
   return (
     <div
