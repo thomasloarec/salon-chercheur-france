@@ -28,7 +28,17 @@ const fmtDate = (s?: string | null) =>
 const AdminNonExhibitorPanel = ({ selection, onBack }: Props) => {
   const isOutreach = selection.kind === 'outreach';
   const eventId = isOutreach ? selection.event_id : null;
-  const legacyId = selection.kind === 'legacy' ? selection.legacy_id : null;
+  // Identifiant de l'exposant legacy éditable. Il peut provenir :
+  //  - directement d'une entrée "legacy",
+  //  - d'une entrée "outreach" reliée à un exposant legacy (id_exposant_legacy).
+  // C'est cet enregistrement (exposants.exposant_description) qui alimente la
+  // description affichée sur la fiche publique.
+  const legacyId =
+    selection.kind === 'legacy'
+      ? selection.legacy_id
+      : selection.kind === 'outreach'
+      ? selection.legacy_id ?? null
+      : null;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
