@@ -107,6 +107,13 @@ const RadarInvitation: React.FC = () => {
     } catch {
       /* ignore */
     }
+
+    // Best-effort: notify the site admin that a member joined the space.
+    // Never blocks the redirection / UX if it fails.
+    void supabase.functions
+      .invoke('radar-notify-admin-new-member', { body: {} })
+      .catch((err) => console.error('radar-notify-admin-new-member failed:', err));
+
     setState({ kind: 'success' });
     toast({ title: 'Bienvenue dans l’espace partagé \u2713' });
     setTimeout(() => navigate(TARGET_ROUTE, { replace: true }), 1200);
