@@ -710,6 +710,15 @@ const RadarCrmResults: React.FC = () => {
     );
   }
 
+  // Blocage propre par siège — priorité sur les données CRM (jamais affichées ici).
+  if (!authLoading && seatBlockKind) {
+    return (
+      <MainLayout title="Mon Radar CRM | Lotexpo">
+        <RadarAccessBlocked kind={seatBlockKind} />
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout title="Mon Radar CRM | Lotexpo">
       <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
