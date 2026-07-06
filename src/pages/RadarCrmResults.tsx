@@ -117,6 +117,20 @@ interface RadarView {
   events: RadarViewEvent[];
 }
 
+/**
+ * Per-member seat access (RPC `my_radar_access`, already in prod).
+ * access_kind pilote l'affichage : bandeau d'essai, blocage propre ou accès normal.
+ */
+type RadarAccessKind = 'paid' | 'trial' | 'beta' | 'locked' | 'none';
+interface RadarAccess {
+  account_id: string | null;
+  access_kind: RadarAccessKind;
+  has_access: boolean;
+  trial_ends_at: string | null;
+  trial_days_left: number | null;
+  paid_seats: number | null;
+}
+
 const formatDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
