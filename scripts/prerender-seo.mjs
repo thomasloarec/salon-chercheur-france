@@ -598,11 +598,21 @@ function buildExhibitor(profile, events, novelties) {
   const robots = indexable ? 'index, follow' : 'noindex, follow';
 
   const title = `${name} : salons, nouveautés et événements professionnels | Lotexpo`.slice(0, 70);
-  const description = (
-    profile.description
-      ? `Retrouvez les salons professionnels, nouveautés et informations publiques de ${name} sur Lotexpo.`
-      : `Consultez la fiche exposant de ${name} sur Lotexpo : salons professionnels associés, nouveautés et informations publiques.`
-  ).slice(0, 160);
+  const evNames = (events || []).map((e) => e && e.nom_event).filter(Boolean);
+  const nSalons = evNames.length;
+  let description;
+  if (nSalons >= 2) {
+    const c2 = `${name} expose sur ${nSalons} salons professionnels en France, dont ${evNames.slice(0, 2).join(' et ')}. Dates, stand et nouveautés sur Lotexpo.`;
+    const c1 = `${name} expose sur ${nSalons} salons professionnels en France, dont ${evNames[0]}. Dates, stand et nouveautés sur Lotexpo.`;
+    const c0 = `${name} expose sur ${nSalons} salons professionnels en France. Dates, stand et nouveautés à retrouver sur Lotexpo.`;
+    description = c2.length <= 160 ? c2 : (c1.length <= 160 ? c1 : c0);
+  } else if (nSalons === 1) {
+    const s1 = `${name} expose sur le salon ${evNames[0]}. Dates, stand et nouveautés de l'exposant sur Lotexpo.`;
+    description = s1.length <= 160 ? s1 : `${name} expose sur un salon professionnel en France. Dates, stand et nouveautés sur Lotexpo.`;
+  } else {
+    description = `Fiche exposant de ${name} sur Lotexpo : salons professionnels associés, dates et nouveautés.`;
+  }
+  description = truncate(description, 160);
 
   const ogImage = OG_EXHIBITOR_FALLBACK;
 
