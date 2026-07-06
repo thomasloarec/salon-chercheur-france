@@ -1,5 +1,8 @@
 import { Helmet } from 'react-helmet-async';
-import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
+import {
+  useExhibitorParticipationHistory,
+  type PublicExhibitorProfile,
+} from '@/hooks/useExhibitorProfile';
 import {
   normalizeExternalUrl,
   normalizeImageUrl,
@@ -22,6 +25,34 @@ function cleanStr(value: string | null | undefined): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+/** Mirrors truncate() in scripts/prerender-seo.mjs. */
+function truncate(s: string, n: number): string {
+  if (!s) return '';
+  return s.length <= n ? s : s.slice(0, n).trimEnd() + '…';
+}
+
+/**
+ * Builds the exhibitor meta description from the deduped list of event names.
+ * EXACT mirror of buildExhibitor() in scripts/prerender-seo.mjs so the client
+ * (react-helmet) description is byte-identical to the static prerendered HTML.
+ */
+function buildExhibitorMetaDescription(name: string, evNames: string[]): string {
+  const nSalons = evNames.length;
+  let description: string;
+  if (nSalons >= 2) {
+    const c2 = `${name} expose sur ${nSalons} salons professionnels en France, dont ${evNames.slice(0, 2).join(' et ')}. Dates, stand et nouveautés sur Lotexpo.`;
+    const c1 = `${name} expose sur ${nSalons} salons professionnels en France, dont ${evNames[0]}. Dates, stand et nouveautés sur Lotexpo.`;
+    const c0 = `${name} expose sur ${nSalons} salons professionnels en France. Dates, stand et nouveautés à retrouver sur Lotexpo.`;
+    description = c2.length <= 160 ? c2 : (c1.length <= 160 ? c1 : c0);
+  } else if (nSalons === 1) {
+    const s1 = `${name} expose sur le salon ${evNames[0]}. Dates, stand et nouveautés de l'exposant sur Lotexpo.`;
+    description = s1.length <= 160 ? s1 : `${name} expose sur un salon professionnel en France. Dates, stand et nouveautés sur Lotexpo.`;
+  } else {
+    description = `Fiche exposant de ${name} sur Lotexpo : salons professionnels associés, dates et nouveautés.`;
+  }
+  return truncate(description, 160);
 }
 
 /**
