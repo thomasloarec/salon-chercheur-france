@@ -341,6 +341,18 @@ const RadarCrmResults: React.FC = () => {
   const daysLeft = radarView?.days_left ?? null;
   const summary = radarView?.summary;
 
+  // ── Gating par siège (modèle par-membre) ────────────────────────────
+  const accessKind = access?.access_kind ?? null;
+  // Blocage dur : accès refusé (essai expiré sans siège, ou accès suspendu),
+  // OU la RPC de données signale explicitement no_access.
+  const seatBlockKind: 'none' | 'locked' | null =
+    access && access.has_access === false && (accessKind === 'none' || accessKind === 'locked')
+      ? accessKind
+      : radarView && radarView.has_access === false && radarView.status === 'none'
+        ? 'none'
+        : null;
+  const isSeatTrial = accessKind === 'trial' && (access?.has_access ?? false);
+
   const eventGroups: EventGroup[] = useMemo(
     () => (radarView?.events ?? []).map(mapEventToGroup),
     [radarView],
