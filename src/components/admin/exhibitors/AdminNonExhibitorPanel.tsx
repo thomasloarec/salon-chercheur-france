@@ -284,7 +284,7 @@ const AdminNonExhibitorPanel = ({ selection, onBack }: Props) => {
 
               <AdminExhibitorParticipationsCard
                 exhibitorName={selection.name}
-                legacyId={selection.kind === 'legacy' ? selection.legacy_id : null}
+                legacyId={legacyId}
               />
             </TabsContent>
 
