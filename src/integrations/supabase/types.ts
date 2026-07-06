@@ -3998,6 +3998,7 @@ export type Database = {
           id: string
           name: string
           org_name: string | null
+          paid_seats: number
           plan: string
           realtime_alerts: boolean
           rows_limit: number
@@ -4013,6 +4014,7 @@ export type Database = {
           id?: string
           name: string
           org_name?: string | null
+          paid_seats?: number
           plan?: string
           realtime_alerts?: boolean
           rows_limit?: number
@@ -4028,6 +4030,7 @@ export type Database = {
           id?: string
           name?: string
           org_name?: string | null
+          paid_seats?: number
           plan?: string
           realtime_alerts?: boolean
           rows_limit?: number
@@ -4236,6 +4239,7 @@ export type Database = {
           radar_account_id: string
           role: string
           status: string
+          trial_ends_at: string | null
           updated_at: string
           user_id: string
         }
@@ -4248,6 +4252,7 @@ export type Database = {
           radar_account_id: string
           role?: string
           status?: string
+          trial_ends_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -4260,6 +4265,7 @@ export type Database = {
           radar_account_id?: string
           role?: string
           status?: string
+          trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -6314,6 +6320,7 @@ export type Database = {
           members: number
           name: string
           org_name: string
+          paid_seats: number
           plan: string
           trial_ends_at: string
         }[]
@@ -6576,6 +6583,10 @@ export type Database = {
       admin_set_access_request_status: {
         Args: { p_request_id: string; p_status: string }
         Returns: undefined
+      }
+      admin_set_radar_paid_seats: {
+        Args: { p_account_id: string; p_paid_seats: number }
+        Returns: Json
       }
       admin_set_radar_plan: {
         Args: { p_account_id: string; p_plan: string }
@@ -7116,6 +7127,7 @@ export type Database = {
           website: string
         }[]
       }
+      my_radar_access: { Args: never; Returns: Json }
       my_radar_status: {
         Args: never
         Returns: {
@@ -7156,6 +7168,10 @@ export type Database = {
       radar_member_display_name: {
         Args: { p_user_id: string }
         Returns: string
+      }
+      radar_member_has_access: {
+        Args: { p_account_id: string; p_user_id: string }
+        Returns: boolean
       }
       radar_notify_hot_prospects: { Args: never; Returns: number }
       radar_notify_prep_reminder: { Args: never; Returns: number }
