@@ -10,6 +10,7 @@ export type AdminSelection =
       campaign_status: string | null;
       current_step: string | null;
       exhibitor_id?: string | null;
+      legacy_id?: string | null;
     }
   | {
       kind: 'legacy';

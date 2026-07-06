@@ -147,6 +147,7 @@ const AdminExhibitorsList = ({ onSelectExhibitor, onSelectResult }: Props) => {
                       campaign_status: ex.campaign_status ?? null,
                       current_step: ex.current_step ?? null,
                       exhibitor_id: null,
+                      legacy_id: ex.legacy_id ?? null,
                     };
                   } else if (ex.source === 'legacy' && !ex.has_exhibitor_row) {
                     sel = {
@@ -170,6 +171,7 @@ const AdminExhibitorsList = ({ onSelectExhibitor, onSelectResult }: Props) => {
                           campaign_status: ex.campaign_status ?? null,
                           current_step: ex.current_step ?? null,
                           exhibitor_id: null,
+                          legacy_id: ex.legacy_id ?? null,
                         }
                       : ex.legacy_id
                       ? { kind: 'legacy', legacy_id: ex.legacy_id, name: ex.name, website: ex.website }
