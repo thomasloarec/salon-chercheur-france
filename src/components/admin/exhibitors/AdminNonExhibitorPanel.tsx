@@ -205,6 +205,72 @@ const AdminNonExhibitorPanel = ({ selection, onBack }: Props) => {
                 </CardContent>
               </Card>
 
+              {/* Description éditoriale — legacy uniquement */}
+              {selection.kind === 'legacy' && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-base">Description</CardTitle>
+                      {!editingDesc && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDescDraft(legacyDescription ?? '');
+                            setEditingDesc(true);
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5 mr-1" />
+                          Modifier
+                        </Button>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {editingDesc ? (
+                      <>
+                        <Textarea
+                          value={descDraft}
+                          onChange={(e) => setDescDraft(e.target.value)}
+                          rows={8}
+                          placeholder="Description de l'entreprise affichée sur le site…"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => updateLegacyDesc.mutate(descDraft)}
+                            disabled={updateLegacyDesc.isPending}
+                          >
+                            <Save className="h-3.5 w-3.5 mr-1" />
+                            Enregistrer
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingDesc(false)}
+                            disabled={updateLegacyDesc.isPending}
+                          >
+                            <X className="h-3.5 w-3.5 mr-1" />
+                            Annuler
+                          </Button>
+                        </div>
+                      </>
+                    ) : legacyDescLoading ? (
+                      <p className="text-sm text-muted-foreground">Chargement…</p>
+                    ) : legacyDescription && legacyDescription.trim().length > 1 ? (
+                      <p className="text-sm whitespace-pre-line">{legacyDescription}</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        Aucune description exploitable{legacyDescription ? ` (« ${legacyDescription} »)` : ''}. Cliquez sur « Modifier » pour en ajouter une.
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Cette description est celle affichée sur la fiche publique de l'entreprise. Vous pouvez la corriger sans revendiquer la société.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               <AdminExhibitorParticipationsCard
                 exhibitorName={selection.name}
                 legacyId={selection.kind === 'legacy' ? selection.legacy_id : null}
