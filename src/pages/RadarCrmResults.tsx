@@ -1925,6 +1925,8 @@ const EmptyText: React.FC<{ label: string }> = ({ label }) => (
 
 /** Trial banner shown to users on an active trial. Tone intensifies near expiry. */
 const TrialBanner: React.FC<{ daysLeft: number | null; detected: number }> = ({ daysLeft, detected }) => {
+
+/* placeholder */
   const urgent = daysLeft != null && daysLeft <= 2;
   return (
     <div
