@@ -809,8 +809,6 @@ const RadarCrmResults: React.FC = () => {
             />
           )}
 
-          {/* Trial banner */}
-          {isTrial && !loading && (
           {/* Bandeau d'essai par siège (modèle par-membre) — source: my_radar_access */}
           {isSeatTrial && !loading && (
             <SeatTrialBanner daysLeft={access?.trial_days_left ?? null} />
