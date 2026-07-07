@@ -17,9 +17,10 @@ const INITIAL_VISIBLE = 4;
 
 interface NoveltiesSectionProps {
   event: Event;
+  exhibitorCount?: number;
 }
 
-export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
+export default function NoveltiesSection({ event, exhibitorCount }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('awaited');
   const [showAll, setShowAll] = useState(false);
