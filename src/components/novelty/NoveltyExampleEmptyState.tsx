@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Building2, Clock, Sparkles, Clock3, Gift, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import type { Event } from '@/types/event';
 
 interface NoveltyExampleEmptyStateProps {
   event: Event;
+  exhibitorCount?: number;
   className?: string;
 }
 
@@ -19,19 +21,35 @@ interface NoveltyExampleEmptyStateProps {
  */
 export default function NoveltyExampleEmptyState({
   event,
+  exhibitorCount,
   className,
 }: NoveltyExampleEmptyStateProps) {
+  const count =
+    typeof exhibitorCount === 'number' && Number.isFinite(exhibitorCount)
+      ? exhibitorCount
+      : 0;
+  const hasExhibitors = count > 0;
+
   return (
     <section className={cn('space-y-4', className)}>
       <div>
         <h2 className="text-xl font-semibold">
-          Aucune nouveauté publiée pour le moment
+          Aucune Nouveauté publiée pour le moment. Soyez le premier exposant
+          visible avant l'ouverture.
         </h2>
         <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-          Les nouveautés permettent aux exposants de présenter en amont ce
-          qu'ils vont montrer sur leur stand : innovation, démonstration,
-          produit phare, lancement ou animation.
+          Les visiteurs qui consultent cette page s'intéressent déjà à ce salon.
+          Publier une Nouveauté vous permet de leur montrer ce qu'ils pourront
+          découvrir sur votre stand avant même le jour J.
         </p>
+
+        {hasExhibitors && (
+          <p className="mt-3 inline-block rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+            {count === 1
+              ? '1 exposant est déjà listé sur ce salon. Il n\u2019a pas encore publié ce qu\u2019il présentera. Prenez la première place.'
+              : `${count} exposants sont déjà listés sur ce salon. Aucun n\u2019a encore publié ce qu\u2019il présentera. Prenez la première place.`}
+          </p>
+        )}
       </div>
 
       {/* Carte exemple — reprend le design de NoveltyEventCard */}
@@ -49,10 +67,13 @@ export default function NoveltyExampleEmptyState({
                   Innovation
                 </span>
               </div>
-              <div className="absolute top-2 left-2">
+              <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
                 <Badge className="bg-primary text-primary-foreground gap-1 shadow-sm">
                   <Eye className="h-3 w-3" />
                   Exemple
+                </Badge>
+                <Badge variant="secondary" className="shadow-sm">
+                  Première place disponible
                 </Badge>
               </div>
             </div>
@@ -70,14 +91,14 @@ export default function NoveltyExampleEmptyState({
               </div>
 
               <h3 className="font-semibold text-base sm:text-lg leading-snug">
-                Présentez en avant-première ce que les visiteurs découvriront
-                sur votre stand
+                Donnez aux visiteurs une raison de passer sur votre stand
               </h3>
 
               <p className="text-sm text-muted-foreground leading-relaxed">
-                En quelques lignes, expliquez ce que vous exposez, ce qui le
-                rend intéressant et pourquoi un visiteur devrait venir vous
-                rencontrer pendant le salon.
+                Présentez une innovation, une démonstration, un lancement
+                produit, une offre spéciale ou un temps fort. En quelques
+                lignes, montrez pourquoi votre stand mérite d'être ajouté au
+                parcours de visite.
               </p>
 
               <div className="h-px bg-border/60" />
@@ -85,7 +106,7 @@ export default function NoveltyExampleEmptyState({
               <div className="flex items-center gap-2 min-w-0">
                 <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-sm font-medium text-muted-foreground truncate">
-                  Votre marque ici
+                  Votre entreprise ici
                 </span>
               </div>
             </div>
@@ -96,7 +117,8 @@ export default function NoveltyExampleEmptyState({
       {/* CTA + réassurance */}
       <div className="flex flex-col items-start gap-3 pt-1">
         <p className="text-xs text-muted-foreground">
-          Publication rapide, gratuite et visible avant l'événement.
+          Votre Nouveauté sera visible sur cette page avant l'ouverture du
+          salon.
         </p>
         <AddNoveltyButton
           event={event}
@@ -117,6 +139,12 @@ export default function NoveltyExampleEmptyState({
             Visible avant l'ouverture du salon
           </li>
         </ul>
+        <Link
+          to="/exposants"
+          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          Pourquoi publier une Nouveauté ?
+        </Link>
       </div>
     </section>
   );

@@ -17,9 +17,10 @@ const INITIAL_VISIBLE = 4;
 
 interface NoveltiesSectionProps {
   event: Event;
+  exhibitorCount?: number;
 }
 
-export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
+export default function NoveltiesSection({ event, exhibitorCount }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('awaited');
   const [showAll, setShowAll] = useState(false);
@@ -169,7 +170,7 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
     }
 
     // Cas normal : pas de nouveautés -> empty state pédagogique avec carte exemple
-    return <NoveltyExampleEmptyState event={event} />;
+    return <NoveltyExampleEmptyState event={event} exhibitorCount={exhibitorCount} />;
   }
 
   // Error state
@@ -216,6 +217,11 @@ export default function NoveltiesSection({ event }: NoveltiesSectionProps) {
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Repérez les annonces des exposants pour préparer votre visite.
+          </p>
+          <p className="text-sm text-foreground/80 mt-2 max-w-xl">
+            {total === 1
+              ? '1 Nouveauté est déjà visible sur ce salon. Ajoutez la vôtre pour donner aux visiteurs une autre raison de passer sur votre stand.'
+              : `${total} Nouveautés sont déjà visibles sur ce salon. Ajoutez la vôtre pour être repéré avant l'ouverture.`}
           </p>
         </div>
         <AddNoveltyButton
