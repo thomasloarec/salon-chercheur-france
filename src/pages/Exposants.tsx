@@ -1,7 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { Check, Crown, Zap, TrendingUp, Users, Calendar, X, BarChart3, Search, Megaphone, LineChart } from 'lucide-react';
+import { Check, Crown, Zap, TrendingUp, Users, Calendar, X, BarChart3, Search, Megaphone, LineChart, Sparkles, Target, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
