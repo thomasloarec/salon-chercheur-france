@@ -254,52 +254,6 @@ export default function Exposants() {
         </div>
       </section>
 
-      {/* Benefits Section - Pourquoi publier vos nouveautés */}
-      <section className="bg-background py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="heading-display text-3xl md:text-4xl text-center text-foreground mb-16 section-rule [&::before]:mx-auto">
-            Pourquoi publier vos nouveautés sur Lotexpo ?
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Être visible avant l'ouverture
-              </h3>
-              <p className="text-muted-foreground">
-                Votre nouveauté apparaît au moment où les visiteurs préparent leur salon, pas seulement quand ils passent devant votre stand.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Créer une raison de passage
-              </h3>
-              <p className="text-muted-foreground">
-                Une nouveauté claire transforme une fiche exposant classique en invitation concrète à venir vous rencontrer.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Mesurer l'intérêt généré
-              </h3>
-              <p className="text-muted-foreground">
-                Suivez les vues, interactions ou contacts liés à vos publications pour mieux comprendre ce qui attire l'attention.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* How It Works Section */}
       <section className="py-20 px-4 bg-background">
