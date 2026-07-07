@@ -17,7 +17,7 @@ import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
   Radar, ArrowRight, Upload, FileCheck2, Lock, CheckCircle2, Mail,
   Compass, AlertTriangle, Briefcase, Check, X, Target,
-  Sparkles, Eye, Globe, ClipboardList,
+  Sparkles, Eye, Globe, ClipboardList, Users, MessageCircle, HelpCircle, ListChecks,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -564,6 +564,56 @@ const RadarCrmPage: React.FC = () => {
         </div>
       </section>
 
+      {/* 5b. Votre visite n'est plus une improvisation */}
+      <section className="max-w-5xl mx-auto px-4 py-10 md:py-14">
+        <div className="max-w-3xl mb-8">
+          <h2 className="heading-display text-xl md:text-2xl mb-3">
+            Votre visite n’est plus une improvisation
+          </h2>
+          <p className="text-base text-muted-foreground">
+            Radar CRM ne vous donne pas seulement une liste d’entreprises présentes sur un salon. Il prépare les décisions qui font la différence entre une visite au hasard et une visite commerciale utile.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-5 rounded-lg border bg-card">
+            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <Users className="h-4 w-4" />
+            </div>
+            <h3 className="font-semibold text-sm mb-1">Qui aller voir en priorité</h3>
+            <p className="text-sm text-muted-foreground">
+              Radar CRM identifie les comptes de votre fichier présents sur le salon et met en avant ceux qui méritent votre attention.
+            </p>
+          </div>
+          <div className="p-5 rounded-lg border bg-card">
+            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <MessageCircle className="h-4 w-4" />
+            </div>
+            <h3 className="font-semibold text-sm mb-1">Comment ouvrir la discussion</h3>
+            <p className="text-sm text-muted-foreground">
+              Chaque compte peut être accompagné d’une phrase d’accroche adaptée pour engager la conversation sans arriver à froid.
+            </p>
+          </div>
+          <div className="p-5 rounded-lg border bg-card">
+            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <HelpCircle className="h-4 w-4" />
+            </div>
+            <h3 className="font-semibold text-sm mb-1">Quelles questions poser</h3>
+            <p className="text-sm text-muted-foreground">
+              Vous arrivez devant le stand avec les bonnes questions pour comprendre le besoin, qualifier l’opportunité et faire avancer l’échange.
+            </p>
+          </div>
+          <div className="p-5 rounded-lg border bg-card">
+            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <ListChecks className="h-4 w-4" />
+            </div>
+            <h3 className="font-semibold text-sm mb-1">Comment assurer le suivi</h3>
+            <p className="text-sm text-muted-foreground">
+              Vos notes de visite deviennent des résumés, tâches et actions de relance exploitables après le salon.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* 6. Aperçu d'un résultat (dashboard) */}
       <section id="apercu" className="max-w-5xl mx-auto px-4 py-14 md:py-20 scroll-mt-24">
         <div className="max-w-3xl mb-8">
@@ -875,15 +925,26 @@ const RadarCrmPage: React.FC = () => {
         </Accordion>
       </section>
 
-      {/* 12. Baseline (le footer global reste rendu par MainLayout) */}
+      {/* 12. CTA final */}
       <section className="max-w-5xl mx-auto px-4 pb-14 md:pb-20">
-        <div className="rounded-2xl border bg-muted/20 p-6 md:p-8 text-center">
-          <p className="flex items-center justify-center gap-2 font-display text-lg font-semibold text-foreground mb-1">
-            <Radar className="h-4 w-4 text-primary" /> Radar CRM · par Lotexpo
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Vos prochains rendez-vous salon sont peut-être déjà dans votre CRM.
-          </p>
+        <div className="rounded-2xl bg-primary text-primary-foreground p-8 md:p-10 text-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at top right, hsl(var(--accent)), transparent 60%)' }} />
+          <div className="relative">
+            <h2 className="heading-display text-2xl md:text-3xl mb-3">
+              Votre prochaine visite salon peut faire avancer vos comptes.
+            </h2>
+            <p className="text-sm md:text-base text-primary-foreground/80 mb-6 max-w-2xl mx-auto">
+              Importez votre CRM. Radar CRM vous aide à savoir quels stands visiter, pourquoi engager la discussion, quoi demander et comment relancer après chaque échange.
+            </p>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => scrollToUpload('final_cta')}
+              className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
+            >
+              <Upload className="h-4 w-4 mr-2 shrink-0" /> Analyser mon fichier CRM
+            </Button>
+          </div>
         </div>
       </section>
 
