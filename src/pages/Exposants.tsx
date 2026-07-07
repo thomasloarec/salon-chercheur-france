@@ -95,6 +95,9 @@ export default function Exposants() {
                 Publication en quelques minutes
               </span>
             </p>
+            <p className="text-sm text-muted-foreground/80">
+              Ciblez les visiteurs qui préparent déjà leur venue.
+            </p>
           </div>
         </div>
 
