@@ -218,6 +218,11 @@ export default function NoveltiesSection({ event, exhibitorCount }: NoveltiesSec
           <p className="text-sm text-muted-foreground mt-1">
             Repérez les annonces des exposants pour préparer votre visite.
           </p>
+          <p className="text-sm text-foreground/80 mt-2 max-w-xl">
+            {total === 1
+              ? '1 Nouveauté est déjà visible sur ce salon. Ajoutez la vôtre pour donner aux visiteurs une autre raison de passer sur votre stand.'
+              : `${total} Nouveautés sont déjà visibles sur ce salon. Ajoutez la vôtre pour être repéré avant l'ouverture.`}
+          </p>
         </div>
         <AddNoveltyButton
           event={event}
