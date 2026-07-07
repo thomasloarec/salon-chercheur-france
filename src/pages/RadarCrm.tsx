@@ -925,15 +925,26 @@ const RadarCrmPage: React.FC = () => {
         </Accordion>
       </section>
 
-      {/* 12. Baseline (le footer global reste rendu par MainLayout) */}
+      {/* 12. CTA final */}
       <section className="max-w-5xl mx-auto px-4 pb-14 md:pb-20">
-        <div className="rounded-2xl border bg-muted/20 p-6 md:p-8 text-center">
-          <p className="flex items-center justify-center gap-2 font-display text-lg font-semibold text-foreground mb-1">
-            <Radar className="h-4 w-4 text-primary" /> Radar CRM · par Lotexpo
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Vos prochains rendez-vous salon sont peut-être déjà dans votre CRM.
-          </p>
+        <div className="rounded-2xl bg-primary text-primary-foreground p-8 md:p-10 text-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at top right, hsl(var(--accent)), transparent 60%)' }} />
+          <div className="relative">
+            <h2 className="heading-display text-2xl md:text-3xl mb-3">
+              Votre prochaine visite salon peut faire avancer vos comptes.
+            </h2>
+            <p className="text-sm md:text-base text-primary-foreground/80 mb-6 max-w-2xl mx-auto">
+              Importez votre CRM. Radar CRM vous aide à savoir quels stands visiter, pourquoi engager la discussion, quoi demander et comment relancer après chaque échange.
+            </p>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => scrollToUpload('final_cta')}
+              className="w-full sm:w-auto h-auto py-3 whitespace-normal text-center"
+            >
+              <Upload className="h-4 w-4 mr-2 shrink-0" /> Analyser mon fichier CRM
+            </Button>
+          </div>
         </div>
       </section>
 
