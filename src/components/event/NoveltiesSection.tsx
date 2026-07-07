@@ -170,7 +170,7 @@ export default function NoveltiesSection({ event, exhibitorCount }: NoveltiesSec
     }
 
     // Cas normal : pas de nouveautés -> empty state pédagogique avec carte exemple
-    return <NoveltyExampleEmptyState event={event} />;
+    return <NoveltyExampleEmptyState event={event} exhibitorCount={exhibitorCount} />;
   }
 
   // Error state
