@@ -934,7 +934,7 @@ const RadarCrmPage: React.FC = () => {
               Votre prochaine visite salon peut faire avancer vos comptes.
             </h2>
             <p className="text-sm md:text-base text-primary-foreground/80 mb-6 max-w-2xl mx-auto">
-              Importez votre CRM. Radar CRM vous aide à savoir quels stands visiter, pourquoi engager la discussion, quoi demander et comment relancer après chaque échange.
+              Importez votre CRM. Radar CRM vous aide à savoir quels salons et stands visiter, pourquoi engager la discussion, quoi demander et comment relancer après chaque échange.
             </p>
             <Button
               size="lg"
