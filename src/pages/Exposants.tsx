@@ -190,6 +190,70 @@ export default function Exposants() {
         </div>
       </section>
 
+      {/* Section soulagement émotionnel — Ce que vous n'avez plus à laisser au hasard */}
+      <section className="py-16 md:py-20 px-4 bg-background">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-10 md:mb-14">
+            <h2 className="heading-display text-3xl md:text-4xl text-foreground mb-4 section-rule [&::before]:mx-auto">
+              Ce que vous n'avez plus à laisser au hasard
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Publier une Nouveauté ne sert pas seulement à être visible. Cela permet de réduire l'incertitude avant le salon en donnant aux visiteurs une raison claire d'intégrer votre stand à leur parcours.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">
+                Être découvert avant le jour J
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Votre nouveauté est visible quand les visiteurs préparent leur parcours, pas seulement quand ils passent devant votre stand.
+              </p>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Target className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">
+                Donner une vraie raison de passer vous voir
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Produit, démonstration, lancement, offre, conférence : vous montrez à l'avance ce qui mérite le détour.
+              </p>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">
+                Parler aux visiteurs déjà intéressés par le salon
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Lotexpo ne pousse pas votre message à une audience froide. Vous touchez des professionnels qui cherchent ce salon, ce secteur ou préparent leur visite.
+              </p>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">
+                Arriver avec moins d'incertitude
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Vous ne misez plus uniquement sur votre emplacement, le trafic dans l'allée ou la chance. Vous créez un signal clair avant l'ouverture.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Benefits Section - Pourquoi publier vos nouveautés */}
       <section className="bg-background py-20 px-4">
         <div className="max-w-7xl mx-auto">
