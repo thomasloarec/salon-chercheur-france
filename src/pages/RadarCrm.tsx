@@ -564,6 +564,56 @@ const RadarCrmPage: React.FC = () => {
         </div>
       </section>
 
+      {/* 5b. Votre visite n'est plus une improvisation */}
+      <section className="max-w-5xl mx-auto px-4 py-10 md:py-14">
+        <div className="max-w-3xl mb-8">
+          <h2 className="heading-display text-xl md:text-2xl mb-3">
+            Votre visite n’est plus une improvisation
+          </h2>
+          <p className="text-base text-muted-foreground">
+            Radar CRM ne vous donne pas seulement une liste d’entreprises présentes sur un salon. Il prépare les décisions qui font la différence entre une visite au hasard et une visite commerciale utile.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-5 rounded-lg border bg-card">
+            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <Users className="h-4 w-4" />
+            </div>
+            <h3 className="font-semibold text-sm mb-1">Qui aller voir en priorité</h3>
+            <p className="text-sm text-muted-foreground">
+              Radar CRM identifie les comptes de votre fichier présents sur le salon et met en avant ceux qui méritent votre attention.
+            </p>
+          </div>
+          <div className="p-5 rounded-lg border bg-card">
+            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <MessageCircle className="h-4 w-4" />
+            </div>
+            <h3 className="font-semibold text-sm mb-1">Comment ouvrir la discussion</h3>
+            <p className="text-sm text-muted-foreground">
+              Chaque compte peut être accompagné d’une phrase d’accroche adaptée pour engager la conversation sans arriver à froid.
+            </p>
+          </div>
+          <div className="p-5 rounded-lg border bg-card">
+            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <HelpCircle className="h-4 w-4" />
+            </div>
+            <h3 className="font-semibold text-sm mb-1">Quelles questions poser</h3>
+            <p className="text-sm text-muted-foreground">
+              Vous arrivez devant le stand avec les bonnes questions pour comprendre le besoin, qualifier l’opportunité et faire avancer l’échange.
+            </p>
+          </div>
+          <div className="p-5 rounded-lg border bg-card">
+            <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-3">
+              <ListChecks className="h-4 w-4" />
+            </div>
+            <h3 className="font-semibold text-sm mb-1">Comment assurer le suivi</h3>
+            <p className="text-sm text-muted-foreground">
+              Vos notes de visite deviennent des résumés, tâches et actions de relance exploitables après le salon.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* 6. Aperçu d'un résultat (dashboard) */}
       <section id="apercu" className="max-w-5xl mx-auto px-4 py-14 md:py-20 scroll-mt-24">
         <div className="max-w-3xl mb-8">
