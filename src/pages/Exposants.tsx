@@ -635,7 +635,7 @@ export default function Exposants() {
             Donnez aux visiteurs une raison de venir vous voir
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Publiez gratuitement votre première nouveauté et rendez votre présence visible avant l'ouverture du salon.
+            Ne laissez pas votre prochaine participation dépendre uniquement du passage dans les allées. Publiez ce que vous présenterez sur votre stand et donnez aux visiteurs une raison de vous ajouter à leur parcours avant le jour J.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
