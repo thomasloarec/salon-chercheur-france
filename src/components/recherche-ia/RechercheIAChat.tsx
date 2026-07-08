@@ -212,7 +212,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-1 flex-col min-h-0">
       {/* Zone défilante : hero + accueil + conversation */}
       <div
         ref={scrollContainerRef}
