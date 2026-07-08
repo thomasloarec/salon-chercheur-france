@@ -57,6 +57,7 @@ import Exposants from '@/pages/Exposants';
 import ExhibitorProfile from '@/pages/ExhibitorProfile';
 import PublierNouveaute from '@/pages/PublierNouveaute';
 import TrouverSalon from '@/pages/TrouverSalon';
+import RechercheIA from '@/pages/RechercheIA';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
 import PolitiqueConfidentialite from '@/pages/PolitiqueConfidentialite';
@@ -123,6 +124,7 @@ function App() {
             <Route path="/premium" element={<Exposants />} />
             <Route path="/publier-nouveaute" element={<PublierNouveaute />} />
             <Route path="/trouver-un-salon" element={<TrouverSalon />} />
+            <Route path="/recherche-ia" element={<RechercheIA />} />
             <Route path="/radar-crm" element={<RadarCrm />} />
             <Route path="/radar-crm/results" element={<RadarCrmResults />} />
             <Route path="/radar-crm/terrain/:eventId" element={<RadarCrmTerrain />} />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, LogOut, Radar } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, LogOut, Radar, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -16,6 +16,8 @@ const Header = () => {
   const { isAdmin } = useIsAdmin();
   const { data: adminCounts } = useAdminPendingCounts();
   const adminPendingTotal = (adminCounts?.novelties ?? 0) + (adminCounts?.claims ?? 0);
+  // Un utilisateur anonyme (session Recherche IA) ne doit pas apparaître comme connecté.
+  const isRealUser = !!user && user.is_anonymous !== true;
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -46,6 +48,14 @@ const Header = () => {
             >
               <Search className="h-4 w-4" />
               <span>Salons</span>
+            </NavLink>
+            <NavLink 
+              to="/recherche-ia" 
+              className={({ isActive }) => navLinkClass(isActive)}
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Recherche IA</span>
+              <Badge variant="secondary" className="ml-1 text-[10px] uppercase">Beta</Badge>
             </NavLink>
             <NavLink 
               to="/nouveautes" 
@@ -99,7 +109,7 @@ const Header = () => {
 
           {/* Auth/User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            {user ? (
+            {isRealUser ? (
               <UserMenu />
             ) : (
               <>
@@ -131,6 +141,16 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Salons
+              </NavLink>
+              <NavLink
+                to="/recherche-ia"
+                className={({ isActive }) => mobileNavLinkClass(isActive)}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="inline-flex items-center gap-2">
+                  Recherche IA
+                  <Badge variant="secondary" className="text-[10px] uppercase">Beta</Badge>
+                </span>
               </NavLink>
               <NavLink
                 to="/nouveautes"
@@ -187,7 +207,7 @@ const Header = () => {
                 </NavLink>
               )}
               <div className="border-t border-border/60 pt-2">
-                {user ? (
+                {isRealUser ? (
                   <div className="space-y-1">
                     <p className="px-3 py-2 text-sm text-muted-foreground">{user.email}</p>
                     {USER_MENU_ITEMS.map((item) => (
