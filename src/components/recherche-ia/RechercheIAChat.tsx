@@ -302,7 +302,6 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
               />
             )}
 
-            
           </div>
         )}
       </div>
