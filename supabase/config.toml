@@ -170,3 +170,10 @@ verify_jwt = false
 # invite_radar_member (non-owners are rejected with 403). No service_role is
 # used. verify_jwt stays false to keep the in-code gate the single source of truth.
 verify_jwt = false
+
+[functions.recherche-ia-visiteur]
+# Point d'entrée public (verify_jwt=false) : l'authentification est vérifiée en
+# code via admin.auth.getUser(jwt) sur le header Authorization, ce qui accepte
+# aussi bien les utilisateurs anonymes qu'inscrits. Nécessaire pour laisser
+# passer le préflight CORS et gérer le gate crédits/rate-limit en interne.
+verify_jwt = false
