@@ -200,21 +200,9 @@ Deno.serve(async (req) => {
         .slice(-10)
     : [];
 
-  // 3) IP + rate-limit anti-abus
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
-  if (ip) {
-    const since = new Date(Date.now() - 3600_000).toISOString();
-    const { count } = await admin
-      .from("ai_search_usage")
-      .select("id", { count: "exact", head: true })
-      .eq("ip", ip)
-      .gte("created_at", since);
-    if ((count ?? 0) >= IP_LIMIT_PER_HOUR) {
-      return json({ error: "rate_limited", message: "Trop de requêtes récentes. Réessaie dans un moment." }, 429);
-    }
-  }
 
-  // 4) Gate crédits
+  // 3) Gate crédits — AVANT le rate-limit IP (pour en exempter les admins)
   const { data: creditRows, error: creditErr } = await admin.rpc("check_ai_credits", {
     p_user_id: userId,
     p_is_anonymous: isAnon,
@@ -225,6 +213,21 @@ Deno.serve(async (req) => {
     const evt = credit.wall_type === "signup" ? "anon_wall_shown" : "paid_wall_shown";
     await admin.from("ai_funnel_events").insert({ user_id: userId, event_type: evt });
     return json({ wall: { type: credit.wall_type }, credits: credit });
+  }
+  // Les admins ont une allocation illimitée (999999) ; anonyme = 3, inscrit = 6.
+  const isAdmin = (credit?.allowed ?? 0) > 6;
+
+  // 4) Rate-limit IP anti-abus — uniquement pour les non-admins
+  if (!isAdmin && ip) {
+    const since = new Date(Date.now() - 3600_000).toISOString();
+    const { count } = await admin
+      .from("ai_search_usage")
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .gte("created_at", since);
+    if ((count ?? 0) >= IP_LIMIT_PER_HOUR) {
+      return json({ error: "rate_limited", message: "Trop de requêtes récentes. Réessaie dans un moment." }, 429);
+    }
   }
 
   // 5) Boucle de tool-calling (Haiku)
