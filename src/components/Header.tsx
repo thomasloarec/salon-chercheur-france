@@ -143,6 +143,16 @@ const Header = () => {
                 Salons
               </NavLink>
               <NavLink
+                to="/recherche-ia"
+                className={({ isActive }) => mobileNavLinkClass(isActive)}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="inline-flex items-center gap-2">
+                  Recherche IA
+                  <Badge variant="secondary" className="text-[10px] uppercase">Beta</Badge>
+                </span>
+              </NavLink>
+              <NavLink
                 to="/nouveautes"
                 className={({ isActive }) => mobileNavLinkClass(isActive)}
                 onClick={() => setIsMenuOpen(false)}
@@ -197,7 +207,7 @@ const Header = () => {
                 </NavLink>
               )}
               <div className="border-t border-border/60 pt-2">
-                {user ? (
+                {isRealUser ? (
                   <div className="space-y-1">
                     <p className="px-3 py-2 text-sm text-muted-foreground">{user.email}</p>
                     {USER_MENU_ITEMS.map((item) => (
