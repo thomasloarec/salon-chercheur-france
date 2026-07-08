@@ -119,43 +119,54 @@ DISTINGUER LES DEUX INTENTIONS « quels salons » :
 
 REQUÊTES D'ANNUAIRE PUR (ex. « tous les salons à Lyon », sans thème) : tu n'as pas d'outil de filtre géographique ; invite l'utilisateur à utiliser l'annuaire et ses filtres sur le site plutôt que d'inventer une liste.
 
+LIENS (obligatoire dès que l'info est disponible dans les résultats d'outil) :
+- Quand tu nommes un SALON, mets son nom en lien markdown vers sa page : [Nom du salon](/events/{slug}), en utilisant le champ \`slug\` du résultat d'outil correspondant (l'instance précise que tu cites dans instances_a_venir[].slug, ou salons[].slug, ou le slug renvoyé par salons_d_une_entreprise).
+- Quand tu nommes une ENTREPRISE / un exposant, mets son nom en lien markdown vers sa page : [Nom exposant](/exposants/{public_slug}), en utilisant le champ \`public_slug\` renvoyé par identifier_entreprise ou rechercher_entreprises.
+- N'INVENTE JAMAIS un slug. Si un résultat n'a pas de \`slug\` / \`public_slug\`, cite l'élément sans lien. Toujours des chemins relatifs (/events/…, /exposants/…), jamais d'URL absolue.
+
 STYLE : français, B2B, concis et actionnable. Pour chaque salon recommandé : nom, ville, date, POURQUOI (ex. « ~X exposants du domaine »), et 1-2 exposants en exemple. Pas de blabla, pas de superlatifs creux. Termine par une réponse claire, pas une liste d'outils.`;
+}
+
+// --- Appel RPC avec un retry (couvre les pannes réseau/connexion base) --------
+async function callRpc(admin: any, fn: string, args: any) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await admin.rpc(fn, args);
+    if (!error) return data;
+    if (attempt === 0) { await new Promise((r) => setTimeout(r, 400)); continue; }
+    return { error: error.message };
+  }
 }
 
 // --- Exécution d'un outil = appel de la RPC Supabase correspondante ----------
 async function runTool(admin: any, name: string, input: any) {
   try {
     if (name === "rechercher_salons") {
-      const { data, error } = await admin.rpc("match_salons_semantic", {
+      return await callRpc(admin, "match_salons_semantic", {
         p_query: String(input.intention ?? ""),
         p_k: 12,
         p_upcoming_only: input.pour_visiter ?? true,
         p_min_sim: 0.48,
       });
-      return error ? { error: error.message } : data;
     }
     if (name === "identifier_entreprise") {
-      const { data, error } = await admin.rpc("resolve_exhibitor", {
+      return await callRpc(admin, "resolve_exhibitor", {
         p_query: String(input.nom_ou_site ?? ""),
         p_k: 5,
       });
-      return error ? { error: error.message } : data;
     }
     if (name === "salons_d_une_entreprise") {
-      const { data, error } = await admin.rpc("get_exhibitor_salons", {
+      return await callRpc(admin, "get_exhibitor_salons", {
         p_exhibitor_id: String(input.exhibitor_id ?? ""),
         p_upcoming_only: input.seulement_a_venir ?? true,
       });
-      return error ? { error: error.message } : data;
     }
     if (name === "rechercher_entreprises") {
-      const { data, error } = await admin.rpc("match_exhibitors_global", {
+      return await callRpc(admin, "match_exhibitors_global", {
         p_query: String(input.intention ?? ""),
         p_threshold: 0.32,
         p_k: 20,
         p_upcoming_only: input.seulement_a_venir ?? true,
       });
-      return error ? { error: error.message } : data;
     }
     return { error: "outil inconnu" };
   } catch (e) {

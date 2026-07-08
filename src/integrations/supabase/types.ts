@@ -6852,6 +6852,7 @@ export type Database = {
       check_seo_cron_dependencies: { Args: never; Returns: Json }
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
       cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
+      cohere_embed_query: { Args: { p_text: string }; Returns: string }
       compute_event_enrichissement_score: {
         Args: { p_event_id: string }
         Returns: number
@@ -7357,6 +7358,7 @@ export type Database = {
           mots_cles_metier: Json
           nom_exposant: string
           produits_services: Json
+          public_slug: string
           resume_court: string
           salons: Json
           secteur_principal: string
@@ -7492,6 +7494,7 @@ export type Database = {
           expose_bientot: boolean
           methode: string
           nom_exposant: string
+          public_slug: string
           score: number
           website: string
         }[]
