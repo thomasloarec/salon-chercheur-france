@@ -6,7 +6,7 @@ import RechercheIAChat from '@/components/recherche-ia/RechercheIAChat';
 
 const RechercheIA = () => {
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col">
       <Helmet>
         <title>Recherche IA — Trouvez vos salons | Lotexpo</title>
         <meta

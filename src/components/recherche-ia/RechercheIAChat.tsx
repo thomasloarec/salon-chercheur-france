@@ -212,11 +212,18 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
   };
 
   return (
-    <div className="flex flex-1 flex-col min-h-0">
-      {/* Zone défilante : hero + accueil + conversation */}
+    <div className={isSidebar ? 'flex h-full flex-col' : 'flex flex-col'}>
+      {/* Zone défilante : hero + accueil + conversation.
+          En sidebar : remplit le Sheet (flex-1).
+          En page : hauteur bornée au viewport pour scroller à l'intérieur,
+          sans jamais déplacer la fenêtre/document. */}
       <div
         ref={scrollContainerRef}
-        className={`flex-1 overflow-y-auto min-h-0 ${isSidebar ? 'px-1' : ''}`}
+        className={
+          isSidebar
+            ? 'flex-1 overflow-y-auto min-h-0 px-1'
+            : 'overflow-y-auto max-h-[calc(100vh-16rem)]'
+        }
       >
         {/* Hero / accroche */}
         {showHero && (
