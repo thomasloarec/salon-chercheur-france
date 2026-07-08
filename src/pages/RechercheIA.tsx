@@ -18,7 +18,7 @@ const RechercheIA = () => {
       <Header />
 
       <main className="flex-1 w-full px-6 mx-auto max-w-3xl py-8 flex flex-col">
-        <RechercheIAChat variant="page" />
+        <RechercheIAChat variant="page" headingAs="h1" />
       </main>
 
       <Footer />
