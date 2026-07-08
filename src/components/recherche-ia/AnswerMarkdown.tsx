@@ -22,7 +22,12 @@ const AnswerMarkdown = ({ children }: { children: string }) => {
           h2: ({ node, ...props }) => <h3 className="heading-display mb-2 mt-3 text-base" {...props} />,
           h3: ({ node, ...props }) => <h4 className="heading-display mb-1 mt-3 text-base" {...props} />,
           a: ({ node, ...props }) => (
-            <a className="font-medium text-accent underline underline-offset-2" {...props} />
+            <a
+              {...props}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-[#ff751f] underline-offset-2 hover:underline"
+            />
           ),
           code: ({ node, ...props }) => (
             <code className="rounded bg-muted px-1 py-0.5 text-[13px]" {...props} />
