@@ -173,6 +173,9 @@ const Events = () => {
       </main>
       
       <Footer />
+
+      {/* Recherche IA — déclencheur flottant + sidebar (n'affecte pas la grille) */}
+      <RechercheIASidebarTrigger />
     </div>
   );
 };
