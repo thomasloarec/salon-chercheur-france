@@ -62,6 +62,57 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_funnel_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          meta: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          meta?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          meta?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_search_usage: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string | null
+          is_anonymous: boolean
+          question: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          is_anonymous?: boolean
+          question?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          is_anonymous?: boolean
+          question?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           created_at: string
@@ -403,6 +454,13 @@ export type Database = {
             foreignKeyName: "crm_company_event_matches_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "crm_company_event_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -551,6 +609,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -2410,6 +2475,13 @@ export type Database = {
             foreignKeyName: "favorites_event_fkey"
             columns: ["event_uuid"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "favorites_event_fkey"
+            columns: ["event_uuid"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -2432,6 +2504,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "favorites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -2629,6 +2708,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -2838,6 +2924,13 @@ export type Database = {
             foreignKeyName: "notifications_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -2997,6 +3090,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -3438,6 +3538,13 @@ export type Database = {
             foreignKeyName: "outreach_campaigns_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -3686,6 +3793,13 @@ export type Database = {
             foreignKeyName: "fk_participation_event"
             columns: ["id_event"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -3832,6 +3946,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "premium_entitlements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -5234,6 +5355,13 @@ export type Database = {
             foreignKeyName: "user_routes_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "user_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -5305,6 +5433,13 @@ export type Database = {
             foreignKeyName: "visit_plans_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "visit_plans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -5370,6 +5505,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "widget_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -5468,6 +5610,13 @@ export type Database = {
             foreignKeyName: "wizard_sessions_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "wizard_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -5515,6 +5664,21 @@ export type Database = {
           ville: string | null
           visible: boolean | null
           website_exposant: string | null
+        }
+        Relationships: []
+      }
+      event_salon_concept: {
+        Row: {
+          concept_key: string | null
+          date_debut: string | null
+          date_fin: string | null
+          domain: string | null
+          event_id: string | null
+          is_test: boolean | null
+          nom_event: string | null
+          slug: string | null
+          ville: string | null
+          visible: boolean | null
         }
         Relationships: []
       }
@@ -5694,6 +5858,13 @@ export type Database = {
             foreignKeyName: "fk_participation_event"
             columns: ["id_event"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -5823,6 +5994,13 @@ export type Database = {
             foreignKeyName: "novelties_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -5914,6 +6092,13 @@ export type Database = {
             foreignKeyName: "outreach_campaigns_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -5986,6 +6171,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -6068,6 +6260,13 @@ export type Database = {
             foreignKeyName: "outreach_campaigns_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
@@ -6107,6 +6306,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -6175,6 +6381,13 @@ export type Database = {
             columns: ["id_event"]
             isOneToOne: false
             referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
             referencedColumns: ["event_id"]
           },
           {
@@ -6626,6 +6839,15 @@ export type Database = {
         Returns: boolean
       }
       can_radar_import: { Args: { p_user_id?: string }; Returns: boolean }
+      check_ai_credits: {
+        Args: { p_is_anonymous: boolean; p_user_id: string }
+        Returns: {
+          allowed: number
+          remaining: number
+          used: number
+          wall_type: string
+        }[]
+      }
       check_seo_automation_dependencies: { Args: never; Returns: Json }
       check_seo_cron_dependencies: { Args: never; Returns: Json }
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
@@ -6876,6 +7098,20 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_exhibitor_salons: {
+        Args: { p_exhibitor_id: string; p_upcoming_only?: boolean }
+        Returns: {
+          a_venir: boolean
+          concept_key: string
+          date_debut: string
+          date_fin: string
+          event_id: string
+          nom_event: string
+          slug: string
+          stand_exposant: string
+          ville: string
+        }[]
+      }
       get_exhibitor_uuid: { Args: { old_id: string }; Returns: string }
       get_location_suggestions: {
         Args: { q: string }
@@ -7108,6 +7344,27 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_funnel_event: { Args: { p_event_type: string }; Returns: undefined }
+      match_exhibitors_global: {
+        Args: {
+          p_k?: number
+          p_query: string
+          p_threshold?: number
+          p_upcoming_only?: boolean
+        }
+        Returns: {
+          exhibitor_id: string
+          mots_cles_metier: Json
+          nom_exposant: string
+          produits_services: Json
+          resume_court: string
+          salons: Json
+          secteur_principal: string
+          similarity: number
+          sous_secteurs: Json
+          website: string
+        }[]
+      }
       match_exhibitors_semantic: {
         Args: {
           p_event_id: string
@@ -7125,6 +7382,26 @@ export type Database = {
           similarity: number
           sous_secteurs: Json
           website: string
+        }[]
+      }
+      match_salons_semantic: {
+        Args: {
+          p_k?: number
+          p_min_sim?: number
+          p_query: string
+          p_upcoming_only?: boolean
+        }
+        Returns: {
+          a_venir: boolean
+          concept_key: string
+          domain: string
+          exemples_exposants: Json
+          instances_a_venir: Json
+          nb_exposants_matchants: number
+          prochaine_date: string
+          salon_label: string
+          similarity_avg: number
+          similarity_max: number
         }[]
       }
       my_radar_access: { Args: never; Returns: Json }
@@ -7208,6 +7485,17 @@ export type Database = {
         Returns: Json
       }
       reset_event_duplicate_candidates: { Args: never; Returns: Json }
+      resolve_exhibitor: {
+        Args: { p_k?: number; p_query: string }
+        Returns: {
+          exhibitor_id: string
+          expose_bientot: boolean
+          methode: string
+          nom_exposant: string
+          score: number
+          website: string
+        }[]
+      }
       resolve_radar_account_for_user: {
         Args: { p_user_id: string }
         Returns: string
