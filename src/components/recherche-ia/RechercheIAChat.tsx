@@ -37,6 +37,8 @@ interface RechercheIAChatProps {
   variant?: 'page' | 'sidebar';
   /** Affiche l'accroche éditoriale (titre + sous-titre). */
   showHero?: boolean;
+  /** Niveau du titre de l'accroche (h1 pour la page dédiée, h2 en sidebar). */
+  headingAs?: 'h1' | 'h2';
 }
 
 /**
@@ -45,10 +47,11 @@ interface RechercheIAChatProps {
  * Même logique : sign-in anonyme, appels à l'Edge Function recherche-ia-visiteur,
  * gestion crédits/murs.
  */
-const RechercheIAChat = ({ variant = 'page', showHero = true }: RechercheIAChatProps) => {
+const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }: RechercheIAChatProps) => {
   const { session, loading: authLoading } = useAuth();
 
   const isSidebar = variant === 'sidebar';
+  const Heading = headingAs;
 
   const [authReady, setAuthReady] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -215,7 +218,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true }: RechercheIAChatP
             <p className="text-accent font-semibold uppercase tracking-wide text-xs mb-2">
               Recherche IA · Lotexpo
             </p>
-            <h2
+            <Heading
               className={`heading-display text-foreground ${
                 isSidebar
                   ? 'text-2xl'
@@ -225,7 +228,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true }: RechercheIAChatP
               }`}
             >
               L'IA lit. Vous décidez.
-            </h2>
+            </Heading>
             {!hasStarted && (
               <p className={`text-muted-foreground mt-4 max-w-2xl ${isSidebar ? 'text-sm' : 'text-base md:text-lg'}`}>
                 Le marché des salons est illisible. Décrivez votre besoin en une phrase,
