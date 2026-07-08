@@ -117,7 +117,20 @@ DISTINGUER LES DEUX INTENTIONS « quels salons » :
 3. Si expose_bientot=false → dis-le franchement, puis bascule sur rechercher_entreprises (seulement_a_venir=true) avec l'activité de cette entreprise pour proposer des acteurs similaires qui, eux, exposent bientôt.
 4. Si plusieurs candidats à score élevé (fiches en doublon, ex. « X » et « X S.R.L »), traite-les comme la même entreprise et combine leurs salons, ou demande de préciser.
 
-REQUÊTES D'ANNUAIRE PUR (ex. « tous les salons à Lyon », sans thème) : tu n'as pas d'outil de filtre géographique ; invite l'utilisateur à utiliser l'annuaire et ses filtres sur le site plutôt que d'inventer une liste.
+RÉSOLUTION D'ENTREPRISE — deux cas à ne jamais confondre :
+- Si identifier_entreprise ne renvoie AUCUN candidat → l'entreprise est absente de l'index. Dis-le.
+- Si des candidats sont renvoyés mais qu'AUCUN n'a expose_bientot=true → l'entreprise EST bien dans l'index, elle n'expose simplement sur aucun salon à venir. NOMME-la (avec son lien), dis clairement « [Entreprise] est bien référencée mais n'expose sur aucun salon à venir », puis propose des voisins qui exposent (rechercher_entreprises).
+- Ne dis JAMAIS « je ne trouve pas cette entreprise » quand un candidat plausible a été renvoyé — même s'il n'expose pas, même si le nom n'est pas exact (ex. « Trivec » → « Trivec by Caspeco »). Nomme le candidat le plus probable.
+
+PERTINENCE DES SALONS :
+- Un salon avec un seul exposant matchant, surtout s'il est généraliste et sans rapport avec le thème (ex. un salon de collectivités pour une requête « logiciel de restauration »), n'est PAS « un salon pour ce domaine ». Ne le présente pas comme une recommandation.
+- Au mieux, mentionne-le en le qualifiant honnêtement : « l'entreprise X de votre domaine y expose, mais ce salon n'est pas centré sur votre sujet ».
+- Priorise toujours les salons denses / spécialisés (plusieurs exposants matchants). S'il y a peu de salons vraiment pertinents à venir, dis-le franchement plutôt que de compléter avec des salons tangentiels.
+
+CE QUE TU CONNAIS DU SITE — RIEN D'AUTRE :
+- Uniquement les pages salon (/events/{slug}) et les pages exposant (/exposants/{public_slug}), quand un slug est présent dans un résultat d'outil.
+- N'invente JAMAIS de fonctionnalité, de nom de filtre précis, ni d'« annuaire des exposants ». Ces éléments peuvent ne pas exister.
+- Pour une demande d'annuaire / de liste / de localisation que tes outils ne couvrent pas : invite simplement à explorer les salons sur lotexpo.com, SANS nommer de filtre spécifique et SANS prétendre qu'un annuaire ou un filtre donné existe.
 
 LIENS (obligatoire dès que l'info est disponible dans les résultats d'outil) :
 - Quand tu nommes un SALON, mets son nom en lien markdown vers sa page : [Nom du salon](/events/{slug}), en utilisant le champ \`slug\` du résultat d'outil correspondant (l'instance précise que tu cites dans instances_a_venir[].slug, ou salons[].slug, ou le slug renvoyé par salons_d_une_entreprise).
@@ -200,21 +213,9 @@ Deno.serve(async (req) => {
         .slice(-10)
     : [];
 
-  // 3) IP + rate-limit anti-abus
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
-  if (ip) {
-    const since = new Date(Date.now() - 3600_000).toISOString();
-    const { count } = await admin
-      .from("ai_search_usage")
-      .select("id", { count: "exact", head: true })
-      .eq("ip", ip)
-      .gte("created_at", since);
-    if ((count ?? 0) >= IP_LIMIT_PER_HOUR) {
-      return json({ error: "rate_limited", message: "Trop de requêtes récentes. Réessaie dans un moment." }, 429);
-    }
-  }
 
-  // 4) Gate crédits
+  // 3) Gate crédits — AVANT le rate-limit IP (pour en exempter les admins)
   const { data: creditRows, error: creditErr } = await admin.rpc("check_ai_credits", {
     p_user_id: userId,
     p_is_anonymous: isAnon,
@@ -225,6 +226,21 @@ Deno.serve(async (req) => {
     const evt = credit.wall_type === "signup" ? "anon_wall_shown" : "paid_wall_shown";
     await admin.from("ai_funnel_events").insert({ user_id: userId, event_type: evt });
     return json({ wall: { type: credit.wall_type }, credits: credit });
+  }
+  // Les admins ont une allocation illimitée (999999) ; anonyme = 3, inscrit = 6.
+  const isAdmin = (credit?.allowed ?? 0) > 6;
+
+  // 4) Rate-limit IP anti-abus — uniquement pour les non-admins
+  if (!isAdmin && ip) {
+    const since = new Date(Date.now() - 3600_000).toISOString();
+    const { count } = await admin
+      .from("ai_search_usage")
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .gte("created_at", since);
+    if ((count ?? 0) >= IP_LIMIT_PER_HOUR) {
+      return json({ error: "rate_limited", message: "Trop de requêtes récentes. Réessaie dans un moment." }, 429);
+    }
   }
 
   // 5) Boucle de tool-calling (Haiku)
