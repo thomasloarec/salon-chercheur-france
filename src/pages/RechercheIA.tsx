@@ -6,7 +6,7 @@ import RechercheIAChat from '@/components/recherche-ia/RechercheIAChat';
 
 const RechercheIA = () => {
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col">
       <Helmet>
         <title>Recherche IA — Trouvez vos salons | Lotexpo</title>
         <meta
@@ -17,7 +17,7 @@ const RechercheIA = () => {
       </Helmet>
       <Header />
 
-      <main className="flex-1 min-h-0 w-full px-6 mx-auto max-w-3xl py-8 flex flex-col">
+      <main className="flex-1 w-full px-6 mx-auto max-w-3xl py-8 flex flex-col">
         <RechercheIAChat variant="page" headingAs="h1" />
       </main>
 
