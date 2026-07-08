@@ -64,7 +64,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
   const [signupOpen, setSignupOpen] = useState(false);
   const [paidIntentSent, setPaidIntentSent] = useState(false);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const anonAttempted = useRef(false);
 
   // 1) Session : sign-in anonyme si aucune session active.
@@ -95,9 +95,12 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
     if (session) setAuthReady(true);
   }, [session]);
 
-  // Auto-scroll vers le bas à chaque nouveau message / état de chargement.
+  // Auto-scroll du conteneur de messages vers le bas (pas de la fenêtre).
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
   }, [messages, asking, wall]);
 
   const hasStarted = messages.length > 0;
@@ -209,9 +212,12 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
   };
 
   return (
-    <div className={isSidebar ? 'flex h-full flex-col' : 'flex flex-col'}>
+    <div className="flex flex-1 flex-col min-h-0">
       {/* Zone défilante : hero + accueil + conversation */}
-      <div className={isSidebar ? 'flex-1 overflow-y-auto px-1' : 'flex flex-col'}>
+      <div
+        ref={scrollContainerRef}
+        className={`flex-1 overflow-y-auto min-h-0 ${isSidebar ? 'px-1' : ''}`}
+      >
         {/* Hero / accroche */}
         {showHero && (
           <section className={`section-rule ${hasStarted ? 'mb-6' : 'mb-8'}`}>
@@ -296,7 +302,6 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
               />
             )}
 
-            <div ref={bottomRef} />
           </div>
         )}
       </div>
