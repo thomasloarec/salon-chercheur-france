@@ -155,6 +155,9 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   const hasStarted = messages.length > 0;
   const hardWallActive = wall?.hard === true;
 
+  // Placeholder animé (typewriter) : actif tant que le champ est vide et non bloqué.
+  const animatedPlaceholder = useTypewriter(EXAMPLES, !hardWallActive && input.length === 0);
+
   const buildHistory = () =>
     messages.slice(-10).map((m) => ({ role: m.role, content: m.content }));
 
