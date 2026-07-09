@@ -741,7 +741,7 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     ),
     ecoNote:
       "Même sur un salon géant, chaque exposant pertinent est vu, et chaque visite devient une vraie rencontre, pas un hasard d'allée.",
-    cta: { label: 'Générer mon parcours', to: '/recherche-ia' },
+    cta: { label: 'Trouver mon prochain salon', to: '/salons' },
     visual: <ParcoursMock />,
   },
   {
