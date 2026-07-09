@@ -15,6 +15,7 @@ import {
 import {
   LayoutDashboard,
   Calendar,
+  CalendarDays,
   FileSearch,
   Sparkles,
   Star,
