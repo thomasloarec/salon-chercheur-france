@@ -662,18 +662,18 @@ const NoveltyMock = () => (
 /* ---- Block 5 : moteur / structuration ---- */
 const StructMock = () => (
   <Mock>
-    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3.5 items-center">
-      <div className="rounded-xl border border-border p-4">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+      <div className="flex-1 rounded-xl border border-border p-4">
         <div className="text-[0.72rem] font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Fiche brute</div>
         <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground leading-relaxed font-mono">
           « Ns proposons sol. digitales p/ restau : caisse tactile, cmd table, paiement… + de 200 clients franchisés en FR &amp; BENELUX. »
         </div>
       </div>
-      <div className="flex sm:flex-col items-center justify-center gap-1.5 text-accent text-[0.7rem] font-bold rotate-90 sm:rotate-0">
-        <ArrowRight className="h-6 w-6" />
-        <span className="rotate-[-90deg] sm:rotate-0 whitespace-nowrap">L'IA lit</span>
+      <div className="flex flex-col items-center justify-center gap-1 text-accent text-[0.7rem] font-bold shrink-0">
+        <ArrowRight className="h-6 w-6 rotate-90 sm:rotate-0" />
+        <span className="whitespace-nowrap">L'IA lit</span>
       </div>
-      <div className="rounded-xl border border-border p-4">
+      <div className="flex-1 rounded-xl border border-border p-4">
         <div className="text-[0.72rem] font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Fiche structurée</div>
         {[
           { k: 'Secteur', tags: ['Restauration tech'] },
