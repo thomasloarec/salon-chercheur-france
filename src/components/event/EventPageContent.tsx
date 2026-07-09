@@ -18,6 +18,7 @@ import { EventFaqBlock } from '@/components/event/EventFaqBlock';
 
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
+import ClaimSalonBanner from '@/components/event/ClaimSalonBanner';
 import EventRadarCrmWidget from '@/components/event/EventRadarCrmWidget';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
@@ -223,6 +224,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </section>
             
             <EventPageHeader event={event} />
+
+            {/* Bandeau discret : revendication de la page salon par l'organisateur */}
+            {!isEventPast && <ClaimSalonBanner event={event} />}
 
             {/* Indicateurs utiles — uniquement événements à venir */}
             {!isEventPast && (
