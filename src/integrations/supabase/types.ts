@@ -921,6 +921,156 @@ export type Database = {
         }
         Relationships: []
       }
+      event_change_requests: {
+        Row: {
+          applied_at: string | null
+          changed_fields: string[]
+          created_at: string
+          event_id: string
+          id: string
+          previous_values: Json
+          proposed_changes: Json
+          requester_user_id: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          applied_at?: string | null
+          changed_fields: string[]
+          created_at?: string
+          event_id: string
+          id?: string
+          previous_values: Json
+          proposed_changes: Json
+          requester_user_id: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          applied_at?: string | null
+          changed_fields?: string[]
+          created_at?: string
+          event_id?: string
+          id?: string
+          previous_values?: Json
+          proposed_changes?: Json
+          requester_user_id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_change_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_change_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_change_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_change_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_change_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_claim_requests: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          message: string | null
+          requester_user_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          message?: string | null
+          requester_user_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          message?: string | null
+          requester_user_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_claim_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_claim_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_claim_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_claim_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_claim_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_duplicate_candidates: {
         Row: {
           created_at: string
@@ -1055,6 +1205,7 @@ export type Database = {
           meta_description_gen: string | null
           nom_event: string
           nom_lieu: string | null
+          owner_user_id: string | null
           pays: string | null
           rubrique_seeded: boolean | null
           rue: string | null
@@ -1075,6 +1226,7 @@ export type Database = {
           url_site_officiel_domain: string | null
           url_site_officiel_normalized: string | null
           validation_mode: string | null
+          verified_at: string | null
           ville: string | null
           visible: boolean | null
         }
@@ -1110,6 +1262,7 @@ export type Database = {
           meta_description_gen?: string | null
           nom_event: string
           nom_lieu?: string | null
+          owner_user_id?: string | null
           pays?: string | null
           rubrique_seeded?: boolean | null
           rue?: string | null
@@ -1130,6 +1283,7 @@ export type Database = {
           url_site_officiel_domain?: string | null
           url_site_officiel_normalized?: string | null
           validation_mode?: string | null
+          verified_at?: string | null
           ville?: string | null
           visible?: boolean | null
         }
@@ -1165,6 +1319,7 @@ export type Database = {
           meta_description_gen?: string | null
           nom_event?: string
           nom_lieu?: string | null
+          owner_user_id?: string | null
           pays?: string | null
           rubrique_seeded?: boolean | null
           rue?: string | null
@@ -1185,6 +1340,7 @@ export type Database = {
           url_site_officiel_domain?: string | null
           url_site_officiel_normalized?: string | null
           validation_mode?: string | null
+          verified_at?: string | null
           ville?: string | null
           visible?: boolean | null
         }
@@ -6471,9 +6627,17 @@ export type Database = {
         Args: { p_account_id: string; p_email: string; p_role?: string }
         Returns: Json
       }
+      admin_apply_event_change: {
+        Args: { p_admin_user_id: string; p_request_id: string }
+        Returns: string
+      }
       admin_approve_access_request: {
         Args: { p_request_id: string }
         Returns: undefined
+      }
+      admin_approve_event_claim: {
+        Args: { p_admin_user_id: string; p_request_id: string }
+        Returns: string
       }
       admin_find_website_duplicate: {
         Args: {
@@ -6724,6 +6888,14 @@ export type Database = {
           p_source?: string
         }
         Returns: Json
+      }
+      admin_reject_event_change: {
+        Args: { p_admin_user_id: string; p_note?: string; p_request_id: string }
+        Returns: undefined
+      }
+      admin_reject_event_claim: {
+        Args: { p_admin_user_id: string; p_request_id: string }
+        Returns: undefined
       }
       admin_remove_exhibitor_from_site: {
         Args: {
@@ -7261,6 +7433,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_ai_refusal: { Args: { txt: string }; Returns: boolean }
       is_email_blacklisted: { Args: { _email: string }; Returns: boolean }
+      is_event_owner: { Args: { p_event_id: string }; Returns: boolean }
       is_radar_member: {
         Args: { p_account_id: string; p_user_id?: string }
         Returns: boolean
