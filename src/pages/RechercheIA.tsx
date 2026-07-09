@@ -1,10 +1,13 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import RechercheIAChat from '@/components/recherche-ia/RechercheIAChat';
 
 const RechercheIA = () => {
+  const [searchParams] = useSearchParams();
+  const initialQuery = searchParams.get('q') ?? undefined;
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Helmet>
@@ -18,7 +21,7 @@ const RechercheIA = () => {
       <Header />
 
       <main className="flex-1 w-full px-6 mx-auto max-w-3xl py-8 flex flex-col">
-        <RechercheIAChat variant="page" headingAs="h1" />
+        <RechercheIAChat variant="page" headingAs="h1" initialQuery={initialQuery} />
       </main>
 
       <Footer />
