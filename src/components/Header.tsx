@@ -127,7 +127,7 @@ const Header = () => {
                   <Button variant="ghost">Se connecter</Button>
                 </Link>
                 <Link to="/recherche-ia">
-                  <Button>
+                  <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
                     Essayer l'IA
                     <Sparkles className="ml-2 h-4 w-4" />
                   </Button>
@@ -242,10 +242,10 @@ const Header = () => {
                       to="/recherche-ia"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Button className="w-full">
-                        Essayer l'IA
-                        <Sparkles className="ml-2 h-4 w-4" />
-                      </Button>
+                    <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                      Essayer l'IA
+                      <Sparkles className="ml-2 h-4 w-4" />
+                    </Button>
                     </Link>
                   </div>
                 )}
