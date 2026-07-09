@@ -510,20 +510,20 @@ const SearchMock = () => {
             <div
               key={r.name}
               style={{ transitionDelay: `${260 + i * 200}ms` }}
-              className={`rounded-2xl border border-border bg-background px-4 py-3.5 transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+              className={`rounded-[14px] border border-border bg-background px-4 py-[15px] transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
             >
               <div className="flex justify-between items-baseline gap-3">
-                <span className="font-bold text-primary">{r.name}</span>
+                <span className="font-bold text-[1.05rem] text-primary">{r.name}</span>
                 <span className="font-bold text-sm text-accent shrink-0">{r.pct}%</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{r.meta}</p>
-              <div className="h-1.5 bg-muted/60 rounded-full mt-3 overflow-hidden">
+              <p className="text-[0.86rem] text-muted-foreground mt-1">{r.meta}</p>
+              <div className="h-[5px] bg-muted/60 rounded-full mt-3 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-accent/70 to-accent transition-[width] duration-[1100ms] ease-out"
                   style={{ width: inView ? `${r.pct}%` : '0%', transitionDelay: `${400 + i * 200}ms` }}
                 />
               </div>
-              <span className="inline-flex items-center mt-3 text-xs font-semibold text-primary bg-secondary rounded-full px-2.5 py-1">
+              <span className="inline-flex items-center mt-3 text-[0.78rem] font-semibold text-primary bg-secondary rounded-full px-[11px] py-1">
                 {r.tag}
               </span>
             </div>
