@@ -86,36 +86,42 @@ function CountUp({ target, format }: { target: number; format: (n: number) => st
   const reduced = usePrefersReducedMotion();
   const [value, setValue] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
-  const started = useRef(false);
+  const [inView, setInView] = useState(false);
 
+  // Détecte le passage dans la vue (une seule fois).
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    if (reduced) {
-      setValue(target);
-      return;
-    }
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true;
-          const duration = 1600;
-          const start = performance.now();
-          const step = (now: number) => {
-            const p = Math.min((now - start) / duration, 1);
-            const eased = 1 - Math.pow(1 - p, 3);
-            setValue(Math.floor(eased * target));
-            if (p < 1) requestAnimationFrame(step);
-            else setValue(target);
-          };
-          requestAnimationFrame(step);
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
         }
       },
       { threshold: 0.4 }
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [target, reduced]);
+  }, []);
+
+  // Anime dès que la cible est connue ET visible (les stats arrivent en async).
+  useEffect(() => {
+    if (!inView || target <= 0) return;
+    if (reduced) { setValue(target); return; }
+    const duration = 1600;
+    const start = performance.now();
+    let raf = 0;
+    const step = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(Math.floor(eased * target));
+      if (p < 1) raf = requestAnimationFrame(step);
+      else setValue(target);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, target, reduced]);
 
   return <span ref={ref}>{format(value)}</span>;
 }
