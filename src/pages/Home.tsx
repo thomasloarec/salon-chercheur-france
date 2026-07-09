@@ -448,7 +448,7 @@ interface SolutionBlock {
 
 const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: boolean }) => (
   <Reveal className="w-full">
-    <div className="max-w-[1180px] mx-auto px-6 md:px-7 py-14 grid grid-cols-1 md:grid-cols-[1.02fr_1fr] gap-10 md:gap-[74px] items-center">
+    <div className="max-w-[1180px] mx-auto px-6 md:px-7 py-14 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
       <div className={reversed ? 'md:order-2' : ''}>
         <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary font-bold text-[0.78rem] uppercase tracking-[0.06em] px-3.5 py-1.5 mb-4">
           {block.actor}
