@@ -33,7 +33,7 @@ import AdminCampaignsPage from '@/pages/admin/AdminCampaignsPage';
 import AdminLeadsPage from '@/pages/admin/AdminLeadsPage';
 import AdminEventDetail from '@/pages/AdminEventDetail';
 import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
-import AdminEventClaims from '@/pages/AdminEventClaims';
+import AdminOrganisateurs from '@/pages/AdminOrganisateurs';
 import AdminExhibitors from '@/pages/AdminExhibitors';
 import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
 import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
@@ -138,7 +138,6 @@ function App() {
               <Route path="events" element={<AdminEventsPage />} />
               <Route path="events/seo" element={<AdminEventsSeoPage />} />
               <Route path="events/diagnostics" element={<AdminEventsDiagnosticsPage />} />
-              <Route path="events/claims" element={<AdminEventClaims />} />
               <Route path="events/:id" element={<AdminEventDetail />} />
               <Route path="events/by-text/:id_event_text" element={<AdminEventByText />} />
               <Route path="novelties" element={<AdminNoveltiesPage />} />
@@ -149,6 +148,7 @@ function App() {
               <Route path="exhibitors/claims" element={<AdminExhibitorClaims />} />
               <Route path="exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />
               <Route path="import-diagnostics" element={<AdminImportDiagnostics />} />
+              <Route path="organisateurs" element={<AdminOrganisateurs />} />
               <Route path="seo-audit" element={<AdminSeoAudit />} />
               <Route path="ia-visite" element={<AdminIaVisite />} />
               <Route path="radar-crm" element={<AdminRadarCrm />} />

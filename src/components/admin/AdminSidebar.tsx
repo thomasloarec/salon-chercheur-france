@@ -15,6 +15,7 @@ import {
 import {
   LayoutDashboard,
   Calendar,
+  CalendarDays,
   FileSearch,
   Sparkles,
   Star,
@@ -46,9 +47,14 @@ const navSections = [
       { title: 'Liste & import', url: '/admin/events', icon: Calendar },
       { title: 'Enrichissement SEO', url: '/admin/events/seo', icon: FileSearch },
       { title: 'Diagnostics', url: '/admin/events/diagnostics', icon: Search },
-      { title: 'Revendications salons', url: '/admin/events/claims', icon: Inbox },
       { title: 'Modération', url: '/admin/novelties', icon: Star },
       { title: 'Blog & Articles', url: '/admin/blog', icon: BookOpen },
+    ],
+  },
+  {
+    label: 'ORGANISATEURS',
+    items: [
+      { title: 'Organisateurs', url: '/admin/organisateurs', icon: CalendarDays },
     ],
   },
   {

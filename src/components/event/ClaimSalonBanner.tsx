@@ -4,6 +4,16 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { BadgeCheck, Clock, ShieldCheck } from 'lucide-react';
 import type { Event } from '@/types/event';
@@ -18,6 +28,7 @@ const ClaimSalonBanner = ({ event }: ClaimSalonBannerProps) => {
   const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
   const [justRequested, setJustRequested] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const ownerId = event.owner_user_id ?? null;
   const isOwner = !!user && ownerId === user.id;
@@ -54,11 +65,20 @@ const ClaimSalonBanner = ({ event }: ClaimSalonBannerProps) => {
 
   const pending = justRequested || existingClaim?.status === 'pending';
 
-  const handleClaim = async () => {
+  const handleClaimClick = () => {
     if (!user) {
       navigate('/auth');
       return;
     }
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmClaim = async () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    setConfirmOpen(false);
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('event-claim-manage', {
@@ -76,6 +96,7 @@ const ClaimSalonBanner = ({ event }: ClaimSalonBannerProps) => {
   };
 
   return (
+    <>
     <div className="rounded-lg bg-muted px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm">
       <span className="text-muted-foreground">Vous organisez ce salon ?</span>
       {pending ? (
@@ -84,12 +105,32 @@ const ClaimSalonBanner = ({ event }: ClaimSalonBannerProps) => {
           Demande de revendication en cours
         </Button>
       ) : (
-        <Button variant="outline" size="sm" onClick={handleClaim} disabled={submitting}>
+        <Button variant="outline" size="sm" onClick={handleClaimClick} disabled={submitting}>
           <BadgeCheck className="h-3.5 w-3.5 mr-1.5" />
           {submitting ? 'Envoi…' : 'Revendiquer cette page'}
         </Button>
       )}
     </div>
+
+    <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Revendiquer cette page salon</AlertDialogTitle>
+          <AlertDialogDescription>
+            En revendiquant cette page, vous attestez être l'organisateur officiel de ce salon
+            (ou agir en son nom) et être habilité à gérer ses informations sur Lotexpo. Toute
+            demande est vérifiée manuellement par notre équipe avant validation.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirmClaim}>
+            Je confirme, revendiquer
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
 
