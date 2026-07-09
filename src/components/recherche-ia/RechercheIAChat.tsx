@@ -39,6 +39,11 @@ interface RechercheIAChatProps {
   showHero?: boolean;
   /** Niveau du titre de l'accroche (h1 pour la page dédiée, h2 en sidebar). */
   headingAs?: 'h1' | 'h2';
+  /**
+   * Question initiale (ex : param `?q=` transmis depuis la home).
+   * Si présente, la recherche est déclenchée automatiquement UNE seule fois.
+   */
+  initialQuery?: string;
 }
 
 /**
@@ -47,7 +52,7 @@ interface RechercheIAChatProps {
  * Même logique : sign-in anonyme, appels à l'Edge Function recherche-ia-visiteur,
  * gestion crédits/murs.
  */
-const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }: RechercheIAChatProps) => {
+const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', initialQuery }: RechercheIAChatProps) => {
   const { session, loading: authLoading } = useAuth();
 
   const isSidebar = variant === 'sidebar';
@@ -66,6 +71,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const anonAttempted = useRef(false);
+  const autoSent = useRef(false);
 
   // 1) Session : sign-in anonyme si aucune session active.
   useEffect(() => {
