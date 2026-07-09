@@ -143,6 +143,12 @@ export default function NoveltiesSection({ event, exhibitorCount, isEventPast = 
 
   // ÉTAT A — Aucune nouveauté
   if (!error && total === 0) {
+    // Pour les événements terminés, ne pas inciter à publier : la création
+    // de nouveautés est interdite après la fin du salon.
+    if (isEventPast) {
+      return null;
+    }
+
     if (isPreLaunch) {
       return (
         <>
