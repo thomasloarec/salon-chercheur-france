@@ -647,9 +647,9 @@ const NoveltyMock = () => (
       </div>
     </div>
     <div className="font-bold text-foreground mb-3">Borne de commande autonome nouvelle génération</div>
-    <div className="flex flex-wrap gap-2 mb-3.5">
+    <div className="flex flex-wrap gap-[7px] mb-3.5">
       {['Démo live sur stand', '-30% temps de commande', 'Intégration caisse native'].map((c) => (
-        <span key={c} className="text-xs font-semibold text-primary bg-secondary/40 border border-secondary rounded-full px-2.5 py-1">
+        <span key={c} className="text-[0.78rem] font-semibold text-primary bg-secondary/40 border border-secondary rounded-full px-[11px] py-1">
           {c}
         </span>
       ))}
