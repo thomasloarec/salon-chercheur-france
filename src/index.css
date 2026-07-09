@@ -140,7 +140,7 @@
 
   /* CTA principal : arrondi xl + ombre noire subtile pour créer de l'épaisseur */
   .cta-button {
-    @apply rounded-xl transition-shadow duration-200;
+    @apply rounded-xl transition-all duration-200;
     box-shadow: 0 4px 14px -4px hsl(0 0% 0% / 0.2);
   }
 
