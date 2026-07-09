@@ -14,7 +14,6 @@ import CookieBanner from '@/components/consent/CookieBanner';
 import AnalyticsTracker from '@/components/consent/AnalyticsTracker';
 import Events from '@/pages/Events';
 import Home from '@/pages/Home';
-import HowItWorks from '@/pages/HowItWorks';
 import EventPage from '@/pages/EventPage';
 import Favorites from '@/pages/Favorites';
 import Profile from '@/pages/Profile';
