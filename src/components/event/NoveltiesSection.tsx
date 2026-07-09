@@ -18,6 +18,7 @@ const INITIAL_VISIBLE = 4;
 interface NoveltiesSectionProps {
   event: Event;
   exhibitorCount?: number;
+  isEventPast?: boolean;
 }
 
 export default function NoveltiesSection({ event, exhibitorCount }: NoveltiesSectionProps) {
