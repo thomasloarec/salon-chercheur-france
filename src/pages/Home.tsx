@@ -321,7 +321,7 @@ const Home = () => {
         {/* ============================= SOLUTION ============================= */}
         <section className="bg-background pt-24 pb-10">
           <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-14">
-            <div className="section-rule inline-block [&::before]:mx-auto" />
+            <div className="w-11 h-[3px] bg-accent rounded-full mx-auto mb-5" />
             <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">La solution</p>
             <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)] text-primary">
               Rendre le marché lisible. Pour tout le monde.
