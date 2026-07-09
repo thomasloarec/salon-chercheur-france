@@ -77,23 +77,34 @@ const RechercheIAShowcase = () => {
   const current = TABS[active];
 
   return (
-    <section aria-label="L'IA en action" className="mt-2">
-      <h2 className="heading-display text-xl md:text-2xl text-foreground mb-4">
-        L'IA en action
-      </h2>
+    <section aria-label="L'IA en action" className="mt-14 md:mt-16">
+      {/* En-tête centré */}
+      <div className="text-center max-w-2xl mx-auto mb-8">
+        <div className="mx-auto mb-4 h-[3px] w-11 rounded-full bg-accent" />
+        <p className="text-accent font-semibold uppercase tracking-[0.15em] text-xs mb-3">
+          L'IA en action
+        </p>
+        <h2 className="heading-display text-2xl md:text-3xl text-foreground">
+          Voyez ce qu'elle sait répondre
+        </h2>
+        <p className="text-muted-foreground mt-3 text-base">
+          Quatre questions typiques, quatre réponses qu'aucun humain ne pourrait compiler à la
+          main. Choisissez un cas.
+        </p>
+      </div>
 
-      {/* Onglets */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* Onglets (centrés) */}
+      <div className="flex flex-wrap gap-2 justify-center mb-5">
         {TABS.map((t, i) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setActive(i)}
             aria-pressed={i === active}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               i === active
-                ? 'bg-accent text-accent-foreground'
-                : 'bg-secondary/50 text-foreground hover:bg-secondary border border-border'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-background text-foreground hover:bg-secondary border border-border'
             }`}
           >
             {t.tab}
@@ -102,51 +113,71 @@ const RechercheIAShowcase = () => {
       </div>
 
       {/* Fenêtre de chat */}
-      <div className="rounded-2xl border border-border bg-background/60 p-4 md:p-5 space-y-4">
-        {/* Question utilisateur */}
-        <div className="flex justify-end animate-fade-in">
-          <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-2.5 text-[15px]">
-            {current.question}
+      <div className="max-w-2xl mx-auto rounded-2xl border border-border bg-background shadow-sm overflow-hidden">
+        {/* En-tête de la fenêtre */}
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border bg-secondary/40">
+          <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground grid place-items-center font-display font-bold">
+            L
+          </div>
+          <div>
+            <p className="font-semibold text-foreground text-sm leading-tight">Assistant Lotexpo</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: 'hsl(var(--success-green))' }}
+              />
+              en ligne
+            </p>
           </div>
         </div>
 
-        {/* Indicateur de saisie */}
-        {phase === 'typing' && (
-          <div className="flex justify-start" key={`typing-${active}`}>
-            <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3">
-              <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
-              <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
-              <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce" />
+        {/* Corps de la conversation */}
+        <div className="px-5 py-5 min-h-[340px] space-y-4">
+          {/* Question utilisateur */}
+          <div className="flex justify-end animate-fade-in">
+            <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-2.5 text-[15px]">
+              {current.question}
             </div>
           </div>
-        )}
 
-        {/* Réponse assistant */}
-        {phase === 'answered' && (
-          <div className="flex justify-start gap-3 animate-fade-in" key={`answer-${active}`}>
-            <div className="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-accent text-accent-foreground grid place-items-center font-display font-semibold">
-              L
-            </div>
-            <div className="max-w-[92%] rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3 space-y-3">
-              <p className="text-[15px] text-foreground">{current.intro}</p>
-              <div className="space-y-2">
-                {current.cards.map((c) => (
-                  <div key={c.name} className="rounded-xl border border-border bg-background/70 px-3.5 py-2.5">
-                    <p className="text-sm font-semibold text-foreground">
-                      {c.name}
-                      <span className="ml-2 font-normal text-muted-foreground">{c.meta}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-0.5">{c.why}</p>
-                  </div>
-                ))}
+          {/* Indicateur de saisie */}
+          {phase === 'typing' && (
+            <div className="flex justify-start" key={`typing-${active}`}>
+              <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3">
+                <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
+                <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
+                <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce" />
               </div>
-              <p className="text-sm text-foreground/80">{current.relance}</p>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Réponse assistant */}
+          {phase === 'answered' && (
+            <div className="flex justify-start gap-3 animate-fade-in" key={`answer-${active}`}>
+              <div className="mt-0.5 h-8 w-8 shrink-0 rounded-lg bg-accent/15 text-accent grid place-items-center font-display font-semibold">
+                L
+              </div>
+              <div className="max-w-[92%] rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3 space-y-3">
+                <p className="text-[15px] text-foreground">{current.intro}</p>
+                <div className="space-y-2.5">
+                  {current.cards.map((c) => (
+                    <div key={c.name} className="border-l-[3px] border-accent pl-3.5 py-0.5">
+                      <p className="text-sm font-semibold text-foreground">
+                        {c.name}
+                        <span className="ml-2 font-normal text-muted-foreground">{c.meta}</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{c.why}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-foreground/80">{current.relance}</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <p className="mt-3 text-center text-xs text-muted-foreground">
+      <p className="mt-4 text-center text-xs text-muted-foreground italic">
         Aperçu illustratif — posez votre question pour lancer une vraie recherche.
       </p>
     </section>

@@ -275,12 +275,122 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
     }
   };
 
+  // Landing (page dédiée, avant toute question) : la maquette place la barre de
+  // recherche directement dans le hero, la démo « L'IA en action » venant en dessous.
+  const isLandingPage = !isSidebar && !hasStarted;
+
+  // Accroche / hero réutilisable dans les deux mises en page.
+  const heroBlock = showHero ? (
+    <section
+      className={`section-rule ${isLandingPage ? 'text-center mx-auto max-w-3xl' : hasStarted ? 'mb-6' : 'mb-8'}`}
+    >
+      <p className="text-accent font-semibold uppercase tracking-wide text-xs mb-2">
+        Recherche IA · Lotexpo
+      </p>
+      <Heading
+        className={`heading-display text-foreground ${
+          isSidebar
+            ? 'text-2xl'
+            : hasStarted
+            ? 'text-2xl md:text-3xl'
+            : 'text-3xl md:text-5xl'
+        }`}
+      >
+        Posez votre question.
+        <span className="block text-accent">
+          L'IA recherche parmi tous les salons B2B de France.
+        </span>
+      </Heading>
+      {!hasStarted && (
+        <p
+          className={`text-muted-foreground mt-4 max-w-2xl ${isLandingPage ? 'mx-auto' : ''} ${
+            isSidebar ? 'text-sm' : 'text-base md:text-lg'
+          }`}
+        >
+          Le marché des salons est illisible. L'IA de Lotexpo a lu tous les salons et
+          leurs exposants : décrivez ce que vous cherchez en une phrase, elle vous dit
+          où aller et à qui parler.
+        </p>
+      )}
+    </section>
+  ) : null;
+
+  // Compteur de crédits restants.
+  const creditsBadge = remainingLabel ? (
+    <div className="flex justify-center">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary text-primary text-xs font-medium px-3 py-1">
+        {remainingLabel}
+      </span>
+    </div>
+  ) : null;
+
+  // Barre de saisie (le champ + le bouton d'envoi).
+  const inputBar = (
+    <div className="rounded-2xl border border-border bg-background shadow-sm p-2 flex items-end gap-2">
+      <Textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder={
+          hardWallActive
+            ? 'Débloquez de nouvelles recherches pour continuer…'
+            : animatedPlaceholder
+        }
+        rows={1}
+        disabled={asking || hardWallActive || !authReady}
+        className="min-h-[44px] max-h-40 resize-none border-0 focus-visible:ring-0 shadow-none bg-transparent"
+      />
+      <Button
+        type="submit"
+        size="icon"
+        className="h-10 w-10 shrink-0 bg-accent text-accent-foreground hover:bg-accent/90"
+        disabled={asking || hardWallActive || !authReady || !input.trim()}
+        aria-label="Envoyer"
+      >
+        {asking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+      </Button>
+    </div>
+  );
+
+  const annuaireNote = (
+    <p className="mt-2 text-center text-xs text-muted-foreground">
+      Besoin d'explorer par filtres ?{' '}
+      <Link to="/salons" className="text-accent hover:underline font-medium">
+        Utilisez l'annuaire des salons
+      </Link>
+    </p>
+  );
+
+  const signupDialog = (
+    <SignupWallDialog open={signupOpen} onOpenChange={setSignupOpen} onUpgraded={handleUpgraded} />
+  );
+
+  // ------- Mise en page LANDING (page dédiée) : hero + recherche + démo -------
+  if (isLandingPage) {
+    return (
+      <div className="flex flex-col">
+        {heroBlock}
+
+        {/* Barre de recherche intégrée au hero */}
+        <form onSubmit={onSubmit} className="mt-8 w-full max-w-2xl mx-auto">
+          {inputBar}
+          {annuaireNote}
+        </form>
+
+        {/* Démo « L'IA en action » */}
+        <RechercheIAShowcase />
+
+        {signupDialog}
+      </div>
+    );
+  }
+
+  // ------- Mise en page CONVERSATION / SIDEBAR -------
   return (
     <div className={isSidebar ? 'flex h-full flex-col' : 'flex flex-col'}>
-      {/* Zone défilante : hero + accueil + conversation.
+      {/* Zone défilante : hero + conversation.
           En sidebar : remplit le Sheet (flex-1).
-          En page : hauteur bornée au viewport pour scroller à l'intérieur,
-          sans jamais déplacer la fenêtre/document. */}
+          En page : hauteur bornée au viewport pour scroller à l'intérieur. */}
       <div
         ref={scrollContainerRef}
         className={
@@ -289,37 +399,9 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             : 'overflow-y-auto max-h-[calc(100vh-16rem)]'
         }
       >
-        {/* Hero / accroche */}
-        {showHero && (
-          <section className={`section-rule ${hasStarted ? 'mb-6' : 'mb-8'}`}>
-            <p className="text-accent font-semibold uppercase tracking-wide text-xs mb-2">
-              Recherche IA · Lotexpo
-            </p>
-            <Heading
-              className={`heading-display text-foreground ${
-                isSidebar
-                  ? 'text-2xl'
-                  : hasStarted
-                  ? 'text-2xl md:text-3xl'
-                  : 'text-3xl md:text-5xl'
-              }`}
-            >
-              Posez votre question.
-              <span className="block text-accent">
-                L'IA recherche parmi tous les salons B2B de France.
-              </span>
-            </Heading>
-            {!hasStarted && (
-              <p className={`text-muted-foreground mt-4 max-w-2xl ${isSidebar ? 'text-sm' : 'text-base md:text-lg'}`}>
-                Le marché des salons est illisible. L'IA de Lotexpo a lu tous les salons et
-                leurs exposants : décrivez ce que vous cherchez en une phrase, elle vous dit
-                où aller et à qui parler.
-              </p>
-            )}
-          </section>
-        )}
+        {heroBlock}
 
-        {/* Écran d'accueil : démo « L'IA en action » */}
+        {/* Écran d'accueil sidebar : démo « L'IA en action » */}
         {!hasStarted && <RechercheIAShowcase />}
 
         {/* Conversation */}
@@ -359,62 +441,22 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
                 onPaidIntent={handlePaidIntent}
               />
             )}
-
           </div>
         )}
       </div>
 
       {/* Zone fixe : compteur + saisie */}
       <div className={isSidebar ? 'pt-3 mt-2 border-t border-border' : ''}>
-        {/* Compteur de crédits */}
-        {remainingLabel && (
-          <div className={isSidebar ? 'mb-3 flex justify-center' : 'mt-4 flex justify-center'}>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary text-primary text-xs font-medium px-3 py-1">
-              {remainingLabel}
-            </span>
-          </div>
+        {creditsBadge && (
+          <div className={isSidebar ? 'mb-3' : 'mt-4'}>{creditsBadge}</div>
         )}
-
-        {/* Barre de saisie */}
         <form onSubmit={onSubmit} className={isSidebar ? '' : 'mt-4 sticky bottom-4'}>
-          <div className="rounded-2xl border border-border bg-background shadow-sm p-2 flex items-end gap-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder={
-                hardWallActive
-                  ? 'Débloquez de nouvelles recherches pour continuer…'
-                  : animatedPlaceholder
-              }
-              rows={1}
-              disabled={asking || hardWallActive || !authReady}
-              className="min-h-[44px] max-h-40 resize-none border-0 focus-visible:ring-0 shadow-none bg-transparent"
-            />
-            <Button
-              type="submit"
-              size="icon"
-              className="h-10 w-10 shrink-0 bg-accent text-accent-foreground hover:bg-accent/90"
-              disabled={asking || hardWallActive || !authReady || !input.trim()}
-              aria-label="Envoyer"
-            >
-              {asking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </div>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            Besoin d'explorer par filtres ?{' '}
-            <Link to="/salons" className="text-accent hover:underline font-medium">
-              Utilisez l'annuaire des salons
-            </Link>
-          </p>
+          {inputBar}
+          {annuaireNote}
         </form>
       </div>
 
-      <SignupWallDialog
-        open={signupOpen}
-        onOpenChange={setSignupOpen}
-        onUpgraded={handleUpgraded}
-      />
+      {signupDialog}
     </div>
   );
 };
