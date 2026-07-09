@@ -304,36 +304,23 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
                   : 'text-3xl md:text-5xl'
               }`}
             >
-              L'IA lit. Vous décidez.
+              Posez votre question.
+              <span className="block text-accent">
+                L'IA recherche parmi tous les salons B2B de France.
+              </span>
             </Heading>
             {!hasStarted && (
               <p className={`text-muted-foreground mt-4 max-w-2xl ${isSidebar ? 'text-sm' : 'text-base md:text-lg'}`}>
-                Le marché des salons est illisible. Décrivez votre besoin en une phrase,
-                l'assistant repère les bons salons à venir et les exposants qui comptent.
+                Le marché des salons est illisible. L'IA de Lotexpo a lu tous les salons et
+                leurs exposants : décrivez ce que vous cherchez en une phrase, elle vous dit
+                où aller et à qui parler.
               </p>
             )}
           </section>
         )}
 
-        {/* Écran d'accueil : puces d'exemple */}
-        {!hasStarted && (
-          <div className={`grid gap-3 ${isSidebar ? 'grid-cols-1' : 'sm:grid-cols-2'}`}>
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                type="button"
-                onClick={() => send(ex)}
-                disabled={asking || !authReady}
-                className="group text-left rounded-xl border border-border bg-secondary/40 hover:bg-secondary hover:border-accent/50 transition-colors p-4 disabled:opacity-60"
-              >
-                <span className="flex items-start gap-3">
-                  <Sparkles className="h-4 w-4 mt-0.5 text-accent shrink-0" />
-                  <span className="text-sm text-foreground">{ex}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Écran d'accueil : démo « L'IA en action » */}
+        {!hasStarted && <RechercheIAShowcase />}
 
         {/* Conversation */}
         {hasStarted && (
