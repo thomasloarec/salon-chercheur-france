@@ -13,7 +13,6 @@ import { SectorIconBar } from '@/components/filters/SectorIconBar';
 import { Loader2 } from 'lucide-react';
 import { sectorWithCanonicalSlug } from '@/utils/sectorMapping';
 
-
 const Events = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { filters, filtersKey } = useUrlFilters();
