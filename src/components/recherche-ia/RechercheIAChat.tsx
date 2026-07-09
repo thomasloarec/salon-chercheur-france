@@ -39,6 +39,11 @@ interface RechercheIAChatProps {
   showHero?: boolean;
   /** Niveau du titre de l'accroche (h1 pour la page dédiée, h2 en sidebar). */
   headingAs?: 'h1' | 'h2';
+  /**
+   * Question initiale (ex : param `?q=` transmis depuis la home).
+   * Si présente, la recherche est déclenchée automatiquement UNE seule fois.
+   */
+  initialQuery?: string;
 }
 
 /**
@@ -47,7 +52,7 @@ interface RechercheIAChatProps {
  * Même logique : sign-in anonyme, appels à l'Edge Function recherche-ia-visiteur,
  * gestion crédits/murs.
  */
-const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }: RechercheIAChatProps) => {
+const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', initialQuery }: RechercheIAChatProps) => {
   const { session, loading: authLoading } = useAuth();
 
   const isSidebar = variant === 'sidebar';
@@ -66,6 +71,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const anonAttempted = useRef(false);
+  const autoSent = useRef(false);
 
   // 1) Session : sign-in anonyme si aucune session active.
   useEffect(() => {
@@ -183,6 +189,18 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
     setCredits(null);
     toast({ title: 'Vous pouvez reprendre vos recherches ✓' });
   };
+
+  // Déclenchement automatique de la question initiale (param `?q=` depuis la home).
+  // Une seule fois, dès que la session anonyme/utilisateur est prête.
+  useEffect(() => {
+    if (autoSent.current) return;
+    const q = initialQuery?.trim();
+    if (!q || !session || asking) return;
+    autoSent.current = true;
+    setInput(q);
+    send(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery, session]);
 
   const handlePaidIntent = async () => {
     setPaidIntentSent(true);
@@ -352,7 +370,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2' }
           </div>
           <p className="mt-2 text-center text-xs text-muted-foreground">
             Besoin d'explorer par filtres ?{' '}
-            <Link to="/" className="text-accent hover:underline font-medium">
+            <Link to="/salons" className="text-accent hover:underline font-medium">
               Utilisez l'annuaire des salons
             </Link>
           </p>
