@@ -9,6 +9,13 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import EventCard from '@/components/EventCard';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 import { usePublicStats } from '@/hooks/usePublicStats';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 
