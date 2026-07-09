@@ -9,6 +9,13 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import EventCard from '@/components/EventCard';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 import { usePublicStats } from '@/hooks/usePublicStats';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 
@@ -133,7 +140,7 @@ function Reveal({ children, className = '', delay = 0 }: { children: React.React
 const Home = () => {
   const navigate = useNavigate();
   const { data: stats } = usePublicStats();
-  const { data: upcoming, isLoading: upcomingLoading } = useUpcomingEvents(8);
+  const { data: upcoming, isLoading: upcomingLoading } = useUpcomingEvents(10);
 
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
@@ -367,9 +374,9 @@ const Home = () => {
             </div>
 
             {upcomingLoading ? (
-              <div className="grid gap-6 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 justify-items-center">
+              <div className="flex gap-6 overflow-hidden">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="w-full max-w-[272px] rounded-2xl bg-background p-4 animate-pulse">
+                  <div key={i} className="w-full max-w-[272px] shrink-0 rounded-2xl bg-background p-4 animate-pulse">
                     <div className="h-44 bg-muted rounded-lg mb-4" />
                     <div className="h-4 bg-muted rounded mb-2" />
                     <div className="h-4 bg-muted rounded w-1/2" />
@@ -377,11 +384,20 @@ const Home = () => {
                 ))}
               </div>
             ) : upcoming && upcoming.length > 0 ? (
-              <div className="grid gap-6 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 justify-items-center">
-                {upcoming.map((event) => (
-                  <EventCard key={event.id} event={event} view="grid" />
-                ))}
-              </div>
+              <Carousel opts={{ align: 'start' }} className="w-full">
+                <CarouselContent className="-ml-6">
+                  {upcoming.map((event) => (
+                    <CarouselItem
+                      key={event.id}
+                      className="pl-6 basis-[85%] xs:basis-1/2 lg:basis-1/4"
+                    >
+                      <EventCard event={event} view="grid" />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="hidden sm:flex" />
+                <CarouselNext className="hidden sm:flex" />
+              </Carousel>
             ) : (
               <p className="text-muted-foreground text-center py-8">Aucun salon à venir pour le moment.</p>
             )}
@@ -725,7 +741,7 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     ),
     ecoNote:
       "Même sur un salon géant, chaque exposant pertinent est vu, et chaque visite devient une vraie rencontre, pas un hasard d'allée.",
-    cta: { label: 'Générer mon parcours', to: '/recherche-ia' },
+    cta: { label: 'Trouver mon prochain salon', to: '/salons' },
     visual: <ParcoursMock />,
   },
   {
