@@ -267,8 +267,8 @@ const Home = () => {
             }}
           />
           <div className="relative max-w-6xl mx-auto px-6">
-            <Reveal className="max-w-[760px] mx-auto text-center mb-14">
-              <div className="w-11 h-[3px] bg-accent rounded-full mx-auto mb-5" />
+            <Reveal className="max-w-[760px] mx-auto text-center mb-[60px]">
+              <div className="w-[46px] h-[3px] bg-accent rounded-full mx-auto mb-5" />
               <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">Le constat</p>
               <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
                 Un cercle vicieux menaçait tout l'écosystème
@@ -326,8 +326,8 @@ const Home = () => {
 
         {/* ============================= SOLUTION ============================= */}
         <section className="bg-background pt-24 pb-10">
-          <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-14">
-            <div className="w-11 h-[3px] bg-accent rounded-full mx-auto mb-5" />
+          <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-[60px]">
+            <div className="w-[46px] h-[3px] bg-accent rounded-full mx-auto mb-5" />
             <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">La solution</p>
             <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)] text-primary">
               Rendre le marché lisible. Pour tout le monde.
@@ -448,18 +448,19 @@ interface SolutionBlock {
 
 const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: boolean }) => (
   <Reveal className="w-full">
-    <div className="max-w-[1180px] mx-auto px-6 md:px-7 py-14 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <div className={reversed ? 'md:order-2' : ''}>
-        <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary font-bold text-[0.78rem] uppercase tracking-[0.06em] px-3.5 py-1.5 mb-4">
+    <div className="max-w-[1180px] mx-auto px-7 py-14 grid grid-cols-1 lg:grid-cols-2 gap-y-[38px] lg:gap-y-0 lg:gap-x-[74px] items-center">
+      {/* Texte : toujours en premier dans le DOM (mobile => au-dessus partout) */}
+      <div className={reversed ? 'lg:order-last' : ''}>
+        <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary font-bold text-[0.78rem] uppercase tracking-[0.06em] px-[13px] py-[5px] mb-4">
           {block.actor}
         </span>
-        <h3 className="heading-display text-[clamp(1.7rem,3vw,2.4rem)] text-primary max-w-[15ch]">
+        <h3 className="heading-display font-bold text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.12] text-primary max-w-[15ch]">
           {block.title}
         </h3>
-        <p className="mt-4 text-lg text-foreground/70 max-w-[44ch]">{block.body}</p>
-        <div className="mt-5 flex gap-3 items-start bg-secondary/40 border-l-[3px] border-accent rounded-r-xl px-4 py-3 max-w-[46ch]">
-          <Info className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-          <p className="text-sm text-foreground/75">{block.ecoNote}</p>
+        <p className="mt-[18px] text-[1.08rem] leading-[1.65] text-foreground/70 max-w-[44ch]">{block.body}</p>
+        <div className="mt-5 flex gap-[11px] items-start bg-secondary/25 border-l-[3px] border-accent rounded-r-[10px] px-4 py-[13px] max-w-[46ch]">
+          <Info className="h-[18px] w-[18px] text-accent shrink-0 mt-0.5" />
+          <p className="text-[0.96rem] leading-relaxed text-foreground/75">{block.ecoNote}</p>
         </div>
         {block.cta && (
           <Link
@@ -471,7 +472,8 @@ const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: bool
           </Link>
         )}
       </div>
-      <div className={reversed ? 'md:order-1' : ''}>{block.visual}</div>
+      {/* Visuel : après le texte dans le DOM ; passe à gauche en desktop pour les blocs pairs */}
+      <div className={reversed ? 'lg:order-first' : ''}>{block.visual}</div>
     </div>
   </Reveal>
 );
@@ -508,20 +510,20 @@ const SearchMock = () => {
             <div
               key={r.name}
               style={{ transitionDelay: `${260 + i * 200}ms` }}
-              className={`rounded-2xl border border-border bg-background px-4 py-3.5 transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+              className={`rounded-[14px] border border-border bg-background px-4 py-[15px] transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
             >
               <div className="flex justify-between items-baseline gap-3">
-                <span className="font-bold text-primary">{r.name}</span>
+                <span className="font-bold text-[1.05rem] text-primary">{r.name}</span>
                 <span className="font-bold text-sm text-accent shrink-0">{r.pct}%</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{r.meta}</p>
-              <div className="h-1.5 bg-muted/60 rounded-full mt-3 overflow-hidden">
+              <p className="text-[0.86rem] text-muted-foreground mt-1">{r.meta}</p>
+              <div className="h-[5px] bg-muted/60 rounded-full mt-3 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-accent/70 to-accent transition-[width] duration-[1100ms] ease-out"
                   style={{ width: inView ? `${r.pct}%` : '0%', transitionDelay: `${400 + i * 200}ms` }}
                 />
               </div>
-              <span className="inline-flex items-center mt-3 text-xs font-semibold text-primary bg-secondary rounded-full px-2.5 py-1">
+              <span className="inline-flex items-center mt-3 text-[0.78rem] font-semibold text-primary bg-secondary rounded-full px-[11px] py-1">
                 {r.tag}
               </span>
             </div>
@@ -563,16 +565,16 @@ const ParcoursMock = () => {
             <div
               key={it.name}
               style={{ transitionDelay: `${150 + i * 180}ms` }}
-              className={`flex gap-3 items-center py-2.5 border-t border-border transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+              className={`flex gap-[13px] items-center py-[11px] border-t border-border transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+              <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
                 {it.n}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-primary text-sm">{it.name}</div>
                 <div className="text-xs text-muted-foreground">{it.loc}</div>
               </div>
-              <span className={`text-[0.73rem] font-bold px-2 py-1 rounded-md ${it.cls}`}>{it.obj}</span>
+              <span className={`text-[0.73rem] font-bold px-[9px] py-[3px] rounded-md ${it.cls}`}>{it.obj}</span>
             </div>
           ))}
         </div>
@@ -595,13 +597,13 @@ const RadarMock = () => (
     <div className="bg-secondary/40 rounded-xl px-3.5 py-3 my-3.5 text-sm text-primary">
       <b>12 entreprises de votre CRM</b> exposent sur ce salon. Voici par quoi commencer.
     </div>
-    <div className="rounded-xl border border-border p-3.5 mb-3">
+    <div className="rounded-[13px] border border-border p-[15px] mb-[11px]">
       <div className="flex justify-between items-center gap-2.5 mb-0.5">
         <span className="font-bold text-primary">Adoria</span>
         <span className="text-[0.72rem] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">Client · renouvellement</span>
       </div>
       <p className="text-xs text-muted-foreground mb-2">Contrat à échéance dans 4 mois, sécuriser le renouvellement.</p>
-      <ul className="space-y-1">
+      <ul className="space-y-1.5">
         {['Où en est la roadmap module stocks 2026 ?', 'Le passage multi-sites est-il à l\u2019ordre du jour ?', 'Qui décide du budget cette année ?'].map((q, i) => (
           <li key={i} className="flex gap-2 text-xs text-foreground">
             <span className="text-accent font-bold shrink-0">{i + 1}.</span>
@@ -614,7 +616,7 @@ const RadarMock = () => (
       { name: 'Inpulse', chip: 'Prospect chaud', cls: 'bg-accent/15 text-accent', why: 'A ouvert vos 3 derniers emails, relance de vive voix.' },
       { name: 'HUBENCY', chip: 'À qualifier', cls: 'bg-muted text-muted-foreground', why: 'Nouveau sur votre marché, premier contact.' },
     ].map((s) => (
-      <div key={s.name} className="rounded-xl border border-border p-3.5 mb-3 opacity-60">
+      <div key={s.name} className="rounded-[13px] border border-border p-[15px] mb-[11px] opacity-60">
         <div className="flex justify-between items-center gap-2.5">
           <span className="font-bold text-primary">{s.name}</span>
           <span className={`text-[0.72rem] font-bold px-2 py-1 rounded-full ${s.cls}`}>{s.chip}</span>
@@ -645,9 +647,9 @@ const NoveltyMock = () => (
       </div>
     </div>
     <div className="font-bold text-foreground mb-3">Borne de commande autonome nouvelle génération</div>
-    <div className="flex flex-wrap gap-2 mb-3.5">
+    <div className="flex flex-wrap gap-[7px] mb-3.5">
       {['Démo live sur stand', '-30% temps de commande', 'Intégration caisse native'].map((c) => (
-        <span key={c} className="text-xs font-semibold text-primary bg-secondary/40 border border-secondary rounded-full px-2.5 py-1">
+        <span key={c} className="text-[0.78rem] font-semibold text-primary bg-secondary/40 border border-secondary rounded-full px-[11px] py-1">
           {c}
         </span>
       ))}
