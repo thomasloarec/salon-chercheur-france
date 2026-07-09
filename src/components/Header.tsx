@@ -122,18 +122,16 @@ const Header = () => {
             {isRealUser ? (
               <UserMenu />
             ) : (
-              <>
-                <Link to="/auth?tab=signin">
-                  <Button variant="ghost">Se connecter</Button>
-                </Link>
-                <Link to="/recherche-ia">
-                  <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    Essayer l'IA
-                    <Sparkles className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </>
+              <Link to="/auth?tab=signin">
+                <Button variant="ghost">Se connecter</Button>
+              </Link>
             )}
+            <Link to="/recherche-ia">
+              <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+                Essayer l'IA
+                <Sparkles className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -229,6 +227,16 @@ const Header = () => {
                         Se déconnecter
                       </span>
                     </button>
+                    <Link
+                      to="/recherche-ia"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block px-3 pt-2"
+                    >
+                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                        Essayer l'IA
+                        <Sparkles className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </div>
                 ) : (
                   <div className="px-3 py-2 flex flex-col gap-2">
