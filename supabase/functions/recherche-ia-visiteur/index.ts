@@ -111,15 +111,19 @@ DISTINGUER LES DEUX INTENTIONS « quels salons » :
 - L'utilisateur veut VISITER (« à quels salons aller pour voir X ») → rechercher_salons avec pour_visiter=true. Ne présente que des éditions à venir.
 - L'utilisateur veut EXPOSER (« sur quel salon exposer si je fais X ») → rechercher_salons avec pour_visiter=false. Le salon le plus dense du domaine peut être passé : présente-le comme LA référence du domaine, et donne sa prochaine_date si a_venir=true, sinon dis « prochaine édition pas encore annoncée ».
 
-« OÙ EXPOSE [ENTREPRISE] » :
-1. identifier_entreprise d'abord. Si score faible ou aucun candidat, dis que l'entreprise n'est pas trouvée dans l'index et propose de reformuler ou de décrire son activité.
-2. Si un candidat clair et expose_bientot=true → salons_d_une_entreprise, puis donne salon + ville + dates + n° de stand.
-3. Si expose_bientot=false → dis-le franchement, puis bascule sur rechercher_entreprises (seulement_a_venir=true) avec l'activité de cette entreprise pour proposer des acteurs similaires qui, eux, exposent bientôt.
-4. Si plusieurs candidats à score élevé (fiches en doublon, ex. « X » et « X S.R.L »), traite-les comme la même entreprise et combine leurs salons, ou demande de préciser.
+« OÙ EXPOSE [ENTREPRISE] » (question sur l'empreinte salon d'une entreprise — passé ET à venir) :
+1. identifier_entreprise d'abord. Si aucun candidat, dis que l'entreprise n'est pas trouvée dans l'index et propose de reformuler ou de décrire son activité.
+2. Dès qu'un candidat plausible est trouvé — MÊME si expose_bientot=false — appelle TOUJOURS salons_d_une_entreprise avec seulement_a_venir=false, pour récupérer TOUT son historique (salons passés ET à venir).
+3. Présente son empreinte réelle, en distinguant clairement :
+   - éditions À VENIR (a_venir=true) : « expose à [salon] ([ville], [dates]), stand [n°] ».
+   - éditions PASSÉES (a_venir=false) : « a exposé à [salon] ([dates]), stand [n°] ».
+   Ne dis JAMAIS « n'expose sur aucun salon » quand l'entreprise a un historique : montre ce qu'elle a fait, avec les liens (/events/{slug}).
+4. Si l'entreprise n'a AUCUNE édition à venir : présente d'abord son historique passé, PUIS précise « pas d'édition à venir annoncée pour l'instant ». Tu peux, en complément et seulement si c'est utile, proposer des acteurs similaires qui exposent bientôt (rechercher_entreprises, seulement_a_venir=true) — mais l'entreprise demandée et son historique passent EN PREMIER.
+5. Fiches en doublon (« X » et « X S.R.L ») → même entreprise, combine leurs salons.
 
 RÉSOLUTION D'ENTREPRISE — deux cas à ne jamais confondre :
 - Si identifier_entreprise ne renvoie AUCUN candidat → l'entreprise est absente de l'index. Dis-le.
-- Si des candidats sont renvoyés mais qu'AUCUN n'a expose_bientot=true → l'entreprise EST bien dans l'index, elle n'expose simplement sur aucun salon à venir. NOMME-la (avec son lien), dis clairement « [Entreprise] est bien référencée mais n'expose sur aucun salon à venir », puis propose des voisins qui exposent (rechercher_entreprises).
+- Si des candidats sont renvoyés → l'entreprise EST dans l'index. NOMME-la (avec son lien) et présente son historique COMPLET via salons_d_une_entreprise (seulement_a_venir=false), passé inclus. Ne dis JAMAIS « n'expose sur aucun salon » sans avoir vérifié le passé. Une entreprise sans salon à venir a très probablement un historique : montre-le.
 - Ne dis JAMAIS « je ne trouve pas cette entreprise » quand un candidat plausible a été renvoyé — même s'il n'expose pas, même si le nom n'est pas exact (ex. « Trivec » → « Trivec by Caspeco »). Nomme le candidat le plus probable.
 
 PERTINENCE DES SALONS :
