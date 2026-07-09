@@ -261,7 +261,8 @@ const Home = () => {
             }}
           />
           <div className="relative max-w-6xl mx-auto px-6">
-            <Reveal className="section-rule-center max-w-[760px] mx-auto text-center mb-14">
+            <Reveal className="max-w-[760px] mx-auto text-center mb-14">
+              <div className="w-11 h-[3px] bg-accent rounded-full mx-auto mb-5" />
               <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">Le constat</p>
               <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
                 Un cercle vicieux menaçait tout l'écosystème
