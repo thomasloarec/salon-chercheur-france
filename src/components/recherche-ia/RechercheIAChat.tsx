@@ -385,7 +385,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
               placeholder={
                 hardWallActive
                   ? 'Débloquez de nouvelles recherches pour continuer…'
-                  : 'Décrivez votre besoin (secteur, produit, entreprise…)'
+                  : animatedPlaceholder
               }
               rows={1}
               disabled={asking || hardWallActive || !authReady}
