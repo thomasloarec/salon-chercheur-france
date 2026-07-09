@@ -21,7 +21,7 @@ interface NoveltiesSectionProps {
   isEventPast?: boolean;
 }
 
-export default function NoveltiesSection({ event, exhibitorCount }: NoveltiesSectionProps) {
+export default function NoveltiesSection({ event, exhibitorCount, isEventPast = false }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('awaited');
   const [showAll, setShowAll] = useState(false);
