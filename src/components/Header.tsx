@@ -232,7 +232,7 @@ const Header = () => {
                       onClick={() => setIsMenuOpen(false)}
                       className="block px-3 pt-2"
                     >
-                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                      <Button className="cta-button w-full bg-accent text-accent-foreground hover:bg-accent/90">
                         Essayer l'IA
                         <Sparkles className="ml-2 h-4 w-4" />
                       </Button>
