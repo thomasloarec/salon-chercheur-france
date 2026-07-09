@@ -597,13 +597,13 @@ const RadarMock = () => (
     <div className="bg-secondary/40 rounded-xl px-3.5 py-3 my-3.5 text-sm text-primary">
       <b>12 entreprises de votre CRM</b> exposent sur ce salon. Voici par quoi commencer.
     </div>
-    <div className="rounded-xl border border-border p-3.5 mb-3">
+    <div className="rounded-[13px] border border-border p-[15px] mb-[11px]">
       <div className="flex justify-between items-center gap-2.5 mb-0.5">
         <span className="font-bold text-primary">Adoria</span>
         <span className="text-[0.72rem] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">Client · renouvellement</span>
       </div>
       <p className="text-xs text-muted-foreground mb-2">Contrat à échéance dans 4 mois, sécuriser le renouvellement.</p>
-      <ul className="space-y-1">
+      <ul className="space-y-1.5">
         {['Où en est la roadmap module stocks 2026 ?', 'Le passage multi-sites est-il à l\u2019ordre du jour ?', 'Qui décide du budget cette année ?'].map((q, i) => (
           <li key={i} className="flex gap-2 text-xs text-foreground">
             <span className="text-accent font-bold shrink-0">{i + 1}.</span>
@@ -616,7 +616,7 @@ const RadarMock = () => (
       { name: 'Inpulse', chip: 'Prospect chaud', cls: 'bg-accent/15 text-accent', why: 'A ouvert vos 3 derniers emails, relance de vive voix.' },
       { name: 'HUBENCY', chip: 'À qualifier', cls: 'bg-muted text-muted-foreground', why: 'Nouveau sur votre marché, premier contact.' },
     ].map((s) => (
-      <div key={s.name} className="rounded-xl border border-border p-3.5 mb-3 opacity-60">
+      <div key={s.name} className="rounded-[13px] border border-border p-[15px] mb-[11px] opacity-60">
         <div className="flex justify-between items-center gap-2.5">
           <span className="font-bold text-primary">{s.name}</span>
           <span className={`text-[0.72rem] font-bold px-2 py-1 rounded-full ${s.cls}`}>{s.chip}</span>
