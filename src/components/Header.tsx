@@ -35,12 +35,12 @@ const Header = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const navLinkClass = (isActive: boolean) =>
-    `text-muted-foreground hover:text-accent transition-colors flex items-center space-x-1 ${
+    `text-sm text-muted-foreground hover:text-accent transition-colors flex items-center space-x-1 ${
       isActive ? 'text-accent font-medium' : ''
     }`;
 
   const mobileNavLinkClass = (isActive: boolean) =>
-    `block px-3 py-2 text-muted-foreground hover:text-accent transition-colors ${
+    `block px-3 py-2 text-sm text-muted-foreground hover:text-accent transition-colors ${
       isActive ? 'text-accent font-medium' : ''
     }`;
 
