@@ -274,27 +274,27 @@ const Home = () => {
             </Reveal>
 
             <Reveal className="max-w-5xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-4 md:gap-0">
-                {[
-                  { icon: Users, title: 'Les visiteurs', text: "Perdus dans une offre illisible, ils ne savent plus quel salon mérite le déplacement. Alors ils viennent moins." },
-                  { icon: Store, title: 'Les exposants', text: "Engager des milliers d'euros sans certitude de rencontrer leur public devient trop risqué. Alors ils investissent moins." },
-                  { icon: Building2, title: 'Les salons', text: "Moins de visiteurs qualifiés, moins d'exposants engagés : la promesse de faire se rencontrer un écosystème ne tient plus." },
-                ].map((c, i) => (
-                  <React.Fragment key={c.title}>
-                    <div className="rounded-2xl border border-primary-foreground/15 bg-primary-foreground/5 p-6 text-left">
+              <div className="flex flex-col md:flex-row items-stretch gap-4 md:gap-0">
+                {LOOP_CARDS.flatMap((c, i) => {
+                  const card = (
+                    <div key={c.title} className="flex-1 rounded-2xl border border-primary-foreground/15 bg-primary-foreground/5 p-6 text-left">
                       <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/20 text-accent mb-4">
                         <c.icon className="h-5 w-5" />
                       </div>
                       <h3 className="heading-display text-xl mb-2">{c.title}</h3>
                       <p className="text-sm text-primary-foreground/70 leading-relaxed">{c.text}</p>
                     </div>
-                    {i < 2 && (
-                      <div className="flex items-center justify-center text-primary-foreground/40 px-2 rotate-90 md:rotate-0">
+                  );
+                  if (i < LOOP_CARDS.length - 1) {
+                    return [
+                      card,
+                      <div key={`${c.title}-arrow`} className="flex items-center justify-center text-primary-foreground/40 px-2 rotate-90 md:rotate-0">
                         <ArrowRight className="h-6 w-6" />
-                      </div>
-                    )}
-                  </React.Fragment>
-                ))}
+                      </div>,
+                    ];
+                  }
+                  return [card];
+                })}
               </div>
             </Reveal>
 
