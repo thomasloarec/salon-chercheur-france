@@ -12,7 +12,7 @@ import StickyFiltersBar from '@/components/filters/StickyFiltersBar';
 import { SectorIconBar } from '@/components/filters/SectorIconBar';
 import { Loader2 } from 'lucide-react';
 import { sectorWithCanonicalSlug } from '@/utils/sectorMapping';
-import RechercheIASidebarTrigger from '@/components/recherche-ia/RechercheIASidebarTrigger';
+
 
 const Events = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -174,8 +174,6 @@ const Events = () => {
       
       <Footer />
 
-      {/* Recherche IA — déclencheur flottant + sidebar (n'affecte pas la grille) */}
-      <RechercheIASidebarTrigger />
     </div>
   );
 };
