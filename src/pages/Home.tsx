@@ -565,16 +565,16 @@ const ParcoursMock = () => {
             <div
               key={it.name}
               style={{ transitionDelay: `${150 + i * 180}ms` }}
-              className={`flex gap-3 items-center py-2.5 border-t border-border transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+              className={`flex gap-[13px] items-center py-[11px] border-t border-border transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+              <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
                 {it.n}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-primary text-sm">{it.name}</div>
                 <div className="text-xs text-muted-foreground">{it.loc}</div>
               </div>
-              <span className={`text-[0.73rem] font-bold px-2 py-1 rounded-md ${it.cls}`}>{it.obj}</span>
+              <span className={`text-[0.73rem] font-bold px-[9px] py-[3px] rounded-md ${it.cls}`}>{it.obj}</span>
             </div>
           ))}
         </div>
