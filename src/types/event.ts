@@ -26,6 +26,9 @@ export interface Event {
   code_postal?: string;
   visible?: boolean;
   slug?: string;
+  // Salon ownership / claim (Phase 2)
+  owner_user_id?: string | null;
+  verified_at?: string | null;
   sectors?: {
     id: string;
     name: string;

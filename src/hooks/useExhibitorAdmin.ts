@@ -120,3 +120,33 @@ export function useUserExhibitors() {
     enabled: !!user,
   });
 }
+
+export interface UserSalon {
+  id: string;
+  nom_event: string;
+  slug: string | null;
+  url_image: string | null;
+  verified_at: string | null;
+}
+
+export function useUserSalons() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['user-salons', user?.id],
+    queryFn: async (): Promise<UserSalon[]> => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, nom_event, slug, url_image, verified_at')
+        .eq('owner_user_id', user.id)
+        .eq('visible', true)
+        .eq('is_test', false);
+
+      if (error) throw error;
+      return (data ?? []) as UserSalon[];
+    },
+    enabled: !!user,
+  });
+}
