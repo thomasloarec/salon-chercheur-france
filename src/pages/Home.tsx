@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Search, ArrowRight, Sparkles, Route, Radar, Rocket, LayoutGrid,
-  Users, Store, Building2, AlertTriangle, Zap, MapPin, CalendarDays,
+  Search, ArrowRight, Sparkles, Users, Store, Building2, Info,
+  RefreshCw, Route, Radar, Rocket, Eye, MapPin, CalendarDays,
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -12,16 +12,9 @@ import EventCard from '@/components/EventCard';
 import { usePublicStats } from '@/hooks/usePublicStats';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
 
-/* ------------------------------------------------------------------ */
-/* Placeholder animé (typewriter) pour le champ de recherche du hero    */
-/* ------------------------------------------------------------------ */
-const TYPEWRITER_QUERIES = [
-  "Je cherche des fournisseurs d'emballage écoresponsable…",
-  'Où exposent mes concurrents en cosmétique bio ?',
-  'Sur quel salon rencontrer des directeurs achats agro ?',
-  'Quels salons couvrent déjà le marché de la foodtech ?',
-];
-
+/* ================================================================== */
+/* Utils : reduced motion, in-view, typewriter, count-up               */
+/* ================================================================== */
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -35,121 +28,98 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-function useTypewriterPlaceholder(active: boolean) {
-  const reduced = usePrefersReducedMotion();
-  const [text, setText] = useState(TYPEWRITER_QUERIES[0]);
-
-  useEffect(() => {
-    if (!active || reduced) {
-      setText(TYPEWRITER_QUERIES[0]);
-      return;
-    }
-    let phrase = 0;
-    let char = 0;
-    let deleting = false;
-    let timer: ReturnType<typeof setTimeout>;
-
-    const tick = () => {
-      const full = TYPEWRITER_QUERIES[phrase];
-      if (!deleting) {
-        char++;
-        setText(full.slice(0, char));
-        if (char >= full.length) {
-          deleting = true;
-          timer = setTimeout(tick, 1800);
-          return;
-        }
-        timer = setTimeout(tick, 45);
-      } else {
-        char--;
-        setText(full.slice(0, char));
-        if (char <= 0) {
-          deleting = false;
-          phrase = (phrase + 1) % TYPEWRITER_QUERIES.length;
-          timer = setTimeout(tick, 350);
-          return;
-        }
-        timer = setTimeout(tick, 25);
-      }
-    };
-    timer = setTimeout(tick, 600);
-    return () => clearTimeout(timer);
-  }, [active, reduced]);
-
-  return text;
-}
-
-/* ------------------------------------------------------------------ */
-/* Compteur count-up au scroll                                          */
-/* ------------------------------------------------------------------ */
-function CountUp({ target, format }: { target: number; format: (n: number) => string }) {
-  const reduced = usePrefersReducedMotion();
-  const [value, setValue] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
+function useInView<T extends HTMLElement>(threshold = 0.2) {
+  const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
-
-  // Détecte le passage dans la vue (une seule fois).
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) { setInView(true); obs.disconnect(); }
       },
-      { threshold: 0.4 }
+      { threshold }
     );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, inView] as const;
+}
 
-  // Anime dès que la cible est connue ET visible (les stats arrivent en async).
+const HERO_QUERIES = [
+  "Je cherche des fournisseurs d'emballage écoresponsable…",
+  'Où exposent mes concurrents en cosmétique bio ?',
+  'Sur quel salon rencontrer des directeurs achats agro ?',
+  'Quels salons couvrent déjà le marché de la foodtech ?',
+];
+
+function useTypewriter(queries: string[], active: boolean) {
+  const reduced = usePrefersReducedMotion();
+  const [text, setText] = useState(queries[0]);
+  useEffect(() => {
+    if (!active || reduced) { setText(queries[0]); return; }
+    let qi = 0, ci = 0, del = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const f = queries[qi];
+      if (!del) {
+        ci++;
+        setText(f.slice(0, ci));
+        if (ci === f.length) { del = true; timer = setTimeout(tick, 1500); return; }
+        timer = setTimeout(tick, 52);
+      } else {
+        ci--;
+        setText(f.slice(0, ci));
+        if (ci === 0) { del = false; qi = (qi + 1) % queries.length; timer = setTimeout(tick, 260); return; }
+        timer = setTimeout(tick, 26);
+      }
+    };
+    timer = setTimeout(tick, 400);
+    return () => clearTimeout(timer);
+  }, [active, reduced, queries]);
+  return text;
+}
+
+const floorTo = (n: number, step: number) => Math.floor(n / step) * step;
+const frThousands = (n: number) => n.toLocaleString('fr-FR');
+
+const LOOP_CARDS = [
+  { icon: Users, title: 'Les visiteurs', text: "Perdus dans une offre illisible, ils ne savent plus quel salon mérite le déplacement. Alors ils viennent moins." },
+  { icon: Store, title: 'Les exposants', text: "Engager des milliers d'euros sans certitude de rencontrer leur public devient trop risqué. Alors ils investissent moins." },
+  { icon: Building2, title: 'Les salons', text: "Moins de visiteurs qualifiés, moins d'exposants engagés : la promesse de faire se rencontrer un écosystème ne tient plus." },
+];
+
+function CountUp({ target }: { target: number }) {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInView<HTMLSpanElement>(0.4);
+  const [value, setValue] = useState(0);
   useEffect(() => {
     if (!inView || target <= 0) return;
     if (reduced) { setValue(target); return; }
-    const duration = 1600;
     const start = performance.now();
     let raf = 0;
     const step = (now: number) => {
-      const p = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(Math.floor(eased * target));
+      const p = Math.min((now - start) / 1300, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      setValue(Math.round(target * e));
       if (p < 1) raf = requestAnimationFrame(step);
       else setValue(target);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [inView, target, reduced]);
-
-  return <span ref={ref}>{format(value)}</span>;
+  return <span ref={ref}>{value > 0 ? `${frThousands(value)}+` : '0'}</span>;
 }
 
-const floorTo = (n: number, step: number) => Math.floor(n / step) * step;
-const frThousands = (n: number) => n.toLocaleString('fr-FR');
-
-/* ------------------------------------------------------------------ */
-/* Reveal au scroll                                                     */
-/* ------------------------------------------------------------------ */
-function Reveal({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+/* Révélation au scroll */
+function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const reduced = usePrefersReducedMotion();
-  const ref = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    if (reduced) { setShown(true); return; }
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setShown(true); obs.disconnect(); } },
-      { threshold: 0.15 }
-    );
-    obs.observe(node);
-    return () => obs.disconnect();
-  }, [reduced]);
+  const [ref, inView] = useInView<HTMLDivElement>(0.14);
+  const shown = reduced || inView;
   return (
     <div
       ref={ref}
+      style={{ transitionDelay: shown ? `${delay}ms` : '0ms' }}
       className={`transition-all duration-700 ease-out ${shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'} ${className}`}
     >
       {children}
@@ -157,9 +127,9 @@ function Reveal({ children, className = '' }: { children: React.ReactNode; class
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Page                                                                 */
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
+/* Page                                                                */
+/* ================================================================== */
 const Home = () => {
   const navigate = useNavigate();
   const { data: stats } = usePublicStats();
@@ -167,7 +137,7 @@ const Home = () => {
 
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
-  const placeholder = useTypewriterPlaceholder(!focused && query.length === 0);
+  const placeholder = useTypewriter(HERO_QUERIES, !focused && query.length === 0);
 
   const submitSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -176,8 +146,8 @@ const Home = () => {
     navigate(`/recherche-ia?q=${encodeURIComponent(value)}`);
   };
 
-  const salonsLabel = stats ? `${frThousands(floorTo(stats.salons, 50))}+` : '…';
-  const exposantsLabel = stats ? `${frThousands(floorTo(stats.exposants, 1000))}+` : '…';
+  const salonsTarget = stats ? floorTo(stats.salons, 50) : 0;
+  const exposantsTarget = stats ? floorTo(stats.exposants, 1000) : 0;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -194,27 +164,38 @@ const Home = () => {
 
       <main className="flex-1">
         {/* ============================= HERO ============================= */}
-        <section className="relative overflow-hidden bg-background">
-          <div className="max-w-4xl mx-auto px-6 pt-16 pb-14 md:pt-24 md:pb-20 text-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary text-xs font-semibold px-3 py-1 mb-6">
-              <Sparkles className="h-3.5 w-3.5 text-accent" />
-              Nouveau · Les salons professionnels, lus par l'IA
+        <section className="relative overflow-hidden text-center py-20 md:py-24">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{
+              background:
+                'radial-gradient(60% 55% at 50% 0%, hsl(var(--secondary) / 0.75) 0%, hsl(var(--secondary) / 0) 62%), radial-gradient(38% 40% at 84% 8%, hsl(var(--accent) / 0.10) 0%, hsl(var(--accent) / 0) 70%)',
+            }}
+          />
+          <div className="relative z-10 max-w-5xl mx-auto px-6">
+            <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-7">
+              <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
+                Nouveau
+              </span>
+              Les salons professionnels, lus par l'IA
             </span>
 
-            <h1 className="heading-display text-4xl md:text-6xl text-foreground">
+            <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-primary max-w-[17ch] mx-auto">
               Le bon salon.
               <span className="block text-accent">Les bonnes rencontres.</span>
             </h1>
 
-            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              L'information sur les salons est partout, donc introuvable. L'IA de Lotexpo lit
-              tout (salons, exposants, secteurs) et vous donne la réponse qui compte.
+            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-[56ch] mx-auto">
+              L'information sur les salons est{' '}
+              <b className="text-foreground font-semibold">partout, donc introuvable.</b>{' '}
+              L'IA de Lotexpo lit tout (salons, exposants, secteurs) et vous donne la réponse qui compte.
             </p>
 
-            {/* Champ de recherche */}
-            <form onSubmit={submitSearch} className="mt-8 max-w-2xl mx-auto">
-              <div className="flex items-center gap-2 rounded-2xl border border-border bg-background shadow-lg p-2 focus-within:border-accent transition-colors">
-                <Search className="ml-2 h-5 w-5 text-muted-foreground shrink-0" />
+            {/* Searchbar */}
+            <form onSubmit={submitSearch} className="max-w-[680px] mx-auto mt-9">
+              <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-border bg-background shadow-lg pl-5 pr-2 py-2 focus-within:border-accent transition-colors">
+                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
                 <input
                   type="text"
                   value={query}
@@ -223,154 +204,157 @@ const Home = () => {
                   onBlur={() => setFocused(false)}
                   placeholder={placeholder}
                   aria-label="Décrivez votre besoin"
-                  className="flex-1 bg-transparent border-0 outline-none text-foreground placeholder:text-muted-foreground text-base py-2.5 min-w-0"
+                  className="flex-1 min-w-0 bg-transparent border-0 outline-none text-foreground placeholder:text-foreground/70 text-base py-2.5"
                 />
                 <Button
                   type="submit"
-                  className="shrink-0 bg-accent text-accent-foreground hover:bg-accent/90 h-11 px-4"
+                  className="shrink-0 bg-accent text-accent-foreground hover:bg-accent/90 h-11 px-4 rounded-xl"
                 >
+                  <Sparkles className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Chercher avec l'IA</span>
-                  <ArrowRight className="h-4 w-4 sm:ml-2" />
                 </Button>
               </div>
+              <p className="text-sm text-muted-foreground mt-3.5 text-left px-0.5">
+                Acheteur, exposant, commercial ou organisateur, posez votre question comme à un humain.
+              </p>
             </form>
 
-            <div className="mt-5 flex items-center justify-center gap-3 text-sm text-muted-foreground">
-              <span>ou</span>
+            <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
+              <span className="text-sm text-muted-foreground">ou</span>
               <Link to="/salons">
-                <Button variant="ghost" className="text-primary hover:text-accent">
+                <Button variant="outline" className="rounded-xl">
                   Voir tous les salons
-                  <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </Link>
             </div>
           </div>
         </section>
 
-        {/* ============================= COMPTEURS ============================= */}
+        {/* ============================= COUNTERS ============================= */}
         <section className="border-y border-border bg-secondary/40">
-          <div className="max-w-5xl mx-auto px-6 py-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="heading-display text-4xl md:text-5xl text-primary">
-                  <CountUp target={stats ? floorTo(stats.salons, 50) : 0} format={(n) => `${frThousands(n)}+`} />
+          <div className="max-w-5xl mx-auto px-6 py-11 flex flex-col items-center">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent mb-6 text-center">
+              L'échelle qu'aucun humain ne peut lire à la main
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 w-full max-w-3xl">
+              {[
+                { node: <CountUp target={salonsTarget} />, lbl: 'salons professionnels indexés' },
+                { node: <CountUp target={exposantsTarget} />, lbl: 'fiches exposants lues et structurées par l\u2019IA' },
+                { node: <span className="text-2xl md:text-3xl">France entière</span>, lbl: 'tous secteurs confondus' },
+              ].map((c, i) => (
+                <div
+                  key={i}
+                  className={`text-center sm:relative ${i < 2 ? 'sm:after:content-[""] sm:after:absolute sm:after:-right-5 sm:after:top-[12%] sm:after:h-[76%] sm:after:w-px sm:after:bg-border' : ''}`}
+                >
+                  <div className="heading-display text-[clamp(2rem,3.4vw,2.9rem)] text-primary leading-none">
+                    {c.node}
+                  </div>
+                  <div className="mt-2.5 text-muted-foreground font-medium leading-snug">{c.lbl}</div>
                 </div>
-                <p className="mt-2 text-muted-foreground">salons professionnels indexés</p>
-              </div>
-              <div>
-                <div className="heading-display text-4xl md:text-5xl text-primary">
-                  <CountUp target={stats ? floorTo(stats.exposants, 1000) : 0} format={(n) => `${frThousands(n)}+`} />
-                </div>
-                <p className="mt-2 text-muted-foreground">fiches exposants lues et structurées par l'IA</p>
-              </div>
-              <div>
-                <div className="heading-display text-4xl md:text-5xl text-primary">France entière</div>
-                <p className="mt-2 text-muted-foreground">tous secteurs confondus</p>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ============================= PROBLÈME ============================= */}
-        <section className="bg-primary text-primary-foreground">
-          <div className="max-w-6xl mx-auto px-6 py-20">
-            <Reveal className="max-w-2xl mx-auto text-center">
-              <p className="text-accent font-semibold uppercase tracking-wide text-xs mb-3">
-                Le cercle vicieux
-              </p>
-              <h2 className="heading-display text-3xl md:text-4xl">
-                Chacun attend l'autre. Le cercle se resserre.
+        {/* ============================= PROBLEM ============================= */}
+        <section className="relative overflow-hidden bg-primary text-primary-foreground py-24">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(50% 45% at 80% 0%, hsl(var(--accent) / 0.14), transparent 60%), radial-gradient(45% 40% at 10% 100%, hsl(var(--accent) / 0.08), transparent 60%)',
+            }}
+          />
+          <div className="relative max-w-6xl mx-auto px-6">
+            <Reveal className="max-w-[760px] mx-auto text-center mb-14">
+              <div className="w-11 h-[3px] bg-accent rounded-full mx-auto mb-5" />
+              <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">Le constat</p>
+              <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
+                Un cercle vicieux menaçait tout l'écosystème
               </h2>
+              <p className="mt-4 text-lg text-primary-foreground/75 max-w-[60ch] mx-auto">
+                Le salon professionnel repose sur une promesse simple : réunir un marché entier au même
+                endroit. Cette promesse était en train de se gripper.
+              </p>
             </Reveal>
 
-            <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  icon: Users,
-                  title: 'Visiteurs',
-                  text: "Trop d'événements, trop peu d'infos comparables. On ne sait plus quel salon vaut le déplacement.",
-                },
-                {
-                  icon: Store,
-                  title: 'Exposants',
-                  text: 'Ils investissent sans visibilité sur le public réellement présent. Le ROI devient un pari.',
-                },
-                {
-                  icon: Building2,
-                  title: 'Salons',
-                  text: 'Ils peinent à prouver leur valeur. Moins de visiteurs qualifiés, moins d\u2019exposants convaincus.',
-                },
-              ].map((c, i) => (
-                <Reveal key={c.title} className="h-full" >
-                  <div
-                    className="h-full rounded-2xl border border-primary-foreground/15 bg-primary-foreground/5 p-6"
-                    style={{ transitionDelay: `${i * 80}ms` }}
-                  >
-                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/20 text-accent mb-4">
-                      <c.icon className="h-5 w-5" />
+            <Reveal className="max-w-5xl mx-auto">
+              <div className="flex flex-col md:flex-row items-stretch gap-4 md:gap-0">
+                {LOOP_CARDS.flatMap((c, i) => {
+                  const card = (
+                    <div key={c.title} className="flex-1 rounded-2xl border border-primary-foreground/15 bg-primary-foreground/5 p-6 text-left">
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/20 text-accent mb-4">
+                        <c.icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="heading-display text-xl mb-2">{c.title}</h3>
+                      <p className="text-sm text-primary-foreground/70 leading-relaxed">{c.text}</p>
                     </div>
-                    <h3 className="heading-display text-xl mb-2">{c.title}</h3>
-                    <p className="text-primary-foreground/75 text-sm leading-relaxed">{c.text}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-
-            {/* Palier */}
-            <Reveal className="mt-14 text-center">
-              <div className="inline-flex items-center gap-2 rounded-full bg-destructive/20 text-primary-foreground px-4 py-2 text-sm font-medium">
-                <AlertTriangle className="h-4 w-4 text-accent" />
-                Un écosystème <span className="italic text-accent">en danger</span>
+                  );
+                  if (i < LOOP_CARDS.length - 1) {
+                    return [
+                      card,
+                      <div key={`${c.title}-arrow`} className="flex items-center justify-center text-primary-foreground/40 px-2 rotate-90 md:rotate-0">
+                        <ArrowRight className="h-6 w-6" />
+                      </div>,
+                    ];
+                  }
+                  return [card];
+                })}
               </div>
             </Reveal>
 
-            {/* Bascule */}
-            <Reveal className="mt-10 max-w-2xl mx-auto text-center">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground mb-4">
-                <Zap className="h-6 w-6" />
+            <Reveal className="text-center mt-8">
+              <p className="text-primary-foreground/60">
+                <span className="text-accent font-semibold">↺</span> Moins de visiteurs → moins
+                d'exposants → salons affaiblis → moins de visiteurs.{' '}
+                <b className="text-accent font-semibold">Le cercle se referme.</b>
+              </p>
+            </Reveal>
+
+            <Reveal className="text-center mt-14">
+              <div className="heading-display text-[clamp(2rem,4.4vw,3.4rem)]">
+                Un écosystème <em className="not-italic text-accent italic">en danger.</em>
               </div>
-              <h3 className="heading-display text-2xl md:text-3xl">
-                C'est l'IA qui débloque l'issue.
-              </h3>
-              <p className="mt-3 text-primary-foreground/80">
-                Lotexpo lit l'ensemble du marché et redonne à chacun l'information qui manquait.
+              <p className="mt-6 text-lg text-primary-foreground/85">
+                Mais il existe une issue. Et c'est{' '}
+                <b className="font-bold">l'IA qui la débloque.</b>
               </p>
             </Reveal>
           </div>
         </section>
 
         {/* ============================= SOLUTION ============================= */}
-        <section className="bg-background">
-          <div className="max-w-6xl mx-auto px-6 py-20">
-            <Reveal className="max-w-2xl mx-auto text-center mb-16">
-              <p className="text-accent font-semibold uppercase tracking-wide text-xs mb-3">
-                La solution
-              </p>
-              <h2 className="heading-display text-3xl md:text-4xl text-foreground">
-                Une intelligence qui lit le marché à votre place
-              </h2>
-              <p className="mt-4 text-muted-foreground text-lg">
-                Cinq briques connectées pour transformer le brouillard des salons en décisions claires.
-              </p>
-            </Reveal>
+        <section className="bg-background pt-24 pb-10">
+          <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-14">
+            <div className="w-11 h-[3px] bg-accent rounded-full mx-auto mb-5" />
+            <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">La solution</p>
+            <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)] text-primary">
+              Rendre le marché lisible. Pour tout le monde.
+            </h2>
+            <p className="mt-4 text-lg text-foreground/70">
+              Lotexpo lit l'intégralité de l'écosystème, chaque salon, chaque exposant, chaque secteur,
+              pour transformer ce chaos en information actionnable.{' '}
+              <b className="text-primary font-semibold">
+                Le même moteur sert le visiteur, l'exposant, le commercial et l'organisateur.
+              </b>
+            </p>
+          </Reveal>
 
-            <div className="space-y-16 md:space-y-24">
-              {SOLUTION_BLOCKS.map((block, i) => (
-                <SolutionRow key={block.title} block={block} reversed={i % 2 === 1} />
-              ))}
-            </div>
+          <div className="flex flex-col">
+            {SOLUTION_BLOCKS.map((b, i) => (
+              <SolutionRow key={b.title} block={b} reversed={i % 2 === 1} />
+            ))}
           </div>
         </section>
 
         {/* ============================= PROCHAINS SALONS ============================= */}
-        <section className="bg-secondary/40 border-t border-border">
+        <section className="bg-secondary/30 border-t border-border">
           <div className="max-w-6xl mx-auto px-6 py-20">
             <div className="flex items-end justify-between gap-4 mb-10">
               <div>
-                <p className="text-accent font-semibold uppercase tracking-wide text-xs mb-2">
-                  Agenda
-                </p>
-                <h2 className="heading-display text-3xl md:text-4xl text-foreground">
+                <div className="section-rule" />
+                <h2 className="heading-display text-[clamp(1.8rem,3vw,2.6rem)] text-primary">
                   Prochains salons
                 </h2>
               </div>
@@ -383,9 +367,9 @@ const Home = () => {
             </div>
 
             {upcomingLoading ? (
-              <div className="grid gap-6 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-6 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 justify-items-center">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="rounded-2xl bg-background p-4 animate-pulse">
+                  <div key={i} className="w-full max-w-[272px] rounded-2xl bg-background p-4 animate-pulse">
                     <div className="h-44 bg-muted rounded-lg mb-4" />
                     <div className="h-4 bg-muted rounded mb-2" />
                     <div className="h-4 bg-muted rounded w-1/2" />
@@ -399,9 +383,7 @@ const Home = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-8">
-                Aucun salon à venir pour le moment.
-              </p>
+              <p className="text-muted-foreground text-center py-8">Aucun salon à venir pour le moment.</p>
             )}
 
             <div className="text-center mt-10 sm:hidden">
@@ -415,34 +397,35 @@ const Home = () => {
           </div>
         </section>
 
-        {/* ============================= CTA FINAL ============================= */}
-        <section className="bg-primary text-primary-foreground">
-          <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-            <Reveal>
-              <h2 className="heading-display text-3xl md:text-5xl">
-                Le salon redevient lisible.
-              </h2>
-              <p className="mt-4 text-primary-foreground/80 text-lg">
-                Posez votre question. L'IA lit tout et vous répond.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link to="/recherche-ia" className="w-full sm:w-auto">
-                  <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 h-12 px-6 text-base">
-                    Essayer la recherche IA
-                    <Sparkles className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link to="/salons" className="w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 px-6 text-base border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                  >
-                    Voir tous les salons
-                  </Button>
-                </Link>
-              </div>
-            </Reveal>
-          </div>
+        {/* ============================= FINAL CTA ============================= */}
+        <section
+          className="text-primary-foreground text-center py-24"
+          style={{ background: 'linear-gradient(160deg, hsl(var(--primary)), hsl(218 95% 14%))' }}
+        >
+          <Reveal className="max-w-3xl mx-auto px-6">
+            <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">Le salon redevient lisible.</h2>
+            <p className="mt-4 text-lg text-primary-foreground/80 max-w-[52ch] mx-auto">
+              Trouvez le vôtre, préparez-le, faites-le rayonner, quel que soit votre rôle dans
+              l'écosystème.
+            </p>
+            <div className="mt-9 flex items-center justify-center gap-4 flex-wrap">
+              <Link to="/recherche-ia">
+                <Button className="bg-background text-primary hover:bg-background/90 h-12 px-6 text-base rounded-xl">
+                  Essayer la recherche IA
+                  <Sparkles className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <span className="text-primary-foreground/60 text-sm">ou</span>
+              <Link to="/salons">
+                <Button
+                  variant="outline"
+                  className="h-12 px-6 text-base rounded-xl border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                >
+                  Voir tous les salons
+                </Button>
+              </Link>
+            </div>
+          </Reveal>
         </section>
       </main>
 
@@ -451,156 +434,342 @@ const Home = () => {
   );
 };
 
-/* ------------------------------------------------------------------ */
-/* Sous-blocs solution                                                  */
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
+/* Solution blocks                                                     */
+/* ================================================================== */
 interface SolutionBlock {
-  icon: React.ComponentType<{ className?: string }>;
-  eyebrow: string;
+  actor: string;
   title: string;
-  text: string;
-  cta: { label: string; to: string };
+  body: React.ReactNode;
+  ecoNote: string;
+  cta?: { label: string; to: string };
   visual: React.ReactNode;
 }
 
 const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: boolean }) => (
-  <Reveal>
-    <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center ${reversed ? 'md:[&>*:first-child]:order-2' : ''}`}>
-      <div>
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-accent mb-4">
-          <block.icon className="h-5 w-5" />
+  <Reveal className="w-full">
+    <div className="max-w-[1180px] mx-auto px-6 md:px-7 py-14 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
+      <div className={reversed ? 'md:order-2' : ''}>
+        <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary font-bold text-[0.78rem] uppercase tracking-[0.06em] px-3.5 py-1.5 mb-4">
+          {block.actor}
+        </span>
+        <h3 className="heading-display text-[clamp(1.7rem,3vw,2.4rem)] text-primary max-w-[15ch]">
+          {block.title}
+        </h3>
+        <p className="mt-4 text-lg text-foreground/70 max-w-[44ch]">{block.body}</p>
+        <div className="mt-5 flex gap-3 items-start bg-secondary/40 border-l-[3px] border-accent rounded-r-xl px-4 py-3 max-w-[46ch]">
+          <Info className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+          <p className="text-sm text-foreground/75">{block.ecoNote}</p>
         </div>
-        <p className="text-accent font-semibold uppercase tracking-wide text-xs mb-2">{block.eyebrow}</p>
-        <h3 className="heading-display text-2xl md:text-3xl text-foreground mb-3">{block.title}</h3>
-        <p className="text-muted-foreground text-base leading-relaxed mb-5">{block.text}</p>
-        <Link to={block.cta.to}>
-          <Button variant="outline" className="group">
+        {block.cta && (
+          <Link
+            to={block.cta.to}
+            className="group mt-6 inline-flex items-center gap-2 text-primary font-bold hover:text-accent transition-colors"
+          >
             {block.cta.label}
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Button>
-        </Link>
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        )}
       </div>
-      <div>{block.visual}</div>
+      <div className={reversed ? 'md:order-1' : ''}>{block.visual}</div>
     </div>
   </Reveal>
 );
 
-/* Visuels mock (brand-consistent, sans image externe) */
-const VisualCard = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-2xl border border-border bg-secondary/30 p-5 shadow-sm">{children}</div>
+/* Cadre mock générique */
+const Mock = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`rounded-[20px] border border-border bg-background shadow-[0_12px_34px_-14px_hsl(var(--primary)/0.22)] p-5 ${className}`}>
+    {children}
+  </div>
 );
 
-const SOLUTION_BLOCKS: SolutionBlock[] = [
-  {
-    icon: Sparkles,
-    eyebrow: 'Recherche IA',
-    title: 'Posez votre question, obtenez la réponse',
-    text: "En langage naturel : l'IA lit les salons, les exposants et les secteurs, puis vous donne la réponse qui compte — pas une liste de liens.",
-    cta: { label: 'Essayer la recherche IA', to: '/recherche-ia' },
-    visual: (
-      <VisualCard>
-        <div className="space-y-3">
-          <div className="flex justify-end">
-            <div className="rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-2 text-sm max-w-[80%]">
-              Où exposent mes concurrents en cosmétique bio ?
-            </div>
-          </div>
-          <div className="flex justify-start">
-            <div className="rounded-2xl rounded-bl-sm bg-background border border-border px-4 py-3 text-sm text-foreground max-w-[90%]">
-              3 salons concentrent l'offre : <span className="text-accent font-medium">Cosmetic 360</span>,
-              <span className="text-accent font-medium"> MakeUp in Paris</span> et
-              <span className="text-accent font-medium"> Natexpo</span>. Voici les exposants clés…
-            </div>
-          </div>
+/* ---- Block 1 : recherche ---- */
+const SearchMock = () => {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const results = [
+    { name: 'SIRHA', pct: 92, meta: 'Restauration & hôtellerie · 23-27 janv. · Lyon', tag: '142 exposants correspondent' },
+    { name: 'Food Hotel Tech', pct: 84, meta: 'Tech & digital pour la restauration · 10-11 mars · Paris', tag: '47 exposants correspondent' },
+    { name: 'Sandwich & Snack Show', pct: 78, meta: 'Restauration rapide & nomade · 19-20 mai · Paris', tag: '63 exposants correspondent' },
+  ];
+  return (
+    <Mock>
+      <div ref={ref}>
+        <div className="flex items-center gap-3 bg-secondary/40 border border-secondary rounded-xl px-4 py-3 mb-4">
+          <Search className="h-4 w-4 text-accent shrink-0" />
+          <span className="text-sm text-foreground truncate">
+            Je vends des logiciels de caisse pour restaurants
+          </span>
         </div>
-      </VisualCard>
-    ),
-  },
-  {
-    icon: Route,
-    eyebrow: 'Parcours IA',
-    title: 'Un parcours de visite optimisé',
-    text: "Selon vos objectifs, l'IA génère l'itinéraire : les bons stands, dans le bon ordre, pour ne rien manquer sur place.",
-    cta: { label: 'Générer mon parcours', to: '/recherche-ia' },
-    visual: (
-      <VisualCard>
-        <ol className="space-y-3">
-          {['Hall 1 · Stand A12 — Fournisseur emballage', 'Hall 2 · Stand C04 — Directeur achats agro', 'Hall 3 · Stand E21 — Solution foodtech'].map((s, i) => (
-            <li key={s} className="flex items-center gap-3 rounded-xl bg-background border border-border px-4 py-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-accent-foreground text-sm font-semibold shrink-0">{i + 1}</span>
-              <span className="text-sm text-foreground">{s}</span>
-            </li>
-          ))}
-        </ol>
-      </VisualCard>
-    ),
-  },
-  {
-    icon: Radar,
-    eyebrow: 'Radar CRM',
-    title: 'Vos comptes, repérés sur le terrain',
-    text: 'Importez votre CRM : Lotexpo croise vos comptes et prospects avec les listes d\u2019exposants et vous dit où les rencontrer.',
-    cta: { label: 'Découvrir Radar CRM', to: '/radar-crm' },
-    visual: (
-      <VisualCard>
-        <div className="space-y-2">
-          {[
-            { name: 'Acme Packaging', match: 'expose à Emballage 2026' },
-            { name: 'BioCosm SAS', match: 'expose à Natexpo' },
-            { name: 'FreshAgro', match: 'expose à SIAL Paris' },
-          ].map((r) => (
-            <div key={r.name} className="flex items-center justify-between rounded-xl bg-background border border-border px-4 py-2.5">
-              <span className="text-sm font-medium text-foreground">{r.name}</span>
-              <span className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5">
-                <Radar className="h-3 w-3" /> {r.match}
+        <p className="text-xs font-semibold text-muted-foreground mb-3.5 px-1">
+          <b className="text-primary">3 salons</b> correspondent à votre activité
+        </p>
+        <div className="space-y-3">
+          {results.map((r, i) => (
+            <div
+              key={r.name}
+              style={{ transitionDelay: `${260 + i * 200}ms` }}
+              className={`rounded-2xl border border-border bg-background px-4 py-3.5 transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+            >
+              <div className="flex justify-between items-baseline gap-3">
+                <span className="font-bold text-primary">{r.name}</span>
+                <span className="font-bold text-sm text-accent shrink-0">{r.pct}%</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{r.meta}</p>
+              <div className="h-1.5 bg-muted/60 rounded-full mt-3 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-accent/70 to-accent transition-[width] duration-[1100ms] ease-out"
+                  style={{ width: inView ? `${r.pct}%` : '0%', transitionDelay: `${400 + i * 200}ms` }}
+                />
+              </div>
+              <span className="inline-flex items-center mt-3 text-xs font-semibold text-primary bg-secondary rounded-full px-2.5 py-1">
+                {r.tag}
               </span>
             </div>
           ))}
         </div>
-      </VisualCard>
-    ),
-  },
-  {
-    icon: Rocket,
-    eyebrow: 'Nouveautés',
-    title: 'Les innovations, avant le salon',
-    text: 'Suivez les nouveautés produits annoncées par les exposants, secteur par secteur, pour préparer les bonnes rencontres.',
-    cta: { label: 'Voir les nouveautés', to: '/nouveautes' },
-    visual: (
-      <VisualCard>
-        <div className="grid grid-cols-2 gap-3">
-          {['Emballage recyclé', 'Cosmétique solide', 'Capteur IoT agro', 'App de commande'].map((n) => (
-            <div key={n} className="rounded-xl bg-background border border-border p-3">
-              <div className="flex items-center gap-1.5 text-accent text-xs font-medium mb-1.5">
-                <Rocket className="h-3.5 w-3.5" /> Nouveauté
+      </div>
+    </Mock>
+  );
+};
+
+/* ---- Block 2 : parcours ---- */
+const ParcoursMock = () => {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const items = [
+    { n: 1, name: 'Adoria', loc: 'Hall 3 · Stand C12', obj: 'Innovation', cls: 'bg-accent/15 text-accent' },
+    { n: 2, name: 'Inpulse', loc: 'Hall 3 · Stand C40', obj: 'Innovation', cls: 'bg-accent/15 text-accent' },
+    { n: 3, name: 'SwiftPay', loc: 'Hall 5 · Stand E08', obj: 'Paiement', cls: 'bg-blue-50 text-blue-700' },
+    { n: 4, name: 'BioNature', loc: 'Hall 1 · Stand A22', obj: 'Bio', cls: 'bg-emerald-50 text-emerald-700' },
+  ];
+  return (
+    <Mock>
+      <div ref={ref}>
+        <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-border">
+          <span className="font-bold text-primary">Votre parcours · SIRHA</span>
+          <span className="text-xs font-bold text-accent-foreground bg-accent rounded-full px-2.5 py-1 whitespace-nowrap">
+            3 200 exposants
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2 items-center mt-3.5">
+          <span className="text-[0.72rem] uppercase tracking-wide font-bold text-muted-foreground">Objectifs</span>
+          {['Voir les innovations', 'Solutions de paiement', 'Fournisseurs bio'].map((g) => (
+            <span key={g} className="text-xs font-semibold text-primary bg-secondary/50 border border-secondary rounded-full px-2.5 py-1">
+              {g}
+            </span>
+          ))}
+        </div>
+        <div className="mt-2">
+          {items.map((it, i) => (
+            <div
+              key={it.name}
+              style={{ transitionDelay: `${150 + i * 180}ms` }}
+              className={`flex gap-3 items-center py-2.5 border-t border-border transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                {it.n}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-primary text-sm">{it.name}</div>
+                <div className="text-xs text-muted-foreground">{it.loc}</div>
               </div>
-              <p className="text-sm text-foreground leading-snug">{n}</p>
+              <span className={`text-[0.73rem] font-bold px-2 py-1 rounded-md ${it.cls}`}>{it.obj}</span>
             </div>
           ))}
         </div>
-      </VisualCard>
+        <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex items-center gap-2">
+          <Route className="h-4 w-4 text-accent shrink-0" />
+          Itinéraire regroupé par hall, vous ne revenez jamais sur vos pas.
+        </div>
+      </div>
+    </Mock>
+  );
+};
+
+/* ---- Block 3 : radar CRM ---- */
+const RadarMock = () => (
+  <Mock>
+    <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-border mb-1">
+      <span className="font-bold text-primary">Votre mission · SIRHA 2026</span>
+      <span className="text-xs font-bold text-primary-foreground bg-primary rounded-full px-2.5 py-1">12 comptes</span>
+    </div>
+    <div className="bg-secondary/40 rounded-xl px-3.5 py-3 my-3.5 text-sm text-primary">
+      <b>12 entreprises de votre CRM</b> exposent sur ce salon. Voici par quoi commencer.
+    </div>
+    <div className="rounded-xl border border-border p-3.5 mb-3">
+      <div className="flex justify-between items-center gap-2.5 mb-0.5">
+        <span className="font-bold text-primary">Adoria</span>
+        <span className="text-[0.72rem] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">Client · renouvellement</span>
+      </div>
+      <p className="text-xs text-muted-foreground mb-2">Contrat à échéance dans 4 mois, sécuriser le renouvellement.</p>
+      <ul className="space-y-1">
+        {['Où en est la roadmap module stocks 2026 ?', 'Le passage multi-sites est-il à l\u2019ordre du jour ?', 'Qui décide du budget cette année ?'].map((q, i) => (
+          <li key={i} className="flex gap-2 text-xs text-foreground">
+            <span className="text-accent font-bold shrink-0">{i + 1}.</span>
+            {q}
+          </li>
+        ))}
+      </ul>
+    </div>
+    {[
+      { name: 'Inpulse', chip: 'Prospect chaud', cls: 'bg-accent/15 text-accent', why: 'A ouvert vos 3 derniers emails, relance de vive voix.' },
+      { name: 'HUBENCY', chip: 'À qualifier', cls: 'bg-muted text-muted-foreground', why: 'Nouveau sur votre marché, premier contact.' },
+    ].map((s) => (
+      <div key={s.name} className="rounded-xl border border-border p-3.5 mb-3 opacity-60">
+        <div className="flex justify-between items-center gap-2.5">
+          <span className="font-bold text-primary">{s.name}</span>
+          <span className={`text-[0.72rem] font-bold px-2 py-1 rounded-full ${s.cls}`}>{s.chip}</span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-0.5">{s.why}</p>
+      </div>
+    ))}
+  </Mock>
+);
+
+/* ---- Block 4 : nouveautés ---- */
+const NoveltyMock = () => (
+  <Mock className="max-w-[420px] mx-auto relative">
+    <span className="absolute top-3.5 left-3.5 z-10 bg-accent text-accent-foreground text-[0.72rem] font-bold uppercase tracking-wide px-3 py-1 rounded-full shadow-md">
+      Nouveauté
+    </span>
+    <div
+      className="h-[150px] rounded-xl flex items-center justify-center text-accent mb-4 overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, hsl(var(--accent) / 0.25), hsl(var(--secondary)))' }}
+    >
+      <Rocket className="h-12 w-12 opacity-50" />
+    </div>
+    <div className="flex items-center gap-2.5 mb-2.5">
+      <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-extrabold text-sm">A</div>
+      <div>
+        <div className="font-bold text-primary text-sm leading-tight">Adoria</div>
+        <div className="text-xs text-muted-foreground">présentée à Food Hotel Tech</div>
+      </div>
+    </div>
+    <div className="font-bold text-foreground mb-3">Borne de commande autonome nouvelle génération</div>
+    <div className="flex flex-wrap gap-2 mb-3.5">
+      {['Démo live sur stand', '-30% temps de commande', 'Intégration caisse native'].map((c) => (
+        <span key={c} className="text-xs font-semibold text-primary bg-secondary/40 border border-secondary rounded-full px-2.5 py-1">
+          {c}
+        </span>
+      ))}
+    </div>
+    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 border-t border-border pt-3">
+      <Eye className="h-4 w-4" />
+      Repérée par 34 visiteurs · 8 prévoient de passer
+    </div>
+  </Mock>
+);
+
+/* ---- Block 5 : moteur / structuration ---- */
+const StructMock = () => (
+  <Mock>
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+      <div className="flex-1 rounded-xl border border-border p-4">
+        <div className="text-[0.72rem] font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Fiche brute</div>
+        <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground leading-relaxed font-mono">
+          « Ns proposons sol. digitales p/ restau : caisse tactile, cmd table, paiement… + de 200 clients franchisés en FR &amp; BENELUX. »
+        </div>
+      </div>
+      <div className="flex flex-col items-center justify-center gap-1 text-accent text-[0.7rem] font-bold shrink-0">
+        <ArrowRight className="h-6 w-6 rotate-90 sm:rotate-0" />
+        <span className="whitespace-nowrap">L'IA lit</span>
+      </div>
+      <div className="flex-1 rounded-xl border border-border p-4">
+        <div className="text-[0.72rem] font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Fiche structurée</div>
+        {[
+          { k: 'Secteur', tags: ['Restauration tech'] },
+          { k: 'Produits', tags: ['Caisse', 'Commande', 'Paiement'] },
+          { k: 'Cible', tags: ['Franchises', 'Restaurateurs'] },
+        ].map((f) => (
+          <div key={f.k} className="mb-3 last:mb-0">
+            <div className="text-[0.72rem] font-bold uppercase tracking-wide text-primary mb-1.5">{f.k}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {f.tags.map((t) => (
+                <span key={t} className="text-xs font-semibold text-primary bg-secondary rounded-md px-2.5 py-1">{t}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </Mock>
+);
+
+const SOLUTION_BLOCKS: SolutionBlock[] = [
+  {
+    actor: 'Pour les visiteurs & acheteurs',
+    title: "Le bon salon, même celui auquel vous n'auriez jamais pensé",
+    body: (
+      <>
+        Décrivez votre besoin en une phrase. L'IA a lu tous les salons et tous les exposants, et fait
+        remonter ceux où se trouve vraiment votre marché,{' '}
+        <strong className="text-primary font-semibold">classés par pertinence réelle.</strong>
+      </>
     ),
+    ecoNote:
+      'Côté exposants et organisateurs : être enfin trouvé par les bonnes personnes, sans se battre pour le référencement.',
+    cta: { label: 'Essayer la recherche IA', to: '/recherche-ia' },
+    visual: <SearchMock />,
   },
   {
-    icon: LayoutGrid,
-    eyebrow: 'Moteur & fiches',
-    title: 'Chaque salon, chaque exposant : structuré',
-    text: 'Un moteur et des fiches lisibles, à jour : dates, lieu, secteurs, exposants. La donnée brute rendue exploitable.',
-    cta: { label: 'Explorer les salons', to: '/salons' },
-    visual: (
-      <VisualCard>
-        <div className="rounded-xl bg-background border border-border p-4">
-          <div className="h-24 rounded-lg bg-secondary/60 mb-3" />
-          <p className="heading-display text-base text-foreground mb-1">SIAL Paris 2026</p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-            <CalendarDays className="h-3.5 w-3.5" /> 17 – 21 octobre 2026
-          </p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5" /> Paris Nord Villepinte
-          </p>
-        </div>
-      </VisualCard>
+    actor: 'Pour les visiteurs · le jour J',
+    title: 'Ne tournez plus en rond dans les allées',
+    body: (
+      <>
+        Indiquez vos objectifs : voir les innovations, sourcer un produit précis, rencontrer un profil.
+        L'IA établit votre <strong className="text-primary font-semibold">liste d'exposants prioritaires</strong>{' '}
+        et l'ordonne stand par stand. Sur un salon de plusieurs milliers d'exposants, vous savez
+        exactement où aller, et à qui parler.
+      </>
     ),
+    ecoNote:
+      "Même sur un salon géant, chaque exposant pertinent est vu, et chaque visite devient une vraie rencontre, pas un hasard d'allée.",
+    cta: { label: 'Générer mon parcours', to: '/recherche-ia' },
+    visual: <ParcoursMock />,
+  },
+  {
+    actor: 'Pour les commerciaux',
+    title: 'Arrivez avec un plan de visite, pas une liste de stands',
+    body: (
+      <>
+        Croisez votre fichier clients avec les exposants d'un salon. L'IA génère votre mission :{' '}
+        <strong className="text-primary font-semibold">qui rencontrer, pourquoi, et les 3 questions à poser</strong>{' '}
+        sur chaque stand.
+      </>
+    ),
+    ecoNote:
+      'Un visiteur préparé, c\u2019est un visiteur qui achète, exactement la valeur qui fait vivre exposants et salons.',
+    cta: { label: 'Découvrir Radar CRM', to: '/radar-crm' },
+    visual: <RadarMock />,
+  },
+  {
+    actor: 'Pour les exposants',
+    title: "Soyez découvert avant même l'ouverture des portes",
+    body: (
+      <>
+        Publiez vos nouveautés : un lancement, une innovation, une démo.{' '}
+        <strong className="text-primary font-semibold">L'IA les fait remonter aux visiteurs concernés</strong>,
+        qui planifient leur passage sur votre stand. Votre visibilité commence des semaines avant le salon.
+      </>
+    ),
+    ecoNote:
+      'Pour les visiteurs : savoir quoi voir et pourquoi. Pour les salons : un contenu vivant qui donne envie de venir.',
+    cta: { label: 'Publier une nouveauté', to: '/publier-nouveaute' },
+    visual: <NoveltyMock />,
+  },
+  {
+    actor: 'Le moteur',
+    title: 'Des milliers de fiches, lues et remises au clair, en continu',
+    body: (
+      <>
+        En coulisses, l'IA lit et structure sans relâche les fiches exposants : descriptions, produits,
+        secteurs.{' '}
+        <strong className="text-primary font-semibold">C'est ce travail invisible qui rend chaque recherche juste</strong>,
+        et que personne ne pourrait faire à la main.
+      </>
+    ),
+    ecoNote:
+      'La fondation invisible qui fait tenir tout le reste, et le fossé qui se creuse fiche après fiche.',
+    visual: <StructMock />,
   },
 ];
 
