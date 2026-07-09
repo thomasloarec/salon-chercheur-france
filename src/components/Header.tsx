@@ -122,18 +122,16 @@ const Header = () => {
             {isRealUser ? (
               <UserMenu />
             ) : (
-              <>
-                <Link to="/auth?tab=signin">
-                  <Button variant="ghost">Se connecter</Button>
-                </Link>
-                <Link to="/recherche-ia">
-                  <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    Essayer l'IA
-                    <Sparkles className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </>
+              <Link to="/auth?tab=signin">
+                <Button variant="ghost">Se connecter</Button>
+              </Link>
             )}
+            <Link to="/recherche-ia">
+              <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+                Essayer l'IA
+                <Sparkles className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
