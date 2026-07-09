@@ -32,6 +32,7 @@ import ProfileSkeleton from '@/components/profile/ProfileSkeleton';
 import EmptyProfileState from '@/components/profile/EmptyProfileState';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import MyExhibitorsSection from '@/components/profile/MyExhibitorsSection';
+import MySalonsSection from '@/components/profile/MySalonsSection';
 import MyPendingClaimsSection from '@/components/profile/MyPendingClaimsSection';
 
 const Profile = () => {
@@ -267,6 +268,9 @@ const Profile = () => {
 
             {/* Bloc Entreprises que je gère */}
             <MyExhibitorsSection />
+
+            {/* Bloc Salons que je gère */}
+            <MySalonsSection />
 
             {/* Bloc Demandes de gestion en cours (claims pending) */}
             <MyPendingClaimsSection />
