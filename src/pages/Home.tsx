@@ -83,6 +83,12 @@ function useTypewriter(queries: string[], active: boolean) {
 const floorTo = (n: number, step: number) => Math.floor(n / step) * step;
 const frThousands = (n: number) => n.toLocaleString('fr-FR');
 
+const LOOP_CARDS = [
+  { icon: Users, title: 'Les visiteurs', text: "Perdus dans une offre illisible, ils ne savent plus quel salon mérite le déplacement. Alors ils viennent moins." },
+  { icon: Store, title: 'Les exposants', text: "Engager des milliers d'euros sans certitude de rencontrer leur public devient trop risqué. Alors ils investissent moins." },
+  { icon: Building2, title: 'Les salons', text: "Moins de visiteurs qualifiés, moins d'exposants engagés : la promesse de faire se rencontrer un écosystème ne tient plus." },
+];
+
 function CountUp({ target }: { target: number }) {
   const reduced = usePrefersReducedMotion();
   const [ref, inView] = useInView<HTMLSpanElement>(0.4);
