@@ -370,7 +370,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
           </div>
           <p className="mt-2 text-center text-xs text-muted-foreground">
             Besoin d'explorer par filtres ?{' '}
-            <Link to="/" className="text-accent hover:underline font-medium">
+            <Link to="/salons" className="text-accent hover:underline font-medium">
               Utilisez l'annuaire des salons
             </Link>
           </p>
