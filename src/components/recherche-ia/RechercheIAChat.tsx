@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Sparkles, ArrowRight, Lock } from 'lucide-react';
+import { Loader2, Send, ArrowRight, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import AnswerMarkdown from '@/components/recherche-ia/AnswerMarkdown';
 import SignupWallDialog from '@/components/recherche-ia/SignupWallDialog';
+import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
 
 type Role = 'user' | 'assistant';
 interface ChatMessage {
@@ -26,8 +27,50 @@ const EXAMPLES = [
   'À quels salons aller pour voir des logiciels de gestion pour la restauration ?',
   'Sur quel salon exposer si je fais du logiciel resto-tech ?',
   'Où expose IDELINK ?',
-  "Quels salons pour l'emballage écologique ?",
+  "Quels salons pour l'emballage écoresponsable ?",
 ];
+
+/** Respecte prefers-reduced-motion. */
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = () => setReduced(mq.matches);
+    mq.addEventListener?.('change', handler);
+    return () => mq.removeEventListener?.('change', handler);
+  }, []);
+  return reduced;
+}
+
+/** Effet de frappe cyclant une liste de phrases (repris de la Home). */
+function useTypewriter(queries: string[], active: boolean) {
+  const reduced = usePrefersReducedMotion();
+  const [text, setText] = useState(queries[0]);
+  useEffect(() => {
+    if (!active || reduced) { setText(queries[0]); return; }
+    let qi = 0, ci = 0, del = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const f = queries[qi];
+      if (!del) {
+        ci++;
+        setText(f.slice(0, ci));
+        if (ci === f.length) { del = true; timer = setTimeout(tick, 1500); return; }
+        timer = setTimeout(tick, 52);
+      } else {
+        ci--;
+        setText(f.slice(0, ci));
+        if (ci === 0) { del = false; qi = (qi + 1) % queries.length; timer = setTimeout(tick, 260); return; }
+        timer = setTimeout(tick, 26);
+      }
+    };
+    timer = setTimeout(tick, 400);
+    return () => clearTimeout(timer);
+  }, [active, reduced, queries]);
+  return text;
+}
 
 interface RechercheIAChatProps {
   /**
@@ -111,6 +154,9 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
 
   const hasStarted = messages.length > 0;
   const hardWallActive = wall?.hard === true;
+
+  // Placeholder animé (typewriter) : actif tant que le champ est vide et non bloqué.
+  const animatedPlaceholder = useTypewriter(EXAMPLES, !hardWallActive && input.length === 0);
 
   const buildHistory = () =>
     messages.slice(-10).map((m) => ({ role: m.role, content: m.content }));
@@ -258,36 +304,23 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
                   : 'text-3xl md:text-5xl'
               }`}
             >
-              L'IA lit. Vous décidez.
+              Posez votre question.
+              <span className="block text-accent">
+                L'IA recherche parmi tous les salons B2B de France.
+              </span>
             </Heading>
             {!hasStarted && (
               <p className={`text-muted-foreground mt-4 max-w-2xl ${isSidebar ? 'text-sm' : 'text-base md:text-lg'}`}>
-                Le marché des salons est illisible. Décrivez votre besoin en une phrase,
-                l'assistant repère les bons salons à venir et les exposants qui comptent.
+                Le marché des salons est illisible. L'IA de Lotexpo a lu tous les salons et
+                leurs exposants : décrivez ce que vous cherchez en une phrase, elle vous dit
+                où aller et à qui parler.
               </p>
             )}
           </section>
         )}
 
-        {/* Écran d'accueil : puces d'exemple */}
-        {!hasStarted && (
-          <div className={`grid gap-3 ${isSidebar ? 'grid-cols-1' : 'sm:grid-cols-2'}`}>
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                type="button"
-                onClick={() => send(ex)}
-                disabled={asking || !authReady}
-                className="group text-left rounded-xl border border-border bg-secondary/40 hover:bg-secondary hover:border-accent/50 transition-colors p-4 disabled:opacity-60"
-              >
-                <span className="flex items-start gap-3">
-                  <Sparkles className="h-4 w-4 mt-0.5 text-accent shrink-0" />
-                  <span className="text-sm text-foreground">{ex}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Écran d'accueil : démo « L'IA en action » */}
+        {!hasStarted && <RechercheIAShowcase />}
 
         {/* Conversation */}
         {hasStarted && (
@@ -352,7 +385,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
               placeholder={
                 hardWallActive
                   ? 'Débloquez de nouvelles recherches pour continuer…'
-                  : 'Décrivez votre besoin (secteur, produit, entreprise…)'
+                  : animatedPlaceholder
               }
               rows={1}
               disabled={asking || hardWallActive || !authReady}
