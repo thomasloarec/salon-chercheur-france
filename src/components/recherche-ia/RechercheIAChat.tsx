@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import AnswerMarkdown from '@/components/recherche-ia/AnswerMarkdown';
 import SignupWallDialog from '@/components/recherche-ia/SignupWallDialog';
+import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
 
 type Role = 'user' | 'assistant';
 interface ChatMessage {
@@ -26,8 +27,50 @@ const EXAMPLES = [
   'À quels salons aller pour voir des logiciels de gestion pour la restauration ?',
   'Sur quel salon exposer si je fais du logiciel resto-tech ?',
   'Où expose IDELINK ?',
-  "Quels salons pour l'emballage écologique ?",
+  "Quels salons pour l'emballage écoresponsable ?",
 ];
+
+/** Respecte prefers-reduced-motion. */
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = () => setReduced(mq.matches);
+    mq.addEventListener?.('change', handler);
+    return () => mq.removeEventListener?.('change', handler);
+  }, []);
+  return reduced;
+}
+
+/** Effet de frappe cyclant une liste de phrases (repris de la Home). */
+function useTypewriter(queries: string[], active: boolean) {
+  const reduced = usePrefersReducedMotion();
+  const [text, setText] = useState(queries[0]);
+  useEffect(() => {
+    if (!active || reduced) { setText(queries[0]); return; }
+    let qi = 0, ci = 0, del = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const f = queries[qi];
+      if (!del) {
+        ci++;
+        setText(f.slice(0, ci));
+        if (ci === f.length) { del = true; timer = setTimeout(tick, 1500); return; }
+        timer = setTimeout(tick, 52);
+      } else {
+        ci--;
+        setText(f.slice(0, ci));
+        if (ci === 0) { del = false; qi = (qi + 1) % queries.length; timer = setTimeout(tick, 260); return; }
+        timer = setTimeout(tick, 26);
+      }
+    };
+    timer = setTimeout(tick, 400);
+    return () => clearTimeout(timer);
+  }, [active, reduced, queries]);
+  return text;
+}
 
 interface RechercheIAChatProps {
   /**
