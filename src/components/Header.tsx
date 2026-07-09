@@ -2,13 +2,26 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, HelpCircle, LogOut, Radar, Sparkles } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, LogOut, Radar, Sparkles, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
 import UserMenu from './UserMenu';
 import { USER_MENU_ITEMS } from '@/config/userMenuItems';
+import {
+  NavigationMenu,
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
+} from '@/components/ui/navigation-menu';
 import logoLotexpo from '@/assets/logo-lotexpo.png';
+
+const FEATURE_ITEMS = [
+  { to: '/recherche-ia', label: 'Recherche IA', icon: Sparkles, description: 'Trouvez le bon salon avec l’IA' },
+  { to: '/radar-crm', label: 'Radar CRM', icon: Radar, description: 'Suivez vos comptes sur les salons' },
+  { to: '/nouveautes', label: 'Nouveautés', icon: Calendar, description: 'Les dernières innovations exposées' },
+];
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,49 +55,46 @@ const Header = () => {
 
           {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
-            <NavLink 
-              to="/" 
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="h-auto bg-transparent px-0 py-0 text-muted-foreground hover:text-accent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent data-[state=open]:text-accent font-normal">
+                    Fonctionnalités
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[320px] gap-1 p-2">
+                      {FEATURE_ITEMS.map((item) => (
+                        <li key={item.to}>
+                          <Link
+                            to={item.to}
+                            className="flex items-start gap-3 rounded-md p-3 hover:bg-accent/10 transition-colors"
+                          >
+                            <item.icon className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+                            <span className="flex flex-col">
+                              <span className="text-sm font-medium text-foreground">{item.label}</span>
+                              <span className="text-xs text-muted-foreground">{item.description}</span>
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+            <NavLink
+              to="/salons"
               className={({ isActive }) => navLinkClass(isActive)}
             >
               <Search className="h-4 w-4" />
               <span>Salons</span>
             </NavLink>
-            <NavLink 
-              to="/recherche-ia" 
-              className={({ isActive }) => navLinkClass(isActive)}
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Recherche IA</span>
-              <Badge variant="secondary" className="ml-1 text-[10px] uppercase">Beta</Badge>
-            </NavLink>
-            <NavLink 
-              to="/nouveautes" 
-              className={({ isActive }) => navLinkClass(isActive)}
-            >
-              <Calendar className="h-4 w-4" />
-              <span>Nouveautés</span>
-            </NavLink>
-            <NavLink 
-              to="/radar-crm" 
-              className={({ isActive }) => navLinkClass(isActive)}
-            >
-              <Radar className="h-4 w-4" />
-              <span>Radar CRM</span>
-              <Badge variant="secondary" className="ml-1 text-[10px] uppercase">Beta</Badge>
-            </NavLink>
-            <NavLink 
-              to="/exposants" 
+            <NavLink
+              to="/exposants"
               className={({ isActive }) => navLinkClass(isActive)}
             >
               <Users className="h-4 w-4" />
               <span>Exposants</span>
-            </NavLink>
-            <NavLink 
-              to="/comment-ca-marche" 
-              className={({ isActive }) => navLinkClass(isActive)}
-            >
-              <HelpCircle className="h-4 w-4" />
-              <span>Comment ça marche</span>
             </NavLink>
             {session && isAdmin && (
               <NavLink
@@ -116,8 +126,11 @@ const Header = () => {
                 <Link to="/auth?tab=signin">
                   <Button variant="ghost">Se connecter</Button>
                 </Link>
-                <Link to="/auth?tab=signup">
-                  <Button>S'inscrire</Button>
+                <Link to="/recherche-ia">
+                  <Button>
+                    Essayer l'IA
+                    <Sparkles className="ml-2 h-4 w-4" />
+                  </Button>
                 </Link>
               </>
             )}
@@ -135,39 +148,28 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-border/60">
+              <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Fonctionnalités
+              </p>
+              {FEATURE_ITEMS.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) => `${mobileNavLinkClass(isActive)} pl-6`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </span>
+                </NavLink>
+              ))}
               <NavLink
-                to="/"
+                to="/salons"
                 className={({ isActive }) => mobileNavLinkClass(isActive)}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Salons
-              </NavLink>
-              <NavLink
-                to="/recherche-ia"
-                className={({ isActive }) => mobileNavLinkClass(isActive)}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span className="inline-flex items-center gap-2">
-                  Recherche IA
-                  <Badge variant="secondary" className="text-[10px] uppercase">Beta</Badge>
-                </span>
-              </NavLink>
-              <NavLink
-                to="/nouveautes"
-                className={({ isActive }) => mobileNavLinkClass(isActive)}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Nouveautés
-              </NavLink>
-              <NavLink
-                to="/radar-crm"
-                className={({ isActive }) => mobileNavLinkClass(isActive)}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span className="inline-flex items-center gap-2">
-                  Radar CRM
-                  <Badge variant="secondary" className="text-[10px] uppercase">Beta</Badge>
-                </span>
               </NavLink>
               <NavLink
                 to="/exposants"
@@ -175,13 +177,6 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Exposants
-              </NavLink>
-              <NavLink
-                to="/comment-ca-marche"
-                className={({ isActive }) => mobileNavLinkClass(isActive)}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Comment ça marche
               </NavLink>
               {session && isAdmin && (
                 <NavLink
@@ -244,10 +239,13 @@ const Header = () => {
                       <Button variant="ghost" className="w-full">Se connecter</Button>
                     </Link>
                     <Link
-                      to="/auth?tab=signup"
+                      to="/recherche-ia"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Button className="w-full">S'inscrire</Button>
+                      <Button className="w-full">
+                        Essayer l'IA
+                        <Sparkles className="ml-2 h-4 w-4" />
+                      </Button>
                     </Link>
                   </div>
                 )}
