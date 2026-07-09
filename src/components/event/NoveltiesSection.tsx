@@ -18,9 +18,10 @@ const INITIAL_VISIBLE = 4;
 interface NoveltiesSectionProps {
   event: Event;
   exhibitorCount?: number;
+  isEventPast?: boolean;
 }
 
-export default function NoveltiesSection({ event, exhibitorCount }: NoveltiesSectionProps) {
+export default function NoveltiesSection({ event, exhibitorCount, isEventPast = false }: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('awaited');
   const [showAll, setShowAll] = useState(false);
@@ -142,6 +143,12 @@ export default function NoveltiesSection({ event, exhibitorCount }: NoveltiesSec
 
   // ÉTAT A — Aucune nouveauté
   if (!error && total === 0) {
+    // Pour les événements terminés, ne pas inciter à publier : la création
+    // de nouveautés est interdite après la fin du salon.
+    if (isEventPast) {
+      return null;
+    }
+
     if (isPreLaunch) {
       return (
         <>

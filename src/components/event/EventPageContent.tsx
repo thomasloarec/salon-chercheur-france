@@ -253,7 +253,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               <div className="col-span-12 lg:col-span-8 space-y-8">
                 {/* B. Nouveautés — bloc principal, design inchangé */}
                 <section id="nouveautes">
-                  <NoveltiesSection event={event} exhibitorCount={exhibitorCount} />
+                  <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
                 </section>
 
                 {/* C. Exposants — déplacés sous les Nouveautés, en pleine largeur */}
