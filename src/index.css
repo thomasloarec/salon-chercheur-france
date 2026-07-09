@@ -137,6 +137,16 @@
     line-height: 1.15;
     letter-spacing: -0.01em;
   }
+
+  /* CTA principal : arrondi xl + ombre noire subtile pour créer de l'épaisseur */
+  .cta-button {
+    @apply rounded-xl transition-all duration-200;
+    box-shadow: 0 4px 14px -4px hsl(0 0% 0% / 0.2);
+  }
+
+  .cta-button:hover {
+    box-shadow: 0 6px 18px -4px hsl(0 0% 0% / 0.3);
+  }
 }
 
 /* Custom animations for smooth interactions */
