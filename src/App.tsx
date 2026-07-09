@@ -115,7 +115,6 @@ function App() {
                 <Routes>
                 <Route path="/" element={<Home />} />
               <Route path="/salons" element={<Events />} />
-              <Route path="/comment-ca-marche" element={<HowItWorks />} />
               <Route path="/organisateurs" element={<Organisateurs />} />
               <Route path="/events/:slug" element={<EventPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
