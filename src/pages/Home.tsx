@@ -565,7 +565,7 @@ const ParcoursMock = () => {
         <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-border">
           <span className="font-bold text-primary">Votre parcours · SIRHA</span>
           <span className="text-xs font-bold text-accent-foreground bg-accent rounded-full px-2.5 py-1 whitespace-nowrap">
-            3 200 exposants
+            196 exposants
           </span>
         </div>
         <div className="flex flex-wrap gap-2 items-center mt-3.5">
