@@ -190,6 +190,18 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
     toast({ title: 'Vous pouvez reprendre vos recherches ✓' });
   };
 
+  // Déclenchement automatique de la question initiale (param `?q=` depuis la home).
+  // Une seule fois, dès que la session anonyme/utilisateur est prête.
+  useEffect(() => {
+    if (autoSent.current) return;
+    const q = initialQuery?.trim();
+    if (!q || !session || asking) return;
+    autoSent.current = true;
+    setInput(q);
+    send(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery, session]);
+
   const handlePaidIntent = async () => {
     setPaidIntentSent(true);
     try {
