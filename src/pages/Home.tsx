@@ -140,7 +140,7 @@ function Reveal({ children, className = '', delay = 0 }: { children: React.React
 const Home = () => {
   const navigate = useNavigate();
   const { data: stats } = usePublicStats();
-  const { data: upcoming, isLoading: upcomingLoading } = useUpcomingEvents(8);
+  const { data: upcoming, isLoading: upcomingLoading } = useUpcomingEvents(10);
 
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
