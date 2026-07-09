@@ -11,10 +11,10 @@ const RechercheIA = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Helmet>
-        <title>Recherche IA — Trouvez vos salons | Lotexpo</title>
+        <title>Recherche IA — Posez votre question | Lotexpo</title>
         <meta
           name="description"
-          content="Décrivez votre besoin, l'assistant IA de Lotexpo trouve les bons salons professionnels et exposants à visiter. L'IA lit. Vous décidez."
+          content="Posez votre question : l'assistant IA de Lotexpo cherche parmi tous les salons B2B de France et leurs exposants les réponses qui comptent."
         />
         <link rel="canonical" href="https://lotexpo.com/recherche-ia" />
       </Helmet>
