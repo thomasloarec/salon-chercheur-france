@@ -267,8 +267,8 @@ const Home = () => {
             }}
           />
           <div className="relative max-w-6xl mx-auto px-6">
-            <Reveal className="max-w-[760px] mx-auto text-center mb-14">
-              <div className="w-11 h-[3px] bg-accent rounded-full mx-auto mb-5" />
+            <Reveal className="max-w-[760px] mx-auto text-center mb-[60px]">
+              <div className="w-[46px] h-[3px] bg-accent rounded-full mx-auto mb-5" />
               <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">Le constat</p>
               <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
                 Un cercle vicieux menaçait tout l'écosystème
@@ -326,8 +326,8 @@ const Home = () => {
 
         {/* ============================= SOLUTION ============================= */}
         <section className="bg-background pt-24 pb-10">
-          <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-14">
-            <div className="w-11 h-[3px] bg-accent rounded-full mx-auto mb-5" />
+          <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-[60px]">
+            <div className="w-[46px] h-[3px] bg-accent rounded-full mx-auto mb-5" />
             <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">La solution</p>
             <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)] text-primary">
               Rendre le marché lisible. Pour tout le monde.
