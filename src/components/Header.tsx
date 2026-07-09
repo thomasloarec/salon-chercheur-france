@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, LogOut, Radar, Sparkles, ChevronDown } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, LogOut, Radar, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
