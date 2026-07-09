@@ -32,12 +32,11 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4 text-primary-foreground">Navigation</h4>
             <ul className="space-y-2">
-              <li><Link to="/" className="text-primary-foreground/70 hover:text-accent transition-colors">Salons</Link></li>
+              <li><Link to="/salons" className="text-primary-foreground/70 hover:text-accent transition-colors">Salons</Link></li>
               <li><Link to="/salons-professionnels-2026" className="text-primary-foreground/70 hover:text-accent transition-colors">Salons professionnels 2026</Link></li>
               <li><Link to="/nouveautes" className="text-primary-foreground/70 hover:text-accent transition-colors">Nouveautés</Link></li>
               <li><Link to="/exposants" className="text-primary-foreground/70 hover:text-accent transition-colors">Exposants</Link></li>
-              <li><Link to="/radar-crm" className="text-primary-foreground/70 hover:text-accent transition-colors">Radar CRM <span className="text-[10px] uppercase ml-1 text-accent">Beta</span></Link></li>
-              <li><Link to="/comment-ca-marche" className="text-primary-foreground/70 hover:text-accent transition-colors">Comment ça marche</Link></li>
+              <li><Link to="/radar-crm" className="text-primary-foreground/70 hover:text-accent transition-colors">Radar CRM</Link></li>
               <li><Link to="/organisateurs" className="text-primary-foreground/70 hover:text-accent transition-colors">Organisateurs de salons</Link></li>
               <li><Link to="/blog" className="text-primary-foreground/70 hover:text-accent transition-colors">Blog</Link></li>
             </ul>
