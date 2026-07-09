@@ -226,7 +226,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             <EventPageHeader event={event} />
 
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
-            {!isEventPast && <ClaimSalonBanner event={event} />}
+            <ClaimSalonBanner event={event} />
 
             {/* Indicateurs utiles — uniquement événements à venir */}
             {!isEventPast && (
