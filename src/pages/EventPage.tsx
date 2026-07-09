@@ -160,6 +160,8 @@ const EventPage = () => {
           code_postal: eventData.code_postal,
           visible: eventData.visible,
           slug: eventData.slug,
+          owner_user_id: eventData.owner_user_id ?? null,
+          verified_at: eventData.verified_at ?? null,
           sectors: [],
           is_favorite: isFavorite,
           // SEO enrichment fields
