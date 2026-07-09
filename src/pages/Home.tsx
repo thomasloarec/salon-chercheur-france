@@ -448,18 +448,19 @@ interface SolutionBlock {
 
 const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: boolean }) => (
   <Reveal className="w-full">
-    <div className="max-w-[1180px] mx-auto px-6 md:px-7 py-14 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-      <div className={reversed ? 'md:order-2' : ''}>
-        <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary font-bold text-[0.78rem] uppercase tracking-[0.06em] px-3.5 py-1.5 mb-4">
+    <div className="max-w-[1180px] mx-auto px-7 py-14 grid grid-cols-1 lg:grid-cols-2 gap-y-[38px] lg:gap-y-0 lg:gap-x-[74px] items-center">
+      {/* Texte : toujours en premier dans le DOM (mobile => au-dessus partout) */}
+      <div className={reversed ? 'lg:order-last' : ''}>
+        <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary font-bold text-[0.78rem] uppercase tracking-[0.06em] px-[13px] py-[5px] mb-4">
           {block.actor}
         </span>
-        <h3 className="heading-display text-[clamp(1.7rem,3vw,2.4rem)] text-primary max-w-[15ch]">
+        <h3 className="heading-display font-bold text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.12] text-primary max-w-[15ch]">
           {block.title}
         </h3>
-        <p className="mt-4 text-lg text-foreground/70 max-w-[44ch]">{block.body}</p>
-        <div className="mt-5 flex gap-3 items-start bg-secondary/40 border-l-[3px] border-accent rounded-r-xl px-4 py-3 max-w-[46ch]">
-          <Info className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-          <p className="text-sm text-foreground/75">{block.ecoNote}</p>
+        <p className="mt-[18px] text-[1.08rem] leading-[1.65] text-foreground/70 max-w-[44ch]">{block.body}</p>
+        <div className="mt-5 flex gap-[11px] items-start bg-secondary/25 border-l-[3px] border-accent rounded-r-[10px] px-4 py-[13px] max-w-[46ch]">
+          <Info className="h-[18px] w-[18px] text-accent shrink-0 mt-0.5" />
+          <p className="text-[0.96rem] leading-relaxed text-foreground/75">{block.ecoNote}</p>
         </div>
         {block.cta && (
           <Link
@@ -471,7 +472,8 @@ const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: bool
           </Link>
         )}
       </div>
-      <div className={reversed ? 'md:order-1' : ''}>{block.visual}</div>
+      {/* Visuel : après le texte dans le DOM ; passe à gauche en desktop pour les blocs pairs */}
+      <div className={reversed ? 'lg:order-first' : ''}>{block.visual}</div>
     </div>
   </Reveal>
 );
