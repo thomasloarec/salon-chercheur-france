@@ -52,7 +52,7 @@ const Auth = () => {
   }, [inviteToken]);
 
   useEffect(() => {
-    if (user) {
+    if (user && user.is_anonymous !== true) {
       navigate(safeRedirect || '/', { replace: true });
     }
   }, [user, navigate, safeRedirect]);
