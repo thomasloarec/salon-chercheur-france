@@ -296,7 +296,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             : 'text-3xl md:text-5xl'
         }`}
       >
-        Posez votre question.
+        Posez vos questions.
         <span className="block text-accent">
           L'IA recherche parmi tous les salons B2B de France.
         </span>

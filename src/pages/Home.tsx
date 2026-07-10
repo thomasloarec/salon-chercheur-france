@@ -189,8 +189,8 @@ const Home = () => {
             </span>
 
             <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-primary max-w-[17ch] mx-auto">
-              Le bon salon.
-              <span className="block text-accent">Les bonnes rencontres.</span>
+              Posez vos questions.
+              <span className="block text-accent">L'IA recherche parmi tous les salons B2B de France.</span>
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-[56ch] mx-auto">
