@@ -25,15 +25,13 @@ const FEATURE_ITEMS = [
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, session, signOut } = useAuth();
+  const { user, session, signOut, isRealUser } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { data: adminCounts } = useAdminPendingCounts();
   const adminPendingTotal =
     (adminCounts?.novelties ?? 0) +
     (adminCounts?.claims ?? 0) +
     (adminCounts?.organisateurs ?? 0);
-  // Un utilisateur anonyme (session Recherche IA) ne doit pas apparaître comme connecté.
-  const isRealUser = !!user && user.is_anonymous !== true;
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 

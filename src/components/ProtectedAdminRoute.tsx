@@ -9,7 +9,7 @@ interface ProtectedAdminRouteProps {
 }
 
 const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
-  const { user, loading: authLoading } = useAuth();
+  const { isRealUser, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
@@ -27,7 +27,7 @@ const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
 
   React.useEffect(() => {
     const checkAdminRole = async () => {
-      if (user) {
+      if (isRealUser) {
         setLoading(true);
         const { data, error } = await supabase
           .rpc('is_admin');
@@ -43,7 +43,7 @@ const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
     };
     
     checkAdminRole();
-  }, [user]);
+  }, [isRealUser]);
 
   // Show loading state while checking admin permissions
   if (loading) {
@@ -57,7 +57,7 @@ const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!isRealUser || !isAdmin) {
     // Redirect non-admin users to login page
     return <Navigate to="/auth" replace />;
   }

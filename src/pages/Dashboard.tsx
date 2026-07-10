@@ -53,7 +53,7 @@ interface NoveltyStats {
 }
 
 export default function Dashboard() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, isRealUser, loading: authLoading } = useAuth()
   const { toast } = useToast()
   
   const [loading, setLoading] = useState(false)
@@ -75,10 +75,10 @@ export default function Dashboard() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
 
   useEffect(() => {
-    if (user) {
+    if (isRealUser) {
       loadDashboardData()
     }
-  }, [user])
+  }, [isRealUser])
 
   const loadDashboardData = async () => {
     if (!user) return

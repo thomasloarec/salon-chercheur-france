@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isRealUser: boolean;
   signUp: (email: string, password: string, redirectPath?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
@@ -231,10 +232,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const isRealUser = !!user && user.is_anonymous !== true;
+
   const value = {
     user,
     session,
     loading,
+    isRealUser,
     signUp,
     signIn,
     signOut,
