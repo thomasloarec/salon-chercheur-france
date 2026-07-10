@@ -23,11 +23,13 @@ import EventRadarCrmWidget from '@/components/event/EventRadarCrmWidget';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import PrepareVisitWizard from '@/components/event/PrepareVisitWizard';
+import OrganizerEventEditSheet from '@/components/event/OrganizerEventEditSheet';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Eye, Sparkles, Check, ChevronDown, Route, Database, Clock, UserCheck, ArrowRight } from 'lucide-react';
+import { Eye, Sparkles, Check, ChevronDown, Route, Database, Clock, UserCheck, ArrowRight, Settings } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 
 interface EventPageContentProps {
@@ -44,11 +46,15 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   onEventDeleted
 }) => {
   const { isAdmin } = useIsAdmin();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
   const [prepareVisitOpen, setPrepareVisitOpen] = useState(false);
+  const [organizerEditOpen, setOrganizerEditOpen] = useState(false);
   const [seriesEventIds, setSeriesEventIds] = useState<string[]>([]);
+
+  const isOwner = !!user && !!event.owner_user_id && event.owner_user_id === user.id;
 
   const handleSeriesIds = useCallback((ids: string[]) => {
     setSeriesEventIds(ids);
@@ -214,6 +220,17 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             <section className="flex items-center justify-between">
               <div></div>
               <div className="flex items-center gap-2">
+                {isOwner && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrganizerEditOpen(true)}
+                    className="gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Gérer mon salon
+                  </Button>
+                )}
                 <EventAdminMenu
                   event={event}
                   isAdmin={isAdmin}
@@ -391,6 +408,15 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
         event={event}
         exhibitorCount={exhibitorCount}
       />
+
+      {/* Sidebar d'édition organisateur (propriétaire uniquement) */}
+      {isOwner && (
+        <OrganizerEventEditSheet
+          event={event}
+          open={organizerEditOpen}
+          onOpenChange={setOrganizerEditOpen}
+        />
+      )}
     </>
   );
 };

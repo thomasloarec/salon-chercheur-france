@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,40 @@ interface ClaimRow {
   requester_name: string | null;
 }
 
+interface ChangeRequestRow {
+  id: string;
+  status: string;
+  created_at: string;
+  requester_user_id: string;
+  requester_name: string | null;
+  changed_fields: string[];
+  proposed_changes: Record<string, any>;
+  previous_values: Record<string, any>;
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  nom_event: 'Nom',
+  date_debut: 'Date de début',
+  date_fin: 'Date de fin',
+  secteur: 'Secteur',
+  affluence: 'Nombre de visiteurs',
+  tarif: 'Tarif',
+  url_image: 'Photo',
+  description_event: 'Description',
+};
+
+const formatValue = (field: string, value: any): string => {
+  if (value === null || value === undefined || value === '') return '—';
+  if (field === 'secteur') {
+    return Array.isArray(value) ? value.join(', ') || '—' : String(value);
+  }
+  if ((field === 'date_debut' || field === 'date_fin') && typeof value === 'string') {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? value : d.toLocaleDateString('fr-FR');
+  }
+  return String(value);
+};
+
 const statusMeta: Record<string, { label: string; className: string }> = {
   pending: { label: 'En attente', className: 'bg-amber-100 text-amber-800 border-amber-300' },
   approved: { label: 'Approuvée', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
@@ -33,6 +68,7 @@ const statusMeta: Record<string, { label: string; className: string }> = {
 const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-salon-detail', salonId],
@@ -86,7 +122,40 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
         requester_name: profilesById[c.requester_user_id] ?? null,
       }));
 
-      return { event, ownerName, claims };
+      // Demandes de modification en attente
+      const { data: changesData } = await supabase
+        .from('event_change_requests')
+        .select('id, status, created_at, requester_user_id, changed_fields, proposed_changes, previous_values')
+        .eq('event_id', salonId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      const changeUserIds = [...new Set((changesData || []).map((c) => c.requester_user_id))];
+      let changeProfilesById: Record<string, string> = { ...profilesById };
+      const missingIds = changeUserIds.filter((id) => !(id in changeProfilesById));
+      if (missingIds.length) {
+        const { data: cp } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', missingIds);
+        (cp || []).forEach((p) => {
+          changeProfilesById[p.user_id] =
+            [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || '—';
+        });
+      }
+
+      const changeRequests: ChangeRequestRow[] = (changesData || []).map((c) => ({
+        id: c.id,
+        status: c.status,
+        created_at: c.created_at,
+        requester_user_id: c.requester_user_id,
+        requester_name: changeProfilesById[c.requester_user_id] ?? null,
+        changed_fields: (c.changed_fields as string[]) || [],
+        proposed_changes: (c.proposed_changes as Record<string, any>) || {},
+        previous_values: (c.previous_values as Record<string, any>) || {},
+      }));
+
+      return { event, ownerName, claims, changeRequests };
     },
   });
 
@@ -108,6 +177,41 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
       queryClient.invalidateQueries({ queryKey: ['admin-salon-detail', salonId] });
       queryClient.invalidateQueries({ queryKey: ['admin-salons'] });
       queryClient.invalidateQueries({ queryKey: ['admin-event-claims'] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Erreur',
+        description: err?.message || 'Impossible de traiter la demande.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const changeMutation = useMutation({
+    mutationFn: async ({
+      requestId,
+      action,
+      note,
+    }: {
+      requestId: string;
+      action: 'approve' | 'reject';
+      note?: string;
+    }) => {
+      const { error } = await supabase.functions.invoke('event-change-manage', {
+        body: { action, request_id: requestId, ...(note ? { note } : {}) },
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, { action }) => {
+      toast({
+        title: action === 'approve' ? 'Modifications appliquées' : 'Modifications refusées',
+        description:
+          action === 'approve'
+            ? 'La fiche du salon a été mise à jour.'
+            : 'La demande de modification a été refusée.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-salon-detail', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons'] });
     },
     onError: (err: any) => {
       toast({
@@ -249,6 +353,134 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <PencilLine className="h-4 w-4" />
+                Modifications proposées
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.changeRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Aucune modification en attente pour ce salon.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {data.changeRequests.map((cr) => (
+                    <div key={cr.id} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <p className="font-medium text-sm">{cr.requester_name || '—'}</p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                            En attente
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(cr.created_at).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {cr.changed_fields.map((field) => {
+                          const before = cr.previous_values?.[field];
+                          const after = cr.proposed_changes?.[field];
+                          const label = FIELD_LABELS[field] ?? field;
+
+                          if (field === 'url_image') {
+                            return (
+                              <div key={field} className="space-y-1.5">
+                                <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-center">
+                                    {before ? (
+                                      <img src={before} alt="Avant" className="h-24 w-20 rounded object-cover border bg-white" />
+                                    ) : (
+                                      <div className="h-24 w-20 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground">—</div>
+                                    )}
+                                    <span className="text-[10px] text-muted-foreground">Avant</span>
+                                  </div>
+                                  <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <div className="text-center">
+                                    {after ? (
+                                      <img src={after} alt="Après" className="h-24 w-20 rounded object-cover border bg-white" />
+                                    ) : (
+                                      <div className="h-24 w-20 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground">—</div>
+                                    )}
+                                    <span className="text-[10px] font-medium text-foreground">Après</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          if (field === 'description_event') {
+                            return (
+                              <div key={field} className="space-y-1.5">
+                                <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                                <div className="grid gap-2">
+                                  <div className="rounded border bg-muted/40 p-2 text-xs text-muted-foreground">
+                                    <span className="block text-[10px] uppercase tracking-wide mb-1">Avant</span>
+                                    {formatValue(field, before)}
+                                  </div>
+                                  <div className="rounded border border-primary/30 bg-primary/5 p-2 text-xs text-foreground">
+                                    <span className="block text-[10px] uppercase tracking-wide mb-1 text-primary">Après</span>
+                                    {formatValue(field, after)}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={field} className="text-sm">
+                              <span className="text-xs font-medium text-muted-foreground">{label} : </span>
+                              <span className="text-muted-foreground line-through">{formatValue(field, before)}</span>
+                              <ArrowRight className="inline h-3.5 w-3.5 mx-1 text-muted-foreground" />
+                              <span className="font-medium text-foreground">{formatValue(field, after)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <Textarea
+                        placeholder="Note (optionnelle, transmise en cas de refus)"
+                        value={notes[cr.id] ?? ''}
+                        onChange={(e) => setNotes((prev) => ({ ...prev, [cr.id]: e.target.value }))}
+                        rows={2}
+                        className="text-sm"
+                      />
+
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => changeMutation.mutate({ requestId: cr.id, action: 'approve' })}
+                          disabled={changeMutation.isPending}
+                          className="flex items-center gap-1"
+                        >
+                          <Check className="h-4 w-4" />
+                          Valider
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            changeMutation.mutate({ requestId: cr.id, action: 'reject', note: notes[cr.id]?.trim() || undefined })
+                          }
+                          disabled={changeMutation.isPending}
+                          className="flex items-center gap-1"
+                        >
+                          <X className="h-4 w-4" />
+                          Refuser
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
