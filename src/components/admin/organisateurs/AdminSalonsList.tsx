@@ -203,6 +203,11 @@ const AdminSalonsList = ({ onSelectSalon }: Props) => {
                       Demande en attente
                     </Badge>
                   )}
+                  {s.has_pending_change && (
+                    <Badge variant="outline" className="text-xs bg-sky-100 text-sky-800 border-sky-300">
+                      Modification en attente
+                    </Badge>
+                  )}
                   <ExternalLink className="h-4 w-4 text-muted-foreground" />
                 </div>
               </button>
