@@ -1214,6 +1214,8 @@ export type Database = {
           seo_generated_at: string | null
           seo_generated_from_hash: string | null
           seo_last_checked_at: string | null
+          seo_quality_report: Json | null
+          seo_quality_score: number | null
           seo_source_hash: string | null
           slug: string | null
           status_event: string | null
@@ -1271,6 +1273,8 @@ export type Database = {
           seo_generated_at?: string | null
           seo_generated_from_hash?: string | null
           seo_last_checked_at?: string | null
+          seo_quality_report?: Json | null
+          seo_quality_score?: number | null
           seo_source_hash?: string | null
           slug?: string | null
           status_event?: string | null
@@ -1328,6 +1332,8 @@ export type Database = {
           seo_generated_at?: string | null
           seo_generated_from_hash?: string | null
           seo_last_checked_at?: string | null
+          seo_quality_report?: Json | null
+          seo_quality_score?: number | null
           seo_source_hash?: string | null
           slug?: string | null
           status_event?: string | null
