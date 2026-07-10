@@ -61,7 +61,10 @@ const Header = () => {
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="h-auto bg-transparent px-0 py-0 text-sm text-muted-foreground hover:text-accent hover:bg-transparent focus:bg-transparent focus:text-accent data-[state=open]:bg-transparent data-[state=open]:text-accent font-normal">
+                  <NavigationMenuTrigger
+                    type="button"
+                    className="h-auto bg-transparent px-0 py-0 text-sm text-muted-foreground hover:text-accent hover:bg-transparent focus:bg-transparent focus:text-accent data-[state=open]:bg-transparent data-[state=open]:text-accent font-normal"
+                  >
                     Fonctionnalités
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
@@ -126,11 +129,14 @@ const Header = () => {
               <UserMenu />
             ) : (
               <Link to="/auth?tab=signin">
-                <Button variant="ghost">Se connecter</Button>
+                <Button variant="ghost" type="button">Se connecter</Button>
               </Link>
             )}
             <Link to="/recherche-ia">
-              <Button className="rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button
+                type="button"
+                className="rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90"
+              >
                 Essayer l'IA
                 <Sparkles className="ml-2 h-4 w-4" />
               </Button>
@@ -139,7 +145,7 @@ const Header = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <Button variant="ghost" size="sm" onClick={toggleMenu}>
+            <Button variant="ghost" size="sm" type="button" onClick={toggleMenu}>
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
@@ -222,6 +228,7 @@ const Header = () => {
                       </NavLink>
                     ))}
                     <button
+                      type="button"
                       onClick={() => { setIsMenuOpen(false); signOut(); }}
                       className="block w-full text-left px-3 py-2 pl-6 text-muted-foreground hover:text-destructive transition-colors"
                     >
@@ -235,7 +242,10 @@ const Header = () => {
                       onClick={() => setIsMenuOpen(false)}
                       className="block px-3 pt-2"
                     >
-                      <Button className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90">
+                      <Button
+                        type="button"
+                        className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90"
+                      >
                         Essayer l'IA
                         <Sparkles className="ml-2 h-4 w-4" />
                       </Button>
@@ -247,13 +257,16 @@ const Header = () => {
                       to="/auth?tab=signin"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Button variant="ghost" className="w-full">Se connecter</Button>
+                      <Button variant="ghost" className="w-full" type="button">Se connecter</Button>
                     </Link>
                     <Link
                       to="/recherche-ia"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Button className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90">
+                      <Button
+                        type="button"
+                        className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90"
+                      >
                         Essayer l'IA
                         <Sparkles className="ml-2 h-4 w-4" />
                       </Button>
