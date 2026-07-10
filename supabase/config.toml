@@ -185,3 +185,11 @@ verify_jwt = false
 # (admin_approve_event_claim / admin_reject_event_claim) et la vérification
 # du rôle admin est faite en code.
 verify_jwt = false
+
+[functions.event-change-manage]
+# Point d'entrée public (verify_jwt=false) : l'authentification est gérée
+# manuellement dans la fonction via supabaseUser.auth.getUser() sur le header
+# Authorization. Les mutations sensibles passent par les RPC service_role
+# (admin_apply_event_change / admin_reject_event_change) et la vérification
+# du rôle admin est faite en code.
+verify_jwt = false
