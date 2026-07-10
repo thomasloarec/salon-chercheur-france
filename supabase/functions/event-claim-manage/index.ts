@@ -24,7 +24,7 @@ const corsHeaders = {
 // Destinataire des alertes admin (Resend via send.lotexpo.com)
 const ADMIN_NOTIFICATION_EMAIL = 'admin@lotexpo.com'
 // Route admin qui listera les demandes de revendication salon (construite en Phase 3)
-const ADMIN_CLAIMS_URL = 'https://lotexpo.com/admin/events/claims'
+const ADMIN_CLAIMS_URL = 'https://lotexpo.com/admin/organisateurs'
 
 function escapeHtml(input: string): string {
   return input
@@ -122,7 +122,7 @@ async function notifyAdminsInApp(admin: any, params: { eventName: string; reques
       title: 'Nouvelle revendication de salon',
       message: `${params.requesterName} demande à revendiquer la page du salon ${params.eventName}.`,
       icon: '📥',
-      link_url: '/admin/events/claims',
+      link_url: '/admin/organisateurs',
       read: false,
     }))
     const { error: insErr } = await admin.from('notifications').insert(rows)
