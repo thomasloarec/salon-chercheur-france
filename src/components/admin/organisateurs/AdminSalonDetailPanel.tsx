@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,40 @@ interface ClaimRow {
   requester_name: string | null;
 }
 
+interface ChangeRequestRow {
+  id: string;
+  status: string;
+  created_at: string;
+  requester_user_id: string;
+  requester_name: string | null;
+  changed_fields: string[];
+  proposed_changes: Record<string, any>;
+  previous_values: Record<string, any>;
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  nom_event: 'Nom',
+  date_debut: 'Date de début',
+  date_fin: 'Date de fin',
+  secteur: 'Secteur',
+  affluence: 'Nombre de visiteurs',
+  tarif: 'Tarif',
+  url_image: 'Photo',
+  description_event: 'Description',
+};
+
+const formatValue = (field: string, value: any): string => {
+  if (value === null || value === undefined || value === '') return '—';
+  if (field === 'secteur') {
+    return Array.isArray(value) ? value.join(', ') || '—' : String(value);
+  }
+  if ((field === 'date_debut' || field === 'date_fin') && typeof value === 'string') {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? value : d.toLocaleDateString('fr-FR');
+  }
+  return String(value);
+};
+
 const statusMeta: Record<string, { label: string; className: string }> = {
   pending: { label: 'En attente', className: 'bg-amber-100 text-amber-800 border-amber-300' },
   approved: { label: 'Approuvée', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
@@ -33,6 +68,7 @@ const statusMeta: Record<string, { label: string; className: string }> = {
 const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-salon-detail', salonId],
@@ -86,7 +122,40 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
         requester_name: profilesById[c.requester_user_id] ?? null,
       }));
 
-      return { event, ownerName, claims };
+      // Demandes de modification en attente
+      const { data: changesData } = await supabase
+        .from('event_change_requests')
+        .select('id, status, created_at, requester_user_id, changed_fields, proposed_changes, previous_values')
+        .eq('event_id', salonId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      const changeUserIds = [...new Set((changesData || []).map((c) => c.requester_user_id))];
+      let changeProfilesById: Record<string, string> = { ...profilesById };
+      const missingIds = changeUserIds.filter((id) => !(id in changeProfilesById));
+      if (missingIds.length) {
+        const { data: cp } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', missingIds);
+        (cp || []).forEach((p) => {
+          changeProfilesById[p.user_id] =
+            [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || '—';
+        });
+      }
+
+      const changeRequests: ChangeRequestRow[] = (changesData || []).map((c) => ({
+        id: c.id,
+        status: c.status,
+        created_at: c.created_at,
+        requester_user_id: c.requester_user_id,
+        requester_name: changeProfilesById[c.requester_user_id] ?? null,
+        changed_fields: (c.changed_fields as string[]) || [],
+        proposed_changes: (c.proposed_changes as Record<string, any>) || {},
+        previous_values: (c.previous_values as Record<string, any>) || {},
+      }));
+
+      return { event, ownerName, claims, changeRequests };
     },
   });
 
@@ -108,6 +177,41 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
       queryClient.invalidateQueries({ queryKey: ['admin-salon-detail', salonId] });
       queryClient.invalidateQueries({ queryKey: ['admin-salons'] });
       queryClient.invalidateQueries({ queryKey: ['admin-event-claims'] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Erreur',
+        description: err?.message || 'Impossible de traiter la demande.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const changeMutation = useMutation({
+    mutationFn: async ({
+      requestId,
+      action,
+      note,
+    }: {
+      requestId: string;
+      action: 'approve' | 'reject';
+      note?: string;
+    }) => {
+      const { error } = await supabase.functions.invoke('event-change-manage', {
+        body: { action, request_id: requestId, ...(note ? { note } : {}) },
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, { action }) => {
+      toast({
+        title: action === 'approve' ? 'Modifications appliquées' : 'Modifications refusées',
+        description:
+          action === 'approve'
+            ? 'La fiche du salon a été mise à jour.'
+            : 'La demande de modification a été refusée.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-salon-detail', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons'] });
     },
     onError: (err: any) => {
       toast({
