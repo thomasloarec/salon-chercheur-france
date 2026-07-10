@@ -20,6 +20,7 @@ export interface AdminSalonRow {
   url_image: string | null;
   owner_name: string | null;
   has_pending_claim: boolean;
+  has_pending_change: boolean;
 }
 
 interface Props {
@@ -45,9 +46,44 @@ const AdminSalonsList = ({ onSelectSalon }: Props) => {
         query = query.ilike('nom_event', `%${debouncedSearch.trim()}%`);
       }
 
-      const { data: events, error } = await query;
+      const { data: eventsData, error } = await query;
       if (error) throw error;
-      if (!events || events.length === 0) return [];
+
+      const columns =
+        'id, nom_event, ville, date_debut, slug, owner_user_id, verified_at, url_image';
+
+      // Pending claims & changes (all pending, not limited to the 300 loaded rows)
+      const [{ data: pendingClaims }, { data: pendingChanges }] = await Promise.all([
+        supabase.from('event_claim_requests').select('event_id').eq('status', 'pending'),
+        supabase.from('event_change_requests').select('event_id').eq('status', 'pending'),
+      ]);
+      const pendingClaimSet = new Set((pendingClaims || []).map((c) => c.event_id));
+      const pendingChangeSet = new Set((pendingChanges || []).map((c) => c.event_id));
+
+      let events = eventsData || [];
+
+      // Ensure salons with a pending request are visible even if outside the 300 loaded rows
+      const loadedIds = new Set(events.map((e) => e.id));
+      const requiredIds = [...new Set([...pendingClaimSet, ...pendingChangeSet])].filter(Boolean);
+      const missingIds = requiredIds.filter((id) => !loadedIds.has(id));
+      if (missingIds.length) {
+        const { data: missingEvents } = await supabase
+          .from('events')
+          .select(columns)
+          .eq('visible', true)
+          .eq('is_test', false)
+          .in('id', missingIds);
+        if (missingEvents?.length) {
+          // If a name search is active, respect it for the extra rows too
+          const term = debouncedSearch.trim().toLowerCase();
+          const filtered = term
+            ? missingEvents.filter((e) => (e.nom_event || '').toLowerCase().includes(term))
+            : missingEvents;
+          events = [...events, ...filtered];
+        }
+      }
+
+      if (events.length === 0) return [];
 
       const eventIds = events.map((e) => e.id);
       const ownerIds = [...new Set(events.map((e) => e.owner_user_id).filter(Boolean))] as string[];
@@ -67,15 +103,7 @@ const AdminSalonsList = ({ onSelectSalon }: Props) => {
         );
       }
 
-      // Pending claims lookup
-      const { data: pendingClaims } = await supabase
-        .from('event_claim_requests')
-        .select('event_id')
-        .eq('status', 'pending')
-        .in('event_id', eventIds);
-      const pendingSet = new Set((pendingClaims || []).map((c) => c.event_id));
-
-      return events.map((e) => ({
+      const rows: AdminSalonRow[] = events.map((e) => ({
         id: e.id,
         nom_event: e.nom_event,
         ville: e.ville ?? null,
@@ -85,8 +113,19 @@ const AdminSalonsList = ({ onSelectSalon }: Props) => {
         verified_at: e.verified_at ?? null,
         url_image: e.url_image ?? null,
         owner_name: e.owner_user_id ? profilesById[e.owner_user_id] ?? null : null,
-        has_pending_claim: pendingSet.has(e.id),
+        has_pending_claim: pendingClaimSet.has(e.id),
+        has_pending_change: pendingChangeSet.has(e.id),
       }));
+
+      // Salons with a pending request first, then existing order (date_debut desc)
+      return rows.sort((a, b) => {
+        const aPending = a.has_pending_claim || a.has_pending_change ? 1 : 0;
+        const bPending = b.has_pending_claim || b.has_pending_change ? 1 : 0;
+        if (aPending !== bPending) return bPending - aPending;
+        const aDate = a.date_debut ? new Date(a.date_debut).getTime() : 0;
+        const bDate = b.date_debut ? new Date(b.date_debut).getTime() : 0;
+        return bDate - aDate;
+      });
     },
   });
 
