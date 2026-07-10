@@ -4977,6 +4977,41 @@ export type Database = {
         }
         Relationships: []
       }
+      sector_label_map: {
+        Row: {
+          confidence: number | null
+          mapped_at: string
+          raw_label: string
+          sector_id: string | null
+          source: string
+          sub_sector_ids: string[]
+        }
+        Insert: {
+          confidence?: number | null
+          mapped_at?: string
+          raw_label: string
+          sector_id?: string | null
+          source?: string
+          sub_sector_ids?: string[]
+        }
+        Update: {
+          confidence?: number | null
+          mapped_at?: string
+          raw_label?: string
+          sector_id?: string | null
+          source?: string
+          sub_sector_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sector_label_map_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sectors: {
         Row: {
           created_at: string
