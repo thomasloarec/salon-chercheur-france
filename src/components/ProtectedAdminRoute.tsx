@@ -57,7 +57,7 @@ const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!isRealUser || !isAdmin) {
     // Redirect non-admin users to login page
     return <Navigate to="/auth" replace />;
   }
