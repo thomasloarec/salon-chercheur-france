@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -25,9 +26,11 @@ interface SignupWallDialogProps {
  * préserver son user_id et ses crédits — surtout ne PAS créer un nouvel utilisateur.
  */
 const SignupWallDialog = ({ open, onOpenChange, onUpgraded }: SignupWallDialogProps) => {
+  const [activeTab, setActiveTab] = useState<'signup' | 'signin'>('signup');
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleGoogleAuth = async () => {
@@ -42,12 +45,21 @@ const SignupWallDialog = ({ open, onOpenChange, onUpgraded }: SignupWallDialogPr
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || password.length < 6) {
       toast({
         title: 'Informations incomplètes',
         description: 'Renseignez un email valide et un mot de passe d’au moins 6 caractères.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Les mots de passe ne correspondent pas',
+        description: 'Vérifiez la confirmation de votre mot de passe.',
         variant: 'destructive',
       });
       return;
@@ -74,6 +86,51 @@ const SignupWallDialog = ({ open, onOpenChange, onUpgraded }: SignupWallDialogPr
       await supabase.rpc('log_funnel_event', { p_event_type: 'account_created' });
 
       toast({ title: 'Compte créé ✓', description: '3 recherches supplémentaires débloquées.' });
+      onUpgraded();
+      onOpenChange(false);
+    } catch (err) {
+      toast({
+        title: 'Une erreur est survenue',
+        description: err instanceof Error ? err.message : 'Réessayez dans un instant.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      toast({
+        title: 'Informations incomplètes',
+        description: 'Renseignez votre email et votre mot de passe.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Utilisateur ayant déjà un compte email : on le connecte à son compte existant.
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: 'Connexion impossible',
+          description:
+            error.message.includes('Invalid login credentials')
+              ? 'Email ou mot de passe incorrect.'
+              : error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({ title: 'Connecté ✓', description: '3 recherches supplémentaires débloquées.' });
       onUpgraded();
       onOpenChange(false);
     } catch (err) {
@@ -136,59 +193,126 @@ const SignupWallDialog = ({ open, onOpenChange, onUpgraded }: SignupWallDialogPr
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="ria-firstname">Prénom (optionnel)</Label>
-              <Input
-                id="ria-firstname"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Thomas"
-                autoComplete="given-name"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ria-email">Email professionnel</Label>
-              <Input
-                id="ria-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="vous@entreprise.fr"
-                autoComplete="email"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ria-password">Mot de passe</Label>
-              <Input
-                id="ria-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="6 caractères minimum"
-                autoComplete="new-password"
-                required
-              />
-            </div>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'signup' | 'signin')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Connexion</TabsTrigger>
+              <TabsTrigger value="signup">Inscription</TabsTrigger>
+            </TabsList>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Création…
-                </>
-              ) : (
-                <>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Créer mon compte et continuer
-                </>
-              )}
-            </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Vos recherches déjà effectuées sont conservées.
-            </p>
-          </form>
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ria-signin-email">Email</Label>
+                  <Input
+                    id="ria-signin-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vous@entreprise.fr"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ria-signin-password">Mot de passe</Label>
+                  <Input
+                    id="ria-signin-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Connexion…
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Se connecter et continuer
+                    </>
+                  )}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  Vos recherches déjà effectuées sont conservées.
+                </p>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ria-firstname">Prénom (optionnel)</Label>
+                  <Input
+                    id="ria-firstname"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Thomas"
+                    autoComplete="given-name"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ria-email">Email</Label>
+                  <Input
+                    id="ria-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vous@entreprise.fr"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ria-password">Mot de passe</Label>
+                  <Input
+                    id="ria-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="6 caractères minimum"
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ria-confirm-password">Confirmer le mot de passe</Label>
+                  <Input
+                    id="ria-confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Création…
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Créer mon compte et continuer
+                    </>
+                  )}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  Vos recherches déjà effectuées sont conservées.
+                </p>
+              </form>
+            </TabsContent>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>
