@@ -1600,6 +1600,7 @@ export type Database = {
           produits_services: Json | null
           profils_visiteurs: Json | null
           resume_court: string | null
+          secteur_id: string | null
           secteur_principal: string | null
           source_table: string | null
           source_url: string | null
@@ -1614,6 +1615,7 @@ export type Database = {
           produits_services?: Json | null
           profils_visiteurs?: Json | null
           resume_court?: string | null
+          secteur_id?: string | null
           secteur_principal?: string | null
           source_table?: string | null
           source_url?: string | null
@@ -1628,13 +1630,22 @@ export type Database = {
           produits_services?: Json | null
           profils_visiteurs?: Json | null
           resume_court?: string | null
+          secteur_id?: string | null
           secteur_principal?: string | null
           source_table?: string | null
           source_url?: string | null
           sous_secteurs?: Json | null
           type_interet?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_ai_secteur_id_fkey"
+            columns: ["secteur_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exhibitor_ai_refusal_archive: {
         Row: {
@@ -2319,6 +2330,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
+      exhibitor_sub_sectors: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          exhibitor_id: string
+          is_primary: boolean
+          sub_sector_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          exhibitor_id: string
+          is_primary?: boolean
+          sub_sector_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          exhibitor_id?: string
+          is_primary?: boolean
+          sub_sector_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_sub_sectors_sub_sector_id_fkey"
+            columns: ["sub_sector_id"]
+            isOneToOne: false
+            referencedRelation: "sub_sectors"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5293,6 +5336,38 @@ export type Database = {
           visible?: boolean | null
         }
         Relationships: []
+      }
+      sub_sectors: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sector_id: string
+          slug: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sector_id: string
+          slug?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sector_id?: string
+          slug?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_sectors_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_locks: {
         Row: {
