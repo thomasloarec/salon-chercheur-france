@@ -357,6 +357,134 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <PencilLine className="h-4 w-4" />
+                Modifications proposées
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.changeRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Aucune modification en attente pour ce salon.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {data.changeRequests.map((cr) => (
+                    <div key={cr.id} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <p className="font-medium text-sm">{cr.requester_name || '—'}</p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                            En attente
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(cr.created_at).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {cr.changed_fields.map((field) => {
+                          const before = cr.previous_values?.[field];
+                          const after = cr.proposed_changes?.[field];
+                          const label = FIELD_LABELS[field] ?? field;
+
+                          if (field === 'url_image') {
+                            return (
+                              <div key={field} className="space-y-1.5">
+                                <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-center">
+                                    {before ? (
+                                      <img src={before} alt="Avant" className="h-24 w-20 rounded object-cover border bg-white" />
+                                    ) : (
+                                      <div className="h-24 w-20 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground">—</div>
+                                    )}
+                                    <span className="text-[10px] text-muted-foreground">Avant</span>
+                                  </div>
+                                  <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <div className="text-center">
+                                    {after ? (
+                                      <img src={after} alt="Après" className="h-24 w-20 rounded object-cover border bg-white" />
+                                    ) : (
+                                      <div className="h-24 w-20 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground">—</div>
+                                    )}
+                                    <span className="text-[10px] font-medium text-foreground">Après</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          if (field === 'description_event') {
+                            return (
+                              <div key={field} className="space-y-1.5">
+                                <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                                <div className="grid gap-2">
+                                  <div className="rounded border bg-muted/40 p-2 text-xs text-muted-foreground">
+                                    <span className="block text-[10px] uppercase tracking-wide mb-1">Avant</span>
+                                    {formatValue(field, before)}
+                                  </div>
+                                  <div className="rounded border border-primary/30 bg-primary/5 p-2 text-xs text-foreground">
+                                    <span className="block text-[10px] uppercase tracking-wide mb-1 text-primary">Après</span>
+                                    {formatValue(field, after)}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={field} className="text-sm">
+                              <span className="text-xs font-medium text-muted-foreground">{label} : </span>
+                              <span className="text-muted-foreground line-through">{formatValue(field, before)}</span>
+                              <ArrowRight className="inline h-3.5 w-3.5 mx-1 text-muted-foreground" />
+                              <span className="font-medium text-foreground">{formatValue(field, after)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <Textarea
+                        placeholder="Note (optionnelle, transmise en cas de refus)"
+                        value={notes[cr.id] ?? ''}
+                        onChange={(e) => setNotes((prev) => ({ ...prev, [cr.id]: e.target.value }))}
+                        rows={2}
+                        className="text-sm"
+                      />
+
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => changeMutation.mutate({ requestId: cr.id, action: 'approve' })}
+                          disabled={changeMutation.isPending}
+                          className="flex items-center gap-1"
+                        >
+                          <Check className="h-4 w-4" />
+                          Valider
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            changeMutation.mutate({ requestId: cr.id, action: 'reject', note: notes[cr.id]?.trim() || undefined })
+                          }
+                          disabled={changeMutation.isPending}
+                          className="flex items-center gap-1"
+                        >
+                          <X className="h-4 w-4" />
+                          Refuser
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
