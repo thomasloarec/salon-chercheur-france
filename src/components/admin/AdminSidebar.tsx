@@ -95,6 +95,7 @@ export function AdminSidebar() {
     '/admin/novelties': counts?.novelties ?? 0,
     '/admin/exhibitors/claims': counts?.claims ?? 0,
     '/admin/exhibitors': counts?.unmanagedExhibitors ?? 0,
+    '/admin/organisateurs': counts?.organisateurs ?? 0,
   };
 
   const isActive = (url: string, end?: boolean) => {

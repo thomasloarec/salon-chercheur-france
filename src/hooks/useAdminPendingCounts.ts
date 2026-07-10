@@ -6,6 +6,7 @@ export interface AdminPendingCounts {
   novelties: number;       // novelties to moderate
   claims: number;          // exhibitor claim requests pending
   unmanagedExhibitors: number; // exhibitors with at least one pending claim (proxy for "to process")
+  organisateurs: number;   // demandes salon en attente : revendications + modifications
 }
 
 /**
@@ -20,7 +21,7 @@ export const useAdminPendingCounts = () => {
     enabled: !!isAdmin,
     staleTime: 30_000,
     queryFn: async (): Promise<AdminPendingCounts> => {
-      const [noveltiesRes, claimsRes] = await Promise.all([
+      const [noveltiesRes, claimsRes, eventClaimsRes, eventChangesRes] = await Promise.all([
         supabase
           .from('novelties')
           .select('id', { count: 'exact', head: true })
@@ -28,6 +29,14 @@ export const useAdminPendingCounts = () => {
         supabase
           .from('exhibitor_claim_requests')
           .select('exhibitor_id', { count: 'exact' })
+          .eq('status', 'pending'),
+        supabase
+          .from('event_claim_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase
+          .from('event_change_requests')
+          .select('id', { count: 'exact', head: true })
           .eq('status', 'pending'),
       ]);
 
@@ -41,6 +50,7 @@ export const useAdminPendingCounts = () => {
         novelties: noveltiesCount,
         claims: claimsCount,
         unmanagedExhibitors: distinctExhibitors,
+        organisateurs: (eventClaimsRes.count ?? 0) + (eventChangesRes.count ?? 0),
       };
     },
   });

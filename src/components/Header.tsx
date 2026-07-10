@@ -28,7 +28,10 @@ const Header = () => {
   const { user, session, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { data: adminCounts } = useAdminPendingCounts();
-  const adminPendingTotal = (adminCounts?.novelties ?? 0) + (adminCounts?.claims ?? 0);
+  const adminPendingTotal =
+    (adminCounts?.novelties ?? 0) +
+    (adminCounts?.claims ?? 0) +
+    (adminCounts?.organisateurs ?? 0);
   // Un utilisateur anonyme (session Recherche IA) ne doit pas apparaître comme connecté.
   const isRealUser = !!user && user.is_anonymous !== true;
 
