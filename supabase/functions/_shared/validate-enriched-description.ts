@@ -124,6 +124,16 @@ function getSourceNumbers(src: EventSource): Set<number> {
     const cp = Number(src.code_postal.replace(/\s/g, ''));
     if (Number.isFinite(cp)) nums.add(cp);
   }
+  // Chiffres présents dans la description source (import/organisateur) :
+  // ce sont des faits sourcés (ex. "8 000 visiteurs", "200 exposants"), pas des inventions.
+  if (src.description_event) {
+    const desc = src.description_event.replace(/<[^>]+>/g, ' ');
+    const dm = desc.match(/\d[\d\s.]*/g) ?? [];
+    for (const x of dm) {
+      const v = Number(x.replace(/[\s.]/g, ''));
+      if (Number.isFinite(v)) nums.add(v);
+    }
+  }
   return nums;
 }
 
