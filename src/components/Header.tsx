@@ -58,7 +58,7 @@ const Header = () => {
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="h-auto bg-transparent px-0 py-0 text-sm text-muted-foreground hover:text-accent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent data-[state=open]:text-accent font-normal">
+                  <NavigationMenuTrigger className="h-auto bg-transparent px-0 py-0 text-sm text-muted-foreground hover:text-accent hover:bg-transparent focus:bg-transparent focus:text-accent data-[state=open]:bg-transparent data-[state=open]:text-accent font-normal">
                     Fonctionnalités
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
