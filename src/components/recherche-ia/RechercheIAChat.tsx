@@ -105,6 +105,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [asking, setAsking] = useState(false);
+  const [deepSearch, setDeepSearch] = useState(false);
   const [credits, setCredits] = useState<Credits | null>(null);
 
   // Mur affiché sous la conversation (mou = après réponse, dur = bloquant).
@@ -177,7 +178,10 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setAsking(true);
+    setDeepSearch(false);
     setWall((w) => (w && !w.hard ? null : w));
+
+    const deepTimer = setTimeout(() => setDeepSearch(true), 10000);
 
     try {
       const { data, error } = await supabase.functions.invoke('recherche-ia-visiteur', {
@@ -226,7 +230,9 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
         variant: 'destructive',
       });
     } finally {
+      clearTimeout(deepTimer);
       setAsking(false);
+      setDeepSearch(false);
     }
   };
 
@@ -427,7 +433,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                  L'assistant analyse les salons…
+                  {deepSearch ? 'Question plus complexe, j\'approfondis la recherche…' : "L'assistant analyse les salons…"}
                 </div>
               </div>
             )}
