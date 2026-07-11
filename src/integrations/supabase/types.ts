@@ -6558,6 +6558,13 @@ export type Database = {
           },
         ]
       }
+      v_labels_a_mapper: {
+        Row: {
+          nb_exposants: number | null
+          raw_label: string | null
+        }
+        Relationships: []
+      }
       v_novelty_visit_signals: {
         Row: {
           date_debut: string | null
