@@ -8020,6 +8020,21 @@ export type Database = {
         Args: { current_password: string; new_password: string }
         Returns: Json
       }
+      upsert_exhibitor_enrichment: {
+        Args: {
+          p_exhibitor_id: string
+          p_macro: string
+          p_mots_cles_metier: Json
+          p_produits_services: Json
+          p_profils_visiteurs: Json
+          p_resume_court: string
+          p_source_table: string
+          p_source_url: string
+          p_sous_secteurs: string[]
+          p_type_interet: Json
+        }
+        Returns: undefined
+      }
       upsert_radar_mission: {
         Args: {
           p_crm_company_id: string
