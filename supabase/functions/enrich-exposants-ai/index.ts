@@ -287,21 +287,18 @@ serve(async (req) => {
       const rawResume = (parsed.resume_court as string) || '';
       const safeResume = isAiRefusal(rawResume) ? '' : rawResume;
 
-      const { error: insertError } = await supabaseAdmin
-        .from('exhibitor_ai')
-        .insert({
-          exhibitor_id: exposant.id_exposant!,
-          resume_court: safeResume,
-          secteur_principal: (parsed.secteur_principal as string) || null,
-          sous_secteurs: (parsed.sous_secteurs as string[]) ?? [],
-          produits_services: (parsed.produits_services as string[]) ?? [],
-          mots_cles_metier: (parsed.mots_cles_metier as string[]) ?? [],
-          profils_visiteurs: (parsed.profils_visiteurs as string[]) ?? [],
-          type_interet: (parsed.type_interet as string[]) ?? [],
-          source_url: exposant.website_exposant || null,
-          source_table: 'exposants',
-          enriched_at: new Date().toISOString(),
-        });
+      const { error: insertError } = await supabaseAdmin.rpc('upsert_exhibitor_enrichment', {
+        p_exhibitor_id: exposant.id_exposant!,
+        p_source_url: exposant.website_exposant || null,
+        p_source_table: 'exposants',
+        p_macro: (parsed.macro as string) || null,
+        p_sous_secteurs: (parsed.sous_secteurs as string[]) ?? [],
+        p_produits_services: (parsed.produits_services as string[]) ?? [],
+        p_mots_cles_metier: (parsed.mots_cles_metier as string[]) ?? [],
+        p_profils_visiteurs: (parsed.profils_visiteurs as string[]) ?? [],
+        p_type_interet: (parsed.type_interet as string[]) ?? [],
+        p_resume_court: safeResume,
+      });
 
       if (insertError) {
         console.error(`[ENRICH] Insert failed for "${exposant.nom_exposant}":`, insertError.message);
