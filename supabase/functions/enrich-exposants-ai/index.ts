@@ -16,21 +16,57 @@ const SYSTEM_PROMPT = `Tu es un expert en analyse d'entreprises B2B dans le sect
 Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans explication, sans backticks.
 La langue de sortie doit être le français.`;
 
+const TAXO_SECTEURS = `Agroalimentaire & Boissons : Agriculture & élevage | Agroalimentaire & transformation alimentaire | Boissons, vins & spiritueux | Horticulture & production végétale | Machines & équipements agricoles | Nutrition & alimentation animale | Restauration & services alimentaires
+
+Automobile & Mobilité : Aéronautique & aérospatial | Automobile & motos | Cycle & micromobilité | Équipementiers & pièces | Ferroviaire | Maritime & naval | Mobilité & services de transport
+
+BTP & Construction : Construction, bâtiment & gros œuvre | Matériaux de construction & revêtements | Menuiserie, fermetures & aménagement | Rénovation & second œuvre | Travaux publics & aménagement extérieur
+
+Commerce & Distribution : Commerce de détail & retail | Distribution & commerce de gros | Import / export | Logistique, transport & supply chain
+
+Cosmétique & Bien-être : Bien-être & soins | Cosmétiques & produits de beauté | Parfumerie
+
+Éducation & Formation : Enseignement & éducation | Formation professionnelle | Médias & édition spécialisée
+
+Énergie & Environnement : Eau, assainissement & traitement | Énergies renouvelables & transition énergétique | Environnement & développement durable | Gestion des déchets & recyclage
+
+Finance, Assurance & Immobilier : Assurance | Capital-investissement | Gestion de patrimoine & d'actifs | Immobilier | Services financiers & investissement
+
+Industrie & Production : Automatisation & robotique industrielle | Bois & transformation du bois | Chimie, matériaux & composites | Électronique & composants | Emballage & conditionnement | Machines-outils & équipements industriels | Mécanique de précision & usinage | Métallurgie & travail des métaux | Plasturgie & transformation des plastiques | Sous-traitance industrielle
+
+Mode & Textile : Accessoires & maroquinerie | Bijouterie, joaillerie & luxe | Chaussure | Mode & habillement | Textile & confection
+
+Santé & Médical : Dispositifs & équipements médicaux | Pharmacie & biotechnologies | Santé & prévention
+
+Secteur Public & Collectivités : Administration & collectivités territoriales | Sécurité & défense | Services publics
+
+Services aux Entreprises & RH : Conseil & services professionnels | Marketing & communication | Ressources humaines & recrutement | Services aux entreprises (généraux)
+
+Technologie & Innovation : Cybersécurité & protection des données | IA, data & innovation | Informatique & télécommunications | Logiciels & SaaS | Services numériques & transformation digitale
+
+Tourisme & Événementiel : Événementiel | Hôtellerie | Loisirs & divertissement | Sports & plein air | Tourisme & voyages`;
+
 function buildUserPrompt(nom: string, website: string | null, description: string | null): string {
   return `Entreprise : ${nom}
 Site web : ${website ?? 'Non disponible'}
 Description originale : ${description ?? 'Non disponible'}
 
+## TAXONOMIE SECTEURS AUTORISÉE (macro : sous-secteurs)
+
+${TAXO_SECTEURS}
+
 Génère un objet JSON avec exactement ces clés :
 {
   "resume_court": "2 à 3 phrases maximum présentant l'entreprise, ses activités principales et sa valeur ajoutée pour un visiteur de salon professionnel",
-  "secteur_principal": "secteur d'activité principal en 2-4 mots",
-  "sous_secteurs": ["sous-secteur 1", "sous-secteur 2"],
+  "macro": "une seule des 15 macros ci-dessus (le domaine dominant)",
+  "sous_secteurs": ["1 à 3 sous-secteurs de la liste, le plus pertinent en premier"],
   "produits_services": ["produit ou service 1", "produit ou service 2", "produit ou service 3"],
   "mots_cles_metier": ["mot-clé 1", "mot-clé 2", "mot-clé 3", "mot-clé 4"],
   "profils_visiteurs": ["profil visiteur 1", "profil visiteur 2"],
   "type_interet": ["achat", "partenariat", "veille"]
 }
+
+Règles secteurs : "macro" = exactement UNE des 15 macros. "sous_secteurs" = 1 à 3 pris dans TOUTE la liste (tu peux combiner des sous-secteurs de macros différentes si l'activité est transverse). N'ajoute un 2e/3e sous-secteur QUE si l'activité le justifie clairement ; ne sur-interprète pas un mot isolé comme "premium" ou "énergie". Recopie les noms EXACTEMENT (accents, casse, ponctuation). N'invente JAMAIS de macro ni de sous-secteur hors liste.
 
 Pour type_interet, choisis parmi : achat, partenariat, veille, recrutement, formation, innovation.
 Si les informations sont insuffisantes pour un champ, utilise un tableau vide [] ou une chaîne vide "".`;
@@ -251,21 +287,18 @@ serve(async (req) => {
       const rawResume = (parsed.resume_court as string) || '';
       const safeResume = isAiRefusal(rawResume) ? '' : rawResume;
 
-      const { error: insertError } = await supabaseAdmin
-        .from('exhibitor_ai')
-        .insert({
-          exhibitor_id: exposant.id_exposant!,
-          resume_court: safeResume,
-          secteur_principal: (parsed.secteur_principal as string) || null,
-          sous_secteurs: (parsed.sous_secteurs as string[]) ?? [],
-          produits_services: (parsed.produits_services as string[]) ?? [],
-          mots_cles_metier: (parsed.mots_cles_metier as string[]) ?? [],
-          profils_visiteurs: (parsed.profils_visiteurs as string[]) ?? [],
-          type_interet: (parsed.type_interet as string[]) ?? [],
-          source_url: exposant.website_exposant || null,
-          source_table: 'exposants',
-          enriched_at: new Date().toISOString(),
-        });
+      const { error: insertError } = await supabaseAdmin.rpc('upsert_exhibitor_enrichment', {
+        p_exhibitor_id: exposant.id_exposant!,
+        p_source_url: exposant.website_exposant || null,
+        p_source_table: 'exposants',
+        p_macro: (parsed.macro as string) || null,
+        p_sous_secteurs: (parsed.sous_secteurs as string[]) ?? [],
+        p_produits_services: (parsed.produits_services as string[]) ?? [],
+        p_mots_cles_metier: (parsed.mots_cles_metier as string[]) ?? [],
+        p_profils_visiteurs: (parsed.profils_visiteurs as string[]) ?? [],
+        p_type_interet: (parsed.type_interet as string[]) ?? [],
+        p_resume_court: safeResume,
+      });
 
       if (insertError) {
         console.error(`[ENRICH] Insert failed for "${exposant.nom_exposant}":`, insertError.message);
