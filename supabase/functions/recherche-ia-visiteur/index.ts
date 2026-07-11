@@ -202,6 +202,12 @@ async function runTool(admin: any, name: string, input: any) {
         p_upcoming_only: input.seulement_a_venir ?? true,
       });
     }
+    if (name === "exposants_d_un_salon") {
+      return await callRpc(admin, "exposants_d_un_salon", {
+        p_salon: String(input.salon ?? ""),
+        p_sous_secteur: input.sous_secteur ? String(input.sous_secteur) : null,
+      });
+    }
     return { error: "outil inconnu" };
   } catch (e) {
     return { error: String(e).slice(0, 300) };
