@@ -94,6 +94,23 @@ const TOOLS = [
       required: ["intention", "seulement_a_venir"],
     },
   },
+  {
+    name: "exposants_d_un_salon",
+    description:
+      "Donne les EXPOSANTS et les CATÉGORIES d'un salon précis, identifié par son nom ou son slug (ex: 'SPACE'). " +
+      "SANS `sous_secteur` : renvoie nb_exposants (total), categories_macro (répartition par grande catégorie), " +
+      "categories_sous_secteurs (répartition fine, top 20) et echantillon_exposants (quelques noms). " +
+      "AVEC `sous_secteur` (un nom issu de categories_sous_secteurs) : renvoie la liste des exposants de cette catégorie au salon, avec leur stand. " +
+      "À utiliser pour toute question 'quels exposants / quelles catégories au salon X'.",
+    input_schema: {
+      type: "object",
+      properties: {
+        salon: { type: "string", description: "Nom ou slug du salon (ex: 'SPACE' ou 'space')." },
+        sous_secteur: { type: "string", description: "Optionnel. Nom d'un sous-secteur pour lister ses exposants au salon." },
+      },
+      required: ["salon"],
+    },
+  },
 ];
 
 // --- System prompt : la discipline anti-échec-silencieux ---------------------
