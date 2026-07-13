@@ -28,6 +28,11 @@ function json(body: unknown, status = 200) {
   });
 }
 
+async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 // --- Outils exposés à Claude -------------------------------------------------
 const TOOLS = [
   {
@@ -248,6 +253,12 @@ Deno.serve(async (req) => {
 
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
 
+  let ipHash: string | null = null;
+  if (ip) {
+    const daySalt = await sha256Hex((Deno.env.get("AI_RL_SALT") ?? "") + new Date().toISOString().slice(0, 10));
+    ipHash = await sha256Hex(ip + daySalt);
+  }
+
   // 3) Gate crédits — AVANT le rate-limit IP (pour en exempter les admins)
   const { data: creditRows, error: creditErr } = await admin.rpc("check_ai_credits", {
     p_user_id: userId,
@@ -263,17 +274,18 @@ Deno.serve(async (req) => {
   // Les admins ont une allocation illimitée (999999) ; anonyme = 3, inscrit = 6.
   const isAdmin = (credit?.allowed ?? 0) > 6;
 
-  // 4) Rate-limit IP anti-abus — uniquement pour les non-admins
-  if (!isAdmin && ip) {
+  // 4) Rate-limit IP anti-abus (hash d'IP salé, non réversible) — non-admins
+  if (!isAdmin && ipHash) {
     const since = new Date(Date.now() - 3600_000).toISOString();
     const { count } = await admin
-      .from("ai_search_usage")
+      .from("ai_rate_limit_hits")
       .select("id", { count: "exact", head: true })
-      .eq("ip", ip)
+      .eq("ip_hash", ipHash)
       .gte("created_at", since);
     if ((count ?? 0) >= IP_LIMIT_PER_HOUR) {
       return json({ error: "rate_limited", message: "Trop de requêtes récentes. Réessaie dans un moment." }, 429);
     }
+    await admin.from("ai_rate_limit_hits").insert({ ip_hash: ipHash });
   }
 
   // 5) Boucle de tool-calling (Haiku)
@@ -337,8 +349,6 @@ Deno.serve(async (req) => {
   await admin.from("ai_search_usage").insert({
     user_id: userId,
     is_anonymous: isAnon,
-    question,
-    ip,
   });
 
   const usedAfter = (credit?.used ?? 0) + 1;
