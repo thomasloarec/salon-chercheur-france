@@ -8017,6 +8017,7 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: Json
       }
+      rollup_ai_search_daily: { Args: { p_day?: string }; Returns: undefined }
       run_exhibitor_ai_remap: { Args: never; Returns: Json }
       scan_event_duplicates: {
         Args: { p_id: string; p_kind: string; p_persist?: boolean }
