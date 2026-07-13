@@ -62,6 +62,72 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_event_visibility_daily: {
+        Row: {
+          appearances: number
+          day: string
+          event_id: string
+          id: string
+          no_result_sector_count: number
+          sector_query_count: number
+          updated_at: string
+        }
+        Insert: {
+          appearances?: number
+          day: string
+          event_id: string
+          id?: string
+          no_result_sector_count?: number
+          sector_query_count?: number
+          updated_at?: string
+        }
+        Update: {
+          appearances?: number
+          day?: string
+          event_id?: string
+          id?: string
+          no_result_sector_count?: number
+          sector_query_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_event_visibility_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "ai_event_visibility_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "ai_event_visibility_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_event_visibility_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_event_visibility_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_funnel_events: {
         Row: {
           created_at: string
@@ -103,6 +169,101 @@ export type Database = {
           ip_hash?: string
         }
         Relationships: []
+      }
+      ai_search_daily_agg: {
+        Row: {
+          day: string
+          id: string
+          intent_type: string
+          macro_sector_id: string
+          no_result_count: number
+          query_count: number
+          sub_sector_id: string
+          updated_at: string
+        }
+        Insert: {
+          day: string
+          id?: string
+          intent_type?: string
+          macro_sector_id?: string
+          no_result_count?: number
+          query_count?: number
+          sub_sector_id?: string
+          updated_at?: string
+        }
+        Update: {
+          day?: string
+          id?: string
+          intent_type?: string
+          macro_sector_id?: string
+          no_result_count?: number
+          query_count?: number
+          sub_sector_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_search_events: {
+        Row: {
+          answer_had_results: boolean | null
+          conversation_key: string | null
+          created_at: string
+          id: string
+          intent_type: string | null
+          macro_sector_id: string | null
+          matched_event_ids: string[] | null
+          matched_exhibitor_count: number
+          occurred_hour: string
+          persona: string
+          query_embedding: string | null
+          query_sanitized: string | null
+          question_rank: number | null
+          sanitization_status: string
+          sub_sector_ids: string[] | null
+        }
+        Insert: {
+          answer_had_results?: boolean | null
+          conversation_key?: string | null
+          created_at?: string
+          id?: string
+          intent_type?: string | null
+          macro_sector_id?: string | null
+          matched_event_ids?: string[] | null
+          matched_exhibitor_count?: number
+          occurred_hour: string
+          persona?: string
+          query_embedding?: string | null
+          query_sanitized?: string | null
+          question_rank?: number | null
+          sanitization_status?: string
+          sub_sector_ids?: string[] | null
+        }
+        Update: {
+          answer_had_results?: boolean | null
+          conversation_key?: string | null
+          created_at?: string
+          id?: string
+          intent_type?: string | null
+          macro_sector_id?: string | null
+          matched_event_ids?: string[] | null
+          matched_exhibitor_count?: number
+          occurred_hour?: string
+          persona?: string
+          query_embedding?: string | null
+          query_sanitized?: string | null
+          question_rank?: number | null
+          sanitization_status?: string
+          sub_sector_ids?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_search_events_macro_sector_id_fkey"
+            columns: ["macro_sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_search_usage: {
         Row: {
