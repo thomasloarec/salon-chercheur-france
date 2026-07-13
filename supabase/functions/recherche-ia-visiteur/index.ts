@@ -349,8 +349,6 @@ Deno.serve(async (req) => {
   await admin.from("ai_search_usage").insert({
     user_id: userId,
     is_anonymous: isAnon,
-    question,
-    ip,
   });
 
   const usedAfter = (credit?.used ?? 0) + 1;
