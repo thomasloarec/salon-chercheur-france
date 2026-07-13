@@ -253,6 +253,12 @@ Deno.serve(async (req) => {
 
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
 
+  let ipHash: string | null = null;
+  if (ip) {
+    const daySalt = await sha256Hex((Deno.env.get("AI_RL_SALT") ?? "") + new Date().toISOString().slice(0, 10));
+    ipHash = await sha256Hex(ip + daySalt);
+  }
+
   // 3) Gate crédits — AVANT le rate-limit IP (pour en exempter les admins)
   const { data: creditRows, error: creditErr } = await admin.rpc("check_ai_credits", {
     p_user_id: userId,
