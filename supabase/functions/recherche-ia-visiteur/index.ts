@@ -225,6 +225,95 @@ async function runTool(admin: any, name: string, input: any) {
   }
 }
 
+// ===== R1 : circuit intelligence anonyme (post-réponse, non bloquant) =====
+const CLASSIFY_TAXO = `Agroalimentaire & Boissons : Agriculture & élevage | Agroalimentaire & transformation alimentaire | Boissons, vins & spiritueux | Horticulture & production végétale | Machines & équipements agricoles | Nutrition & alimentation animale | Restauration & services alimentaires
+Automobile & Mobilité : Aéronautique & aérospatial | Automobile & motos | Cycle & micromobilité | Équipementiers & pièces | Ferroviaire | Maritime & naval | Mobilité & services de transport
+BTP & Construction : Construction, bâtiment & gros œuvre | Matériaux de construction & revêtements | Menuiserie, fermetures & aménagement | Rénovation & second œuvre | Travaux publics & aménagement extérieur
+Commerce & Distribution : Commerce de détail & retail | Distribution & commerce de gros | Import / export | Logistique, transport & supply chain
+Cosmétique & Bien-être : Bien-être & soins | Cosmétiques & produits de beauté | Parfumerie
+Éducation & Formation : Enseignement & éducation | Formation professionnelle | Médias & édition spécialisée
+Énergie & Environnement : Eau, assainissement & traitement | Énergies renouvelables & transition énergétique | Environnement & développement durable | Gestion des déchets & recyclage
+Finance, Assurance & Immobilier : Assurance | Capital-investissement | Gestion de patrimoine & d'actifs | Immobilier | Services financiers & investissement
+Industrie & Production : Automatisation & robotique industrielle | Bois & transformation du bois | Chimie, matériaux & composites | Électronique & composants | Emballage & conditionnement | Machines-outils & équipements industriels | Mécanique de précision & usinage | Métallurgie & travail des métaux | Plasturgie & transformation des plastiques | Sous-traitance industrielle
+Mode & Textile : Accessoires & maroquinerie | Bijouterie, joaillerie & luxe | Chaussure | Mode & habillement | Textile & confection
+Santé & Médical : Dispositifs & équipements médicaux | Pharmacie & biotechnologies | Santé & prévention
+Secteur Public & Collectivités : Administration & collectivités territoriales | Sécurité & défense | Services publics
+Services aux Entreprises & RH : Conseil & services professionnels | Marketing & communication | Ressources humaines & recrutement | Services aux entreprises (généraux)
+Technologie & Innovation : Cybersécurité & protection des données | IA, data & innovation | Informatique & télécommunications | Logiciels & SaaS | Services numériques & transformation digitale
+Tourisme & Événementiel : Événementiel | Hôtellerie | Loisirs & divertissement | Sports & plein air | Tourisme & voyages`;
+
+const CLASSIFY_SYSTEM = `Tu analyses une question posée à la Recherche IA de Lotexpo pour produire des métadonnées analytiques ANONYMES.
+Réponds UNIQUEMENT avec un objet JSON valide, sans préambule ni backticks :
+{"intent":"decouverte_salon|recherche_exposant|preparation_visite|comparaison|hors_sujet|autre","macro_sector_name":"<un nom EXACT de la liste ou null>","sub_sector_names":["<0 à 3 noms EXACTS de la liste>"],"query_sanitized":"<la question, avec les noms de PERSONNES remplacés par [PERSONNE] et les auto-références de l'entreprise de l'utilisateur par [ENTREPRISE_UTILISATEUR]. CONSERVE les noms de salons et d'exposants recherchés.>"}
+
+## TAXONOMIE (macro : sous-secteurs)
+${CLASSIFY_TAXO}
+
+Règles : macro_sector_name = le domaine dominant (null si hors sujet). sub_sector_names = 0 à 3, noms EXACTS de la liste. N'invente aucun nom hors liste.`;
+
+const VALID_INTENTS = ["decouverte_salon","recherche_exposant","preparation_visite","comparaison","hors_sujet","autre"];
+
+function sanitizeRegex(text: string): string {
+  return text
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[EMAIL]")
+    .replace(/https?:\/\/[^\s]+/gi, "[URL_PERSO]")
+    .replace(/\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b/g, "[IBAN]")
+    .replace(/\b\d{14}\b/g, "[SIRET]")
+    .replace(/\b\d{9}\b/g, "[SIREN]")
+    .replace(/\+?\d[\d\s.\-]{7,}\d/g, "[TEL]");
+}
+
+function extractEventSlugs(text: string): string[] {
+  const set = new Set<string>(); const re = /\/events\/([a-z0-9-]+)/gi; let m;
+  while ((m = re.exec(text)) !== null) set.add(m[1].toLowerCase());
+  return [...set];
+}
+function countExhibitorLinks(text: string): number {
+  const set = new Set<string>(); const re = /\/exposants\/([a-z0-9-]+)/gi; let m;
+  while ((m = re.exec(text)) !== null) set.add(m[1].toLowerCase());
+  return set.size;
+}
+
+async function classifyQuestion(sanitizedQuestion: string): Promise<any> {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: MODEL, max_tokens: 400, system: CLASSIFY_SYSTEM, messages: [{ role: "user", content: sanitizedQuestion }] }),
+  });
+  if (!resp.ok) throw new Error("classify_http_" + resp.status);
+  const data = await resp.json();
+  let txt = (data.content ?? []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("").trim();
+  txt = txt.replace(/^```json/i, "").replace(/```$/, "").trim();
+  return JSON.parse(txt);
+}
+
+async function logIntelligence(admin: any, question: string, questionRank: number, conversationKey: string, finalText: string) {
+  try {
+    const regexed = sanitizeRegex(question);
+    const eventSlugs = extractEventSlugs(finalText);
+    const exhCount = countExhibitorLinks(finalText);
+    const hadResults = eventSlugs.length > 0 || exhCount > 0;
+
+    let cls: any = null;
+    try { cls = await classifyQuestion(regexed); } catch (_) { cls = null; }
+    const ok = cls && typeof cls.query_sanitized === "string" && cls.query_sanitized.length <= regexed.length + 80;
+
+    await admin.rpc("insert_ai_search_event", ok ? {
+      p_conversation_key: conversationKey, p_question_rank: questionRank, p_persona: "inconnu",
+      p_query_sanitized: cls.query_sanitized, p_sanitization_status: "ok",
+      p_intent_type: VALID_INTENTS.includes(cls.intent) ? cls.intent : "autre",
+      p_macro_sector_name: cls.macro_sector_name ?? null,
+      p_sub_sector_names: Array.isArray(cls.sub_sector_names) ? cls.sub_sector_names : [],
+      p_event_slugs: eventSlugs, p_matched_exhibitor_count: exhCount, p_answer_had_results: hadResults,
+    } : {
+      p_conversation_key: conversationKey, p_question_rank: questionRank, p_persona: "inconnu",
+      p_query_sanitized: null, p_sanitization_status: "fallback_metadata_only",
+      p_intent_type: null, p_macro_sector_name: null, p_sub_sector_names: [],
+      p_event_slugs: eventSlugs, p_matched_exhibitor_count: exhCount, p_answer_had_results: hadResults,
+    });
+  } catch (_) { /* ne JAMAIS impacter la réponse utilisateur */ }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -252,6 +341,10 @@ Deno.serve(async (req) => {
     : [];
 
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
+
+  const conversationKey = (typeof body?.conversation_key === "string" && /^[0-9a-f-]{36}$/i.test(body.conversation_key))
+    ? body.conversation_key : crypto.randomUUID();
+  const questionRank = history.filter((m: any) => m.role === "user").length + 1;
 
   let ipHash: string | null = null;
   if (ip) {
@@ -355,8 +448,13 @@ Deno.serve(async (req) => {
   const allowed = credit?.allowed ?? (isAnon ? 3 : 6);
   const remainingAfter = Math.max(allowed - usedAfter, 0);
 
+  if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
+    (EdgeRuntime as any).waitUntil(logIntelligence(admin, question, questionRank, conversationKey, finalText));
+  }
+
   return json({
     answer: finalText,
+    conversation_key: conversationKey,
     credits: { used: usedAfter, allowed, remaining: remainingAfter },
     // Indice "mur imminent" pour que le front prépare le CTA (sans logguer d'event ici :
     // l'event sera loggé au prochain appel effectivement bloqué).
