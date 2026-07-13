@@ -86,6 +86,24 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_rate_limit_hits: {
+        Row: {
+          created_at: string
+          id: number
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       ai_search_usage: {
         Row: {
           created_at: string
