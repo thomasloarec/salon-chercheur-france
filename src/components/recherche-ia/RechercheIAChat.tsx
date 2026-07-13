@@ -107,6 +107,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   const [asking, setAsking] = useState(false);
   const [deepSearch, setDeepSearch] = useState(false);
   const [credits, setCredits] = useState<Credits | null>(null);
+  const [conversationKey, setConversationKey] = useState<string | null>(null);
 
   // Mur affiché sous la conversation (mou = après réponse, dur = bloquant).
   const [wall, setWall] = useState<{ type: WallType; hard: boolean } | null>(null);
@@ -185,7 +186,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
 
     try {
       const { data, error } = await supabase.functions.invoke('recherche-ia-visiteur', {
-        body: { question, history },
+        body: { question, history, conversation_key: conversationKey },
       });
 
       if (error) {
@@ -207,6 +208,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
       }
 
       if (data?.credits) setCredits(data.credits as Credits);
+      if (data?.conversation_key) setConversationKey(data.conversation_key as string);
 
       if (data?.wall && !data?.answer) {
         setWall({ type: data.wall.type as WallType, hard: true });
