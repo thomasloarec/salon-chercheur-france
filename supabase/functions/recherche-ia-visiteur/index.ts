@@ -274,17 +274,18 @@ Deno.serve(async (req) => {
   // Les admins ont une allocation illimitée (999999) ; anonyme = 3, inscrit = 6.
   const isAdmin = (credit?.allowed ?? 0) > 6;
 
-  // 4) Rate-limit IP anti-abus — uniquement pour les non-admins
-  if (!isAdmin && ip) {
+  // 4) Rate-limit IP anti-abus (hash d'IP salé, non réversible) — non-admins
+  if (!isAdmin && ipHash) {
     const since = new Date(Date.now() - 3600_000).toISOString();
     const { count } = await admin
-      .from("ai_search_usage")
+      .from("ai_rate_limit_hits")
       .select("id", { count: "exact", head: true })
-      .eq("ip", ip)
+      .eq("ip_hash", ipHash)
       .gte("created_at", since);
     if ((count ?? 0) >= IP_LIMIT_PER_HOUR) {
       return json({ error: "rate_limited", message: "Trop de requêtes récentes. Réessaie dans un moment." }, 429);
     }
+    await admin.from("ai_rate_limit_hits").insert({ ip_hash: ipHash });
   }
 
   // 5) Boucle de tool-calling (Haiku)
