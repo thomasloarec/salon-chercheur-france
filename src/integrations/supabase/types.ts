@@ -7726,6 +7726,22 @@ export type Database = {
         Args: { p_field: string; p_novelty_id: string }
         Returns: undefined
       }
+      insert_ai_search_event: {
+        Args: {
+          p_answer_had_results: boolean
+          p_conversation_key: string
+          p_event_slugs: string[]
+          p_intent_type: string
+          p_macro_sector_name: string
+          p_matched_exhibitor_count: number
+          p_persona: string
+          p_query_sanitized: string
+          p_question_rank: number
+          p_sanitization_status: string
+          p_sub_sector_names: string[]
+        }
+        Returns: undefined
+      }
       invite_radar_member: {
         Args: { p_account_id: string; p_email: string; p_role?: string }
         Returns: Json
