@@ -274,6 +274,15 @@ function countExhibitorLinks(text: string): number {
   return set.size;
 }
 
+function collectSlugs(node: any, acc: Set<string>): void {
+  if (!node || typeof node !== "object") return;
+  if (Array.isArray(node)) { for (const v of node) collectSlugs(v, acc); return; }
+  for (const [k, v] of Object.entries(node)) {
+    if (k === "slug" && typeof v === "string" && v) acc.add(v.toLowerCase());
+    else collectSlugs(v, acc);
+  }
+}
+
 async function classifyQuestion(sanitizedQuestion: string): Promise<any> {
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -287,10 +296,11 @@ async function classifyQuestion(sanitizedQuestion: string): Promise<any> {
   return JSON.parse(txt);
 }
 
-async function logIntelligence(admin: any, question: string, questionRank: number, conversationKey: string, finalText: string) {
+async function logIntelligence(admin: any, question: string, questionRank: number, conversationKey: string, finalText: string, retrievedSlugs: string[]) {
   try {
     const regexed = sanitizeRegex(question);
-    const eventSlugs = extractEventSlugs(finalText);
+    const cited = extractEventSlugs(finalText);
+    const eventSlugs = cited.length > 0 ? cited : (Array.isArray(retrievedSlugs) ? retrievedSlugs : []);
     const exhCount = countExhibitorLinks(finalText);
     const hadResults = eventSlugs.length > 0 || exhCount > 0;
 
@@ -383,6 +393,7 @@ Deno.serve(async (req) => {
 
   // 5) Boucle de tool-calling (Haiku)
   const messages: any[] = [...history, { role: "user", content: question }];
+  const retrievedSlugs = new Set<string>();
   let finalText = "";
   try {
     for (let i = 0; i < MAX_ITERS; i++) {
@@ -413,6 +424,7 @@ Deno.serve(async (req) => {
         for (const block of data.content ?? []) {
           if (block.type === "tool_use") {
             const result = await runTool(admin, block.name, block.input ?? {});
+            collectSlugs(result, retrievedSlugs);
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,
@@ -449,7 +461,7 @@ Deno.serve(async (req) => {
   const remainingAfter = Math.max(allowed - usedAfter, 0);
 
   if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
-    (EdgeRuntime as any).waitUntil(logIntelligence(admin, question, questionRank, conversationKey, finalText));
+    (EdgeRuntime as any).waitUntil(logIntelligence(admin, question, questionRank, conversationKey, finalText, [...retrievedSlugs]));
   }
 
   return json({
