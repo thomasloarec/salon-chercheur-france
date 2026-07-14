@@ -70,6 +70,37 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
 
+  const { data: imports, isLoading: importsLoading } = useQuery({
+    queryKey: ['admin-salon-imports', salonId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organizer_exhibitor_imports')
+        .select('id, created_at, original_name, file_path')
+        .eq('event_id', salonId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const handleDownloadImport = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('organizer-exhibitor-import', {
+        body: { action: 'signed_url', file_path: filePath },
+      });
+      if (error) throw error;
+      const url = (data as any)?.url;
+      if (!url) throw new Error('URL indisponible');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      toast({
+        title: 'Erreur',
+        description: err?.message || 'Téléchargement impossible.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const { data, isLoading } = useQuery({
     queryKey: ['admin-salon-detail', salonId],
     queryFn: async () => {
