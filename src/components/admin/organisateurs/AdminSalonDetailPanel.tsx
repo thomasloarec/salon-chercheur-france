@@ -516,6 +516,49 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Imports exposants
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {importsLoading ? (
+                <Skeleton className="h-16 w-full" />
+              ) : !imports || imports.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Aucune liste transmise pour ce salon.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {imports.map((imp) => (
+                    <div
+                      key={imp.id}
+                      className="flex items-center justify-between p-3 border rounded-lg gap-4"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{imp.original_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(imp.created_at).toLocaleString('fr-FR')}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadImport(imp.file_path)}
+                        className="flex items-center gap-1 shrink-0"
+                      >
+                        <Download className="h-4 w-4" />
+                        Télécharger
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
