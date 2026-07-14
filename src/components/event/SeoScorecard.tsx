@@ -239,9 +239,58 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
               Télécharger le modèle
             </button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Colonnes obligatoires : Nom Exposant et Website Exposant.
-          </p>
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground">
+              Format attendu : un fichier Excel (.xlsx) avec les 4 colonnes suivantes, dans cet ordre.
+              <span className="block mt-0.5">
+                Colonnes obligatoires : <span className="font-medium text-foreground/80">Nom Exposant</span> et{' '}
+                <span className="font-medium text-foreground/80">Site Internet Exposant</span>.
+              </span>
+            </p>
+            <div className="overflow-x-auto rounded-md border bg-background">
+              <table className="w-full text-[11px] border-collapse">
+                <thead>
+                  <tr className="bg-muted/60 text-muted-foreground">
+                    <th className="w-8 border-r border-b px-2 py-1 text-center font-medium"></th>
+                    <th className="border-r border-b px-2 py-1 text-center font-medium">A</th>
+                    <th className="border-r border-b px-2 py-1 text-center font-medium">B</th>
+                    <th className="border-r border-b px-2 py-1 text-center font-medium">C</th>
+                    <th className="border-b px-2 py-1 text-center font-medium">D</th>
+                  </tr>
+                  <tr className="bg-muted/30 text-foreground">
+                    <th className="w-8 border-r border-b px-2 py-1 text-center font-medium text-muted-foreground">1</th>
+                    <th className="border-r border-b px-2 py-1 text-left font-semibold">
+                      Nom Exposant <span className="text-destructive">*</span>
+                    </th>
+                    <th className="border-r border-b px-2 py-1 text-left font-semibold">Stand Exposant</th>
+                    <th className="border-r border-b px-2 py-1 text-left font-semibold">
+                      Site Internet Exposant <span className="text-destructive">*</span>
+                    </th>
+                    <th className="border-b px-2 py-1 text-left font-semibold">Description Exposant</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  <tr>
+                    <td className="border-r border-b px-2 py-1 text-center text-muted-foreground bg-muted/30 font-medium">2</td>
+                    <td className="border-r border-b px-2 py-1">Acme Textile</td>
+                    <td className="border-r border-b px-2 py-1">A12</td>
+                    <td className="border-r border-b px-2 py-1">https://acme-textile.com</td>
+                    <td className="border-b px-2 py-1">Fabricant de tissus techniques</td>
+                  </tr>
+                  <tr>
+                    <td className="border-r px-2 py-1 text-center text-muted-foreground bg-muted/30 font-medium">3</td>
+                    <td className="border-r px-2 py-1">Studio Mode SA</td>
+                    <td className="border-r px-2 py-1">B07</td>
+                    <td className="border-r px-2 py-1">https://studiomode.fr</td>
+                    <td className="px-2 py-1">Prêt-à-porter féminin</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              <span className="text-destructive">*</span> champs obligatoires. Le stand et la description sont facultatifs.
+            </p>
+          </div>
           <div className="pt-2 border-t space-y-1.5">
             <p className="text-xs font-medium text-foreground/80">Listes transmises</p>
             {imports.length === 0 ? (
