@@ -11,6 +11,7 @@ import { ExternalLink, Sparkles } from 'lucide-react';
 import OrganizerEventEditForm from '@/components/event/OrganizerEventEditForm';
 import SeoScorecard from '@/components/event/SeoScorecard';
 import OrganizerActivationKit from '@/components/event/OrganizerActivationKit';
+import OrganizerEmbedWidget from '@/components/event/OrganizerEmbedWidget';
 import { useEventScorecard } from '@/hooks/useEventScorecard';
 import type { Event } from '@/types/event';
 
@@ -130,6 +131,17 @@ const OrganizerSalonPage: React.FC = () => {
           <OrganizerActivationKit
             event={{ id: event.id, slug: event.slug, nom_event: event.nom_event }}
           />
+        </section>
+
+        {/* Section : Widget nouveautés */}
+        <section>
+          <div className="mb-3">
+            <h2 className="text-lg font-semibold text-foreground">Widget nouveautés pour votre site</h2>
+            <p className="text-sm text-muted-foreground">
+              Affichez les nouveautés de votre salon sur votre propre site. Copiez ce code et collez-le où vous le souhaitez.
+            </p>
+          </div>
+          <OrganizerEmbedWidget slug={event.slug || event.id} nomEvent={event.nom_event} />
         </section>
       </div>
     </MainLayout>
