@@ -272,12 +272,6 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
           </div>
         </div>
 
-        <div>
-          <Button variant="outline" size="sm" onClick={onSwitchToEdit}>
-            <PencilLine className="h-3.5 w-3.5 mr-1.5" />
-            Améliorer votre description
-          </Button>
-        </div>
       </Card>
 
       {/* Visibilité IA */}
