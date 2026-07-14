@@ -1369,6 +1369,9 @@ export type Database = {
           enrichissement_niveau: string | null
           enrichissement_score: number | null
           enrichissement_statut: string | null
+          exhibitors_confirmed_at: string | null
+          exhibitors_confirmed_by: string | null
+          exhibitors_confirmed_complete: boolean
           faq_json: Json | null
           id: string
           id_event: string
@@ -1428,6 +1431,9 @@ export type Database = {
           enrichissement_niveau?: string | null
           enrichissement_score?: number | null
           enrichissement_statut?: string | null
+          exhibitors_confirmed_at?: string | null
+          exhibitors_confirmed_by?: string | null
+          exhibitors_confirmed_complete?: boolean
           faq_json?: Json | null
           id?: string
           id_event: string
@@ -1487,6 +1493,9 @@ export type Database = {
           enrichissement_niveau?: string | null
           enrichissement_score?: number | null
           enrichissement_statut?: string | null
+          exhibitors_confirmed_at?: string | null
+          exhibitors_confirmed_by?: string | null
+          exhibitors_confirmed_complete?: boolean
           faq_json?: Json | null
           id?: string
           id_event?: string
@@ -8191,6 +8200,10 @@ export type Database = {
           p_source_surface?: string
         }
         Returns: Json
+      }
+      set_exhibitors_complete: {
+        Args: { p_confirmed: boolean; p_event_id: string }
+        Returns: undefined
       }
       set_radar_company_pref: {
         Args: { p_crm_company_id: string; p_status: string }
