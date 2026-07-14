@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
 
       const { data: ev } = await admin
         .from('events')
-        .select('id, nom_event, date_debut, date_fin, secteur, affluence, tarif, url_image, description_event, owner_user_id, visible, is_test')
+        .select('id, nom_event, date_debut, date_fin, secteur, affluence, tarif, url_image, description_event, description_enrichie, enrichissement_statut, owner_user_id, visible, is_test')
         .eq('id', eventId)
         .maybeSingle()
       if (!ev) return json({ error: 'EVENT_NOT_FOUND', message: 'Salon introuvable.' }, 404)
@@ -220,7 +220,14 @@ Deno.serve(async (req) => {
       for (const field of EDITABLE_FIELDS) {
         if (Object.prototype.hasOwnProperty.call(changes, field) && changes[field] !== undefined) {
           proposed[field] = changes[field]
-          previous[field] = (ev as Record<string, any>)[field]
+          if (field === 'description_event') {
+            const displayedDesc = (ev.enrichissement_statut === 'valide' && ev.description_enrichie)
+              ? ev.description_enrichie
+              : (ev.description_event ?? '')
+            previous[field] = displayedDesc
+          } else {
+            previous[field] = (ev as Record<string, any>)[field]
+          }
           changedFields.push(field)
         }
       }
