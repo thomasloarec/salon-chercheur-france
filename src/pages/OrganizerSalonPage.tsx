@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Sparkles } from 'lucide-react';
 import OrganizerEventEditForm from '@/components/event/OrganizerEventEditForm';
 import SeoScorecard from '@/components/event/SeoScorecard';
+import OrganizerActivationKit from '@/components/event/OrganizerActivationKit';
 import { useEventScorecard } from '@/hooks/useEventScorecard';
 import type { Event } from '@/types/event';
 
@@ -126,9 +127,9 @@ const OrganizerSalonPage: React.FC = () => {
               Invitez vos exposants à compléter leur fiche et à publier leurs nouveautés.
             </p>
           </div>
-          <Card className="p-6 border-dashed bg-muted/30">
-            <p className="text-sm text-muted-foreground">Bientôt disponible.</p>
-          </Card>
+          <OrganizerActivationKit
+            event={{ id: event.id, slug: event.slug, nom_event: event.nom_event }}
+          />
         </section>
       </div>
     </MainLayout>
