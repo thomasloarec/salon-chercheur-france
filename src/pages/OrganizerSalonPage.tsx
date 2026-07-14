@@ -22,6 +22,7 @@ const OrganizerSalonPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState<'salon' | 'exposants' | 'activation' | 'widget'>('salon');
 
   useEffect(() => {
     let cancelled = false;
@@ -111,7 +112,6 @@ const OrganizerSalonPage: React.FC = () => {
     },
   ];
 
-  const [activeSection, setActiveSection] = useState<SectionKey>('salon');
   const active = sections.find((s) => s.key === activeSection)!;
 
   return (
