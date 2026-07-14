@@ -5404,6 +5404,69 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_regen_backup: {
+        Row: {
+          backed_up_at: string
+          description_enrichie_old: string | null
+          enrichissement_statut_old: string | null
+          event_id: string
+          nom_event: string | null
+          seo_quality_score_old: number | null
+        }
+        Insert: {
+          backed_up_at?: string
+          description_enrichie_old?: string | null
+          enrichissement_statut_old?: string | null
+          event_id: string
+          nom_event?: string | null
+          seo_quality_score_old?: number | null
+        }
+        Update: {
+          backed_up_at?: string
+          description_enrichie_old?: string | null
+          enrichissement_statut_old?: string | null
+          event_id?: string
+          nom_event?: string | null
+          seo_quality_score_old?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_regen_backup_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "seo_regen_backup_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "seo_regen_backup_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seo_regen_backup_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seo_regen_backup_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seo_scans: {
         Row: {
           completed_at: string | null
