@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -23,6 +24,36 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
   const [localConfirmed, setLocalConfirmed] = useState<boolean | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const {
+    data: imports = [],
+    refetch: refetchImports,
+  } = useQuery({
+    queryKey: ['organizer-exhibitor-imports', eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organizer_exhibitor_imports')
+        .select('id, original_name, created_at, file_path')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const handleDownloadImport = async (file_path: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('organizer-exhibitor-import', {
+        body: { action: 'signed_url', file_path },
+      });
+      if (error) throw error;
+      const url = (data as any)?.url;
+      if (!url) throw new Error('URL indisponible');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      toast.error(err?.message || 'Téléchargement impossible');
+    }
+  };
 
   const downloadTemplate = () => {
     const header = 'Nom Exposant,Stand Exposant,Website Exposant,Description Exposant\n';
@@ -65,6 +96,7 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
       });
       if (error || !(data as any)?.success) throw error || new Error('Upload échoué');
       toast.success("Votre liste a bien été transmise. Notre équipe l'intègre sous quelques jours.");
+      await refetchImports();
     } catch (err: any) {
       toast.error(err?.message || 'Upload impossible');
     } finally {
@@ -210,6 +242,34 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
           <p className="text-xs text-muted-foreground">
             Colonnes obligatoires : Nom Exposant et Website Exposant.
           </p>
+          <div className="pt-2 border-t space-y-1.5">
+            <p className="text-xs font-medium text-foreground/80">Listes transmises</p>
+            {imports.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Aucune liste transmise pour l'instant.</p>
+            ) : (
+              <ul className="space-y-1">
+                {imports.map((imp: any) => (
+                  <li key={imp.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="truncate">
+                      <span className="text-muted-foreground">
+                        {new Date(imp.created_at).toLocaleDateString('fr-FR')} ·{' '}
+                      </span>
+                      <span className="text-foreground">{imp.original_name}</span>
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => handleDownloadImport(imp.file_path)}
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      Télécharger
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         <div>
