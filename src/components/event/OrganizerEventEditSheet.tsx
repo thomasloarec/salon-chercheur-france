@@ -19,6 +19,7 @@ import { useSectors } from '@/hooks/useSectors';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 import type { Sector } from '@/types/sector';
+import { scoreSeoQuality } from '@/lib/seoQuality';
 
 interface OrganizerEventEditSheetProps {
   event: Event;
@@ -74,6 +75,14 @@ export const OrganizerEventEditSheet = ({ event, open, onOpenChange }: Organizer
   const sectorOptions = useMemo(
     () => allSectors.map((s: Sector) => ({ value: s.id, label: s.name })),
     [allSectors],
+  );
+
+  const seo = useMemo(
+    () =>
+      formData.description_event && formData.description_event.trim()
+        ? scoreSeoQuality(formData.description_event)
+        : null,
+    [formData.description_event],
   );
 
   const resolvedDescription = useMemo(() => {
@@ -347,6 +356,33 @@ export const OrganizerEventEditSheet = ({ event, open, onOpenChange }: Organizer
               className="mt-1"
               placeholder="Décrivez votre salon..."
             />
+            {seo && (
+              <div className="mt-2 space-y-2">
+                <span
+                  className={
+                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ' +
+                    (seo.score >= 80
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-amber-100 text-amber-800')
+                  }
+                >
+                  {seo.score >= 80 ? 'Qualité SEO : Super' : 'Qualité SEO : Alerte'} · {seo.score}/100
+                </span>
+                {seo.advice.length > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    <div className="font-medium">Pour améliorer :</div>
+                    <ul className="list-disc pl-5">
+                      {seo.advice.map((a, i) => (
+                        <li key={i}>{a}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Visez un score Super pour un bon référencement de votre salon sur Google.
+                </p>
+              </div>
+            )}
           </div>
 
           {!hasChanges && (
