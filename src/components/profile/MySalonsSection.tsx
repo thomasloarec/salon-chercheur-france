@@ -19,7 +19,7 @@ const SalonCompletenessBadge = ({ eventId }: { eventId: string }) => {
   return (
     <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
       <Sparkles className="h-3 w-3" />
-      <span>{pct}% de fiches enrichies</span>
+      <span>{pct}% de fiches détaillées</span>
     </div>
   );
 };

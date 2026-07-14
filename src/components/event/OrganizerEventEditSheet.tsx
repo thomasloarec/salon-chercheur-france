@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { Info, Loader2, Camera, ShieldCheck } from 'lucide-react';
+import { Info, Loader2, Camera, ShieldCheck, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useSectors } from '@/hooks/useSectors';
@@ -20,7 +20,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 import type { Sector } from '@/types/sector';
 import { scoreSeoQuality } from '@/lib/seoQuality';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useEventScorecard } from '@/hooks/useEventScorecard';
 import SeoScorecard from './SeoScorecard';
 
 interface OrganizerEventEditSheetProps {
@@ -61,7 +62,8 @@ export const OrganizerEventEditSheet = ({ event, open, onOpenChange }: Organizer
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'edit' | 'scorecard'>('edit');
+  const [scorecardOpen, setScorecardOpen] = useState(false);
+  const { data: scorecardData } = useEventScorecard(event.id, open);
 
   // Valeurs initiales pour le diff (uniquement les champs modifiés seront envoyés).
   const initialRef = useRef<{
@@ -234,13 +236,23 @@ export const OrganizerEventEditSheet = ({ event, open, onOpenChange }: Organizer
           </SheetDescription>
         </SheetHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'scorecard')} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="edit">Modifier</TabsTrigger>
-            <TabsTrigger value="scorecard">Scorecard</TabsTrigger>
-          </TabsList>
+        <Collapsible open={scorecardOpen} onOpenChange={setScorecardOpen} className="mt-4 rounded-lg border">
+          <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm">
+            <span className="text-foreground/90">
+              {(() => {
+                const c = (scorecardData as any)?.completude;
+                const exp = c?.exposants_references ?? 0;
+                const p = Math.max(0, Math.min(100, Number(c?.pct_enrichies ?? 0)));
+                return `${exp} exposant${exp > 1 ? 's' : ''} · ${p}% de fiches détaillées`;
+              })()}
+            </span>
+            <ChevronDown className={`h-4 w-4 transition-transform ${scorecardOpen ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="border-t p-3">
+            <SeoScorecard eventId={event.id} onSwitchToEdit={() => setScorecardOpen(false)} />
+          </CollapsibleContent>
+        </Collapsible>
 
-          <TabsContent value="edit" className="mt-4">
         {/* Bandeau d'information */}
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm text-foreground/80">
           <ShieldCheck className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
@@ -417,12 +429,6 @@ export const OrganizerEventEditSheet = ({ event, open, onOpenChange }: Organizer
             )}
           </Button>
         </SheetFooter>
-          </TabsContent>
-
-          <TabsContent value="scorecard" className="mt-4">
-            <SeoScorecard eventId={event.id} onSwitchToEdit={() => setActiveTab('edit')} />
-          </TabsContent>
-        </Tabs>
       </SheetContent>
     </Sheet>
   );
