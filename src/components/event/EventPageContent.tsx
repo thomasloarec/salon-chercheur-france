@@ -23,7 +23,6 @@ import EventRadarCrmWidget from '@/components/event/EventRadarCrmWidget';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
 import PrepareVisitWizard from '@/components/event/PrepareVisitWizard';
-import OrganizerEventEditSheet from '@/components/event/OrganizerEventEditSheet';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -51,7 +50,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   const [searchParams] = useSearchParams();
   const [participationsCount, setParticipationsCount] = useState<number>(0);
   const [prepareVisitOpen, setPrepareVisitOpen] = useState(false);
-  const [organizerEditOpen, setOrganizerEditOpen] = useState(false);
   const [seriesEventIds, setSeriesEventIds] = useState<string[]>([]);
 
   const isOwner = !!user && !!event.owner_user_id && event.owner_user_id === user.id;
@@ -224,7 +222,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setOrganizerEditOpen(true)}
+                    onClick={() => navigate(`/events/${event.slug || event.id}/gerer`)}
                     className="gap-2"
                   >
                     <Settings className="h-4 w-4" />
@@ -409,14 +407,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
         exhibitorCount={exhibitorCount}
       />
 
-      {/* Sidebar d'édition organisateur (propriétaire uniquement) */}
-      {isOwner && (
-        <OrganizerEventEditSheet
-          event={event}
-          open={organizerEditOpen}
-          onOpenChange={setOrganizerEditOpen}
-        />
-      )}
     </>
   );
 };
