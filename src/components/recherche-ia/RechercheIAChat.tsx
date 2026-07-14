@@ -296,7 +296,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
         Recherche IA · Lotexpo
       </p>
       <Heading
-        className={`heading-display text-foreground ${
+        className={`heading-display text-primary ${
           isSidebar
             ? 'text-2xl'
             : hasStarted
@@ -304,10 +304,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             : 'text-3xl md:text-5xl'
         }`}
       >
-        Posez vos questions.
-        <span className="block text-accent">
-          L'IA recherche parmi tous les salons B2B de France.
-        </span>
+        Toutes les opportunités des salons professionnels, révélées par l'IA.
       </Heading>
       {!hasStarted && (
         <p
