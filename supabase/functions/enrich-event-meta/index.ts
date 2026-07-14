@@ -570,7 +570,7 @@ async function enrichDescription(
       headers: buildAnthropicHeaders(anthropicKey),
       body: JSON.stringify({
         model: getAnthropicModelFast(),
-        max_tokens: 1000,
+        max_tokens: 2500,
         messages: [{ role: 'user', content: userMessage }],
         system: DESC_ENRICHIE_SYSTEM_PROMPT,
       }),
