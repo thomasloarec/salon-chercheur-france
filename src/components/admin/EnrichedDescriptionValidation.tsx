@@ -610,6 +610,29 @@ export function EnrichedDescriptionValidation() {
                     </div>
                   )}
 
+                  {expanded && ev.seo_quality_report && (
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-xs space-y-1">
+                      <div className="font-medium text-slate-900">Qualité SEO · {ev.seo_quality_score ?? '—'}/100</div>
+                      <div className="text-slate-800">
+                        Profondeur {ev.seo_quality_report.subscores.profondeur}/30 ·
+                        {' '}Couverture {ev.seo_quality_report.subscores.couverture}/25 ·
+                        {' '}Spécificité {ev.seo_quality_report.subscores.specificite}/20 ·
+                        {' '}Richesse {ev.seo_quality_report.subscores.richesse}/15 ·
+                        {' '}Structure {ev.seo_quality_report.subscores.structure}/10
+                      </div>
+                      {ev.seo_quality_report.advice.length > 0 && (
+                        <ul className="space-y-0.5 text-slate-800 pt-1">
+                          {ev.seo_quality_report.advice.map((a, i) => (
+                            <li key={i} className="flex gap-1.5">
+                              <span className="opacity-60">•</span>
+                              <span>{a}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
                   {isEditing ? (
                     <div className="space-y-2">
                       <Textarea
