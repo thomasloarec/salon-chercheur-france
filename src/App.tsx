@@ -105,6 +105,18 @@ function PendingVisitRedirect() {
 }
 
 function App() {
+  const isEmbed = typeof window !== 'undefined' && window.location.pathname.startsWith('/embed/');
+  if (isEmbed) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <Routes>
+            <Route path="/embed/salon/:slug" element={<SalonEmbedPage />} />
+          </Routes>
+        </Router>
+      </QueryClientProvider>
+    );
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
