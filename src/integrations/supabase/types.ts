@@ -8157,6 +8157,7 @@ export type Database = {
         Returns: Json
       }
       rollup_ai_search_daily: { Args: { p_day?: string }; Returns: undefined }
+      rollup_ai_visibility: { Args: { p_day?: string }; Returns: undefined }
       run_exhibitor_ai_remap: { Args: never; Returns: Json }
       scan_event_duplicates: {
         Args: { p_id: string; p_kind: string; p_persist?: boolean }
