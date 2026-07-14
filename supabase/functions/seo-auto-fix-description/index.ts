@@ -67,7 +67,7 @@ function buildFixInstructions(
         out.push(`Noms d'entreprises/exposants non sourcés. SUPPRIME les noms suivants du texte : ${(c.evidence ?? []).join(', ') || '—'}. Reformule sans citer d'exposants nominativement.`);
         break;
       case 'superlatives':
-        out.push(`Superlatifs/promesses non sourcés. Reformule sans "leader", "n°1", "incontournable", "unique en France", "le plus grand", etc.`);
+        out.push(`Allégation factuelle invérifiable et non sourcée (ex. "n°1 mondial", "le plus grand salon de France", "leader du secteur"). Reformule UNIQUEMENT cette allégation pour retirer la prétention chiffrée ou comparative non sourcée. Ne touche à rien d'autre et conserve le style vivant et spécifique du texte.`);
         break;
       case 'length_min':
         if (c.status === 'fail') out.push(`Texte trop court. Étoffe en restant strictement factuel à partir des données fournies, sans inventer.`);
@@ -159,9 +159,8 @@ Deno.serve(async (req) => {
 RÈGLES ABSOLUES :
 - Tu N'INVENTES AUCUNE NOUVELLE INFORMATION. Tu ne fais que corriger ou supprimer ce qui pose problème.
 - Si une information factuelle est demandée mais absente des données, tu l'omets totalement.
-- Tu conserves la longueur, le ton, la structure du texte original autant que possible.
 - Tu retournes UNIQUEMENT le texte corrigé, sans préambule, sans commentaire, sans titre.
-- Pas de superlatifs ("incontournable", "leader", "unique"…).`;
+- Tu ne modifies QUE le ou les éléments factuels précis listés dans les corrections (tu les corriges ou les retires). Tout le reste du texte — sa longueur, sa richesse, sa spécificité, ses chiffres sourcés, ses noms et ses thématiques — doit rester identique. N'appauvris jamais le texte au-delà du retrait strict de l'élément problématique. Le texte corrigé ne doit pas être plus court ni plus pauvre que l'original. N'ajoute aucune allégation invérifiable.`;
 
   const dataBlock = [
     `NOM : ${source.nom_event}`,
