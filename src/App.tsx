@@ -76,6 +76,7 @@ import SectorYearHub from '@/pages/SectorYearHub';
 import CityHub from '@/pages/CityHub';
 import CityYearHub from '@/pages/CityYearHub';
 import SalonsAnnualHub from '@/pages/SalonsAnnualHub';
+import SalonEmbedPage from '@/pages/SalonEmbedPage';
 import './App.css';
 
 // Global listener for pending visit plan redirect after OAuth
@@ -108,8 +109,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ConsentProvider>
-          <SiteGuard>
-            <Router>
+          <Router>
+            <Routes>
+              <Route path="/embed/salon/:slug" element={<SalonEmbedPage />} />
+            </Routes>
+            <SiteGuard>
               <ScrollToTop />
               <AnalyticsTracker />
                 <PendingVisitRedirect />
@@ -190,8 +194,8 @@ function App() {
                 <CookieBanner />
                 <Toaster />
               </div>
-            </Router>
-          </SiteGuard>
+            </SiteGuard>
+          </Router>
         </ConsentProvider>
       </AuthProvider>
     </QueryClientProvider>
