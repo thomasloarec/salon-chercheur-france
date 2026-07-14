@@ -257,6 +257,13 @@ export function EnrichedDescriptionValidation() {
     return <Badge variant="outline" className="text-xs">{s} · {score ?? '?'}/100</Badge>;
   };
 
+  const seoQualityBadge = (ev: PendingEvent) => {
+    const s = ev.seo_quality_score;
+    if (s == null) return <Badge variant="outline" className="text-xs">SEO —</Badge>;
+    if (s >= 80) return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs">SEO Super · {s}/100</Badge>;
+    return <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">SEO Alerte · {s}/100</Badge>;
+  };
+
   const checkLabelToBadge = (code: string): string => {
     switch (code) {
       case 'numbers_grounded': return 'Chiffre non vérifié';
