@@ -86,7 +86,7 @@ export function SeoEnrichmentSimple() {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('enrich-event-meta', {
-        body: { batch_desc_enrichie: true, limit: 10 },
+        body: { batch_desc_enrichie: true, limit: 3 },
       });
       if (error) throw error;
       const r = data as { total?: number; done?: number; errors?: number; skipped?: number };
