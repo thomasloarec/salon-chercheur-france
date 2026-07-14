@@ -193,3 +193,7 @@ verify_jwt = false
 # (admin_apply_event_change / admin_reject_event_change) et la vérification
 # du rôle admin est faite en code.
 verify_jwt = false
+
+[functions.organizer-exhibitor-import]
+# Authentification gérée manuellement (getUser sur le header Authorization).
+verify_jwt = false
