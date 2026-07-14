@@ -22,8 +22,8 @@ const OrganizerActivationKit: React.FC<Props> = ({ event }) => {
 
   const { data: scorecard, isLoading: scLoading } = useEventScorecard(event.id);
   const completude = (scorecard as any)?.completude;
-  const fichesEnrichies = completude?.fiches_enrichies ?? 0;
   const exposantsReferences = completude?.exposants_references ?? 0;
+  const exposantsRevendiques = completude?.exposants_revendiques ?? 0;
 
   const { data: noveltiesCount, isLoading: nvLoading } = useQuery({
     queryKey: ['organizer-activation-novelties', event.id],
@@ -98,7 +98,7 @@ L'équipe ${event.nom_event}`;
         <div className="rounded-md border p-3">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Users className="h-4 w-4" />
-            <span>Fiches détaillées</span>
+            <span>Pages revendiquées</span>
           </div>
           <div className="mt-1 text-sm">
             {scLoading ? (
@@ -106,11 +106,14 @@ L'équipe ${event.nom_event}`;
             ) : (
               <>
                 <span className="text-lg font-semibold">
-                  {fichesEnrichies} / {exposantsReferences}
+                  {exposantsRevendiques} / {exposantsReferences}
                 </span>{' '}
                 <span className="text-muted-foreground text-xs">
-                  de vos exposants ont une fiche détaillée
+                  de vos exposants ont revendiqué leur page
                 </span>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sans revendication, vos exposants n'apparaissent pas pleinement sur Lotexpo.
+                </p>
               </>
             )}
           </div>

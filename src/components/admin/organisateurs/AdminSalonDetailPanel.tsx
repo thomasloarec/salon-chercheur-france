@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,6 +69,37 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
+
+  const { data: imports, isLoading: importsLoading } = useQuery({
+    queryKey: ['admin-salon-imports', salonId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organizer_exhibitor_imports')
+        .select('id, created_at, original_name, file_path')
+        .eq('event_id', salonId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const handleDownloadImport = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('organizer-exhibitor-import', {
+        body: { action: 'signed_url', file_path: filePath },
+      });
+      if (error) throw error;
+      const url = (data as any)?.url;
+      if (!url) throw new Error('URL indisponible');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      toast({
+        title: 'Erreur',
+        description: err?.message || 'Téléchargement impossible.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-salon-detail', salonId],
@@ -479,6 +510,49 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                           Refuser
                         </Button>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Imports exposants
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {importsLoading ? (
+                <Skeleton className="h-16 w-full" />
+              ) : !imports || imports.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Aucune liste transmise pour ce salon.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {imports.map((imp) => (
+                    <div
+                      key={imp.id}
+                      className="flex items-center justify-between p-3 border rounded-lg gap-4"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{imp.original_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(imp.created_at).toLocaleString('fr-FR')}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadImport(imp.file_path)}
+                        className="flex items-center gap-1 shrink-0"
+                      >
+                        <Download className="h-4 w-4" />
+                        Télécharger
+                      </Button>
                     </div>
                   ))}
                 </div>

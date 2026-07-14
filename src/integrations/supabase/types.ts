@@ -3804,6 +3804,69 @@ export type Database = {
           },
         ]
       }
+      organizer_exhibitor_imports: {
+        Row: {
+          created_at: string
+          event_id: string
+          file_path: string
+          id: string
+          original_name: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          file_path: string
+          id?: string
+          original_name?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          file_path?: string
+          id?: string
+          original_name?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizer_exhibitor_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "organizer_exhibitor_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "organizer_exhibitor_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizer_exhibitor_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizer_exhibitor_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outreach_campaigns: {
         Row: {
           campaign_status: string | null
@@ -4142,6 +4205,7 @@ export type Database = {
           id_event_text: string | null
           id_exposant: string
           id_participation: string
+          source: string
           stand_exposant: string | null
           urlexpo_event: string | null
           website_exposant: string | null
@@ -4153,6 +4217,7 @@ export type Database = {
           id_event_text?: string | null
           id_exposant: string
           id_participation?: string
+          source?: string
           stand_exposant?: string | null
           urlexpo_event?: string | null
           website_exposant?: string | null
@@ -4164,6 +4229,7 @@ export type Database = {
           id_event_text?: string | null
           id_exposant?: string
           id_participation?: string
+          source?: string
           stand_exposant?: string | null
           urlexpo_event?: string | null
           website_exposant?: string | null

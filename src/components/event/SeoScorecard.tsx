@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles, Users, Upload, PencilLine, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Users, Upload, PencilLine, CheckCircle2, Download, Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +21,57 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [localConfirmed, setLocalConfirmed] = useState<boolean | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const downloadTemplate = () => {
+    const header = 'Nom Exposant,Stand Exposant,Website Exposant,Description Exposant\n';
+    const blob = new Blob([header], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'modele-exposants.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const readAsBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const res = String(reader.result || '');
+        resolve(res.includes(',') ? res.split(',').pop() || '' : res);
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const b64 = await readAsBase64(file);
+      const { data, error } = await supabase.functions.invoke('organizer-exhibitor-import', {
+        body: {
+          action: 'upload',
+          event_id: eventId,
+          file_base64: b64,
+          file_name: file.name,
+          content_type: file.type || 'application/octet-stream',
+        },
+      });
+      if (error || !(data as any)?.success) throw error || new Error('Upload échoué');
+      toast.success("Votre liste a bien été transmise. Notre équipe l'intègre sous quelques jours.");
+    } catch (err: any) {
+      toast.error(err?.message || 'Upload impossible');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   if (isLoading) {
     return (
@@ -127,19 +177,39 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
           <p className="text-xs text-muted-foreground">
             Si des exposants manquent, vous pourrez bientôt importer votre liste complète.
           </p>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-block">
-                  <Button variant="outline" size="sm" disabled>
-                    <Upload className="h-3.5 w-3.5 mr-1.5" />
-                    Importer votre liste exposants
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>Bientôt disponible</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {uploading ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              Importer votre liste exposants
+            </Button>
+            <button
+              type="button"
+              onClick={downloadTemplate}
+              className="text-xs text-primary underline inline-flex items-center gap-1"
+            >
+              <Download className="h-3 w-3" />
+              Télécharger le modèle
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Colonnes obligatoires : Nom Exposant et Website Exposant.
+          </p>
         </div>
 
         <div>
