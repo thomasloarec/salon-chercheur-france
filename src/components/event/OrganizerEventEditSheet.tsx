@@ -20,6 +20,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 import type { Sector } from '@/types/sector';
 import { scoreSeoQuality } from '@/lib/seoQuality';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SeoScorecard from './SeoScorecard';
 
 interface OrganizerEventEditSheetProps {
   event: Event;
@@ -59,6 +61,7 @@ export const OrganizerEventEditSheet = ({ event, open, onOpenChange }: Organizer
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'edit' | 'scorecard'>('edit');
 
   // Valeurs initiales pour le diff (uniquement les champs modifiés seront envoyés).
   const initialRef = useRef<{
@@ -231,6 +234,13 @@ export const OrganizerEventEditSheet = ({ event, open, onOpenChange }: Organizer
           </SheetDescription>
         </SheetHeader>
 
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'scorecard')} className="mt-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="edit">Modifier</TabsTrigger>
+            <TabsTrigger value="scorecard">Scorecard</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="edit" className="mt-4">
         {/* Bandeau d'information */}
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm text-foreground/80">
           <ShieldCheck className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
@@ -407,6 +417,12 @@ export const OrganizerEventEditSheet = ({ event, open, onOpenChange }: Organizer
             )}
           </Button>
         </SheetFooter>
+          </TabsContent>
+
+          <TabsContent value="scorecard" className="mt-4">
+            <SeoScorecard eventId={event.id} onSwitchToEdit={() => setActiveTab('edit')} />
+          </TabsContent>
+        </Tabs>
       </SheetContent>
     </Sheet>
   );

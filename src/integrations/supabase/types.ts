@@ -7610,6 +7610,7 @@ export type Database = {
           novelty_count: number
         }[]
       }
+      get_event_scorecard: { Args: { p_event_id: string }; Returns: Json }
       get_exhibitor_ai_enrichment_stats: { Args: never; Returns: Json }
       get_exhibitor_completion: {
         Args: { ids: string[] }

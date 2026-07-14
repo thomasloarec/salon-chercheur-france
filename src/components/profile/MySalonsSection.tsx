@@ -5,6 +5,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { useUserSalons } from '@/hooks/useExhibitorAdmin';
+import { useEventScorecard } from '@/hooks/useEventScorecard';
+import { Sparkles } from 'lucide-react';
+
+const SalonCompletenessBadge = ({ eventId }: { eventId: string }) => {
+  const { data, isLoading } = useEventScorecard(eventId);
+  if (isLoading) {
+    return <Skeleton className="h-3 w-24 mt-1" />;
+  }
+  const anyData = data as any;
+  const pct = anyData?.completude?.pct_enrichies;
+  if (typeof pct !== 'number') return null;
+  return (
+    <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+      <Sparkles className="h-3 w-3" />
+      <span>{pct}% de fiches enrichies</span>
+    </div>
+  );
+};
 
 const MySalonsSection = () => {
   const { data: salons, isLoading } = useUserSalons();
@@ -62,6 +80,7 @@ const MySalonsSection = () => {
                   <span className="font-medium truncate">{salon.nom_event}</span>
                   {salon.verified_at && <VerifiedBadge />}
                 </div>
+                <SalonCompletenessBadge eventId={salon.id} />
               </div>
             </div>
 
