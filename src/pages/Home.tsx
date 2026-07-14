@@ -188,8 +188,9 @@ const Home = () => {
               Les salons professionnels, lus par l'IA
             </span>
 
-            <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-primary max-w-[17ch] mx-auto">
-              Toutes les opportunités des salons professionnels, révélées par l'IA.
+            <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-primary max-w-[28ch] mx-auto text-balance">
+              Toutes les opportunités des salons professionnels,
+              <span className="block text-accent">révélées par l'IA.</span>
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-[56ch] mx-auto">

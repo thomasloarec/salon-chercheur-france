@@ -304,7 +304,8 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             : 'text-3xl md:text-5xl'
         }`}
       >
-        Toutes les opportunités des salons professionnels, révélées par l'IA.
+        Toutes les opportunités des salons professionnels,
+        <span className="block text-accent">révélées par l'IA.</span>
       </Heading>
       {!hasStarted && (
         <p
