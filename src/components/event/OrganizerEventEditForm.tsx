@@ -219,7 +219,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
 
   return (
     <div className="space-y-5">
-      {submittedOk && (
+      {submittedOk && !hasChanges && (
         <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
           <CheckCircle2 className="h-4 w-4 !text-emerald-600" />
           <AlertDescription className="text-emerald-900">
