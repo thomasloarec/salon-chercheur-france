@@ -16,6 +16,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
+import type { SeoQualityResult } from '@/lib/seoQuality';
 
 interface PendingEvent {
   id: string;
@@ -30,6 +31,8 @@ interface PendingEvent {
   auto_validation_score: number | null;
   auto_validation_report: AutoValidationReport | null;
   validation_mode: string | null;
+  seo_quality_score: number | null;
+  seo_quality_report: SeoQualityResult | null;
 }
 
 interface AutoValidationCheck {
@@ -100,7 +103,7 @@ export function EnrichedDescriptionValidation() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .gt('date_debut', today),
         supabase.from('events')
-          .select('id, nom_event, slug, ville, date_debut, enrichissement_score, description_enrichie, enrichissement_statut, auto_validation_status, auto_validation_score, auto_validation_report, validation_mode')
+          .select('id, nom_event, slug, ville, date_debut, enrichissement_score, description_enrichie, enrichissement_statut, auto_validation_status, auto_validation_score, auto_validation_report, validation_mode, seo_quality_score, seo_quality_report')
           .not('description_enrichie', 'is', null)
           .in('enrichissement_statut', ['en_attente', 'valide'])
           .order('enrichissement_score', { ascending: false })
@@ -121,6 +124,8 @@ export function EnrichedDescriptionValidation() {
       setEvents((eventsRes.data ?? []).map((e) => ({
         ...e,
         auto_validation_report: (e.auto_validation_report ?? null) as unknown as AutoValidationReport | null,
+        seo_quality_score: (e as { seo_quality_score?: number | null }).seo_quality_score ?? null,
+        seo_quality_report: ((e as { seo_quality_report?: unknown }).seo_quality_report ?? null) as unknown as SeoQualityResult | null,
       })) as PendingEvent[]);
       const lastDetails = lastRunRes.data?.[0]?.details as Record<string, unknown> | undefined;
       const ids = (lastDetails?.processed_ids as string[] | undefined) ?? [];
