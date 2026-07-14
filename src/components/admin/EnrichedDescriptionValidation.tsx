@@ -16,6 +16,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
+import type { SeoQualityResult } from '@/lib/seoQuality';
 
 interface PendingEvent {
   id: string;
@@ -30,6 +31,8 @@ interface PendingEvent {
   auto_validation_score: number | null;
   auto_validation_report: AutoValidationReport | null;
   validation_mode: string | null;
+  seo_quality_score: number | null;
+  seo_quality_report: SeoQualityResult | null;
 }
 
 interface AutoValidationCheck {
@@ -100,7 +103,7 @@ export function EnrichedDescriptionValidation() {
         supabase.from('events').select('id', { count: 'exact', head: true })
           .gt('date_debut', today),
         supabase.from('events')
-          .select('id, nom_event, slug, ville, date_debut, enrichissement_score, description_enrichie, enrichissement_statut, auto_validation_status, auto_validation_score, auto_validation_report, validation_mode')
+          .select('id, nom_event, slug, ville, date_debut, enrichissement_score, description_enrichie, enrichissement_statut, auto_validation_status, auto_validation_score, auto_validation_report, validation_mode, seo_quality_score, seo_quality_report')
           .not('description_enrichie', 'is', null)
           .in('enrichissement_statut', ['en_attente', 'valide'])
           .order('enrichissement_score', { ascending: false })
@@ -121,6 +124,8 @@ export function EnrichedDescriptionValidation() {
       setEvents((eventsRes.data ?? []).map((e) => ({
         ...e,
         auto_validation_report: (e.auto_validation_report ?? null) as unknown as AutoValidationReport | null,
+        seo_quality_score: (e as { seo_quality_score?: number | null }).seo_quality_score ?? null,
+        seo_quality_report: ((e as { seo_quality_report?: unknown }).seo_quality_report ?? null) as unknown as SeoQualityResult | null,
       })) as PendingEvent[]);
       const lastDetails = lastRunRes.data?.[0]?.details as Record<string, unknown> | undefined;
       const ids = (lastDetails?.processed_ids as string[] | undefined) ?? [];
@@ -250,6 +255,13 @@ export function EnrichedDescriptionValidation() {
       return <Badge className="bg-red-100 text-red-800 border-red-300 text-xs"><ShieldAlert className="h-3 w-3 mr-1" />Échec · {score}/100</Badge>;
     }
     return <Badge variant="outline" className="text-xs">{s} · {score ?? '?'}/100</Badge>;
+  };
+
+  const seoQualityBadge = (ev: PendingEvent) => {
+    const s = ev.seo_quality_score;
+    if (s == null) return <Badge variant="outline" className="text-xs">SEO —</Badge>;
+    if (s >= 80) return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs">SEO Super · {s}/100</Badge>;
+    return <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">SEO Alerte · {s}/100</Badge>;
   };
 
   const checkLabelToBadge = (code: string): string => {
@@ -564,6 +576,7 @@ export function EnrichedDescriptionValidation() {
                       </div>
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {autoValidationBadge(ev)}
+                        {seoQualityBadge(ev)}
                         {ev.enrichissement_statut === 'valide' && (
                           <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">Publié</Badge>
                         )}
@@ -594,6 +607,29 @@ export function EnrichedDescriptionValidation() {
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+
+                  {expanded && ev.seo_quality_report && (
+                    <div className="rounded-md border border-slate-200 bg-slate-50/60 p-2.5 text-xs space-y-1">
+                      <div className="font-medium text-slate-900">Qualité SEO · {ev.seo_quality_score ?? '—'}/100</div>
+                      <div className="text-slate-800">
+                        Profondeur {ev.seo_quality_report.subscores.profondeur}/30 ·
+                        {' '}Couverture {ev.seo_quality_report.subscores.couverture}/25 ·
+                        {' '}Spécificité {ev.seo_quality_report.subscores.specificite}/20 ·
+                        {' '}Richesse {ev.seo_quality_report.subscores.richesse}/15 ·
+                        {' '}Structure {ev.seo_quality_report.subscores.structure}/10
+                      </div>
+                      {ev.seo_quality_report.advice.length > 0 && (
+                        <ul className="space-y-0.5 text-slate-800 pt-1">
+                          {ev.seo_quality_report.advice.map((a, i) => (
+                            <li key={i} className="flex gap-1.5">
+                              <span className="opacity-60">•</span>
+                              <span>{a}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   )}
 

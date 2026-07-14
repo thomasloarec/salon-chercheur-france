@@ -60,6 +60,7 @@ interface Counters {
   ready_for_batch: number;
   desc_missing: number;
   published: number;
+  seo_alerte: number;
 }
 
 interface StaleFailureInfo {
@@ -180,7 +181,7 @@ export function SeoEnrichmentDashboard() {
     setLoading(true);
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, readyForBatchRes, descMissingRes, publishedRes] = await Promise.all([
+      const [eligibilityRes, runsRes, passedRes, pendingRes, failedRes, nullScoreRes, ge55Res, readyForBatchRes, descMissingRes, publishedRes, seoAlerteRes] = await Promise.all([
         supabase.rpc('count_seo_enrichment_eligible'),
         supabase.from('seo_enrichment_runs')
           .select('*')
@@ -212,6 +213,9 @@ export function SeoEnrichmentDashboard() {
           .is('description_enrichie', null),
         supabase.from('events').select('id', { count: 'exact', head: true })
           .eq('enrichissement_statut', 'valide'),
+        supabase.from('events').select('id', { count: 'exact', head: true })
+          .not('description_enrichie', 'is', null)
+          .lt('seo_quality_score', 80),
       ]);
 
       if (eligibilityRes.error) throw eligibilityRes.error;
@@ -235,6 +239,7 @@ export function SeoEnrichmentDashboard() {
         ready_for_batch: readyForBatchCount,
         desc_missing: descMissingRes.count ?? 0,
         published: publishedRes.count ?? 0,
+        seo_alerte: seoAlerteRes.count ?? 0,
       });
 
       // ─── Audit "erreurs corrigeables automatiquement" ───
@@ -938,6 +943,7 @@ export function SeoEnrichmentDashboard() {
             { label: 'En attente revue', value: counters?.pending, hint: 'Texte généré mais pas publié, en attente de relecture.' },
             { label: 'Validation failed', value: counters?.failed, hint: 'Textes en échec automatique qui ne sont pas déjà validés manuellement.' },
             { label: 'À corriger auto.', value: autoFixable?.count ?? 0, hint: 'Textes en échec, non validés manuellement, avec description enrichie présente. Ce sont les seuls que le correcteur automatique peut traiter.' },
+            { label: 'Descriptions en Alerte SEO (< 80)', value: counters?.seo_alerte, hint: 'Descriptions enrichies dont le score de qualité SEO est inférieur à 80/100.' },
           ]}
         />
         <KpiFamily
