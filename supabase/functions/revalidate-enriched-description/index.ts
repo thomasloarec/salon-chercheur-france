@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { buildCorsHeaders, handleCors } from '../_shared/cors.ts';
 import { validateEnrichedDescription, type EventSource } from '../_shared/validate-enriched-description.ts';
+import { scoreSeoQuality } from '../_shared/score-seo-quality.ts';
 
 /**
  * Edge Function: revalidate-enriched-description
@@ -114,6 +115,7 @@ Deno.serve(async (req) => {
     };
     const desc = (ev as { description_enrichie: string }).description_enrichie;
     const validation = validateEnrichedDescription(desc, source, exhibitorNames);
+    const seoQuality = scoreSeoQuality(desc);
     const autoValidated = validation.decision === 'auto_validate';
 
     let applied = false;
@@ -122,6 +124,8 @@ Deno.serve(async (req) => {
         auto_validation_status: validation.status,
         auto_validation_score: validation.score,
         auto_validation_report: validation,
+        seo_quality_score: seoQuality.score,
+        seo_quality_report: seoQuality,
         auto_validated_at: new Date().toISOString(),
         validation_mode: autoValidated ? 'auto' : 'manual',
       };
