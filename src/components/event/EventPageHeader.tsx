@@ -181,7 +181,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           <div className="mb-4">
             <div
               className={cn(
-                "prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left",
+                "prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left [&>p]:mb-3",
                 !showFullDescription && "line-clamp-2"
               )}
               dangerouslySetInnerHTML={{
@@ -312,7 +312,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           <div className="my-6">
             <div
               className={cn(
-                "prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left",
+                "prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left [&>p]:mb-3",
                 !showFullDescription && "line-clamp-2"
               )}
               dangerouslySetInnerHTML={{
