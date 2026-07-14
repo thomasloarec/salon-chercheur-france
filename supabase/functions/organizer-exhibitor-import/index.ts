@@ -141,8 +141,18 @@ Deno.serve(async (req) => {
       _user_id: user.id,
       _role: 'admin',
     });
-    if (roleErr || !isAdmin) {
-      return new Response(JSON.stringify({ error: 'Accès admin requis' }), { status: 403, headers });
+    if (roleErr) {
+      return new Response(JSON.stringify({ error: 'Vérification rôle échouée' }), { status: 500, headers });
+    }
+    if (!isAdmin) {
+      const { data: row, error: rowErr } = await service
+        .from('organizer_exhibitor_imports')
+        .select('uploaded_by')
+        .eq('file_path', String(file_path))
+        .maybeSingle();
+      if (rowErr || !row || row.uploaded_by !== user.id) {
+        return new Response(JSON.stringify({ error: 'Accès refusé' }), { status: 403, headers });
+      }
     }
     const { data: signed, error: sErr } = await service.storage
       .from(BUCKET)
