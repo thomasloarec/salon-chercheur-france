@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles, Users, Database, Upload, PencilLine } from 'lucide-react';
+import { Sparkles, Users, Upload, PencilLine, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { useEventScorecard } from '@/hooks/useEventScorecard';
 
 interface SeoScorecardProps {
@@ -15,6 +19,9 @@ interface SeoScorecardProps {
 
 export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToEdit }) => {
   const { data, isLoading, error } = useEventScorecard(eventId);
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const [localConfirmed, setLocalConfirmed] = useState<boolean | null>(null);
 
   if (isLoading) {
     return (
@@ -44,20 +51,37 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
 
   const { completude, visibilite_30j, genere_le } = anyData;
   const pct = Math.max(0, Math.min(100, Number(completude?.pct_enrichies ?? 0)));
-  const missingEnriched =
-    (completude?.fiches_enrichies ?? 0) < (completude?.exposants_references ?? 0) ||
-    (completude?.exposants_references ?? 0) === 0;
+  const listeConfirmee = localConfirmed ?? Boolean(completude?.liste_confirmee);
+
+  const handleToggleConfirm = async (checked: boolean) => {
+    setConfirming(true);
+    setLocalConfirmed(checked);
+    try {
+      const { error } = await supabase.rpc('set_exhibitors_complete' as any, {
+        p_event_id: eventId,
+        p_confirmed: checked,
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['event-scorecard', eventId] });
+      toast.success(checked ? 'Liste confirmée complète.' : 'Confirmation retirée.');
+    } catch (e: any) {
+      setLocalConfirmed(!checked);
+      toast.error(e?.message || 'Impossible de mettre à jour.');
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
       {/* Complétude */}
       <Card className="p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Complétude de votre salon</h3>
+          <h3 className="text-sm font-semibold">État de votre salon</h3>
           <Badge variant="secondary">{pct}%</Badge>
         </div>
         <Progress value={pct} />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Metric
             icon={<Users className="h-4 w-4" />}
             label="Exposants référencés"
@@ -65,34 +89,58 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
           />
           <Metric
             icon={<Sparkles className="h-4 w-4" />}
-            label="Fiches enrichies IA"
+            label="Exposants avec fiche détaillée"
             value={completude?.fiches_enrichies ?? 0}
             hint={`${pct}%`}
           />
-          <Metric
-            icon={<Database className="h-4 w-4" />}
-            label="Fiches embeddées"
-            value={completude?.fiches_embeddees ?? 0}
-          />
         </div>
 
-        {missingEnriched && (
-          <div className="pt-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-block">
-                    <Button variant="outline" size="sm" disabled>
-                      <Upload className="h-3.5 w-3.5 mr-1.5" />
-                      Importer votre liste exposants
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>Bientôt disponible</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
+        <p className="text-xs text-muted-foreground">
+          {pct}% de vos exposants ont une fiche détaillée.
+        </p>
+
+        <div className="rounded-md border p-3 space-y-2">
+          {listeConfirmee ? (
+            <div className="flex items-center gap-2 text-sm text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="font-medium">Liste confirmée complète</span>
+              <button
+                type="button"
+                className="ml-auto text-xs text-muted-foreground underline"
+                onClick={() => handleToggleConfirm(false)}
+                disabled={confirming}
+              >
+                annuler
+              </button>
+            </div>
+          ) : (
+            <label className="flex items-start gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={listeConfirmee}
+                onCheckedChange={(v) => handleToggleConfirm(Boolean(v))}
+                disabled={confirming}
+                className="mt-0.5"
+              />
+              <span>Je confirme que la liste de mes exposants est complète.</span>
+            </label>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Si des exposants manquent, vous pourrez bientôt importer votre liste complète.
+          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-block">
+                  <Button variant="outline" size="sm" disabled>
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    Importer votre liste exposants
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Bientôt disponible</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
 
         <div>
           <Button variant="outline" size="sm" onClick={onSwitchToEdit}>
