@@ -576,6 +576,7 @@ export function EnrichedDescriptionValidation() {
                       </div>
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {autoValidationBadge(ev)}
+                        {seoQualityBadge(ev)}
                         {ev.enrichissement_statut === 'valide' && (
                           <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">Publié</Badge>
                         )}
