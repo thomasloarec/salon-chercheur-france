@@ -110,15 +110,13 @@ function App() {
       <AuthProvider>
         <ConsentProvider>
           <Router>
-            <Routes>
-              <Route path="/embed/salon/:slug" element={<SalonEmbedPage />} />
-            </Routes>
             <SiteGuard>
               <ScrollToTop />
               <AnalyticsTracker />
                 <PendingVisitRedirect />
               <div className="App">
                 <Routes>
+                <Route path="/embed/salon/:slug" element={<SalonEmbedPage />} />
                 <Route path="/" element={<Home />} />
               <Route path="/salons" element={<Events />} />
               <Route path="/organisateurs" element={<Organisateurs />} />
