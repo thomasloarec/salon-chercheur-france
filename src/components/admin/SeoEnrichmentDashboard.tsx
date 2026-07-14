@@ -943,6 +943,7 @@ export function SeoEnrichmentDashboard() {
             { label: 'En attente revue', value: counters?.pending, hint: 'Texte généré mais pas publié, en attente de relecture.' },
             { label: 'Validation failed', value: counters?.failed, hint: 'Textes en échec automatique qui ne sont pas déjà validés manuellement.' },
             { label: 'À corriger auto.', value: autoFixable?.count ?? 0, hint: 'Textes en échec, non validés manuellement, avec description enrichie présente. Ce sont les seuls que le correcteur automatique peut traiter.' },
+            { label: 'Descriptions en Alerte SEO (< 80)', value: counters?.seo_alerte, hint: 'Descriptions enrichies dont le score de qualité SEO est inférieur à 80/100.' },
           ]}
         />
         <KpiFamily
