@@ -5,6 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Info, Loader2, Camera, ShieldCheck } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useSectors } from '@/hooks/useSectors';
@@ -49,6 +51,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittedOk, setSubmittedOk] = useState(false);
 
   const initialRef = useRef<{
     nom_event: string;
@@ -109,12 +112,15 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     });
     setSelectedSectorIds(matchedIds);
     initialRef.current = initial;
+    setSubmittedOk(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event.id, sectorsReady]);
 
   const handleSectorChange = (next: string[]) => {
-    if (next.length <= 3) setSelectedSectorIds(next);
-    else toast.error('Vous ne pouvez sélectionner que 3 secteurs maximum.');
+    if (next.length <= 3) {
+      setSelectedSectorIds(next);
+      setSubmittedOk(false);
+    } else toast.error('Vous ne pouvez sélectionner que 3 secteurs maximum.');
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,9 +190,28 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
       toast.success(
         data?.message || 'Vos modifications ont été soumises et seront examinées sous 24-48h.',
       );
+      // Reset baseline so form no longer shows pending changes
+      if (initialRef.current) {
+        const selectedNames = allSectors
+          .filter((s) => selectedSectorIds.includes(s.id))
+          .map((s) => s.name);
+        initialRef.current = {
+          nom_event: formData.nom_event.trim(),
+          date_debut: formData.date_debut,
+          date_fin: formData.date_fin,
+          affluence: formData.affluence,
+          tarif: formData.tarif,
+          url_image: formData.url_image,
+          description_event: formData.description_event,
+          secteurNames: selectedNames,
+        };
+        setFormData((p) => ({ ...p, nom_event: p.nom_event.trim() }));
+      }
+      setSubmittedOk(true);
       onSubmitted?.();
     } catch (err: any) {
       toast.error(err?.message || 'Une erreur est survenue. Veuillez réessayer.');
+      setSubmittedOk(false);
     } finally {
       setSubmitting(false);
     }
@@ -194,6 +219,16 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
 
   return (
     <div className="space-y-5">
+      {submittedOk && (
+        <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
+          <CheckCircle2 className="h-4 w-4 !text-emerald-600" />
+          <AlertDescription className="text-emerald-900">
+            Votre modification a bien été envoyée. Elle sera vérifiée par notre équipe et
+            deviendra effective sous environ 12 heures.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm text-foreground/80">
         <ShieldCheck className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
         <span>Vos modifications seront vérifiées par notre équipe avant d'être publiées.</span>
