@@ -284,8 +284,13 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
       <Card className="p-4 space-y-3">
         <h3 className="text-sm font-semibold">Visibilité dans l'IA (30 jours)</h3>
         {!visibilite_30j?.available || visibilite_30j?.below_threshold ? (
-          <div className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-            Données en cours de constitution
+          <div className="rounded-md bg-muted px-3 py-2 space-y-1">
+            <p className="text-sm text-foreground/80">
+              Des informations sur votre visibilité dans les recherches IA apparaîtront prochainement ici.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Plus vos exposants sont actifs sur Lotexpo, plus votre salon apparaît dans les recherches.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
