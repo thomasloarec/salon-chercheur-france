@@ -15,6 +15,7 @@ import AnalyticsTracker from '@/components/consent/AnalyticsTracker';
 import Events from '@/pages/Events';
 import Home from '@/pages/Home';
 import EventPage from '@/pages/EventPage';
+import OrganizerSalonPage from '@/pages/OrganizerSalonPage';
 import Favorites from '@/pages/Favorites';
 import Profile from '@/pages/Profile';
 import Auth from '@/pages/Auth';
@@ -118,6 +119,7 @@ function App() {
               <Route path="/salons" element={<Events />} />
               <Route path="/organisateurs" element={<Organisateurs />} />
               <Route path="/events/:slug" element={<EventPage />} />
+              <Route path="/events/:slug/gerer" element={<OrganizerSalonPage />} />
             <Route path="/nouveautes" element={<Nouveautes />} />
             <Route path="/nouveautes/:slug" element={<NoveltyDetail />} />
             <Route path="/exposants" element={<Exposants />} />
