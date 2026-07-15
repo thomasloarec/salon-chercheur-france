@@ -201,36 +201,40 @@ const SECTIONS: SectionBlock[] = [
 
 const FAQ = [
   {
+    q: 'Comment revendiquer notre salon ?',
+    a: "Recherchez votre salon sur Lotexpo, ouvrez sa page et cliquez sur Revendiquer. Vous confirmez être l'organisateur officiel, notre équipe vérifie la demande, puis la page vous revient. C'est gratuit et cela ne vous engage à rien.",
+  },
+  {
+    q: 'Qui valide les informations que nous modifions ?',
+    a: "Vos modifications nous sont transmises pour vérification, puis elles sont publiées. Une fois publiées, elles font foi : nos imports automatiques ne les écrasent jamais.",
+  },
+  {
+    q: 'Est-ce payant pour les organisateurs ?',
+    a: "Non. Le référencement, la revendication et la gestion de votre salon sur Lotexpo sont gratuits.",
+  },
+  {
+    q: 'Peut-on acheter une meilleure visibilité sur Lotexpo ?',
+    a: "Non. Il n'existe aucun classement payant et aucune mise en avant vendue. Les réponses faites aux visiteurs dépendent de la pertinence, jamais d'un statut commercial.",
+  },
+  {
+    q: 'Que devient la liste d\u2019exposants que nous transmettons ?',
+    a: "Elle sert à compléter la liste des exposants affichée sur la page de votre salon, afin que les visiteurs puissent identifier qui sera présent et pourquoi s'y rendre. Ce sont les mêmes informations que celles que vous publiez déjà publiquement sur votre site.",
+  },
+  {
+    q: 'Lotexpo remplace-t-il notre site officiel ?',
+    a: "Non. Votre site officiel reste la source de référence pour l'inscription, les informations pratiques, les conditions de participation et les communications officielles. Lotexpo agit comme un point d'entrée complémentaire et renvoie vers vos supports.",
+  },
+  {
     q: 'Lotexpo est-il affilié aux salons référencés ?',
     a: "Non. Lotexpo est une plateforme indépendante. La présence d'un événement sur Lotexpo ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite.",
   },
   {
-    q: 'Pourquoi notre salon est-il présent sur Lotexpo ?',
-    a: "Lotexpo référence les salons professionnels en France afin d'aider les visiteurs, exposants et professionnels à identifier les événements utiles dans leur secteur. L'objectif est de rendre les salons plus faciles à découvrir et de rediriger les utilisateurs vers les informations officielles de chaque événement.",
-  },
-  {
-    q: 'Lotexpo remplace-t-il notre site officiel ?',
-    a: "Non. Votre site officiel reste la source de référence pour l'inscription, les informations pratiques, les conditions de participation et les communications officielles. Lotexpo agit comme un point d'entrée complémentaire.",
-  },
-  {
-    q: 'Est-ce payant pour les organisateurs ?',
-    a: "Non. Le référencement d'un salon professionnel sur Lotexpo est gratuit.",
-  },
-  {
-    q: 'Pouvons-nous corriger ou compléter les informations affichées ?',
-    a: "Oui. Si vous représentez un salon et souhaitez corriger, compléter ou mettre à jour une information, vous pouvez contacter Lotexpo.",
-  },
-  {
-    q: 'Pouvons-nous encourager nos exposants à publier leurs Nouveautés ?',
-    a: "Oui. C'est même l'un des meilleurs usages de Lotexpo. Les exposants peuvent publier ce qu'ils présenteront sur le salon afin d'aider les visiteurs à préparer leur parcours et à identifier les stands à visiter.",
-  },
-  {
     q: 'Lotexpo risque-t-il de détourner les visiteurs de notre site officiel ?',
-    a: "Non. Lotexpo est conçu comme un point d'entrée complémentaire. Lorsqu'un utilisateur cherche à s'inscrire, consulter les informations officielles ou contacter l'organisateur, il est redirigé vers les supports officiels du salon.",
+    a: "Non. Lorsqu'un utilisateur cherche à s'inscrire, à consulter les informations officielles ou à contacter l'organisateur, il est redirigé vers les supports officiels du salon.",
   },
   {
-    q: 'Pourquoi les Nouveautés exposants sont-elles utiles pour un organisateur ?',
-    a: "Parce qu'elles donnent aux visiteurs des raisons concrètes de venir. Un salon n'est pas seulement une date et un lieu : ce sont aussi des produits, innovations, démonstrations, conférences et rencontres. Les Nouveautés rendent cette valeur plus visible avant l'ouverture.",
+    q: 'Pourquoi encourager nos exposants à publier leurs Nouveautés ?',
+    a: "Parce qu'elles donnent aux visiteurs des raisons concrètes de venir. Un salon n'est pas seulement une date et un lieu : ce sont aussi des produits, des innovations, des démonstrations et des rencontres. Les Nouveautés rendent cette valeur visible avant l'ouverture, et vous pouvez les afficher sur votre propre site grâce au widget.",
   },
 ];
 
