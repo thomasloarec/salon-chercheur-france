@@ -528,8 +528,8 @@ const Organisateurs = () => {
                 </p>
               </div>
               <Button asChild className="mt-6 gap-2">
-                <Link to="/contact">
-                  Demander l'intégration du widget <ArrowRight className="w-4 h-4" />
+                <Link to="/trouver-un-salon">
+                  Revendiquer mon salon <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
             </div>
