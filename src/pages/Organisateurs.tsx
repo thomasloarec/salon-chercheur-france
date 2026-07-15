@@ -618,17 +618,7 @@ const Organisateurs = () => {
                     {item.q}
                   </h3>
                   <p className="text-muted-foreground leading-relaxed pl-7">
-                    {item.q === 'Pouvons-nous corriger ou compléter les informations affichées ?' ? (
-                      <>
-                        Oui. Si vous représentez un salon et souhaitez corriger, compléter ou mettre à jour une information, vous pouvez{' '}
-                        <Link to="/contact" className="text-primary font-medium underline underline-offset-2 hover:text-primary/80">
-                          contacter Lotexpo
-                        </Link>
-                        .
-                      </>
-                    ) : (
-                      item.a
-                    )}
+                    {item.a}
                   </p>
                 </div>
               ))}
@@ -640,14 +630,14 @@ const Organisateurs = () => {
         <section className="bg-primary text-primary-foreground py-16 px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="heading-display text-3xl md:text-4xl mb-4">
-              Votre salon mérite d'être découvert avant le jour J
+              Votre salon est déjà sur Lotexpo. Prenez-en la main.
             </h2>
             <p className="text-lg text-primary-foreground/80 mb-8">
-              Lotexpo peut vous aider à renforcer gratuitement la visibilité de votre événement, valoriser vos exposants et rediriger les visiteurs vers vos informations officielles.
+              La revendication est gratuite et ne vous engage à rien.
             </p>
             <Button asChild size="lg" variant="secondary" className="gap-2">
-              <Link to="/contact">
-                Contacter Lotexpo <ArrowRight className="w-4 h-4" />
+              <Link to="/trouver-un-salon">
+                Revendiquer mon salon <ArrowRight className="w-4 h-4" />
               </Link>
             </Button>
           </div>
