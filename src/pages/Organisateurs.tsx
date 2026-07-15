@@ -287,17 +287,17 @@ const Organisateurs = () => {
           <div className="max-w-4xl mx-auto text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary mb-6">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Visibilité pré-salon
+              Espace organisateurs
             </span>
             <h1 className="heading-display text-3xl md:text-4xl text-foreground mb-6 leading-tight">
-              Aidez les bons visiteurs à choisir votre salon avant même l'ouverture
+              Votre salon vous appartient. Sur Lotexpo aussi.
             </h1>
             <div className="space-y-4 text-base md:text-lg text-muted-foreground text-left max-w-3xl mx-auto">
               <p>
-                Lotexpo référence les salons professionnels en France pour aider les visiteurs, exposants et équipes commerciales à identifier les événements utiles dans leur secteur. La plateforme agit comme un point d'entrée complémentaire : elle rend votre salon plus facile à découvrir, valorise vos exposants et redirige les utilisateurs vers vos informations officielles.
+                Chaque jour, des professionnels viennent sur Lotexpo pour une seule raison : savoir quel salon mérite leur déplacement. Ils comparent les secteurs, les dates, les exposants et les nouveautés. Nous leur répondons avec les informations disponibles.
               </p>
               <p>
-                Votre site officiel reste la destination de référence. Lotexpo intervient en amont, au moment où les visiteurs comparent les salons, cherchent des exposants à rencontrer et décident si le déplacement mérite leur temps.
+                Vous êtes les seuls à détenir la vérité sur votre événement. C'est pour cela que nous avons ouvert cet espace : pour que la référence sur votre salon soit la vôtre, et non la nôtre. Votre site officiel reste la destination. Lotexpo intervient en amont, au moment où le visiteur décide.
               </p>
             </div>
             {/* Mini-cards badges */}
@@ -305,18 +305,18 @@ const Organisateurs = () => {
               {[
                 {
                   icon: BadgeEuro,
-                  title: '100% gratuit',
-                  text: 'Référencement sans frais pour les salons professionnels.',
+                  title: 'Gratuit, sans engagement',
+                  text: "Revendiquer et gérer votre salon ne coûte rien et ne vous engage à rien.",
                 },
                 {
                   icon: ShieldCheck,
-                  title: 'Indépendant',
-                  text: "Lotexpo n'est pas affilié aux organisateurs, sauf mention explicite.",
+                  title: 'Vous gardez la main',
+                  text: "Une fois votre salon revendiqué, vos informations font foi. Nos imports automatiques ne les écrasent jamais.",
                 },
                 {
                   icon: Target,
-                  title: 'Orienté visiteurs qualifiés',
-                  text: 'Votre salon est découvert par des professionnels qui préparent activement leur venue.',
+                  title: "La visibilité ne s'achète pas",
+                  text: "Aucun classement payant sur Lotexpo. Personne ne peut acheter une meilleure place que vous.",
                 },
               ].map((badge) => {
                 const Icon = badge.icon;
@@ -337,13 +337,57 @@ const Organisateurs = () => {
             {/* Highlighted phrase */}
             <div className="mt-8 max-w-3xl mx-auto rounded-2xl border-l-4 border-primary bg-primary/5 px-5 py-4 text-left">
               <p className="text-sm md:text-base text-foreground font-medium">
-                Lotexpo ne remplace pas votre site officiel. La plateforme crée un point d'entrée supplémentaire vers votre salon, vos exposants et vos informations officielles.
+                Lotexpo ne remplace pas votre site officiel et ne cherche pas à le remplacer. Chaque page renvoie vers vos supports officiels pour l'inscription, les informations pratiques et le contact.
               </p>
             </div>
             <div className="mt-8">
               <Button asChild size="lg" className="gap-2">
                 <Link to="/trouver-un-salon">
-                  Vérifier la fiche de mon salon <ArrowRight className="w-4 h-4" />
+                  Revendiquer mon salon <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Recherchez votre salon, ouvrez sa page, puis cliquez sur Revendiquer.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Votre rôle sur Lotexpo */}
+        <section className="py-16 px-4 bg-background">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="heading-display text-2xl md:text-3xl text-foreground text-center mb-4 max-w-3xl mx-auto section-rule [&::before]:mx-auto">
+              Ce que vous pouvez faire, dès maintenant
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground text-center mb-10 max-w-3xl mx-auto">
+              Jusqu'ici, les organisateurs étaient les seuls acteurs de l'écosystème à ne rien pouvoir faire sur Lotexpo. Ce n'est plus le cas.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {ROLE_STEPS.map((step, idx) => {
+                const Icon = step.icon;
+                return (
+                  <div
+                    key={step.title}
+                    className="bg-card border border-border rounded-2xl p-6 shadow-sm flex flex-col"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                        {idx + 1}
+                      </span>
+                      <div className="bg-primary/10 rounded-xl p-2">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-bold text-foreground mb-2">{step.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{step.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-10 text-center">
+              <Button asChild size="lg" className="gap-2">
+                <Link to="/trouver-un-salon">
+                  Revendiquer mon salon <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
             </div>
