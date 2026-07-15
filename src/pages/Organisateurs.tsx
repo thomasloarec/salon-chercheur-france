@@ -175,7 +175,7 @@ const SECTIONS: SectionBlock[] = [
     ),
     highlight:
       "Les exposants créent le contenu, les visiteurs identifient les stands utiles, et votre salon bénéficie d'une attention mieux structurée.",
-    cta: { label: 'Proposer Lotexpo à mes exposants', to: '/contact' },
+    cta: { label: 'Revendiquer mon salon', to: '/trouver-un-salon' },
   },
   {
     icon: ShieldCheck,
@@ -189,22 +189,13 @@ const SECTIONS: SectionBlock[] = [
           La présence d'un événement sur Lotexpo ne constitue pas une affiliation officielle avec l'organisateur, sauf mention explicite. Lotexpo ne remplace ni le site officiel du salon, ni la billetterie, ni l'espace exposant, ni les actions marketing de l'organisateur.
         </p>
         <p>
-          Si vous représentez un salon et souhaitez corriger, compléter ou mettre à jour les informations affichées, vous pouvez{' '}
-          <a
-            href="https://lotexpo.com/contact"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary font-medium underline underline-offset-2 hover:text-primary/80"
-          >
-            nous contacter
-          </a>
-          .
+          Si vous représentez un salon, vous pouvez revendiquer sa page pour en devenir le gestionnaire officiel. Vous pourrez alors corriger et compléter vous-même les informations affichées, sans passer par nous à chaque fois.
         </p>
       </>
     ),
     highlight:
       "En résumé : Lotexpo ne capte pas l'attention à votre place. Il aide à canaliser une attention déjà dispersée vers votre événement officiel.",
-    cta: { label: 'Demander une correction', to: '/contact' },
+    cta: { label: 'Revendiquer mon salon', to: '/trouver-un-salon' },
   },
 ];
 
