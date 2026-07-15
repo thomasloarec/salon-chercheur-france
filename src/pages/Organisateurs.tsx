@@ -445,11 +445,8 @@ const Organisateurs = () => {
         <section className="py-16 px-4 bg-secondary">
           <div className="max-w-5xl mx-auto">
             <h2 className="heading-display text-2xl md:text-3xl text-foreground text-center mb-4 max-w-3xl mx-auto section-rule [&::before]:mx-auto">
-              Le problème : l'attention autour d'un salon est souvent dispersée
+              Pourquoi des informations complètes vous amènent des visiteurs plus qualifiés
             </h2>
-            <p className="text-base md:text-lg text-muted-foreground text-center mb-10 max-w-3xl mx-auto">
-              Avant un salon, les visiteurs reçoivent des emails, voient des posts LinkedIn, consultent parfois le site officiel, découvrent quelques exposants ou téléchargent un programme. Mais ces informations sont rarement centralisées au moment où ils décident réellement si le salon mérite leur déplacement.
-            </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {PROBLEM_CARDS.map((card) => (
                 <div
@@ -460,6 +457,11 @@ const Organisateurs = () => {
                   <p className="text-sm text-muted-foreground leading-relaxed">{card.text}</p>
                 </div>
               ))}
+            </div>
+            <div className="mt-8 max-w-3xl mx-auto rounded-2xl border-l-4 border-primary bg-primary/5 px-5 py-4">
+              <p className="text-sm md:text-base text-foreground font-medium">
+                Nous ne décidons pas quels salons méritent d'être vus. Nous répondons avec ce que nous savons. Vous êtes les mieux placés pour nous le dire.
+              </p>
             </div>
           </div>
         </section>
