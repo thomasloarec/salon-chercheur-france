@@ -582,7 +582,7 @@ const Organisateurs = () => {
         <section className="bg-secondary py-16 px-4">
           <div className="max-w-6xl mx-auto">
             <h2 className="heading-display text-3xl md:text-4xl text-foreground text-center mb-12 section-rule [&::before]:mx-auto">
-              Ce que votre salon gagne avec Lotexpo
+              Nos engagements envers vous
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {BENEFITS.map((benefit) => {
