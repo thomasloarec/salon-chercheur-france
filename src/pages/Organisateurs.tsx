@@ -255,13 +255,13 @@ const Organisateurs = () => {
         <title>Organisateurs de salons professionnels | Lotexpo</title>
         <meta
           name="description"
-          content="Lotexpo aide les organisateurs de salons professionnels à gagner en visibilité, valoriser leurs exposants et attirer un public qualifié gratuitement."
+          content="Revendiquez la page de votre salon sur Lotexpo, gratuitement. Vous gardez la main sur vos informations, votre site officiel reste la destination, et la visibilité ne s'achète pas."
         />
         <link rel="canonical" href="https://lotexpo.com/organisateurs" />
         <meta property="og:title" content="Organisateurs de salons professionnels | Lotexpo" />
         <meta
           property="og:description"
-          content="Lotexpo aide les organisateurs de salons professionnels à gagner en visibilité, valoriser leurs exposants et attirer un public qualifié gratuitement."
+          content="Revendiquez la page de votre salon sur Lotexpo, gratuitement. Vous gardez la main sur vos informations, votre site officiel reste la destination, et la visibilité ne s'achète pas."
         />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://lotexpo.com/organisateurs" />
