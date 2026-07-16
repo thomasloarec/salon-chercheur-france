@@ -264,7 +264,7 @@ const Home = () => {
         </section>
 
         {/* ============================= PROBLEM ============================= */}
-        <section className="relative overflow-hidden bg-primary text-primary-foreground py-24">
+        <section className="relative overflow-hidden bg-surface-inverse text-inverse py-24">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -275,8 +275,8 @@ const Home = () => {
           />
           <div className="relative max-w-6xl mx-auto px-6">
             <Reveal className="max-w-[760px] mx-auto text-center mb-[60px]">
-              <div className="w-[46px] h-[3px] bg-primary rounded-full mx-auto mb-5" />
-              <p className="text-primary font-bold uppercase tracking-[0.15em] text-xs mb-3">Le constat</p>
+              <div className="w-[46px] h-[3px] bg-inverse-primary rounded-full mx-auto mb-5" />
+              <p className="text-inverse-primary font-bold uppercase tracking-[0.15em] text-xs mb-3">Le constat</p>
               <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
                 Un cercle vicieux menaçait tout l'écosystème
               </h2>
@@ -291,7 +291,7 @@ const Home = () => {
                 {LOOP_CARDS.flatMap((c, i) => {
                   const card = (
                     <div key={c.title} className="flex-1 rounded-2xl border border-primary-foreground/15 bg-primary-foreground/5 p-6 text-left">
-                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/20 text-primary mb-4">
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-inverse/10 text-inverse mb-4">
                         <c.icon className="h-5 w-5" />
                       </div>
                       <h3 className="heading-display text-xl mb-2">{c.title}</h3>
@@ -313,15 +313,15 @@ const Home = () => {
 
             <Reveal className="text-center mt-8">
               <p className="text-primary-foreground/60">
-                <span className="text-primary font-semibold">↺</span> Moins de visiteurs → moins
+                <span className="text-inverse-primary font-semibold">↺</span> Moins de visiteurs → moins
                 d'exposants → salons affaiblis → moins de visiteurs.{' '}
-                <b className="text-primary font-semibold">Le cercle se referme.</b>
+                <b className="text-inverse-primary font-semibold">Le cercle se referme.</b>
               </p>
             </Reveal>
 
             <Reveal className="text-center mt-14">
               <div className="heading-display text-[clamp(2rem,4.4vw,3.4rem)]">
-                Un écosystème <em className="not-italic text-primary italic">en danger.</em>
+                Un écosystème <em className="not-italic text-inverse-primary italic">en danger.</em>
               </div>
               <p className="mt-6 text-lg text-primary-foreground/85">
                 Mais il existe une issue. Et c'est{' '}
