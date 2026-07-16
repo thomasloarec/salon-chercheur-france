@@ -13,6 +13,8 @@
     "generate:sitemap": "node scripts/generateSitemap.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/google-sans-flex": "^5.2.3",
+    "@fontsource/playfair-display": "^5.2.8",
     "@hookform/resolvers": "^3.9.0",
     "@jest/globals": "^29.7.0",
     "@lovable.dev/mcp-js": "^0.20.0",
