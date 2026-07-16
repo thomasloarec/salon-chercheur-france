@@ -132,7 +132,7 @@ const Contact = () => {
           {isSuccess ? (
             <div className="bg-secondary border border-border rounded-lg p-8 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="w-8 h-8 text-primary" />
+                <Send className="w-8 h-8 text-foreground" />
               </div>
               <h2 className="text-xl font-semibold text-foreground mb-2">
                 Message envoyé avec succès

@@ -290,7 +290,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 {/* Connecteur visuel discret : continuité Exposants → Parcours IA */}
                 {exhibitorCount >= 80 && !isEventPast && (
                   <div className="flex justify-center -my-3" aria-hidden="true">
-                    <ChevronDown className="w-5 h-5 text-primary/40" />
+                    <ChevronDown className="w-5 h-5 text-foreground" />
                   </div>
                 )}
 

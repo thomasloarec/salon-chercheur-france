@@ -406,13 +406,13 @@ const Organisateurs = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
                 <h3 className="text-xl font-bold text-foreground mb-5 flex items-center gap-2">
-                  <CheckCircle2 className="w-6 h-6 text-primary" />
+                  <CheckCircle2 className="w-6 h-6 text-foreground" />
                   Lotexpo est
                 </h3>
                 <ul className="space-y-3">
                   {IS_LIST.map((item) => (
                     <li key={item} className="flex items-start gap-3 text-muted-foreground">
-                      <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                      <Check className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -614,7 +614,7 @@ const Organisateurs = () => {
               {FAQ.map((item) => (
                 <div key={item.q} className="border border-border rounded-2xl p-6 bg-card">
                   <h3 className="text-lg font-semibold text-foreground mb-2 flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
                     {item.q}
                   </h3>
                   <p className="text-muted-foreground leading-relaxed pl-7">

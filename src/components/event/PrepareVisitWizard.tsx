@@ -609,7 +609,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
         <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Route className="w-5 h-5 text-primary" />
+              <Route className="w-5 h-5 text-foreground" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-base sm:text-lg font-semibold truncate">Préparer ma visite avec l'IA</h2>
@@ -889,7 +889,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   {results.prioritaires.length > 0 && (
                     <section className="min-w-0 overflow-x-hidden">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 break-words">
-                        <Star className="w-5 h-5 text-primary flex-shrink-0" /> Vos incontournables
+                        <Star className="w-5 h-5 text-foreground flex-shrink-0" /> Vos incontournables
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
                         {results.prioritaires.map((rec, i) => (
@@ -1080,7 +1080,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
           <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-sm border-t px-4 sm:px-6 py-4 overflow-x-hidden">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-0">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Bookmark className="w-5 h-5 text-primary flex-shrink-0" />
+                <Bookmark className="w-5 h-5 text-foreground flex-shrink-0" />
                 <p className="text-sm font-medium break-words sm:truncate leading-snug">{bannerConfig.message}</p>
               </div>
               <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
@@ -1157,7 +1157,7 @@ function LoadingScreen({
       `}</style>
 
       <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
-        <Sparkles className="w-9 h-9 text-primary animate-pulse" />
+        <Sparkles className="w-9 h-9 text-foreground animate-pulse" />
       </div>
 
       <div className="text-center space-y-2 max-w-sm">
