@@ -745,7 +745,7 @@ const RadarMissionSheet: React.FC<{
         <span
           className={cn(
             'h-2 w-2 rounded-full',
-            band === 'faible' ? 'bg-primary' : band === 'moyen' ? 'bg-stone-400' : 'bg-emerald-600/60',
+            band === 'faible' ? 'bg-primary' : band === 'moyen' ? 'bg-muted-foreground' : 'bg-info',
           )}
           aria-hidden="true"
         />
