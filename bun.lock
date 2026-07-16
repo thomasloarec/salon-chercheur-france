@@ -5,6 +5,8 @@
     "": {
       "name": "vite_react_shadcn_ts",
       "dependencies": {
+        "@fontsource-variable/google-sans-flex": "^5.2.3",
+        "@fontsource/playfair-display": "^5.2.8",
         "@hookform/resolvers": "^3.9.0",
         "@jest/globals": "^29.7.0",
         "@lovable.dev/mcp-js": "^0.20.0",
@@ -260,6 +262,10 @@
     "@floating-ui/react-dom": ["@floating-ui/react-dom@2.1.2", "", { "dependencies": { "@floating-ui/dom": "^1.0.0" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-06okr5cgPzMNBy+Ycse2A6udMi4bqwW/zgBF/rwjcNqWkyr82Mcg8b0vjX8OJpZFy/FKjJmw6wV7t44kK6kW7A=="],
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.8", "", {}, "sha512-kym7SodPp8/wloecOpcmSnWJsK7M0E5Wg8UcFA+uO4B9s5d0ywXOEro/8HM9x0rW+TljRzul/14UYz3TleT3ig=="],
+
+    "@fontsource-variable/google-sans-flex": ["@fontsource-variable/google-sans-flex@5.2.3", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fontsource-variable/google-sans-flex/-/google-sans-flex-5.2.3.tgz", {}, "sha512-g5z9WANJW56gZTWJvu7mIHOiHJaffkk/dhOKqEiK4Nxnsk8lnGnijvGt4vF4KD2KWzscXBOB9XR2sfvTPSi5hA=="],
+
+    "@fontsource/playfair-display": ["@fontsource/playfair-display@5.2.8", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fontsource/playfair-display/-/playfair-display-5.2.8.tgz", {}, "sha512-fUEhib70SszNhQVsGbUMSsWJhr7Je0rdeuZdtGpDNu0GKF1xJM8QhpI/y0pckU25GcChXm9TLOmeZupkvvZo2g=="],
 
     "@hapi/boom": ["@hapi/boom@10.0.1", "", { "dependencies": { "@hapi/hoek": "^11.0.2" } }, "sha512-ERcCZaEjdH3OgSJlyjVk8pHIFeus91CjKP3v+MpgBNp5IvGzP2l/bRiD78nqYcKPaZdbKkK5vDBVPd2ohHBlsA=="],
 
