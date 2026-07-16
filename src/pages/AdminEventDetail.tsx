@@ -132,7 +132,7 @@ const AdminEventDetail = () => {
           </p>
           <button
             onClick={() => navigate('/admin')}
-            className="px-4 py-2 bg-border text-muted-foreground rounded hover:bg-gray-300 transition-colors"
+            className="px-4 py-2 bg-border text-muted-foreground rounded hover:bg-border transition-colors"
           >
             Retour à l'administration
           </button>

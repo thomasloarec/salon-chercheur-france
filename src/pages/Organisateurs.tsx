@@ -539,8 +539,8 @@ const Organisateurs = () => {
               {/* Fake browser bar */}
               <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-3">
                 <span className="h-3 w-3 rounded-full bg-destructive/60" />
-                <span className="h-3 w-3 rounded-full bg-yellow-400/70" />
-                <span className="h-3 w-3 rounded-full bg-green-500/60" />
+                <span className="h-3 w-3 rounded-full bg-warning" />
+                <span className="h-3 w-3 rounded-full bg-primary" />
                 <span className="ml-3 text-xs font-medium text-muted-foreground">
                   Site officiel du salon
                 </span>

@@ -557,7 +557,7 @@ const ParcoursMock = () => {
     { n: 1, name: 'Adoria', loc: 'Hall 3 · Stand C12', obj: 'Innovation', cls: 'bg-primary/15 text-primary' },
     { n: 2, name: 'Inpulse', loc: 'Hall 3 · Stand C40', obj: 'Innovation', cls: 'bg-primary/15 text-primary' },
     { n: 3, name: 'SwiftPay', loc: 'Hall 5 · Stand E08', obj: 'Paiement', cls: 'bg-info/10 text-info' },
-    { n: 4, name: 'BioNature', loc: 'Hall 1 · Stand A22', obj: 'Bio', cls: 'bg-emerald-50 text-emerald-700' },
+    { n: 4, name: 'BioNature', loc: 'Hall 1 · Stand A22', obj: 'Bio', cls: 'bg-info/10 text-info' },
   ];
   return (
     <Mock>
@@ -616,7 +616,7 @@ const RadarMock = () => (
     <div className="rounded-[13px] border border-border p-[15px] mb-[11px]">
       <div className="flex justify-between items-center gap-2.5 mb-0.5">
         <span className="font-bold text-primary">Adoria</span>
-        <span className="text-[0.72rem] font-bold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">Client · renouvellement</span>
+        <span className="text-[0.72rem] font-bold px-2 py-1 rounded-full bg-info/10 text-info">Client · renouvellement</span>
       </div>
       <p className="text-xs text-muted-foreground mb-2">Contrat à échéance dans 4 mois, sécuriser le renouvellement.</p>
       <ul className="space-y-1.5">
@@ -670,7 +670,7 @@ const NoveltyMock = () => (
         </span>
       ))}
     </div>
-    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 border-t border-border pt-3">
+    <div className="flex items-center gap-2 text-xs font-semibold text-info border-t border-border pt-3">
       <Eye className="h-4 w-4" />
       Repérée par 34 visiteurs · 8 prévoient de passer
     </div>

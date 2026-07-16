@@ -1161,11 +1161,11 @@ const RadarMissionSheet: React.FC<{
                   className={cn(
                     'w-full min-h-[44px] gap-2',
                     visited
-                      ? 'border-emerald-600/40 text-emerald-700 hover:text-emerald-700'
+                      ? 'border-info/30 text-info hover:text-info'
                       : 'border-border/70 text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  <Check className={cn('h-4 w-4', visited && 'text-emerald-600')} />
+                  <Check className={cn('h-4 w-4', visited && 'text-info')} />
                   {visited ? 'Visité' : 'Marquer comme visité'}
                 </Button>
               )}

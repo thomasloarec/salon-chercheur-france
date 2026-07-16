@@ -45,9 +45,9 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
   // Case: enterprise already managed (only if modern exhibitor exists)
   if (hasModernExhibitor && governance.hasActiveOwner) {
     return (
-      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-start gap-3">
-        <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-emerald-800">
+      <div className="rounded-lg bg-info/10 border border-info/30 p-3 flex items-start gap-3">
+        <CheckCircle2 className="h-5 w-5 text-info flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-info">
           Cette entreprise est déjà gérée officiellement sur Lotexpo.
         </p>
       </div>
@@ -58,10 +58,10 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
   if (hasModernExhibitor && governance.hasPendingClaim) {
     return (
       <div className="rounded-lg bg-warning-surface border border-warning/40 p-3 flex items-start gap-3">
-        <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <Clock className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-amber-800">Demande en cours</p>
-          <p className="text-xs text-amber-700 mt-0.5">
+          <p className="text-sm font-medium text-warning-foreground">Demande en cours</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Votre demande a bien été envoyée. Elle sera vérifiée par l'équipe Lotexpo.
           </p>
         </div>

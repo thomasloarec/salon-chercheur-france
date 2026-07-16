@@ -207,11 +207,11 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
         <div className="space-y-4">
           {/* Radar CRM — needs_review alert */}
           {e.needs_review && (
-            <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning-surface p-3 text-amber-900">
+            <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning-surface p-3 text-warning-foreground">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <div className="text-sm leading-snug">
                 <p className="font-semibold">Correspondance CRM à vérifier</p>
-                <p className="mt-0.5 text-amber-800">
+                <p className="mt-0.5 text-warning-foreground">
                   Le nom de votre fichier CRM
                   {e.crm_company_name ? <> (<span className="font-medium">{e.crm_company_name}</span>)</> : null}
                   {' '}diffère sensiblement du nom Lotexpo (<span className="font-medium">{displayName}</span>).

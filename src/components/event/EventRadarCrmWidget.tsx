@@ -31,7 +31,7 @@ const WidgetShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     aria-label="Radar CRM"
   >
     <div className="flex items-center gap-2">
-      <Radar className="h-4 w-4 text-orange-500" />
+      <Radar className="h-4 w-4 text-warning" />
       <h2 className="font-semibold text-lg">Radar CRM</h2>
     </div>
     {children}
@@ -157,7 +157,7 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
     return (
       <WidgetShell>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+          <Loader2 className="h-4 w-4 animate-spin text-warning" />
           Analyse CRM en cours…
         </div>
         <p className="text-xs text-muted-foreground/80">
@@ -307,7 +307,7 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
                     <span className="text-xs text-muted-foreground">Stand {m.stand}</span>
                   )}
                   {m.needsReview && (
-                    <span className="text-[10px] font-medium text-amber-600">à vérifier</span>
+                    <span className="text-[10px] font-medium text-warning">à vérifier</span>
                   )}
                 </div>
                 </span>

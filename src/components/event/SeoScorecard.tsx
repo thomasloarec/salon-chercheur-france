@@ -183,7 +183,7 @@ export const SeoScorecard: React.FC<SeoScorecardProps> = ({ eventId, onSwitchToE
 
         <div className="rounded-md border p-3 space-y-2">
           {listeConfirmee ? (
-            <div className="flex items-center gap-2 text-sm text-emerald-700">
+            <div className="flex items-center gap-2 text-sm text-info">
               <CheckCircle2 className="h-4 w-4" />
               <span className="font-medium">Liste confirmée complète</span>
               <button

@@ -189,7 +189,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                         <h3 className="text-lg sm:text-xl font-semibold line-clamp-2">{event.nom_event}</h3>
                       </Link>
                       {visitPlan && (
-                        <Badge className="bg-green-100 text-green-700 border-green-200 text-xs gap-1">
+                        <Badge className="bg-info/10 text-info border-info/30 text-xs gap-1">
                           <CheckCircle2 className="w-3 h-3" />
                           Liste prête
                         </Badge>

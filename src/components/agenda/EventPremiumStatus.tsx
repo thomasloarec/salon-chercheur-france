@@ -44,7 +44,7 @@ export function EventPremiumStatus({ exhibitorId, eventId }: EventPremiumStatusP
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="default" className="gap-1 bg-yellow-500 hover:bg-yellow-600 text-white">
+              <Badge variant="default" className="gap-1 bg-warning hover:bg-warning text-white">
                 <Crown className="h-3 w-3" />
                 Premium
               </Badge>

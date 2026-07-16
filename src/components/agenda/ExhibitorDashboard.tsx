@@ -35,14 +35,14 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
   return (
     <div className="space-y-6">
       {/* Banner explicatif */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+      <div className="bg-info/10 border border-info/30 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <Building2 className="h-5 w-5 text-green-600 mt-0.5" />
+          <Building2 className="h-5 w-5 text-info mt-0.5" />
           <div>
-            <h3 className="font-semibold text-green-900 mb-1">
+            <h3 className="font-semibold text-info mb-1">
               Espace professionnel exposant
             </h3>
-            <p className="text-sm text-green-700">
+            <p className="text-sm text-info">
               Gérez vos nouveautés, suivez vos statistiques et consultez vos leads générés sur les salons.
             </p>
           </div>
@@ -184,7 +184,7 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                       {/* Statistiques compactes */}
                       <div className="flex items-center gap-4 flex-wrap">
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-danger-surface dark:bg-red-950/30">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-danger-surface">
                             <Heart className="h-4 w-4 text-danger dark:text-danger" />
                           </div>
                           <div>
@@ -193,7 +193,7 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-info/10 dark:bg-blue-950/30">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-info/10">
                             <Download className="h-4 w-4 text-info dark:text-info" />
                           </div>
                           <div>
@@ -202,11 +202,11 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-950/30">
-                            <CalendarCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-info/10">
+                            <CalendarCheck className="h-4 w-4 text-info dark:text-info" />
                           </div>
                           <div>
-                            <p className="text-lg font-bold text-green-600 dark:text-green-400">{novelty.stats?.meeting_leads || 0}</p>
+                            <p className="text-lg font-bold text-info dark:text-info">{novelty.stats?.meeting_leads || 0}</p>
                             <p className="text-xs text-muted-foreground">Rendez-vous</p>
                           </div>
                         </div>

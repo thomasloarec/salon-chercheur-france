@@ -220,9 +220,9 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
   return (
     <div className="space-y-5">
       {submittedOk && !hasChanges && (
-        <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
-          <CheckCircle2 className="h-4 w-4 !text-emerald-600" />
-          <AlertDescription className="text-emerald-900">
+        <Alert className="border-info/30 bg-info/10 text-info">
+          <CheckCircle2 className="h-4 w-4 !text-info" />
+          <AlertDescription className="text-info">
             Votre modification a bien été envoyée. Elle sera vérifiée par notre équipe et
             deviendra effective sous environ 12 heures.
           </AlertDescription>
@@ -358,8 +358,8 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
               className={
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ' +
                 (seo.score >= 80
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-warning-surface text-amber-800')
+                  ? 'bg-info/10 text-info'
+                  : 'bg-warning-surface text-warning-foreground')
               }
             >
               {seo.score >= 80 ? 'Qualité SEO : Super' : 'Qualité SEO : Alerte'} · {seo.score}/100

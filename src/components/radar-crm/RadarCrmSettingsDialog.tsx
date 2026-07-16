@@ -283,7 +283,7 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
                 <CardContent className="pt-5 space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">Statut Radar CRM</h3>
-                    <Badge variant="secondary" className="bg-warning-surface text-orange-700 hover:bg-warning-surface">
+                    <Badge variant="secondary" className="bg-warning-surface text-muted-foreground hover:bg-warning-surface">
                       {STATUS_LABELS[access.access_status] ?? 'Beta'}
                     </Badge>
                   </div>

@@ -157,7 +157,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           <div className="bg-warning-surface border-l-4 border-warning/40 p-4 rounded-none">
             <div className="container mx-auto px-4 flex items-center justify-between">
               <div>
-                <p className="text-sm text-orange-700">
+                <p className="text-sm text-muted-foreground">
                   <strong>Admin:</strong> Outils d'administration pour cet événement
                   {participationsCount > 0 && (
                     <span className="ml-4 text-xs bg-orange-200 px-2 py-1 rounded">
@@ -167,10 +167,10 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 </p>
                 {/* Enrichment status */}
                 <div className="flex flex-wrap gap-2 mt-1">
-                  <span className={`text-xs px-2 py-0.5 rounded ${event.meta_description_gen ? 'bg-green-200 text-green-800' : 'bg-border text-muted-foreground'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded ${event.meta_description_gen ? 'bg-info/10 text-info' : 'bg-border text-muted-foreground'}`}>
                     Meta: {event.meta_description_gen ? '✓' : '—'}
                   </span>
-                  <span className={`text-xs px-2 py-0.5 rounded ${Array.isArray(event.faq_json) && event.faq_json.length > 0 ? 'bg-green-200 text-green-800' : 'bg-border text-muted-foreground'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded ${Array.isArray(event.faq_json) && event.faq_json.length > 0 ? 'bg-info/10 text-info' : 'bg-border text-muted-foreground'}`}>
                     FAQ: {Array.isArray(event.faq_json) && event.faq_json.length > 0 ? `✓ (${event.faq_json.length})` : '—'}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-border text-muted-foreground">
@@ -189,7 +189,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => navigate(`/admin/events/${event.id}`)}
-                  className="border-warning/40 text-orange-700 hover:bg-warning-surface"
+                  className="border-warning/40 text-muted-foreground hover:bg-warning-surface"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   Éditer

@@ -75,9 +75,9 @@ const FavoriteButton = ({
               className={cn(
                 'inline-flex items-center justify-center rounded-full transition-all duration-200',
                 isFavorite 
-                  ? 'bg-green-500 hover:bg-green-600' 
+                  ? 'bg-primary hover:bg-primary' 
                   : 'bg-white hover:bg-muted',
-                'focus:ring-2 focus:ring-green-300 focus:outline-none',
+                'focus:ring-2 focus:ring-primary/30 focus:outline-none',
                 'shadow-sm hover:shadow-md',
                 config.container,
                 toggleFavorite.isPending && "animate-pulse",

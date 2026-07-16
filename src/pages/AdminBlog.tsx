@@ -20,9 +20,9 @@ const statusLabels: Record<string, string> = {
 
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-foreground',
-  ready: 'bg-warning-surface text-yellow-800',
+  ready: 'bg-warning-surface text-warning-foreground',
   scheduled: 'bg-info/10 text-info',
-  published: 'bg-green-100 text-green-800',
+  published: 'bg-info/10 text-info',
 };
 
 const AdminBlog = () => {

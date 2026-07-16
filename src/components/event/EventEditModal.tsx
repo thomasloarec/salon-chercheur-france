@@ -517,7 +517,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
               <Label htmlFor="description_event">
                 Description
                 {event.enrichissement_statut === 'valide' && event.description_enrichie && (
-                  <span className="ml-2 text-xs font-normal text-green-600">
+                  <span className="ml-2 text-xs font-normal text-info">
                     (description enrichie validée)
                   </span>
                 )}
@@ -727,9 +727,9 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                     {metaLen > 0 && (
                       <span className={`text-xs flex items-center gap-1 ${
                         metaStatus === 'good'
-                          ? 'text-green-600'
+                          ? 'text-info'
                           : metaStatus === 'short'
-                            ? 'text-amber-600'
+                            ? 'text-warning'
                             : 'text-destructive'
                       }`}>
                         {metaStatus === 'good' && <><Check className="h-3 w-3" /> Longueur idéale</>}

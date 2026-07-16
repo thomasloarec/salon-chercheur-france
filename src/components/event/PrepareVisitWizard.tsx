@@ -853,7 +853,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                   <>
                   {/* Seller mode banner */}
                   {results.mode === 'seller' && (
-                    <div className="max-w-full overflow-hidden bg-amber-500/10 border border-warning/40/30 rounded-xl p-3 sm:p-4 text-xs sm:text-sm leading-relaxed break-words">
+                    <div className="max-w-full overflow-hidden bg-warning/10 border border-warning/40/30 rounded-xl p-3 sm:p-4 text-xs sm:text-sm leading-relaxed break-words">
                       <span className="font-medium">Mode prospection :</span> nous remontons les exposants
                       dont l'activité suggère qu'ils pourraient être clients de votre offre — à valider sur place.
                     </div>
@@ -1061,8 +1061,8 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                 </Alert>
               )}
               {authMessage && (
-                <Alert className="border-green-200 bg-green-50">
-                  <AlertDescription className="text-green-700">{authMessage}</AlertDescription>
+                <Alert className="border-info/30 bg-info/10">
+                  <AlertDescription className="text-info">{authMessage}</AlertDescription>
                 </Alert>
               )}
 

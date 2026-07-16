@@ -35,7 +35,7 @@ import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditDrawer';
 
 const TIER_META: Record<ExhibitorTier, { label: string; className: string }> = {
-  bronze: { label: 'Bronze', className: 'border-warning/40/30 bg-amber-700/10 text-amber-800' },
+  bronze: { label: 'Bronze', className: 'border-warning/40/30 bg-warning/10 text-warning-foreground' },
   argent: { label: 'Argent', className: 'border-border/40 bg-border/60 text-muted-foreground' },
   or: { label: 'Or', className: 'border-primary/40 bg-primary/10 text-primary' },
 };
@@ -228,7 +228,7 @@ export default function ExhibitorManagerWidget({
             if (item.done) {
               return (
                 <div key={item.key} className="flex items-center gap-2 py-1 text-sm text-muted-foreground">
-                  <Check className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                  <Check className="h-4 w-4 text-info flex-shrink-0" />
                   <Icon className="h-3.5 w-3.5 flex-shrink-0" />
                   <span className="truncate">{item.label}</span>
                 </div>

@@ -57,7 +57,7 @@ const ClaimSalonBanner = ({ event }: ClaimSalonBannerProps) => {
   if (isOwner) {
     return (
       <div className="rounded-lg bg-muted px-4 py-2.5 flex items-center gap-2 text-sm text-muted-foreground">
-        <ShieldCheck className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+        <ShieldCheck className="h-4 w-4 text-info flex-shrink-0" />
         <span>Vous gérez ce salon.</span>
       </div>
     );

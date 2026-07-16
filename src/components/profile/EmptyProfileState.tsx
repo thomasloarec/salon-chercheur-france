@@ -24,7 +24,7 @@ const EmptyProfileState = ({ onCreateProfile }: EmptyProfileStateProps) => {
         <Card className="p-8 rounded-2xl shadow-sm text-center">
           <div className="flex items-center justify-center mb-6">
             <div className="bg-warning-surface p-4 rounded-full">
-              <AlertCircle className="h-8 w-8 text-amber-600" />
+              <AlertCircle className="h-8 w-8 text-warning" />
             </div>
           </div>
           

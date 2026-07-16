@@ -48,7 +48,7 @@ const MyPendingClaimsSection = () => {
   return (
     <Card className="p-6 rounded-2xl shadow-sm">
       <h2 className="text-xl font-semibold mb-1 flex items-center gap-2">
-        <Clock className="h-5 w-5 text-amber-600" />
+        <Clock className="h-5 w-5 text-warning" />
         Mes demandes en cours
       </h2>
       <p className="text-sm text-muted-foreground mb-4">
@@ -83,7 +83,7 @@ const MyPendingClaimsSection = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium truncate">{ex.name}</span>
-                  <Badge variant="outline" className="text-xs border-warning/40 text-amber-800 bg-warning-surface/60">
+                  <Badge variant="outline" className="text-xs border-warning/40 text-warning-foreground bg-warning-surface/60">
                     <Clock className="h-3 w-3 mr-1" />
                     En attente de validation
                   </Badge>
