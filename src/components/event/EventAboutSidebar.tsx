@@ -29,7 +29,7 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
       {/* Tarif */}
       <div className="pt-4 border-t">
         <div className="flex items-start gap-2">
-          <Euro size={18} className="mt-0.5 text-warning flex-shrink-0" />
+          <Euro size={18} className="mt-0.5 text-foreground flex-shrink-0" />
           <div>
             <p className="font-medium text-sm">Tarif</p>
             <p className="text-sm text-muted-foreground">{event.tarif || '—'}</p>
@@ -40,7 +40,7 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
       {/* Adresse */}
       <section>
         <div className="flex items-center gap-2 mb-2">
-          <MapPin className="h-4 w-4 text-warning" />
+          <MapPin className="h-4 w-4 text-foreground" />
           <h4 className="font-medium text-sm">Adresse</h4>
         </div>
         <div className="text-sm text-muted-foreground">
@@ -51,7 +51,7 @@ export default function EventAboutSidebar({ event }: EventAboutSidebarProps) {
       {/* Localisation (carte) */}
       <section>
         <div className="flex items-center gap-2 mb-2">
-          <Map className="h-4 w-4 text-warning" />
+          <Map className="h-4 w-4 text-foreground" />
           <h4 className="font-medium text-sm">Localisation</h4>
         </div>
         <EventMapEmbed 
