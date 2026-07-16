@@ -474,7 +474,7 @@ const RadarCrmPage: React.FC = () => {
                   'Le suivi est déjà prêt',
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-2.5 text-sm text-foreground">
-                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-foreground" aria-hidden="true" />
                     <span className="font-medium">{t}</span>
                   </li>
                 ))}

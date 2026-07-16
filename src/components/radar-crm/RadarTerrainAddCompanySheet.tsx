@@ -282,9 +282,9 @@ const RadarTerrainAddCompanySheet: React.FC<Props> = ({
                               )}
                             </div>
                             {busy ? (
-                              <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0 mt-0.5" />
+                              <Loader2 className="h-5 w-5 animate-spin shrink-0 mt-0.5" />
                             ) : (
-                              <Plus className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                              <Plus className="h-5 w-5 shrink-0 mt-0.5" />
                             )}
                           </button>
                         </li>

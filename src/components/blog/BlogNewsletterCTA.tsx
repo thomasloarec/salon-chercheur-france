@@ -40,7 +40,7 @@ const BlogNewsletterCTA = () => {
         <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/5 to-primary/5 p-8 md:p-10 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.08),transparent_50%)]" />
           <div className="relative">
-            <CheckCircle2 className="h-12 w-12 text-primary mx-auto mb-4" />
+            <CheckCircle2 className="h-12 w-12 text-foreground mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-foreground mb-2">
               Vous êtes inscrit ! 🎉
             </h3>
@@ -79,15 +79,15 @@ const BlogNewsletterCTA = () => {
           {/* Benefits */}
           <div className="flex flex-wrap gap-x-6 gap-y-2 mb-7 text-sm text-foreground/70">
             <span className="flex items-center gap-1.5">
-              <CalendarDays className="h-4 w-4 text-primary/70" />
+              <CalendarDays className="h-4 w-4 text-foreground/70" />
               1 e-mail par mois
             </span>
             <span className="flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4 text-primary/70" />
+              <TrendingUp className="h-4 w-4 text-foreground/70" />
               Tous les salons du mois
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-primary/70" />
+              <CheckCircle2 className="h-4 w-4 text-foreground/70" />
               100 % gratuit
             </span>
           </div>

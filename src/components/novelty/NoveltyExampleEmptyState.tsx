@@ -62,7 +62,7 @@ export default function NoveltyExampleEmptyState({
             {/* Visuel */}
             <div className="relative shrink-0 bg-muted overflow-hidden w-full sm:w-44 md:w-48 aspect-[4/3] sm:aspect-[4/5]">
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-primary/10 to-muted/40">
-                <Sparkles className="h-7 w-7 text-primary/50" />
+                <Sparkles className="h-7 w-7 text-foreground/50" />
                 <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
                   Innovation
                 </span>

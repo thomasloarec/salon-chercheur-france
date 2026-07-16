@@ -165,7 +165,7 @@ const RadarInvitation: React.FC = () => {
             <CardContent className="p-6">
               {(state.kind === 'loading' || state.kind === 'accepting') && (
                 <div className="flex flex-col items-center gap-3 py-6 text-center">
-                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                  <Loader2 className="h-7 w-7 animate-spin text-foreground" />
                   <p className="text-sm text-muted-foreground">
                     {state.kind === 'accepting'
                       ? 'Validation de votre invitation…'
@@ -177,7 +177,7 @@ const RadarInvitation: React.FC = () => {
               {state.kind === 'needs_auth' && (
                 <div className="space-y-4">
                   <div className="rounded-lg bg-secondary/60 p-4 text-sm text-foreground flex gap-3">
-                    <Mail className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+                    <Mail className="h-5 w-5 shrink-0 text-foreground mt-0.5" />
                     <p>
                       Connectez-vous avec l’adresse email à laquelle l’invitation
                       a été envoyée pour rejoindre l’espace.
@@ -194,7 +194,7 @@ const RadarInvitation: React.FC = () => {
 
               {state.kind === 'success' && (
                 <div className="flex flex-col items-center gap-3 py-6 text-center animate-scale-in">
-                  <CheckCircle2 className="h-10 w-10 text-primary" />
+                  <CheckCircle2 className="h-10 w-10 text-foreground" />
                   <p className="font-medium text-foreground">Invitation acceptée !</p>
                   <p className="text-sm text-muted-foreground">
                     Redirection vers votre espace partagé…
@@ -205,7 +205,7 @@ const RadarInvitation: React.FC = () => {
               {state.kind === 'error' && (
                 <div className="space-y-4">
                   <div className="flex flex-col items-center gap-3 py-2 text-center">
-                    <AlertCircle className="h-9 w-9 text-primary" />
+                    <AlertCircle className="h-9 w-9 text-foreground" />
                     <p className="text-sm text-foreground">{ERROR_MESSAGES[state.code]}</p>
                   </div>
 

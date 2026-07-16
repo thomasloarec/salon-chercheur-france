@@ -52,7 +52,7 @@ export function NoveltyLimitDialog({
             
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-lg border border-primary/20 mt-4">
               <div className="flex items-start gap-3">
-                <Zap className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <Zap className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-foreground mb-1">Passez au plan Pro</p>
                   <p className="text-sm text-muted-foreground">

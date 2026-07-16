@@ -125,7 +125,7 @@ export function PremiumLeadDialog({
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-primary" />
+                <Zap className="h-5 w-5 text-foreground" />
                 Passer au Premium
               </DialogTitle>
               <DialogDescription>

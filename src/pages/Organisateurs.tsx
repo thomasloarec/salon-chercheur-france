@@ -547,7 +547,7 @@ const Organisateurs = () => {
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-4 w-4 text-primary" />
+                  <Sparkles className="h-4 w-4 text-foreground" />
                   <h3 className="text-sm font-bold text-foreground">Nouveautés des exposants</h3>
                 </div>
                 <div className="space-y-3">

@@ -161,7 +161,7 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
         >
           <div className="flex items-start gap-3">
             {starred && (
-              <Star className="h-5 w-5 text-primary fill-primary shrink-0 mt-0.5" aria-label="Compte prioritaire" />
+              <Star className="h-5 w-5 fill-primary shrink-0 mt-0.5" aria-label="Compte prioritaire" />
             )}
             <div className="min-w-0 flex-1">
               <p

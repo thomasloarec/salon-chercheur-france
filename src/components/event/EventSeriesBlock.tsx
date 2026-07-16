@@ -44,7 +44,7 @@ export const EventSeriesBlock = ({ event, onSeriesIds }: EventSeriesBlockProps) 
     return (
       <section className="mt-8">
         <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-          <ArrowRight className="h-5 w-5 text-primary" />
+          <ArrowRight className="h-5 w-5 text-foreground" />
           Autres éditions de ce salon
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -66,7 +66,7 @@ export const EventSeriesBlock = ({ event, onSeriesIds }: EventSeriesBlockProps) 
   return (
     <section className="mt-8">
       <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-        <ArrowRight className="h-5 w-5 text-primary" />
+        <ArrowRight className="h-5 w-5 text-foreground" />
         Autres éditions de ce salon
       </h2>
 

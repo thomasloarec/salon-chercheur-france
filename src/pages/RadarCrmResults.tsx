@@ -895,7 +895,7 @@ const RadarCrmResults: React.FC = () => {
                   ) : (
                     <div className="space-y-6">
                       <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Target className="h-4 w-4 text-primary shrink-0" />
+                        <Target className="h-4 w-4 text-foreground shrink-0" />
                         Cliquez sur une entreprise pour préparer votre mission (statut, objectif, questions).
                       </p>
                       {futureGroups.map((g) => (
@@ -1259,7 +1259,7 @@ const CompanyChip: React.FC<{
     <span className="flex min-w-0 flex-1 flex-col items-start gap-1 leading-tight">
       {/* Ligne 1 : nom (tronqué proprement) */}
       <span className="flex min-w-0 max-w-full items-center gap-1.5">
-        {starred && <Star className="h-3 w-3 text-primary fill-primary shrink-0" aria-label="Compte prioritaire" />}
+        {starred && <Star className="h-3 w-3 text-foreground fill-primary shrink-0" aria-label="Compte prioritaire" />}
         <span className="truncate font-display text-sm font-semibold text-foreground group-hover:text-primary">
           {nomExposant ?? company.company_name}
         </span>
@@ -1623,7 +1623,7 @@ const CompanyAccountsList: React.FC<{
           <div className="space-y-2">
             <div className="h-[3px] w-10 rounded-full bg-primary" aria-hidden="true" />
             <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-primary fill-primary" />
+              <Star className="h-5 w-5 text-foreground fill-primary" />
               <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
                 Prioritaires <span className="text-muted-foreground font-normal">({starred.length})</span>
               </h2>
@@ -2159,7 +2159,7 @@ const LockedView: React.FC<{
 const NoFutureMatches: React.FC<{ companiesCount: number; matchedCount: number }> = ({ companiesCount, matchedCount }) => (
   <Card>
     <CardContent className="pt-8 pb-8 text-center">
-      <Radar className="h-10 w-10 mx-auto text-primary mb-3" />
+      <Radar className="h-10 w-10 mx-auto text-foreground mb-3" />
       <h3 className="text-lg font-semibold mb-1 text-foreground">
         Aucun mouvement détecté pour l'instant
       </h3>

@@ -30,7 +30,7 @@ export default function NotificationsPage() {
       <div className="container mx-auto py-8 max-w-4xl">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
-            <Bell className="h-8 w-8 text-primary" />
+            <Bell className="h-8 w-8 text-foreground" />
             <h1 className="heading-display text-3xl text-foreground">Notifications</h1>
             {unreadCount > 0 && (
               <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full">

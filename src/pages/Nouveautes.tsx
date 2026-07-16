@@ -322,7 +322,7 @@ export default function Nouveautes() {
         <section className="sticky top-16 z-20 border-b-2 bg-background/90 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/75">
           <div className="container mx-auto max-w-6xl px-4 py-3.5">
             <div className="mb-2.5 flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 text-primary" />
+              <SlidersHorizontal className="h-4 w-4 text-foreground" />
               <span className="text-sm font-semibold tracking-tight">
                 Filtrer les nouveautés
               </span>
@@ -397,7 +397,7 @@ export default function Nouveautes() {
             /* RÉSULTATS FILTRÉS — grille simple, pas de redirection */
             <section>
               <div className="mb-5 flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
+                <Layers className="h-4 w-4 text-foreground" />
                 <h2 className="text-xl font-bold tracking-tight">
                   {filtered.length} nouveauté{filtered.length > 1 ? "s" : ""}
                 </h2>
@@ -424,7 +424,7 @@ export default function Nouveautes() {
               <section aria-labelledby="salons-heading">
                   <div className="section-rule" />
                   <div className="mb-1 flex items-center gap-2">
-                    <CalendarClock className="h-5 w-5 text-primary" />
+                    <CalendarClock className="h-5 w-5 text-foreground" />
                     <h2 id="salons-heading" className="heading-display text-2xl text-foreground md:text-3xl">
                       À voir avant les prochains salons
                     </h2>

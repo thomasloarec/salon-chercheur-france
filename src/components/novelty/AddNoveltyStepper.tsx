@@ -998,7 +998,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
           <div className="flex items-center justify-center space-x-4">
             <div className="flex items-center space-x-2">
               {currentStep >= 1 ? (
-                <CheckCircle className="h-5 w-5 text-primary" />
+                <CheckCircle className="h-5 w-5 text-foreground" />
               ) : (
                 <Circle className="h-5 w-5 text-muted-foreground" />
               )}
@@ -1015,7 +1015,7 @@ export default function AddNoveltyStepper({ isOpen, onClose, event }: AddNovelty
             
             <div className="flex items-center space-x-2">
               {currentStep >= 2 ? (
-                <CheckCircle className="h-5 w-5 text-primary" />
+                <CheckCircle className="h-5 w-5 text-foreground" />
               ) : (
                 <Circle className="h-5 w-5 text-muted-foreground" />
               )}

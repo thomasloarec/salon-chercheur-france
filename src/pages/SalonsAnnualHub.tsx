@@ -179,7 +179,7 @@ const SalonsAnnualHub = () => {
                               {s.label}
                             </h3>
                           </div>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
                           {s.count} salon{s.count > 1 ? 's' : ''} en {YEAR}
@@ -219,7 +219,7 @@ const SalonsAnnualHub = () => {
                             <MapPin className="h-4 w-4 text-muted-foreground" />
                             {c.name}
                           </h3>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
                           {c.count} salon{c.count > 1 ? 's' : ''} en {YEAR}

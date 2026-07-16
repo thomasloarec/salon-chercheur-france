@@ -32,7 +32,7 @@ export const RelatedEvents = ({ event, limit = 4, excludeIds = [] }: RelatedEven
   return (
     <section className="mt-8">
       <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-        <ArrowRight className="h-5 w-5 text-primary" />
+        <ArrowRight className="h-5 w-5 text-foreground" />
         Événements similaires
       </h2>
 

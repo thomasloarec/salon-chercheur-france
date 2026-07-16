@@ -29,7 +29,7 @@ export const SectorArticlesBlock = ({ event }: SectorArticlesBlockProps) => {
   return (
     <section className="mt-8">
       <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-        <BookOpen className="h-5 w-5 text-primary" />
+        <BookOpen className="h-5 w-5 text-foreground" />
         Articles sur ce secteur
       </h2>
 
