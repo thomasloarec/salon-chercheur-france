@@ -114,7 +114,7 @@ const AdminEventDetail = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-gray-600">Chargement de l'événement...</p>
+          <p className="mt-2 text-muted-foreground">Chargement de l'événement...</p>
         </div>
       </div>
     );
@@ -124,15 +124,15 @@ const AdminEventDetail = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">
+          <h1 className="text-2xl font-bold text-danger mb-4">
             {error ? 'Erreur de chargement' : 'Événement introuvable'}
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             {error ? 'Une erreur s\'est produite lors du chargement de l\'événement.' : 'L\'événement demandé n\'existe pas ou a été supprimé.'}
           </p>
           <button
             onClick={() => navigate('/admin')}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+            className="px-4 py-2 bg-border text-muted-foreground rounded hover:bg-border transition-colors"
           >
             Retour à l'administration
           </button>

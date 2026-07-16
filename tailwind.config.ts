@@ -101,6 +101,16 @@ export default {
 					primary: 'hsl(var(--primary-inverse))'
 				},
 				line: 'hsl(var(--line))',
+				warning: {
+					DEFAULT: 'hsl(var(--warning))',
+					surface: 'hsl(var(--warning-surface))',
+					foreground: 'hsl(var(--warning-foreground))'
+				},
+				danger: {
+					DEFAULT: 'hsl(var(--danger))',
+					surface: 'hsl(var(--danger-surface))',
+					foreground: 'hsl(var(--danger-foreground))'
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

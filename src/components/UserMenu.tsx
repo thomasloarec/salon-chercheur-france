@@ -42,7 +42,7 @@ const UserMenu = () => {
             </Avatar>
           </Button>
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center rounded-full bg-red-500 text-white text-xs px-1">
+            <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center rounded-full bg-danger text-white text-xs px-1">
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
@@ -61,7 +61,7 @@ const UserMenu = () => {
               <item.icon className="mr-2 h-4 w-4" />
               {item.label}
               {item.showUnreadBadge && unreadCount > 0 && (
-                <Badge className="ml-auto bg-red-500">{unreadCount}</Badge>
+                <Badge className="ml-auto bg-danger">{unreadCount}</Badge>
               )}
             </Link>
           </DropdownMenuItem>

@@ -303,7 +303,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
                   <TooltipTrigger asChild>
                     <DropdownMenuItem 
                       disabled
-                      className="text-gray-400 cursor-not-allowed"
+                      className="text-muted-foreground cursor-not-allowed"
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Rendre visible

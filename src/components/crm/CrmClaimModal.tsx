@@ -163,8 +163,8 @@ export function CrmClaimModal({ isOpen, onClose, claimData, onClaimSuccess }: Cr
 
           {/* Email pré-rempli */}
           {claimData.email_from_crm && (
-            <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-              <p className="text-sm text-blue-700">
+            <div className="p-3 bg-info/10 rounded-lg border-l-4 border-info/30">
+              <p className="text-sm text-info">
                 Email HubSpot détecté : <strong>{claimData.email_from_crm}</strong>
               </p>
             </div>

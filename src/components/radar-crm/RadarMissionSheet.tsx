@@ -745,7 +745,7 @@ const RadarMissionSheet: React.FC<{
         <span
           className={cn(
             'h-2 w-2 rounded-full',
-            band === 'faible' ? 'bg-primary' : band === 'moyen' ? 'bg-stone-400' : 'bg-emerald-600/60',
+            band === 'faible' ? 'bg-primary' : band === 'moyen' ? 'bg-muted-foreground' : 'bg-info',
           )}
           aria-hidden="true"
         />
@@ -1161,11 +1161,11 @@ const RadarMissionSheet: React.FC<{
                   className={cn(
                     'w-full min-h-[44px] gap-2',
                     visited
-                      ? 'border-emerald-600/40 text-emerald-700 hover:text-emerald-700'
+                      ? 'border-info/30 text-info hover:text-info'
                       : 'border-border/70 text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  <Check className={cn('h-4 w-4', visited && 'text-emerald-600')} />
+                  <Check className={cn('h-4 w-4', visited && 'text-info')} />
                   {visited ? 'Visité' : 'Marquer comme visité'}
                 </Button>
               )}

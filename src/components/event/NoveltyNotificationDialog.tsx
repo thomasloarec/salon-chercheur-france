@@ -93,8 +93,8 @@ export function NoveltyNotificationDialog({
         {isSuccess ? (
           // État de succès
           <div className="py-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-info/10 mb-4">
+              <CheckCircle className="h-8 w-8 text-info" />
             </div>
             <h3 className="text-xl font-semibold mb-2">C'est noté !</h3>
             <p className="text-muted-foreground">

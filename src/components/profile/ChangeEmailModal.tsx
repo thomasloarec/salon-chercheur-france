@@ -79,7 +79,7 @@ const ChangeEmailModal = ({ isOpen, onClose }: ChangeEmailModalProps) => {
               placeholder="nouvelle@adresse.com"
               required
             />
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Un email de confirmation sera envoyé à cette adresse.
             </p>
           </div>

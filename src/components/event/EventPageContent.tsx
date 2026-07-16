@@ -154,32 +154,32 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
         
         {/* Admin toolbar - shown if user is admin */}
         {isAdmin && (
-          <div className="bg-orange-100 border-l-4 border-orange-500 p-4 rounded-none">
+          <div className="bg-warning-surface border-l-4 border-warning/40 p-4 rounded-none">
             <div className="container mx-auto px-4 flex items-center justify-between">
               <div>
-                <p className="text-sm text-orange-700">
+                <p className="text-sm text-muted-foreground">
                   <strong>Admin:</strong> Outils d'administration pour cet événement
                   {participationsCount > 0 && (
-                    <span className="ml-4 text-xs bg-orange-200 px-2 py-1 rounded">
+                    <span className="ml-4 text-xs bg-warning-surface px-2 py-1 rounded">
                       Participations en DB : {participationsCount}
                     </span>
                   )}
                 </p>
                 {/* Enrichment status */}
                 <div className="flex flex-wrap gap-2 mt-1">
-                  <span className={`text-xs px-2 py-0.5 rounded ${event.meta_description_gen ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded ${event.meta_description_gen ? 'bg-info/10 text-info' : 'bg-border text-muted-foreground'}`}>
                     Meta: {event.meta_description_gen ? '✓' : '—'}
                   </span>
-                  <span className={`text-xs px-2 py-0.5 rounded ${Array.isArray(event.faq_json) && event.faq_json.length > 0 ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded ${Array.isArray(event.faq_json) && event.faq_json.length > 0 ? 'bg-info/10 text-info' : 'bg-border text-muted-foreground'}`}>
                     FAQ: {Array.isArray(event.faq_json) && event.faq_json.length > 0 ? `✓ (${event.faq_json.length})` : '—'}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600">
+                  <span className="text-xs px-2 py-0.5 rounded bg-border text-muted-foreground">
                     Score: {event.enrichissement_score ?? '—'}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600">
+                  <span className="text-xs px-2 py-0.5 rounded bg-border text-muted-foreground">
                     Statut: {event.enrichissement_statut || '—'}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600">
+                  <span className="text-xs px-2 py-0.5 rounded bg-border text-muted-foreground">
                     Enrichi: {event.enrichissement_date ? new Date(event.enrichissement_date).toLocaleDateString('fr-FR') : '—'}
                   </span>
                 </div>
@@ -189,7 +189,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => navigate(`/admin/events/${event.id}`)}
-                  className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                  className="border-warning/40 text-muted-foreground hover:bg-warning-surface"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   Éditer
@@ -290,7 +290,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 {/* Connecteur visuel discret : continuité Exposants → Parcours IA */}
                 {exhibitorCount >= 80 && !isEventPast && (
                   <div className="flex justify-center -my-3" aria-hidden="true">
-                    <ChevronDown className="w-5 h-5 text-primary/40" />
+                    <ChevronDown className="w-5 h-5 text-foreground" />
                   </div>
                 )}
 

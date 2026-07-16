@@ -203,8 +203,8 @@ const VoiceNoteReviewCard: React.FC<Props> = ({ note, onValidated, onDeleted, on
   // ---- État VALIDÉ : accusé discret (navy/emerald), plus d'action orange ----
   if (validated) {
     return (
-      <div className="rounded-xl border bg-emerald-50/50 p-4">
-        <div className="flex items-center gap-2 text-emerald-700">
+      <div className="rounded-xl border bg-info/10 p-4">
+        <div className="flex items-center gap-2 text-info">
           <Check className="h-4 w-4 shrink-0" />
           <p className="text-sm font-medium">Note enregistrée dans la mission</p>
         </div>
@@ -286,9 +286,9 @@ const VoiceNoteReviewCard: React.FC<Props> = ({ note, onValidated, onDeleted, on
       </div>
 
       {needsReview && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
-          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-          <p className="text-xs text-amber-800">
+        <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning-surface px-3 py-2.5">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
+          <p className="text-xs text-warning-foreground">
             L'audio était ambigu — relisez attentivement avant de valider.
           </p>
         </div>

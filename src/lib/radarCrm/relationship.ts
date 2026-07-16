@@ -49,12 +49,12 @@ export const RELATIONSHIP_META: Record<RelationshipStatus, RelationshipMeta> = {
   client_actif: {
     label: 'Client actif',
     badge: 'text-foreground',
-    dot: 'bg-emerald-600/60',
+    dot: 'bg-primary',
   },
   client_dormant: {
     label: 'Client dormant',
     badge: 'text-foreground',
-    dot: 'bg-stone-400',
+    dot: 'bg-muted-foreground',
   },
   prospect_chaud: {
     label: 'Prospect chaud',
@@ -64,12 +64,12 @@ export const RELATIONSHIP_META: Record<RelationshipStatus, RelationshipMeta> = {
   prospect_froid: {
     label: 'Prospect froid',
     badge: 'text-foreground',
-    dot: 'bg-sky-400/60',
+    dot: 'bg-info',
   },
   ancien_client: {
     label: 'Ancien client',
     badge: 'text-foreground',
-    dot: 'bg-slate-300',
+    dot: 'bg-border',
   },
   a_qualifier: {
     label: 'À qualifier',

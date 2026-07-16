@@ -240,7 +240,7 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
             className="flex-1 min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
             onClick={onToggleVisited}
           >
-            <Check className={cn('h-4 w-4', visited && 'text-emerald-600')} />
+            <Check className={cn('h-4 w-4', visited && 'text-info')} />
             {visited ? 'Vu' : 'Visité'}
           </Button>
         </div>
@@ -677,7 +677,7 @@ const RadarCrmTerrainInner: React.FC = () => {
               {totalCount > 0 && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
-                    <Check className="h-4 w-4 text-emerald-600" />
+                    <Check className="h-4 w-4 text-info" />
                     <span>{seenCount} vus</span>
                     <span className="text-muted-foreground font-normal">·</span>
                     <span className={cn(toSeeCount > 0 ? 'text-foreground' : 'text-muted-foreground')}>

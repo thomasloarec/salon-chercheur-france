@@ -86,7 +86,7 @@ export default function ResourceUploader({
       <div className="space-y-2">
         <label className="text-sm font-medium">{label}</label>
         <p className="text-xs text-muted-foreground">
-          <span className="text-amber-600 font-medium">Optionnel mais recommandé</span> - Les utilisateurs intéressés pourront télécharger ce document après avoir fourni leurs coordonnées
+          <span className="text-warning-foreground font-medium">Optionnel mais recommandé</span> - Les utilisateurs intéressés pourront télécharger ce document après avoir fourni leurs coordonnées
         </p>
       </div>
 
@@ -126,8 +126,8 @@ export default function ResourceUploader({
         <div className="border rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-red-50 rounded-lg">
-                <FileText className="h-6 w-6 text-red-600" />
+              <div className="p-2 bg-danger-surface rounded-lg">
+                <FileText className="h-6 w-6 text-danger" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate" title={file.name}>

@@ -18,7 +18,7 @@ const VerifiedBadge = ({ className }: VerifiedBadgeProps) => {
         <TooltipTrigger asChild>
           <Badge
             variant="outline"
-            className={`border-emerald-200 bg-emerald-50 text-emerald-700 gap-1 ${className ?? ''}`}
+            className={`border-info/30 bg-info/10 text-info gap-1 ${className ?? ''}`}
           >
             <BadgeCheck className="h-3.5 w-3.5" />
             Vérifié

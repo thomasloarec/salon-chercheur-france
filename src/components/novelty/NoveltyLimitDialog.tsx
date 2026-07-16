@@ -37,8 +37,8 @@ export function NoveltyLimitDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-              <Crown className="h-6 w-6 text-amber-600" />
+            <div className="w-12 h-12 rounded-full bg-warning-surface flex items-center justify-center">
+              <Crown className="h-6 w-6 text-warning" />
             </div>
           </div>
           <AlertDialogTitle>Limite de nouveautés atteinte</AlertDialogTitle>

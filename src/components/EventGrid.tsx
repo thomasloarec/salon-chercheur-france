@@ -11,7 +11,7 @@ interface EventGridProps {
 const EventGrid = ({ events, adminPreview = false, onPublish }: EventGridProps) => {
   if (events.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-muted-foreground">
         {adminPreview ? "Aucun événement en attente de publication" : "Aucun événement trouvé"}
       </div>
     );

@@ -75,7 +75,7 @@ const TerrainVoiceCapture: React.FC<Props> = ({ companyId, eventId, onProcessing
       {isRecording && (
         <div className="space-y-3 text-center">
           <div className="flex items-center justify-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
+            <span className="h-2.5 w-2.5 rounded-full bg-danger animate-pulse" aria-hidden="true" />
             <span className="font-display text-2xl tabular-nums" style={{ color: NAVY }}>
               {fmtClock(elapsedMs)}
             </span>

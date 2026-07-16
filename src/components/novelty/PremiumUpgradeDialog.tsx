@@ -106,7 +106,7 @@ export default function PremiumUpgradeDialog({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
-            <Crown className="h-6 w-6 text-yellow-500" />
+            <Crown className="h-6 w-6 text-warning" />
             Passez en Premium
           </DialogTitle>
           <DialogDescription>
@@ -124,7 +124,7 @@ export default function PremiumUpgradeDialog({
           {/* Features */}
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <Check className="h-5 w-5 text-info mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Leads illimités visibles avant le salon</p>
                 <p className="text-sm text-muted-foreground">
@@ -134,7 +134,7 @@ export default function PremiumUpgradeDialog({
             </div>
             
             <div className="flex items-start gap-3">
-              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <Check className="h-5 w-5 text-info mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Coordonnées complètes</p>
                 <p className="text-sm text-muted-foreground">
@@ -146,7 +146,7 @@ export default function PremiumUpgradeDialog({
             
             
             <div className="flex items-start gap-3">
-              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <Check className="h-5 w-5 text-info mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Export CSV</p>
                 <p className="text-sm text-muted-foreground">
@@ -156,7 +156,7 @@ export default function PremiumUpgradeDialog({
             </div>
 
             <div className="flex items-start gap-3">
-              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <Check className="h-5 w-5 text-info mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Statistiques détaillées</p>
                 <p className="text-sm text-muted-foreground">

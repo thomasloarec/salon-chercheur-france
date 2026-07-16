@@ -27,6 +27,32 @@
     --lx-on-navy-60: 222 25% 70%;    /* #9fabc6 — 7,98:1 sur navy */
     --lx-danger:     352 74% 50%;    /* #de213a — 4,79:1 sur blanc */
 
+    /* ─── LA SIXIÈME COULEUR ────────────────────────────────────────
+       L'ambre est HORS CHARTE, et c'est assumé. La palette va de 203° à
+       249° : tout est froid sauf le rouge. Un avertissement n'a pas de
+       place entre le bleu (information) et le rouge (critique).
+
+       CONTRAINTE MESURÉE : aucun ambre ne satisfait à la fois « lisible
+       en texte » (≥4,5:1) et « discernable du rouge en daltonisme ». Les
+       ambres sombres passent le contraste mais se confondent avec #de213a
+       en protanopie (distance 42). Les ambres vifs sont discernables mais
+       ne passent pas 3:1.
+
+       D'OÙ LA RÈGLE : --warning ne porte JAMAIS de texte. Il ne sert qu'à
+       l'icône et à la bordure, où le seuil WCAG est 3:1. Le texte du badge
+       est en encre navy.
+       ──────────────────────────────────────────────────────────────── */
+    --lx-warning: 32.1 94.6% 43.7%;   /* #d97706 — 3,19:1 sur blanc, 3,07:1 sur sa surface */
+
+    /* ─── STATUTS ───────────────────────────────────────────────────── */
+    --warning: var(--lx-warning);
+    --warning-surface: 48 100% 96%;        /* #fffbeb */
+    --warning-foreground: var(--lx-navy);  /* 17,73:1 sur la surface */
+
+    --danger: var(--lx-danger);
+    --danger-surface: 352 74% 96%;
+    --danger-foreground: var(--lx-danger); /* 4,79:1 sur blanc — le rouge PEUT porter du texte */
+
     /* ═══════════════════════════════════════════════════════════════════
        SÉMANTIQUE — contrat shadcn.
        ═══════════════════════════════════════════════════════════════════ */
