@@ -139,7 +139,7 @@ export default function Step2NoveltyDetails({
             <p className="text-xs text-muted-foreground">
               Mettez en avant les avantages, innovations ou bénéfices clés (10 à 1000 caractères)
             </p>
-            <p className={`text-xs ${formData.reason.length > 1000 ? 'text-destructive font-medium' : formData.reason.length > 900 ? 'text-warning' : 'text-muted-foreground'}`}>
+            <p className={`text-xs ${formData.reason.length > 1000 ? 'text-destructive font-medium' : formData.reason.length > 900 ? 'text-warning-foreground' : 'text-muted-foreground'}`}>
               {formData.reason.length} / 1000
             </p>
           </div>
