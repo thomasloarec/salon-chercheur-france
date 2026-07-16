@@ -160,7 +160,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 <p className="text-sm text-muted-foreground">
                   <strong>Admin:</strong> Outils d'administration pour cet événement
                   {participationsCount > 0 && (
-                    <span className="ml-4 text-xs bg-orange-200 px-2 py-1 rounded">
+                    <span className="ml-4 text-xs bg-warning-surface px-2 py-1 rounded">
                       Participations en DB : {participationsCount}
                     </span>
                   )}
