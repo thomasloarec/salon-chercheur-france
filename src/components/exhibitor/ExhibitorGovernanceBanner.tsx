@@ -57,10 +57,10 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
   // Case: user already has a pending claim
   if (hasModernExhibitor && governance.hasPendingClaim) {
     return (
-      <div className="rounded-lg bg-warning-surface border border-warning/40 p-3 flex items-start gap-3">
-        <Clock className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+      <div className="rounded-lg bg-info/10 border border-info/30 p-3 flex items-start gap-3">
+        <Clock className="h-5 w-5 text-info flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-warning-foreground">Demande en cours</p>
+          <p className="text-sm font-medium text-foreground">Demande en cours</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Votre demande a bien été envoyée. Elle sera vérifiée par l'équipe Lotexpo.
           </p>
