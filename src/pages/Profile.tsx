@@ -177,7 +177,7 @@ const Profile = () => {
                   </span>
                 </div>
                 {profileProgress < 100 && (
-                  <div className="flex items-center gap-2 text-warning-foreground bg-warning-surface p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-foreground bg-muted p-3 rounded-lg">
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm">
                       Complétez votre profil pour une meilleure expérience

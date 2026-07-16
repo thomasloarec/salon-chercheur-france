@@ -359,7 +359,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ' +
                 (seo.score >= 80
                   ? 'bg-info/10 text-info'
-                  : 'bg-warning-surface text-warning-foreground')
+                  : 'bg-info/10 text-foreground')
               }
             >
               {seo.score >= 80 ? 'Qualité SEO : Super' : 'Qualité SEO : Alerte'} · {seo.score}/100

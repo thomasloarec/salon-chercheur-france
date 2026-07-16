@@ -219,7 +219,7 @@ const ExhibitorPanel = ({
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7">
                         <AvatarFallback className="text-xs">
-                          {m.role === 'owner' ? <Crown className="h-3 w-3 text-warning" /> : <User className="h-3 w-3" />}
+                          {m.role === 'owner' ? <Crown className="h-3 w-3 text-foreground" /> : <User className="h-3 w-3" />}
                         </AvatarFallback>
                       </Avatar>
                       <div>

@@ -154,13 +154,13 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
         
         {/* Admin toolbar - shown if user is admin */}
         {isAdmin && (
-          <div className="bg-warning-surface border-l-4 border-warning/40 p-4 rounded-none">
+          <div className="bg-muted border-l-4 border-border p-4 rounded-none">
             <div className="container mx-auto px-4 flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">
                   <strong>Admin:</strong> Outils d'administration pour cet événement
                   {participationsCount > 0 && (
-                    <span className="ml-4 text-xs bg-warning-surface px-2 py-1 rounded">
+                    <span className="ml-4 text-xs bg-muted px-2 py-1 rounded">
                       Participations en DB : {participationsCount}
                     </span>
                   )}
@@ -189,7 +189,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => navigate(`/admin/events/${event.id}`)}
-                  className="border-warning/40 text-muted-foreground hover:bg-warning-surface"
+                  className="border-border text-muted-foreground hover:bg-muted"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   Éditer

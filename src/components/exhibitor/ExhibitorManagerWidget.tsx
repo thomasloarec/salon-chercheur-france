@@ -35,7 +35,7 @@ import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditDrawer';
 
 const TIER_META: Record<ExhibitorTier, { label: string; className: string }> = {
-  bronze: { label: 'Bronze', className: 'border-warning/40 bg-warning/10 text-warning-foreground' },
+  bronze: { label: 'Bronze', className: 'border-border bg-muted text-muted-foreground' },
   argent: { label: 'Argent', className: 'border-border/40 bg-border/60 text-muted-foreground' },
   or: { label: 'Or', className: 'border-primary/40 bg-primary/10 text-primary' },
 };

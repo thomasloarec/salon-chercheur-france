@@ -48,7 +48,7 @@ const MyPendingClaimsSection = () => {
   return (
     <Card className="p-6 rounded-2xl shadow-sm">
       <h2 className="text-xl font-semibold mb-1 flex items-center gap-2">
-        <Clock className="h-5 w-5 text-warning" />
+        <Clock className="h-5 w-5 text-info" />
         Mes demandes en cours
       </h2>
       <p className="text-sm text-muted-foreground mb-4">
@@ -64,7 +64,7 @@ const MyPendingClaimsSection = () => {
           return (
             <div
               key={claim.id}
-              className="border border-warning/40 bg-warning-surface/50 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center gap-3"
+              className="border border-info/30 bg-info/10 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center gap-3"
             >
               {logoUrl ? (
                 <div className="h-10 w-10 rounded bg-background border flex items-center justify-center flex-shrink-0 p-1">
@@ -83,7 +83,7 @@ const MyPendingClaimsSection = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium truncate">{ex.name}</span>
-                  <Badge variant="outline" className="text-xs border-warning/40 text-warning-foreground bg-warning-surface/60">
+                  <Badge variant="outline" className="text-xs border-info/30 text-foreground bg-info/10">
                     <Clock className="h-3 w-3 mr-1" />
                     En attente de validation
                   </Badge>
