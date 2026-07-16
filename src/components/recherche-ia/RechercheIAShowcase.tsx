@@ -80,8 +80,8 @@ const RechercheIAShowcase = () => {
     <section aria-label="L'IA en action" className="mt-14 md:mt-16">
       {/* En-tête centré */}
       <div className="text-center max-w-2xl mx-auto mb-8">
-        <div className="mx-auto mb-4 h-[3px] w-11 rounded-full bg-accent" />
-        <p className="text-accent font-semibold uppercase tracking-[0.15em] text-xs mb-3">
+        <div className="mx-auto mb-4 h-[3px] w-11 rounded-full bg-primary" />
+        <p className="text-primary font-semibold uppercase tracking-[0.15em] text-xs mb-3">
           L'IA en action
         </p>
         <h2 className="heading-display text-2xl md:text-3xl text-foreground">
@@ -154,14 +154,14 @@ const RechercheIAShowcase = () => {
           {/* Réponse assistant */}
           {phase === 'answered' && (
             <div className="flex justify-start gap-3 animate-fade-in" key={`answer-${active}`}>
-              <div className="mt-0.5 h-8 w-8 shrink-0 rounded-lg bg-accent/15 text-accent grid place-items-center font-display font-semibold">
+              <div className="mt-0.5 h-8 w-8 shrink-0 rounded-lg bg-primary/15 text-primary grid place-items-center font-display font-semibold">
                 L
               </div>
               <div className="max-w-[92%] rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3 space-y-3">
                 <p className="text-[15px] text-foreground">{current.intro}</p>
                 <div className="space-y-2.5">
                   {current.cards.map((c) => (
-                    <div key={c.name} className="border-l-[3px] border-accent pl-3.5 py-0.5">
+                    <div key={c.name} className="border-l-[3px] border-primary pl-3.5 py-0.5">
                       <p className="text-sm font-semibold text-foreground">
                         {c.name}
                         <span className="ml-2 font-normal text-muted-foreground">{c.meta}</span>

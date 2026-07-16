@@ -292,7 +292,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
     <section
       className={`section-rule ${isLandingPage ? 'text-center mx-auto max-w-3xl' : hasStarted ? 'mb-6' : 'mb-8'}`}
     >
-      <p className="text-accent font-semibold uppercase tracking-wide text-xs mb-2">
+      <p className="text-primary font-semibold uppercase tracking-wide text-xs mb-2">
         Recherche IA · Lotexpo
       </p>
       <Heading
@@ -305,7 +305,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
         }`}
       >
         Toutes les opportunités des salons professionnels,
-        <span className="block text-accent">révélées par l'IA.</span>
+        <span className="block text-primary">révélées par l'IA.</span>
       </Heading>
       {!hasStarted && (
         <p
@@ -349,7 +349,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
       <Button
         type="submit"
         size="icon"
-        className="h-10 w-10 shrink-0 bg-accent text-accent-foreground hover:bg-accent/90"
+        className="h-10 w-10 shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
         disabled={asking || hardWallActive || !authReady || !input.trim()}
         aria-label="Envoyer"
       >
@@ -361,7 +361,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   const annuaireNote = (
     <p className="mt-2 text-center text-xs text-muted-foreground">
       Besoin d'explorer par filtres ?{' '}
-      <Link to="/salons" className="text-accent hover:underline font-medium">
+      <Link to="/salons" className="text-primary hover:underline font-medium">
         Utilisez l'annuaire des salons
       </Link>
     </p>
@@ -432,7 +432,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             {asking && (
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-accent" />
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   {deepSearch ? 'Question plus complexe, j\'approfondis la recherche…' : "L'assistant analyse les salons…"}
                 </div>
               </div>
@@ -483,14 +483,14 @@ const WallCallout = ({
 }) => {
   if (type === 'signup') {
     return (
-      <div className="rounded-2xl border border-accent/40 bg-secondary/60 p-5">
+      <div className="rounded-2xl border border-primary/40 bg-secondary/60 p-5">
         <p className="heading-display text-lg text-foreground mb-1">
           {hard ? 'Vous avez utilisé vos 3 recherches gratuites' : 'Encore une envie de creuser ?'}
         </p>
         <p className="text-sm text-muted-foreground mb-4">
           Créez votre compte Lotexpo pour 3 recherches de plus. Vos échanges sont conservés.
         </p>
-        <Button onClick={onSignup} className="bg-accent text-accent-foreground hover:bg-accent/90">
+        <Button onClick={onSignup} className="bg-primary text-primary-foreground hover:bg-primary/90">
           Créer mon compte
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>

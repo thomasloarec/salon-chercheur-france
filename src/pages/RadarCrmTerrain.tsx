@@ -150,7 +150,7 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
       <div
         className={cn(
           'rounded-xl border bg-card transition-colors',
-          visited ? 'border-border/50 opacity-60' : starred ? 'border-accent/50' : 'border-border/60',
+          visited ? 'border-border/50 opacity-60' : starred ? 'border-primary/50' : 'border-border/60',
         )}
       >
         {/* Zone tap → Sheet mission (hors boutons) */}
@@ -161,7 +161,7 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
         >
           <div className="flex items-start gap-3">
             {starred && (
-              <Star className="h-5 w-5 text-accent fill-accent shrink-0 mt-0.5" aria-label="Compte prioritaire" />
+              <Star className="h-5 w-5 text-primary fill-primary shrink-0 mt-0.5" aria-label="Compte prioritaire" />
             )}
             <div className="min-w-0 flex-1">
               <p
@@ -218,7 +218,7 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           <Button
             type="button"
             variant="default"
-            className="flex-[1.25] min-h-[44px] gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="flex-[1.25] min-h-[44px] gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={noteOpen ? onCloseNote : onOpenNote}
             aria-expanded={noteOpen}
           >
@@ -793,11 +793,11 @@ const RadarCrmTerrainInner: React.FC = () => {
           size="icon"
           onClick={() => setAddOpen(true)}
           aria-label="Ajouter une entreprise"
-          className="fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90"
+          className="fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <span className="relative inline-flex items-center justify-center">
             <Building2 className="h-6 w-6" />
-            <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent-foreground text-accent">
+            <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary-foreground text-primary">
               <Plus className="h-3 w-3" strokeWidth={3} />
             </span>
           </span>

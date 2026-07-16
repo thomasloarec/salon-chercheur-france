@@ -136,8 +136,8 @@ export const EventsResultsInfinite = ({
           <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-6">
             <span className="inline-flex items-center gap-3">
               <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
-                <span className="relative inline-flex h-3 w-3 rounded-full bg-accent"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-primary"></span>
               </span>
               Événements en cours
             </span>

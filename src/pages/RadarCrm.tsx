@@ -353,7 +353,7 @@ const RadarCrmPage: React.FC = () => {
         />
         <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 grid lg:grid-cols-[55fr_45fr] gap-10 items-center">
           <div className="animate-fade-in-up">
-            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-3">
               Pour les commerciaux qui vont sur les salons
             </p>
             <h1 className="heading-display text-3xl sm:text-4xl md:text-5xl tracking-tight mb-4 leading-tight">
@@ -388,7 +388,7 @@ const RadarCrmPage: React.FC = () => {
 
           {/* Aperçu carte de mission — miroir présentationnel du vrai Radar CRM */}
           <div className="relative animate-scale-in">
-            <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 via-accent/10 to-transparent rounded-3xl blur-2xl -z-10" />
+            <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 via-primary/10 to-transparent rounded-3xl blur-2xl -z-10" />
             <MissionCardPreview big />
           </div>
         </div>
@@ -398,7 +398,7 @@ const RadarCrmPage: React.FC = () => {
       <section className="bg-primary text-primary-foreground">
         <div className="max-w-6xl mx-auto px-4 py-14 md:py-20">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Le vrai problème</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Le vrai problème</p>
             <h2 className="heading-display text-2xl md:text-4xl mb-5">
               Ce n’est pas d’aller sur le salon. C’est d’y aller sans objectif.
             </h2>
@@ -433,7 +433,7 @@ const RadarCrmPage: React.FC = () => {
       {/* 3. Le basculement (avant / après) */}
       <section className="max-w-6xl mx-auto px-4 py-14 md:py-20">
         <div className="max-w-3xl mb-10">
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Le basculement</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Le basculement</p>
           <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
             La différence entre un salon subi et un salon rentable ? Un objectif par compte.
           </h2>
@@ -462,7 +462,7 @@ const RadarCrmPage: React.FC = () => {
               </ul>
             </CardContent>
           </Card>
-          <Card className="border-accent/30 bg-secondary/30 shadow-sm">
+          <Card className="border-primary/30 bg-secondary/30 shadow-sm">
             <CardContent className="pt-6">
               <h3 className="font-semibold text-lg mb-4 text-foreground">Avec Radar CRM</h3>
               <ul className="space-y-3">
@@ -474,7 +474,7 @@ const RadarCrmPage: React.FC = () => {
                   'Le suivi est déjà prêt',
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-2.5 text-sm text-foreground">
-                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-accent" aria-hidden="true" />
+                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-primary" aria-hidden="true" />
                     <span className="font-medium">{t}</span>
                   </li>
                 ))}
@@ -488,7 +488,7 @@ const RadarCrmPage: React.FC = () => {
       <section className="bg-muted/20 border-y border-border/60">
         <div className="max-w-5xl mx-auto px-4 py-14 md:py-20">
           <div className="max-w-3xl mb-10">
-            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">
               Ce que fait Radar CRM, maintenant
             </p>
             <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
@@ -531,7 +531,7 @@ const RadarCrmPage: React.FC = () => {
           {/* Bandeau bonus (peach) */}
           <div className="mt-10 rounded-2xl bg-secondary text-secondary-foreground p-6 md:p-8">
             <div className="flex items-start gap-4">
-              <span className="h-10 w-10 shrink-0 rounded-lg bg-accent/15 text-accent flex items-center justify-center">
+              <span className="h-10 w-10 shrink-0 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
                 <Sparkles className="h-5 w-5" />
               </span>
               <div>
@@ -557,8 +557,8 @@ const RadarCrmPage: React.FC = () => {
             chaque compte, le plan qu’un commercial de 20 ans qui connaît votre secteur vous aurait
             soufflé. Vous suivez le plan. Radar CRM apporte l’expertise.
           </p>
-          <p className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+          <p className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
             Le besoin d’abord · le talent commercial ensuite
           </p>
         </div>
@@ -617,7 +617,7 @@ const RadarCrmPage: React.FC = () => {
       {/* 6. Aperçu d'un résultat (dashboard) */}
       <section id="apercu" className="max-w-5xl mx-auto px-4 py-14 md:py-20 scroll-mt-24">
         <div className="max-w-3xl mb-8">
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Aperçu d’un résultat</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Aperçu d’un résultat</p>
           <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
             Votre CRM, transformé en plan de visite.
           </h2>
@@ -634,7 +634,7 @@ const RadarCrmPage: React.FC = () => {
       <section className="bg-muted/20 border-y border-border/60">
         <div className="max-w-5xl mx-auto px-4 py-14 md:py-20">
           <div className="max-w-3xl mb-10">
-            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Comment ça marche</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Comment ça marche</p>
             <h2 className="heading-display text-2xl md:text-3xl section-rule">
               Trois étapes. La première prend deux minutes.
             </h2>
@@ -651,7 +651,7 @@ const RadarCrmPage: React.FC = () => {
       <section className="max-w-5xl mx-auto px-4 py-14 md:py-20">
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Confidentialité</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Confidentialité</p>
             <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
               Vos données CRM restent privées.
             </h2>
@@ -671,9 +671,9 @@ const RadarCrmPage: React.FC = () => {
 
       {/* 9. Connecteurs */}
       <section className="max-w-6xl mx-auto px-4 py-8 md:py-12">
-        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-accent/5 p-8 md:p-10">
+        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-primary/5 p-8 md:p-10">
           <div className="max-w-3xl mb-8">
-            <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Démarrez tout de suite</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Démarrez tout de suite</p>
             <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
               Commencez sans connecter votre CRM.
             </h2>
@@ -912,7 +912,7 @@ const RadarCrmPage: React.FC = () => {
       {/* 11. FAQ */}
       <section className="max-w-3xl mx-auto px-4 py-14 md:py-20">
         <div className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-2">Questions fréquentes</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Questions fréquentes</p>
           <h2 className="heading-display text-2xl md:text-3xl section-rule">Ce qu’on nous demande le plus.</h2>
         </div>
         <Accordion type="single" collapsible className="w-full">
@@ -971,7 +971,7 @@ const RadarCrmPage: React.FC = () => {
 
 const PainCard: React.FC<{ icon: React.ReactNode; title: string; text: string }> = ({ icon, title, text }) => (
   <div className="rounded-xl border border-primary-foreground/15 bg-primary-foreground/[0.06] p-5">
-    <div className="h-10 w-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center mb-3">
+    <div className="h-10 w-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mb-3">
       {icon}
     </div>
     <h3 className="font-semibold mb-1 text-primary-foreground">{title}</h3>
@@ -990,7 +990,7 @@ const PhaseRow: React.FC<{
       {!last && <span className="mt-1 w-px flex-1 bg-border" aria-hidden="true" />}
     </div>
     <div className={last ? '' : 'pb-2'}>
-      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent mb-1.5">
+      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary mb-1.5">
         {icon}<span>{phase}</span>
       </div>
       <h3 className="font-semibold text-lg text-foreground mb-2">{title}</h3>

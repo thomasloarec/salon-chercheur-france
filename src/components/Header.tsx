@@ -36,13 +36,13 @@ const Header = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const navLinkClass = (isActive: boolean) =>
-    `text-sm text-muted-foreground hover:text-accent transition-colors flex items-center space-x-1 ${
-      isActive ? 'text-accent font-medium' : ''
+    `text-sm text-muted-foreground hover:text-primary transition-colors flex items-center space-x-1 ${
+      isActive ? 'text-primary font-medium' : ''
     }`;
 
   const mobileNavLinkClass = (isActive: boolean) =>
-    `block px-3 py-2 text-sm text-muted-foreground hover:text-accent transition-colors ${
-      isActive ? 'text-accent font-medium' : ''
+    `block px-3 py-2 text-sm text-muted-foreground hover:text-primary transition-colors ${
+      isActive ? 'text-primary font-medium' : ''
     }`;
 
   return (
@@ -61,7 +61,7 @@ const Header = () => {
                 <NavigationMenuItem>
                   <NavigationMenuTrigger
                     type="button"
-                    className="h-auto bg-transparent px-0 py-0 text-sm text-muted-foreground hover:text-accent hover:bg-transparent focus:bg-transparent focus:text-accent data-[state=open]:bg-transparent data-[state=open]:text-accent font-normal"
+                    className="h-auto bg-transparent px-0 py-0 text-sm text-muted-foreground hover:text-primary hover:bg-transparent focus:bg-transparent focus:text-primary data-[state=open]:bg-transparent data-[state=open]:text-primary font-normal"
                   >
                     Fonctionnalités
                   </NavigationMenuTrigger>
@@ -71,9 +71,9 @@ const Header = () => {
                         <li key={item.to}>
                           <Link
                             to={item.to}
-                            className="flex items-start gap-3 rounded-md p-3 hover:bg-accent/10 transition-colors"
+                            className="flex items-start gap-3 rounded-md p-3 hover:bg-primary/10 transition-colors"
                           >
-                            <item.icon className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+                            <item.icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                             <span className="flex flex-col">
                               <span className="text-sm font-medium text-foreground">{item.label}</span>
                               <span className="text-xs text-muted-foreground">{item.description}</span>
@@ -133,7 +133,7 @@ const Header = () => {
             <Link to="/recherche-ia">
               <Button
                 type="button"
-                className="rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90"
+                className="rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Essayer l'IA
                 <Sparkles className="ml-2 h-4 w-4" />
@@ -187,8 +187,8 @@ const Header = () => {
                 <NavLink
                   to="/admin"
                   className={({ isActive }) =>
-                    `block px-3 py-2 text-muted-foreground hover:text-accent transition-colors flex items-center space-x-1 ${
-                      isActive ? 'text-accent font-medium' : ''
+                    `block px-3 py-2 text-muted-foreground hover:text-primary transition-colors flex items-center space-x-1 ${
+                      isActive ? 'text-primary font-medium' : ''
                     }`
                   }
                   onClick={() => setIsMenuOpen(false)}
@@ -215,7 +215,7 @@ const Header = () => {
                         key={item.to}
                         to={item.to}
                         className={({ isActive }) =>
-                          `block px-3 py-2 pl-6 text-muted-foreground hover:text-accent transition-colors ${isActive ? 'text-accent font-medium' : ''}`
+                          `block px-3 py-2 pl-6 text-muted-foreground hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
                         }
                         onClick={() => setIsMenuOpen(false)}
                       >
@@ -242,7 +242,7 @@ const Header = () => {
                     >
                       <Button
                         type="button"
-                        className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90"
+                        className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         Essayer l'IA
                         <Sparkles className="ml-2 h-4 w-4" />
@@ -263,7 +263,7 @@ const Header = () => {
                     >
                       <Button
                         type="button"
-                        className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-accent text-accent-foreground hover:bg-accent/90"
+                        className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         Essayer l'IA
                         <Sparkles className="ml-2 h-4 w-4" />

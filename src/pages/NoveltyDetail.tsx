@@ -372,7 +372,7 @@ export default function NoveltyDetail() {
                       setLeadType('brochure_download');
                       setShowLeadForm(true);
                     }}
-                    className="gap-1.5 border-accent/40 bg-accent/10 text-accent hover:bg-accent hover:text-accent-foreground hover:border-accent"
+                    className="gap-1.5 border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary"
                   >
                     <Download className="h-4 w-4" />
                     Télécharger la brochure

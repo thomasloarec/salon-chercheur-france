@@ -37,7 +37,7 @@ export default function NoveltyInteractionBar({
           size="sm"
           disabled={isPending}
           className={cn(
-            "flex items-center gap-1 sm:gap-1.5 hover:bg-accent/50 text-muted-foreground h-8 px-1.5 sm:px-2",
+            "flex items-center gap-1 sm:gap-1.5 hover:bg-primary/50 text-muted-foreground h-8 px-1.5 sm:px-2",
             isLiked && "text-primary"
           )}
         >
@@ -50,7 +50,7 @@ export default function NoveltyInteractionBar({
           variant="ghost"
           size="sm"
           className={cn(
-            "flex items-center gap-1 sm:gap-1.5 hover:bg-accent/50 text-muted-foreground h-8 px-1.5 sm:px-2",
+            "flex items-center gap-1 sm:gap-1.5 hover:bg-primary/50 text-muted-foreground h-8 px-1.5 sm:px-2",
             showComments && "text-primary"
           )}
         >

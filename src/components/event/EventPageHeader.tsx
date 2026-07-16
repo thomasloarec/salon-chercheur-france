@@ -142,7 +142,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           {/* Infos: Date, Type, Affluence, Lieu */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground mb-4">
             <div className="flex items-center">
-              <CalendarDays className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
+              <CalendarDays className="h-4 w-4 mr-1.5 text-primary flex-shrink-0" />
               <time dateTime={event.date_debut}>
                 {formatDate(event.date_debut)}
                 {event.date_debut !== event.date_fin && (
@@ -153,7 +153,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
 
             {event.type_event && (
               <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
+                <Calendar className="h-4 w-4 mr-1.5 text-primary flex-shrink-0" />
                 <span>{getEventTypeLabel(event.type_event)}</span>
               </div>
             )}
@@ -163,7 +163,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
               if (!formattedAffluence) return null;
               return (
                 <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
+                  <Users className="h-4 w-4 mr-1.5 text-primary flex-shrink-0" />
                   <span>{formattedAffluence}</span>
                 </div>
               );
@@ -171,7 +171,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
 
             {event.nom_lieu && (
               <div className="flex items-center">
-                <Building className="h-4 w-4 mr-1.5 text-accent flex-shrink-0" />
+                <Building className="h-4 w-4 mr-1.5 text-primary flex-shrink-0" />
                 <span>{event.nom_lieu}</span>
               </div>
             )}
@@ -270,7 +270,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base text-muted-foreground mb-6">
             {/* Date */}
             <div className="flex items-center">
-              <CalendarDays className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+              <CalendarDays className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
               <time dateTime={event.date_debut}>
                 {formatDate(event.date_debut)}
                 {event.date_debut !== event.date_fin && (
@@ -282,7 +282,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             {/* Type */}
             {event.type_event && (
               <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                <Calendar className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                 <span>{getEventTypeLabel(event.type_event)}</span>
               </div>
             )}
@@ -293,7 +293,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
               if (!formattedAffluence) return null;
               return (
                 <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                  <Users className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                   <span>{formattedAffluence}</span>
                 </div>
               );
@@ -302,7 +302,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
             {/* Nom du lieu */}
             {event.nom_lieu && (
               <div className="flex items-center">
-                <Building className="h-4 w-4 mr-2 text-accent flex-shrink-0" />
+                <Building className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                 <span>{event.nom_lieu}</span>
               </div>
             )}

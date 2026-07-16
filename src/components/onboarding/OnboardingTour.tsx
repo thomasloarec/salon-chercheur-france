@@ -24,16 +24,16 @@ const STEPS = [
     route: '/',
     illustration: (
       <div className="flex items-center justify-center gap-3 py-4">
-        <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-          <CalendarCheck className="h-6 w-6 text-accent" />
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <CalendarCheck className="h-6 w-6 text-primary" />
         </div>
         <ArrowRight className="h-5 w-5 text-muted-foreground" />
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
           <Star className="h-6 w-6 text-primary" />
         </div>
         <ArrowRight className="h-5 w-5 text-muted-foreground" />
-          <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-          <Bell className="h-6 w-6 text-accent" />
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <Bell className="h-6 w-6 text-primary" />
         </div>
       </div>
     ),
@@ -73,8 +73,8 @@ const STEPS = [
         <div className="w-56 rounded-xl bg-muted/50 border border-border p-3 space-y-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-accent/20 flex items-center justify-center flex-shrink-0">
-                <CalendarCheck className="h-3 w-3 text-accent" />
+              <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <CalendarCheck className="h-3 w-3 text-primary" />
               </div>
               <div className="flex-1 space-y-1">
                 <div className={cn("h-2 rounded bg-muted-foreground/20", i === 1 ? "w-3/4" : i === 2 ? "w-1/2" : "w-2/3")} />
@@ -104,7 +104,7 @@ const STEPS = [
             <label key={sector} className="flex items-center gap-2 cursor-pointer">
               <div className={cn(
                 "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
-                i < 2 ? "bg-accent border-accent" : "border-muted-foreground/30"
+                i < 2 ? "bg-primary border-primary" : "border-muted-foreground/30"
               )}>
                 {i < 2 && <span className="text-white text-[10px]">✓</span>}
               </div>
@@ -132,8 +132,8 @@ const STEPS = [
           <div className="text-xs font-medium text-foreground mb-2">Vos comptes détectés</div>
           {['Acme Corp · Salon Industrie 2026', 'Globex · SIAL Paris', 'Initech · Vivatech'].map((line) => (
             <div key={line} className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded bg-accent/20 flex items-center justify-center flex-shrink-0">
-                <Radar className="h-3 w-3 text-accent" />
+              <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Radar className="h-3 w-3 text-primary" />
               </div>
               <span className="text-xs text-foreground truncate">{line}</span>
             </div>
@@ -204,8 +204,8 @@ const OnboardingTour: React.FC = () => {
         <div className="px-6 pt-5 pb-2">
           <DialogHeader className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                <Icon className="h-5 w-5 text-accent" />
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Icon className="h-5 w-5 text-primary" />
               </div>
               <DialogTitle className="text-lg leading-snug text-left">
                 {currentStep.title}

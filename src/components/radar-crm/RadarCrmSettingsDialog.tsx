@@ -352,7 +352,7 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-baseline gap-2">
                       <Label htmlFor="offer-problem" className="font-medium">Le problème que vous adressez</Label>
-                      <span className="text-[11px] font-medium text-accent">
+                      <span className="text-[11px] font-medium text-primary">
                         le plus utile pour personnaliser vos questions
                       </span>
                     </div>

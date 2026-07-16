@@ -32,13 +32,13 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4 text-primary-foreground">Navigation</h4>
             <ul className="space-y-2">
-              <li><Link to="/salons" className="text-primary-foreground/70 hover:text-accent transition-colors">Salons</Link></li>
-              <li><Link to="/salons-professionnels-2026" className="text-primary-foreground/70 hover:text-accent transition-colors">Salons professionnels 2026</Link></li>
-              <li><Link to="/nouveautes" className="text-primary-foreground/70 hover:text-accent transition-colors">Nouveautés</Link></li>
-              <li><Link to="/exposants" className="text-primary-foreground/70 hover:text-accent transition-colors">Exposants</Link></li>
-              <li><Link to="/radar-crm" className="text-primary-foreground/70 hover:text-accent transition-colors">Radar CRM</Link></li>
-              <li><Link to="/organisateurs" className="text-primary-foreground/70 hover:text-accent transition-colors">Organisateurs de salons</Link></li>
-              <li><Link to="/blog" className="text-primary-foreground/70 hover:text-accent transition-colors">Blog</Link></li>
+              <li><Link to="/salons" className="text-primary-foreground/70 hover:text-primary transition-colors">Salons</Link></li>
+              <li><Link to="/salons-professionnels-2026" className="text-primary-foreground/70 hover:text-primary transition-colors">Salons professionnels 2026</Link></li>
+              <li><Link to="/nouveautes" className="text-primary-foreground/70 hover:text-primary transition-colors">Nouveautés</Link></li>
+              <li><Link to="/exposants" className="text-primary-foreground/70 hover:text-primary transition-colors">Exposants</Link></li>
+              <li><Link to="/radar-crm" className="text-primary-foreground/70 hover:text-primary transition-colors">Radar CRM</Link></li>
+              <li><Link to="/organisateurs" className="text-primary-foreground/70 hover:text-primary transition-colors">Organisateurs de salons</Link></li>
+              <li><Link to="/blog" className="text-primary-foreground/70 hover:text-primary transition-colors">Blog</Link></li>
             </ul>
           </div>
 
@@ -48,7 +48,7 @@ const Footer = () => {
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
               {CANONICAL_SECTORS.map(s => (
                 <li key={s.value}>
-                  <Link to={`/secteur/${s.value}`} className="text-primary-foreground/70 hover:text-accent transition-colors text-xs leading-snug">
+                  <Link to={`/secteur/${s.value}`} className="text-primary-foreground/70 hover:text-primary transition-colors text-xs leading-snug">
                     {s.label}
                   </Link>
                 </li>
@@ -62,7 +62,7 @@ const Footer = () => {
             <ul className="space-y-2">
               {FOOTER_CITIES.map(c => (
                 <li key={c.slug}>
-                  <Link to={`/ville/${c.slug}`} className="text-primary-foreground/70 hover:text-accent transition-colors text-sm">
+                  <Link to={`/ville/${c.slug}`} className="text-primary-foreground/70 hover:text-primary transition-colors text-sm">
                     Salons à {c.name}
                   </Link>
                 </li>
@@ -74,7 +74,7 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4 text-primary-foreground">Contact</h4>
             <ul className="space-y-2">
-              <li><Link to="/contact" className="text-primary-foreground/70 hover:text-accent transition-colors">Nous contacter</Link></li>
+              <li><Link to="/contact" className="text-primary-foreground/70 hover:text-primary transition-colors">Nous contacter</Link></li>
             </ul>
           </div>
         </div>
@@ -86,19 +86,19 @@ const Footer = () => {
               © {new Date().getFullYear()} Lotexpo. Tous droits réservés.
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 md:mt-0">
-              <Link to="/mentions-legales" className="text-primary-foreground/70 hover:text-accent text-sm transition-colors">
+              <Link to="/mentions-legales" className="text-primary-foreground/70 hover:text-primary text-sm transition-colors">
                 Mentions légales
               </Link>
-              <Link to="/politique-confidentialite" className="text-primary-foreground/70 hover:text-accent text-sm transition-colors">
+              <Link to="/politique-confidentialite" className="text-primary-foreground/70 hover:text-primary text-sm transition-colors">
                 Politique de confidentialité
               </Link>
-              <Link to="/cgu" className="text-primary-foreground/70 hover:text-accent text-sm transition-colors">
+              <Link to="/cgu" className="text-primary-foreground/70 hover:text-primary text-sm transition-colors">
                 CGU
               </Link>
               <button
                 type="button"
                 onClick={openPreferences}
-                className="text-primary-foreground/70 hover:text-accent text-sm transition-colors"
+                className="text-primary-foreground/70 hover:text-primary text-sm transition-colors"
               >
                 Gérer mes cookies
               </button>

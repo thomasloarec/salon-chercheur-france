@@ -37,7 +37,7 @@ import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditD
 const TIER_META: Record<ExhibitorTier, { label: string; className: string }> = {
   bronze: { label: 'Bronze', className: 'border-amber-700/30 bg-amber-700/10 text-amber-800' },
   argent: { label: 'Argent', className: 'border-slate-400/40 bg-slate-200/60 text-slate-700' },
-  or: { label: 'Or', className: 'border-accent/40 bg-accent/10 text-accent' },
+  or: { label: 'Or', className: 'border-primary/40 bg-primary/10 text-primary' },
 };
 
 /**
@@ -246,9 +246,9 @@ export default function ExhibitorManagerWidget({
                 );
               }
               return (
-                <div key={item.key} className="rounded-md border border-accent/30 bg-accent/5 p-2.5">
+                <div key={item.key} className="rounded-md border border-primary/30 bg-primary/5 p-2.5">
                   <div className="flex items-start gap-2">
-                    <Icon className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                    <Icon className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">Confirmez la gouvernance de cette page</p>
                       <p className="text-xs text-muted-foreground">
@@ -313,12 +313,12 @@ export default function ExhibitorManagerWidget({
                 key={item.key}
                 className={
                   highlight
-                    ? 'flex items-center justify-between gap-2 rounded-md border border-accent/30 bg-accent/5 p-2.5'
+                    ? 'flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5'
                     : 'flex items-center justify-between gap-2 py-1'
                 }
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <Icon className={`h-4 w-4 flex-shrink-0 ${highlight ? 'text-accent' : 'text-muted-foreground'}`} />
+                  <Icon className={`h-4 w-4 flex-shrink-0 ${highlight ? 'text-primary' : 'text-muted-foreground'}`} />
                   <span className={`text-sm truncate ${highlight ? 'font-medium' : 'text-muted-foreground'}`}>
                     {item.label}
                   </span>
@@ -337,9 +337,9 @@ export default function ExhibitorManagerWidget({
 
           {/* Nudge Nouveauté (objectif Or) */}
           {needsNovelty && (
-            <div className="rounded-md border border-accent/40 bg-accent/10 p-3 mt-2">
+            <div className="rounded-md border border-primary/40 bg-primary/10 p-3 mt-2">
               <div className="flex items-start gap-2">
-                <Rocket className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                <Rocket className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-primary">Vous participez à un salon à venir</p>
                   <p className="text-xs text-muted-foreground">

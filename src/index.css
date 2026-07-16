@@ -48,8 +48,10 @@
     --muted: var(--lx-grey);
     --muted-foreground: var(--lx-navy-60);
 
-    --accent: var(--lx-violet);
-    --accent-foreground: var(--lx-white);
+    /* --accent retrouve son rôle shadcn : surface de survol de menu.
+       La marque, c'est --primary. */
+    --accent: 220 14% 94%;
+    --accent-foreground: var(--lx-navy);
 
     --destructive: var(--lx-danger);
     --destructive-foreground: var(--lx-white);
@@ -147,16 +149,6 @@
     /* font-body = Source Sans 3 (cf. tailwind.config.ts), avec pile de secours intégrée */
   }
 
-  /* Les primitives shadcn détournent --accent en surface de survol de menu.
-     Lotexpo s'en sert comme accent de marque (430 usages contre 58).
-     On restitue le rôle shadcn localement : les variables CSS cascadent,
-     donc redéfinir --accent sur les seuls conteneurs Radix suffit.
-     Passerelle jusqu'au Lot 2, qui donnera un token propre à ces 58 usages. */
-  [role="menu"], [role="listbox"], [cmdk-list],
-  [data-radix-menu-content], [data-radix-select-content] {
-    --accent: 220 14% 94%;
-    --accent-foreground: var(--lx-navy);
-  }
 }
 
 @layer components {

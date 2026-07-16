@@ -404,7 +404,7 @@ const RadarCrmDebrief: React.FC = () => {
                               {companyLabel(c)}
                             </p>
                             {isNew(c) && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 text-accent px-2 py-0.5 text-[11px] font-semibold">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[11px] font-semibold">
                                 <Sparkles className="h-3 w-3" /> Nouvelle entreprise
                               </span>
                             )}

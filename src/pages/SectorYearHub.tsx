@@ -174,7 +174,7 @@ const SectorYearHub = () => {
                 <Link
                   key={city}
                   to={getCityUrl(city)}
-                  className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent/10 hover:border-primary/30 transition-colors text-foreground"
+                  className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-primary/10 hover:border-primary/30 transition-colors text-foreground"
                 >
                   <MapPin className="h-3 w-3 text-muted-foreground" />
                   {city}
@@ -234,7 +234,7 @@ const SectorYearHub = () => {
                 </Link>
                 <Link
                   to="/salons-professionnels-2026"
-                  className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent/10 hover:border-primary/30 transition-colors text-foreground"
+                  className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-primary/10 hover:border-primary/30 transition-colors text-foreground"
                 >
                   Tous les salons 2026
                 </Link>
@@ -243,7 +243,7 @@ const SectorYearHub = () => {
                     <Link
                       key={y.year}
                       to={`/secteur/${hub.sectorSlug}/${y.year}`}
-                      className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent/10 hover:border-primary/30 transition-colors text-foreground"
+                      className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-primary/10 hover:border-primary/30 transition-colors text-foreground"
                     >
                       {hub.sectorLabel} {y.year} ({y.count})
                     </Link>
