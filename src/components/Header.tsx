@@ -15,7 +15,7 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
 } from '@/components/ui/navigation-menu';
-import logoLotexpo from '@/assets/logo-lotexpo.png';
+import { LotexpoWordmark } from '@/components/LotexpoWordmark';
 
 const FEATURE_ITEMS = [
   { to: '/recherche-ia', label: 'Recherche IA', icon: Sparkles, description: 'Trouvez le bon salon avec l’IA' },
@@ -51,7 +51,7 @@ const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src={logoLotexpo} alt="LotExpo" className="h-8" />
+            <LotexpoWordmark aria-label="Lotexpo" className="h-8 w-auto text-foreground [--logo-accent:hsl(var(--primary))]" />
           </Link>
 
           {/* Navigation Desktop */}
@@ -73,7 +73,7 @@ const Header = () => {
                             to={item.to}
                             className="flex items-start gap-3 rounded-md p-3 hover:bg-primary/10 transition-colors"
                           >
-                            <item.icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                            <item.icon className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
                             <span className="flex flex-col">
                               <span className="text-sm font-medium text-foreground">{item.label}</span>
                               <span className="text-xs text-muted-foreground">{item.description}</span>
