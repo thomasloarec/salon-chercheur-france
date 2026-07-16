@@ -13,10 +13,10 @@ const RadarStatCard: React.FC<{
   accent?: 'primary' | 'success' | 'accent'; icon?: React.ReactNode;
 }> = ({ label, value, sub, accent, icon }) => {
   const tone =
-    accent === 'accent' ? 'border-accent/30 bg-secondary/40' :
+    accent === 'accent' ? 'border-primary/30 bg-secondary/40' :
     'bg-card border-border/60';
   const valueTone =
-    accent === 'accent'  ? 'text-accent' :
+    accent === 'accent'  ? 'text-primary' :
     accent === 'primary' ? 'text-primary' :
     'text-foreground';
   return (

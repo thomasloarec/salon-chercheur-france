@@ -212,7 +212,7 @@ export default function ExhibitorOwnerEditDrawer({
                 <div className="space-y-1">
                   <Label
                     htmlFor="exhibitor-logo-input"
-                    className="inline-flex items-center gap-2 cursor-pointer rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent"
+                    className="inline-flex items-center gap-2 cursor-pointer rounded-md border px-3 py-2 text-sm font-medium hover:bg-primary"
                   >
                     <Upload className="h-4 w-4" />
                     {previewLogo ? 'Remplacer le logo' : 'Téléverser un logo'}

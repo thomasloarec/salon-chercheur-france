@@ -369,7 +369,7 @@ const MissionRow: React.FC<{ mission: MissionDef }> = ({ mission }) => {
           variant="outline"
           size="sm"
           onClick={onCta}
-          className="w-full shrink-0 min-h-[44px] border-accent/40 text-accent hover:bg-accent/10 hover:text-accent sm:w-auto"
+          className="w-full shrink-0 min-h-[44px] border-primary/40 text-primary hover:bg-primary/10 hover:text-primary sm:w-auto"
         >
           {ctaLabel}
         </Button>

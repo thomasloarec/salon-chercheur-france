@@ -222,7 +222,7 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                 return (
                   <button
                     key={ex.id_exposant}
-                    className="text-left rounded-lg border p-3 hover:bg-accent transition-colors"
+                    className="text-left rounded-lg border p-3 hover:bg-primary transition-colors"
                     onClick={() => onSelect(ex)}
                   >
                     <div className="flex items-center gap-3">

@@ -895,7 +895,7 @@ const RadarCrmResults: React.FC = () => {
                   ) : (
                     <div className="space-y-6">
                       <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Target className="h-4 w-4 text-accent shrink-0" />
+                        <Target className="h-4 w-4 text-primary shrink-0" />
                         Cliquez sur une entreprise pour préparer votre mission (statut, objectif, questions).
                       </p>
                       {futureGroups.map((g) => (
@@ -1016,15 +1016,15 @@ const RadarActiveBanner: React.FC<{
     const live = ongoing[0];
     const others = ongoing.slice(1);
     return (
-      <Card className="bg-accent/5 border-accent/40 shadow-none">
+      <Card className="bg-primary/5 border-primary/40 shadow-none">
         <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
           <div className="flex items-start gap-3">
             <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 animate-ping" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-accent">Salon en cours aujourd'hui</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Salon en cours aujourd'hui</p>
               <p className="font-display text-lg md:text-xl font-semibold text-foreground leading-tight mt-1">
                 {live.nom_event}{live.ville ? <span className="text-muted-foreground font-normal"> · {live.ville}</span> : null}
               </p>
@@ -1075,8 +1075,8 @@ const RadarActiveBanner: React.FC<{
       <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
         <div className="flex items-start gap-3">
           <span className="relative flex h-3 w-3 mt-1.5 shrink-0" aria-hidden="true">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-accent/50 opacity-75 animate-ping" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />
+            <span className="absolute inline-flex h-full w-full rounded-full bg-primary/50 opacity-75 animate-ping" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
           </span>
           <div className="min-w-0">
             <p className="font-display text-lg font-semibold text-foreground leading-tight">Radar actif</p>
@@ -1096,15 +1096,15 @@ const RadarActiveBanner: React.FC<{
             type="button"
             onClick={() => onClickEvent(ev)}
             disabled={!ev.slug}
-            className="w-full text-left rounded-xl border border-accent/30 bg-card p-4 md:p-5 transition-colors hover:bg-muted/50 disabled:opacity-60"
+            className="w-full text-left rounded-xl border border-primary/30 bg-card p-4 md:p-5 transition-colors hover:bg-muted/50 disabled:opacity-60"
           >
-            <p className="text-[11px] font-bold uppercase tracking-wide text-accent flex items-center gap-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
               {isPriority ? <Star className="h-3 w-3 fill-current" /> : <Flame className="h-3 w-3" />}
               {isPriority ? 'Compte prioritaire' : 'Prochain salon'}
             </p>
             {isPriority && featured?.company ? (
               <p className="text-base font-semibold text-foreground mt-2 leading-snug">
-                <span className="text-accent">{featured.company.company_name}</span> expose à {ev.nom_event}
+                <span className="text-primary">{featured.company.company_name}</span> expose à {ev.nom_event}
                 {days != null && <span className="ml-1">dans {days} jour{days > 1 ? 's' : ''}</span>}
                 {ev.ville ? ` · ${ev.ville}` : ''}
               </p>
@@ -1112,7 +1112,7 @@ const RadarActiveBanner: React.FC<{
               <>
                 <p className="text-base font-semibold text-foreground mt-2 leading-snug">
                   Prochain salon où vos comptes exposent : {ev.nom_event}
-                  {days != null && <span className="ml-2 text-accent">dans {days} jour{days > 1 ? 's' : ''}</span>}
+                  {days != null && <span className="ml-2 text-primary">dans {days} jour{days > 1 ? 's' : ''}</span>}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {ev.company_count} de vos comptes y exposent
@@ -1141,7 +1141,7 @@ const RadarActiveBanner: React.FC<{
 
 const priorityFor = (n: number): { label: string; tone: string; icon?: React.ReactNode } | null => {
   // Échelle unique : l'orange est réservé à la vraie priorité forte ; le reste reste neutre/atténué.
-  if (n >= 3) return { label: `Priorité forte · ${n} comptes`, tone: 'bg-accent text-accent-foreground', icon: <Flame className="h-3 w-3 mr-1" /> };
+  if (n >= 3) return { label: `Priorité forte · ${n} comptes`, tone: 'bg-primary text-primary-foreground', icon: <Flame className="h-3 w-3 mr-1" /> };
   if (n === 2) return { label: '2 comptes détectés', tone: 'bg-muted text-muted-foreground' };
   if (n === 1) return { label: '1 compte détecté', tone: 'bg-muted text-muted-foreground' };
   return null;
@@ -1200,10 +1200,10 @@ const RelationshipSelect: React.FC<{
 
 /** Nudge cockpit : incite à compléter le profil d'offre (disparaît une fois rempli). */
 const OfferProfileNudge: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) => (
-  <Card className="border-accent/30 bg-accent/5 shadow-none">
+  <Card className="border-primary/30 bg-primary/5 shadow-none">
     <CardContent className="py-4 px-5 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="flex items-start gap-3 min-w-0 flex-1">
-        <Sparkles className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+        <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
         <p className="text-sm text-foreground">
           Complétez votre profil d'offre pour des questions de terrain personnalisées.
         </p>
@@ -1251,7 +1251,7 @@ const CompanyChip: React.FC<{
     className={cn(
       // Mobile : pleine largeur → empilement vertical propre. Desktop : puce compacte.
       'group flex w-full sm:w-auto sm:max-w-xs items-center gap-2.5 max-w-full bg-card border border-border rounded-lg px-2.5 py-2 cursor-pointer text-left transition-colors hover:bg-muted/40 hover:border-primary/40',
-      starred && 'border-accent/40',
+      starred && 'border-primary/40',
     )}
     title={nomExposant && nomExposant !== company.company_name ? `CRM : ${company.company_name}` : undefined}
   >
@@ -1259,7 +1259,7 @@ const CompanyChip: React.FC<{
     <span className="flex min-w-0 flex-1 flex-col items-start gap-1 leading-tight">
       {/* Ligne 1 : nom (tronqué proprement) */}
       <span className="flex min-w-0 max-w-full items-center gap-1.5">
-        {starred && <Star className="h-3 w-3 text-accent fill-accent shrink-0" aria-label="Compte prioritaire" />}
+        {starred && <Star className="h-3 w-3 text-primary fill-primary shrink-0" aria-label="Compte prioritaire" />}
         <span className="truncate font-display text-sm font-semibold text-foreground group-hover:text-primary">
           {nomExposant ?? company.company_name}
         </span>
@@ -1287,8 +1287,8 @@ const CompanyChip: React.FC<{
           </span>
         )}
         {needsReview && (
-          <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-accent whitespace-nowrap">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" /> À vérifier
+          <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-primary whitespace-nowrap">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" /> À vérifier
           </span>
         )}
       </span>
@@ -1403,7 +1403,7 @@ const EventCard: React.FC<{
             <Badge className={cn(
               'absolute top-2 left-2 border-none text-xs',
               group.days_until < 30
-                ? 'bg-accent text-accent-foreground'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground',
             )}>
               J-{Math.max(0, group.days_until)}
@@ -1465,7 +1465,7 @@ const EventCard: React.FC<{
                 <Button
                   size="sm"
                   onClick={onModeSalon}
-                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Radar className="h-3.5 w-3.5 mr-1" /> Mode salon
                 </Button>
@@ -1621,9 +1621,9 @@ const CompanyAccountsList: React.FC<{
       {starred.length > 0 && (
         <section className="space-y-5">
           <div className="space-y-2">
-            <div className="h-[3px] w-10 rounded-full bg-accent" aria-hidden="true" />
+            <div className="h-[3px] w-10 rounded-full bg-primary" aria-hidden="true" />
             <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-accent fill-accent" />
+              <Star className="h-5 w-5 text-primary fill-primary" />
               <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
                 Prioritaires <span className="text-muted-foreground font-normal">({starred.length})</span>
               </h2>
@@ -1707,7 +1707,7 @@ const CompanyAccountCard: React.FC<{
               className={cn(
                 'shrink-0 border-none',
                 imminent
-                  ? 'bg-accent text-accent-foreground'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground',
               )}
             >
@@ -1738,7 +1738,7 @@ const CompanyAccountCard: React.FC<{
             onClick={() => onOpenMission(g)}
             title="Préparer ma visite"
             aria-label={`Préparer ma visite — ${g.nom_event}`}
-            className="shrink-0 flex items-center gap-1 rounded-lg border border-accent/30 bg-accent/5 px-2.5 text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
+            className="shrink-0 flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
           >
             <Target className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Préparer ma visite</span>
@@ -1765,7 +1765,7 @@ const CompanyAccountCard: React.FC<{
       dimmed
         ? 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
         : 'hover:border-border hover:shadow-sm',
-      pref === 'starred' && 'border-accent/40',
+      pref === 'starred' && 'border-primary/40',
     )}>
       <CardContent className="p-5 space-y-4">
         <div className="flex items-start gap-3">
@@ -1786,7 +1786,7 @@ const CompanyAccountCard: React.FC<{
               onClick={() => onSetPref(pref === 'starred' ? 'normal' : 'starred')}
               className="p-1.5 rounded-md hover:bg-muted transition-colors"
             >
-              <Star className={cn('h-4 w-4', pref === 'starred' ? 'text-accent fill-accent' : 'text-foreground/40')} />
+              <Star className={cn('h-4 w-4', pref === 'starred' ? 'text-primary fill-primary' : 'text-foreground/40')} />
             </button>
             <button
               type="button"
@@ -1983,11 +1983,11 @@ const TrialBanner: React.FC<{ daysLeft: number | null; detected: number }> = ({ 
       className={cn(
         'rounded-lg border px-4 py-3 flex items-start gap-3',
         urgent
-          ? 'border-accent/50 bg-accent/10 text-foreground'
+          ? 'border-primary/50 bg-primary/10 text-foreground'
           : 'border-primary/30 bg-primary/5 text-foreground',
       )}
     >
-      <Clock className={cn('h-5 w-5 mt-0.5 shrink-0', urgent ? 'text-accent' : 'text-primary')} />
+      <Clock className={cn('h-5 w-5 mt-0.5 shrink-0', urgent ? 'text-primary' : 'text-primary')} />
       <div className="text-sm">
         {urgent ? (
           <p>

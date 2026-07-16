@@ -94,7 +94,7 @@ const ResultDashboardPreview: React.FC<{ className?: string }> = ({ className })
               <MapPin className="h-3.5 w-3.5" /> Brest · Dans 9 jours
             </p>
           </div>
-          <Badge className="bg-accent text-accent-foreground border-none whitespace-nowrap shrink-0">
+          <Badge className="bg-primary text-primary-foreground border-none whitespace-nowrap shrink-0">
             <Flame className="h-3 w-3 mr-1" /> Priorité forte · 3 comptes
           </Badge>
         </div>

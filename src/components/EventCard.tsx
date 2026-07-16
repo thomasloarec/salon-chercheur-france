@@ -136,7 +136,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
             )}
             {!adminPreview && ongoing && (
               <div 
-                className="absolute top-2 right-2 z-[3] flex items-center gap-1 bg-accent text-accent-foreground px-2 py-1 rounded-full text-xs font-semibold shadow-md"
+                className="absolute top-2 right-2 z-[3] flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold shadow-md"
                 title="Événement en cours"
               >
                 <Radio className="h-3 w-3 animate-pulse" />
@@ -152,7 +152,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
         
         <CardContent className="flex flex-col gap-1 p-5">
           <CardWrapper>
-            <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-accent cursor-pointer" title={event.nom_event}>
+            <h3 className="font-semibold text-lg leading-5 line-clamp-2 hover:text-primary cursor-pointer" title={event.nom_event}>
               {event.nom_event}
             </h3>
           </CardWrapper>

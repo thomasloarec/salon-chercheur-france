@@ -188,7 +188,7 @@ const RadarCrmAccessManager: React.FC = () => {
                     return (
                       <TableRow
                         key={r.request_id}
-                        className={r.status === 'pending' ? 'bg-accent/5' : undefined}
+                        className={r.status === 'pending' ? 'bg-primary/5' : undefined}
                       >
                         <TableCell className="font-medium">{fullName}</TableCell>
                         <TableCell>

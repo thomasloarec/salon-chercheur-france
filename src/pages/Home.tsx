@@ -190,7 +190,7 @@ const Home = () => {
 
             <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-primary max-w-[28ch] mx-auto text-balance">
               Toutes les opportunités des salons professionnels,
-              <span className="block text-accent">révélées par l'IA.</span>
+              <span className="block text-primary">révélées par l'IA.</span>
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-[56ch] mx-auto">
@@ -201,7 +201,7 @@ const Home = () => {
 
             {/* Searchbar */}
             <form onSubmit={submitSearch} className="max-w-[680px] mx-auto mt-9">
-              <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-border bg-background shadow-lg pl-5 pr-2 py-2 focus-within:border-accent transition-colors">
+              <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-border bg-background shadow-lg pl-5 pr-2 py-2 focus-within:border-primary transition-colors">
                 <Search className="h-5 w-5 text-muted-foreground shrink-0" />
                 <input
                   type="text"
@@ -215,7 +215,7 @@ const Home = () => {
                 />
                 <Button
                   type="submit"
-                  className="shrink-0 bg-accent text-accent-foreground hover:bg-accent/90 h-11 px-4 rounded-xl"
+                  className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 rounded-xl"
                 >
                   <Sparkles className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Chercher avec l'IA</span>
@@ -240,7 +240,7 @@ const Home = () => {
         {/* ============================= COUNTERS ============================= */}
         <section className="border-y border-border bg-secondary/40">
           <div className="max-w-5xl mx-auto px-6 py-11 flex flex-col items-center">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent mb-6 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary mb-6 text-center">
               L'échelle qu'aucun humain ne peut lire à la main
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 w-full max-w-3xl">
@@ -275,8 +275,8 @@ const Home = () => {
           />
           <div className="relative max-w-6xl mx-auto px-6">
             <Reveal className="max-w-[760px] mx-auto text-center mb-[60px]">
-              <div className="w-[46px] h-[3px] bg-accent rounded-full mx-auto mb-5" />
-              <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">Le constat</p>
+              <div className="w-[46px] h-[3px] bg-primary rounded-full mx-auto mb-5" />
+              <p className="text-primary font-bold uppercase tracking-[0.15em] text-xs mb-3">Le constat</p>
               <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
                 Un cercle vicieux menaçait tout l'écosystème
               </h2>
@@ -291,7 +291,7 @@ const Home = () => {
                 {LOOP_CARDS.flatMap((c, i) => {
                   const card = (
                     <div key={c.title} className="flex-1 rounded-2xl border border-primary-foreground/15 bg-primary-foreground/5 p-6 text-left">
-                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/20 text-accent mb-4">
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/20 text-primary mb-4">
                         <c.icon className="h-5 w-5" />
                       </div>
                       <h3 className="heading-display text-xl mb-2">{c.title}</h3>
@@ -313,15 +313,15 @@ const Home = () => {
 
             <Reveal className="text-center mt-8">
               <p className="text-primary-foreground/60">
-                <span className="text-accent font-semibold">↺</span> Moins de visiteurs → moins
+                <span className="text-primary font-semibold">↺</span> Moins de visiteurs → moins
                 d'exposants → salons affaiblis → moins de visiteurs.{' '}
-                <b className="text-accent font-semibold">Le cercle se referme.</b>
+                <b className="text-primary font-semibold">Le cercle se referme.</b>
               </p>
             </Reveal>
 
             <Reveal className="text-center mt-14">
               <div className="heading-display text-[clamp(2rem,4.4vw,3.4rem)]">
-                Un écosystème <em className="not-italic text-accent italic">en danger.</em>
+                Un écosystème <em className="not-italic text-primary italic">en danger.</em>
               </div>
               <p className="mt-6 text-lg text-primary-foreground/85">
                 Mais il existe une issue. Et c'est{' '}
@@ -334,8 +334,8 @@ const Home = () => {
         {/* ============================= SOLUTION ============================= */}
         <section className="bg-background pt-24 pb-10">
           <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-[60px]">
-            <div className="w-[46px] h-[3px] bg-accent rounded-full mx-auto mb-5" />
-            <p className="text-accent font-bold uppercase tracking-[0.15em] text-xs mb-3">La solution</p>
+            <div className="w-[46px] h-[3px] bg-primary rounded-full mx-auto mb-5" />
+            <p className="text-primary font-bold uppercase tracking-[0.15em] text-xs mb-3">La solution</p>
             <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)] text-primary">
               Rendre le marché lisible. Pour tout le monde.
             </h2>
@@ -474,14 +474,14 @@ const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: bool
           {block.title}
         </h3>
         <p className="mt-[18px] text-[1.08rem] leading-[1.65] text-foreground/70 max-w-[44ch]">{block.body}</p>
-        <div className="mt-5 flex gap-[11px] items-start bg-secondary/25 border-l-[3px] border-accent rounded-r-[10px] px-4 py-[13px] max-w-[46ch]">
-          <Info className="h-[18px] w-[18px] text-accent shrink-0 mt-0.5" />
+        <div className="mt-5 flex gap-[11px] items-start bg-secondary/25 border-l-[3px] border-primary rounded-r-[10px] px-4 py-[13px] max-w-[46ch]">
+          <Info className="h-[18px] w-[18px] text-primary shrink-0 mt-0.5" />
           <p className="text-[0.96rem] leading-relaxed text-foreground/75">{block.ecoNote}</p>
         </div>
         {block.cta && (
           <Link
             to={block.cta.to}
-            className="group mt-6 inline-flex items-center gap-2 text-primary font-bold hover:text-accent transition-colors"
+            className="group mt-6 inline-flex items-center gap-2 text-primary font-bold hover:text-primary transition-colors"
           >
             {block.cta.label}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -513,7 +513,7 @@ const SearchMock = () => {
     <Mock>
       <div ref={ref}>
         <div className="flex items-center gap-3 bg-secondary/40 border border-secondary rounded-xl px-4 py-3 mb-4">
-          <Search className="h-4 w-4 text-accent shrink-0" />
+          <Search className="h-4 w-4 text-primary shrink-0" />
           <span className="text-sm text-foreground truncate">
             Je vends des logiciels de caisse pour restaurants
           </span>
@@ -530,12 +530,12 @@ const SearchMock = () => {
             >
               <div className="flex justify-between items-baseline gap-3">
                 <span className="font-bold text-[1.05rem] text-primary">{r.name}</span>
-                <span className="font-bold text-sm text-accent shrink-0">{r.pct}%</span>
+                <span className="font-bold text-sm text-primary shrink-0">{r.pct}%</span>
               </div>
               <p className="text-[0.86rem] text-muted-foreground mt-1">{r.meta}</p>
               <div className="h-[5px] bg-muted/60 rounded-full mt-3 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-accent/70 to-accent transition-[width] duration-[1100ms] ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-[1100ms] ease-out"
                   style={{ width: inView ? `${r.pct}%` : '0%', transitionDelay: `${400 + i * 200}ms` }}
                 />
               </div>
@@ -554,8 +554,8 @@ const SearchMock = () => {
 const ParcoursMock = () => {
   const [ref, inView] = useInView<HTMLDivElement>(0.35);
   const items = [
-    { n: 1, name: 'Adoria', loc: 'Hall 3 · Stand C12', obj: 'Innovation', cls: 'bg-accent/15 text-accent' },
-    { n: 2, name: 'Inpulse', loc: 'Hall 3 · Stand C40', obj: 'Innovation', cls: 'bg-accent/15 text-accent' },
+    { n: 1, name: 'Adoria', loc: 'Hall 3 · Stand C12', obj: 'Innovation', cls: 'bg-primary/15 text-primary' },
+    { n: 2, name: 'Inpulse', loc: 'Hall 3 · Stand C40', obj: 'Innovation', cls: 'bg-primary/15 text-primary' },
     { n: 3, name: 'SwiftPay', loc: 'Hall 5 · Stand E08', obj: 'Paiement', cls: 'bg-blue-50 text-blue-700' },
     { n: 4, name: 'BioNature', loc: 'Hall 1 · Stand A22', obj: 'Bio', cls: 'bg-emerald-50 text-emerald-700' },
   ];
@@ -564,7 +564,7 @@ const ParcoursMock = () => {
       <div ref={ref}>
         <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-border">
           <span className="font-bold text-primary">Votre parcours · SIRHA</span>
-          <span className="text-xs font-bold text-accent-foreground bg-accent rounded-full px-2.5 py-1 whitespace-nowrap">
+          <span className="text-xs font-bold text-primary-foreground bg-primary rounded-full px-2.5 py-1 whitespace-nowrap">
             196 exposants
           </span>
         </div>
@@ -595,7 +595,7 @@ const ParcoursMock = () => {
           ))}
         </div>
         <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex items-center gap-2">
-          <Route className="h-4 w-4 text-accent shrink-0" />
+          <Route className="h-4 w-4 text-primary shrink-0" />
           Itinéraire regroupé par hall, vous ne revenez jamais sur vos pas.
         </div>
       </div>
@@ -622,14 +622,14 @@ const RadarMock = () => (
       <ul className="space-y-1.5">
         {['Où en est la roadmap module stocks 2026 ?', 'Le passage multi-sites est-il à l\u2019ordre du jour ?', 'Qui décide du budget cette année ?'].map((q, i) => (
           <li key={i} className="flex gap-2 text-xs text-foreground">
-            <span className="text-accent font-bold shrink-0">{i + 1}.</span>
+            <span className="text-primary font-bold shrink-0">{i + 1}.</span>
             {q}
           </li>
         ))}
       </ul>
     </div>
     {[
-      { name: 'Inpulse', chip: 'Prospect chaud', cls: 'bg-accent/15 text-accent', why: 'A ouvert vos 3 derniers emails, relance de vive voix.' },
+      { name: 'Inpulse', chip: 'Prospect chaud', cls: 'bg-primary/15 text-primary', why: 'A ouvert vos 3 derniers emails, relance de vive voix.' },
       { name: 'HUBENCY', chip: 'À qualifier', cls: 'bg-muted text-muted-foreground', why: 'Nouveau sur votre marché, premier contact.' },
     ].map((s) => (
       <div key={s.name} className="rounded-[13px] border border-border p-[15px] mb-[11px] opacity-60">
@@ -646,11 +646,11 @@ const RadarMock = () => (
 /* ---- Block 4 : nouveautés ---- */
 const NoveltyMock = () => (
   <Mock className="max-w-[420px] mx-auto relative">
-    <span className="absolute top-3.5 left-3.5 z-10 bg-accent text-accent-foreground text-[0.72rem] font-bold uppercase tracking-wide px-3 py-1 rounded-full shadow-md">
+    <span className="absolute top-3.5 left-3.5 z-10 bg-primary text-primary-foreground text-[0.72rem] font-bold uppercase tracking-wide px-3 py-1 rounded-full shadow-md">
       Nouveauté
     </span>
     <div
-      className="h-[150px] rounded-xl flex items-center justify-center text-accent mb-4 overflow-hidden"
+      className="h-[150px] rounded-xl flex items-center justify-center text-primary mb-4 overflow-hidden"
       style={{ background: 'linear-gradient(135deg, hsl(var(--accent) / 0.25), hsl(var(--secondary)))' }}
     >
       <Rocket className="h-12 w-12 opacity-50" />
@@ -687,7 +687,7 @@ const StructMock = () => (
           « Ns proposons sol. digitales p/ restau : caisse tactile, cmd table, paiement… + de 200 clients franchisés en FR &amp; BENELUX. »
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center gap-1 text-accent text-[0.7rem] font-bold shrink-0">
+      <div className="flex flex-col items-center justify-center gap-1 text-primary text-[0.7rem] font-bold shrink-0">
         <ArrowRight className="h-6 w-6 rotate-90 sm:rotate-0" />
         <span className="whitespace-nowrap">L'IA lit</span>
       </div>

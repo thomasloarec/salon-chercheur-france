@@ -203,7 +203,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           <div className="container mx-auto px-4 space-y-8">
             {/* Preview notice */}
             {isPreview && (
-              <div className="bg-accent/10 border-l-4 border-accent p-4 rounded">
+              <div className="bg-primary/10 border-l-4 border-primary p-4 rounded">
                 <div className="flex items-center">
                   <div className="ml-3">
                     <p className="text-sm text-foreground/80">
@@ -254,7 +254,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
             {/* Past event banner */}
             {isEventPast && (
-              <div className="rounded-r-lg border-l-4 border-accent bg-accent/10 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+              <div className="rounded-r-lg border-l-4 border-primary bg-primary/10 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
                 <p className="text-sm text-foreground/80">
                   Cet événement est terminé. Retrouvez les prochains salons de ce secteur sur Lotexpo.
                 </p>

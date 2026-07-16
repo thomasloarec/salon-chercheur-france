@@ -145,7 +145,7 @@ const Events = () => {
             </h1>
             <p className="text-muted-foreground mt-3 max-w-3xl text-sm md:text-base">
               Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période.{' '}
-              <Link to="/salons-professionnels-2026" className="text-accent hover:underline font-medium whitespace-nowrap">
+              <Link to="/salons-professionnels-2026" className="text-primary hover:underline font-medium whitespace-nowrap">
                 Voir les salons professionnels 2026 →
               </Link>
             </p>

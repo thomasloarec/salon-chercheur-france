@@ -138,7 +138,7 @@ function UrgencyBadge({ at }: { at: string | null }) {
 
 function KpiCard({ label, value, icon: Icon, color = 'text-foreground', onClick, active }: { label: string; value: string | number; icon: React.ElementType; color?: string; onClick?: () => void; active?: boolean }) {
   return (
-    <Card className={`${onClick ? 'cursor-pointer hover:bg-accent/30 transition-colors' : ''} ${active ? 'ring-2 ring-primary' : ''}`} onClick={onClick}>
+    <Card className={`${onClick ? 'cursor-pointer hover:bg-primary/30 transition-colors' : ''} ${active ? 'ring-2 ring-primary' : ''}`} onClick={onClick}>
       <CardContent className="pt-4 pb-4">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
@@ -406,7 +406,7 @@ export default function AdminOutreachDashboard() {
                   </thead>
                   <tbody>
                     {rows.map(r => (
-                      <tr key={r.ev.id} className={`border-b last:border-0 cursor-pointer hover:bg-accent/30 ${!r.isFuture ? 'opacity-60' : ''}`} onClick={() => { setEventFilter(r.ev.id); setPage(0); setShowCampaignList(true); }}>
+                      <tr key={r.ev.id} className={`border-b last:border-0 cursor-pointer hover:bg-primary/30 ${!r.isFuture ? 'opacity-60' : ''}`} onClick={() => { setEventFilter(r.ev.id); setPage(0); setShowCampaignList(true); }}>
                         <td className="py-2 font-medium">{r.ev.nom_event}</td>
                         <td className="py-2 text-muted-foreground">{r.ev.date_debut ? format(new Date(r.ev.date_debut), 'dd MMM yyyy', { locale: fr }) : '–'}</td>
                         <td className="py-2 text-center">{r.isFuture ? <Badge className="bg-green-500/15 text-green-700 border-green-300" variant="outline">À venir</Badge> : <Badge variant="outline">Passé</Badge>}</td>
@@ -546,7 +546,7 @@ export default function AdminOutreachDashboard() {
                   {paginated.map(({ c, anomalies, primary }) => {
                     const ev = eventsMap[c.event_id];
                     return (
-                      <tr key={c.id} className={`border-b last:border-0 hover:bg-accent/20 ${anomalies.length > 0 ? 'bg-destructive/5' : ''}`}>
+                      <tr key={c.id} className={`border-b last:border-0 hover:bg-primary/20 ${anomalies.length > 0 ? 'bg-destructive/5' : ''}`}>
                         <td className="py-2">
                           <button className="font-medium hover:underline text-left" onClick={() => setSelected(c)}>
                             {c.company_name ?? '–'}

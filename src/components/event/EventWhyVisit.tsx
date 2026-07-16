@@ -32,7 +32,7 @@ export const EventWhyVisit = ({ event }: EventWhyVisitProps) => {
   }
 
   return (
-    <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/10">
+    <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/5 border-primary/10">
       <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-primary" />
         Pourquoi visiter {event.nom_event} ?

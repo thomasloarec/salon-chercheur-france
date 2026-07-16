@@ -548,7 +548,7 @@ export default function Step1ExhibitorAndUser({
                     />
                     <label
                       htmlFor="selected-exhibitor-logo"
-                      className="flex items-center justify-center w-full h-20 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                      className="flex items-center justify-center w-full h-20 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-primary transition-colors"
                     >
                       {(newExhibitorData.logo || selectedExhibitorLogo) ? (
                         <div className="text-center">
@@ -707,7 +707,7 @@ export default function Step1ExhibitorAndUser({
                   />
                   <label
                     htmlFor="company-logo"
-                    className="flex items-center justify-center w-full h-24 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                    className="flex items-center justify-center w-full h-24 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-primary transition-colors"
                   >
                     {newExhibitorData.logo ? (
                       <div className="text-center">
@@ -752,7 +752,7 @@ export default function Step1ExhibitorAndUser({
                 {exhibitors.map((exhibitor) => (
                   <Card 
                     key={exhibitor.id} 
-                    className="cursor-pointer hover:bg-accent transition-colors"
+                    className="cursor-pointer hover:bg-primary transition-colors"
                     onClick={() => handleExhibitorSelect(exhibitor)}
                   >
                     <CardContent className="p-4">
@@ -772,7 +772,7 @@ export default function Step1ExhibitorAndUser({
                 {globalExhibitors.map((exhibitor) => (
                   <Card
                     key={`global-${exhibitor.id}`}
-                    className="cursor-pointer hover:bg-accent transition-colors border-dashed"
+                    className="cursor-pointer hover:bg-primary transition-colors border-dashed"
                     onClick={() => handleExhibitorSelect(exhibitor)}
                   >
                     <CardContent className="p-4">

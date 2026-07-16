@@ -153,7 +153,7 @@ const SimilarExhibitorsSection: React.FC<{
           )}
         >
           <span className="flex items-center gap-2 min-w-0">
-            <Sparkles className="h-4 w-4 shrink-0 text-accent" />
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
             <span className="truncate">
               {remaining > 0
                 ? `Découvrir ${remaining} autre${remaining > 1 ? 's' : ''} exposant${remaining > 1 ? 's' : ''} à potentiel`
@@ -214,7 +214,7 @@ const SimilarExhibitorsSection: React.FC<{
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-9 border-accent/60 bg-accent/[0.06] text-foreground hover:bg-accent/10"
+                    className="h-9 border-primary/60 bg-primary/[0.06] text-foreground hover:bg-primary/10"
                     disabled={busy[s.id_exposant]}
                     onClick={() => handleKeep(s)}
                   >

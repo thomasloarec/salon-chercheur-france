@@ -247,7 +247,7 @@ const CityYearHub = () => {
                   <Link
                     key={y.year}
                     to={`/ville/${hub.citySlug}/${y.year}`}
-                    className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-accent/10 hover:border-primary/30 transition-colors text-foreground"
+                    className="inline-flex items-center text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:bg-primary/10 hover:border-primary/30 transition-colors text-foreground"
                   >
                     {hub.cityName} {y.year} ({y.count})
                   </Link>

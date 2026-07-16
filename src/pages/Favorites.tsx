@@ -53,7 +53,7 @@ const Favorites = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="heading-display text-3xl text-foreground flex items-center gap-2">
-              <Heart className="h-8 w-8 text-accent" />
+              <Heart className="h-8 w-8 text-primary" />
               Mes événements favoris
             </h1>
             <p className="text-muted-foreground mt-2">

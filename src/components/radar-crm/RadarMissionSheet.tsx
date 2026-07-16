@@ -738,14 +738,14 @@ const RadarMissionSheet: React.FC<{
         className={cn(
           'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
           band === 'faible'
-            ? 'border-accent/50 bg-accent/[0.06] text-foreground'
+            ? 'border-primary/50 bg-primary/[0.06] text-foreground'
             : 'border-border bg-background text-muted-foreground',
         )}
       >
         <span
           className={cn(
             'h-2 w-2 rounded-full',
-            band === 'faible' ? 'bg-accent' : band === 'moyen' ? 'bg-stone-400' : 'bg-emerald-600/60',
+            band === 'faible' ? 'bg-primary' : band === 'moyen' ? 'bg-stone-400' : 'bg-emerald-600/60',
           )}
           aria-hidden="true"
         />
@@ -767,7 +767,7 @@ const RadarMissionSheet: React.FC<{
     if (band !== 'faible' && band !== 'moyen') return null;
     const missing = aiMeta?.missing_profile_fields ?? [];
     return (
-      <div className="space-y-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5">
+      <div className="space-y-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">
         <p className="text-xs text-foreground/80">
           Complète ton profil d'offre pour des questions plus précises.
         </p>
@@ -779,7 +779,7 @@ const RadarMissionSheet: React.FC<{
         <button
           type="button"
           onClick={() => { onOpenChange(false); onOpenSettings(); }}
-          className="text-xs text-accent underline underline-offset-2 hover:text-accent/80"
+          className="text-xs text-primary underline underline-offset-2 hover:text-primary/80"
         >
           Compléter mon profil
         </button>
@@ -1045,7 +1045,7 @@ const RadarMissionSheet: React.FC<{
   // Bloc « Ce que je dis » (préparation ouverte, terrain).
   const preparationSection = (
     <section className="space-y-4">
-      <div className="flex items-center gap-2 text-accent">
+      <div className="flex items-center gap-2 text-primary">
         <MessageSquare className="h-4 w-4 shrink-0" />
         <span className="text-xs font-semibold uppercase tracking-wide">Ce que je dis</span>
       </div>
@@ -1056,7 +1056,7 @@ const RadarMissionSheet: React.FC<{
   // Bloc « Ce que je capture » (notes + tâches + vocal, terrain).
   const captureSection = (
     <section className="space-y-6">
-      <div className="flex items-center gap-2 text-accent">
+      <div className="flex items-center gap-2 text-primary">
         <StickyNote className="h-4 w-4 shrink-0" />
         <span className="text-xs font-semibold uppercase tracking-wide">Ce que je capture</span>
       </div>
@@ -1083,7 +1083,7 @@ const RadarMissionSheet: React.FC<{
         {isTerrain ? (
           /* Mode TERRAIN : l'ENTREPRISE est l'élément principal (en-tête compact). */
           <SheetHeader className="px-5 pt-6 pb-4 border-b text-left space-y-2">
-            <div className="flex items-center gap-2 text-accent">
+            <div className="flex items-center gap-2 text-primary">
               <MapPin className="h-4 w-4 shrink-0" />
               <span className="text-xs font-semibold uppercase tracking-wide truncate">
                 Mode salon · {target?.eventName ?? 'Salon'}
@@ -1107,7 +1107,7 @@ const RadarMissionSheet: React.FC<{
         ) : (
           /* Mode PREPA (inchangé) : le SALON est l'élément principal. */
           <SheetHeader className="px-5 pt-6 pb-4 border-b text-left space-y-2">
-            <div className="flex items-center gap-2 text-accent">
+            <div className="flex items-center gap-2 text-primary">
               <Target className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wide">Préparer ma visite</span>
             </div>
@@ -1237,7 +1237,7 @@ const RadarMissionSheet: React.FC<{
             </AlertDialogAction>
             <AlertDialogAction
               onClick={() => { setRegenConfirm(false); void generateMission({ force: true }); }}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Tout régénérer
             </AlertDialogAction>
