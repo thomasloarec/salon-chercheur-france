@@ -26,7 +26,7 @@ export default function NoveltyFeatured({ main, secondary }: NoveltyFeaturedProp
   return (
     <section aria-labelledby="alaune-heading">
       <div className="mb-1 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
+        <Sparkles className="h-5 w-5 text-foreground" />
         <h2 id="alaune-heading" className="text-2xl font-bold tracking-tight md:text-3xl">
           À la une
         </h2>

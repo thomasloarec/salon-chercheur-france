@@ -192,7 +192,7 @@ const AccessRequestDialog: React.FC<AccessRequestDialogProps> = ({ open, onOpenC
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-primary" /> Demande envoyée
+                <CheckCircle2 className="h-5 w-5 text-foreground" /> Demande envoyée
               </DialogTitle>
               <DialogDescription>
                 Nous revenons vers vous rapidement.

@@ -38,8 +38,8 @@ export default function ExistingCompanyCard({ match, onUse }: Props) {
           {match.logo_url ? (
             <img src={match.logo_url} alt="" className="h-12 w-12 rounded object-contain bg-white" />
           ) : (
-            <div className="p-2 bg-primary/10 rounded-lg">
-              {blocked ? <Lock className="h-5 w-5 text-destructive" /> : <Building className="h-5 w-5 text-primary" />}
+            <div className="p-2 bg-muted rounded-lg">
+              {blocked ? <Lock className="h-5 w-5 text-destructive" /> : <Building className="h-5 w-5 text-foreground" />}
             </div>
           )}
           <div className="flex-1 min-w-0">

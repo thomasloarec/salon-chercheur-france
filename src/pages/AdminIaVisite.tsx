@@ -229,7 +229,7 @@ export default function AdminIaVisite() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary" />
+                <Sparkles className="h-6 w-6 text-foreground" />
                 Dashboard IA Visite
               </h1>
               <p className="text-sm text-muted-foreground">Suivi de la fonctionnalité "Préparer ma visite avec l'IA"</p>

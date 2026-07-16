@@ -513,7 +513,7 @@ const SearchMock = () => {
     <Mock>
       <div ref={ref}>
         <div className="flex items-center gap-3 bg-secondary/40 border border-secondary rounded-xl px-4 py-3 mb-4">
-          <Search className="h-4 w-4 text-primary shrink-0" />
+          <Search className="h-4 w-4 text-foreground shrink-0" />
           <span className="text-sm text-foreground truncate">
             Je vends des logiciels de caisse pour restaurants
           </span>
@@ -595,7 +595,7 @@ const ParcoursMock = () => {
           ))}
         </div>
         <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex items-center gap-2">
-          <Route className="h-4 w-4 text-primary shrink-0" />
+          <Route className="h-4 w-4 text-foreground shrink-0" />
           Itinéraire regroupé par hall, vous ne revenez jamais sur vos pas.
         </div>
       </div>

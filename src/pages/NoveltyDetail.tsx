@@ -335,7 +335,7 @@ export default function NoveltyDetail() {
                 <ul className="space-y-2">
                   {reasons.map((r, i) => (
                     <li key={i} className="flex gap-2 text-sm leading-relaxed">
-                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
                       <span className="whitespace-pre-line">{r}</span>
                     </li>
                   ))}
@@ -410,7 +410,7 @@ export default function NoveltyDetail() {
                 to={`/events/${novelty.event_slug}`}
                 className="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:border-primary/40 hover:bg-muted/40"
               >
-                <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <Calendar className="mt-0.5 h-5 w-5 shrink-0" />
                 <div className="min-w-0">
                   <p className="font-semibold">{novelty.event_name}</p>
                   <p className="text-sm text-muted-foreground">

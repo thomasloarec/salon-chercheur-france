@@ -231,7 +231,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                       className="flex items-center justify-between w-full text-left group"
                     >
                        <div className="flex items-center gap-2">
-                         <Route className="h-5 w-5 text-primary" />
+                         <Route className="h-5 w-5" />
                         <h4 className="font-semibold">Mes exposants à voir</h4>
                         <Badge variant="secondary" className="text-xs">
                           {(visitPlan.prioritaires?.length || 0) + (visitPlan.optionnels?.length || 0)}
@@ -306,7 +306,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                   <div className="mt-4 pt-4 border-t">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
+                        <Sparkles className="h-5 w-5 text-foreground" />
                         <h4 className="font-semibold">Mon parcours</h4>
                         <Badge variant="secondary" className="text-xs">
                           {eventNovelties.length} nouveauté{eventNovelties.length > 1 ? 's' : ''}

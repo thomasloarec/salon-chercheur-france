@@ -95,8 +95,8 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
   // Case: enterprise not managed (or legacy-only), user logged in → CTA
   return (
     <>
-      <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 flex items-start gap-3">
-        <ShieldCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+      <div className="rounded-lg bg-muted border border-primary/20 p-3 flex items-start gap-3">
+        <ShieldCheck className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
         <div className="flex-1">
           <p className="text-sm text-muted-foreground">
             Cette entreprise n'est pas encore gérée officiellement sur Lotexpo.

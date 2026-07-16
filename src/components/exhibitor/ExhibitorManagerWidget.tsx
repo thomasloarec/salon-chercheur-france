@@ -246,9 +246,9 @@ export default function ExhibitorManagerWidget({
                 );
               }
               return (
-                <div key={item.key} className="rounded-md border border-primary/30 bg-primary/5 p-2.5">
+                <div key={item.key} className="rounded-md border border-primary/30 bg-muted p-2.5">
                   <div className="flex items-start gap-2">
-                    <Icon className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                    <Icon className="h-4 w-4 text-foreground flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">Confirmez la gouvernance de cette page</p>
                       <p className="text-xs text-muted-foreground">
@@ -337,9 +337,9 @@ export default function ExhibitorManagerWidget({
 
           {/* Nudge Nouveauté (objectif Or) */}
           {needsNovelty && (
-            <div className="rounded-md border border-primary/40 bg-primary/10 p-3 mt-2">
+            <div className="rounded-md border border-primary/40 bg-muted p-3 mt-2">
               <div className="flex items-start gap-2">
-                <Rocket className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                <Rocket className="h-4 w-4 text-foreground flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-primary">Vous participez à un salon à venir</p>
                   <p className="text-xs text-muted-foreground">

@@ -153,7 +153,7 @@ const SimilarExhibitorsSection: React.FC<{
           )}
         >
           <span className="flex items-center gap-2 min-w-0">
-            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+            <Sparkles className="h-4 w-4 shrink-0" />
             <span className="truncate">
               {remaining > 0
                 ? `Découvrir ${remaining} autre${remaining > 1 ? 's' : ''} exposant${remaining > 1 ? 's' : ''} à potentiel`

@@ -325,8 +325,8 @@ const Organisateurs = () => {
                     key={badge.title}
                     className="bg-card border border-border rounded-2xl p-5 shadow-sm"
                   >
-                    <div className="bg-primary/10 rounded-xl p-2.5 w-fit mb-3">
-                      <Icon className="h-5 w-5 text-primary" />
+                    <div className="bg-muted rounded-xl p-2.5 w-fit mb-3">
+                      <Icon className="h-5 w-5 text-foreground" />
                     </div>
                     <h3 className="text-sm font-bold text-foreground mb-1">{badge.title}</h3>
                     <p className="text-xs text-muted-foreground leading-relaxed">{badge.text}</p>
@@ -374,8 +374,8 @@ const Organisateurs = () => {
                       <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                         {idx + 1}
                       </span>
-                      <div className="bg-primary/10 rounded-xl p-2">
-                        <Icon className="h-5 w-5 text-primary" />
+                      <div className="bg-muted rounded-xl p-2">
+                        <Icon className="h-5 w-5 text-foreground" />
                       </div>
                     </div>
                     <h3 className="text-lg font-bold text-foreground mb-2">{step.title}</h3>
@@ -477,8 +477,8 @@ const Organisateurs = () => {
             >
               <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-5">
                 <div className="shrink-0">
-                  <div className="bg-primary/10 rounded-2xl p-3 w-fit">
-                    <Icon className="h-7 w-7 text-primary" />
+                  <div className="bg-muted rounded-2xl p-3 w-fit">
+                    <Icon className="h-7 w-7 text-foreground" />
                   </div>
                 </div>
                 <div className="flex-1">
@@ -510,8 +510,8 @@ const Organisateurs = () => {
         <section className="py-16 px-4 bg-background">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div>
-              <div className="bg-primary/10 rounded-2xl p-3 w-fit mb-5">
-                <LayoutGrid className="h-7 w-7 text-primary" />
+              <div className="bg-muted rounded-2xl p-3 w-fit mb-5">
+                <LayoutGrid className="h-7 w-7 text-foreground" />
               </div>
               <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-4">
                 Affichez les temps forts de vos exposants sur votre site officiel
@@ -547,7 +547,7 @@ const Organisateurs = () => {
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-4 w-4 text-primary" />
+                  <Sparkles className="h-4 w-4 text-foreground" />
                   <h3 className="text-sm font-bold text-foreground">Nouveautés des exposants</h3>
                 </div>
                 <div className="space-y-3">
@@ -560,8 +560,8 @@ const Organisateurs = () => {
                       key={card.title}
                       className="flex items-center gap-3 rounded-xl border border-border bg-background p-3"
                     >
-                      <div className="h-12 w-12 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Sparkles className="h-5 w-5 text-primary" />
+                      <div className="h-12 w-12 shrink-0 rounded-lg bg-muted flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-foreground" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-semibold text-foreground truncate">{card.title}</p>
@@ -592,8 +592,8 @@ const Organisateurs = () => {
                     key={benefit.title}
                     className="bg-card border border-border rounded-2xl p-6 shadow-sm"
                   >
-                    <div className="bg-primary/10 rounded-xl p-3 w-fit mb-4">
-                      <Icon className="h-6 w-6 text-primary" />
+                    <div className="bg-muted rounded-xl p-3 w-fit mb-4">
+                      <Icon className="h-6 w-6 text-foreground" />
                     </div>
                     <h3 className="text-lg font-bold text-foreground mb-2">{benefit.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">{benefit.text}</p>

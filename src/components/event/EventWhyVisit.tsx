@@ -32,9 +32,9 @@ export const EventWhyVisit = ({ event }: EventWhyVisitProps) => {
   }
 
   return (
-    <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/5 border-primary/10">
+    <Card className="p-6 bg-gradient-to-br from-primary/5 to-info/5 border-primary/10">
       <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
+        <Sparkles className="h-5 w-5 text-foreground" />
         Pourquoi visiter {event.nom_event} ?
       </h2>
 
@@ -47,7 +47,7 @@ export const EventWhyVisit = ({ event }: EventWhyVisitProps) => {
           
           return (
             <li className="flex items-start gap-3">
-              <Users className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <Users className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
               <span>
                 Rencontrez les{" "}
                 {isValidNumber && (
@@ -64,7 +64,7 @@ export const EventWhyVisit = ({ event }: EventWhyVisitProps) => {
 
         {sectors.length > 0 && (
           <li className="flex items-start gap-3">
-            <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <Sparkles className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
             <span>
               Découvrez les dernières innovations dans{" "}
               {sectors.length === 1 ? "le secteur" : "les secteurs"} :{" "}
@@ -76,7 +76,7 @@ export const EventWhyVisit = ({ event }: EventWhyVisitProps) => {
         )}
 
         <li className="flex items-start gap-3">
-          <Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+          <Calendar className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
           <span>
             Préparez votre visite du salon{" "}
             <strong className="text-foreground">

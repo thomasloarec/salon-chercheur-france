@@ -282,9 +282,9 @@ const RadarTerrainAddCompanySheet: React.FC<Props> = ({
                               )}
                             </div>
                             {busy ? (
-                              <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0 mt-0.5" />
+                              <Loader2 className="h-5 w-5 animate-spin shrink-0 mt-0.5" />
                             ) : (
-                              <Plus className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                              <Plus className="h-5 w-5 shrink-0 mt-0.5" />
                             )}
                           </button>
                         </li>
@@ -312,9 +312,9 @@ const RadarTerrainAddCompanySheet: React.FC<Props> = ({
                   setCreateWebsite('');
                   setCreateOpen(true);
                 }}
-                className="w-full text-left rounded-xl border border-dashed border-primary/50 bg-card p-4 min-h-[44px] hover:bg-primary/5 active:bg-primary/10 transition-colors flex items-center gap-3"
+                className="w-full text-left rounded-xl border border-dashed border-primary/50 bg-card p-4 min-h-[44px] hover:bg-muted active:bg-primary/10 transition-colors flex items-center gap-3"
               >
-                <Building2 className="h-5 w-5 text-primary shrink-0" />
+                <Building2 className="h-5 w-5 text-foreground shrink-0" />
                 <span className="text-sm font-medium text-foreground">
                   L'entreprise n'est pas dans la liste ? Créer «&nbsp;{typedName}&nbsp;»
                 </span>

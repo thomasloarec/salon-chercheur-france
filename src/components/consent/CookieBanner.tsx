@@ -27,7 +27,7 @@ export default function CookieBanner() {
         >
           <div className="mx-auto max-w-6xl px-4 py-4 md:py-5 flex flex-col md:flex-row md:items-center gap-4">
             <div className="flex items-start gap-3 flex-1">
-              <Cookie className="h-5 w-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+              <Cookie className="h-5 w-5 text-foreground shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-sm text-foreground leading-relaxed">
                 Nous utilisons des cookies pour assurer le bon fonctionnement du site, mesurer son
                 audience et améliorer votre expérience. Vous pouvez accepter, refuser ou personnaliser

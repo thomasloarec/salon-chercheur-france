@@ -146,7 +146,7 @@ export function ExhibitorDialog({
           {!isLoading && participations.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Calendar className="h-4 w-4 text-primary" />
+                <Calendar className="h-4 w-4 text-foreground" />
                 Présent sur {participations.length} salon
                 {participations.length > 1 ? 's' : ''} à venir
               </div>

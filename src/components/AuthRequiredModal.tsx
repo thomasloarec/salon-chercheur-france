@@ -88,7 +88,7 @@ const AuthRequiredModal = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <IconComponent className="h-5 w-5 text-primary" />
+            <IconComponent className="h-5 w-5 text-foreground" />
             {message.title}
           </DialogTitle>
           <DialogDescription>

@@ -81,17 +81,17 @@ export default function Exposants() {
             {/* Trust indicators */}
             <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-primary" />
+                <Check className="h-4 w-4 text-foreground" />
                 1 nouveauté gratuite
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-primary" />
+                <Check className="h-4 w-4 text-foreground" />
                 Sans carte bancaire
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-primary" />
+                <Check className="h-4 w-4 text-foreground" />
                 Publication en quelques minutes
               </span>
             </p>
@@ -154,8 +154,8 @@ export default function Exposants() {
 
             {/* Solution */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-                <Check className="h-5 w-5 text-primary" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-primary/20">
+                <Check className="h-5 w-5 text-foreground" />
                 <span className="text-sm font-semibold text-primary">La solution Lotexpo</span>
               </div>
               
@@ -204,8 +204,8 @@ export default function Exposants() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Sparkles className="h-6 w-6 text-primary" />
+              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Sparkles className="h-6 w-6 text-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
                 Être découvert avant le jour J
@@ -216,8 +216,8 @@ export default function Exposants() {
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Target className="h-6 w-6 text-primary" />
+              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Target className="h-6 w-6 text-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
                 Donner une vraie raison de passer vous voir
@@ -228,8 +228,8 @@ export default function Exposants() {
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Users className="h-6 w-6 text-primary" />
+              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
                 Parler aux visiteurs déjà intéressés par le salon
@@ -240,8 +240,8 @@ export default function Exposants() {
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <ShieldCheck className="h-6 w-6 text-primary" />
+              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <ShieldCheck className="h-6 w-6 text-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
                 Arriver avec moins d'incertitude
@@ -273,7 +273,7 @@ export default function Exposants() {
             <div className="relative">
               <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
                 <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Search className="h-10 w-10 text-primary-foreground" />
+                  <Search className="h-10 w-10 text-foreground-foreground" />
                 </div>
                 <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
                   ÉTAPE 1
@@ -291,7 +291,7 @@ export default function Exposants() {
             <div className="relative">
               <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
                 <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Megaphone className="h-10 w-10 text-primary-foreground" />
+                  <Megaphone className="h-10 w-10 text-foreground-foreground" />
                 </div>
                 <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
                   ÉTAPE 2
@@ -309,7 +309,7 @@ export default function Exposants() {
             <div className="relative">
               <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
                 <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <LineChart className="h-10 w-10 text-primary-foreground" />
+                  <LineChart className="h-10 w-10 text-foreground-foreground" />
                 </div>
                 <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
                   ÉTAPE 3
@@ -362,15 +362,15 @@ export default function Exposants() {
 
                   <div className="space-y-3">
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                       <span className="text-sm">1 nouveauté par événement</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                       <span className="text-sm">3 premiers contacts générés gratuits</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Sans carte bancaire</span>
                     </div>
                     <div className="flex items-start gap-2 opacity-50">
@@ -402,7 +402,7 @@ export default function Exposants() {
                   <div>
                     <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
                       Plan Premium
-                      <Crown className="h-5 w-5 text-primary" />
+                      <Crown className="h-5 w-5 text-foreground" />
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       Pour amplifier vos résultats et accéder à tout le potentiel de la plateforme
@@ -416,23 +416,23 @@ export default function Exposants() {
 
                   <div className="space-y-3">
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                       <span className="text-sm"><strong>5 Nouveautés par événement</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                       <span className="text-sm"><strong>Accès complet aux contacts générés</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Export CSV de vos contacts</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Statistiques détaillées</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                       <span className="text-sm">Badge Premium sur vos nouveautés</span>
                     </div>
                   </div>
@@ -468,8 +468,8 @@ export default function Exposants() {
             {/* Startup */}
             <Card>
               <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-foreground" />
                 </div>
                 <h3 className="text-xl font-bold">Startup innovante</h3>
                 <p className="text-sm text-muted-foreground">
@@ -487,8 +487,8 @@ export default function Exposants() {
             {/* PME établie */}
             <Card>
               <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-foreground" />
                 </div>
                 <h3 className="text-xl font-bold">PME établie</h3>
                 <p className="text-sm text-muted-foreground">
@@ -506,8 +506,8 @@ export default function Exposants() {
             {/* Grande entreprise */}
             <Card>
               <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                  <Users className="h-6 w-6 text-foreground" />
                 </div>
                 <h3 className="text-xl font-bold">Grande entreprise</h3>
                 <p className="text-sm text-muted-foreground">

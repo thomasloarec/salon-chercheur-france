@@ -432,7 +432,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             {asking && (
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <Loader2 className="h-4 w-4 animate-spin text-foreground" />
                   {deepSearch ? 'Question plus complexe, j\'approfondis la recherche…' : "L'assistant analyse les salons…"}
                 </div>
               </div>
@@ -501,7 +501,7 @@ const WallCallout = ({
   return (
     <div className="rounded-2xl border border-primary/30 bg-secondary/60 p-5">
       <p className="heading-display text-lg text-foreground mb-1 flex items-center gap-2">
-        <Lock className="h-4 w-4 text-primary" />
+        <Lock className="h-4 w-4 text-foreground" />
         Vous avez exploré à fond
       </p>
       {paidIntentSent ? (

@@ -256,7 +256,7 @@ const SectorHub = () => {
           {articles.length > 0 && (
             <section className="mb-12">
               <h2 className="heading-display text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                <ArrowRight className="h-5 w-5 text-primary" />
+                <ArrowRight className="h-5 w-5 text-foreground" />
                 Articles liés au secteur {hub.sectorLabel}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -300,7 +300,7 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
               <Card>
                 <CardContent className="pt-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
+                    <Target className="h-5 w-5 text-foreground" />
                     <h3 className="font-semibold">Profil d'offre commercial</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -476,16 +476,16 @@ const RadarCrmSettingsDialog: React.FC<Props> = ({ open, onOpenChange, onDataDel
               <Card>
                 <CardContent className="pt-5 space-y-3">
                   <div className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
+                    <Shield className="h-5 w-5 text-foreground" />
                     <h3 className="font-semibold">Vos données Radar CRM restent privées</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Les fichiers importés dans Radar CRM sont utilisés uniquement pour détecter les correspondances entre vos entreprises et les exposants référencés sur Lotexpo. Vos données Radar CRM ne sont pas affichées publiquement. Elles ne modifient pas les événements, les exposants ou les données publiques du site.
                   </p>
                   <ul className="text-sm space-y-1.5">
-                    <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> Données visibles uniquement par vous</li>
-                    <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> Matching basé sur les sites web des entreprises</li>
-                    <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> Suppression possible à tout moment</li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-foreground mt-0.5 shrink-0" /> Données visibles uniquement par vous</li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-foreground mt-0.5 shrink-0" /> Matching basé sur les sites web des entreprises</li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-foreground mt-0.5 shrink-0" /> Suppression possible à tout moment</li>
                   </ul>
                 </CardContent>
               </Card>

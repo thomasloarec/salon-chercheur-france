@@ -229,8 +229,8 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
         </Alert>
       )}
 
-      <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm text-foreground/80">
-        <ShieldCheck className="h-4 w-4 flex-shrink-0 text-primary mt-0.5" />
+      <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-muted px-3 py-2.5 text-sm text-foreground/80">
+        <ShieldCheck className="h-4 w-4 flex-shrink-0 text-foreground mt-0.5" />
         <span>Vos modifications seront vérifiées par notre équipe avant d'être publiées.</span>
       </div>
 

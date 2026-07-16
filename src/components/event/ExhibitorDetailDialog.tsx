@@ -279,7 +279,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
           {!loadingParticipations && otherParticipations.length > 0 && (
             <div className="border-t pt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Calendar className="h-4 w-4 text-primary" />
+                <Calendar className="h-4 w-4 text-foreground" />
                 Également présent sur {otherParticipations.length} autre
                 {otherParticipations.length > 1 ? 's' : ''} salon
                 {otherParticipations.length > 1 ? 's' : ''} à venir

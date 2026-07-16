@@ -51,7 +51,7 @@ const RadarSpaceNameDialog: React.FC<Props> = ({ open, accountId, onClose }) => 
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" /> Nommez votre espace
+            <Building2 className="h-5 w-5 text-foreground" /> Nommez votre espace
           </AlertDialogTitle>
           <AlertDialogDescription>
             À quelle entreprise correspond ce CRM ? Ce nom aide votre équipe à repérer le bon espace.

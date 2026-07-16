@@ -474,7 +474,7 @@ const RadarCrmPage: React.FC = () => {
                   'Le suivi est déjà prêt',
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-2.5 text-sm text-foreground">
-                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-foreground" aria-hidden="true" />
                     <span className="font-medium">{t}</span>
                   </li>
                 ))}
@@ -671,7 +671,7 @@ const RadarCrmPage: React.FC = () => {
 
       {/* 9. Connecteurs */}
       <section className="max-w-6xl mx-auto px-4 py-8 md:py-12">
-        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-primary/5 p-8 md:p-10">
+        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-info/5 p-8 md:p-10">
           <div className="max-w-3xl mb-8">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Démarrez tout de suite</p>
             <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
@@ -752,8 +752,8 @@ const RadarCrmPage: React.FC = () => {
             <Card className="bg-card">
               <CardContent className="pt-6 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileCheck2 className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                    <FileCheck2 className="h-5 w-5 text-foreground" />
                   </div>
                   <div>
                     <p className="font-medium">{parsed.fileName}</p>
@@ -836,10 +836,10 @@ const RadarCrmPage: React.FC = () => {
 
             {/* Auth gate / submit */}
             {!authLoading && !user && (
-              <Card className="border-primary/30 bg-primary/5">
+              <Card className="border-primary/30 bg-muted">
                 <CardContent className="pt-6 space-y-4">
                   <div className="flex items-start gap-3">
-                    <Lock className="h-5 w-5 mt-0.5 text-primary" />
+                    <Lock className="h-5 w-5 mt-0.5 text-foreground" />
                     <div>
                       <h3 className="font-semibold">Votre analyse est prête</h3>
                       <p className="text-sm text-muted-foreground">

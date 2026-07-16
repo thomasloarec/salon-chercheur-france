@@ -9,8 +9,8 @@ import { Radar, ArrowRight } from 'lucide-react';
 const BlogRadarCrmCTA = () => (
   <section className="mx-auto px-4 max-w-[720px] mb-14">
     <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-border/60 bg-muted/30 p-5 sm:p-6">
-      <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/10 shrink-0">
-        <Radar className="h-5 w-5 text-primary" />
+      <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-muted shrink-0">
+        <Radar className="h-5 w-5 text-foreground" />
       </div>
       <div className="flex-1">
         <p className="text-[15px] font-semibold text-foreground leading-snug">
