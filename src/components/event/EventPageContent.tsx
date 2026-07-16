@@ -189,7 +189,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => navigate(`/admin/events/${event.id}`)}
-                  className="border-warning/40 text-muted-foreground hover:bg-warning-surface"
+                  className="border-border text-muted-foreground hover:bg-muted"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   Éditer
