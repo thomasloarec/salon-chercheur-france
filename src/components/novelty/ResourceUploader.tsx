@@ -86,7 +86,7 @@ export default function ResourceUploader({
       <div className="space-y-2">
         <label className="text-sm font-medium">{label}</label>
         <p className="text-xs text-muted-foreground">
-          <span className="text-warning font-medium">Optionnel mais recommandé</span> - Les utilisateurs intéressés pourront télécharger ce document après avoir fourni leurs coordonnées
+          <span className="text-warning-foreground font-medium">Optionnel mais recommandé</span> - Les utilisateurs intéressés pourront télécharger ce document après avoir fourni leurs coordonnées
         </p>
       </div>
 
