@@ -144,7 +144,15 @@ const AdminBlogEdit = () => {
       setBodyText(existingArticle.body_text || '');
       setHeaderImageUrl(existingArticle.header_image_url || '');
       setStatus(existingArticle.status);
-      setPublishedAt(existingArticle.published_at ? existingArticle.published_at.slice(0, 16) : '');
+      setPublishedAt(
+        existingArticle.published_at
+          ? (() => {
+              const d = new Date(existingArticle.published_at);
+              const pad = (n: number) => String(n).padStart(2, '0');
+              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            })()
+          : ''
+      );
       setFaqItems(existingArticle.faq || []);
       
       // Sanitize event_ids (handles N8N raw strings)
