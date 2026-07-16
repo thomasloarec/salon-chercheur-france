@@ -84,14 +84,14 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
       <Card className={cn(
         "flex flex-col w-full max-w-[272px] overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] relative event-card",
         !event.visible && isAdmin && "bg-muted opacity-50",
-        adminPreview && "border-orange-200",
+        adminPreview && "border-warning/40",
         ongoing && ""
       )}>
         {/* Badge "Brouillon" pour adminPreview */}
         {adminPreview && (
           <Badge
             variant="secondary"
-            className="absolute top-2 left-2 z-10 bg-orange-100 text-orange-800 border-orange-300"
+            className="absolute top-2 left-2 z-10 bg-warning-surface text-orange-800 border-warning/40"
             title="Événement en attente de publication"
           >
             En attente

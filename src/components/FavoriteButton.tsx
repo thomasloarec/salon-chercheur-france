@@ -76,7 +76,7 @@ const FavoriteButton = ({
                 'inline-flex items-center justify-center rounded-full transition-all duration-200',
                 isFavorite 
                   ? 'bg-green-500 hover:bg-green-600' 
-                  : 'bg-white hover:bg-gray-100',
+                  : 'bg-white hover:bg-muted',
                 'focus:ring-2 focus:ring-green-300 focus:outline-none',
                 'shadow-sm hover:shadow-md',
                 config.container,
@@ -95,7 +95,7 @@ const FavoriteButton = ({
                 <Calendar
                   className={cn(
                     config.icon,
-                    "transition-all duration-200 text-gray-500"
+                    "transition-all duration-200 text-muted-foreground"
                   )}
                 />
               )}

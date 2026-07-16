@@ -22,8 +22,8 @@ export default function EventMapEmbed({
   // Fallback si pas de clé
   if (!apiKey) {
     return (
-      <div className={`rounded-lg border p-4 bg-gray-50 ${className}`}>
-        <p className="text-sm text-gray-600">Carte indisponible (clé Google Maps absente).</p>
+      <div className={`rounded-lg border p-4 bg-muted ${className}`}>
+        <p className="text-sm text-muted-foreground">Carte indisponible (clé Google Maps absente).</p>
         {address ? (
           <a
             className="underline text-sm text-primary hover:text-primary/80 transition-colors"
@@ -50,8 +50,8 @@ export default function EventMapEmbed({
   } else {
     // Aucun data de localisation
     return (
-      <div className={`rounded-lg border p-4 bg-gray-50 ${className}`}>
-        <p className="text-sm text-gray-600">Localisation non renseignée.</p>
+      <div className={`rounded-lg border p-4 bg-muted ${className}`}>
+        <p className="text-sm text-muted-foreground">Localisation non renseignée.</p>
       </div>
     );
   }

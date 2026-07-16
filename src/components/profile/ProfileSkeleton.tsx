@@ -47,7 +47,7 @@ const ProfileSkeleton = () => {
       <Card className="p-6 rounded-2xl shadow-sm">
         <Skeleton className="h-6 w-32 mb-4" />
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-3">
               <Skeleton className="h-5 w-5" />
               <div>
@@ -57,7 +57,7 @@ const ProfileSkeleton = () => {
             </div>
             <Skeleton className="h-8 w-16" />
           </div>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-3">
               <Skeleton className="h-5 w-5" />
               <div>
@@ -97,7 +97,7 @@ const ProfileSkeleton = () => {
       <Card className="p-6 rounded-2xl shadow-sm">
         <Skeleton className="h-6 w-40 mb-4" />
         <div className="w-full">
-          <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
+          <div className="flex items-center justify-between p-4 border border-danger/30 rounded-lg bg-danger-surface">
             <div className="flex items-center gap-3">
               <Skeleton className="h-5 w-5" />
               <div>

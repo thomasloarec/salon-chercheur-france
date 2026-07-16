@@ -207,7 +207,7 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
         <div className="space-y-4">
           {/* Radar CRM — needs_review alert */}
           {e.needs_review && (
-            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900">
+            <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning-surface p-3 text-amber-900">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <div className="text-sm leading-snug">
                 <p className="font-semibold">Correspondance CRM à vérifier</p>

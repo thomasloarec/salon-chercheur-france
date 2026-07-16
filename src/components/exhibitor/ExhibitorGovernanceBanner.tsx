@@ -57,7 +57,7 @@ const ExhibitorGovernanceBanner: React.FC<ExhibitorGovernanceBannerProps> = ({
   // Case: user already has a pending claim
   if (hasModernExhibitor && governance.hasPendingClaim) {
     return (
-      <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex items-start gap-3">
+      <div className="rounded-lg bg-warning-surface border border-warning/40 p-3 flex items-start gap-3">
         <Clock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-sm font-medium text-amber-800">Demande en cours</p>

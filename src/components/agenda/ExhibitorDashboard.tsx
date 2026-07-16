@@ -184,20 +184,20 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                       {/* Statistiques compactes */}
                       <div className="flex items-center gap-4 flex-wrap">
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 dark:bg-red-950/30">
-                            <Heart className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-danger-surface dark:bg-red-950/30">
+                            <Heart className="h-4 w-4 text-danger dark:text-danger" />
                           </div>
                           <div>
-                            <p className="text-lg font-bold text-red-600 dark:text-red-400">{novelty.stats?.likes || 0}</p>
+                            <p className="text-lg font-bold text-danger dark:text-danger">{novelty.stats?.likes || 0}</p>
                             <p className="text-xs text-muted-foreground">Likes</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950/30">
-                            <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-info/10 dark:bg-blue-950/30">
+                            <Download className="h-4 w-4 text-info dark:text-info" />
                           </div>
                           <div>
-                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{novelty.stats?.brochure_leads || 0}</p>
+                            <p className="text-lg font-bold text-info dark:text-info">{novelty.stats?.brochure_leads || 0}</p>
                             <p className="text-xs text-muted-foreground">Téléchargements</p>
                           </div>
                         </div>
@@ -238,11 +238,11 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
       ) : (
         <Card>
           <CardContent className="p-12 text-center">
-            <Sparkles className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+            <Sparkles className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-muted-foreground mb-2">
               Aucune nouveauté créée
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-muted-foreground mb-6">
               Publiez vos innovations sur les salons pour attirer des visiteurs
             </p>
             <Button asChild>

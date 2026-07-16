@@ -113,10 +113,10 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
             <div className="flex items-center gap-4 mb-4">
-              <div className="h-16 w-16 bg-gray-200 rounded-lg"></div>
+              <div className="h-16 w-16 bg-border rounded-lg"></div>
               <div className="flex-1">
-                <div className="h-5 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                <div className="h-5 bg-border rounded mb-2"></div>
+                <div className="h-4 bg-border rounded w-2/3"></div>
               </div>
             </div>
           </div>
@@ -128,14 +128,14 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
   return (
     <div className="space-y-6">
       {/* Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-info/10 border border-info/30 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <Ticket className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <Ticket className="h-5 w-5 text-info mt-0.5 flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-blue-900 mb-1">
+            <h3 className="font-semibold text-info mb-1">
               Votre programme de visites
             </h3>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-info">
               Retrouvez ici les salons auxquels vous souhaitez assister et les nouveautés que vous avez likées pour préparer votre parcours.
             </p>
           </div>
@@ -385,11 +385,11 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
         </div>
       ) : (
         <div className="text-center py-12 bg-white rounded-lg">
-          <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">
+          <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-muted-foreground mb-2">
             Votre agenda est vide
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-muted-foreground mb-6">
             Likez des nouveautés pour les retrouver ici avec leurs salons
           </p>
           <Button asChild>

@@ -17,14 +17,14 @@ const RecentEventsSection = () => {
   const limitedEvents = upcomingEvents?.slice(0, 10) || [];
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-muted">
       <div className="w-full px-6 mx-auto">
         <div className="flex justify-between items-end mb-12">
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
               Événements à venir
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Découvrez les prochains salons professionnels majeurs en France
             </p>
           </div>
@@ -39,12 +39,12 @@ const RecentEventsSection = () => {
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl p-4 animate-pulse">
-                <div className="h-56 bg-gray-200 rounded mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-56 bg-border rounded mb-4"></div>
+                <div className="h-4 bg-border rounded mb-2"></div>
+                <div className="h-4 bg-border rounded w-1/2 mb-4"></div>
                 <div className="space-y-2">
-                  <div className="h-8 bg-gray-200 rounded"></div>
-                  <div className="h-8 bg-gray-200 rounded"></div>
+                  <div className="h-8 bg-border rounded"></div>
+                  <div className="h-8 bg-border rounded"></div>
                 </div>
               </div>
             ))}
@@ -57,7 +57,7 @@ const RecentEventsSection = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500">Aucun événement à venir pour le moment</p>
+            <p className="text-muted-foreground">Aucun événement à venir pour le moment</p>
           </div>
         )}
 

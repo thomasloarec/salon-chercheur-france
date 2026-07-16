@@ -44,7 +44,7 @@ export default function LeadCard({ lead, isPremium }: LeadCardProps) {
                 🤝 Rendez-vous
               </Badge>
             ) : (
-              <Badge className="text-xs border-transparent bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400">
+              <Badge className="text-xs border-transparent bg-info/10 text-info hover:bg-info/10 dark:bg-blue-950/40 dark:text-info">
                 📄 Brochure
               </Badge>
             )}

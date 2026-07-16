@@ -556,7 +556,7 @@ const ParcoursMock = () => {
   const items = [
     { n: 1, name: 'Adoria', loc: 'Hall 3 · Stand C12', obj: 'Innovation', cls: 'bg-primary/15 text-primary' },
     { n: 2, name: 'Inpulse', loc: 'Hall 3 · Stand C40', obj: 'Innovation', cls: 'bg-primary/15 text-primary' },
-    { n: 3, name: 'SwiftPay', loc: 'Hall 5 · Stand E08', obj: 'Paiement', cls: 'bg-blue-50 text-blue-700' },
+    { n: 3, name: 'SwiftPay', loc: 'Hall 5 · Stand E08', obj: 'Paiement', cls: 'bg-info/10 text-info' },
     { n: 4, name: 'BioNature', loc: 'Hall 1 · Stand A22', obj: 'Bio', cls: 'bg-emerald-50 text-emerald-700' },
   ];
   return (

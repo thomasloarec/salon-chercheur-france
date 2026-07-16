@@ -43,13 +43,13 @@ const DeleteAccountModal = ({ isOpen, onClose }: DeleteAccountModalProps) => {
     <Dialog open={isOpen} onOpenChange={resetModal}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-red-600">Supprimer mon compte</DialogTitle>
+          <DialogTitle className="text-danger">Supprimer mon compte</DialogTitle>
         </DialogHeader>
         
         {!doubleConfirmation ? (
           <div className="space-y-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm">
+            <div className="bg-danger-surface border border-danger/30 rounded-lg p-4">
+              <p className="text-danger text-sm">
                 <strong>Attention :</strong> Cette action est irréversible. Toutes vos données seront définitivement supprimées.
               </p>
             </div>
@@ -79,14 +79,14 @@ const DeleteAccountModal = ({ isOpen, onClose }: DeleteAccountModalProps) => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm font-medium">
+            <div className="bg-danger-surface border border-danger/30 rounded-lg p-4">
+              <p className="text-danger text-sm font-medium">
                 Êtes-vous absolument certain de vouloir supprimer votre compte ?
               </p>
-              <p className="text-red-700 text-sm mt-2">
+              <p className="text-danger text-sm mt-2">
                 Cette action supprimera définitivement :
               </p>
-              <ul className="text-red-700 text-sm mt-1 list-disc list-inside">
+              <ul className="text-danger text-sm mt-1 list-disc list-inside">
                 <li>Votre profil et vos informations personnelles</li>
                 <li>Vos événements favoris</li>
                 <li>Vos abonnements aux newsletters</li>

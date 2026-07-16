@@ -305,7 +305,7 @@ export default function ExhibitorsSidebar({
         className={
           isGrid
             ? 'flex flex-col rounded-lg border bg-white hover:border-primary/40 hover:shadow-sm transition-all'
-            : 'rounded-lg hover:bg-gray-50 transition-colors'
+            : 'rounded-lg hover:bg-muted transition-colors'
         }
       >
         <button
@@ -315,8 +315,8 @@ export default function ExhibitorsSidebar({
           <div
             className={
               isGrid
-                ? 'w-10 h-10 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center p-1'
-                : 'w-6 h-6 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center'
+                ? 'w-10 h-10 bg-muted rounded flex-shrink-0 flex items-center justify-center p-1'
+                : 'w-6 h-6 bg-border rounded flex-shrink-0 flex items-center justify-center'
             }
           >
             {resolvedLogo ? (
@@ -326,20 +326,20 @@ export default function ExhibitorsSidebar({
                 className="w-full h-full object-contain rounded"
               />
             ) : (
-              <Building2 className={isGrid ? 'w-5 h-5 text-gray-400' : 'w-4 h-4 text-gray-400'} />
+              <Building2 className={isGrid ? 'w-5 h-5 text-muted-foreground' : 'w-4 h-4 text-muted-foreground'} />
             )}
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm text-gray-900 truncate">
+            <div className="font-medium text-sm text-foreground truncate">
               {exhibitor.exhibitor_name || exhibitor.name}
             </div>
             {standText && (
-              <p className="text-xs text-gray-500 truncate">{standText}</p>
+              <p className="text-xs text-muted-foreground truncate">{standText}</p>
             )}
           </div>
 
-          {!isGrid && <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />}
+          {!isGrid && <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0" />}
         </button>
         {/* Phase 4B — discreet crawlable link to the full public profile */}
         {exhibitor.public_slug && !exhibitor.is_test && (
@@ -413,7 +413,7 @@ export default function ExhibitorsSidebar({
         {/* Search - affiché seulement s'il y a des exposants */}
         {total > 0 && (
           <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher un exposant..."
               value={searchQuery}
@@ -443,11 +443,11 @@ export default function ExhibitorsSidebar({
             ))
           ) : error ? (
             <div className="text-center py-4 col-span-full">
-              <p className="text-sm text-red-600">Erreur lors du chargement</p>
+              <p className="text-sm text-danger">Erreur lors du chargement</p>
             </div>
           ) : preview.length === 0 && debouncedSearch ? (
             <div className="text-center py-4 col-span-full">
-              <p className="text-sm text-gray-500">Aucun exposant trouvé</p>
+              <p className="text-sm text-muted-foreground">Aucun exposant trouvé</p>
             </div>
           ) : preview.length > 0 ? (
             preview.map((exhibitor) => renderExhibitorCard(exhibitor))
