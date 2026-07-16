@@ -307,7 +307,7 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
                     <span className="text-xs text-muted-foreground">Stand {m.stand}</span>
                   )}
                   {m.needsReview && (
-                    <span className="text-[10px] font-medium text-warning">à vérifier</span>
+                    <span className="text-[10px] font-medium text-warning-foreground">à vérifier</span>
                   )}
                 </div>
                 </span>
