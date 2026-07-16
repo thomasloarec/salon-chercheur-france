@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sectorIconMap, FallbackIcon } from "./sectorIconMap";
-import { sectorColorMap, sectorColorFallback } from "./sectorColorMap";
 
 interface Sector {
   id: string;
@@ -130,7 +129,6 @@ export function SectorIconBar({
             {sectors.map((sector) => {
               const IconComponent = sectorIconMap[sector.slug] ?? FallbackIcon;
               const active = selected.includes(sector.slug);
-              const colors = sectorColorMap[sector.slug] ?? sectorColorFallback;
 
               return (
                 <button
@@ -147,21 +145,21 @@ export function SectorIconBar({
                     className={cn(
                       "inline-flex h-14 w-14 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
                       active
-                        ? `${colors.bgActive} ${colors.borderActive}`
-                        : `bg-background border-border ${colors.bgHover} hover:shadow-md hover:scale-105`
+                        ? "bg-primary border-primary"
+                        : "bg-background border-border hover:bg-muted hover:shadow-md hover:scale-105"
                     )}
                   >
                     <IconComponent 
                       className={cn(
                         "h-6 w-6 transition-colors",
-                        active ? colors.iconActive : "text-foreground/70"
+                        active ? "text-primary-foreground" : "text-foreground/70"
                       )} 
                     />
                   </span>
                   <span
                     className={cn(
                       "text-center leading-tight transition-colors line-clamp-2",
-                      active ? colors.textActive : `text-foreground/80 ${colors.textHover}`
+                      active ? "text-primary-foreground" : "text-foreground/80 group-hover:text-primary"
                     )}
                   >
                     {sector.name}
