@@ -28,7 +28,7 @@ export default {
 		extend: {
 			fontFamily: {
 				display: ['"Playfair Display"', 'Georgia', 'serif'],
-				body: ['"Source Sans 3"', 'Inter', 'system-ui', 'sans-serif'],
+				body: ['"Google Sans Flex Variable"', '"Google Sans Flex"', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -78,12 +78,37 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+
+				/* ─── NOUVEAUX RÔLES — LOT 1 ─────────────────────────────────
+				   info    : donnée, informationnel non cliquable. Jamais un bouton.
+				   surface : mise en avant. `sky` ne porte JAMAIS de texte clair.
+				   inverse : sections navy. Ce n'est PAS un dark mode.
+				   ──────────────────────────────────────────────────────────── */
+				info: {
+					DEFAULT: 'hsl(var(--info))',
+					foreground: 'hsl(var(--info-foreground))',
+					surface: 'hsl(var(--info-surface))'
+				},
+				surface: {
+					accent: 'hsl(var(--surface-accent))',
+					'accent-foreground': 'hsl(var(--surface-accent-foreground))',
+					inverse: 'hsl(var(--surface-inverse))'
+				},
+				inverse: {
+					DEFAULT: 'hsl(var(--on-inverse))',
+					muted: 'hsl(var(--on-inverse-muted))',
+					primary: 'hsl(var(--primary-inverse))'
+				},
+				line: 'hsl(var(--line))',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			transitionTimingFunction: {
+				'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
 			},
 			keyframes: {
 				'accordion-down': {

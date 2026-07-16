@@ -9,61 +9,92 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    /* Gris foncé standard pour le texte */
-    --foreground: 0 0% 15%;
+    /* ═══════════════════════════════════════════════════════════════════
+       LOTEXPO — PRIMITIVES
+       Les six couleurs de la charte. Format HSL sans hsl(), attendu par shadcn.
+       ═══════════════════════════════════════════════════════════════════ */
+    --lx-navy:       225 59% 11%;    /* #0b132b */
+    --lx-violet:     249 100% 66%;   /* #6b51ff */
+    --lx-blue:       223 100% 57%;   /* #2563ff */
+    --lx-sky:        203 100% 86%;   /* #b6e3ff */
+    --lx-grey:       220 14% 91%;    /* #e6e8ec */
+    --lx-white:      0 0% 100%;      /* #ffffff */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 15%;
+    /* ─── DÉRIVÉES ──────────────────────────────────────────────────── */
+    --lx-navy-60:    225 18% 44%;    /* #5c6684 — 5,69:1 sur blanc */
+    --lx-line:       220 14% 59%;    /* #8892a5 — 3,13:1 sur blanc */
+    --lx-violet-up:  249 100% 72%;   /* #8670ff — 5,06:1 sur navy */
+    --lx-on-navy-60: 222 25% 70%;    /* #9fabc6 — 7,98:1 sur navy */
+    --lx-danger:     352 74% 50%;    /* #de213a — 4,79:1 sur blanc */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 15%;
+    /* ═══════════════════════════════════════════════════════════════════
+       SÉMANTIQUE — contrat shadcn.
+       ═══════════════════════════════════════════════════════════════════ */
+    --background: var(--lx-white);
+    --foreground: var(--lx-navy);
 
-    /* Bleu principal #04316d */
-    --primary: 218 95% 22%;
-    --primary-foreground: 0 0% 100%;
+    --card: var(--lx-white);
+    --card-foreground: var(--lx-navy);
 
-    /* Orange secondaire pâle #ffe8d9 */
-    --secondary: 20 100% 93%;
-    --secondary-foreground: 0 0% 15%;
+    --popover: var(--lx-white);
+    --popover-foreground: var(--lx-navy);
 
-    /* Bleu secondaire pâle #d4d6df */
-    --muted: 224 12% 85%;
-    --muted-foreground: 0 0% 40%;
+    --primary: var(--lx-violet);
+    --primary-foreground: var(--lx-white);
 
-    /* Orange principal #ff751f */
-    --accent: 24 100% 56%;
-    --accent-foreground: 0 0% 100%;
+    --secondary: var(--lx-grey);
+    --secondary-foreground: var(--lx-navy);
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --muted: var(--lx-grey);
+    --muted-foreground: var(--lx-navy-60);
 
-    /* Gris pâle #cecece */
-    --border: 0 0% 81%;
-    --input: 0 0% 81%;
-    --ring: 218 95% 22%;
+    --accent: var(--lx-violet);
+    --accent-foreground: var(--lx-white);
+
+    --destructive: var(--lx-danger);
+    --destructive-foreground: var(--lx-white);
+
+    --border: var(--lx-grey);
+    --input: var(--lx-line);
+    --ring: var(--lx-violet);
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 15%;
-    --sidebar-primary: 218 95% 22%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 20 100% 93%;
-    --sidebar-accent-foreground: 0 0% 15%;
-    --sidebar-border: 0 0% 81%;
-    --sidebar-ring: 24 100% 56%;
+    /* ─── NOUVEAUX RÔLES ─────────────────────────────────────────────── */
+    --info: var(--lx-blue);
+    --info-foreground: var(--lx-white);
+    --info-surface: 223 100% 96%;
 
-    /* Custom colors for professional events platform */
-    --business-blue: 218 95% 22%;
-    --accent-orange: 24 100% 56%;
-    --light-gray: 0 0% 81%;
-    --success-green: 142 71% 45%;
+    --surface-accent: var(--lx-sky);
+    --surface-accent-foreground: var(--lx-navy);
 
-    /* Stat bubble tokens */
-    --bubble: 214 60% 96%;
-    --bubble-foreground: 218 95% 22%;
-    --bubble-border: 214 50% 89%;
+    --surface-inverse: var(--lx-navy);
+    --on-inverse: var(--lx-white);
+    --on-inverse-muted: var(--lx-on-navy-60);
+    --primary-inverse: var(--lx-violet-up);
+
+    --line: var(--lx-line);
+
+    /* ─── SIDEBAR ────────────────────────────────────────────────────── */
+    --sidebar-background: 220 14% 98%;
+    --sidebar-foreground: var(--lx-navy);
+    --sidebar-primary: var(--lx-violet);
+    --sidebar-primary-foreground: var(--lx-white);
+    --sidebar-accent: var(--lx-grey);
+    --sidebar-accent-foreground: var(--lx-navy);
+    --sidebar-border: var(--lx-grey);
+    --sidebar-ring: var(--lx-violet);
+
+    /* ─── BULLES DE STATISTIQUE ──────────────────────────────────────── */
+    --bubble: 203 100% 96%;
+    --bubble-foreground: var(--lx-navy);
+    --bubble-border: var(--lx-sky);
+
+    /* ─── LEGACY — à purger au Lot 2 ─────────────────────────────────── */
+    --business-blue: var(--lx-navy);
+    --accent-orange: var(--lx-violet);
+    --light-gray: var(--lx-grey);
+    --success-green: var(--lx-blue);
   }
 
   .dark {
@@ -114,6 +145,17 @@
     @apply bg-background text-foreground;
     @apply font-body;
     /* font-body = Source Sans 3 (cf. tailwind.config.ts), avec pile de secours intégrée */
+  }
+
+  /* Les primitives shadcn détournent --accent en surface de survol de menu.
+     Lotexpo s'en sert comme accent de marque (430 usages contre 58).
+     On restitue le rôle shadcn localement : les variables CSS cascadent,
+     donc redéfinir --accent sur les seuls conteneurs Radix suffit.
+     Passerelle jusqu'au Lot 2, qui donnera un token propre à ces 58 usages. */
+  [role="menu"], [role="listbox"], [cmdk-list],
+  [data-radix-menu-content], [data-radix-select-content] {
+    --accent: 220 14% 94%;
+    --accent-foreground: var(--lx-navy);
   }
 }
 
@@ -173,11 +215,11 @@
 
 /* Gradient backgrounds */
 .gradient-hero {
-  background: linear-gradient(135deg, hsl(var(--business-blue)) 0%, hsl(218, 95%, 30%) 100%);
+  background: linear-gradient(135deg, hsl(var(--lx-navy)) 0%, hsl(233 45% 20%) 100%);
 }
 
 .gradient-card {
-  background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+  background: linear-gradient(145deg, hsl(var(--lx-white) / 0.95) 0%, hsl(220 14% 98% / 0.95) 100%);
 }
 
 /* MapLibre GL overrides */
