@@ -729,7 +729,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                         metaStatus === 'good'
                           ? 'text-info'
                           : metaStatus === 'short'
-                            ? 'text-warning'
+                            ? 'text-warning-foreground'
                             : 'text-destructive'
                       }`}>
                         {metaStatus === 'good' && <><Check className="h-3 w-3" /> Longueur idéale</>}
