@@ -23,7 +23,7 @@ const Footer = () => {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <LotexpoWordmark aria-label="Lotexpo" className="h-8 mb-4 w-auto text-inverse [--logo-accent:hsl(var(--primary-inverse))]" />
-            <p className="text-primary-foreground/70 mb-4">
+            <p className="text-inverse-muted mb-4">
               Lotexpo centralise les salons professionnels en France et aide les entreprises à mieux préparer, suivre et valoriser leur présence sur les événements.
             </p>
           </div>
@@ -82,7 +82,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-inverse/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-primary-foreground/70 text-sm">
+            <p className="text-inverse-muted text-sm">
               © {new Date().getFullYear()} Lotexpo. Tous droits réservés.
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 md:mt-0">
