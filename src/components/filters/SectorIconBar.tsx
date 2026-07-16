@@ -110,7 +110,7 @@ export function SectorIconBar({
                 className={cn(
                   "inline-flex h-14 w-14 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
                   allActive
-                    ? "bg-gradient-to-br from-blue-200/60 via-purple-200/60 to-pink-200/60 border-info/30 dark:from-blue-900/40 dark:via-purple-900/40 dark:to-pink-900/40"
+                    ? "bg-gradient-to-br from-info/10 via-primary/10 to-primary/10 border-info/30"
                     : "bg-background border-border hover:bg-muted hover:shadow-md hover:scale-105"
                 )}
               >
