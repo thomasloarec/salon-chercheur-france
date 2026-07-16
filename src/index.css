@@ -13,11 +13,11 @@
        LOTEXPO — PRIMITIVES
        Les six couleurs de la charte. Format HSL sans hsl(), attendu par shadcn.
        ═══════════════════════════════════════════════════════════════════ */
-    --lx-navy:       225 59% 11%;    /* #0b132b */
-    --lx-violet:     249 100% 66%;   /* #6b51ff */
-    --lx-blue:       223 100% 57%;   /* #2563ff */
-    --lx-sky:        203 100% 86%;   /* #b6e3ff */
-    --lx-grey:       220 14% 91%;    /* #e6e8ec */
+    --lx-navy:       225 59.3% 10.6%;   /* #0b132b */
+    --lx-violet:     249 100% 65.9%;    /* #6b51ff */
+    --lx-blue:       222.9 100% 57.3%;  /* #2563ff */
+    --lx-sky:        203 100% 85.7%;    /* #b6e3ff */
+    --lx-grey:       220 13.6% 91.4%;   /* #e6e8ec */
     --lx-white:      0 0% 100%;      /* #ffffff */
 
     /* ─── DÉRIVÉES ──────────────────────────────────────────────────── */
