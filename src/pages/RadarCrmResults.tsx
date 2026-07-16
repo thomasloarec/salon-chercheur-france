@@ -1200,10 +1200,10 @@ const RelationshipSelect: React.FC<{
 
 /** Nudge cockpit : incite à compléter le profil d'offre (disparaît une fois rempli). */
 const OfferProfileNudge: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) => (
-  <Card className="border-primary/30 bg-primary/5 shadow-none">
+  <Card className="border-primary/30 bg-muted shadow-none">
     <CardContent className="py-4 px-5 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="flex items-start gap-3 min-w-0 flex-1">
-        <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <Sparkles className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
         <p className="text-sm text-foreground">
           Complétez votre profil d'offre pour des questions de terrain personnalisées.
         </p>
@@ -1929,8 +1929,8 @@ const EmptyText: React.FC<{ label: string }> = ({ label }) => (
 const SeatTrialBanner: React.FC<{ daysLeft: number | null }> = ({ daysLeft }) => {
   const d = Math.max(0, daysLeft ?? 0);
   return (
-    <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 flex items-start gap-3">
-      <Clock className="h-5 w-5 mt-0.5 shrink-0 text-primary" />
+    <div className="rounded-lg border border-primary/30 bg-muted px-4 py-3 flex items-start gap-3">
+      <Clock className="h-5 w-5 mt-0.5 shrink-0 text-foreground" />
       <div className="text-sm text-foreground">
         <p>
           <span className="font-semibold">Essai</span> : {d} jour{d > 1 ? 's' : ''} restant{d > 1 ? 's' : ''}.

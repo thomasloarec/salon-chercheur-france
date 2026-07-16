@@ -752,8 +752,8 @@ const RadarCrmPage: React.FC = () => {
             <Card className="bg-card">
               <CardContent className="pt-6 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileCheck2 className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                    <FileCheck2 className="h-5 w-5 text-foreground" />
                   </div>
                   <div>
                     <p className="font-medium">{parsed.fileName}</p>
@@ -836,10 +836,10 @@ const RadarCrmPage: React.FC = () => {
 
             {/* Auth gate / submit */}
             {!authLoading && !user && (
-              <Card className="border-primary/30 bg-primary/5">
+              <Card className="border-primary/30 bg-muted">
                 <CardContent className="pt-6 space-y-4">
                   <div className="flex items-start gap-3">
-                    <Lock className="h-5 w-5 mt-0.5 text-primary" />
+                    <Lock className="h-5 w-5 mt-0.5 text-foreground" />
                     <div>
                       <h3 className="font-semibold">Votre analyse est prête</h3>
                       <p className="text-sm text-muted-foreground">

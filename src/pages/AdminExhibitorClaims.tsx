@@ -187,8 +187,8 @@ export default function AdminExhibitorClaims() {
                   {requests?.map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Building className="h-6 w-6 text-primary" />
+                        <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                          <Building className="h-6 w-6 text-foreground" />
                         </div>
                         
                         <div>

@@ -154,8 +154,8 @@ export default function Exposants() {
 
             {/* Solution */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-                <Check className="h-5 w-5 text-primary" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-primary/20">
+                <Check className="h-5 w-5 text-foreground" />
                 <span className="text-sm font-semibold text-primary">La solution Lotexpo</span>
               </div>
               
@@ -204,8 +204,8 @@ export default function Exposants() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Sparkles className="h-6 w-6 text-primary" />
+              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Sparkles className="h-6 w-6 text-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
                 Être découvert avant le jour J
@@ -216,8 +216,8 @@ export default function Exposants() {
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Target className="h-6 w-6 text-primary" />
+              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Target className="h-6 w-6 text-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
                 Donner une vraie raison de passer vous voir
@@ -228,8 +228,8 @@ export default function Exposants() {
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Users className="h-6 w-6 text-primary" />
+              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
                 Parler aux visiteurs déjà intéressés par le salon
@@ -240,8 +240,8 @@ export default function Exposants() {
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <ShieldCheck className="h-6 w-6 text-primary" />
+              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <ShieldCheck className="h-6 w-6 text-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
                 Arriver avec moins d'incertitude
@@ -468,8 +468,8 @@ export default function Exposants() {
             {/* Startup */}
             <Card>
               <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-foreground" />
                 </div>
                 <h3 className="text-xl font-bold">Startup innovante</h3>
                 <p className="text-sm text-muted-foreground">
@@ -487,8 +487,8 @@ export default function Exposants() {
             {/* PME établie */}
             <Card>
               <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-foreground" />
                 </div>
                 <h3 className="text-xl font-bold">PME établie</h3>
                 <p className="text-sm text-muted-foreground">
@@ -506,8 +506,8 @@ export default function Exposants() {
             {/* Grande entreprise */}
             <Card>
               <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                  <Users className="h-6 w-6 text-foreground" />
                 </div>
                 <h3 className="text-xl font-bold">Grande entreprise</h3>
                 <p className="text-sm text-muted-foreground">

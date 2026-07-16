@@ -61,8 +61,8 @@ const BlogNewsletterCTA = () => {
         <div className="relative p-8 md:p-10">
           {/* Header */}
           <div className="flex items-center gap-3 mb-2">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
-              <Mail className="h-5 w-5 text-primary" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-muted">
+              <Mail className="h-5 w-5 text-foreground" />
             </div>
             <span className="text-xs font-semibold uppercase tracking-widest text-primary">
               Newsletter gratuite

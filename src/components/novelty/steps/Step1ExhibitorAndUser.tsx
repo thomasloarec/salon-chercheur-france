@@ -492,8 +492,8 @@ export default function Step1ExhibitorAndUser({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Building className="h-5 w-5 text-primary" />
+                    <div className="p-2 bg-muted rounded-lg">
+                      <Building className="h-5 w-5 text-foreground" />
                     </div>
                     <div>
                       <h4 className="font-medium">{selectedExhibitor.name}</h4>
@@ -632,9 +632,9 @@ export default function Step1ExhibitorAndUser({
 
               {/* Détection live : entreprise déjà présente sur Lotexpo */}
               {confirmedLegacyMatch ? (
-                <div className="rounded-lg border border-primary bg-primary/5 p-4 space-y-3">
+                <div className="rounded-lg border border-primary bg-muted p-4 space-y-3">
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium">Entreprise sélectionnée</p>
                       <p className="text-sm text-muted-foreground mt-0.5">

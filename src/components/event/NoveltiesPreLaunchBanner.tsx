@@ -27,8 +27,8 @@ export function NoveltiesPreLaunchBanner({
     <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/5">
       <div className="relative p-8 md:p-12 text-center">
         {/* Icône principale */}
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
-          <Sparkles className="h-8 w-8 text-primary animate-pulse" />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
+          <Sparkles className="h-8 w-8 text-foreground animate-pulse" />
         </div>
 
         {/* Titre principal */}

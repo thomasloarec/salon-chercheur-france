@@ -37,8 +37,8 @@ export default function LeadCaptureCard({
           <div className="flex items-start gap-4">
             {/* Icon */}
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <ScanQrCode className="h-6 w-6 text-primary" />
+              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                <ScanQrCode className="h-6 w-6 text-foreground" />
               </div>
             </div>
 
