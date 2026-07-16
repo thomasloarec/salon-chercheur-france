@@ -671,7 +671,7 @@ const RadarCrmPage: React.FC = () => {
 
       {/* 9. Connecteurs */}
       <section className="max-w-6xl mx-auto px-4 py-8 md:py-12">
-        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-primary/5 p-8 md:p-10">
+        <div className="rounded-2xl border bg-gradient-to-br from-primary/5 to-info/5 p-8 md:p-10">
           <div className="max-w-3xl mb-8">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Démarrez tout de suite</p>
             <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">

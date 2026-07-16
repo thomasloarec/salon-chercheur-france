@@ -37,7 +37,7 @@ const BlogNewsletterCTA = () => {
   if (subscribed) {
     return (
       <section className="mx-auto px-4 max-w-[720px] mb-14">
-        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/5 to-primary/5 p-8 md:p-10 text-center">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-info/5 to-transparent p-8 md:p-10 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.08),transparent_50%)]" />
           <div className="relative">
             <CheckCircle2 className="h-12 w-12 text-foreground mx-auto mb-4" />
@@ -55,7 +55,7 @@ const BlogNewsletterCTA = () => {
 
   return (
     <section className="mx-auto px-4 max-w-[720px] mb-14">
-      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/5 to-primary/5">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-info/5 to-transparent">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.08),transparent_50%)]" />
 
         <div className="relative p-8 md:p-10">
