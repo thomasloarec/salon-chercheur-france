@@ -171,69 +171,115 @@ const Home = () => {
 
       <main className="flex-1">
         {/* ============================= HERO ============================= */}
-        <section className="relative overflow-hidden text-center py-20 md:py-24">
+        <section className="relative overflow-hidden">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 z-0"
             style={{
-              background:
-                'radial-gradient(60% 55% at 50% 0%, hsl(var(--secondary) / 0.75) 0%, hsl(var(--secondary) / 0) 62%), radial-gradient(38% 40% at 84% 8%, hsl(var(--accent) / 0.10) 0%, hsl(var(--accent) / 0) 70%)',
+              backgroundImage: 'url(/home-texture-light.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.7,
             }}
           />
-          <div className="relative z-10 max-w-5xl mx-auto px-6">
-            <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-7">
-              <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
-                Nouveau
+          {/* Voile horizontal — desktop */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0 hidden lg:block"
+            style={{ background: 'linear-gradient(90deg, hsl(var(--background)) 30%, transparent 75%)' }}
+          />
+          {/* Voile vertical — mobile/tablette (pas d'image à droite) */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0 lg:hidden"
+            style={{ background: 'linear-gradient(180deg, hsl(var(--background) / 0.6), hsl(var(--background)))' }}
+          />
+
+          <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 md:py-20 grid grid-cols-1 lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
+            {/* COLONNE GAUCHE : contenu hero */}
+            <Reveal className="text-left">
+              <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-7">
+                <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
+                  Nouveau
+                </span>
+                Les salons professionnels, lus par l'IA
               </span>
-              Les salons professionnels, lus par l'IA
-            </span>
 
-            <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-primary max-w-[28ch] mx-auto text-balance">
-              Toutes les opportunités des salons professionnels,
-              <span className="block text-primary">révélées par l'IA.</span>
-            </h1>
+              <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-primary max-w-[28ch] text-balance">
+                Toutes les opportunités des salons professionnels,
+                <span className="block text-primary">révélées par l'IA.</span>
+              </h1>
 
-            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-[56ch] mx-auto">
-              L'information sur les salons est{' '}
-              <b className="text-foreground font-semibold">partout, donc introuvable.</b>{' '}
-              L'IA de Lotexpo lit tout (salons, exposants, secteurs) et vous donne la réponse qui compte.
-            </p>
-
-            {/* Searchbar */}
-            <form onSubmit={submitSearch} className="max-w-[680px] mx-auto mt-9">
-              <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-border bg-background shadow-lg pl-5 pr-2 py-2 focus-within:border-primary transition-colors">
-                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  placeholder={placeholder}
-                  aria-label="Décrivez votre besoin"
-                  className="flex-1 min-w-0 bg-transparent border-0 outline-none text-foreground placeholder:text-foreground/70 text-base py-2.5"
-                />
-                <Button
-                  type="submit"
-                  className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 rounded-xl"
-                >
-                  <Sparkles className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Chercher avec l'IA</span>
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground mt-3.5 text-left px-0.5">
-                Acheteur, exposant, commercial ou organisateur, posez votre question comme à un humain.
+              <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-[56ch]">
+                L'information sur les salons est{' '}
+                <b className="text-foreground font-semibold">partout, donc introuvable.</b>{' '}
+                L'IA de Lotexpo lit tout (salons, exposants, secteurs) et vous donne la réponse qui compte.
               </p>
-            </form>
 
-            <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
-              <span className="text-sm text-muted-foreground">ou</span>
-              <Link to="/salons">
-                <Button variant="outline" className="rounded-xl">
-                  Voir tous les salons
-                </Button>
-              </Link>
-            </div>
+              {/* Searchbar */}
+              <form onSubmit={submitSearch} className="max-w-[680px] mt-9">
+                <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-border bg-background shadow-lg pl-5 pr-2 py-2 focus-within:border-primary transition-colors">
+                  <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    placeholder={placeholder}
+                    aria-label="Décrivez votre besoin"
+                    className="flex-1 min-w-0 bg-transparent border-0 outline-none text-foreground placeholder:text-foreground/70 text-base py-2.5"
+                  />
+                  <Button
+                    type="submit"
+                    className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 rounded-xl"
+                  >
+                    <Sparkles className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Chercher avec l'IA</span>
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-3.5 text-left px-0.5">
+                  Acheteur, exposant, commercial ou organisateur, posez votre question comme à un humain.
+                </p>
+              </form>
+
+              <div className="flex items-center justify-start gap-4 mt-6 flex-wrap">
+                <span className="text-sm text-muted-foreground">ou</span>
+                <Link to="/salons">
+                  <Button variant="outline" className="rounded-xl">
+                    Voir tous les salons
+                  </Button>
+                </Link>
+              </div>
+            </Reveal>
+
+            {/* COLONNE DROITE : image */}
+            <Reveal delay={120} className="hidden lg:block">
+              <div className="relative">
+                <div className="relative rounded-[22px] overflow-hidden shadow-[0_30px_70px_-30px_rgba(11,19,43,0.45)]">
+                  <img
+                    src="/home-hero.jpg"
+                    alt="Visiteuse sur un salon professionnel consultant Lotexpo sur son téléphone"
+                    className="w-full h-[440px] object-cover"
+                    loading="eager"
+                  />
+                </div>
+                <div
+                  aria-hidden
+                  className="absolute -right-4 -bottom-4 w-20 h-20 rounded-[20px] rotate-12 shadow-[0_20px_44px_-16px_hsl(var(--primary)/0.6)]"
+                  style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--info)))' }}
+                />
+                <div className="absolute -left-6 bottom-8 bg-background rounded-[14px] px-4 py-3 shadow-[0_18px_40px_-16px_rgba(11,19,43,0.32)] flex items-center gap-3 max-w-[230px]">
+                  <span className="w-9 h-9 rounded-[10px] bg-primary/10 text-primary grid place-items-center shrink-0">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <b className="text-[13px] block text-foreground">Réponse trouvée</b>
+                    <span className="text-[11.5px] text-muted-foreground">en langage naturel</span>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
           </div>
         </section>
 
@@ -249,15 +295,16 @@ const Home = () => {
                 { node: <CountUp target={exposantsTarget} />, lbl: 'fiches exposants lues et structurées par l\u2019IA' },
                 { node: <span className="text-2xl md:text-3xl">France entière</span>, lbl: 'tous secteurs confondus' },
               ].map((c, i) => (
-                <div
+                <Reveal
                   key={i}
+                  delay={i * 80}
                   className={`text-center sm:relative ${i < 2 ? 'sm:after:content-[""] sm:after:absolute sm:after:-right-5 sm:after:top-[12%] sm:after:h-[76%] sm:after:w-px sm:after:bg-border' : ''}`}
                 >
                   <div className="heading-display text-[clamp(2rem,3.4vw,2.9rem)] text-primary leading-none">
                     {c.node}
                   </div>
                   <div className="mt-2.5 text-muted-foreground font-medium leading-snug">{c.lbl}</div>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -269,9 +316,16 @@ const Home = () => {
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
-              background:
-                'radial-gradient(50% 45% at 80% 0%, hsl(var(--accent) / 0.14), transparent 60%), radial-gradient(45% 40% at 10% 100%, hsl(var(--accent) / 0.08), transparent 60%)',
+              backgroundImage: 'url(/home-texture-plexus.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.28,
             }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{ background: 'radial-gradient(80% 60% at 50% 40%, transparent, hsl(var(--surface-inverse) / 0.85))' }}
           />
           <div className="relative max-w-6xl mx-auto px-6">
             <Reveal className="max-w-[760px] mx-auto text-center mb-[60px]">
@@ -290,13 +344,13 @@ const Home = () => {
               <div className="flex flex-col md:flex-row items-stretch gap-4 md:gap-0">
                 {LOOP_CARDS.flatMap((c, i) => {
                   const card = (
-                    <div key={c.title} className="flex-1 rounded-2xl border border-primary-foreground/15 bg-primary-foreground/5 p-6 text-left">
+                    <Reveal key={c.title} delay={i * 80} className="flex-1 rounded-2xl border border-primary-foreground/15 bg-primary-foreground/5 p-6 text-left">
                       <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-inverse/10 text-inverse mb-4">
                         <c.icon className="h-5 w-5" />
                       </div>
                       <h3 className="heading-display text-xl mb-2">{c.title}</h3>
                       <p className="text-sm text-primary-foreground/70 leading-relaxed">{c.text}</p>
-                    </div>
+                    </Reveal>
                   );
                   if (i < LOOP_CARDS.length - 1) {
                     return [
@@ -359,12 +413,12 @@ const Home = () => {
         <section className="bg-secondary/30 border-t border-border">
           <div className="max-w-6xl mx-auto px-6 py-20">
             <div className="flex items-end justify-between gap-4 mb-10">
-              <div>
+              <Reveal>
                 <div className="section-rule" />
                 <h2 className="heading-display text-[clamp(1.8rem,3vw,2.6rem)] text-primary">
                   Prochains salons
                 </h2>
-              </div>
+              </Reveal>
               <Link to="/salons" className="hidden sm:block">
                 <Button variant="outline">
                   Voir tous les salons
@@ -415,10 +469,25 @@ const Home = () => {
 
         {/* ============================= FINAL CTA ============================= */}
         <section
-          className="text-primary-foreground text-center py-24"
+          className="relative overflow-hidden text-primary-foreground text-center py-24"
           style={{ background: 'linear-gradient(160deg, hsl(var(--primary)), hsl(218 95% 14%))' }}
         >
-          <Reveal className="max-w-3xl mx-auto px-6">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: 'url(/home-texture-wave.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.3,
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{ background: 'radial-gradient(60% 70% at 50% 50%, hsl(var(--primary) / 0.55), hsl(218 95% 14% / 0.9))' }}
+          />
+          <Reveal className="relative z-10 max-w-3xl mx-auto px-6">
             <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">Le salon redevient lisible.</h2>
             <p className="mt-4 text-lg text-primary-foreground/80 max-w-[52ch] mx-auto">
               Trouvez le vôtre, préparez-le, faites-le rayonner, quel que soit votre rôle dans
@@ -651,7 +720,7 @@ const NoveltyMock = () => (
     </span>
     <div
       className="h-[150px] rounded-xl flex items-center justify-center text-primary mb-4 overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, hsl(var(--accent) / 0.25), hsl(var(--secondary)))' }}
+      style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.25), hsl(var(--secondary)))' }}
     >
       <Rocket className="h-12 w-12 opacity-50" />
     </div>
