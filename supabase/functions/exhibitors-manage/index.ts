@@ -2240,46 +2240,10 @@ async function sendExhibitorEmail(params: {
   subject: string;
   html: string;
 }): Promise<{ success: boolean; status?: number; error?: string }> {
-  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-  const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'Lotexpo <admin@lotexpo.com>'
-
-  console.log('📧 Sending email', {
-    to: params.to,
-    subject: params.subject,
-    from: resendFromEmail,
-    hasApiKey: !!RESEND_API_KEY,
-    apiKeyPrefix: RESEND_API_KEY?.substring(0, 8) ?? 'MISSING',
-  })
-
-  if (!RESEND_API_KEY) {
-    console.error('❌ RESEND_API_KEY is not set')
-    return { success: false, error: 'RESEND_API_KEY missing' }
-  }
-
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: resendFromEmail,
-        to: [params.to],
-        subject: params.subject,
-        html: params.html,
-      }),
-    })
-
-    const body = await res.text()
-
-    if (!res.ok) {
-      console.error(`❌ Email send failed [${res.status}]:`, body)
-      return { success: false, status: res.status, error: body }
-    }
-
-    console.log(`📧 Email sent successfully to ${params.to} [${res.status}]`)
-    return { success: true, status: res.status }
+    const { id } = await sendResendEmail({ to: params.to, subject: params.subject, html: params.html })
+    console.log(`📧 Email sent successfully to ${params.to} (${id})`)
+    return { success: true }
   } catch (err) {
     console.error('❌ Email send exception:', err)
     return { success: false, error: String(err) }
