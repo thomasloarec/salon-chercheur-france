@@ -1467,18 +1467,16 @@ Deno.serve(async (req) => {
         const emailResult = await sendExhibitorEmail({
           to: user_email,
           subject: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">Vous avez été invité sur Lotexpo</h1>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                <strong>${inviterName}</strong> vous a invité à devenir ${role} de <strong>${exhibitorName}</strong>.
-              </p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Créer mon compte et rejoindre l'équipe</a>
-              </div>
-              <p style="color: #888; font-size: 13px;">Lien valable 7 jours.</p>
-            </div>
-          `,
+          html: renderEmailShell({
+            title: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
+            preheader: `${inviterName} vous invite à gérer ${exhibitorName}.`,
+            bodyBlocks: [
+              heading(`Vous avez été invité sur Lotexpo`),
+              paragraph(`${inviterName} vous a invité à devenir ${role} de ${exhibitorName}.`),
+            ],
+            cta: { label: `Créer mon compte et rejoindre l'équipe`, href: inviteUrl },
+            footer: { extraHtml: `Lien valable 7 jours.` },
+          }),
         })
 
         console.log('📧 owner_add_member email result:', {
