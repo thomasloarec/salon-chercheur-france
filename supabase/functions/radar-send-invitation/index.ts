@@ -15,6 +15,7 @@
 // "Thomas Loarec <admin@lotexpo.com>". No new secret is created.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendResendEmail } from "../_shared/resend.ts";
+import { renderEmailShell, heading, paragraph, button } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -81,57 +82,20 @@ function buildEmailHtml(opts: {
   spaceName: string;
 }): string {
   const { acceptUrl, inviterName, spaceName } = opts;
-  return `<!DOCTYPE html>
-<html lang="fr">
-  <body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#262626;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:32px 16px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #ffe8d9;border-radius:16px;overflow:hidden;">
-            <tr>
-              <td style="background:#04316d;padding:24px 32px;">
-                <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">Radar CRM</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:32px;">
-                <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3;color:#04316d;font-weight:700;">Invitation à collaborer</h1>
-                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#262626;">
-                  <strong>${escapeHtml(inviterName)}</strong> vous invite à rejoindre l'espace
-                  <strong>${escapeHtml(spaceName)}</strong> sur Radar CRM pour préparer et suivre vos visites salon en équipe.
-                </p>
-                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-                  <tr>
-                    <td style="border-radius:10px;background:#ff751f;">
-                      <a href="${escapeHtml(acceptUrl)}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">Accepter l'invitation</a>
-                    </td>
-                  </tr>
-                </table>
-                <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#666666;">
-                  Ou copiez ce lien dans votre navigateur :
-                </p>
-                <p style="margin:0 0 20px;font-size:13px;line-height:1.6;word-break:break-all;">
-                  <a href="${escapeHtml(acceptUrl)}" style="color:#04316d;">${escapeHtml(acceptUrl)}</a>
-                </p>
-                <p style="margin:0;font-size:13px;line-height:1.6;color:#666666;">
-                  Cette invitation expire dans <strong>14 jours</strong>.
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:16px 32px;background:#ffe8d9;">
-                <p style="margin:0;font-size:12px;line-height:1.5;color:#666666;">
-                  Vous recevez cet email car ${escapeHtml(inviterName)} vous a invité sur Lotexpo Radar CRM.
-                  Si vous n'êtes pas concerné, ignorez ce message.
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+  return renderEmailShell({
+    title: "Invitation à collaborer",
+    preheader: `${inviterName} vous invite à rejoindre ${spaceName} sur Radar CRM.`,
+    bodyBlocks: [
+      heading("Invitation à collaborer"),
+      paragraph(`${escapeHtml(inviterName)} vous invite à rejoindre l'espace ${escapeHtml(spaceName)} sur Radar CRM pour préparer et suivre vos visites salon en équipe.`),
+      button({ label: "Accepter l'invitation", href: acceptUrl }),
+      paragraph(`Ou copiez ce lien dans votre navigateur :<br>${escapeHtml(acceptUrl)}`),
+      paragraph(`Cette invitation expire dans 14 jours.`),
+    ],
+    footer: {
+      extraHtml: `Vous recevez cet email car ${escapeHtml(inviterName)} vous a invité sur Lotexpo Radar CRM. Si vous n'êtes pas concerné, ignorez ce message.`,
+    },
+  });
 }
 
 function buildEmailText(opts: { acceptUrl: string; inviterName: string; spaceName: string }): string {
