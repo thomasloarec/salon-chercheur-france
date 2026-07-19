@@ -24,6 +24,7 @@
 //   5. log in radar_email_log.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendResendEmail } from '../_shared/resend.ts';
+import { renderEmailShell, heading, paragraph, infoBox } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -186,15 +187,6 @@ function renderSalonEmail(args: {
   ctaUrl: string;
   unsubscribeUrl: string;
 }): { html: string; text: string; subject: string } {
-  const ORANGE = '#ff7a1f';
-  const ORANGE_DARK = '#ea6a10';
-  const ORANGE_SOFT = '#fff4ec';
-  const NAVY = '#06286e';
-  const BG = '#f8fafc';
-  const BORDER = '#e5e7eb';
-  const TEXT = '#0f172a';
-  const MUTED = '#94a3b8';
-
   const copy = copyFor(args.type, args.eventName);
   const eventName = escapeHtml(args.eventName);
   const body = escapeHtml(args.message).replace(/\n/g, '<br/>');
@@ -209,54 +201,20 @@ function renderSalonEmail(args: {
   };
   const preheader = preheaderByType[args.type];
 
-  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="color-scheme" content="light only" /><meta name="supported-color-schemes" content="light only" /><title>${escapeHtml(copy.subject)}</title>
-<style>
-  img{max-width:100% !important;height:auto;}
-  table{border-collapse:collapse;}
-  .rcrm-cta{mso-padding-alt:14px 16px;}
-  @media only screen and (max-width:520px){
-    .rcrm-container{width:100% !important;max-width:100% !important;padding:0 !important;}
-    .rcrm-outer-cell{padding:12px 8px !important;}
-    .rcrm-card{padding:20px 16px !important;border-radius:12px !important;}
-    .rcrm-card h1{font-size:20px !important;}
-    .rcrm-cta{display:block !important;width:100% !important;box-sizing:border-box !important;}
-  }
-</style>
-</head>
-<body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${TEXT};">
-  <div style="display:none;max-height:0;overflow:hidden;color:transparent;">${escapeHtml(preheader)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};width:100%;">
-    <tr><td align="center" class="rcrm-outer-cell" style="padding:24px 12px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" class="rcrm-container" style="max-width:600px;width:100%;">
-        <tr><td style="padding:0 4px 18px 4px;">
-          <table role="presentation" width="100%"><tr>
-            <td style="font-size:20px;font-weight:700;color:${ORANGE};letter-spacing:-0.01em;">Lotexpo</td>
-            <td style="text-align:right;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.06em;">Radar CRM</td>
-          </tr></table>
-        </td></tr>
-
-        <tr><td class="rcrm-card" style="background:#fff;border:1px solid ${BORDER};border-radius:14px;padding:28px 24px;">
-          <span style="display:inline-block;padding:3px 10px;background:${ORANGE};color:#fff;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Radar CRM · ${eventName}</span>
-          <h1 style="font-size:22px;line-height:1.3;margin:12px 0 12px 0;color:${NAVY};word-break:break-word;">${escapeHtml(copy.title)}</h1>
-          <p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 20px 0;">${body}</p>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${ORANGE_SOFT};border-radius:10px;margin-bottom:20px;">
-            <tr><td style="padding:12px 16px;font-size:13px;color:${NAVY};">
-              <strong style="color:${ORANGE_DARK};">${eventName}</strong>
-            </td></tr>
-          </table>
-          <a href="${ctaUrl}" class="rcrm-cta" style="display:block;width:100%;max-width:100%;box-sizing:border-box;padding:14px 16px;background:${ORANGE};color:#fff;border-radius:8px;text-decoration:none;font-size:15px;font-weight:700;text-align:center;">${escapeHtml(copy.ctaLabel)} →</a>
-        </td></tr>
-
-        <tr><td style="padding:16px 12px 24px 12px;">
-          <p style="font-size:12px;color:${MUTED};line-height:1.6;margin:0;text-align:center;">
-            Vous recevez cet email car vous avez activé les alertes email Radar CRM sur Lotexpo.<br/>
-            <a href="${unsubscribeUrl}" style="color:${NAVY};text-decoration:underline;">Se désabonner des emails Radar CRM</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+  const html = renderEmailShell({
+    title: copy.subject,
+    preheader,
+    bodyBlocks: [
+      heading(copy.title),
+      paragraph(body),
+      infoBox(`<strong>${eventName}</strong>`),
+    ],
+    cta: { label: copy.ctaLabel, href: ctaUrl },
+    footer: {
+      unsubscribeUrl,
+      extraHtml: `Vous recevez cet email car vous avez activé les alertes email Radar CRM sur Lotexpo.`,
+    },
+  });
 
   const text = [
     'Lotexpo · Radar CRM',
