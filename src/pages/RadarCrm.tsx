@@ -398,7 +398,7 @@ const RadarCrmPage: React.FC = () => {
       <section className="bg-primary text-primary-foreground">
         <div className="max-w-6xl mx-auto px-4 py-14 md:py-20">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Le vrai problème</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-inverse-primary mb-2">Le vrai problème</p>
             <h2 className="heading-display text-2xl md:text-4xl mb-5">
               Ce n’est pas d’aller sur le salon. C’est d’y aller sans objectif.
             </h2>
@@ -557,7 +557,7 @@ const RadarCrmPage: React.FC = () => {
             chaque compte, le plan qu’un commercial de 20 ans qui connaît votre secteur vous aurait
             soufflé. Vous suivez le plan. Radar CRM apporte l’expertise.
           </p>
-          <p className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+          <p className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-inverse-primary">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
             Le besoin d’abord · le talent commercial ensuite
           </p>
@@ -971,7 +971,7 @@ const RadarCrmPage: React.FC = () => {
 
 const PainCard: React.FC<{ icon: React.ReactNode; title: string; text: string }> = ({ icon, title, text }) => (
   <div className="rounded-xl border border-primary-foreground/15 bg-primary-foreground/[0.06] p-5">
-    <div className="h-10 w-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mb-3">
+    <div className="h-10 w-10 rounded-lg bg-primary-foreground/10 text-primary-foreground flex items-center justify-center mb-3">
       {icon}
     </div>
     <h3 className="font-semibold mb-1 text-primary-foreground">{title}</h3>
