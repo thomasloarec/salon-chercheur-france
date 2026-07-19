@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { sendResendEmail } from '../_shared/resend.ts'
+import { renderEmailShell, heading, paragraph } from '../_shared/email-template.ts'
 
 // ============================================================================
 // event-change-manage
@@ -80,41 +82,20 @@ async function resolveRequesterName(admin: any, userId: string, fallbackEmail?: 
 // Alerte email admin (Resend). Ne lève JAMAIS.
 async function sendAdminChangeAlertEmail(params: { eventName: string; requesterName: string; fieldsCount: number }): Promise<void> {
   try {
-    const apiKey = Deno.env.get('RESEND_API_KEY')
-    if (!apiKey) { console.error('[event-change] RESEND_API_KEY manquant — email admin ignoré'); return }
-    const from = Deno.env.get('RESEND_FROM_EMAIL') ?? 'Lotexpo <admin@lotexpo.com>'
     const safeEvent = escapeHtml(params.eventName)
     const safeRequester = escapeHtml(params.requesterName)
-    const html = `
-      <div style="font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; max-width: 560px; margin: 0 auto;">
-        <h2 style="font-size: 18px; margin: 0 0 16px;">Modifications de salon à valider</h2>
-        <p style="font-size: 14px; line-height: 1.5; margin: 0 0 20px;">
-          ${safeRequester} a proposé ${params.fieldsCount} modification(s) pour la fiche du salon
-          <strong>${safeEvent}</strong>. Comparez l'AVANT / APRÈS puis validez ou refusez.
-        </p>
-        <p style="margin: 0 0 24px;">
-          <a href="${ADMIN_URL}" style="display: inline-block; background: #1a1a1a; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-size: 14px;">
-            Examiner les modifications
-          </a>
-        </p>
-      </div>
-    `
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        from,
-        to: [ADMIN_NOTIFICATION_EMAIL],
-        subject: `Modifications à valider — ${params.eventName}`,
-        html,
-      }),
+    const subject = `Modifications à valider — ${params.eventName}`
+    const html = renderEmailShell({
+      title: subject,
+      preheader: `${params.requesterName} a proposé des modifications pour un salon.`,
+      bodyBlocks: [
+        heading(`Modifications de salon à valider`),
+        paragraph(`${safeRequester} a proposé ${params.fieldsCount} modification(s) pour la fiche du salon <strong>${safeEvent}</strong>. Comparez l'AVANT / APRÈS puis validez ou refusez.`),
+      ],
+      cta: { label: `Examiner les modifications`, href: ADMIN_URL },
     })
-    if (!res.ok) {
-      const b = await res.text().catch(() => '')
-      console.error(`[event-change] email admin échoué [${res.status}]:`, b.slice(0, 500))
-      return
-    }
-    console.log(`[event-change] email admin envoyé pour "${params.eventName}"`)
+    const { id } = await sendResendEmail({ to: [ADMIN_NOTIFICATION_EMAIL], subject, html })
+    console.log(`[event-change] email admin envoyé pour "${params.eventName}" (${id})`)
   } catch (err) {
     console.error('[event-change] exception email admin:', err)
   }

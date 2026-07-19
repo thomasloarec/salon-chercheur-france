@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { sendResendEmail } from '../_shared/resend.ts'
+import { renderEmailShell, heading, paragraph } from '../_shared/email-template.ts'
 
 // ============================================================================
 // event-claim-manage
@@ -68,41 +70,20 @@ async function resolveRequesterName(admin: any, userId: string, fallbackEmail?: 
 // Alerte email admin (Resend). Ne lève JAMAIS : tout échec est loggé puis avalé.
 async function sendAdminClaimAlertEmail(params: { eventName: string; requesterName: string }): Promise<void> {
   try {
-    const apiKey = Deno.env.get('RESEND_API_KEY')
-    if (!apiKey) { console.error('[event-claim] RESEND_API_KEY manquant — email admin ignoré'); return }
-    const from = Deno.env.get('RESEND_FROM_EMAIL') ?? 'Lotexpo <admin@lotexpo.com>'
     const safeEvent = escapeHtml(params.eventName)
     const safeRequester = escapeHtml(params.requesterName)
-    const html = `
-      <div style="font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; max-width: 560px; margin: 0 auto;">
-        <h2 style="font-size: 18px; margin: 0 0 16px;">Nouvelle revendication de salon à valider</h2>
-        <p style="font-size: 14px; line-height: 1.5; margin: 0 0 20px;">
-          ${safeRequester} demande à revendiquer la page du salon <strong>${safeEvent}</strong>.
-          Vérifiez la demande puis validez ou refusez.
-        </p>
-        <p style="margin: 0 0 24px;">
-          <a href="${ADMIN_CLAIMS_URL}" style="display: inline-block; background: #1a1a1a; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-size: 14px;">
-            Examiner la demande
-          </a>
-        </p>
-      </div>
-    `
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        from,
-        to: [ADMIN_NOTIFICATION_EMAIL],
-        subject: `Nouvelle revendication salon — ${params.eventName}`,
-        html,
-      }),
+    const subject = `Nouvelle revendication salon — ${params.eventName}`
+    const html = renderEmailShell({
+      title: subject,
+      preheader: `${params.requesterName} demande à revendiquer une page salon.`,
+      bodyBlocks: [
+        heading(`Nouvelle revendication de salon à valider`),
+        paragraph(`${safeRequester} demande à revendiquer la page du salon <strong>${safeEvent}</strong>. Vérifiez la demande puis validez ou refusez.`),
+      ],
+      cta: { label: `Examiner la demande`, href: ADMIN_CLAIMS_URL },
     })
-    if (!res.ok) {
-      const b = await res.text().catch(() => '')
-      console.error(`[event-claim] email admin échoué [${res.status}]:`, b.slice(0, 500))
-      return
-    }
-    console.log(`[event-claim] email admin envoyé pour "${params.eventName}"`)
+    const { id } = await sendResendEmail({ to: [ADMIN_NOTIFICATION_EMAIL], subject, html })
+    console.log(`[event-claim] email admin envoyé pour "${params.eventName}" (${id})`)
   } catch (err) {
     console.error('[event-claim] exception email admin:', err)
   }
