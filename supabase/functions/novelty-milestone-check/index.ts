@@ -268,7 +268,6 @@ serve(async (req) => {
               for (const email of recipientEmails) {
                 try {
                   const { id: emailId } = await sendResendEmail({
-                    from: "Lotexpo <admin@lotexpo.com>",
                     to: [email],
                     subject,
                     html,

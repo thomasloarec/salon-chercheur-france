@@ -299,7 +299,6 @@ Message : ${escapeHtml(data.notes)}
 
               try {
                 const { id: emailId } = await sendResendEmail({
-                  from: 'Lotexpo @lotexpo.com>',
                   to: [adminEmail],
                   subject,
                   html,
@@ -411,7 +410,6 @@ Message : ${escapeHtml(data.notes)}
               });
             try {
               const { id: emailId } = await sendResendEmail({
-                from: 'Lotexpo @lotexpo.com>',
                 to: recipientEmails.map(r => r.email),
                 subject,
                 html,
