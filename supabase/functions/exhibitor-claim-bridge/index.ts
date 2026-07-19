@@ -1,4 +1,6 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2'
+import { sendResendEmail } from '../_shared/resend.ts'
+import { renderEmailShell, heading, paragraph } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,48 +31,20 @@ async function sendAdminClaimAlertEmail(params: {
   requesterName: string
 }): Promise<void> {
   try {
-    const apiKey = Deno.env.get('RESEND_API_KEY')
-    if (!apiKey) {
-      console.error('[claim-bridge] RESEND_API_KEY missing — skipping admin alert email')
-      return
-    }
-    const from = Deno.env.get('RESEND_FROM_EMAIL') ?? 'Lotexpo <admin@lotexpo.com>'
     const safeName = escapeHtml(params.exhibitorName)
     const safeRequester = escapeHtml(params.requesterName)
     const subject = `Nouvelle revendication à valider — ${params.exhibitorName}`
-    const html = `
-      <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#0f172a">
-        <h2 style="font-size:18px;margin:0 0 16px">Nouvelle revendication à valider</h2>
-        <p style="font-size:15px;line-height:1.6;margin:0 0 20px">
-          <strong>${safeRequester}</strong> demande à revendiquer la fiche <strong>${safeName}</strong>.
-          Validez ou refusez rapidement pour ne pas perdre l'élan de l'exposant.
-        </p>
-        <p style="margin:0 0 8px">
-          <a href="${ADMIN_CLAIMS_URL}" style="display:inline-block;padding:11px 22px;background:#2563eb;color:#ffffff;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600">Examiner la demande</a>
-        </p>
-      </div>
-    `
-
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from,
-        to: [ADMIN_NOTIFICATION_EMAIL],
-        subject,
-        html,
-      }),
+    const html = renderEmailShell({
+      title: subject,
+      preheader: `${params.requesterName} demande à revendiquer une fiche exposant.`,
+      bodyBlocks: [
+        heading(`Nouvelle revendication à valider`),
+        paragraph(`<strong>${safeRequester}</strong> demande à revendiquer la fiche <strong>${safeName}</strong>. Validez ou refusez rapidement pour ne pas perdre l'élan de l'exposant.`),
+      ],
+      cta: { label: `Examiner la demande`, href: ADMIN_CLAIMS_URL },
     })
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      console.error(`[claim-bridge] Admin alert email failed [${res.status}]:`, body.slice(0, 500))
-      return
-    }
-    console.log(`[claim-bridge] Admin alert email sent to ${ADMIN_NOTIFICATION_EMAIL} for "${params.exhibitorName}"`)
+    const { id } = await sendResendEmail({ to: [ADMIN_NOTIFICATION_EMAIL], subject, html })
+    console.log(`[claim-bridge] Admin alert email sent to ${ADMIN_NOTIFICATION_EMAIL} for "${params.exhibitorName}" (${id})`)
   } catch (err) {
     console.error('[claim-bridge] Admin alert email exception:', err)
   }
@@ -590,3 +564,4 @@ Deno.serve(async (req) => {
     )
   }
 })
+
