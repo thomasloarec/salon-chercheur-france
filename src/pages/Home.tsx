@@ -351,7 +351,7 @@ const Home = () => {
           <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-[60px]">
             <div className="w-[46px] h-[3px] bg-primary rounded-full mx-auto mb-5" />
             <p className="text-primary font-bold uppercase tracking-[0.15em] text-xs mb-3">La solution</p>
-            <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)] text-primary">
+            <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)] text-foreground">
               Rendre le marché lisible. Pour tout le monde.
             </h2>
             <p className="mt-4 text-lg text-foreground/70">
@@ -376,7 +376,7 @@ const Home = () => {
             <div className="flex items-end justify-between gap-4 mb-10">
               <Reveal>
                 <div className="section-rule" />
-                <h2 className="heading-display text-[clamp(1.8rem,3vw,2.6rem)] text-primary">
+                <h2 className="heading-display text-[clamp(1.8rem,3vw,2.6rem)] text-foreground">
                   Prochains salons
                 </h2>
               </Reveal>
@@ -500,7 +500,7 @@ const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: bool
         <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary font-bold text-[0.78rem] uppercase tracking-[0.06em] px-[13px] py-[5px] mb-4">
           {block.actor}
         </span>
-        <h3 className="heading-display font-bold text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.12] text-primary max-w-[15ch]">
+        <h3 className="heading-display font-bold text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.12] text-foreground max-w-[15ch]">
           {block.title}
         </h3>
         <p className="mt-[18px] text-[1.08rem] leading-[1.65] text-foreground/70 max-w-[44ch]">{block.body}</p>
