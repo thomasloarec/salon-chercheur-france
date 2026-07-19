@@ -1991,19 +1991,17 @@ Deno.serve(async (req) => {
             emailResult = await sendExhibitorEmail({
               to: user_email,
               subject: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                  <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">📩 Vous êtes invité(e) !</h1>
-                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                    Vous avez été invité à devenir gestionnaire de <strong>${exhibitorName}</strong> sur <strong>Lotexpo</strong>.
-                  </p>
-                  <p style="color: #333; font-size: 16px; line-height: 1.6;">Créez votre compte pour accepter l'invitation :</p>
-                  <div style="text-align: center; margin: 30px 0;">
-                    <a href="${signupUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Créer mon compte</a>
-                  </div>
-                  <p style="color: #888; font-size: 13px;">Cette invitation expire dans 30 jours. — L'équipe Lotexpo</p>
-                </div>
-              `,
+              html: renderEmailShell({
+                title: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
+                preheader: `Vous êtes invité à gérer ${exhibitorName} sur Lotexpo.`,
+                bodyBlocks: [
+                  heading(`📩 Vous êtes invité(e) !`),
+                  paragraph(`Vous avez été invité à devenir gestionnaire de ${exhibitorName} sur Lotexpo.`),
+                  paragraph(`Créez votre compte pour accepter l'invitation :`),
+                ],
+                cta: { label: `Créer mon compte`, href: signupUrl },
+                footer: { extraHtml: `Cette invitation expire dans 30 jours. — L'équipe Lotexpo` },
+              }),
             })
             log('admin_add_member.invite_flow.send_email.done', { success: emailResult.success, status: emailResult.status })
           } catch (emailErr: any) {
