@@ -1397,20 +1397,16 @@ Deno.serve(async (req) => {
         const emailResult = await sendExhibitorEmail({
           to: user_email,
           subject: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">Bienvenue dans l'équipe ${exhibitorName}</h1>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                <strong>${inviterName}</strong> vous a ajouté comme ${role} de la société <strong>${exhibitorName}</strong> sur Lotexpo.
-              </p>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                Retrouvez vos entreprises depuis votre espace profil.
-              </p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${siteUrl}/profile" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
-              </div>
-            </div>
-          `,
+          html: renderEmailShell({
+            title: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
+            preheader: `${inviterName} vous a ajouté à l'équipe de ${exhibitorName}.`,
+            bodyBlocks: [
+              heading(`Bienvenue dans l'équipe ${exhibitorName}`),
+              paragraph(`${inviterName} vous a ajouté comme ${role} de la société ${exhibitorName} sur Lotexpo.`),
+              paragraph(`Retrouvez vos entreprises depuis votre espace profil.`),
+            ],
+            cta: { label: `Accéder à mon espace`, href: `${siteUrl}/profile` },
+          }),
         })
 
         console.log('📧 owner_add_member email result:', {
