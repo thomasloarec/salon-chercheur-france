@@ -15,7 +15,7 @@
 // "Thomas Loarec <admin@lotexpo.com>". No new secret is created.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendResendEmail } from "../_shared/resend.ts";
-import { renderEmailShell, heading, paragraph, button } from "../_shared/email-template.ts";
+import { renderEmailShell, heading, paragraph, button, link } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,13 +87,13 @@ function buildEmailHtml(opts: {
     preheader: `${inviterName} vous invite à rejoindre ${spaceName} sur Radar CRM.`,
     bodyBlocks: [
       heading("Invitation à collaborer"),
-      paragraph(`${escapeHtml(inviterName)} vous invite à rejoindre l'espace ${escapeHtml(spaceName)} sur Radar CRM pour préparer et suivre vos visites salon en équipe.`),
+      paragraph(`<strong>${escapeHtml(inviterName)}</strong> vous invite à rejoindre l'espace <strong>${escapeHtml(spaceName)}</strong> sur Radar CRM pour préparer et suivre vos visites salon en équipe.`),
       button({ label: "Accepter l'invitation", href: acceptUrl }),
-      paragraph(`Ou copiez ce lien dans votre navigateur :<br>${escapeHtml(acceptUrl)}`),
+      paragraph(`Ou copiez ce lien dans votre navigateur :<br>${link(acceptUrl, escapeHtml(acceptUrl))}`),
       paragraph(`Cette invitation expire dans 14 jours.`),
     ],
     footer: {
-      extraHtml: `Vous recevez cet email car ${escapeHtml(inviterName)} vous a invité sur Lotexpo Radar CRM. Si vous n'êtes pas concerné, ignorez ce message.`,
+      extraHtml: `Vous recevez cet email car <strong>${escapeHtml(inviterName)}</strong> vous a invité sur Lotexpo Radar CRM. Si vous n'êtes pas concerné, ignorez ce message.`,
     },
   });
 }
