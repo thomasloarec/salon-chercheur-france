@@ -711,10 +711,10 @@ function companyPrefKey(co: any): string | null {
 }
 
 function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string) {
-  const ORANGE = '#ff7a1f';
-  const ORANGE_DARK = '#ea6a10';
-  const ORANGE_SOFT = '#fff4ec';
-  const NAVY = '#06286e';
+  const ORANGE = '#6b51ff';
+  const ORANGE_DARK = '#6b51ff';
+  const ORANGE_SOFT = '#e6e8ec';
+  const NAVY = '#0b132b';
   const TEXT = '#0f172a';
   const MUTED = '#64748b';
   const BORDER = '#e5e7eb';
@@ -901,10 +901,10 @@ function renderEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string
 }
 
 function renderTeaserEmail(p: PreviewBuild, unsubscribeUrl: string, appBaseUrl: string) {
-  const ORANGE = '#ff7a1f';
-  const ORANGE_DARK = '#ea6a10';
-  const ORANGE_SOFT = '#fff4ec';
-  const NAVY = '#06286e';
+  const ORANGE = '#6b51ff';
+  const ORANGE_DARK = '#6b51ff';
+  const ORANGE_SOFT = '#e6e8ec';
+  const NAVY = '#0b132b';
   const TEXT = '#0f172a';
   const MUTED = '#64748b';
   const BORDER = '#e5e7eb';
