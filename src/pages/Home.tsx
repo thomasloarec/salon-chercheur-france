@@ -174,14 +174,14 @@ const Home = () => {
         <section className="relative overflow-hidden">
           {/* IMAGE PLEIN CADRE — fond du hero */}
           <div aria-hidden className="absolute inset-0 z-0">
-            <img src="/home-hero.jpg" alt="" className="w-full h-full object-cover object-right" />
+            <img src="/home-hero.jpg" alt="" className="w-full h-full object-cover" style={{ objectPosition: '72% center' }} />
           </div>
 
           {/* Voile blanc dégradé — DESKTOP */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 z-[1] hidden lg:block"
-            style={{ background: 'linear-gradient(90deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.92) 34%, hsl(var(--background) / 0.55) 52%, transparent 72%)' }}
+            style={{ background: 'linear-gradient(90deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.96) 26%, hsl(var(--background) / 0.7) 40%, transparent 56%)' }}
           />
           {/* Voile MOBILE */}
           <div
@@ -190,28 +190,28 @@ const Home = () => {
             style={{ background: 'linear-gradient(180deg, hsl(var(--background) / 0.94), hsl(var(--background) / 0.88))' }}
           />
 
-          <div className="relative z-10 max-w-6xl mx-auto px-6 py-20 md:py-28 lg:py-32">
+          <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 lg:min-h-[calc(100vh-64px)] lg:py-0 flex flex-col justify-center">
             <Reveal className="text-left max-w-[600px]">
-              <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-7">
+              <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-5">
                 <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
                   Nouveau
                 </span>
                 Les salons professionnels, lus par l'IA
               </span>
 
-              <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-foreground max-w-[28ch] text-balance">
+              <h1 className="heading-display text-[clamp(1.9rem,3.6vw,3.3rem)] text-foreground max-w-[16ch] text-balance">
                 Toutes les opportunités des salons professionnels,
                 <span className="block text-primary">révélées par l'IA.</span>
               </h1>
 
-              <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-[56ch]">
+              <p className="mt-5 text-lg md:text-xl text-muted-foreground max-w-[56ch]">
                 L'information sur les salons est{' '}
                 <b className="text-foreground font-semibold">partout, donc introuvable.</b>{' '}
                 L'IA de Lotexpo lit tout (salons, exposants, secteurs) et vous donne la réponse qui compte.
               </p>
 
               {/* Searchbar */}
-              <form onSubmit={submitSearch} className="max-w-[680px] mt-9">
+              <form onSubmit={submitSearch} className="max-w-[680px] mt-7">
                 <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-border bg-background shadow-lg pl-5 pr-2 py-2 focus-within:border-primary transition-colors">
                   <Search className="h-5 w-5 text-muted-foreground shrink-0" />
                   <input
