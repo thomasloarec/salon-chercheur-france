@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { sendResendEmail } from '../_shared/resend.ts'
+import { renderEmailShell, heading, paragraph } from '../_shared/email-template.ts'
 import {
   sanitizeDescription,
   normalizeExternalUrl,
