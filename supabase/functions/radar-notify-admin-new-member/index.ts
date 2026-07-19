@@ -14,6 +14,7 @@
 // blocks the join flow / redirection on the client. No sensitive data in clear.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendResendEmail } from "../_shared/resend.ts";
+import { renderEmailShell, heading, paragraph } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,36 +96,16 @@ Deno.serve(async (req) => {
       `L'espace compte maintenant ${memberCount} membres.`,
     ].join("\n");
 
-    const html = `<!DOCTYPE html>
-<html lang="fr">
-  <body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#262626;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:32px 16px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #ffe8d9;border-radius:16px;overflow:hidden;">
-            <tr>
-              <td style="background:#04316d;padding:24px 32px;">
-                <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">Radar CRM</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:32px;">
-                <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3;color:#04316d;font-weight:700;">Nouveau membre</h1>
-                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#262626;">
-                  <strong>${escapeHtml(displayName)}</strong> (${escapeHtml(memberEmail)}) a rejoint l'espace
-                  <strong>${escapeHtml(spaceLabel)}</strong>.
-                </p>
-                <p style="margin:0;font-size:15px;line-height:1.6;color:#262626;">
-                  L'espace compte maintenant <strong>${escapeHtml(String(memberCount))}</strong> membres.
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+    const html = renderEmailShell({
+      title: "Nouveau membre",
+      preheader: `${displayName} a rejoint ${spaceLabel}.`,
+      bodyBlocks: [
+        heading("Nouveau membre"),
+        paragraph(`<strong>${escapeHtml(displayName)}</strong> (${escapeHtml(memberEmail)}) a rejoint l'espace <strong>${escapeHtml(spaceLabel)}</strong>.`),
+        paragraph(`L'espace compte maintenant <strong>${escapeHtml(String(memberCount))}</strong> membres.`),
+      ],
+      footer: {},
+    });
 
     // Best-effort send: never block the join flow.
     try {

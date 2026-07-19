@@ -7,6 +7,7 @@
 // always returns success:true with emailSent:true|false.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendResendEmail } from '../_shared/resend.ts';
+import { renderEmailShell, heading, paragraph } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,59 +35,21 @@ function escapeHtml(s: string): string {
 }
 
 function renderApprovalEmail(firstName: string | null, appBaseUrl: string) {
-  const ORANGE = '#ff7a1f';
-  const NAVY = '#06286e';
-  const TEXT = '#0f172a';
-  const MUTED = '#64748b';
-  const BORDER = '#e5e7eb';
-  const BG = '#f5f7fb';
   const hello = firstName ? `Bonjour ${escapeHtml(firstName)},` : 'Bonjour,';
   const ctaUrl = `${appBaseUrl}/radar-crm`;
   const subject = 'Votre accès Radar CRM est ouvert';
 
-  const html = `<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(subject)}</title>
-  </head>
-  <body style="margin:0;padding:0;background-color:${BG};">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${BG};padding:24px 0;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border:1px solid ${BORDER};border-radius:12px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;">
-            <tr>
-              <td style="padding:20px 32px;border-bottom:1px solid ${BORDER};">
-                <span style="font-size:18px;font-weight:700;color:${NAVY};">Lotexpo</span>
-                <span style="font-size:13px;font-weight:600;color:${ORANGE};margin-left:8px;">Radar CRM</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:32px;">
-                <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:${TEXT};">Votre accès Radar CRM est ouvert</h1>
-                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${TEXT};">${hello}</p>
-                <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:${TEXT};">Votre accès à Radar CRM est désormais actif. Vous pouvez importer votre fichier CRM et voir, salon par salon, quelles entreprises de votre portefeuille exposent prochainement — pour préparer vos rendez-vous en amont.</p>
-                <table role="presentation" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td style="border-radius:8px;background-color:${NAVY};">
-                      <a href="${ctaUrl}" style="display:inline-block;padding:12px 24px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Accéder à Radar CRM</a>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:20px 32px;border-top:1px solid ${BORDER};">
-                <p style="margin:0;font-size:12px;line-height:1.5;color:${MUTED};">Vous recevez cet email car votre demande d'accès à Radar CRM sur Lotexpo a été acceptée.</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+  const html = renderEmailShell({
+    title: subject,
+    preheader: 'Votre accès à Radar CRM est désormais actif.',
+    bodyBlocks: [
+      heading('Votre accès Radar CRM est ouvert'),
+      paragraph(hello),
+      paragraph("Votre accès à Radar CRM est désormais actif. Vous pouvez importer votre fichier CRM et voir, salon par salon, quelles entreprises de votre portefeuille exposent prochainement — pour préparer vos rendez-vous en amont."),
+    ],
+    cta: { label: 'Accéder à Radar CRM', href: ctaUrl },
+    footer: { extraHtml: "Vous recevez cet email car votre demande d'accès à Radar CRM sur Lotexpo a été acceptée." },
+  });
 
   const text = [
     'Lotexpo · Radar CRM',

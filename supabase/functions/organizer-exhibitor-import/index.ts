@@ -1,8 +1,13 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { buildCorsHeaders, handleCors } from '../_shared/cors.ts';
 import { sendResendEmail } from '../_shared/resend.ts';
+import { renderEmailShell, paragraph } from '../_shared/email-template.ts';
 
 const BUCKET = 'organizer-imports';
+
+function escapeHtml(s: unknown): string {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
 
 function decodeBase64(b64: string): Uint8Array {
   const clean = b64.includes(',') ? b64.split(',').pop()! : b64;
@@ -108,18 +113,16 @@ Deno.serve(async (req) => {
         profile?.email || user.email || 'Un organisateur';
 
       const subject = `Nouvelle liste d'exposants, ${event.nom_event}`;
-      const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
-          <p>${displayName} a transmis une liste d'exposants pour le salon <strong>${event.nom_event}</strong>.</p>
-          <p>Retrouvez le fichier dans l'administration, onglet Organisateurs, dans la fiche de ce salon.</p>
-          <p style="margin-top: 24px;">
-            <a href="https://lotexpo.com/admin/organisateurs"
-               style="background:#ff751f;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;font-weight:600;">
-              Ouvrir l'administration
-            </a>
-          </p>
-        </div>
-      `;
+      const html = renderEmailShell({
+        title: `Nouvelle liste d'exposants, ${event.nom_event}`,
+        preheader: `${displayName} a transmis une liste d'exposants pour ${event.nom_event}.`,
+        bodyBlocks: [
+          paragraph(`${escapeHtml(displayName)} a transmis une liste d'exposants pour le salon <strong>${escapeHtml(event.nom_event)}</strong>.`),
+          paragraph("Retrouvez le fichier dans l'administration, onglet Organisateurs, dans la fiche de ce salon."),
+        ],
+        cta: { label: "Ouvrir l'administration", href: "https://lotexpo.com/admin/organisateurs" },
+        footer: {},
+      });
       await sendResendEmail({
         to: 'admin@lotexpo.com',
         subject,
