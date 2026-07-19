@@ -172,26 +172,21 @@ const Home = () => {
       <main className="flex-1">
         {/* ============================= HERO ============================= */}
         <section className="relative overflow-hidden">
-          {/* IMAGE PLEIN CADRE — fond du hero */}
-          <div aria-hidden className="absolute inset-0 z-0">
-            <img src="/home-texture-wave.jpg" alt="" className="w-full h-full object-cover" style={{ objectPosition: '72% center' }} />
+          {/* IMAGE calée à droite, fondue sur son bord gauche */}
+          <div aria-hidden className="absolute inset-y-0 right-0 z-0 hidden lg:block w-[64%]">
+            <img
+              src="/home-texture-wave.jpg"
+              alt=""
+              className="w-full h-full object-cover object-center"
+              style={{
+                maskImage: 'linear-gradient(90deg, transparent 0%, transparent 18%, black 42%)',
+                WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, transparent 18%, black 42%)',
+              }}
+            />
           </div>
 
-          {/* Voile blanc dégradé — DESKTOP */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-[1] hidden lg:block"
-            style={{ background: 'linear-gradient(90deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.96) 26%, hsl(var(--background) / 0.7) 40%, transparent 56%)' }}
-          />
-          {/* Voile MOBILE */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-[1] lg:hidden"
-            style={{ background: 'linear-gradient(180deg, hsl(var(--background) / 0.94), hsl(var(--background) / 0.88))' }}
-          />
-
           <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 lg:min-h-[calc(100vh-64px)] lg:py-0 flex flex-col justify-center">
-            <Reveal className="text-left max-w-[600px]">
+            <Reveal className="text-left max-w-[540px]">
               <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-5">
                 <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
                   Nouveau
