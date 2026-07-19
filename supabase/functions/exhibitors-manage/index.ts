@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { sendResendEmail } from '../_shared/resend.ts'
+import { renderEmailShell, heading, paragraph } from '../_shared/email-template.ts'
 import {
   sanitizeDescription,
   normalizeExternalUrl,
@@ -903,23 +905,17 @@ Deno.serve(async (req) => {
             const emailResult = await sendExhibitorEmail({
               to: requesterEmail,
               subject: `Votre fiche ${exhibitorName} est validée sur Lotexpo`,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #04316d;">
-                  <h1 style="color: #04316d; font-size: 24px; text-align: center; margin-bottom: 8px;">Votre fiche est validée 🎉</h1>
-                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                    Bonne nouvelle : votre revendication de la fiche <strong>${exhibitorName}</strong> a été approuvée. Vous en êtes désormais le gestionnaire sur Lotexpo.
-                  </p>
-                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                    Complétez votre fiche pour gagner en visibilité et <strong>publier vos Nouveautés</strong> : elles génèrent des leads qualifiés auprès des visiteurs <strong>avant même le salon</strong>.
-                  </p>
-                  <div style="text-align: center; margin: 32px 0;">
-                    <a href="${absoluteUrl}" style="background-color: #ff751f; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">Compléter ma fiche</a>
-                  </div>
-                  <p style="color: #888; font-size: 13px; text-align: center;">
-                    Ou copiez ce lien : <a href="${absoluteUrl}" style="color: #04316d;">${absoluteUrl}</a>
-                  </p>
-                </div>
-              `,
+              html: renderEmailShell({
+                title: `Votre fiche ${exhibitorName} est validée sur Lotexpo`,
+                preheader: `Votre revendication de ${exhibitorName} a été approuvée.`,
+                bodyBlocks: [
+                  heading(`Votre fiche est validée 🎉`),
+                  paragraph(`Bonne nouvelle : votre revendication de la fiche ${exhibitorName} a été approuvée. Vous en êtes désormais le gestionnaire sur Lotexpo.`),
+                  paragraph(`Complétez votre fiche pour gagner en visibilité et publier vos Nouveautés : elles génèrent des leads qualifiés auprès des visiteurs avant même le salon.`),
+                ],
+                cta: { label: `Compléter ma fiche`, href: absoluteUrl },
+                footer: { extraHtml: `Ou copiez ce lien : ${absoluteUrl}` },
+              }),
             })
             console.log('📧 claim_approved email result:', {
               success: emailResult.success,
@@ -1401,20 +1397,16 @@ Deno.serve(async (req) => {
         const emailResult = await sendExhibitorEmail({
           to: user_email,
           subject: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">Bienvenue dans l'équipe ${exhibitorName}</h1>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                <strong>${inviterName}</strong> vous a ajouté comme ${role} de la société <strong>${exhibitorName}</strong> sur Lotexpo.
-              </p>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                Retrouvez vos entreprises depuis votre espace profil.
-              </p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${siteUrl}/profile" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
-              </div>
-            </div>
-          `,
+          html: renderEmailShell({
+            title: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
+            preheader: `${inviterName} vous a ajouté à l'équipe de ${exhibitorName}.`,
+            bodyBlocks: [
+              heading(`Bienvenue dans l'équipe ${exhibitorName}`),
+              paragraph(`${inviterName} vous a ajouté comme ${role} de la société ${exhibitorName} sur Lotexpo.`),
+              paragraph(`Retrouvez vos entreprises depuis votre espace profil.`),
+            ],
+            cta: { label: `Accéder à mon espace`, href: `${siteUrl}/profile` },
+          }),
         })
 
         console.log('📧 owner_add_member email result:', {
@@ -1475,18 +1467,16 @@ Deno.serve(async (req) => {
         const emailResult = await sendExhibitorEmail({
           to: user_email,
           subject: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">Vous avez été invité sur Lotexpo</h1>
-              <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                <strong>${inviterName}</strong> vous a invité à devenir ${role} de <strong>${exhibitorName}</strong>.
-              </p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Créer mon compte et rejoindre l'équipe</a>
-              </div>
-              <p style="color: #888; font-size: 13px;">Lien valable 7 jours.</p>
-            </div>
-          `,
+          html: renderEmailShell({
+            title: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
+            preheader: `${inviterName} vous invite à gérer ${exhibitorName}.`,
+            bodyBlocks: [
+              heading(`Vous avez été invité sur Lotexpo`),
+              paragraph(`${inviterName} vous a invité à devenir ${role} de ${exhibitorName}.`),
+            ],
+            cta: { label: `Créer mon compte et rejoindre l'équipe`, href: inviteUrl },
+            footer: { extraHtml: `Lien valable 7 jours.` },
+          }),
         })
 
         console.log('📧 owner_add_member email result:', {
@@ -2001,19 +1991,17 @@ Deno.serve(async (req) => {
             emailResult = await sendExhibitorEmail({
               to: user_email,
               subject: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                  <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">📩 Vous êtes invité(e) !</h1>
-                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                    Vous avez été invité à devenir gestionnaire de <strong>${exhibitorName}</strong> sur <strong>Lotexpo</strong>.
-                  </p>
-                  <p style="color: #333; font-size: 16px; line-height: 1.6;">Créez votre compte pour accepter l'invitation :</p>
-                  <div style="text-align: center; margin: 30px 0;">
-                    <a href="${signupUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Créer mon compte</a>
-                  </div>
-                  <p style="color: #888; font-size: 13px;">Cette invitation expire dans 30 jours. — L'équipe Lotexpo</p>
-                </div>
-              `,
+              html: renderEmailShell({
+                title: `Invitation à gérer ${exhibitorName} sur Lotexpo`,
+                preheader: `Vous êtes invité à gérer ${exhibitorName} sur Lotexpo.`,
+                bodyBlocks: [
+                  heading(`📩 Vous êtes invité(e) !`),
+                  paragraph(`Vous avez été invité à devenir gestionnaire de ${exhibitorName} sur Lotexpo.`),
+                  paragraph(`Créez votre compte pour accepter l'invitation :`),
+                ],
+                cta: { label: `Créer mon compte`, href: signupUrl },
+                footer: { extraHtml: `Cette invitation expire dans 30 jours. — L'équipe Lotexpo` },
+              }),
             })
             log('admin_add_member.invite_flow.send_email.done', { success: emailResult.success, status: emailResult.status })
           } catch (emailErr: any) {
@@ -2088,18 +2076,16 @@ Deno.serve(async (req) => {
           emailResult = await sendExhibitorEmail({
             to: user_email,
             subject: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">🎉 Bienvenue dans l'équipe !</h1>
-                <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                  Vous avez été ajouté comme gestionnaire de <strong>${exhibitorName}</strong> sur Lotexpo.
-                </p>
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${siteUrl}/profile" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
-                </div>
-                <p style="color: #888; font-size: 13px;">— L'équipe Lotexpo</p>
-              </div>
-            `,
+            html: renderEmailShell({
+              title: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
+              preheader: `Vous êtes désormais gestionnaire de ${exhibitorName}.`,
+              bodyBlocks: [
+                heading(`🎉 Bienvenue dans l'équipe !`),
+                paragraph(`Vous avez été ajouté comme gestionnaire de ${exhibitorName} sur Lotexpo.`),
+              ],
+              cta: { label: `Accéder à mon espace`, href: `${siteUrl}/profile` },
+              footer: { extraHtml: `— L'équipe Lotexpo` },
+            }),
           })
           log('admin_add_member.direct_add.send_email.done', { success: emailResult.success, status: emailResult.status, error: emailResult.error })
         } catch (emailErr: any) {
@@ -2238,46 +2224,10 @@ async function sendExhibitorEmail(params: {
   subject: string;
   html: string;
 }): Promise<{ success: boolean; status?: number; error?: string }> {
-  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-  const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'Lotexpo <admin@lotexpo.com>'
-
-  console.log('📧 Sending email', {
-    to: params.to,
-    subject: params.subject,
-    from: resendFromEmail,
-    hasApiKey: !!RESEND_API_KEY,
-    apiKeyPrefix: RESEND_API_KEY?.substring(0, 8) ?? 'MISSING',
-  })
-
-  if (!RESEND_API_KEY) {
-    console.error('❌ RESEND_API_KEY is not set')
-    return { success: false, error: 'RESEND_API_KEY missing' }
-  }
-
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: resendFromEmail,
-        to: [params.to],
-        subject: params.subject,
-        html: params.html,
-      }),
-    })
-
-    const body = await res.text()
-
-    if (!res.ok) {
-      console.error(`❌ Email send failed [${res.status}]:`, body)
-      return { success: false, status: res.status, error: body }
-    }
-
-    console.log(`📧 Email sent successfully to ${params.to} [${res.status}]`)
-    return { success: true, status: res.status }
+    const { id } = await sendResendEmail({ to: params.to, subject: params.subject, html: params.html })
+    console.log(`📧 Email sent successfully to ${params.to} (${id})`)
+    return { success: true }
   } catch (err) {
     console.error('❌ Email send exception:', err)
     return { success: false, error: String(err) }
