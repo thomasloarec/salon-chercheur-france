@@ -905,23 +905,17 @@ Deno.serve(async (req) => {
             const emailResult = await sendExhibitorEmail({
               to: requesterEmail,
               subject: `Votre fiche ${exhibitorName} est validée sur Lotexpo`,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #04316d;">
-                  <h1 style="color: #04316d; font-size: 24px; text-align: center; margin-bottom: 8px;">Votre fiche est validée 🎉</h1>
-                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                    Bonne nouvelle : votre revendication de la fiche <strong>${exhibitorName}</strong> a été approuvée. Vous en êtes désormais le gestionnaire sur Lotexpo.
-                  </p>
-                  <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                    Complétez votre fiche pour gagner en visibilité et <strong>publier vos Nouveautés</strong> : elles génèrent des leads qualifiés auprès des visiteurs <strong>avant même le salon</strong>.
-                  </p>
-                  <div style="text-align: center; margin: 32px 0;">
-                    <a href="${absoluteUrl}" style="background-color: #ff751f; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">Compléter ma fiche</a>
-                  </div>
-                  <p style="color: #888; font-size: 13px; text-align: center;">
-                    Ou copiez ce lien : <a href="${absoluteUrl}" style="color: #04316d;">${absoluteUrl}</a>
-                  </p>
-                </div>
-              `,
+              html: renderEmailShell({
+                title: `Votre fiche ${exhibitorName} est validée sur Lotexpo`,
+                preheader: `Votre revendication de ${exhibitorName} a été approuvée.`,
+                bodyBlocks: [
+                  heading(`Votre fiche est validée 🎉`),
+                  paragraph(`Bonne nouvelle : votre revendication de la fiche ${exhibitorName} a été approuvée. Vous en êtes désormais le gestionnaire sur Lotexpo.`),
+                  paragraph(`Complétez votre fiche pour gagner en visibilité et publier vos Nouveautés : elles génèrent des leads qualifiés auprès des visiteurs avant même le salon.`),
+                ],
+                cta: { label: `Compléter ma fiche`, href: absoluteUrl },
+                footer: { extraHtml: `Ou copiez ce lien : ${absoluteUrl}` },
+              }),
             })
             console.log('📧 claim_approved email result:', {
               success: emailResult.success,
