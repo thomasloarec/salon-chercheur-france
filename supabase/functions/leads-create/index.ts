@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendResendEmail } from "../_shared/resend.ts";
+import { renderEmailShell, heading as renderHeading, paragraph, dataTable } from "../_shared/email-template.ts";
 
 // Frontend schema
 const schema = z.object({
@@ -251,37 +252,54 @@ serve(async (req) => {
                 ? '[Lead orphelin] Demande de rendez-vous — fiche non revendiquée'
                 : '[Lead orphelin] Téléchargement de brochure — fiche non revendiquée';
 
-              const rowCompany = data.company ? `<p style="margin:0 0 6px"><strong>Société :</strong> ${escapeHtml(data.company)}</p>` : '';
-              const rowPhone = data.phone ? `<p style="margin:0 0 6px"><strong>Téléphone :</strong> ${escapeHtml(data.phone)}</p>` : '';
-              const rowRole = data.role ? `<p style="margin:0 0 6px"><strong>Fonction :</strong> ${escapeHtml(data.role)}</p>` : '';
-              const rowNotes = data.notes ? `<p style="margin:0 0 6px"><strong>Message :</strong> ${escapeHtml(data.notes)}</p>` : '';
+              const rowCompany = data.company ? `
 
-              const html = `
-                <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:auto;color:#111">
-                  <h2 style="color:#111">🛟 Lead orphelin — ${escapeHtml(leadTypeLabel)}</h2>
-                  <p>Un nouveau lead a été généré sur Lotexpo, mais la fiche exposant concernée
-                  <strong>n'est pas encore revendiquée</strong> : aucun membre d'équipe actif n'a été prévenu.
-                  Ce message admin garantit que le lead n'est pas perdu.</p>
-                  <div style="background:#f6f6f8;border-radius:8px;padding:16px;margin:16px 0">
-                    <p style="margin:0 0 6px"><strong>Type de lead :</strong> ${escapeHtml(leadTypeLabel)}</p>
-                    <p style="margin:0 0 6px"><strong>Nouveauté :</strong> ${escapeHtml(noveltyTitle)}</p>
-                    <p style="margin:0 0 6px"><strong>Exposant :</strong> ${escapeHtml(exhibitorName || '(nom indisponible)')}</p>
-                    <p style="margin:0 0 6px"><strong>Salon :</strong> ${escapeHtml(eventName || '(non renseigné)')}</p>
-                  </div>
-                  <div style="background:#f6f6f8;border-radius:8px;padding:16px;margin:16px 0">
-                    <p style="margin:0 0 6px"><strong>Contact :</strong> ${escapeHtml(actorName)}</p>
-                    <p style="margin:0 0 6px"><strong>Email :</strong> ${escapeHtml(data.email)}</p>
-                    ${rowCompany}
-                    ${rowRole}
-                    ${rowPhone}
-                    ${rowNotes}
-                  </div>
-                  <p style="font-size:12px;color:#666;margin-top:24px">Email automatique : fiche exposant non revendiquée, aucun destinataire d'équipe disponible.</p>
-                </div>`;
+Société : ${escapeHtml(data.company)}
+
+` : '';
+              const rowPhone = data.phone ? `
+
+Téléphone : ${escapeHtml(data.phone)}
+
+` : '';
+              const rowRole = data.role ? `
+
+Fonction : ${escapeHtml(data.role)}
+
+` : '';
+              const rowNotes = data.notes ? `
+
+Message : ${escapeHtml(data.notes)}
+
+` : '';
+
+              const html = renderEmailShell({
+                title: subject,
+                preheader: `Un lead a été généré sur une fiche exposant non revendiquée.`,
+                bodyBlocks: [
+                  renderHeading(`🛟 Lead orphelin — ${escapeHtml(leadTypeLabel)}`),
+                  paragraph(`Un nouveau lead a été généré sur Lotexpo, mais la fiche exposant concernée n'est pas encore revendiquée : aucun membre d'équipe actif n'a été prévenu. Ce message admin garantit que le lead n'est pas perdu.`),
+                  dataTable([
+                    [`Type de lead`, leadTypeLabel],
+                    [`Nouveauté`, noveltyTitle],
+                    [`Exposant`, exhibitorName || `(nom indisponible)`],
+                    [`Salon`, eventName || `(non renseigné)`],
+                  ] as Array<[string, string]>),
+                  dataTable([
+                    [`Contact`, actorName],
+                    [`Email`, data.email],
+                    ...(data.company ? [[`Société`, data.company]] : []),
+                    ...(data.role ? [[`Fonction`, data.role]] : []),
+                    ...(data.phone ? [[`Téléphone`, data.phone]] : []),
+                    ...(data.notes ? [[`Message`, data.notes]] : []),
+                  ] as Array<[string, string]>),
+                ],
+                footer: { extraHtml: `Email automatique : fiche exposant non revendiquée, aucun destinataire d'équipe disponible.` },
+              });
 
               try {
                 const { id: emailId } = await sendResendEmail({
-                  from: 'Lotexpo <admin@lotexpo.com>',
+                  from: 'Lotexpo @lotexpo.com>',
                   to: [adminEmail],
                   subject,
                   html,
@@ -354,37 +372,46 @@ serve(async (req) => {
           } else {
             const eventName = event?.nom_event ?? '';
             const noveltyTitle = novelty.title ?? '';
-            const leadCompany = data.company ? `<p><strong>Société :</strong> ${escapeHtml(data.company)}</p>` : '';
+            const leadCompany = data.company ? `
+
+Société : ${escapeHtml(data.company)}
+
+` : '';
             const ctaUrl = 'https://lotexpo.com/agenda?tab=exposant&section=novelties&id=' + data.novelty_id + '#leads';
             const intro = isMeeting
-              ? `Un visiteur de Lotexpo souhaite prendre rendez-vous au sujet de votre nouveauté${noveltyTitle ? ` <strong>${escapeHtml(noveltyTitle)}</strong>` : ''}${eventName ? ` (événement <strong>${escapeHtml(eventName)}</strong>)` : ''}.`
-              : `Un visiteur de Lotexpo vient de télécharger la brochure de votre nouveauté${noveltyTitle ? ` <strong>${escapeHtml(noveltyTitle)}</strong>` : ''}${eventName ? ` (événement <strong>${escapeHtml(eventName)}</strong>)` : ''}.`;
+              ? `Un visiteur de Lotexpo souhaite prendre rendez-vous au sujet de votre nouveauté${noveltyTitle ? ` ${escapeHtml(noveltyTitle)}` : ''}${eventName ? ` (événement ${escapeHtml(eventName)})` : ''}.`
+              : `Un visiteur de Lotexpo vient de télécharger la brochure de votre nouveauté${noveltyTitle ? ` ${escapeHtml(noveltyTitle)}` : ''}${eventName ? ` (événement ${escapeHtml(eventName)})` : ''}.`;
             const heading = isMeeting ? '📅 Nouvelle demande de rendez-vous' : '🎯 Nouveau lead sur votre nouveauté';
             const subject = isMeeting
               ? 'Nouveau lead : demande de rendez-vous sur Lotexpo'
               : 'Nouveau lead : téléchargement de brochure sur Lotexpo';
             const leadNotes = isMeeting && data.notes
-              ? `<p style="margin:6px 0 0"><strong>Message :</strong> ${escapeHtml(data.notes)}</p>`
+              ? `
+
+Message : ${escapeHtml(data.notes)}
+
+`
               : '';
-            const html = `
-              <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:auto;color:#111">
-                <h2 style="color:#111">${heading}</h2>
-                <p>Bonjour,</p>
-                <p>${intro}</p>
-                <div style="background:#f6f6f8;border-radius:8px;padding:16px;margin:16px 0">
-                  <p style="margin:0 0 6px"><strong>Nom :</strong> ${escapeHtml(actorName)}</p>
-                  <p style="margin:0 0 6px"><strong>Email :</strong> ${escapeHtml(data.email)}</p>
-                  ${leadCompany}
-                  ${leadNotes}
-                </div>
-                <p>
-                  <a href="${ctaUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px">Consulter le lead sur Lotexpo</a>
-                </p>
-                <p style="font-size:12px;color:#666;margin-top:24px">Cet email vous est envoyé car vous êtes membre actif de l'équipe exposant sur Lotexpo.</p>
-              </div>`;
+            const html = renderEmailShell({
+                title: subject,
+                preheader: isMeeting ? `Nouvelle demande de rendez-vous sur votre nouveauté.` : `Un visiteur a téléchargé la brochure de votre nouveauté.`,
+                bodyBlocks: [
+                  renderHeading(heading),
+                  paragraph(`Bonjour,`),
+                  paragraph(intro),
+                  dataTable([
+                    [`Nom`, actorName],
+                    [`Email`, data.email],
+                    ...(data.company ? [[`Société`, data.company]] : []),
+                    ...(isMeeting && data.notes ? [[`Message`, data.notes]] : []),
+                  ] as Array<[string, string]>),
+                ],
+                cta: { label: `Consulter le lead sur Lotexpo`, href: ctaUrl },
+                footer: { extraHtml: `Cet email vous est envoyé car vous êtes membre actif de l'équipe exposant sur Lotexpo.` },
+              });
             try {
               const { id: emailId } = await sendResendEmail({
-                from: 'Lotexpo <admin@lotexpo.com>',
+                from: 'Lotexpo @lotexpo.com>',
                 to: recipientEmails.map(r => r.email),
                 subject,
                 html,

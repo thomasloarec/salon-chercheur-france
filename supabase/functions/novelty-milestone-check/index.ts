@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendResendEmail } from "../_shared/resend.ts";
+import { renderEmailShell, heading, paragraph } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -249,17 +250,18 @@ serve(async (req) => {
               // prefixed with the public origin to make it clickable in email.
               const ctaUrl = `https://lotexpo.com${linkUrl}`;
 
-              const html = `
-                <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:auto;color:#111">
-                  <h2 style="color:#111">👀 Votre stand attire l'attention</h2>
-                  <p>Bonjour,</p>
-                  <p><strong>${threshold} visiteurs</strong> ont déjà ajouté votre stand à leur parcours de visite${nomEvent ? ` sur <strong>${escapeHtml(nomEvent)}</strong>` : ""}.</p>
-                  ${noveltyTitle ? `<p>Votre nouveauté <strong>${escapeHtml(noveltyTitle)}</strong> suscite l'intérêt avant même l'ouverture du salon. C'est le moment de finaliser votre préparation !</p>` : `<p>Votre nouveauté suscite l'intérêt avant même l'ouverture du salon. C'est le moment de finaliser votre préparation !</p>`}
-                  <p>
-                    <a href="${ctaUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px">Voir ma nouveauté sur Lotexpo</a>
-                  </p>
-                  <p style="font-size:12px;color:#666;margin-top:24px">Cet email vous est envoyé car vous êtes administrateur de cette fiche exposant sur Lotexpo.</p>
-                </div>`;
+              const html = renderEmailShell({
+                title: subject,
+                preheader: nomEvent ? `${threshold} visiteurs veulent voir votre stand sur ${nomEvent}.` : `${threshold} visiteurs veulent voir votre stand.`,
+                bodyBlocks: [
+                  heading(`👀 Votre stand attire l'attention`),
+                  paragraph(`Bonjour,`),
+                  paragraph(`<strong>${threshold} visiteurs</strong> ont déjà ajouté votre stand à leur parcours de visite${nomEvent ? ` sur <strong>${escapeHtml(nomEvent)}</strong>` : ""}.`),
+                  paragraph(noveltyTitle ? `Votre nouveauté <strong>${escapeHtml(noveltyTitle)}</strong> suscite l'intérêt avant même l'ouverture du salon. C'est le moment de finaliser votre préparation !` : `Votre nouveauté suscite l'intérêt avant même l'ouverture du salon. C'est le moment de finaliser votre préparation !`),
+                ],
+                cta: { label: `Voir ma nouveauté sur Lotexpo`, href: ctaUrl },
+                footer: { extraHtml: `Cet email vous est envoyé car vous êtes administrateur de cette fiche exposant sur Lotexpo.` },
+              });
 
               // One send per recipient so co-administrators are never exposed to
               // each other in the To. Each send is best-effort.
