@@ -9,10 +9,14 @@
 //     send.lotexpo.com), via the shared sendResendEmail helper.
 //   - No new secret is created.
 //
+// Presentation: HTML built by the shared _shared/email-template.ts (charte Lotexpo).
+// Email copy (subject, title, intro, labels, admin note) is unchanged.
+//
 // No silent failure: a Resend error is logged and returns a non-200 status so
 // the webhook sees the failure. A non-INSERT / unexpected payload returns 200
 // without sending, so the webhook is never broken by unrelated events.
 import { sendResendEmail } from '../_shared/resend.ts';
+import { renderEmailShell, heading, paragraph, dataTable } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -70,40 +74,30 @@ interface WebhookPayload {
 
 function buildHtml(r: AccessRequestRecord): string {
   const fullName = `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || '—';
-  const row = (label: string, value: unknown) => `
-    <tr>
-      <td style="padding:8px 12px;color:#6b7280;font-size:13px;white-space:nowrap;vertical-align:top;">${escapeHtml(label)}</td>
-      <td style="padding:8px 12px;color:#111827;font-size:14px;font-weight:500;">${escapeHtml(value ?? '—') || '—'}</td>
-    </tr>`;
-  return `<!DOCTYPE html>
-<html lang="fr">
-  <body style="margin:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <div style="max-width:560px;margin:0 auto;padding:24px;">
-      <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
-        <div style="background:#111827;padding:20px 24px;">
-          <h1 style="margin:0;color:#ffffff;font-size:18px;">🔔 Nouvelle demande d'accès Radar CRM</h1>
-        </div>
-        <div style="padding:24px;">
-          <p style="margin:0 0 16px;color:#374151;font-size:14px;">
-            <strong>${escapeHtml(fullName)}</strong>${r.company ? ` — ${escapeHtml(r.company)}` : ''} vient de demander l'accès à Radar CRM.
-          </p>
-          <table style="width:100%;border-collapse:collapse;border:1px solid #f3f4f6;border-radius:8px;">
-            ${row('Prénom', r.first_name)}
-            ${row('Nom', r.last_name)}
-            ${row('Email', r.email)}
-            ${row('Entreprise', r.company)}
-            ${row('Fonction', r.job_title)}
-            ${row('Téléphone', r.phone)}
-            ${row('Date', formatDateFr(r.created_at))}
-          </table>
-          <p style="margin:20px 0 0;color:#6b7280;font-size:13px;line-height:1.5;">
-            Activez l'accès depuis l'onglet admin Radar CRM (ou via <code>admin_approve_access_request</code>).
-          </p>
-        </div>
-      </div>
-    </div>
-  </body>
-</html>`;
+  const intro = `<strong>${escapeHtml(fullName)}</strong>${r.company ? ` — ${escapeHtml(r.company)}` : ''} vient de demander l'accès à Radar CRM.`;
+
+  return renderEmailShell({
+    title: "Nouvelle demande d'accès Radar CRM",
+    preheader: `${fullName}${r.company ? ` — ${r.company}` : ''} vient de demander l'accès à Radar CRM.`,
+    bodyBlocks: [
+      heading("🔔 Nouvelle demande d'accès Radar CRM"),
+      paragraph(intro),
+      dataTable([
+        ['Prénom', r.first_name ?? '—'],
+        ['Nom', r.last_name ?? '—'],
+        ['Email', r.email ?? '—'],
+        ['Entreprise', r.company ?? '—'],
+        ['Fonction', r.job_title ?? '—'],
+        ['Téléphone', r.phone ?? '—'],
+        ['Date', formatDateFr(r.created_at)],
+      ]),
+      paragraph(
+        "Activez l'accès depuis l'onglet admin Radar CRM (ou via <code>admin_approve_access_request</code>).",
+      ),
+    ],
+    // Email interne a l'admin : pas de lien de desinscription (transactionnel).
+    footer: {},
+  });
 }
 
 Deno.serve(async (req) => {
