@@ -174,7 +174,7 @@ const Home = () => {
         <section className="relative overflow-hidden">
           {/* IMAGE PLEIN CADRE — fond du hero */}
           <div aria-hidden className="absolute inset-0 z-0">
-            <img src="/home-hero.jpg" alt="" className="w-full h-full object-cover" style={{ objectPosition: '72% center' }} />
+            <img src="/home-texture-wave.jpg" alt="" className="w-full h-full object-cover" style={{ objectPosition: '72% center' }} />
           </div>
 
           {/* Voile blanc dégradé — DESKTOP */}
