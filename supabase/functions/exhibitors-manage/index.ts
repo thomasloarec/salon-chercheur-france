@@ -2076,18 +2076,16 @@ Deno.serve(async (req) => {
           emailResult = await sendExhibitorEmail({
             to: user_email,
             subject: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: #1a1a1a; font-size: 24px; text-align: center;">🎉 Bienvenue dans l'équipe !</h1>
-                <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                  Vous avez été ajouté comme gestionnaire de <strong>${exhibitorName}</strong> sur Lotexpo.
-                </p>
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${siteUrl}/profile" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Accéder à mon espace</a>
-                </div>
-                <p style="color: #888; font-size: 13px;">— L'équipe Lotexpo</p>
-              </div>
-            `,
+            html: renderEmailShell({
+              title: `Vous avez été ajouté comme gestionnaire de ${exhibitorName}`,
+              preheader: `Vous êtes désormais gestionnaire de ${exhibitorName}.`,
+              bodyBlocks: [
+                heading(`🎉 Bienvenue dans l'équipe !`),
+                paragraph(`Vous avez été ajouté comme gestionnaire de ${exhibitorName} sur Lotexpo.`),
+              ],
+              cta: { label: `Accéder à mon espace`, href: `${siteUrl}/profile` },
+              footer: { extraHtml: `— L'équipe Lotexpo` },
+            }),
           })
           log('admin_add_member.direct_add.send_email.done', { success: emailResult.success, status: emailResult.status, error: emailResult.error })
         } catch (emailErr: any) {
