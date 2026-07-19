@@ -172,32 +172,26 @@ const Home = () => {
       <main className="flex-1">
         {/* ============================= HERO ============================= */}
         <section className="relative overflow-hidden">
+          {/* IMAGE PLEIN CADRE — fond du hero */}
+          <div aria-hidden className="absolute inset-0 z-0">
+            <img src="/home-hero.jpg" alt="" className="w-full h-full object-cover object-right" />
+          </div>
+
+          {/* Voile blanc dégradé — DESKTOP */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-0"
-            style={{
-              backgroundImage: 'url(/home-texture-light.jpg)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              opacity: 0.7,
-            }}
+            className="pointer-events-none absolute inset-0 z-[1] hidden lg:block"
+            style={{ background: 'linear-gradient(90deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.92) 34%, hsl(var(--background) / 0.55) 52%, transparent 72%)' }}
           />
-          {/* Voile horizontal — desktop */}
+          {/* Voile MOBILE */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-0 hidden lg:block"
-            style={{ background: 'linear-gradient(90deg, hsl(var(--background)) 30%, transparent 75%)' }}
-          />
-          {/* Voile vertical — mobile/tablette (pas d'image à droite) */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-0 lg:hidden"
-            style={{ background: 'linear-gradient(180deg, hsl(var(--background) / 0.6), hsl(var(--background)))' }}
+            className="pointer-events-none absolute inset-0 z-[1] lg:hidden"
+            style={{ background: 'linear-gradient(180deg, hsl(var(--background) / 0.94), hsl(var(--background) / 0.88))' }}
           />
 
-          <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 md:py-20 grid grid-cols-1 lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
-            {/* COLONNE GAUCHE : contenu hero */}
-            <Reveal className="text-left">
+          <div className="relative z-10 max-w-6xl mx-auto px-6 py-20 md:py-28 lg:py-32">
+            <Reveal className="text-left max-w-[600px]">
               <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-7">
                 <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
                   Nouveau
@@ -205,7 +199,7 @@ const Home = () => {
                 Les salons professionnels, lus par l'IA
               </span>
 
-              <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-primary max-w-[28ch] text-balance">
+              <h1 className="heading-display text-[clamp(2.5rem,5.4vw,4.4rem)] text-foreground max-w-[28ch] text-balance">
                 Toutes les opportunités des salons professionnels,
                 <span className="block text-primary">révélées par l'IA.</span>
               </h1>
@@ -250,34 +244,6 @@ const Home = () => {
                     Voir tous les salons
                   </Button>
                 </Link>
-              </div>
-            </Reveal>
-
-            {/* COLONNE DROITE : image */}
-            <Reveal delay={120} className="hidden lg:block">
-              <div className="relative">
-                <div className="relative rounded-[22px] overflow-hidden shadow-[0_30px_70px_-30px_rgba(11,19,43,0.45)]">
-                  <img
-                    src="/home-hero.jpg"
-                    alt="Visiteuse sur un salon professionnel consultant Lotexpo sur son téléphone"
-                    className="w-full h-[440px] object-cover"
-                    loading="eager"
-                  />
-                </div>
-                <div
-                  aria-hidden
-                  className="absolute -right-4 -bottom-4 w-20 h-20 rounded-[20px] rotate-12 shadow-[0_20px_44px_-16px_hsl(var(--primary)/0.6)]"
-                  style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--info)))' }}
-                />
-                <div className="absolute -left-6 bottom-8 bg-background rounded-[14px] px-4 py-3 shadow-[0_18px_40px_-16px_rgba(11,19,43,0.32)] flex items-center gap-3 max-w-[230px]">
-                  <span className="w-9 h-9 rounded-[10px] bg-primary/10 text-primary grid place-items-center shrink-0">
-                    <Sparkles className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <b className="text-[13px] block text-foreground">Réponse trouvée</b>
-                    <span className="text-[11.5px] text-muted-foreground">en langage naturel</span>
-                  </div>
-                </div>
               </div>
             </Reveal>
           </div>
@@ -476,7 +442,7 @@ const Home = () => {
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: 'url(/home-texture-wave.jpg)',
+              backgroundImage: 'url(/home-texture-final.jpg)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               opacity: 0.3,
