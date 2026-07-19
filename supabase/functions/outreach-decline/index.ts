@@ -16,8 +16,8 @@
 // no views.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const ORANGE = '#ff7a1f';
-const NAVY = '#06286e';
+const ORANGE = '#6b51ff';
+const NAVY = '#0b132b';
 
 const ALLOWED_REASONS = ['pas_le_temps', 'pas_de_nouveaute', 'pas_compris'] as const;
 type Reason = (typeof ALLOWED_REASONS)[number];
@@ -70,14 +70,14 @@ function page(
   .actions { margin-top:28px; display:flex; flex-direction:column; gap:12px; align-items:center; }
   .btn { display:inline-block; padding:12px 22px; border-radius:10px; text-decoration:none; font-size:15px; font-weight:600; }
   .btn-primary { background:${ORANGE}; color:#fff; }
-  .btn-primary:hover { background:#ea6a10; }
+  .btn-primary:hover { background:#5540d6; }
   .link { color:${NAVY}; text-decoration:underline; font-size:14px; }
   .footer { text-align:center; margin-top:24px; font-size:12px; color:#94a3b8; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="brand">Lot<span>expo</span></div>
+    <div class="brand"><img src="https://vxivdvzzhebobveedxbj.supabase.co/storage/v1/object/public/email-assets/lotexpo-email-navy.png" alt="Lotexpo" width="150" height="39" style="display:inline-block;width:150px;height:39px;" /></div>
     <div class="card">
       <div class="badge">${icon}</div>
       <h1>${title}</h1>
