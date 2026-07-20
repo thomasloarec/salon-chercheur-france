@@ -100,13 +100,6 @@ const Header = () => {
               <Users className="h-4 w-4" />
               <span>Exposants</span>
             </NavLink>
-            <NavLink
-              to="/nouveautes"
-              className={({ isActive }) => navLinkClass(isActive)}
-            >
-              <Lightbulb className="h-4 w-4" />
-              <span>Nouveautés</span>
-            </NavLink>
             {session && isAdmin && (
               <NavLink
                 to="/admin"
