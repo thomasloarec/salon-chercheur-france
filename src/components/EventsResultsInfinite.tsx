@@ -1,9 +1,98 @@
-import { useMemo, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import EventCard from './EventCard';
 import { Calendar, Loader2 } from 'lucide-react';
 import type { Event } from '@/types/event';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { Button } from '@/components/ui/button';
+
+// Offset sticky: header (4rem) + StickyFiltersBar (~3.5rem) + SectorIconBar (~3.5rem)
+const STICKY_TOP = 'calc(4rem + 3.5rem + 3.5rem)';
+
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = () => setReduced(mq.matches);
+    mq.addEventListener?.('change', handler);
+    return () => mq.removeEventListener?.('change', handler);
+  }, []);
+  return reduced;
+}
+
+/** Reveal-on-scroll wrapper. Stagger plafonné, respecte reduced-motion. */
+function RevealItem({ index, children }: { index: number; children: React.ReactNode }) {
+  const reduced = usePrefersReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (reduced) { setInView(true); return; }
+    const node = ref.current;
+    if (!node) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) { setInView(true); obs.disconnect(); }
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [reduced]);
+
+  const delay = reduced ? 0 : Math.min(index, 5) * 60; // stagger plafonné à 6 items
+  return (
+    <div
+      ref={ref}
+      style={{
+        transition: reduced
+          ? undefined
+          : 'opacity 500ms cubic-bezier(0.22, 1, 0.36, 1), transform 500ms cubic-bezier(0.22, 1, 0.36, 1)',
+        transitionDelay: inView ? `${delay}ms` : '0ms',
+        opacity: inView ? 1 : reduced ? 1 : 0,
+        transform: inView || reduced ? 'none' : 'translateY(12px)',
+        willChange: 'opacity, transform',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionHeader({
+  label,
+  count,
+  ongoing = false,
+}: {
+  label: string;
+  count: number;
+  ongoing?: boolean;
+}) {
+  return (
+    <div
+      className="sticky z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border/60"
+      style={{ top: STICKY_TOP }}
+    >
+      <div className="flex items-center gap-3 py-3">
+        {ongoing && (
+          <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+          </span>
+        )}
+        <h2 className="heading-display text-xl md:text-2xl text-foreground capitalize">
+          {label}
+        </h2>
+        <span className="flex-1 h-px bg-border/70" aria-hidden="true" />
+        <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-xs font-medium px-2.5 py-1 shrink-0">
+          {count} salon{count > 1 ? 's' : ''}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 // Local YYYY-MM-DD (pas UTC) pour comparer les dates d'événement
 function todayYmdLocal(): string {
@@ -37,6 +126,7 @@ export const EventsResultsInfinite = ({
   totalCount
 }: EventsResultsInfiniteProps) => {
   const observerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Batched public stats (exposants + nouveautés) pour toutes les cartes affichées
   const eventIds = useMemo(() => (events ?? []).map((e) => e.id), [events]);
@@ -99,15 +189,18 @@ export const EventsResultsInfinite = ({
 
   if (isLoading) {
     return (
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col divide-y divide-border/60 border-y border-border/60">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="bg-card rounded-2xl p-6 animate-pulse">
-            <div className="h-48 bg-muted rounded-lg mb-4"></div>
-            <div className="h-4 bg-muted rounded mb-2"></div>
-            <div className="h-4 bg-muted rounded w-1/2 mb-4"></div>
-            <div className="space-y-2">
-              <div className="h-3 bg-muted rounded"></div>
-              <div className="h-3 bg-muted rounded"></div>
+          <div key={i} className="flex gap-4 sm:gap-6 py-5 animate-pulse">
+            <div className="w-32 sm:w-48 aspect-[16/10] rounded-lg bg-muted shrink-0" />
+            <div className="flex-1 min-w-0 space-y-3 py-1">
+              <div className="h-5 bg-muted rounded w-3/5" />
+              <div className="h-3 bg-muted rounded w-2/5" />
+              <div className="h-3 bg-muted rounded w-1/3" />
+            </div>
+            <div className="hidden sm:flex flex-col gap-2 w-24 py-1">
+              <div className="h-8 bg-muted rounded" />
+              <div className="h-8 bg-muted rounded" />
             </div>
           </div>
         ))}
@@ -117,44 +210,46 @@ export const EventsResultsInfinite = ({
 
   if (!events || events.length === 0) {
     return (
-      <div className="text-center py-12">
-        <Calendar className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
-        <h3 className="heading-display text-xl text-foreground mb-2">
+      <div className="max-w-md mx-auto text-center py-16 px-4">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-5">
+          <Calendar className="h-8 w-8 text-primary" />
+        </div>
+        <h3 className="heading-display text-2xl text-foreground mb-2">
           Aucun salon trouvé
         </h3>
-        <p className="text-muted-foreground">
-          Essayez de modifier vos critères de recherche
+        <p className="text-muted-foreground mb-6">
+          Essayez d'élargir votre recherche ou de retirer certains filtres.
         </p>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/salons', { replace: true })}
+        >
+          Réinitialiser les filtres
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-14 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
       {ongoingEvents.length > 0 && (
-        <section className="border-t border-border/60 pt-10 first:border-t-0 first:pt-0">
-          <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-6">
-            <span className="inline-flex items-center gap-3">
-              <span className="relative flex h-3 w-3 shrink-0" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex h-3 w-3 rounded-full bg-primary"></span>
-              </span>
-              Événements en cours
-            </span>
-          </h2>
-          <div className="flex flex-col border-t border-border/60">
-            {ongoingEvents.map((event) => renderCard(event))}
+        <section className="mb-10">
+          <SectionHeader label="Événements en cours" count={ongoingEvents.length} ongoing />
+          <div className="flex flex-col">
+            {ongoingEvents.map((event, i) => (
+              <RevealItem key={event.id} index={i}>{renderCard(event)}</RevealItem>
+            ))}
           </div>
         </section>
       )}
 
       {groupedEvents.map(({ monthLabel, events: monthEvents }) => (
-        <section key={monthLabel} className="border-t border-border/60 pt-10 first:border-t-0 first:pt-0">
-          <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-6 capitalize">
-            {monthLabel}
-          </h2>
-          <div className="flex flex-col border-t border-border/60">
-            {monthEvents.map((event) => renderCard(event))}
+        <section key={monthLabel} className="mb-10">
+          <SectionHeader label={monthLabel} count={monthEvents.length} />
+          <div className="flex flex-col">
+            {monthEvents.map((event, i) => (
+              <RevealItem key={event.id} index={i}>{renderCard(event)}</RevealItem>
+            ))}
           </div>
         </section>
       ))}
