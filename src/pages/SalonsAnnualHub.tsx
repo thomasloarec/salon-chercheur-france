@@ -35,6 +35,7 @@ function toEvent(e: CanonicalEvent): Event {
     visible: e.visible ?? true,
     slug: e.slug,
     type_event: (e.type_code || 'salon') as Event['type_event'],
+    accroche: e.accroche ?? undefined,
   };
 }
 

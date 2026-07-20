@@ -56,6 +56,7 @@ const Events = () => {
     id: event.id,
     nom_event: event.title,
     description_event: '',
+    accroche: event.accroche ?? undefined,
     date_debut: event.start_date || '',
     date_fin: event.end_date || '',
     secteur: event.secteur_labels.join(', '),
