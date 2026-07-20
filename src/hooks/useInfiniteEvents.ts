@@ -57,7 +57,7 @@ async function fetchAllFilteredEvents(filters: UrlFilters): Promise<CanonicalEve
 
   let q = supabase
     .from("events")
-    .select("*")
+    .select("*, event_ai(accroche)")
     .eq("visible", true)
     .eq("is_test", false)
     .order("date_debut", { ascending: true });
@@ -85,7 +85,7 @@ async function fetchAllFilteredEvents(filters: UrlFilters): Promise<CanonicalEve
     // Fallback: fetch all visible events
     const { data: fallbackData, error: fallbackError } = await supabase
       .from("events")
-      .select("*")
+      .select("*, event_ai(accroche)")
       .eq("visible", true)
       .eq("is_test", false)
       .order("date_debut", { ascending: true });

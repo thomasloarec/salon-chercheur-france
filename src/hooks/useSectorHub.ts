@@ -55,7 +55,7 @@ export function useSectorHub(slug: string | undefined, options: UseSectorHubOpti
         // Use filter with explicit JSON string to avoid encoding issues with '&' in PostgREST
         const { data, error } = await supabase
           .from('events')
-          .select('*')
+          .select("*, event_ai(accroche)")
           .eq('visible', true)
           .eq('is_test', false)
           .filter('secteur', 'cs', JSON.stringify([dbLabels[0]]))

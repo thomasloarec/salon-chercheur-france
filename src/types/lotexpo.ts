@@ -237,6 +237,7 @@ export type CanonicalEvent = {
   rue: string | null;
   code_postal: string | null;
   affluence: string | number | null;
+  accroche: string | null;
 };
 
 // Constants

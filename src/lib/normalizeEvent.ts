@@ -27,6 +27,10 @@ export function normalizeEventRow(row: any): CanonicalEvent {
   const postal_code = first(row.code_postal, row.postal_code, row.zip) ?? null;
   const affluence = first(row.affluence, row.nb_visiteurs, row.visiteurs) ?? null;
 
+  // Accroche IA — embed relation `event_ai(accroche)` peut être objet ou tableau
+  const eventAi = row.event_ai;
+  const accroche = (Array.isArray(eventAi) ? eventAi[0]?.accroche : eventAi?.accroche) ?? null;
+
   return {
     id: String(id),
     title: String(title),
@@ -52,6 +56,7 @@ export function normalizeEventRow(row: any): CanonicalEvent {
     rue: first(row.rue, row.street, row.address_street) ?? null,
     code_postal: postal_code ? String(postal_code) : null,
     affluence: (affluence as string | number | null) ?? null,
+    accroche: accroche ? String(accroche) : null,
   };
 }
 

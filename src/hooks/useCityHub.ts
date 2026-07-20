@@ -55,7 +55,7 @@ export function useCityHub(slug: string | undefined, options: UseCityHubOptions 
       // Fetch distinct cities from events and match.
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select("*, event_ai(accroche)")
         .eq('visible', true)
         .eq('is_test', false)
         .not('ville', 'is', null)
