@@ -261,7 +261,7 @@ function buildEvent(ev, exhibitors, novelties) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
-      { '@type': 'ListItem', position: 2, name: 'Salons', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 2, name: 'Salons', item: `${SITE_ORIGIN}/salons` },
       { '@type': 'ListItem', position: 3, name: ev.nom_event, item: canonical },
     ],
   };
@@ -315,7 +315,7 @@ function buildHome() {
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>Salons professionnels en France</h1>
     <p>Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Lotexpo centralise les salons, congrès, conventions et événements B2B avec leurs dates, lieux et exposants associés.</p>
-    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/events">Calendrier complet</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
+    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/salons">Calendrier complet</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
@@ -328,7 +328,7 @@ function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
-      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/salons` },
       { '@type': 'ListItem', position: 3, name: `Salons professionnels ${year}`, item: canonical },
     ],
   };
@@ -371,7 +371,7 @@ function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
     ${citiesLis ? `<h2>Explorer par ville</h2><ul>${citiesLis}</ul>` : ''}
     ${upcomingLis ? `<h2>Prochains salons professionnels ${year}</h2><ul>${upcomingLis}</ul>` : ''}
     ${monthsBlocks ? `<h2>Calendrier ${year} mois par mois</h2>${monthsBlocks}` : ''}
-    <p><a href="/">Tous les salons à venir</a> · <a href="/events">Calendrier complet</a></p>
+    <p><a href="/">Tous les salons à venir</a> · <a href="/salons">Calendrier complet</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
