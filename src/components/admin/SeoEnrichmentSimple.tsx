@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, Sparkles, Wand2, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Loader2, RefreshCw, Sparkles, Wand2, ShieldCheck, ExternalLink, MessageSquareQuote } from 'lucide-react';
 
 interface Counters {
   enriched: number;
@@ -31,8 +31,29 @@ export function SeoEnrichmentSimple() {
   const [generating, setGenerating] = useState(false);
   const [revalidating, setRevalidating] = useState(false);
   const [fixing, setFixing] = useState(false);
+  const [accrochesMissing, setAccrochesMissing] = useState<number | null>(null);
+  const [accrochesLoading, setAccrochesLoading] = useState(false);
+  const [accrochesRunning, setAccrochesRunning] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
+
+  const fetchAccrochesMissing = useCallback(async () => {
+    setAccrochesLoading(true);
+    try {
+      const [totalRes, withAccrocheRes] = await Promise.all([
+        supabase.from('events').select('id', { count: 'exact', head: true })
+          .eq('visible', true).eq('is_test', false),
+        supabase.from('event_ai').select('event_id', { count: 'exact', head: true })
+          .not('accroche', 'is', null),
+      ]);
+      const missing = Math.max(0, (totalRes.count ?? 0) - (withAccrocheRes.count ?? 0));
+      setAccrochesMissing(missing);
+    } catch (e) {
+      console.error('[SeoEnrichmentSimple] accroches count error', e);
+    } finally {
+      setAccrochesLoading(false);
+    }
+  }, []);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -75,11 +96,30 @@ export function SeoEnrichmentSimple() {
     }
   }, [today]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => { fetchAll(); fetchAccrochesMissing(); }, [fetchAll, fetchAccrochesMissing]);
 
   const refreshAll = () => {
     fetchAll();
+    fetchAccrochesMissing();
     window.dispatchEvent(new Event('seo-enrichment-refresh'));
+  };
+
+  const generateAccroches = async () => {
+    setAccrochesRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-event-accroches', { body: {} });
+      if (error) throw error;
+      const r = data as { traites?: number; done?: number; errors?: number; restants?: number };
+      toast({
+        title: '✨ Accroches générées',
+        description: `${r?.done ?? 0} générées, ${r?.errors ?? 0} erreurs sur ${r?.traites ?? 0}. Restants : ${r?.restants ?? '—'}.`,
+      });
+      fetchAccrochesMissing();
+    } catch (e) {
+      toast({ title: 'Erreur', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+    } finally {
+      setAccrochesRunning(false);
+    }
   };
 
   const generate = async () => {
@@ -205,6 +245,28 @@ export function SeoEnrichmentSimple() {
           <Button variant="outline" size="sm" onClick={autoFixAll} disabled={fixing}>
             {fixing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
             Corriger les erreurs factuelles
+          </Button>
+        </div>
+
+        {/* Accroches des salons */}
+        <div className="rounded-lg border p-4 bg-muted/20">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <MessageSquareQuote className="h-5 w-5 text-primary" />
+              <div>
+                <div className="text-sm font-medium">Accroches des salons</div>
+                <div className="text-xs text-muted-foreground">
+                  Une phrase courte affichée sous le nom du salon. Le cron traite quotidiennement le manquant ; ce bouton permet un rattrapage manuel (100 par clic).
+                </div>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-sm shrink-0">
+              {accrochesLoading ? '…' : `${accrochesMissing ?? '—'} sans accroche`}
+            </Badge>
+          </div>
+          <Button onClick={generateAccroches} disabled={accrochesRunning || accrochesMissing === 0}>
+            {accrochesRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            Générer les accroches manquantes
           </Button>
         </div>
 
