@@ -1094,6 +1094,66 @@ export type Database = {
         }
         Relationships: []
       }
+      event_ai: {
+        Row: {
+          accroche: string | null
+          event_id: string
+          generated_at: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          accroche?: string | null
+          event_id: string
+          generated_at?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          accroche?: string | null
+          event_id?: string
+          generated_at?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_ai_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_ai_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_ai_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_ai_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_ai_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_change_requests: {
         Row: {
           applied_at: string | null
