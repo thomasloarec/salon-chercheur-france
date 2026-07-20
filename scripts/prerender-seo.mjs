@@ -377,6 +377,47 @@ function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
 }
 
 function buildBlogIndex(articles) {
+  return _buildBlogIndex(articles);
+}
+
+function buildSalonsIndex(eventsFuture) {
+  const canonical = `${SITE_ORIGIN}/salons`;
+  const title = 'Salons professionnels en France | Lotexpo';
+  const description = "Retrouvez les salons à venir, classés par secteur, ville et période.";
+  const breadcrumb = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: canonical },
+    ],
+  };
+  const capped = eventsFuture.slice(0, 50);
+  const itemList = {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    name: title,
+    numberOfItems: capped.length,
+    itemListElement: capped.map((e, i) => ({
+      '@type': 'ListItem', position: i + 1,
+      url: `${SITE_ORIGIN}/events/${encodeURIComponent(e.slug)}`,
+      name: e.nom_event,
+    })),
+  };
+  const headExtra = commonHead(canonical, title, description)
+    + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`
+    + `<script type="application/ld+json">${safeJsonLd(itemList)}</script>`;
+  const upcomingLis = capped.map(e =>
+    `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.ville ? ' – ' + escapeHtml(e.ville) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`
+  ).join('');
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>Salons professionnels en France</h1>
+    <p>Retrouvez les salons à venir, classés par secteur, ville et période.</p>
+    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
+    ${upcomingLis ? `<h2>Prochains salons professionnels</h2><ul>${upcomingLis}</ul>` : ''}
+  </div>`;
+  return { title, description, canonical, headExtra, body };
+}
+
+function _buildBlogIndex(articles) {
   const canonical = `${SITE_ORIGIN}/blog`;
   const title = 'Blog Lotexpo – Salons professionnels, secteurs & exposants';
   const description = 'Articles, guides et analyses sur les salons professionnels en France : secteurs porteurs, calendriers, exposants à suivre et tendances B2B.';
