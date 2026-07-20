@@ -1194,6 +1194,17 @@ async function main() {
     console.log(`[prerender] annual hub: ${futureOfYear.length} events, ${annualSectors.length} sectors, ${annualCities.length} cities`);
   } catch (e) { errors++; console.warn('[prerender] annual hub failed', e.message); }
 
+  // 7a-bis. /salons index — upcoming events (date_fin >= today), sorted asc, capped 50.
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const salonsFuture = events
+      .filter((e) => (e.date_fin || e.date_debut || '') >= today)
+      .sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
+    const built = buildSalonsIndex(salonsFuture);
+    await writeRoute('/salons', applyToShell(baseTemplate, built));
+    console.log(`[prerender] /salons: ${salonsFuture.length} upcoming events`);
+  } catch (e) { errors++; console.warn('[prerender] /salons failed', e.message); }
+
   // 7b. exhibitor profiles (/exposants/:slug) — robots READ from seo_indexable
   // and written HARD into the HTML. Generated for every active non-test profile.
   for (const prof of profiles) {
