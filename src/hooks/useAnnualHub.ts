@@ -31,7 +31,7 @@ export function useAnnualHub(year: number) {
     queryFn: async (): Promise<AnnualHubData> => {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select("*, event_ai(accroche)")
         .eq('visible', true)
         .eq('is_test', false)
         .gte('date_debut', `${year}-01-01`)
