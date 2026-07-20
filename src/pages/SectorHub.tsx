@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import type { Event } from '@/types/event';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { MonthSeparator } from '@/components/MonthSeparator';
 
 function canonicalToEvent(e: any): Event {
   return {
@@ -170,11 +171,9 @@ const SectorHub = () => {
               </h2>
               <div className="space-y-10">
                 {groupedUpcoming.map(({ monthLabel, events: monthEvents }) => (
-                  <div key={monthLabel} className="border-t border-border pt-8 first:border-t-0 first:pt-0">
-                    <h3 className="text-2xl font-semibold text-foreground mb-6 capitalize">
-                      {monthLabel}
-                    </h3>
-                    <div className="flex flex-col border-t border-border/60">
+                  <div key={monthLabel}>
+                    <MonthSeparator label={monthLabel} count={monthEvents.length} className="mb-6" />
+                    <div className="flex flex-col">
                       {monthEvents.map(e => (
                         <EventCard
                           key={e.id}
