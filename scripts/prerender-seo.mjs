@@ -261,7 +261,7 @@ function buildEvent(ev, exhibitors, novelties) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
-      { '@type': 'ListItem', position: 2, name: 'Salons', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 2, name: 'Salons', item: `${SITE_ORIGIN}/salons` },
       { '@type': 'ListItem', position: 3, name: ev.nom_event, item: canonical },
     ],
   };
@@ -315,7 +315,7 @@ function buildHome() {
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>Salons professionnels en France</h1>
     <p>Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Lotexpo centralise les salons, congrès, conventions et événements B2B avec leurs dates, lieux et exposants associés.</p>
-    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/events">Calendrier complet</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
+    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/salons">Calendrier complet</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
@@ -328,7 +328,7 @@ function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
-      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/salons` },
       { '@type': 'ListItem', position: 3, name: `Salons professionnels ${year}`, item: canonical },
     ],
   };
@@ -371,7 +371,44 @@ function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
     ${citiesLis ? `<h2>Explorer par ville</h2><ul>${citiesLis}</ul>` : ''}
     ${upcomingLis ? `<h2>Prochains salons professionnels ${year}</h2><ul>${upcomingLis}</ul>` : ''}
     ${monthsBlocks ? `<h2>Calendrier ${year} mois par mois</h2>${monthsBlocks}` : ''}
-    <p><a href="/">Tous les salons à venir</a> · <a href="/events">Calendrier complet</a></p>
+    <p><a href="/">Tous les salons à venir</a> · <a href="/salons">Calendrier complet</a></p>
+  </div>`;
+  return { title, description, canonical, headExtra, body };
+}
+
+function buildSalonsIndex(eventsFuture) {
+  const canonical = `${SITE_ORIGIN}/salons`;
+  const title = 'Salons professionnels en France | Lotexpo';
+  const description = "Retrouvez les salons à venir, classés par secteur, ville et période.";
+  const breadcrumb = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: canonical },
+    ],
+  };
+  const capped = eventsFuture.slice(0, 50);
+  const itemList = {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    name: title,
+    numberOfItems: capped.length,
+    itemListElement: capped.map((e, i) => ({
+      '@type': 'ListItem', position: i + 1,
+      url: `${SITE_ORIGIN}/events/${encodeURIComponent(e.slug)}`,
+      name: e.nom_event,
+    })),
+  };
+  const headExtra = commonHead(canonical, title, description)
+    + `<script type="application/ld+json">${safeJsonLd(breadcrumb)}</script>`
+    + `<script type="application/ld+json">${safeJsonLd(itemList)}</script>`;
+  const upcomingLis = capped.map(e =>
+    `<li><a href="/events/${encodeURIComponent(e.slug)}">${escapeHtml(e.nom_event)}${e.ville ? ' – ' + escapeHtml(e.ville) : ''}${e.date_debut ? ' (' + escapeHtml(fmtDateRange(e.date_debut, e.date_fin)) + ')' : ''}</a></li>`
+  ).join('');
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>Salons professionnels en France</h1>
+    <p>Retrouvez les salons à venir, classés par secteur, ville et période.</p>
+    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
+    ${upcomingLis ? `<h2>Prochains salons professionnels</h2><ul>${upcomingLis}</ul>` : ''}
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
@@ -459,7 +496,7 @@ function buildSectorYear(slug, label, year, eventsOfYear, otherYears) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
-      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/salons` },
       { '@type': 'ListItem', position: 3, name: `Salons ${sectorLabel}`, item: evergreen },
       { '@type': 'ListItem', position: 4, name: `Salons ${sectorLabel} ${year}`, item: self },
     ],
@@ -553,7 +590,7 @@ function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
-      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/salons` },
       { '@type': 'ListItem', position: 3, name: `Salons à ${cityLabel}`, item: evergreen },
       { '@type': 'ListItem', position: 4, name: `Salons à ${cityLabel} ${year}`, item: self },
     ],
@@ -797,7 +834,7 @@ function buildNoveltiesIndex(novelties) {
     <h1>Nouveautés des salons professionnels</h1>
     <p>Retrouvez les ${novelties.length} nouveautés présentées par les exposants des salons professionnels référencés sur Lotexpo : lancements de produits, innovations, démonstrations et offres.</p>
     <ul>${list}</ul>
-    <p><a href="/events">Calendrier des salons</a> · <a href="/exposants">Tous les exposants</a></p>
+    <p><a href="/salons">Calendrier des salons</a> · <a href="/exposants">Tous les exposants</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body, robots };
 }
@@ -1156,6 +1193,17 @@ async function main() {
     await writeRoute(`/salons-professionnels-${ANNUAL_YEAR}`, applyToShell(baseTemplate, built));
     console.log(`[prerender] annual hub: ${futureOfYear.length} events, ${annualSectors.length} sectors, ${annualCities.length} cities`);
   } catch (e) { errors++; console.warn('[prerender] annual hub failed', e.message); }
+
+  // 7a-bis. /salons index — upcoming events (date_fin >= today), sorted asc, capped 50.
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const salonsFuture = events
+      .filter((e) => (e.date_fin || e.date_debut || '') >= today)
+      .sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
+    const built = buildSalonsIndex(salonsFuture);
+    await writeRoute('/salons', applyToShell(baseTemplate, built));
+    console.log(`[prerender] /salons: ${salonsFuture.length} upcoming events`);
+  } catch (e) { errors++; console.warn('[prerender] /salons failed', e.message); }
 
   // 7b. exhibitor profiles (/exposants/:slug) — robots READ from seo_indexable
   // and written HARD into the HTML. Generated for every active non-test profile.
