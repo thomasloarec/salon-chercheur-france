@@ -101,7 +101,7 @@ const SectorHub = () => {
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Salons", "item": "https://lotexpo.com" },
-      { "@type": "ListItem", "position": 2, "name": "Salons professionnels", "item": "https://lotexpo.com/events" },
+      { "@type": "ListItem", "position": 2, "name": "Salons professionnels", "item": "https://lotexpo.com/salons" },
       { "@type": "ListItem", "position": 3, "name": `Salons ${hub.sectorLabel}`, "item": canonicalUrl },
     ],
   };
