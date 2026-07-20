@@ -39,6 +39,7 @@ async function fetchAllFilteredEvents(filters: UrlFilters): Promise<CanonicalEve
     .from("events")
     .select("*")
     .eq("visible", true)
+    .eq("is_test", false)
     .order("date_debut", { ascending: true });
 
   // TYPE via type_event
@@ -66,6 +67,7 @@ async function fetchAllFilteredEvents(filters: UrlFilters): Promise<CanonicalEve
       .from("events")
       .select("*")
       .eq("visible", true)
+      .eq("is_test", false)
       .order("date_debut", { ascending: true });
     
     if (fallbackError) throw fallbackError;
