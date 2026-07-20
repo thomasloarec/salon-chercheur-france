@@ -376,10 +376,6 @@ function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
   return { title, description, canonical, headExtra, body };
 }
 
-function buildBlogIndex(articles) {
-  return _buildBlogIndex(articles);
-}
-
 function buildSalonsIndex(eventsFuture) {
   const canonical = `${SITE_ORIGIN}/salons`;
   const title = 'Salons professionnels en France | Lotexpo';
@@ -417,7 +413,7 @@ function buildSalonsIndex(eventsFuture) {
   return { title, description, canonical, headExtra, body };
 }
 
-function _buildBlogIndex(articles) {
+function buildBlogIndex(articles) {
   const canonical = `${SITE_ORIGIN}/blog`;
   const title = 'Blog Lotexpo – Salons professionnels, secteurs & exposants';
   const description = 'Articles, guides et analyses sur les salons professionnels en France : secteurs porteurs, calendriers, exposants à suivre et tendances B2B.';
