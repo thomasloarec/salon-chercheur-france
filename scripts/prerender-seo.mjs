@@ -459,7 +459,7 @@ function buildSectorYear(slug, label, year, eventsOfYear, otherYears) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
-      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/salons` },
       { '@type': 'ListItem', position: 3, name: `Salons ${sectorLabel}`, item: evergreen },
       { '@type': 'ListItem', position: 4, name: `Salons ${sectorLabel} ${year}`, item: self },
     ],
@@ -553,7 +553,7 @@ function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_ORIGIN },
-      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/events` },
+      { '@type': 'ListItem', position: 2, name: 'Salons professionnels', item: `${SITE_ORIGIN}/salons` },
       { '@type': 'ListItem', position: 3, name: `Salons à ${cityLabel}`, item: evergreen },
       { '@type': 'ListItem', position: 4, name: `Salons à ${cityLabel} ${year}`, item: self },
     ],
@@ -797,7 +797,7 @@ function buildNoveltiesIndex(novelties) {
     <h1>Nouveautés des salons professionnels</h1>
     <p>Retrouvez les ${novelties.length} nouveautés présentées par les exposants des salons professionnels référencés sur Lotexpo : lancements de produits, innovations, démonstrations et offres.</p>
     <ul>${list}</ul>
-    <p><a href="/events">Calendrier des salons</a> · <a href="/exposants">Tous les exposants</a></p>
+    <p><a href="/salons">Calendrier des salons</a> · <a href="/exposants">Tous les exposants</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body, robots };
 }
