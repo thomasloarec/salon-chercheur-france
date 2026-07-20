@@ -77,13 +77,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
         !event.visible && isAdmin && 'opacity-60',
       )}
     >
-      <Link
-        to={targetHref}
-        aria-label={event.nom_event}
-        className="absolute inset-0 z-[1] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-      />
-
-      {/* Contenu non interactif : laisse passer les clics vers le <Link> étiré ci-dessus.
+      {/* Contenu non interactif : laisse passer les clics vers le <Link> étiré du nom (ci-dessous).
           Les éléments réellement interactifs (FavoriteButton, bouton Publier) réactivent
           pointer-events + z-index au-dessus du lien. */}
       <div className="pointer-events-none relative z-[2] grid gap-4 p-4 grid-cols-1 min-[560px]:grid-cols-[140px_1fr] min-[1040px]:grid-cols-[172px_1fr_auto] min-[1040px]:gap-6 min-[1040px]:items-center">
@@ -137,7 +131,12 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
             className="heading-display text-[1.2rem] leading-tight text-foreground group-hover:text-primary transition-colors"
             title={event.nom_event}
           >
-            {event.nom_event}
+            <Link
+              to={targetHref}
+              className="pointer-events-auto after:absolute after:inset-0 after:z-[1] after:content-[''] after:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-md"
+            >
+              {event.nom_event}
+            </Link>
           </h3>
 
           <div className="flex flex-wrap items-center gap-1.5">
