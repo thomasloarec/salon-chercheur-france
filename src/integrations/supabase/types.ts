@@ -8301,6 +8301,16 @@ export type Database = {
         Args: { p_event_id: string; p_query: string }
         Returns: Json
       }
+      select_events_missing_accroche: {
+        Args: { p_limit?: number }
+        Returns: {
+          description_event: string
+          id: string
+          nom_event: string
+          secteur: Json
+          ville: string
+        }[]
+      }
       seo_eligible_events: {
         Args: { p_only_post_import?: boolean }
         Returns: {
