@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SENTINEL_ALL, normalizeParam, isAll, updateUrlParam } from '@/lib/urlFilters';
 import { SafeSelect } from '@/components/ui/SafeSelect';
 import { fetchAllEventTypes, fetchAllRegions, ALL_MONTHS, type Option } from '@/lib/filtersData';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface StickyFiltersBarProps {
   className?: string;
@@ -41,8 +43,37 @@ export default function StickyFiltersBar({ className }: StickyFiltersBarProps) {
   const currentType = normalizeParam(searchParams.get('type'));
   const currentMonth = normalizeParam(searchParams.get('month'));
   const currentRegion = normalizeParam(searchParams.get('region'));
+  const currentQ = searchParams.get('q') ?? '';
 
-  const hasActiveFilters = !isAll(currentType) || !isAll(currentMonth) || !isAll(currentRegion);
+  const [qInput, setQInput] = useState<string>(currentQ);
+  const debouncedQ = useDebounce(qInput, 250);
+
+  // Sync URL when debounced value changes
+  useEffect(() => {
+    const trimmed = debouncedQ.trim();
+    const current = searchParams.get('q') ?? '';
+    if (trimmed === current) return;
+    const newParams = new URLSearchParams(searchParams);
+    if (trimmed) newParams.set('q', trimmed);
+    else newParams.delete('q');
+    setSearchParams(newParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQ]);
+
+  // Sync from URL (e.g. back/forward navigation)
+  useEffect(() => {
+    if ((searchParams.get('q') ?? '') !== qInput) {
+      setQInput(searchParams.get('q') ?? '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get('q')]);
+
+  const hasActiveFilters =
+    !isAll(currentType) ||
+    !isAll(currentMonth) ||
+    !isAll(currentRegion) ||
+    (searchParams.get('sectors') ?? '').length > 0 ||
+    qInput.trim().length > 0;
 
   const updateFilter = (key: string, value: string | null) => {
     const newParams = updateUrlParam(searchParams, key, value);
@@ -54,62 +85,65 @@ export default function StickyFiltersBar({ className }: StickyFiltersBarProps) {
     newParams.delete('type');
     newParams.delete('month');
     newParams.delete('region');
+    newParams.delete('sectors');
+    newParams.delete('q');
     setSearchParams(newParams);
+    setQInput('');
   };
-
-  const getTypeName = (id: string) => eventTypes.find(t => t.value === id)?.label || id;
-  const getMonthName = (id: string) => ALL_MONTHS.find(m => m.value === id)?.label || id;
-  const getRegionName = (id: string) => regions.find(r => r.value === id)?.label || id;
 
   return (
     <div className={cn(
-      "sticky top-16 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b",
+      "sticky top-16 z-30 bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/70 border-b border-border",
       className
     )}>
       <div className="container mx-auto px-4 py-3">
-        {/* Filters - Horizontal scroll on mobile */}
-        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar md:overflow-visible md:flex-wrap">
-          
-          {/* Type Filter */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-              Type
-            </label>
-            <SafeSelect
-              ariaLabel="Filtre type d'événement"
-              className="w-40"
-              placeholder="Type d'événement"
-              value={isAll(currentType) ? null : currentType}
-              onChange={(v) => updateFilter('type', v)}
-              options={eventTypes}
-              allLabel="Tous les types"
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Search input */}
+          <div className="relative flex-1 min-w-[220px] max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
+              placeholder="Rechercher un salon, une ville, un secteur…"
+              aria-label="Rechercher un salon"
+              className="h-[42px] pl-9 pr-9 rounded-full border-border bg-background focus-visible:ring-primary"
             />
+            {qInput && (
+              <button
+                type="button"
+                onClick={() => setQInput('')}
+                aria-label="Effacer la recherche"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
-          {/* Month Filter */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-              Mois
-            </label>
+          {/* Filters group */}
+          <div className="flex items-center gap-2 flex-wrap">
             <SafeSelect
               ariaLabel="Filtre mois"
-              className="w-40"
+              className="w-40 h-[42px] rounded-full"
               placeholder="Mois"
               value={isAll(currentMonth) ? null : currentMonth}
               onChange={(v) => updateFilter('month', v)}
               options={ALL_MONTHS}
               allLabel="Tous les mois"
             />
-          </div>
-
-          {/* Region Filter */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-              Région
-            </label>
+            <SafeSelect
+              ariaLabel="Filtre type d'événement"
+              className="w-40 h-[42px] rounded-full"
+              placeholder="Type"
+              value={isAll(currentType) ? null : currentType}
+              onChange={(v) => updateFilter('type', v)}
+              options={eventTypes}
+              allLabel="Tous les types"
+            />
             <SafeSelect
               ariaLabel="Filtre région"
-              className="w-40"
+              className="w-44 h-[42px] rounded-full"
               placeholder="Région"
               value={isAll(currentRegion) ? null : currentRegion}
               onChange={(v) => updateFilter('region', v)}
@@ -118,52 +152,15 @@ export default function StickyFiltersBar({ className }: StickyFiltersBarProps) {
             />
           </div>
 
-          {/* Active Filters Display */}
           {hasActiveFilters && (
-            <div className="flex items-center gap-2 ml-auto">
-              <div className="flex flex-wrap gap-1">
-                {!isAll(currentType) && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    {getTypeName(currentType)}
-                    <button
-                      onClick={() => updateFilter('type', SENTINEL_ALL)}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                      aria-label="Supprimer le filtre type"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                )}
-                {!isAll(currentMonth) && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    {getMonthName(currentMonth)}
-                    <button
-                      onClick={() => updateFilter('month', SENTINEL_ALL)}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                      aria-label="Supprimer le filtre mois"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                )}
-                {!isAll(currentRegion) && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    {getRegionName(currentRegion)}
-                    <button
-                      onClick={() => updateFilter('region', SENTINEL_ALL)}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                      aria-label="Supprimer le filtre région"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                )}
-              </div>
-              
-              <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-                Effacer tout
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="ml-auto text-muted-foreground hover:text-foreground"
+            >
+              Réinitialiser
+            </Button>
           )}
         </div>
       </div>

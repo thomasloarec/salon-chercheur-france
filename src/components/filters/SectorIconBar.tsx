@@ -109,8 +109,8 @@ export function SectorIconBar({
                 className={cn(
                   "inline-flex h-14 w-14 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
                   allActive
-                    ? "bg-gradient-to-br from-info/10 via-primary/10 to-primary/10 border-info/30"
-                    : "bg-background border-border hover:bg-muted hover:shadow-md hover:scale-105"
+                    ? "bg-primary border-primary text-primary-foreground"
+                    : "bg-muted border-border hover:bg-muted/70 hover:shadow-md hover:scale-105"
                 )}
               >
                 <span className="text-xl">✨</span>
@@ -118,7 +118,7 @@ export function SectorIconBar({
               <span
                 className={cn(
                   "text-center leading-tight transition-colors",
-                  allActive ? "text-info dark:text-info" : "text-foreground/80 group-hover:text-foreground"
+                  allActive ? "text-primary" : "text-foreground/80 group-hover:text-foreground"
                 )}
               >
                 Tout
@@ -146,20 +146,20 @@ export function SectorIconBar({
                       "inline-flex h-14 w-14 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
                       active
                         ? "bg-primary border-primary"
-                        : "bg-background border-border hover:bg-muted hover:shadow-md hover:scale-105"
+                        : "bg-muted border-border hover:bg-muted/70 hover:shadow-md hover:scale-105"
                     )}
                   >
                     <IconComponent 
                       className={cn(
                         "h-6 w-6 transition-colors",
-                        active ? "text-primary-foreground" : "text-foreground/70"
+                        active ? "text-primary-foreground" : "text-foreground/70 group-hover:text-foreground"
                       )} 
                     />
                   </span>
                   <span
                     className={cn(
                       "text-center leading-tight transition-colors line-clamp-2",
-                      active ? "text-primary-foreground" : "text-foreground/80 group-hover:text-primary"
+                      active ? "text-primary" : "text-foreground/80 group-hover:text-primary"
                     )}
                   >
                     {sector.name}

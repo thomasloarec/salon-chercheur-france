@@ -32,6 +32,26 @@ function matchesRegion(ev: CanonicalEvent, wantedSlug: string | null): boolean {
   return slug === wantedSlug;
 }
 
+function normalizeForSearch(s: string | null | undefined): string {
+  return (s ?? "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function matchesQuery(ev: CanonicalEvent, q: string | null | undefined): boolean {
+  const needle = normalizeForSearch(q ?? "").trim();
+  if (!needle) return true;
+  const hay = [
+    normalizeForSearch(ev.title),
+    normalizeForSearch(ev.ville),
+    normalizeForSearch(ev.nom_lieu),
+    ...(ev.secteur_labels ?? []).map((l) => normalizeForSearch(l)),
+  ].join(" \u241f ");
+  return hay.includes(needle);
+}
+
 async function fetchAllFilteredEvents(filters: UrlFilters): Promise<CanonicalEvent[]> {
   const { sectors, type } = filters;
 
@@ -85,8 +105,9 @@ async function fetchAllFilteredEvents(filters: UrlFilters): Promise<CanonicalEve
     const byMonth = bySector.filter(ev => matchesMonth(ev, filters.month));
     const byDate = byMonth.filter(ev => isOngoingOrUpcoming(ev));
     const byRegion = byDate.filter(ev => matchesRegion(ev, filters.region));
-    
-    return byRegion;
+    const byQuery = byRegion.filter(ev => matchesQuery(ev, filters.q));
+
+    return byQuery;
   }
   
   const normalized = (Array.isArray(data) ? data : []).map(normalizeEventRow);
@@ -95,8 +116,9 @@ async function fetchAllFilteredEvents(filters: UrlFilters): Promise<CanonicalEve
   const byMonth = normalized.filter(ev => matchesMonth(ev, filters.month));
   const byDate = byMonth.filter(ev => isOngoingOrUpcoming(ev));
   const byRegion = byDate.filter(ev => matchesRegion(ev, filters.region));
-  
-  return byRegion;
+  const byQuery = byRegion.filter(ev => matchesQuery(ev, filters.q));
+
+  return byQuery;
 }
 
 export function useInfiniteEvents(params: UseInfiniteEventsParams) {
@@ -109,6 +131,7 @@ export function useInfiniteEvents(params: UseInfiniteEventsParams) {
       filters.type ?? 'all',
       filters.month ?? 'all',
       filters.region ?? 'all',
+      filters.q ?? 'all',
       pageSize
     ],
     queryFn: async ({ pageParam = 1 }): Promise<EventsPage> => {
