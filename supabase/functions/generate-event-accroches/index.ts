@@ -37,16 +37,22 @@ function extractSectors(secteur: unknown): string {
 
 function buildPrompt(ev: EventRow): string {
   const nom = (ev.nom_event || '').trim();
-  const ville = (ev.ville || '').trim();
   const secteurs = extractSectors(ev.secteur);
   const desc = (ev.description_event || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
-  return `Tu rédiges une accroche courte pour un salon professionnel, affichée sous son nom dans un annuaire.
+  return `Tu rédiges une accroche pour un salon professionnel, affichée sous son nom dans un annuaire. Elle complète les informations déjà visibles à côté (nom, secteur, dates, ville, nombre d'exposants) : elle ne doit surtout pas les répéter.
+
 Salon : ${nom}
 Secteur(s) : ${secteurs}
-Ville : ${ville}
 Description : ${desc}
 
-Consignes : une seule phrase, 110 à 140 caractères, en français, factuelle et spécifique à ce salon (pas de formule générique ni de superlatif creux), sans tiret cadratin. Réponds uniquement par l'accroche, sans guillemets ni préambule.`;
+Consignes :
+- En une seule phrase, décris ce qu'est ce salon : son thème, son public professionnel, ce qu'on y trouve ou pourquoi y aller.
+- N'indique JAMAIS la date, ni la ville ou la région, ni le nombre d'exposants : ces informations sont déjà affichées à côté de l'accroche.
+- Maximum 130 caractères, une phrase complète et fluide.
+- Français, factuel et spécifique à ce salon ; évite les superlatifs creux.
+- Varie la formulation : n'ouvre pas par « Le rendez-vous » ni « Le salon ».
+- Sans tiret cadratin.
+- Réponds uniquement par l'accroche, sans guillemets ni préambule.`;
 }
 
 function cleanAccroche(raw: string): string {
@@ -55,7 +61,13 @@ function cleanAccroche(raw: string): string {
   t = t.replace(/^["'«»“”‘’]+|["'«»“”‘’]+$/g, '').trim();
   // remove em-dash per instructions
   t = t.replace(/—/g, '-');
-  if (t.length > MAX_LEN) t = t.slice(0, MAX_LEN).trimEnd();
+  if (t.length > MAX_LEN) {
+    const slice = t.slice(0, MAX_LEN);
+    const lastSpace = slice.lastIndexOf(' ');
+    t = (lastSpace > 0 ? slice.slice(0, lastSpace) : slice).trimEnd();
+    // strip trailing punctuation fragments like a lone comma/semicolon
+    t = t.replace(/[,;:\-]+$/g, '').trimEnd();
+  }
   return t;
 }
 
