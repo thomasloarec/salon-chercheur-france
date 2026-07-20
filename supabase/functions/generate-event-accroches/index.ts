@@ -104,11 +104,46 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
-  if (!supabaseUrl || !serviceKey || !anthropicKey) {
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!supabaseUrl || !serviceKey || !anthropicKey || !anonKey) {
     return new Response(JSON.stringify({ error: 'Missing required secrets' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  }
+
+  // Auth: allow (a) service_role token (cron) or (b) authenticated admin user.
+  const authHeader = req.headers.get('Authorization') || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  const token = authHeader.slice('Bearer '.length);
+  if (token !== serviceKey) {
+    // Verify user JWT and admin role
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const admin = createClient(supabaseUrl, serviceKey);
+    const { data: isAdmin, error: roleError } = await admin.rpc('has_role', {
+      _user_id: claimsData.claims.sub,
+      _role: 'admin',
+    });
+    if (roleError || !isAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden: admin only' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
 
   const supabase = createClient(supabaseUrl, serviceKey);
