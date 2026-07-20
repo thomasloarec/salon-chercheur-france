@@ -147,6 +147,10 @@ const Events = () => {
               <Link to="/salons-professionnels-2026" className="text-primary hover:underline font-medium whitespace-nowrap">
                 Voir les salons 2026 →
               </Link>
+              {' '}
+              <Link to="/nouveautes" className="text-primary hover:underline font-medium whitespace-nowrap">
+                Nouveautés des exposants →
+              </Link>
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
               {isLoading ? 'Chargement…' : `${totalCount} salon${totalCount > 1 ? 's' : ''} référencé${totalCount > 1 ? 's' : ''}`}
