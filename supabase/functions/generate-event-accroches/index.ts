@@ -102,47 +102,17 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, serviceKey);
 
-  // Select events with no accroche yet (either no event_ai row or accroche IS NULL).
+  // Select events missing an accroche via dedicated RPC (NOT EXISTS join).
   const { data, error } = await supabase.rpc('select_events_missing_accroche', {
     p_limit: BATCH_LIMIT,
-  }).select();
-
-  let rows: EventRow[] | null = null;
+  });
   if (error) {
-    // Fallback: two-step query without a dedicated RPC.
-    const { data: existing, error: aiErr } = await supabase
-      .from('event_ai')
-      .select('event_id')
-      .not('accroche', 'is', null);
-    if (aiErr) {
-      return new Response(JSON.stringify({ error: aiErr.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    const doneIds = (existing ?? []).map((r: any) => r.event_id as string);
-    let query = supabase
-      .from('events')
-      .select('id, nom_event, ville, secteur, description_event')
-      .eq('visible', true)
-      .eq('is_test', false)
-      .limit(BATCH_LIMIT);
-    if (doneIds.length > 0) {
-      // Supabase supports .not('id','in',`(${...})`)
-      const list = `(${doneIds.map((id) => `"${id}"`).join(',')})`;
-      query = query.not('id', 'in', list);
-    }
-    const { data: evs, error: evErr } = await query;
-    if (evErr) {
-      return new Response(JSON.stringify({ error: evErr.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    rows = (evs ?? []) as EventRow[];
-  } else {
-    rows = (data ?? []) as EventRow[];
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
+  const rows = (data ?? []) as EventRow[];
 
   const total = rows.length;
   let done = 0;
