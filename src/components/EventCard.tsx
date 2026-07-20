@@ -83,7 +83,10 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
         className="absolute inset-0 z-[1] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       />
 
-      <div className="relative z-[2] grid gap-4 p-4 grid-cols-1 min-[560px]:grid-cols-[140px_1fr] min-[1040px]:grid-cols-[172px_1fr_auto] min-[1040px]:gap-6 min-[1040px]:items-center">
+      {/* Contenu non interactif : laisse passer les clics vers le <Link> étiré ci-dessus.
+          Les éléments réellement interactifs (FavoriteButton, bouton Publier) réactivent
+          pointer-events + z-index au-dessus du lien. */}
+      <div className="pointer-events-none relative z-[2] grid gap-4 p-4 grid-cols-1 min-[560px]:grid-cols-[140px_1fr] min-[1040px]:grid-cols-[172px_1fr_auto] min-[1040px]:gap-6 min-[1040px]:items-center">
         {/* Vignette */}
         <div className="relative w-full overflow-hidden rounded-xl bg-muted aspect-[16/10] min-[560px]:w-[140px] min-[1040px]:w-[172px]">
           {adminPreview && (
@@ -122,7 +125,7 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
           )}
 
           {!adminPreview && !ongoing && (
-            <div className="absolute top-2 right-2 z-[3]">
+            <div className="pointer-events-auto absolute top-2 right-2 z-[3]">
               <FavoriteButton eventId={event.id} size="sm" variant="inline" />
             </div>
           )}
