@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, LogOut, Radar, Sparkles } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, LogOut, Radar, Sparkles, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -99,6 +99,13 @@ const Header = () => {
             >
               <Users className="h-4 w-4" />
               <span>Exposants</span>
+            </NavLink>
+            <NavLink
+              to="/nouveautes"
+              className={({ isActive }) => navLinkClass(isActive)}
+            >
+              <Lightbulb className="h-4 w-4" />
+              <span>Nouveautés</span>
             </NavLink>
             {session && isAdmin && (
               <NavLink
