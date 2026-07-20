@@ -5,6 +5,7 @@ import { Calendar, Loader2, Radar } from 'lucide-react';
 import type { Event } from '@/types/event';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { MonthSeparator } from '@/components/MonthSeparator';
 import { useLatestCrmImportCompanyIds } from '@/hooks/useLatestCrmImportCompanyIds';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -84,28 +85,7 @@ function SectionHeader({
   count: number;
   ongoing?: boolean;
 }) {
-  return (
-    <div
-      className="sticky z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border/60"
-      style={{ top: STICKY_TOP }}
-    >
-      <div className="flex items-center gap-3 py-3">
-        {ongoing && (
-          <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
-          </span>
-        )}
-        <h2 className="heading-display text-xl md:text-2xl text-foreground capitalize">
-          {label}
-        </h2>
-        <span className="flex-1 h-px bg-border/70" aria-hidden="true" />
-        <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-xs font-medium px-2.5 py-1 shrink-0">
-          {count} salon{count > 1 ? 's' : ''}
-        </span>
-      </div>
-    </div>
-  );
+  return <MonthSeparator label={label} count={count} ongoing={ongoing} stickyTop={STICKY_TOP} />;
 }
 
 // Local YYYY-MM-DD (pas UTC) pour comparer les dates d'événement
