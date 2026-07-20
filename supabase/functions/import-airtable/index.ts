@@ -268,6 +268,22 @@ serve(async (req) => {
         // Silence total
       }
 
+      // Fire-and-forget : génération des accroches IA pour les nouveaux salons
+      // Idempotent : ne traite que les events sans accroche existante
+      try {
+        const accrochesUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-event-accroches`
+        fetch(accrochesUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ triggered_by: 'import-airtable' })
+        }).catch(() => {})
+      } catch (_) {
+        // Silence total
+      }
+
       return new Response(JSON.stringify(summary), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
