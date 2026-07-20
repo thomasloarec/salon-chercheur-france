@@ -80,7 +80,7 @@ const SectorHub = () => {
         <Helmet>
           <title>Salons professionnels par secteur | Lotexpo</title>
           <meta name="description" content="Explorez les salons professionnels par secteur d'activité en France sur Lotexpo." />
-          <link rel="canonical" href="https://lotexpo.com/events" />
+          <link rel="canonical" href={`https://lotexpo.com/secteur/${slug ?? ''}`} />
           <meta name="robots" content="noindex,follow" />
         </Helmet>
         <Header />
