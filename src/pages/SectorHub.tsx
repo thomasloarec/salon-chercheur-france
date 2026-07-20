@@ -174,7 +174,7 @@ const SectorHub = () => {
                     <h3 className="text-2xl font-semibold text-foreground mb-6 capitalize">
                       {monthLabel}
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+                    <div className="flex flex-col border-t border-border/60">
                       {monthEvents.map(e => (
                         <EventCard
                           key={e.id}
@@ -208,7 +208,7 @@ const SectorHub = () => {
                 Éditions précédentes
               </h2>
               <p className="text-sm text-muted-foreground mb-6">Ces salons ont déjà eu lieu.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5 opacity-75">
+              <div className="flex flex-col border-t border-border/60 opacity-75">
                 {pastEvents.map(e => (
                   <EventCard
                     key={e.id}

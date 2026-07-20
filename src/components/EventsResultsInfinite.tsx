@@ -142,7 +142,7 @@ export const EventsResultsInfinite = ({
               Événements en cours
             </span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
+          <div className="flex flex-col border-t border-border/60">
             {ongoingEvents.map((event) => renderCard(event))}
           </div>
         </section>
@@ -153,7 +153,7 @@ export const EventsResultsInfinite = ({
           <h2 className="section-rule heading-display text-2xl md:text-3xl text-foreground mb-6 capitalize">
             {monthLabel}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
+          <div className="flex flex-col border-t border-border/60">
             {monthEvents.map((event) => renderCard(event))}
           </div>
         </section>
