@@ -1,15 +1,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { callAnthropic } from '../_shared/anthropic.ts';
+import { callAnthropic, getAnthropicModelFast } from '../_shared/anthropic.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = getAnthropicModelFast(); // Sonnet 4.6 par défaut (via _shared/anthropic.ts)
 const BATCH_LIMIT = 100;
 const CONCURRENCY = 4;
-const MAX_LEN = 160;
+const MAX_LEN = 200;
 
 type EventRow = {
   id: string;
@@ -39,20 +39,19 @@ function buildPrompt(ev: EventRow): string {
   const nom = (ev.nom_event || '').trim();
   const secteurs = extractSectors(ev.secteur);
   const desc = (ev.description_event || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
-  return `Tu rédiges une accroche pour un salon professionnel, affichée sous son nom dans un annuaire. Elle complète les informations déjà visibles à côté (nom, secteur, dates, ville, nombre d'exposants) : elle ne doit surtout pas les répéter.
+  return `Tu rédiges une accroche pour un salon professionnel, affichée sous son nom dans un annuaire. Elle complète les informations déjà affichées à côté (nom, secteur, dates, ville, nombre d'exposants) : ne les répète jamais.
 
 Salon : ${nom}
 Secteur(s) : ${secteurs}
 Description : ${desc}
 
 Consignes :
-- En une seule phrase, décris ce qu'est ce salon : son thème, son public professionnel, ce qu'on y trouve ou pourquoi y aller.
-- N'indique JAMAIS la date, ni la ville ou la région, ni le nombre d'exposants : ces informations sont déjà affichées à côté de l'accroche.
-- Maximum 130 caractères, une phrase complète et fluide.
-- Français, factuel et spécifique à ce salon ; évite les superlatifs creux.
-- Varie la formulation : n'ouvre pas par « Le rendez-vous » ni « Le salon ».
-- Sans tiret cadratin.
-- Réponds uniquement par l'accroche, sans guillemets ni préambule.`;
+- Une seule phrase complète et fluide, environ 90 à 120 caractères. Reste court : une phrase courte et entière vaut mieux qu'une longue.
+- Décris le thème du salon, son public professionnel et ce qu'on y trouve ou pourquoi y aller.
+- N'indique JAMAIS la date, ni la ville ou la région, ni le nombre d'exposants (déjà affichés à côté).
+- Varie la formulation d'un salon à l'autre. Ne commence pas par « Le rendez-vous », « Le salon », « Découvrez », « Explorez » ni « Plateforme ».
+- Français, factuel et spécifique ; pas de superlatif creux.
+- Sans tiret cadratin. Réponds uniquement par l'accroche, sans guillemets ni préambule.`;
 }
 
 function cleanAccroche(raw: string): string {
