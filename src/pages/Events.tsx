@@ -115,7 +115,46 @@ const Events = () => {
         </script>
       </Helmet>
       <Header />
-      
+
+      {/* ============================= HERO ============================= */}
+      <section className="relative overflow-hidden bg-background">
+        {/* Image calée à droite, fondue sur son bord gauche */}
+        <div aria-hidden className="absolute inset-y-0 right-0 z-0 hidden lg:block w-[58%]">
+          <img
+            src="/salons-hero.png"
+            alt=""
+            className="w-full h-full object-cover object-center"
+            style={{
+              maskImage: 'linear-gradient(90deg, transparent 0%, transparent 14%, black 40%)',
+              WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, transparent 14%, black 40%)',
+            }}
+          />
+        </div>
+
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 lg:py-16">
+          <div className="max-w-[560px]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-5">
+              <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
+                Calendrier
+              </span>
+              Tous les salons professionnels en France
+            </span>
+            <h1 className="heading-display text-[clamp(1.8rem,3.2vw,2.9rem)] text-foreground text-balance">
+              Salons professionnels en France
+            </h1>
+            <p className="mt-4 text-base md:text-lg text-muted-foreground max-w-[52ch]">
+              Retrouvez les salons à venir, classés par secteur, ville et période.{' '}
+              <Link to="/salons-professionnels-2026" className="text-primary hover:underline font-medium whitespace-nowrap">
+                Voir les salons 2026 →
+              </Link>
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {isLoading ? 'Chargement…' : `${totalCount} salon${totalCount > 1 ? 's' : ''} référencé${totalCount > 1 ? 's' : ''}`}
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Filters: Type / Month / Region */}
       <StickyFiltersBar />
 
@@ -138,26 +177,11 @@ const Events = () => {
       
       <main className="py-8">
         <div className="w-full px-6 mx-auto">
-          {/* Header with results count */}
-          <div className="mb-10 section-rule">
-            <h1 className="heading-display text-3xl md:text-4xl text-foreground">
-              Salons professionnels en France
-            </h1>
-            <p className="text-muted-foreground mt-3 max-w-3xl text-sm md:text-base">
-              Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période.{' '}
-              <Link to="/salons-professionnels-2026" className="text-primary hover:underline font-medium whitespace-nowrap">
-                Voir les salons professionnels 2026 →
-              </Link>
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {isLoading ? 'Chargement…' : `${totalCount} salon${totalCount > 1 ? 's' : ''} référencé${totalCount > 1 ? 's' : ''}`}
-            </p>
-            {data && (
-              <div className="sr-only" aria-hidden="true">
-                Chargement terminé — {totalCount} événements
-              </div>
-            )}
-          </div>
+          {data && (
+            <div className="sr-only" aria-hidden="true">
+              Chargement terminé — {totalCount} événements
+            </div>
+          )}
 
           {/* Results with infinite scroll */}
           <EventsResultsInfinite 
